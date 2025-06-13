@@ -953,12 +953,12 @@ def put_items_nowait(items: Iterable[_T], queue: Queue[_T], /) -> None:
 
 
 async def sleep_max(
-    delay: TimeDelta | None = None, /, *, random: Random = SYSTEM_RANDOM
+    sleep: TimeDelta | None = None, /, *, random: Random = SYSTEM_RANDOM
 ) -> None:
-    """Sleep which accepts max durations."""
-    if delay is None:
+    """Sleep which accepts deltas."""
+    if sleep is None:
         return
-    await sleep(random.uniform(0.0, delay.in_seconds()))
+    await asyncio.sleep(random.uniform(0.0, sleep.in_seconds()))
 
 
 ##
@@ -967,18 +967,18 @@ async def sleep_max(
 async def sleep_rounded(
     *, unit: DateTimeRoundUnit = "second", increment: int = 1
 ) -> None:
-    """Sleep until a rounded time; accepts durations."""
+    """Sleep until a rounded time."""
     await sleep_until(get_now().round(unit, increment=increment, mode="ceil"))
 
 
 ##
 
 
-async def sleep_td(delay: TimeDelta | None = None, /) -> None:
-    """Sleep which accepts durations."""
-    if delay is None:
+async def sleep_td(delta: TimeDelta | None = None, /) -> None:
+    """Sleep which accepts deltas."""
+    if delta is None:
         return
-    await sleep(delay.in_seconds())
+    await sleep(delta.in_seconds())
 
 
 ##
@@ -1044,12 +1044,15 @@ async def _stream_one(
 
 @asynccontextmanager
 async def timeout_td(
-    delay: TimeDelta | None = None, /, *, error: MaybeType[BaseException] = TimeoutError
+    timeout: TimeDelta | None = None,
+    /,
+    *,
+    error: MaybeType[BaseException] = TimeoutError,
 ) -> AsyncIterator[None]:
-    """Timeout context manager which accepts durations."""
-    delay_use = None if delay is None else delay.in_seconds()
+    """Timeout context manager which accepts deltas."""
+    timeout_use = None if timeout is None else timeout.in_seconds()
     try:
-        async with asyncio.timeout(delay_use):
+        async with asyncio.timeout(timeout_use):
             yield
     except TimeoutError:
         raise error from None
