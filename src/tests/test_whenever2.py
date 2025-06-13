@@ -5,8 +5,8 @@ from logging import DEBUG
 from typing import TYPE_CHECKING, ClassVar, Self
 from zoneinfo import ZoneInfo
 
-from hypothesis import HealthCheck, given, settings
-from hypothesis.strategies import DataObject, data, integers, none
+from hypothesis import given
+from hypothesis.strategies import integers, none, timezones
 from pytest import raises
 from whenever import (
     Date,
@@ -115,32 +115,30 @@ class TestFormatCompact:
 
 
 class TestFromTimeStamp:
-    @given(data=data())
-    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    def test_main(self, *, data: DataObject, time_zone_name: TimeZone) -> None:
-        datetime = data.draw(zoned_datetimes_whenever(time_zone=time_zone_name)).round(
-            "second"
+    @given(
+        datetime=zoned_datetimes_whenever(time_zone=timezones()).map(
+            lambda d: d.round("second")
         )
+    )
+    def test_main(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.timestamp()
-        result = from_timestamp(timestamp, time_zone=time_zone_name)
+        result = from_timestamp(timestamp, time_zone=datetime.tz)
         assert result == datetime
 
-    @given(data=data())
-    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    def test_millis(self, *, data: DataObject, time_zone_name: TimeZone) -> None:
-        datetime = data.draw(zoned_datetimes_whenever(time_zone=time_zone_name)).round(
-            "millisecond"
+    @given(
+        datetime=zoned_datetimes_whenever(time_zone=timezones()).map(
+            lambda d: d.round("millisecond")
         )
+    )
+    def test_millis(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.timestamp_millis()
-        result = from_timestamp_millis(timestamp, time_zone=time_zone_name)
+        result = from_timestamp_millis(timestamp, time_zone=datetime.tz)
         assert result == datetime
 
-    @given(data=data())
-    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    def test_nanos(self, *, data: DataObject, time_zone_name: TimeZone) -> None:
-        datetime = data.draw(zoned_datetimes_whenever(time_zone=time_zone_name))
+    @given(datetime=zoned_datetimes_whenever(time_zone=timezones()))
+    def test_nanos(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.timestamp_nanos()
-        result = from_timestamp_nanos(timestamp, time_zone=time_zone_name)
+        result = from_timestamp_nanos(timestamp, time_zone=datetime.tz)
         assert result == datetime
 
 

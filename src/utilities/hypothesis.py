@@ -49,9 +49,11 @@ from whenever import (
     DateDelta,
     DateTimeDelta,
     PlainDateTime,
+    RepeatedTime,
     SkippedTime,
     Time,
     TimeDelta,
+    TimeZoneNotFoundError,
     ZonedDateTime,
 )
 
@@ -1239,7 +1241,9 @@ def zoned_datetimes_whenever(
             assert_never(never)
     plain = draw(plain_datetimes_whenever(min_value=min_value_, max_value=max_value_))
     with (
+        assume_does_not_raise(RepeatedTime),
         assume_does_not_raise(SkippedTime),
+        assume_does_not_raise(TimeZoneNotFoundError),
         assume_does_not_raise(ValueError, match="Resulting datetime is out of range"),
     ):
         zoned = plain.assume_tz(time_zone_.key, disambiguate="raise")
