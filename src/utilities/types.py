@@ -97,19 +97,6 @@ class Dataclass(Protocol):
 TDataclass = TypeVar("TDataclass", bound=Dataclass)
 
 
-# datetime
-type DateOrDateTime = dt.date | dt.datetime
-type DateTimeLike = MaybeStr[dt.datetime]
-type Duration = Number | dt.timedelta
-type DurationLike = MaybeStr[Duration]
-type DurationOrEveryDuration = Duration | tuple[Literal["every"], Duration]
-type MaybeCallablePyDate = MaybeCallable[dt.date]
-type MaybeCallablePyDateTime = MaybeCallable[dt.datetime]
-type PyDateLike = MaybeStr[dt.date]
-type PyTimeDeltaLike = MaybeStr[dt.timedelta]
-type PyTimeLike = MaybeStr[dt.time]
-
-
 # enum
 type EnumLike[_TEnum: Enum] = MaybeStr[_TEnum]
 TEnum = TypeVar("TEnum", bound=Enum)
@@ -301,14 +288,9 @@ __all__ = [
     "Dataclass",
     "DateDeltaLike",
     "DateLike",
-    "DateOrDateTime",
     "DateTimeDeltaLike",
-    "DateTimeLike",
     "DateTimeRoundMode",
     "DateTimeRoundUnit",
-    "Duration",
-    "DurationLike",
-    "DurationOrEveryDuration",
     "EnumLike",
     "ExcInfo",
     "IterableHashable",
@@ -320,8 +302,6 @@ __all__ = [
     "MaybeCallableDate",
     "MaybeCallableEvent",
     "MaybeCallablePathLike",
-    "MaybeCallablePyDate",
-    "MaybeCallablePyDateTime",
     "MaybeCallableZonedDateTime",
     "MaybeCoroutine1",
     "MaybeIterable",
@@ -336,9 +316,6 @@ __all__ = [
     "PathLike",
     "PatternLike",
     "PlainDateTimeLike",
-    "PyDateLike",
-    "PyTimeDeltaLike",
-    "PyTimeLike",
     "Seed",
     "SerializeObjectExtra",
     "Sign",
