@@ -7,7 +7,7 @@ from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import assume, given, reproduce_failure
+from hypothesis import assume, given
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -21,7 +21,7 @@ from hypothesis.strategies import (
 )
 from orjson import JSONDecodeError
 from polars import Object, String, UInt64
-from pytest import approx, mark, raises
+from pytest import approx, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from tests.test_objects.objects import (
@@ -511,8 +511,6 @@ class TestSerializeAndDeserialize:
         assert is_equal(result, obj)
 
     @given(obj=objects(dataclass_int=True, parsable=True))
-    @mark.only
-    @reproduce_failure("6.135.7", b"AEECAUEBQQABQQFBAQA=")
     def test_dataclass_int(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassFutureInt})
         assert is_equal(result, obj)
