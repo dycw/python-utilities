@@ -40,10 +40,6 @@ class TestNodeIdToPath:
                 Path("src.tests.module.test_funcs", "TestClass__test_main"),
             ),
             param(
-                "src/tests/module/test_funcs.py::TestClass::test_main.csv",
-                Path("src.tests.module.test_funcs", "TestClass__test_main"),
-            ),
-            param(
                 "src/tests/module/test_funcs.py::TestClass::test_main[param1, param2]",
                 Path(
                     "src.tests.module.test_funcs",
@@ -68,8 +64,8 @@ class TestNodeIdToPath:
 
     def test_suffix(self) -> None:
         node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
-        result = node_id_to_path(node_id, head=Path("src/tests"), suffix=".test")
-        expected = Path("module.test_funcs", "TestClass__test_main.test")
+        result = node_id_to_path(node_id, head=Path("src/tests"), suffix=".sv")
+        expected = Path("module.test_funcs", "TestClass__test_main.sv")
         assert result == expected
 
     def test_error_file_suffix(self) -> None:

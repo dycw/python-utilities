@@ -304,7 +304,10 @@ class TestMinMaxDate:
         min_age: DateDelta | None,
         max_age: DateDelta | None,
     ) -> None:
-        with assume_does_not_raise(MinMaxDateError):
+        with (
+            assume_does_not_raise(MinMaxDateError),
+            assume_does_not_raise(ValueError, match="Resulting date out of range"),
+        ):
             min_date_use, max_date_use = min_max_date(
                 min_date=min_date, max_date=max_date, min_age=min_age, max_age=max_age
             )

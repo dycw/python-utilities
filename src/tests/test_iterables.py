@@ -1267,6 +1267,16 @@ class TestSortIterablesCmpFloats:
         if isnan(x) is not isnan(y):
             assert result1 != result2
 
+    @given(x=floats(allow_nan=False))
+    def test_num_vs_nan(self, *, x: float) -> None:
+        result = _sort_iterable_cmp_floats(x, nan)
+        assert result == -1
+
+    @given(x=floats(allow_nan=False))
+    def test_nan_vs_num(self, *, x: float) -> None:
+        result = _sort_iterable_cmp_floats(nan, x)
+        assert result == 1
+
     def test_nan_vs_nan(self) -> None:
         result = _sort_iterable_cmp_floats(nan, nan)
         assert result == 0

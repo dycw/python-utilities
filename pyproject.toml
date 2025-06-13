@@ -220,7 +220,6 @@ addopts = [
   "--cov=utilities",
   "--cov-config=pyproject.toml",
   "--cov-report=html",
-  "--cov-report=term-missing",
   "--durations=10",
   "--durations-min=10",
   "--strict-markers",
