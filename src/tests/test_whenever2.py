@@ -122,7 +122,7 @@ class TestFromTimeStamp:
     )
     def test_main(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.timestamp()
-        result = from_timestamp(timestamp, time_zone=datetime.tz)
+        result = from_timestamp(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
     @given(
@@ -132,13 +132,13 @@ class TestFromTimeStamp:
     )
     def test_millis(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.timestamp_millis()
-        result = from_timestamp_millis(timestamp, time_zone=datetime.tz)
+        result = from_timestamp_millis(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
     @given(datetime=zoned_datetimes_whenever(time_zone=timezones()))
     def test_nanos(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.timestamp_nanos()
-        result = from_timestamp_nanos(timestamp, time_zone=datetime.tz)
+        result = from_timestamp_nanos(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
 
