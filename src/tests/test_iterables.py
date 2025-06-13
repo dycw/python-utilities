@@ -33,13 +33,7 @@ from pytest import mark, param, raises
 
 from tests.test_objects.objects import objects
 from utilities.functions import is_sequence_of
-from utilities.hypothesis import (
-    pairs,
-    sentinels,
-    sets_fixed_length,
-    text_ascii,
-    zoned_datetimes,
-)
+from utilities.hypothesis import pairs, sentinels, sets_fixed_length, text_ascii
 from utilities.iterables import (
     CheckBijectionError,
     CheckDuplicatesError,
