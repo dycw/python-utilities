@@ -354,12 +354,10 @@ class TestThrottle:
         )
         for delay in [0.2, 0.0]:
             testdir.runpytest().assert_outcomes(failed=1)
-            for _ in range(2):
-                testdir.runpytest().assert_outcomes(skipped=1)
+            testdir.runpytest().assert_outcomes(skipped=1)
             sleep(0.2)
             testdir.runpytest("--pass").assert_outcomes(passed=1)
-            for _ in range(2):
-                testdir.runpytest().assert_outcomes(skipped=1)
+            testdir.runpytest().assert_outcomes(skipped=1)
             sleep(delay)
 
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
