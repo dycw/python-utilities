@@ -121,7 +121,7 @@ class TestSerializeAndParseObject:
         result = parse_object(bool, text, extra={Literal["lit"]: parse_bool})
         assert result is bool_
 
-    @mark.parametrize("truth", [param("true", param("false"))])
+    @mark.parametrize("truth", [param("true"), param("false")])
     def test_literal(self, *, truth: Literal["true", "false"]) -> None:
         result = parse_object(TrueOrFalseFutureLit, truth)
         assert result == truth
@@ -228,7 +228,7 @@ class TestSerializeAndParseObject:
         expected = DataClassFutureInt(int_=int_)
         assert result == expected
 
-    @mark.parametrize("truth", [param("true", param("false"))])
+    @mark.parametrize("truth", [param("true"), param("false")])
     def test_type_literal(self, *, truth: Literal["true", "false"]) -> None:
         result = parse_object(TrueOrFalseFutureTypeLit, truth)
         assert result == truth
