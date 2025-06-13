@@ -307,22 +307,24 @@ class TestThrottle:
             """
         )
         root_str = str(tmp_path)
-        contents = f"""
+        _ = testdir.makepyfile(
+            f"""
+            from whenever import TimeDelta
+
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, duration=1.0)
+            @throttle(root={root_str!r}, duration=TimeDelta(seconds=0.1))
             def test_main(is_pass):
                 assert is_pass
             """
-        _ = testdir.makepyfile(contents)
-        for i in range(2):
+        )
+        for _ in range(2):
             for _ in range(2):
                 testdir.runpytest().assert_outcomes(failed=1)
             testdir.runpytest("--pass").assert_outcomes(passed=1)
             for _ in range(2):
                 testdir.runpytest("--pass").assert_outcomes(skipped=1)
-            if i == 0:
-                await sleep_td(0.1 * SECOND)
+            await sleep_td(0.2 * SECOND)
 
     @mark.flaky
     async def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
@@ -354,12 +356,12 @@ class TestThrottle:
             testdir.runpytest().assert_outcomes(failed=1)
             for _ in range(2):
                 testdir.runpytest().assert_outcomes(skipped=1)
-            await sleep_td(0.1 * SECOND)
+            await sleep_td(0.2 * SECOND)
             testdir.runpytest("--pass").assert_outcomes(passed=1)
             for _ in range(2):
                 testdir.runpytest().assert_outcomes(skipped=1)
             if i == 0:
-                await sleep_td(0.1 * SECOND)
+                await sleep_td(0.2 * SECOND)
 
     @mark.flaky
     async def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
@@ -380,7 +382,7 @@ class TestThrottle:
         )
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        await sleep_td(0.1 * SECOND)
+        await sleep_td(0.2 * SECOND)
         testdir.runpytest().assert_outcomes(passed=1)
 
     def test_signature(self) -> None:
