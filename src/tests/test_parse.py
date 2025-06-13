@@ -14,10 +14,9 @@ from hypothesis.strategies import (
     integers,
     lists,
     none,
-    sampled_from,
     sets,
 )
-from pytest import raises
+from pytest import mark, param, raises
 from whenever import (
     Date,
     DateDelta,
@@ -86,7 +85,7 @@ class TestSerializeAndParseObject:
         result = parse_object(dict[int, int], serialized)
         assert result == mapping
 
-    @given(truth=sampled_from(TruthEnum))
+    @mark.parametrize("truth", TruthEnum)
     def test_enum(self, *, truth: TruthEnum) -> None:
         serialized = serialize_object(truth)
         result = parse_object(TruthEnum, serialized)
@@ -122,7 +121,7 @@ class TestSerializeAndParseObject:
         result = parse_object(bool, text, extra={Literal["lit"]: parse_bool})
         assert result is bool_
 
-    @given(truth=sampled_from(["true", "false"]))
+    @mark.parametrize("truth", [param("true", param("false"))])
     def test_literal(self, *, truth: Literal["true", "false"]) -> None:
         result = parse_object(TrueOrFalseFutureLit, truth)
         assert result == truth
@@ -229,7 +228,7 @@ class TestSerializeAndParseObject:
         expected = DataClassFutureInt(int_=int_)
         assert result == expected
 
-    @given(truth=sampled_from(["true", "false"]))
+    @mark.parametrize("truth", [param("true", param("false"))])
     def test_type_literal(self, *, truth: Literal["true", "false"]) -> None:
         result = parse_object(TrueOrFalseFutureTypeLit, truth)
         assert result == truth
@@ -302,7 +301,7 @@ class TestSerializeAndParseObject:
 
 
 class TestParseObject:
-    @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
+    @mark.parametrize("text", [param("F_a_l_s_e"), param("T_r_u_e")])
     def test_extra(self, *, text: str) -> None:
         def parser(text: str, /) -> bool:
             match text:
@@ -323,7 +322,7 @@ class TestParseObject:
                 raise ImpossibleCaseError(case=[f"{text=}"])
         assert bool_ is expected
 
-    @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
+    @mark.parametrize("text", [param("F_a_l_s_e"), param("T_r_u_e")])
     def test_extra_both_exact_match_and_non_unique_parents(self, *, text: str) -> None:
         def parser(text: str, /) -> bool:
             match text:
@@ -414,7 +413,7 @@ class TestParseObject:
         ):
             _ = parse_object(DataClassFutureInt, "invalid", extra={})
 
-    @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
+    @mark.parametrize("text", [param("F_a_l_s_e"), param("T_r_u_e")])
     def test_error_extra_empty_bool_does_not_use_int(self, *, text: str) -> None:
         def parser(text: str, /) -> bool:
             match text:
