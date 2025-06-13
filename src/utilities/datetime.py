@@ -346,20 +346,6 @@ def datetime_utc(
 ##
 
 
-def days_since_epoch(date: dt.date, /) -> int:
-    """Compute the number of days since the epoch."""
-    check_date_not_datetime(date)
-    return timedelta_since_epoch(date).days
-
-
-def days_since_epoch_to_date(days: int, /) -> dt.date:
-    """Convert a number of days since the epoch to a date."""
-    return EPOCH_DATE + days * DAY
-
-
-##
-
-
 def ensure_month(month: MonthLike, /) -> Month:
     """Ensure the object is a month."""
     if isinstance(month, Month):
@@ -1286,8 +1272,6 @@ __all__ = [
     "datetime_duration_to_milliseconds",
     "datetime_duration_to_timedelta",
     "datetime_utc",
-    "days_since_epoch",
-    "days_since_epoch_to_date",
     "ensure_month",
     "format_datetime_local_and_utc",
     "get_date",

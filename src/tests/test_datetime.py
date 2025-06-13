@@ -86,8 +86,6 @@ from utilities.datetime import (
     datetime_duration_to_milliseconds,
     datetime_duration_to_timedelta,
     datetime_utc,
-    days_since_epoch,
-    days_since_epoch_to_date,
     ensure_month,
     format_datetime_local_and_utc,
     get_date,
@@ -509,14 +507,6 @@ class TestDatetimeUTC:
             microsecond=datetime.microsecond,
         )
         assert result == datetime
-
-
-class TestDaysSinceEpoch:
-    @given(date=dates())
-    def test_main(self, *, date: dt.date) -> None:
-        days = days_since_epoch(date)
-        result = days_since_epoch_to_date(days)
-        assert result == date
 
 
 class TestEpoch:
