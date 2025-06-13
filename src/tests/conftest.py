@@ -22,8 +22,6 @@ if TYPE_CHECKING:
 
     from _pytest.fixtures import SubRequest
 
-    from utilities.types import TimeZoneLike
-
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
 IS_CI = "CI" in environ
@@ -104,19 +102,3 @@ def _is_to_drop(table: str, /) -> bool:
     )
     now = get_now()
     return (now - datetime) >= MINUTE
-
-
-# fixtures - zone info
-
-
-@fixture(
-    params=[
-        param("Asia/Hong_Kong"),
-        param("Asia/Tokyo"),
-        param("US/Central"),
-        param("US/Eastern"),
-        param("UTC"),
-    ]
-)
-def time_zone_name(*, request: SubRequest) -> TimeZoneLike:
-    return request.param
