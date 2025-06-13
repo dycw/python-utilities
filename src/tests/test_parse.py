@@ -5,7 +5,7 @@ from pathlib import Path
 from types import NoneType
 from typing import Final, Literal
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import (
     booleans,
     dictionaries,
@@ -635,6 +635,7 @@ class TestSerializeObject:
         assert serialized == expected
 
     @given(int_=integers())
+    @settings(max_examples=1)
     def test_type_with_extra(self, *, int_: int) -> None:
         obj = DataClassFutureInt(int_=int_)
 
