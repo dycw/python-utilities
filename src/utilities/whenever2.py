@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from functools import cache
 from logging import LogRecord
-from typing import TYPE_CHECKING, Any, assert_never, overload, override
+from statistics import fmean
+from typing import TYPE_CHECKING, Any, SupportsFloat, assert_never, overload, override
 
 from whenever import (
     Date,
@@ -172,6 +173,36 @@ def get_today_local() -> Date:
 
 
 TODAY_LOCAL = get_today_local()
+
+
+##
+
+
+def mean_datetime(
+    datetimes: Iterable[ZonedDateTime],
+    /,
+    *,
+    weights: Iterable[SupportsFloat] | None = None,
+) -> ZonedDateTime:
+    """Compute the mean of a set of datetimes."""
+    datetimes = list(datetimes)
+    match len(datetimes):
+        case 0:
+            raise MeanDateTimeError from None
+        case 1:
+            return datetimes[0]
+        case _:
+            timestamps = [d.timestamp_nanos() for d in datetimes]
+            timestamp = round(fmean(timestamps, weights=weights))
+            return ZonedDateTime.from_timestamp_nanos(timestamp, tz=datetimes[0].tz)
+
+
+@dataclass(kw_only=True, slots=True)
+class MeanDateTimeError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "Mean requires at least 1 datetime"
+
 
 ##
 
@@ -461,10 +492,10 @@ __all__ = [
     "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
+    "MeanDateTimeError",
     "ToDaysError",
     "ToNanosError",
     "WheneverLogRecord",
-    "format_compact",
     "format_compact",
     "from_timestamp",
     "from_timestamp_millis",
@@ -473,6 +504,8 @@ __all__ = [
     "get_now_local",
     "get_today",
     "get_today_local",
+    "mean_datetime",
+    "mean_datetime",
     "to_date",
     "to_date_time_delta",
     "to_days",

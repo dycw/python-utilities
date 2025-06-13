@@ -42,18 +42,14 @@ from utilities.datetime import (
     WEEK,
     YEAR,
     ZERO_TIME,
-    AddDurationError,
     AddWeekdaysError,
     AreEqualDateTimesError,
     CheckDateNotDateTimeError,
     EnsureMonthError,
     GetMinMaxDateError,
-    MeanDateTimeError,
-    MeanTimeDeltaError,
     Month,
     MonthError,
     ParseMonthError,
-    SubDurationError,
     YieldDaysError,
     YieldWeekdaysError,
     _DateDurationToIntFloatError,
@@ -67,7 +63,6 @@ from utilities.datetime import (
     _GetMinMaxDatePeriodError,
     _ParseTwoDigitYearInvalidIntegerError,
     _ParseTwoDigitYearInvalidStringError,
-    add_duration,
     add_weekdays,
     are_equal_datetimes,
     check_date_not_datetime,
@@ -92,8 +87,6 @@ from utilities.datetime import (
     is_weekday,
     is_zero_time,
     maybe_sub_pct_y,
-    mean_datetime,
-    mean_timedelta,
     microseconds_since_epoch,
     microseconds_since_epoch_to_datetime,
     microseconds_to_timedelta,
@@ -103,7 +96,6 @@ from utilities.datetime import (
     round_to_next_weekday,
     round_to_prev_weekday,
     serialize_month,
-    sub_duration,
     timedelta_since_epoch,
     yield_days,
     yield_weekdays,
@@ -135,61 +127,6 @@ if TYPE_CHECKING:
         MaybeCallablePyDateTime,
         Number,
     )
-
-
-class TestAddDuration:
-    @given(date=dates(), n=integers())
-    def test_date_with_int(self, *, date: dt.date, n: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            result = add_duration(date, duration=n)
-        expected = date + dt.timedelta(days=n)
-        assert result == expected
-
-    @given(date=dates(), n=integers())
-    def test_date_with_timedelta(self, *, date: dt.date, n: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            timedelta = dt.timedelta(days=n)
-        with assume_does_not_raise(OverflowError):
-            result = add_duration(date, duration=timedelta)
-        expected = date + timedelta
-        assert result == expected
-
-    @given(datetime=zoned_datetimes(), n=integers())
-    def test_datetime_with_int(self, *, datetime: dt.datetime, n: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            result = add_duration(datetime, duration=n)
-        expected = datetime + dt.timedelta(seconds=n)
-        assert result == expected
-
-    @given(datetime=zoned_datetimes(), n=integers())
-    def test_datetime_with_timedelta(self, *, datetime: dt.datetime, n: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            timedelta = dt.timedelta(seconds=n)
-        with assume_does_not_raise(OverflowError):
-            result = add_duration(datetime, duration=timedelta)
-        expected = datetime + timedelta
-        assert result == expected
-
-    @given(date=dates() | zoned_datetimes())
-    def test_none(self, *, date: DateOrDateTime) -> None:
-        result = add_duration(date)
-        assert result == date
-
-    @given(
-        date=dates(),
-        n=integers(),
-        frac=timedeltas(
-            min_value=-(DAY - MICROSECOND), max_value=DAY - MICROSECOND
-        ).filter(not_func(is_zero_time)),
-    )
-    def test_error(self, *, date: dt.date, n: int, frac: dt.timedelta) -> None:
-        with assume_does_not_raise(OverflowError):
-            timedelta = dt.timedelta(days=n) + frac
-        with raises(
-            AddDurationError,
-            match="Date .* must be paired with an integral duration; got .*",
-        ):
-            _ = add_duration(date, duration=timedelta)
 
 
 class TestAddWeekdays:
@@ -691,40 +628,6 @@ class TestMaybeSubPctY:
         assert not search("%Y", result)
 
 
-class TestMeanDateTime:
-    @given(datetime=zoned_datetimes())
-    def test_one(self, *, datetime: dt.datetime) -> None:
-        assert mean_datetime([datetime]) == datetime
-
-    def test_many(self) -> None:
-        assert mean_datetime([NOW_UTC, NOW_UTC + MINUTE]) == (NOW_UTC + 30 * SECOND)
-
-    def test_weights(self) -> None:
-        assert mean_datetime([NOW_UTC, NOW_UTC + MINUTE], weights=[1, 3]) == (
-            NOW_UTC + 45 * SECOND
-        )
-
-    def test_error(self) -> None:
-        with raises(MeanDateTimeError, match="Mean requires at least 1 datetime"):
-            _ = mean_datetime([])
-
-
-class TestMeanTimeDelta:
-    @given(timedelta=timedeltas())
-    def test_one(self, *, timedelta: dt.timedelta) -> None:
-        assert mean_timedelta([timedelta]) == timedelta
-
-    def test_many(self) -> None:
-        assert mean_timedelta([MINUTE, 2 * MINUTE]) == 1.5 * MINUTE
-
-    def test_weights(self) -> None:
-        assert mean_timedelta([MINUTE, 2 * MINUTE], weights=[1, 3]) == 1.75 * MINUTE
-
-    def test_error(self) -> None:
-        with raises(MeanTimeDeltaError, match="Mean requires at least 1 timedelta"):
-            _ = mean_timedelta([])
-
-
 class TestMicrosecondsOrMillisecondsSinceEpoch:
     @given(datetime=datetimes() | zoned_datetimes())
     def test_datetime_to_microseconds(self, *, datetime: dt.datetime) -> None:
@@ -903,43 +806,6 @@ class TestRoundToWeekday:
         with assume_does_not_raise(OverflowError):
             result = func(date)
         assert operator(result, date)
-
-
-class TestSubDuration:
-    @given(date=dates(), n=integers())
-    def test_date(self, *, date: dt.date, n: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            result = sub_duration(date, duration=n)
-        expected = date - dt.timedelta(days=n)
-        assert result == expected
-
-    @given(datetime=zoned_datetimes(), n=integers())
-    def test_datetime(self, *, datetime: dt.datetime, n: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            result = sub_duration(datetime, duration=n)
-        expected = datetime - dt.timedelta(seconds=n)
-        assert result == expected
-
-    @given(date=dates() | zoned_datetimes())
-    def test_none(self, *, date: DateOrDateTime) -> None:
-        result = sub_duration(date)
-        assert result == date
-
-    @given(
-        date=dates(),
-        n=integers(),
-        frac=timedeltas(
-            min_value=-(DAY - MICROSECOND), max_value=DAY - MICROSECOND
-        ).filter(not_func(is_zero_time)),
-    )
-    def test_error(self, *, date: dt.date, n: int, frac: dt.timedelta) -> None:
-        with assume_does_not_raise(OverflowError):
-            timedelta = dt.timedelta(days=n) + frac
-        with raises(
-            SubDurationError,
-            match="Date .* must be paired with an integral duration; got .*",
-        ):
-            _ = sub_duration(date, duration=timedelta)
 
 
 class TestTimedeltaSinceEpoch:

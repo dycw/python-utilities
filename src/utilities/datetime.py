@@ -1,20 +1,10 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from re import search, sub
-from statistics import fmean
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Self,
-    SupportsFloat,
-    assert_never,
-    overload,
-    override,
-)
+from typing import TYPE_CHECKING, Any, Literal, Self, assert_never, overload, override
 
 from utilities.iterables import OneEmptyError, one
 from utilities.math import SafeRoundError, round_, safe_round
@@ -31,7 +21,6 @@ if TYPE_CHECKING:
 
 
 _DAYS_PER_YEAR = 365.25
-_MICROSECONDS_PER_MILLISECOND = int(1e3)
 _MICROSECONDS_PER_SECOND = int(1e6)
 _SECONDS_PER_DAY = 24 * 60 * 60
 _MICROSECONDS_PER_DAY = _MICROSECONDS_PER_SECOND * _SECONDS_PER_DAY
@@ -50,40 +39,6 @@ MINUTE = dt.timedelta(minutes=1)
 HOUR = dt.timedelta(hours=1)
 DAY = dt.timedelta(days=1)
 WEEK = dt.timedelta(weeks=1)
-
-
-##
-
-
-@overload
-def add_duration(
-    date: dt.datetime, /, *, duration: Duration | None = ...
-) -> dt.datetime: ...
-@overload
-def add_duration(date: dt.date, /, *, duration: Duration | None = ...) -> dt.date: ...
-def add_duration(
-    date: DateOrDateTime, /, *, duration: Duration | None = None
-) -> dt.date:
-    """Add a duration to a date/datetime."""
-    if duration is None:
-        return date
-    if isinstance(date, dt.datetime):
-        return date + datetime_duration_to_timedelta(duration)
-    try:
-        timedelta = date_duration_to_timedelta(duration)
-    except DateDurationToTimeDeltaError:
-        raise AddDurationError(date=date, duration=duration) from None
-    return date + timedelta
-
-
-@dataclass(kw_only=True, slots=True)
-class AddDurationError(Exception):
-    date: dt.date
-    duration: Duration
-
-    @override
-    def __str__(self) -> str:
-        return f"Date {self.date} must be paired with an integral duration; got {self.duration}"
 
 
 ##
@@ -600,74 +555,6 @@ def maybe_sub_pct_y(text: str, /) -> str:
 ##
 
 
-def mean_datetime(
-    datetimes: Iterable[dt.datetime],
-    /,
-    *,
-    weights: Iterable[SupportsFloat] | None = None,
-    mode: MathRoundMode = "standard",
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
-) -> dt.datetime:
-    """Compute the mean of a set of datetimes."""
-    datetimes = list(datetimes)
-    match len(datetimes):
-        case 0:
-            raise MeanDateTimeError from None
-        case 1:
-            return one(datetimes)
-        case _:
-            microseconds = list(map(microseconds_since_epoch, datetimes))
-            mean_float = fmean(microseconds, weights=weights)
-            mean_int = round_(mean_float, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
-            return microseconds_since_epoch_to_datetime(
-                mean_int, time_zone=datetimes[0].tzinfo
-            )
-
-
-@dataclass(kw_only=True, slots=True)
-class MeanDateTimeError(Exception):
-    @override
-    def __str__(self) -> str:
-        return "Mean requires at least 1 datetime"
-
-
-##
-
-
-def mean_timedelta(
-    timedeltas: Iterable[dt.timedelta],
-    /,
-    *,
-    weights: Iterable[SupportsFloat] | None = None,
-    mode: MathRoundMode = "standard",
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
-) -> dt.timedelta:
-    """Compute the mean of a set of timedeltas."""
-    timedeltas = list(timedeltas)
-    match len(timedeltas):
-        case 0:
-            raise MeanTimeDeltaError from None
-        case 1:
-            return one(timedeltas)
-        case _:
-            microseconds = list(map(datetime_duration_to_microseconds, timedeltas))
-            mean_float = fmean(microseconds, weights=weights)
-            mean_int = round_(mean_float, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol)
-            return microseconds_to_timedelta(mean_int)
-
-
-@dataclass(kw_only=True, slots=True)
-class MeanTimeDeltaError(Exception):
-    @override
-    def __str__(self) -> str:
-        return "Mean requires at least 1 timedelta"
-
-
-##
-
-
 def microseconds_since_epoch(datetime: dt.datetime, /) -> int:
     """Compute the number of microseconds since the epoch."""
     return datetime_duration_to_microseconds(timedelta_since_epoch(datetime))
@@ -908,37 +795,6 @@ class ParseMonthError(Exception):
 ##
 
 
-@overload
-def sub_duration(
-    date: dt.datetime, /, *, duration: Duration | None = ...
-) -> dt.datetime: ...
-@overload
-def sub_duration(date: dt.date, /, *, duration: Duration | None = ...) -> dt.date: ...
-def sub_duration(
-    date: DateOrDateTime, /, *, duration: Duration | None = None
-) -> dt.date:
-    """Subtract a duration from a date/datetime."""
-    if duration is None:
-        return date
-    try:
-        return add_duration(date, duration=-duration)
-    except AddDurationError:
-        raise SubDurationError(date=date, duration=duration) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class SubDurationError(Exception):
-    date: dt.date
-    duration: Duration
-
-    @override
-    def __str__(self) -> str:
-        return f"Date {self.date} must be paired with an integral duration; got {self.duration}"
-
-
-##
-
-
 def timedelta_since_epoch(date_or_datetime: DateOrDateTime, /) -> dt.timedelta:
     """Compute the timedelta since the epoch."""
     match date_or_datetime:
@@ -1065,24 +921,19 @@ __all__ = [
     "WEEK",
     "YEAR",
     "ZERO_TIME",
-    "AddDurationError",
     "AddWeekdaysError",
     "AreEqualDateTimesError",
     "CheckDateNotDateTimeError",
     "DateOrMonth",
     "EnsureMonthError",
     "GetMinMaxDateError",
-    "MeanDateTimeError",
-    "MeanTimeDeltaError",
     "Month",
     "MonthError",
     "MonthLike",
     "ParseMonthError",
-    "SubDurationError",
     "TimedeltaToMillisecondsError",
     "YieldDaysError",
     "YieldWeekdaysError",
-    "add_duration",
     "add_weekdays",
     "are_equal_datetimes",
     "check_date_not_datetime",
@@ -1107,8 +958,6 @@ __all__ = [
     "is_weekday",
     "is_zero_time",
     "maybe_sub_pct_y",
-    "mean_datetime",
-    "mean_timedelta",
     "microseconds_since_epoch",
     "microseconds_since_epoch_to_datetime",
     "microseconds_to_timedelta",
@@ -1118,7 +967,6 @@ __all__ = [
     "round_to_next_weekday",
     "round_to_prev_weekday",
     "serialize_month",
-    "sub_duration",
     "timedelta_since_epoch",
     "yield_days",
     "yield_weekdays",

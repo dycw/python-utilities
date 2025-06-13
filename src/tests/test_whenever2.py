@@ -2,13 +2,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from logging import DEBUG
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, ClassVar, Self
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
 from hypothesis.strategies import integers, just, none, timezones
 from pytest import raises
-from whenever import Date, DateDelta, DateTimeDelta, PlainDateTime, ZonedDateTime
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 from tests.conftest import IS_CI
 from utilities.dataclasses import replace_non_sentinel
@@ -32,6 +39,8 @@ from utilities.whenever2 import (
     DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
     DATE_TIME_DELTA_PARSABLE_MIN,
+    MICROSECOND,
+    MINUTE,
     NOW_LOCAL,
     NOW_UTC,
     PLAIN_DATE_TIME_MAX,
@@ -43,6 +52,7 @@ from utilities.whenever2 import (
     TODAY_UTC,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
+    MeanDateTimeError,
     ToDaysError,
     ToNanosError,
     WheneverLogRecord,
@@ -54,6 +64,7 @@ from utilities.whenever2 import (
     get_now_local,
     get_today,
     get_today_local,
+    mean_datetime,
     to_date,
     to_date_time_delta,
     to_days,
@@ -142,6 +153,31 @@ class TestGetTodayLocal:
 
     def test_constant(self) -> None:
         assert isinstance(TODAY_LOCAL, Date)
+
+
+class TestMeanDateTime:
+    threshold: ClassVar[TimeDelta] = 100 * MICROSECOND
+
+    @given(datetime=zoned_datetimes_whenever())
+    def test_one(self, *, datetime: ZonedDateTime) -> None:
+        result = mean_datetime([datetime])
+        assert result == datetime
+
+    @given(datetime=zoned_datetimes_whenever())
+    def test_many(self, *, datetime: ZonedDateTime) -> None:
+        result = mean_datetime([datetime, datetime + MINUTE])
+        expected = datetime + 30 * SECOND
+        assert abs(result - expected) <= self.threshold
+
+    @given(datetime=zoned_datetimes_whenever())
+    def test_weights(self, *, datetime: ZonedDateTime) -> None:
+        result = mean_datetime([datetime, datetime + MINUTE], weights=[1, 3])
+        expected = datetime + 45 * SECOND
+        assert abs(result - expected) <= self.threshold
+
+    def test_error(self) -> None:
+        with raises(MeanDateTimeError, match="Mean requires at least 1 datetime"):
+            _ = mean_datetime([])
 
 
 class TestMinMax:
