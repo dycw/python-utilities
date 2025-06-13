@@ -9,6 +9,16 @@ from re import DOTALL
 from types import NoneType
 from typing import TYPE_CHECKING, Any, override
 
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
+
 from utilities.enum import ParseEnumError, parse_enum
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one, one_str
 from utilities.math import ParseNumberError, parse_number
@@ -26,7 +36,7 @@ from utilities.text import (
     split_key_value_pairs,
     split_str,
 )
-from utilities.types import Duration, Number, ParseObjectExtra, SerializeObjectExtra
+from utilities.types import Number, ParseObjectExtra, SerializeObjectExtra
 from utilities.typing import (
     get_args,
     is_dict_type,
@@ -181,6 +191,14 @@ def _parse_object_type(
         try:
             return parse_enum(text, cls, case_sensitive=case_sensitive)
         except ParseEnumError:
+            raise _ParseObjectParseError(type_=cls, text=text) from None
+    if issubclass(
+        cls,
+        (Date, DateDelta, DateTimeDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime),
+    ):
+        try:
+            return cls.parse_common_iso(text)
+        except ValueError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(cls, Path):
         return Path(text).expanduser()
@@ -374,13 +392,6 @@ def _parse_object_union_type(type_: Any, text: str, /) -> Any:
             return parse_number(text)
         except ParseNumberError:
             raise _ParseObjectParseError(type_=type_, text=text) from None
-    if type_ is Duration:
-        from utilities.whenever import ParseDurationError, parse_duration
-
-        try:
-            return parse_duration(text)
-        except ParseDurationError:
-            raise _ParseObjectParseError(type_=type_, text=text) from None
     raise _ParseObjectParseError(type_=type_, text=text) from None
 
 
@@ -464,22 +475,11 @@ def serialize_object(
         obj, bool | int | float | str | Path | Sentinel | Version
     ):
         return str(obj)
-    if is_instance_gen(obj, dt.date):
-        from utilities.whenever import serialize_date
-
-        return serialize_date(obj)
-    if is_instance_gen(obj, dt.datetime):
-        from utilities.whenever import serialize_datetime
-
-        return serialize_datetime(obj)
-    if isinstance(obj, dt.time):
-        from utilities.whenever import serialize_time
-
-        return serialize_time(obj)
-    if isinstance(obj, dt.timedelta):
-        from utilities.whenever import serialize_timedelta
-
-        return serialize_timedelta(obj)
+    if isinstance(
+        obj,
+        (Date, DateDelta, DateTimeDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime),
+    ):
+        return obj.format_common_iso()
     if isinstance(obj, Enum):
         return obj.name
     if isinstance(obj, dict):
