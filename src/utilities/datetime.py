@@ -113,16 +113,6 @@ class AddWeekdaysError(Exception): ...
 ##
 
 
-def are_equal_date_durations(x: Duration, y: Duration, /) -> bool:
-    """Check if x == y for durations."""
-    x_timedelta = date_duration_to_timedelta(x)
-    y_timedelta = date_duration_to_timedelta(y)
-    return x_timedelta == y_timedelta
-
-
-##
-
-
 def are_equal_dates_or_datetimes(
     x: DateOrDateTime, y: DateOrDateTime, /, *, strict: bool = False
 ) -> bool:
@@ -1118,7 +1108,6 @@ __all__ = [
     "YieldWeekdaysError",
     "add_duration",
     "add_weekdays",
-    "are_equal_date_durations",
     "are_equal_dates_or_datetimes",
     "are_equal_datetimes",
     "check_date_not_datetime",
