@@ -118,7 +118,7 @@ class TestIsMessage:
 
 
 class TestPublish:
-    @given(data=lists(binary(min_size=1), min_size=1, max_size=5))
+    @given(data=lists(binary(min_size=1), min_size=1))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
@@ -139,7 +139,7 @@ class TestPublish:
             assert isinstance(result, bytes)
             assert result == datum
 
-    @given(objects=lists(make_objects(), min_size=1, max_size=5))
+    @given(objects=lists(make_objects(), min_size=1))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
@@ -159,7 +159,7 @@ class TestPublish:
         for result, obj in zip(results, objects, strict=True):
             assert is_equal(result, obj)
 
-    @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
+    @given(messages=lists(text_ascii(min_size=1), min_size=1))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
@@ -186,7 +186,7 @@ class TestPublish:
 
 
 class TestPublisherService:
-    @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
+    @given(messages=lists(text_ascii(min_size=1), min_size=1))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
@@ -544,7 +544,7 @@ class TestRedisKey:
 
 
 class TestSubscribe:
-    @given(messages=lists(binary(min_size=1), min_size=1, max_size=5))
+    @given(messages=lists(binary(min_size=1), min_size=1))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
@@ -565,7 +565,7 @@ class TestSubscribe:
             assert isinstance(result, bytes)
             assert result == message
 
-    @given(objs=lists(make_objects(), min_size=1, max_size=5))
+    @given(objs=lists(make_objects(), min_size=1))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
@@ -587,8 +587,8 @@ class TestSubscribe:
 
     @given(
         data=data(),
-        short_messages=lists(text_ascii(max_size=4), min_size=1, max_size=5),
-        long_messages=lists(text_ascii(min_size=6), min_size=1, max_size=5),
+        short_messages=lists(text_ascii(max_size=4), min_size=1),
+        long_messages=lists(text_ascii(min_size=6), min_size=1),
     )
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
@@ -617,7 +617,7 @@ class TestSubscribe:
             assert isinstance(result, str)
             assert len(result) >= 3
 
-    @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
+    @given(messages=lists(text_ascii(min_size=1), min_size=1))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
@@ -641,7 +641,7 @@ class TestSubscribe:
             assert result["channel"] == channel.encode()
             assert result["data"] == message.encode()
 
-    @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
+    @given(messages=lists(text_ascii(min_size=1), min_size=1))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
@@ -667,7 +667,7 @@ class TestSubscribe:
 
 
 class TestSubscribeService:
-    @given(objects=lists(make_objects(), min_size=1, max_size=5))
+    @given(objects=lists(make_objects(), min_size=1))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
