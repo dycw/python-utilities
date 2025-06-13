@@ -51,9 +51,9 @@ from utilities.hypothesis import (
     pairs,
     plain_datetimes,
     text_ascii,
-    time_deltas_whenever,
-    times_whenever,
-    zoned_datetimes_whenever,
+    time_deltas,
+    times,
+    zoned_datetimes,
 )
 from utilities.text import join_strs, strip_and_dedent
 
@@ -243,20 +243,18 @@ class TestParameters:
                 whenever.PlainDateTime.format_common_iso,
                 True,
             ),
-            param(
-                Time(), "TIME", times_whenever(), whenever.Time.format_common_iso, True
-            ),
+            param(Time(), "TIME", times(), whenever.Time.format_common_iso, True),
             param(
                 TimeDelta(),
                 "TIME-DELTA",
-                time_deltas_whenever(),
+                time_deltas(),
                 whenever.TimeDelta.format_common_iso,
                 True,
             ),
             param(
                 ZonedDateTime(),
                 "ZONED DATE-TIME",
-                zoned_datetimes_whenever(),
+                zoned_datetimes(),
                 whenever.ZonedDateTime.format_common_iso,
                 True,
             ),

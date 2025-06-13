@@ -43,10 +43,10 @@ from utilities.hypothesis import (
     plain_datetimes,
     text_ascii,
     text_printable,
-    time_deltas_whenever,
-    times_whenever,
+    time_deltas,
+    times,
     versions,
-    zoned_datetimes_whenever,
+    zoned_datetimes,
 )
 from utilities.math import MAX_INT64, MIN_INT64
 
@@ -85,11 +85,11 @@ def objects(
         | paths()
         | plain_datetimes()
         | text_printable().filter(lambda x: not x.startswith("["))
-        | time_deltas_whenever()
-        | times_whenever()
+        | time_deltas()
+        | times()
         | uuids()
         | versions()
-        | zoned_datetimes_whenever()
+        | zoned_datetimes()
     )
     if dataclass_custom_equality:
         base |= builds(DataClassFutureCustomEquality)

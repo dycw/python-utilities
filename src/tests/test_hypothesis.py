@@ -84,13 +84,13 @@ from utilities.hypothesis import (
     text_clean,
     text_digits,
     text_printable,
-    time_deltas_whenever,
-    times_whenever,
+    time_deltas,
+    times,
     triples,
     uint32s,
     uint64s,
     versions,
-    zoned_datetimes_whenever,
+    zoned_datetimes,
 )
 from utilities.math import (
     MAX_FLOAT32,
@@ -895,12 +895,10 @@ class TestTextPrintable:
 class TestTimeDeltas:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_value = data.draw(time_deltas_whenever() | none())
-        max_value = data.draw(time_deltas_whenever() | none())
+        min_value = data.draw(time_deltas() | none())
+        max_value = data.draw(time_deltas() | none())
         with assume_does_not_raise(InvalidArgument):
-            delta = data.draw(
-                time_deltas_whenever(min_value=min_value, max_value=max_value)
-            )
+            delta = data.draw(time_deltas(min_value=min_value, max_value=max_value))
         assert isinstance(delta, TimeDelta)
         assert TimeDelta.parse_common_iso(delta.format_common_iso()) == delta
         if min_value is not None:
@@ -912,10 +910,10 @@ class TestTimeDeltas:
 class TestTimes:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_value = data.draw(times_whenever() | none())
-        max_value = data.draw(times_whenever() | none())
+        min_value = data.draw(times() | none())
+        max_value = data.draw(times() | none())
         with assume_does_not_raise(InvalidArgument):
-            time = data.draw(times_whenever(min_value=min_value, max_value=max_value))
+            time = data.draw(times(min_value=min_value, max_value=max_value))
         assert isinstance(time, Time)
         assert Time.parse_common_iso(time.format_common_iso()) == time
         if min_value is not None:
@@ -969,11 +967,11 @@ class TestZonedDateTimesWhenever:
     @given(data=data(), time_zone=timezones())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
-        min_value = data.draw(zoned_datetimes_whenever() | none())
-        max_value = data.draw(zoned_datetimes_whenever() | none())
+        min_value = data.draw(zoned_datetimes() | none())
+        max_value = data.draw(zoned_datetimes() | none())
         with assume_does_not_raise(InvalidArgument):
             datetime = data.draw(
-                zoned_datetimes_whenever(
+                zoned_datetimes(
                     min_value=min_value, max_value=max_value, time_zone=time_zone
                 )
             )
@@ -990,7 +988,5 @@ class TestZonedDateTimesWhenever:
     def test_examples(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
         with assume_does_not_raise(TimeZoneNotFoundError):
             max_value = ZonedDateTime(1, 1, 2, tz=time_zone.key)
-        datetime = data.draw(
-            zoned_datetimes_whenever(max_value=max_value, time_zone=time_zone)
-        )
+        datetime = data.draw(zoned_datetimes(max_value=max_value, time_zone=time_zone))
         _ = datetime.py_datetime()

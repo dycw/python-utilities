@@ -47,10 +47,10 @@ from utilities.hypothesis import (
     paths,
     plain_datetimes,
     text_ascii,
-    time_deltas_whenever,
-    times_whenever,
+    time_deltas,
+    times,
     versions,
-    zoned_datetimes_whenever,
+    zoned_datetimes,
 )
 from utilities.math import is_equal
 from utilities.parse import (
@@ -200,13 +200,13 @@ class TestSerializeAndParseObject:
         result = parse_object(str, serialized)
         assert result == serialized
 
-    @given(time=times_whenever())
+    @given(time=times())
     def test_time(self, *, time: Time) -> None:
         serialized = serialize_object(time)
         result = parse_object(Time, serialized)
         assert result == time
 
-    @given(time_delta=time_deltas_whenever())
+    @given(time_delta=time_deltas())
     def test_time_delta(self, *, time_delta: TimeDelta) -> None:
         serialized = serialize_object(time_delta)
         result = parse_object(TimeDelta, serialized)
@@ -294,7 +294,7 @@ class TestSerializeAndParseObject:
         result = parse_object(Version, serialized)
         assert result == version
 
-    @given(datetime=zoned_datetimes_whenever())
+    @given(datetime=zoned_datetimes())
     def test_zoned_datetime(self, *, datetime: ZonedDateTime) -> None:
         serialized = serialize_object(datetime)
         result = parse_object(ZonedDateTime, serialized)

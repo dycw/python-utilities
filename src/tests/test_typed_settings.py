@@ -25,9 +25,9 @@ from utilities.hypothesis import (
     plain_datetimes,
     temp_paths,
     text_ascii,
-    time_deltas_whenever,
-    times_whenever,
-    zoned_datetimes_whenever,
+    time_deltas,
+    times,
+    zoned_datetimes,
 )
 from utilities.typed_settings import ExtendedTSConverter
 
@@ -50,13 +50,9 @@ class TestExtendedTSConverter:
                 DateTimeDelta.format_common_iso,
             ),
             param(PlainDateTime, plain_datetimes(), PlainDateTime.format_common_iso),
-            param(Time, times_whenever(), Time.format_common_iso),
-            param(TimeDelta, time_deltas_whenever(), TimeDelta.format_common_iso),
-            param(
-                ZonedDateTime,
-                zoned_datetimes_whenever(),
-                ZonedDateTime.format_common_iso,
-            ),
+            param(Time, times(), Time.format_common_iso),
+            param(TimeDelta, time_deltas(), TimeDelta.format_common_iso),
+            param(ZonedDateTime, zoned_datetimes(), ZonedDateTime.format_common_iso),
         ],
     )
     def test_main(

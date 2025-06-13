@@ -1076,7 +1076,7 @@ def text_printable(
 
 
 @composite
-def time_deltas_whenever(
+def time_deltas(
     draw: DrawFn,
     /,
     *,
@@ -1111,7 +1111,7 @@ def time_deltas_whenever(
 
 
 @composite
-def times_whenever(
+def times(
     draw: DrawFn,
     /,
     *,
@@ -1212,7 +1212,7 @@ def versions(draw: DrawFn, /, *, suffix: MaybeSearchStrategy[bool] = False) -> V
 
 
 @composite
-def zoned_datetimes_whenever(
+def zoned_datetimes(
     draw: DrawFn,
     /,
     *,
@@ -1294,11 +1294,11 @@ __all__ = [
     "text_clean",
     "text_digits",
     "text_printable",
-    "time_deltas_whenever",
-    "times_whenever",
+    "time_deltas",
+    "times",
     "triples",
     "uint32s",
     "uint64s",
     "versions",
-    "zoned_datetimes_whenever",
+    "zoned_datetimes",
 ]

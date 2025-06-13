@@ -25,7 +25,7 @@ from utilities.hypothesis import (
     dates_whenever,
     pairs,
     sentinels,
-    zoned_datetimes_whenever,
+    zoned_datetimes,
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo
@@ -90,7 +90,7 @@ if TYPE_CHECKING:
 
 
 class TestDatetimeUTC:
-    @given(datetime=zoned_datetimes_whenever())
+    @given(datetime=zoned_datetimes())
     def test_main(self, *, datetime: ZonedDateTime) -> None:
         result = datetime_utc(
             datetime.year,
@@ -105,7 +105,7 @@ class TestDatetimeUTC:
 
 
 class TestFormatCompact:
-    @given(datetime=zoned_datetimes_whenever())
+    @given(datetime=zoned_datetimes())
     def test_main(self, *, datetime: ZonedDateTime) -> None:
         result = format_compact(datetime)
         assert isinstance(result, str)
@@ -117,9 +117,7 @@ class TestFormatCompact:
 
 class TestFromTimeStamp:
     @given(
-        datetime=zoned_datetimes_whenever(time_zone=timezones()).map(
-            lambda d: d.round("second")
-        )
+        datetime=zoned_datetimes(time_zone=timezones()).map(lambda d: d.round("second"))
     )
     def test_main(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.timestamp()
@@ -127,7 +125,7 @@ class TestFromTimeStamp:
         assert result == datetime
 
     @given(
-        datetime=zoned_datetimes_whenever(time_zone=timezones()).map(
+        datetime=zoned_datetimes(time_zone=timezones()).map(
             lambda d: d.round("millisecond")
         )
     )
@@ -136,7 +134,7 @@ class TestFromTimeStamp:
         result = from_timestamp_millis(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    @given(datetime=zoned_datetimes_whenever(time_zone=timezones()))
+    @given(datetime=zoned_datetimes(time_zone=timezones()))
     def test_nanos(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.timestamp_nanos()
         result = from_timestamp_nanos(timestamp, time_zone=ZoneInfo(datetime.tz))
@@ -190,18 +188,18 @@ class TestGetTodayLocal:
 class TestMeanDateTime:
     threshold: ClassVar[TimeDelta] = 100 * MICROSECOND
 
-    @given(datetime=zoned_datetimes_whenever())
+    @given(datetime=zoned_datetimes())
     def test_one(self, *, datetime: ZonedDateTime) -> None:
         result = mean_datetime([datetime])
         assert result == datetime
 
-    @given(datetime=zoned_datetimes_whenever())
+    @given(datetime=zoned_datetimes())
     def test_many(self, *, datetime: ZonedDateTime) -> None:
         result = mean_datetime([datetime, datetime + MINUTE])
         expected = datetime + 30 * SECOND
         assert abs(result - expected) <= self.threshold
 
-    @given(datetime=zoned_datetimes_whenever())
+    @given(datetime=zoned_datetimes())
     def test_weights(self, *, datetime: ZonedDateTime) -> None:
         result = mean_datetime([datetime, datetime + MINUTE], weights=[1, 3])
         expected = datetime + 45 * SECOND
@@ -425,7 +423,7 @@ class TestToDays:
 
 
 class TestToZonedDateTime:
-    @given(date_time=zoned_datetimes_whenever())
+    @given(date_time=zoned_datetimes())
     def test_date_time(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time=date_time) == date_time
 
@@ -433,7 +431,7 @@ class TestToZonedDateTime:
     def test_none_or_sentinel(self, *, date_time: None | Sentinel) -> None:
         assert to_zoned_date_time(date_time=date_time) is date_time
 
-    @given(date_time1=zoned_datetimes_whenever(), date_time2=zoned_datetimes_whenever())
+    @given(date_time1=zoned_datetimes(), date_time2=zoned_datetimes())
     def test_replace_non_sentinel(
         self, *, date_time1: ZonedDateTime, date_time2: ZonedDateTime
     ) -> None:
@@ -454,7 +452,7 @@ class TestToZonedDateTime:
         assert obj.replace(date_time=date_time2).date_time == date_time2
         assert abs(obj.replace(date_time=get_now).date_time - get_now()) <= SECOND
 
-    @given(date_time=zoned_datetimes_whenever())
+    @given(date_time=zoned_datetimes())
     def test_callable(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time=lambda: date_time) == date_time
 
