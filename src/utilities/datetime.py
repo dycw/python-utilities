@@ -762,15 +762,6 @@ class MillisecondsSinceEpochError(Exception):
         return f"Unable to convert {self.datetime} to milliseconds since epoch; got {self.remainder} microsecond(s)"
 
 
-def milliseconds_since_epoch_to_datetime(
-    milliseconds: int, /, *, time_zone: dt.tzinfo | None = None
-) -> dt.datetime:
-    """Convert a number of milliseconds since the epoch to a datetime."""
-    epoch = EPOCH_NAIVE if time_zone is None else EPOCH_UTC
-    timedelta = milliseconds_to_timedelta(milliseconds)
-    return epoch + timedelta
-
-
 def milliseconds_to_timedelta(milliseconds: int, /) -> dt.timedelta:
     """Compute a timedelta given a number of milliseconds."""
     return microseconds_to_timedelta(_MICROSECONDS_PER_MILLISECOND * milliseconds)
@@ -1266,7 +1257,6 @@ __all__ = [
     "microseconds_since_epoch_to_datetime",
     "microseconds_to_timedelta",
     "milliseconds_since_epoch",
-    "milliseconds_since_epoch_to_datetime",
     "milliseconds_to_timedelta",
     "parse_date_compact",
     "parse_datetime_compact",

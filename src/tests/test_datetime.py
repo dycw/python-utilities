@@ -52,7 +52,6 @@ from utilities.datetime import (
     GetMinMaxDateError,
     MeanDateTimeError,
     MeanTimeDeltaError,
-    MillisecondsSinceEpochError,
     Month,
     MonthError,
     ParseDateCompactError,
@@ -106,8 +105,6 @@ from utilities.datetime import (
     microseconds_since_epoch,
     microseconds_since_epoch_to_datetime,
     microseconds_to_timedelta,
-    milliseconds_since_epoch,
-    milliseconds_since_epoch_to_datetime,
     milliseconds_to_timedelta,
     parse_date_compact,
     parse_datetime_compact,
@@ -808,40 +805,6 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
             datetime = microseconds_since_epoch_to_datetime(microseconds)
         result = microseconds_since_epoch(datetime)
         assert result == microseconds
-
-    @given(datetime=datetimes() | zoned_datetimes())
-    @mark.parametrize("strict", [param(True), param(False)])  # use mark.parametrize
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_datetime_to_milliseconds_exact(
-        self, *, datetime: dt.datetime, strict: bool
-    ) -> None:
-        _ = assume(datetime.microsecond == 0)
-        milliseconds = milliseconds_since_epoch(datetime, strict=strict)
-        if strict:
-            assert isinstance(milliseconds, int)
-        else:
-            assert milliseconds == round(milliseconds)
-        result = milliseconds_since_epoch_to_datetime(
-            round(milliseconds), time_zone=datetime.tzinfo
-        )
-        assert result == datetime
-
-    @given(datetime=datetimes() | zoned_datetimes())
-    def test_datetime_to_milliseconds_error(self, *, datetime: dt.datetime) -> None:
-        _, microseconds = divmod(datetime.microsecond, _MICROSECONDS_PER_MILLISECOND)
-        _ = assume(microseconds != 0)
-        with raises(
-            MillisecondsSinceEpochError,
-            match=r"Unable to convert .* to milliseconds since epoch; got .* microsecond\(s\)",
-        ):
-            _ = milliseconds_since_epoch(datetime, strict=True)
-
-    @given(milliseconds=integers())
-    def test_milliseconds_to_datetime(self, *, milliseconds: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            datetime = milliseconds_since_epoch_to_datetime(milliseconds)
-        result = milliseconds_since_epoch(datetime)
-        assert result == milliseconds
 
 
 class TestMonth:
