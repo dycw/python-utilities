@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from whenever import TimeDelta
 
 
-_DELTA: TimeDelta = 0.01 * SECOND
+_DELTA: TimeDelta = 0.1 * SECOND
 
 
 async def _func_access(num_tasks: int, key: str, /, *, num_locks: int = 1) -> None:
