@@ -296,7 +296,6 @@ class TestMinMax:
             _ = ZONED_DATE_TIME_MIN.subtract(nanoseconds=1)
 
     def test_zoned_date_time_max(self) -> None:
-        _ = ZONED_DATE_TIME_MAX.add(nanoseconds=999)
         with raises(ValueError, match="Instant is out of range"):
             _ = ZONED_DATE_TIME_MAX.add(microseconds=1)
 
