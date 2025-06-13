@@ -31,7 +31,6 @@ from hypothesis.strategies import (
     booleans,
     characters,
     composite,
-    dates,
     datetimes,
     floats,
     integers,
@@ -271,7 +270,7 @@ def dates_two_digit_year(
 
 
 @composite
-def dates_whenever(
+def dates(
     draw: DrawFn,
     /,
     *,
@@ -295,7 +294,9 @@ def dates_whenever(
         case _ as never:
             assert_never(never)
     py_date = draw(
-        dates(min_value=min_value_.py_date(), max_value=max_value_.py_date())
+        hypothesis.strategies.dates(
+            min_value=min_value_.py_date(), max_value=max_value_.py_date()
+        )
     )
     return Date.from_py_date(py_date)
 
@@ -1261,8 +1262,8 @@ __all__ = [
     "bool_arrays",
     "date_deltas",
     "date_time_deltas",
+    "dates",
     "dates_two_digit_year",
-    "dates_whenever",
     "draw2",
     "float32s",
     "float64s",

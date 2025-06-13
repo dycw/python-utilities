@@ -37,7 +37,7 @@ from utilities.hypothesis import (
     assume_does_not_raise,
     date_deltas,
     date_time_deltas,
-    dates_whenever,
+    dates,
     int64s,
     paths,
     plain_datetimes,
@@ -78,7 +78,7 @@ def objects(
 ) -> SearchStrategy[Any]:
     base = (
         booleans()
-        | dates_whenever()
+        | dates()
         | floats(allow_nan=floats_allow_nan)
         | (int64s() if parsable else integers())
         | none()

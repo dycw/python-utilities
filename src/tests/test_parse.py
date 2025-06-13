@@ -41,7 +41,7 @@ from tests.test_typing_funcs.with_future import (
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_path
 from utilities.hypothesis import (
-    dates_whenever,
+    dates,
     int64s,
     numbers,
     paths,
@@ -74,7 +74,7 @@ class TestSerializeAndParseObject:
         result = parse_object(bool, serialized)
         assert result is bool_
 
-    @given(date=dates_whenever())
+    @given(date=dates())
     def test_date(self, *, date: Date) -> None:
         serialized = serialize_object(date)
         result = parse_object(Date, serialized)

@@ -50,8 +50,8 @@ from utilities.hypothesis import (
     bool_arrays,
     date_deltas,
     date_time_deltas,
+    dates,
     dates_two_digit_year,
-    dates_whenever,
     draw2,
     float32s,
     float64s,
@@ -223,10 +223,10 @@ class TestDatesTwoDigitYear:
 class TestDatesWhenever:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_value = data.draw(dates_whenever() | none())
-        max_value = data.draw(dates_whenever() | none())
+        min_value = data.draw(dates() | none())
+        max_value = data.draw(dates() | none())
         with assume_does_not_raise(InvalidArgument):
-            date = data.draw(dates_whenever(min_value=min_value, max_value=max_value))
+            date = data.draw(dates(min_value=min_value, max_value=max_value))
         assert isinstance(date, Date)
         assert Date.parse_common_iso(date.format_common_iso()) == date
         if min_value is not None:

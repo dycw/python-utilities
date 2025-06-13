@@ -21,7 +21,7 @@ from whenever import (
 from utilities.hypothesis import (
     date_deltas,
     date_time_deltas,
-    dates_whenever,
+    dates,
     plain_datetimes,
     temp_paths,
     text_ascii,
@@ -42,7 +42,7 @@ class TestExtendedTSConverter:
     @mark.parametrize(
         ("test_cls", "strategy", "serialize"),
         [
-            param(Date, dates_whenever(), Date.format_common_iso),
+            param(Date, dates(), Date.format_common_iso),
             param(DateDelta, date_deltas(parsable=True), DateDelta.format_common_iso),
             param(
                 DateTimeDelta,

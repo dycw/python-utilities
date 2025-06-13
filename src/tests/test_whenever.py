@@ -22,7 +22,7 @@ from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import (
     assume_does_not_raise,
     date_deltas,
-    dates_whenever,
+    dates,
     pairs,
     sentinels,
     zoned_datetimes,
@@ -296,8 +296,8 @@ class TestMinMax:
 
 class TestMinMaxDate:
     @given(
-        min_date=dates_whenever(max_value=TODAY_LOCAL) | none(),
-        max_date=dates_whenever(max_value=TODAY_LOCAL) | none(),
+        min_date=dates(max_value=TODAY_LOCAL) | none(),
+        max_date=dates(max_value=TODAY_LOCAL) | none(),
         min_age=date_deltas(min_value=ZERO_DAYS) | none(),
         max_age=date_deltas(min_value=ZERO_DAYS) | none(),
     )
@@ -331,21 +331,21 @@ class TestMinMaxDate:
         if (min_date_use is not None) and (max_date_use is not None):
             assert min_date_use <= max_date_use
 
-    @given(date=dates_whenever(min_value=TODAY_UTC + DAY))
+    @given(date=dates(min_value=TODAY_UTC + DAY))
     def test_error_min_date(self, *, date: Date) -> None:
         with raises(
             _MinMaxDateMinDateError, match="Min date must be at most today; got .* > .*"
         ):
             _ = min_max_date(min_date=date)
 
-    @given(date=dates_whenever(min_value=TODAY_UTC + DAY))
+    @given(date=dates(min_value=TODAY_UTC + DAY))
     def test_error_max_date(self, *, date: Date) -> None:
         with raises(
             _MinMaxDateMaxDateError, match="Max date must be at most today; got .* > .*"
         ):
             _ = min_max_date(max_date=date)
 
-    @given(dates=pairs(dates_whenever(max_value=TODAY_UTC), unique=True, sorted=True))
+    @given(dates=pairs(dates(max_value=TODAY_UTC), unique=True, sorted=True))
     def test_error_period(self, *, dates: tuple[Date, Date]) -> None:
         with raises(
             _MinMaxDatePeriodError,
@@ -355,7 +355,7 @@ class TestMinMaxDate:
 
 
 class TestToDate:
-    @given(date=dates_whenever())
+    @given(date=dates())
     def test_date(self, *, date: Date) -> None:
         assert to_date(date=date) == date
 
@@ -363,7 +363,7 @@ class TestToDate:
     def test_none_or_sentinel(self, *, date: None | Sentinel) -> None:
         assert to_date(date=date) is date
 
-    @given(date1=dates_whenever(), date2=dates_whenever())
+    @given(date1=dates(), date2=dates())
     def test_replace_non_sentinel(self, *, date1: Date, date2: Date) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -378,7 +378,7 @@ class TestToDate:
         assert obj.replace(date=date2).date == date2
         assert obj.replace(date=get_today).date == get_today()
 
-    @given(date=dates_whenever())
+    @given(date=dates())
     def test_callable(self, *, date: Date) -> None:
         assert to_date(date=lambda: date) == date
 

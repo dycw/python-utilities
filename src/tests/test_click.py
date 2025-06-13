@@ -46,7 +46,7 @@ from utilities.datetime import serialize_month
 from utilities.hypothesis import (
     date_deltas,
     date_time_deltas,
-    dates_whenever,
+    dates,
     months,
     pairs,
     plain_datetimes,
@@ -183,9 +183,7 @@ class TestParameters:
     @mark.parametrize(
         ("param", "exp_repr", "strategy", "serialize", "failable"),
         [
-            param(
-                Date(), "DATE", dates_whenever(), whenever.Date.format_common_iso, True
-            ),
+            param(Date(), "DATE", dates(), whenever.Date.format_common_iso, True),
             param(
                 Enum(_ExampleEnum),
                 "ENUM[_ExampleEnum]",
