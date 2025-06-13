@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import suppress

@@ -1,23 +1,17 @@
 from __future__ import annotations
 
-import datetime as dt
 from collections.abc import Callable, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, TypeVar, cast, override
 
 import utilities.math
-from utilities.datetime import (
-    AreEqualDatesOrDateTimesError,
-    AreEqualDateTimesError,
-    are_equal_dates_or_datetimes,
-)
 from utilities.functions import is_dataclass_instance
 from utilities.iterables import SortIterableError, sort_iterable
 from utilities.reprlib import get_repr
 
 if TYPE_CHECKING:
-    from utilities.types import Dataclass, DateOrDateTime, Number
+    from utilities.types import Dataclass, Number
 
 _T = TypeVar("_T")
 
@@ -51,12 +45,6 @@ def is_equal(
         if isinstance(x, str):  # else Sequence
             y = cast("str", y)
             return x == y
-        if isinstance(x, dt.date | dt.datetime):
-            y = cast("DateOrDateTime", y)
-            try:
-                return are_equal_dates_or_datetimes(x, y)
-            except (AreEqualDateTimesError, AreEqualDatesOrDateTimesError):
-                return False
         if is_dataclass_instance(x):
             y = cast("Dataclass", y)
             x_values = asdict(x)

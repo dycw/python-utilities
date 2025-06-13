@@ -6,13 +6,11 @@ from functools import partial
 from math import nan
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import example, given, settings
+from hypothesis import example, given
 from hypothesis.strategies import (
     SearchStrategy,
     booleans,
     builds,
-    dates,
-    datetimes,
     dictionaries,
     floats,
     integers,
@@ -21,13 +19,11 @@ from hypothesis.strategies import (
     none,
     recursive,
     sampled_from,
-    times,
     tuples,
     uuids,
 )
 from polars import DataFrame, Int64
 from pytest import raises
-from whenever import DateTimeDelta
 
 import utilities.math
 import utilities.operator
@@ -46,24 +42,28 @@ from tests.test_typing_funcs.with_future import (
 )
 from utilities.hypothesis import (
     assume_does_not_raise,
+    date_deltas_whenever,
+    date_time_deltas_whenever,
+    dates_whenever,
     int64s,
     pairs,
     paths,
+    plain_datetimes_whenever,
     text_ascii,
     text_printable,
-    timedeltas_2w,
+    time_deltas_whenever,
+    times_whenever,
     versions,
-    zoned_datetimes,
+    zoned_datetimes_whenever,
 )
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.operator import IsEqualError
 from utilities.polars import are_frames_equal
-from utilities.whenever2 import get_now
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from utilities.types import DateOrDateTime, Number
+    from utilities.types import Number
     from utilities.typing import StrMapping
 
 
@@ -95,21 +95,19 @@ def base_objects(
             allow_nan=floats_allow_nan,
             allow_infinity=floats_allow_infinity,
         )
-        | dates()
-        | datetimes()
+        | date_deltas_whenever()
+        | date_time_deltas_whenever()
+        | dates_whenever()
         | int64s()
         | none()
         | paths()
+        | plain_datetimes_whenever()
         | text_printable().filter(lambda x: not x.startswith("["))
-        | times()
-        | timedeltas_2w()
+        | time_deltas_whenever()
+        | times_whenever()
         | uuids()
         | versions()
-        | zoned_datetimes(
-            min_value=get_now().py_datetime(),
-            max_value=(get_now() + DateTimeDelta(years=1)).py_datetime(),
-            valid=True,
-        )
+        | zoned_datetimes_whenever()
     )
     if dataclass_custom_equality:
         base |= builds(DataClassFutureCustomEquality)
@@ -323,7 +321,6 @@ class TestIsEqual:
             )
         )
     )
-    @settings(max_examples=1000)
     def test_two_objects(self, *, objs: tuple[Any, Any]) -> None:
         first, second = objs
         with assume_does_not_raise(IsEqualError):
@@ -346,14 +343,6 @@ class TestIsEqual:
         first, second = Example(x=0), Example(x=1e-16)
         assert not utilities.operator.is_equal(first, second)
         assert utilities.operator.is_equal(first, second, abs_tol=1e-8)
-
-    @given(
-        x=dates() | datetimes() | zoned_datetimes(),
-        y=dates() | datetimes() | zoned_datetimes(),
-    )
-    def test_dates_or_datetimes(self, *, x: DateOrDateTime, y: DateOrDateTime) -> None:
-        result = utilities.operator.is_equal(x, y)
-        assert isinstance(result, bool)
 
     def test_exception_class(self) -> None:
         assert utilities.operator.is_equal(CustomError, CustomError)
