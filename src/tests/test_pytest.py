@@ -15,7 +15,6 @@ from utilities.pytest import (
     random_state,
     throttle,
 )
-from utilities.whenever2 import SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -241,9 +240,7 @@ class TestRandomState:
 class TestThrottle:
     @mark.parametrize("on_try", [param(True), param(False)])
     @mark.flaky
-    async def test_basic(
-        self, *, testdir: Testdir, tmp_path: Path, on_try: bool
-    ) -> None:
+    def test_basic(self, *, testdir: Testdir, tmp_path: Path, on_try: bool) -> None:
         root_str = str(tmp_path)
         _ = testdir.makepyfile(
             f"""
@@ -258,7 +255,7 @@ class TestThrottle:
         )
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        await sleep_td(0.2 * SECOND)
+        sleep(0.2)
         testdir.runpytest().assert_outcomes(passed=1)
 
     @mark.parametrize("asyncio_first", [param(True), param(False)])
