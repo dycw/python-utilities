@@ -3,11 +3,11 @@ from __future__ import annotations
 from inspect import signature
 from pathlib import Path
 from random import Random
-from time import sleep
 from typing import TYPE_CHECKING
 
 from pytest import mark, param, raises
 
+from utilities.asyncio import sleep_td
 from utilities.pytest import (
     NodeIdToPathError,
     is_pytest,
@@ -15,6 +15,7 @@ from utilities.pytest import (
     random_state,
     throttle,
 )
+from utilities.whenever2 import SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -240,7 +241,9 @@ class TestRandomState:
 class TestThrottle:
     @mark.parametrize("on_try", [param(True), param(False)])
     @mark.flaky
-    def test_basic(self, *, testdir: Testdir, tmp_path: Path, on_try: bool) -> None:
+    async def test_basic(
+        self, *, testdir: Testdir, tmp_path: Path, on_try: bool
+    ) -> None:
         root_str = str(tmp_path)
         _ = testdir.makepyfile(
             f"""
@@ -248,25 +251,25 @@ class TestThrottle:
 
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, duration=TimeDelta(seconds=1.0), on_try={on_try})
+            @throttle(root={root_str!r}, duration=TimeDelta(seconds=0.1), on_try={on_try})
             def test_main():
                 assert True
             """
         )
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(1.0)
+        await sleep_td(0.1 * SECOND)
         testdir.runpytest().assert_outcomes(passed=1)
 
     @mark.parametrize("asyncio_first", [param(True), param(False)])
     @mark.parametrize("on_try", [param(True), param(False)])
     @mark.flaky
-    def test_async(
+    async def test_async(
         self, *, testdir: Testdir, tmp_path: Path, asyncio_first: bool, on_try: bool
     ) -> None:
         root_str = str(tmp_path)
         asyncio_str = "@mark.asyncio"
-        throttle_str = f"@throttle(root={root_str!r}, duration=TimeDelta(seconds=1.0), on_try={on_try})"
+        throttle_str = f"@throttle(root={root_str!r}, duration=TimeDelta(seconds=0.1), on_try={on_try})"
         if asyncio_first:
             decorators = f"{asyncio_str}\n{throttle_str}"
         else:
@@ -286,11 +289,11 @@ class TestThrottle:
         )
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(1.0)
+        await sleep_td(0.1 * SECOND)
         testdir.runpytest().assert_outcomes(passed=1)
 
     @mark.flaky
-    def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
+    async def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
             from pytest import fixture
@@ -319,10 +322,10 @@ class TestThrottle:
             for _ in range(2):
                 testdir.runpytest("--pass").assert_outcomes(skipped=1)
             if i == 0:
-                sleep(1.0)
+                await sleep_td(0.1 * SECOND)
 
     @mark.flaky
-    def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
+    async def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
             from pytest import fixture
@@ -336,27 +339,30 @@ class TestThrottle:
             """
         )
         root_str = str(tmp_path)
-        contents = f"""
+        _ = testdir.makepyfile(
+            f"""
+            from whenever import TimeDelta
+
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, duration=1.0, on_try=True)
+            @throttle(root={root_str!r}, duration=TimeDelta(seconds=0.1), on_try=True)
             def test_main(is_pass):
                 assert is_pass
             """
-        _ = testdir.makepyfile(contents)
+        )
         for i in range(2):
             testdir.runpytest().assert_outcomes(failed=1)
             for _ in range(2):
                 testdir.runpytest().assert_outcomes(skipped=1)
-            sleep(1.0)
+            await sleep_td(0.1 * SECOND)
             testdir.runpytest("--pass").assert_outcomes(passed=1)
             for _ in range(2):
                 testdir.runpytest().assert_outcomes(skipped=1)
             if i == 0:
-                sleep(1.0)
+                await sleep_td(0.1 * SECOND)
 
     @mark.flaky
-    def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
+    async def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
         root_str = str(tmp_path)
         contents = f"""
             from pytest import mark
@@ -372,7 +378,7 @@ class TestThrottle:
         _ = testdir.makepyfile(contents)
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(1.0)
+        await sleep_td(0.1 * SECOND)
         testdir.runpytest().assert_outcomes(passed=1)
 
     def test_signature(self) -> None:
