@@ -56,14 +56,7 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.datetime import (
-    MAX_DATE_TWO_DIGIT_YEAR,
-    MAX_MONTH,
-    MIN_DATE_TWO_DIGIT_YEAR,
-    MIN_MONTH,
-    Month,
-    date_to_month,
-)
+from utilities.datetime import MAX_DATE_TWO_DIGIT_YEAR, MIN_DATE_TWO_DIGIT_YEAR
 from utilities.functions import ensure_int, ensure_str
 from utilities.math import (
     MAX_FLOAT32,
@@ -98,12 +91,15 @@ from utilities.whenever import (
     DATE_TIME_DELTA_PARSABLE_MAX,
     DATE_TIME_DELTA_PARSABLE_MIN,
     DAY,
+    MONTH_MAX,
+    MONTH_MIN,
     PLAIN_DATE_TIME_MAX,
     PLAIN_DATE_TIME_MIN,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
     TIME_MAX,
     TIME_MIN,
+    Month,
     to_date_time_delta,
     to_days,
     to_nanos,
@@ -640,13 +636,14 @@ def months(
     draw: DrawFn,
     /,
     *,
-    min_value: MaybeSearchStrategy[Month] = MIN_MONTH,
-    max_value: MaybeSearchStrategy[Month] = MAX_MONTH,
+    min_value: MaybeSearchStrategy[Month] = MONTH_MIN,
+    max_value: MaybeSearchStrategy[Month] = MONTH_MAX,
 ) -> Month:
-    """Strategy for generating datetimes with the UTC timezone."""
-    min_value_, max_value_ = [draw2(draw, v).to_date() for v in [min_value, max_value]]
-    date = draw(dates(min_value=min_value_, max_value=max_value_))
-    return date_to_month(date)
+    """Strategy for generating months."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    min_date, max_date = [m.to_date() for m in [min_value_, max_value_]]
+    date = draw(dates(min_value=min_date, max_value=max_date))
+    return Month.from_date(date)
 
 
 ##

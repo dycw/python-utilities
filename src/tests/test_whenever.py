@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 from hypothesis import given
 from hypothesis.strategies import integers, none, timezones
-from pytest import raises
+from pytest import mark, param, raises
 from whenever import (
     Date,
     DateDelta,
@@ -23,6 +23,7 @@ from utilities.hypothesis import (
     assume_does_not_raise,
     date_deltas,
     dates,
+    months,
     pairs,
     sentinels,
     zoned_datetimes,
@@ -58,6 +59,8 @@ from utilities.whenever import (
     ZONED_DATE_TIME_MIN,
     MeanDateTimeError,
     MinMaxDateError,
+    Month,
+    MonthError,
     ToDaysError,
     ToNanosError,
     WheneverLogRecord,
@@ -85,6 +88,8 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from utilities.sentinel import Sentinel
     from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime
 
@@ -352,6 +357,76 @@ class TestMinMaxDate:
             match="Min date must be at most max date; got .* > .*",
         ):
             _ = min_max_date(min_date=dates[1], max_date=dates[0])
+
+
+class TestMonth:
+    @mark.parametrize(
+        ("month", "n", "expected"),
+        [
+            param(Month(2000, 1), -2, Month(1999, 11)),
+            param(Month(2000, 1), -1, Month(1999, 12)),
+            param(Month(2000, 1), 0, Month(2000, 1)),
+            param(Month(2000, 1), 1, Month(2000, 2)),
+            param(Month(2000, 1), 2, Month(2000, 3)),
+            param(Month(2000, 1), 11, Month(2000, 12)),
+            param(Month(2000, 1), 12, Month(2001, 1)),
+        ],
+    )
+    def test_add(self, *, month: Month, n: int, expected: Month) -> None:
+        result = month + n
+        assert result == expected
+
+    @mark.parametrize(
+        ("x", "y", "expected"),
+        [
+            param(Month(2000, 1), Month(1999, 11), 2),
+            param(Month(2000, 1), Month(1999, 12), 1),
+            param(Month(2000, 1), Month(2000, 1), 0),
+            param(Month(2000, 1), Month(2000, 2), -1),
+            param(Month(2000, 1), Month(2000, 3), -2),
+            param(Month(2000, 1), Month(2000, 12), -11),
+            param(Month(2000, 1), Month(2001, 1), -12),
+        ],
+    )
+    def test_diff(self, *, x: Month, y: Month, expected: int) -> None:
+        result = x - y
+        assert result == expected
+
+    @given(month=months())
+    def test_hashable(self, *, month: Month) -> None:
+        _ = hash(month)
+
+    @mark.parametrize("func", [param(repr), param(str)])
+    def test_repr(self, *, func: Callable[..., str]) -> None:
+        result = func(Month(2000, 12))
+        expected = "2000-12"
+        assert result == expected
+
+    @mark.parametrize(
+        ("month", "n", "expected"),
+        [
+            param(Month(2000, 1), -2, Month(2000, 3)),
+            param(Month(2000, 1), -1, Month(2000, 2)),
+            param(Month(2000, 1), 0, Month(2000, 1)),
+            param(Month(2000, 1), 1, Month(1999, 12)),
+            param(Month(2000, 1), 2, Month(1999, 11)),
+            param(Month(2000, 1), 12, Month(1999, 1)),
+            param(Month(2000, 1), 13, Month(1998, 12)),
+        ],
+    )
+    def test_subtract(self, *, month: Month, n: int, expected: Month) -> None:
+        result = month - n
+        assert result == expected
+
+    @given(date=dates())
+    def test_to_and_from_date(self, *, date: Date) -> None:
+        month = Month.from_date(date)
+        result = month.to_date(day=date.day)
+        assert result == date
+
+    def test_error(self) -> None:
+        with raises(MonthError, match=r"Invalid year and month: \d+, \d+"):
+            _ = Month(2000, 13)
 
 
 class TestToDate:

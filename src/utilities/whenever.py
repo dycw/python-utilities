@@ -379,7 +379,7 @@ class Month:
         return f"{self.year:04}-{self.month:02}"
 
     @classmethod
-    def from_date(cls, date: dt.date, /) -> Self:
+    def from_date(cls, date: Date, /) -> Self:
         return cls(year=date.year, month=date.month)
 
     @classmethod
@@ -390,8 +390,8 @@ class Month:
             raise _MonthParseCommonISOError(text=text) from None
         return cls(year=int(year), month=int(month))
 
-    def to_date(self, /, *, day: int = 1) -> dt.date:
-        return dt.date(self.year, self.month, day)
+    def to_date(self, /, *, day: int = 1) -> Date:
+        return Date(self.year, self.month, day)
 
 
 @dataclass(kw_only=True, slots=True)

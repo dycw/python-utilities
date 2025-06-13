@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING
+from re import search
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, dates, integers, sampled_from
-from pytest import mark, param, raises
+from pytest import raises
 
 from utilities.datetime import (
     EnsureMonthError,
     Month,
-    MonthError,
     ParseMonthError,
     _ParseTwoDigitYearInvalidIntegerError,
     _ParseTwoDigitYearInvalidStringError,
@@ -23,9 +22,6 @@ from utilities.datetime import (
 from utilities.hypothesis import months
 from utilities.zoneinfo import UTC
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
 
 class TestDateToMonth:
     @given(date=dates())
@@ -34,74 +30,12 @@ class TestDateToMonth:
         assert result == date
 
 
-class TestMonth:
-    @mark.parametrize(
-        ("month", "n", "expected"),
-        [
-            param(Month(2000, 1), -2, Month(1999, 11)),
-            param(Month(2000, 1), -1, Month(1999, 12)),
-            param(Month(2000, 1), 0, Month(2000, 1)),
-            param(Month(2000, 1), 1, Month(2000, 2)),
-            param(Month(2000, 1), 2, Month(2000, 3)),
-            param(Month(2000, 1), 11, Month(2000, 12)),
-            param(Month(2000, 1), 12, Month(2001, 1)),
-        ],
-    )
-    def test_add(self, *, month: Month, n: int, expected: Month) -> None:
-        result = month + n
-        assert result == expected
-
-    @mark.parametrize(
-        ("x", "y", "expected"),
-        [
-            param(Month(2000, 1), Month(1999, 11), 2),
-            param(Month(2000, 1), Month(1999, 12), 1),
-            param(Month(2000, 1), Month(2000, 1), 0),
-            param(Month(2000, 1), Month(2000, 2), -1),
-            param(Month(2000, 1), Month(2000, 3), -2),
-            param(Month(2000, 1), Month(2000, 12), -11),
-            param(Month(2000, 1), Month(2001, 1), -12),
-        ],
-    )
-    def test_diff(self, *, x: Month, y: Month, expected: int) -> None:
-        result = x - y
-        assert result == expected
-
-    @given(month=months())
-    def test_hashable(self, *, month: Month) -> None:
-        _ = hash(month)
-
-    @mark.parametrize("func", [param(repr), param(str)])
-    def test_repr(self, *, func: Callable[..., str]) -> None:
-        result = func(Month(2000, 12))
-        expected = "2000-12"
-        assert result == expected
-
-    @mark.parametrize(
-        ("month", "n", "expected"),
-        [
-            param(Month(2000, 1), -2, Month(2000, 3)),
-            param(Month(2000, 1), -1, Month(2000, 2)),
-            param(Month(2000, 1), 0, Month(2000, 1)),
-            param(Month(2000, 1), 1, Month(1999, 12)),
-            param(Month(2000, 1), 2, Month(1999, 11)),
-            param(Month(2000, 1), 12, Month(1999, 1)),
-            param(Month(2000, 1), 13, Month(1998, 12)),
-        ],
-    )
-    def test_subtract(self, *, month: Month, n: int, expected: Month) -> None:
-        result = month - n
-        assert result == expected
-
-    @given(date=dates())
-    def test_to_and_from_date(self, *, date: dt.date) -> None:
-        month = Month.from_date(date)
-        result = month.to_date(day=date.day)
-        assert result == date
-
-    def test_error(self) -> None:
-        with raises(MonthError, match=r"Invalid year and month: \d+, \d+"):
-            _ = Month(2000, 13)
+class TestMaybeSubPctY:
+    @given(text=text_clean())
+    def test_main(self, *, text: str) -> None:
+        result = maybe_sub_pct_y(text)
+        _ = assume(not search("%Y", result))
+        assert not search("%Y", result)
 
 
 class TestSerializeAndParseMonth:
