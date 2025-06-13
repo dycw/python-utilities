@@ -414,7 +414,7 @@ def ensure_plain_date_time(
 def ensure_plain_date_time(
     obj: Any, /, *, nullable: bool = False
 ) -> PlainDateTime | None:
-    """Ensure an object is a plain datetime."""
+    """Ensure an object is a plain date-time."""
     try:
         return ensure_class(obj, PlainDateTime, nullable=nullable)
     except EnsureClassError as error:
@@ -558,7 +558,7 @@ def ensure_zoned_date_time(
 def ensure_zoned_date_time(
     obj: Any, /, *, nullable: bool = False
 ) -> ZonedDateTime | None:
-    """Ensure an object is a zoned datetime."""
+    """Ensure an object is a zoned date-time."""
     try:
         return ensure_class(obj, ZonedDateTime, nullable=nullable)
     except EnsureClassError as error:
@@ -572,7 +572,7 @@ class EnsureZonedDateTimeError(Exception):
 
     @override
     def __str__(self) -> str:
-        return _make_error_msg(self.obj, "a zoned datetime", nullable=self.nullable)
+        return _make_error_msg(self.obj, "a zoned date-time", nullable=self.nullable)
 
 
 ##
