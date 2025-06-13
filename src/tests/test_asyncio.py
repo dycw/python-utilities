@@ -145,7 +145,7 @@ class TestEnhancedQueue:
 
 
 class TestEnhancedTaskGroup:
-    delta: ClassVar[TimeDelta] = 0.01 * SECOND
+    delta: ClassVar[TimeDelta] = 0.05 * SECOND
 
     async def test_create_task_context_coroutine(self) -> None:
         flag: bool = False
@@ -905,7 +905,7 @@ class TestUniqueQueue:
 
 
 class TestSleepMaxDur:
-    delta: ClassVar[TimeDelta] = 0.01 * SECOND
+    delta: ClassVar[TimeDelta] = 0.05 * SECOND
 
     async def test_main(self) -> None:
         with Timer() as timer:
@@ -919,7 +919,7 @@ class TestSleepMaxDur:
 
 
 class TestSleepTD:
-    delta: ClassVar[TimeDelta] = 0.01 * SECOND
+    delta: ClassVar[TimeDelta] = 0.05 * SECOND
 
     async def test_main(self) -> None:
         with Timer() as timer:
@@ -934,7 +934,7 @@ class TestSleepTD:
 
 class TestSleepUntil:
     async def test_main(self) -> None:
-        await sleep_until(get_now() + 0.01 * SECOND)
+        await sleep_until(get_now() + 0.05 * SECOND)
 
 
 class TestSleepUntilRounded:
@@ -943,7 +943,7 @@ class TestSleepUntilRounded:
 
 
 class TestStreamCommand:
-    delta: ClassVar[TimeDelta] = 0.01 * SECOND
+    delta: ClassVar[TimeDelta] = 0.05 * SECOND
 
     @skipif_windows
     async def test_main(self) -> None:
@@ -967,7 +967,7 @@ class TestStreamCommand:
 
 
 class TestTimeoutTD:
-    delta: ClassVar[TimeDelta] = 0.01 * SECOND
+    delta: ClassVar[TimeDelta] = 0.05 * SECOND
 
     async def test_pass(self) -> None:
         async with timeout_td(2 * self.delta):
