@@ -451,13 +451,6 @@ class TestSerializeAndDeserialize:
             dataclass_none=True,
             dataclass_type_literal=True,
             dataclass_type_literal_nullable=True,
-            enum=True,
-            exception_class=True,
-            exception_instance=True,
-            sub_frozenset=True,
-            sub_list=True,
-            sub_set=True,
-            sub_tuple=True,
         )
     )
     def test_all(self, *, obj: Any) -> None:

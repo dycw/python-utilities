@@ -28,7 +28,7 @@ from whenever import (
     ZonedDateTime,
 )
 
-from tests.test_operator import TruthEnum
+from tests.test_objects.objects import TruthEnum
 from tests.test_typing_funcs.with_future import (
     DataClassFutureInt,
     DataClassFutureIntEven,
