@@ -37,35 +37,39 @@ class TestNodeIdToPath:
         [
             param(
                 "src/tests/module/test_funcs.py::TestClass::test_main",
-                Path("src.tests.module.test_funcs", "TestClass__test_main.csv"),
+                Path("src.tests.module.test_funcs", "TestClass__test_main"),
             ),
             param(
                 "src/tests/module/test_funcs.py::TestClass::test_main.csv",
-                Path("src.tests.module.test_funcs", "TestClass__test_main.csv"),
+                Path("src.tests.module.test_funcs", "TestClass__test_main"),
             ),
             param(
                 "src/tests/module/test_funcs.py::TestClass::test_main[param1, param2]",
                 Path(
                     "src.tests.module.test_funcs",
-                    "TestClass__test_main[param1, param2].csv",
+                    "TestClass__test_main[param1, param2]",
                 ),
             ),
             param(
                 "src/tests/module/test_funcs.py::TestClass::test_main[EUR.USD]",
-                Path(
-                    "src.tests.module.test_funcs", "TestClass__test_main[EUR.USD].csv"
-                ),
+                Path("src.tests.module.test_funcs", "TestClass__test_main[EUR.USD]"),
             ),
         ],
     )
     def test_main(self, *, node_id: str, expected: Path) -> None:
-        result = node_id_to_path(node_id, suffix=".csv")
+        result = node_id_to_path(node_id)
         assert result == expected
 
     def test_head(self) -> None:
         node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
-        result = node_id_to_path(node_id, head=Path("src/tests"), suffix=".csv")
-        expected = Path("module.test_funcs", "TestClass__test_main.csv")
+        result = node_id_to_path(node_id, head=Path("src/tests"))
+        expected = Path("module.test_funcs", "TestClass__test_main")
+        assert result == expected
+
+    def test_suffix(self) -> None:
+        node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
+        result = node_id_to_path(node_id, head=Path("src/tests"), suffix=".test")
+        expected = Path("module.test_funcs", "TestClass__test_main.test")
         assert result == expected
 
     def test_error_file_suffix(self) -> None:

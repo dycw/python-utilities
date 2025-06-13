@@ -250,7 +250,9 @@ def _skipif_recent(*, root: PathLike | None = None, delta: TimeDelta = SECOND) -
 
 def _get_path(*, root: PathLike | None = None) -> Path:
     if root is None:
-        root_use = get_repo_root().joinpath(".pytest_cache", "throttle")
+        root_use = get_repo_root().joinpath(  # pragma: no cover
+            ".pytest_cache", "throttle"
+        )
     else:
         root_use = root
     return Path(root_use, _md5_hash_cached(_get_name()))
