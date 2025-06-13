@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 from functools import cache
@@ -21,7 +20,6 @@ from whenever import (
     DateDelta,
     DateTimeDelta,
     PlainDateTime,
-    Time,
     TimeDelta,
     ZonedDateTime,
 )
@@ -47,14 +45,14 @@ if TYPE_CHECKING:
 ## bounds
 
 
-DATE_MIN = Date.from_py_date(dt.date.min)
-DATE_MAX = Date.from_py_date(dt.date.max)
-TIME_MIN = Time.from_py_time(dt.time.min)
-TIME_MAX = Time.from_py_time(dt.time.max)
-
-
-PLAIN_DATE_TIME_MIN = PlainDateTime.from_py_datetime(dt.datetime.min)  # noqa: DTZ901
-PLAIN_DATE_TIME_MAX = PlainDateTime.from_py_datetime(dt.datetime.max)  # noqa: DTZ901
+PLAIN_DATE_TIME_MIN = PlainDateTime(1, 1, 1)
+PLAIN_DATE_TIME_MAX = PlainDateTime(
+    9999, 12, 31, hour=23, minute=59, second=59, nanosecond=999999999
+)
+DATE_MIN = PLAIN_DATE_TIME_MIN.date()
+DATE_MAX = PLAIN_DATE_TIME_MAX.date()
+TIME_MIN = PLAIN_DATE_TIME_MIN.time()
+TIME_MAX = PLAIN_DATE_TIME_MIN.time()
 ZONED_DATE_TIME_MIN = PLAIN_DATE_TIME_MIN.assume_tz(UTC.key)
 ZONED_DATE_TIME_MAX = PLAIN_DATE_TIME_MAX.assume_tz(UTC.key)
 
@@ -105,6 +103,10 @@ DATE_TIME_DELTA_PARSABLE_MAX = DateTimeDelta(
 )
 DATE_DELTA_PARSABLE_MIN = DateDelta(days=-999999)
 DATE_DELTA_PARSABLE_MAX = DateDelta(days=999999)
+
+
+DATE_TWO_DIGIT_YEAR_MIN = Date(1969, 1, 1)
+DATE_TWO_DIGIT_YEAR_MAX = Date(DATE_TWO_DIGIT_YEAR_MIN.year + 99, 12, 31)
 
 
 ## common constants
@@ -386,7 +388,7 @@ class Month:
     @classmethod
     def parse_common_iso(cls, text: str, /) -> Self:
         try:
-            year, month = extract_groups(r"^(\d{1,4})[\- ](\d{1,2})$", text)
+            year, month = extract_groups(r"^(\d{1,4})[\- ]?(\d{1,2})$", text)
         except ExtractGroupsError:
             raise _MonthParseCommonISOError(text=text) from None
         return cls(year=int(year), month=int(month))
@@ -693,6 +695,8 @@ __all__ = [
     "DATE_TIME_DELTA_MIN",
     "DATE_TIME_DELTA_PARSABLE_MAX",
     "DATE_TIME_DELTA_PARSABLE_MIN",
+    "DATE_TWO_DIGIT_YEAR_MAX",
+    "DATE_TWO_DIGIT_YEAR_MIN",
     "DAY",
     "HOUR",
     "MICROSECOND",

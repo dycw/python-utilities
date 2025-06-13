@@ -287,8 +287,8 @@ def dates_two_digit_year(
     draw: DrawFn,
     /,
     *,
-    min_value: MaybeSearchStrategy[dt.date] = MIN_DATE_TWO_DIGIT_YEAR,
-    max_value: MaybeSearchStrategy[dt.date] = MAX_DATE_TWO_DIGIT_YEAR,
+    min_value: MaybeSearchStrategy[Date] = MIN_DATE_TWO_DIGIT_YEAR,
+    max_value: MaybeSearchStrategy[Date] = MAX_DATE_TWO_DIGIT_YEAR,
 ) -> dt.date:
     """Strategy for generating dates with valid 2 digit years."""
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]

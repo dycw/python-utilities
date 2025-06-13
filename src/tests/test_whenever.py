@@ -415,6 +415,11 @@ class TestMonth:
     def test_hashable(self, *, month: Month) -> None:
         _ = hash(month)
 
+    @mark.parametrize("text", [param("2000-01"), param("2000 01"), param("200001")])
+    def test_parse_common_iso(self, *, text: str) -> None:
+        result = Month.parse_common_iso(text)
+        assert result == Month(2000, 1)
+
     @mark.parametrize("func", [param(repr), param(str)])
     def test_repr(self, *, func: Callable[..., str]) -> None:
         result = func(Month(2000, 12))
