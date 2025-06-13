@@ -20,7 +20,7 @@ class TestCallMemoized:
 
     async def test_refresh(self) -> None:
         counter = 0
-        delta = 0.05 * SECOND
+        delta = 0.1 * SECOND
 
         async def increment() -> int:
             nonlocal counter

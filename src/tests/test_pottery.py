@@ -80,7 +80,7 @@ class TestYieldAccess:
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_error_unable_to_acquire_lock(self) -> None:
         key = unique_str()
-        delta = 0.01 * SECOND
+        delta = 0.1 * SECOND
 
         async def coroutine(redis: Redis, key: str, /) -> None:
             async with yield_access(

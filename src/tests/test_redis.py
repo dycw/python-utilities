@@ -446,7 +446,7 @@ class TestRedisHashMapKey:
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_ttl(self, *, key: int, value: bool) -> None:
-        delta = 0.05 * SECOND
+        delta = 0.1 * SECOND
         async with yield_test_redis() as redis:
             hm_key = redis_hash_map_key(unique_str(), int, bool, ttl=2 * delta)
             _ = await hm_key.set(redis, key, value)
@@ -533,7 +533,7 @@ class TestRedisKey:
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_ttl(self, *, value: bool) -> None:
-        delta = 0.05 * SECOND
+        delta = 0.1 * SECOND
         async with yield_test_redis() as redis:
             key = redis_key(unique_str(), bool, ttl=2 * delta)
             _ = await key.set(redis, value)

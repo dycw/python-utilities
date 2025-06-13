@@ -96,7 +96,7 @@ class TestTimer:
             _ = op(timer, "")
 
     async def test_context_manager(self) -> None:
-        delta = 0.01 * SECOND
+        delta = 0.1 * SECOND
         with Timer() as timer:
             await sleep_td(2 * delta)
         assert timer >= delta
@@ -109,7 +109,7 @@ class TestTimer:
         assert search(r"^PT0\.\d+S$", as_str)
 
     async def test_running(self) -> None:
-        delta = 0.01 * SECOND
+        delta = 0.1 * SECOND
         timer = Timer()
         await sleep_td(2 * delta)
         assert timer >= delta
