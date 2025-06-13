@@ -8,7 +8,7 @@ from hypothesis import given
 from hypothesis.strategies import DataObject, data, datetimes, sampled_from, timezones
 from pytest import raises
 
-from utilities.hypothesis import zoned_datetimes, zoned_datetimes_whenever
+from utilities.hypothesis import zoned_datetimes_whenever
 from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import (
@@ -51,7 +51,7 @@ class TestEnsureTimeZone:
     def test_standard_zoned_datetime(
         self, *, data: DataObject, time_zone: ZoneInfo
     ) -> None:
-        datetime = data.draw(zoned_datetimes(time_zone=time_zone))
+        datetime = data.draw(datetimes(time_zone=time_zone))
         result = ensure_time_zone(datetime)
         assert result is time_zone
 
