@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 from re import escape
-from typing import TYPE_CHECKING
 
 from hypothesis import example, given
 from hypothesis.strategies import integers, sampled_from, timedeltas
@@ -16,13 +15,11 @@ from utilities.datetime import (
     DAY,
     MICROSECOND,
 )
-from utilities.hypothesis import assume_does_not_raise, datetime_durations
+from utilities.hypothesis import assume_does_not_raise
 from utilities.tzdata import HongKong
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
-    ParseDurationError,
-    SerializeDurationError,
     SerializeTimeDeltaError,
     _CheckValidZonedDateTimeUnequalError,
     _ParseTimedeltaNanosecondError,
@@ -30,15 +27,9 @@ from utilities.whenever import (
     _to_datetime_delta,
     _ToDateTimeDeltaError,
     check_valid_zoned_datetime,
-    parse_duration,
     parse_timedelta,
-    serialize_duration,
     serialize_timedelta,
 )
-
-if TYPE_CHECKING:
-    from utilities.types import Duration
-
 
 _TIMEDELTA_MICROSECONDS = int(1e18) * MICROSECOND
 _TIMEDELTA_OVERFLOW = dt.timedelta(days=106751991, seconds=14454, microseconds=775808)
@@ -64,29 +55,6 @@ class TestCheckValidZonedDateTime:
             ),
         ):
             check_valid_zoned_datetime(datetime)
-
-
-class TestSerializeAndParseDuration:
-    @given(duration=datetime_durations())
-    def test_main(self, *, duration: Duration) -> None:
-        with assume_does_not_raise(SerializeDurationError):
-            serialized = serialize_duration(duration)
-        with assume_does_not_raise(ParseDurationError):
-            result = parse_duration(serialized)
-        assert result == duration
-
-    def test_error_parse(self) -> None:
-        with raises(
-            ParseDurationError, match="Unable to parse duration; got 'invalid'"
-        ):
-            _ = parse_duration("invalid")
-
-    @given(duration=sampled_from([_TIMEDELTA_MICROSECONDS, _TIMEDELTA_OVERFLOW]))
-    def test_error_serialize(self, *, duration: Duration) -> None:
-        with raises(
-            SerializeDurationError, match="Unable to serialize duration; got .*"
-        ):
-            _ = serialize_duration(duration)
 
 
 class TestSerializeAndParseTimedelta:
