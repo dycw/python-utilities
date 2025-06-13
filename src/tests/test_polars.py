@@ -177,7 +177,7 @@ if TYPE_CHECKING:
     from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
     from polars.datatypes import DataTypeClass
 
-    from utilities.types import MaybeType, StrMapping, TimeZoneLike, WeekDay
+    from utilities.types import MaybeType, StrMapping, WeekDay
 
 
 class TestACF:
@@ -977,9 +977,7 @@ class TestDataClassToDataFrame:
 
     @given(data=data())
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    def test_zoned_datetime(
-        self, *, data: DataObject, time_zone_name: TimeZoneLike
-    ) -> None:
+    def test_zoned_datetime(self, *, data: DataObject, time_zone_name: str) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: dt.datetime

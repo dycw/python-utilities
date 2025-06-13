@@ -85,11 +85,7 @@ from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
-    from utilities.types import (
-        MaybeCallableDate,
-        MaybeCallableZonedDateTime,
-        TimeZoneLike,
-    )
+    from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime
 
 
 class TestDatetimeUTC:
@@ -121,7 +117,7 @@ class TestFormatCompact:
 class TestFromTimeStamp:
     @given(data=data())
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    def test_main(self, *, data: DataObject, time_zone_name: TimeZoneLike) -> None:
+    def test_main(self, *, data: DataObject, time_zone_name: str) -> None:
         datetime = data.draw(zoned_datetimes_whenever(time_zone=time_zone_name)).round(
             "second"
         )
@@ -131,7 +127,7 @@ class TestFromTimeStamp:
 
     @given(data=data())
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    def test_millis(self, *, data: DataObject, time_zone_name: TimeZoneLike) -> None:
+    def test_millis(self, *, data: DataObject, time_zone_name: str) -> None:
         datetime = data.draw(zoned_datetimes_whenever(time_zone=time_zone_name)).round(
             "millisecond"
         )
@@ -141,7 +137,7 @@ class TestFromTimeStamp:
 
     @given(data=data())
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    def test_nanos(self, *, data: DataObject, time_zone_name: TimeZoneLike) -> None:
+    def test_nanos(self, *, data: DataObject, time_zone_name: str) -> None:
         datetime = data.draw(zoned_datetimes_whenever(time_zone=time_zone_name))
         timestamp = datetime.timestamp_nanos()
         result = from_timestamp_nanos(timestamp, time_zone=time_zone_name)
@@ -149,7 +145,7 @@ class TestFromTimeStamp:
 
 
 class TestGetNow:
-    def test_function(self, *, time_zone_name: TimeZoneLike) -> None:
+    def test_function(self, *, time_zone_name: str) -> None:
         now = get_now(time_zone=time_zone_name)
         assert isinstance(now, ZonedDateTime)
         assert now.tz == time_zone_name

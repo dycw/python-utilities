@@ -20,7 +20,7 @@ from utilities.zoneinfo import (
 )
 
 if TYPE_CHECKING:
-    from utilities.types import TimeZone, TimeZoneLike
+    from utilities.types import TimeZone
 
 
 class TestEnsureTimeZone:
@@ -50,7 +50,7 @@ class TestEnsureTimeZone:
     @given(data=data())
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     def test_standard_zoned_datetime(
-        self, *, data: DataObject, time_zone_name: TimeZoneLike
+        self, *, data: DataObject, time_zone_name: str
     ) -> None:
         time_zone = ZoneInfo(time_zone_name)
         datetime = data.draw(datetimes(timezones=just(time_zone)))
@@ -60,7 +60,7 @@ class TestEnsureTimeZone:
     @given(data=data())
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     def test_whenever_zoned_datetime(
-        self, *, data: DataObject, time_zone_name: TimeZoneLike
+        self, *, data: DataObject, time_zone_name: str
     ) -> None:
         time_zone = ZoneInfo(time_zone_name)
         datetime = data.draw(zoned_datetimes_whenever(time_zone=time_zone))
