@@ -24,14 +24,12 @@ from hypothesis.strategies import (
 )
 from pytest import raises
 
-from utilities.datetime import ZERO_TIME, get_now, get_today
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     EnsureBoolError,
     EnsureBytesError,
     EnsureClassError,
     EnsureDateError,
-    EnsureDateTimeError,
     EnsureFloatError,
     EnsureHashableError,
     EnsureIntError,
@@ -39,11 +37,13 @@ from utilities.functions import (
     EnsureNotNoneError,
     EnsureNumberError,
     EnsurePathError,
+    EnsurePlainDateTimeError,
     EnsureSizedError,
     EnsureSizedNotStrError,
     EnsureStrError,
     EnsureTimeDeltaError,
     EnsureTimeError,
+    EnsureZonedDateTimeError,
     MaxNullableError,
     MinNullableError,
     apply_decorators,
@@ -51,7 +51,6 @@ from utilities.functions import (
     ensure_bytes,
     ensure_class,
     ensure_date,
-    ensure_datetime,
     ensure_float,
     ensure_hashable,
     ensure_int,
@@ -59,11 +58,13 @@ from utilities.functions import (
     ensure_not_none,
     ensure_number,
     ensure_path,
+    ensure_plain_date_time,
     ensure_sized,
     ensure_sized_not_str,
     ensure_str,
     ensure_time,
-    ensure_timedelta,
+    ensure_time_delta,
+    ensure_zoned_date_time,
     first,
     get_class,
     get_class_name,
@@ -94,10 +95,13 @@ from utilities.functions import (
     yield_object_properties,
 )
 from utilities.sentinel import sentinel
+from utilities.whenever2 import NOW_UTC, ZERO_TIME, get_now, get_today
 
 if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import Callable, Iterable
+
+    from whenever import PlainDateTime, TimeDelta, ZonedDateTime
 
     from utilities.types import Number
 
@@ -210,24 +214,6 @@ class TestEnsureDate:
         nullable, match = case
         with raises(EnsureDateError, match=match):
             _ = ensure_date(sentinel, nullable=nullable)
-
-
-class TestEnsureDateTime:
-    @given(case=sampled_from([(get_now(), False), (get_now(), True), (None, True)]))
-    def test_main(self, *, case: tuple[dt.datetime | None, bool]) -> None:
-        obj, nullable = case
-        _ = ensure_datetime(obj, nullable=nullable)
-
-    @given(
-        case=sampled_from([
-            (False, "Object '.*' of type '.*' must be a datetime"),
-            (True, "Object '.*' of type '.*' must be a datetime or None"),
-        ])
-    )
-    def test_error(self, *, case: tuple[bool, str]) -> None:
-        nullable, match = case
-        with raises(EnsureDateTimeError, match=match):
-            _ = ensure_datetime(sentinel, nullable=nullable)
 
 
 class TestEnsureFloat:
@@ -355,6 +341,30 @@ class TestEnsurePath:
             _ = ensure_path(sentinel, nullable=nullable)
 
 
+class TestEnsurePlainDateTime:
+    @given(
+        case=sampled_from([
+            (NOW_UTC.to_plain(), False),
+            (NOW_UTC.to_plain(), True),
+            (None, True),
+        ])
+    )
+    def test_main(self, *, case: tuple[PlainDateTime | None, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_plain_date_time(obj, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be a plain date-time"),
+            (True, "Object '.*' of type '.*' must be a plain date-time or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsurePlainDateTimeError, match=match):
+            _ = ensure_plain_date_time(sentinel, nullable=nullable)
+
+
 class TestEnsureSized:
     @given(obj=sampled_from([[], (), ""]))
     def test_main(self, *, obj: Any) -> None:
@@ -423,20 +433,38 @@ class TestEnsureTime:
 
 class TestEnsureTimeDelta:
     @given(case=sampled_from([(ZERO_TIME, False), (ZERO_TIME, True), (None, True)]))
-    def test_main(self, *, case: tuple[dt.timedelta | None, bool]) -> None:
+    def test_main(self, *, case: tuple[TimeDelta | None, bool]) -> None:
         obj, nullable = case
-        _ = ensure_timedelta(obj, nullable=nullable)
+        _ = ensure_time_delta(obj, nullable=nullable)
 
     @given(
         case=sampled_from([
-            (False, "Object '.*' of type '.*' must be a timedelta"),
-            (True, "Object '.*' of type '.*' must be a timedelta or None"),
+            (False, "Object '.*' of type '.*' must be a time-delta"),
+            (True, "Object '.*' of type '.*' must be a time-delta or None"),
         ])
     )
     def test_error(self, *, case: tuple[bool, str]) -> None:
         nullable, match = case
         with raises(EnsureTimeDeltaError, match=match):
-            _ = ensure_timedelta(sentinel, nullable=nullable)
+            _ = ensure_time_delta(sentinel, nullable=nullable)
+
+
+class TestEnsureZonedDateTime:
+    @given(case=sampled_from([(NOW_UTC, False), (NOW_UTC, True), (None, True)]))
+    def test_main(self, *, case: tuple[ZonedDateTime | None, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_zoned_date_time(obj, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be a zoned date-time"),
+            (True, "Object '.*' of type '.*' must be a zoned date-time or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsureZonedDateTimeError, match=match):
+            _ = ensure_zoned_date_time(sentinel, nullable=nullable)
 
 
 class TestFirst:
