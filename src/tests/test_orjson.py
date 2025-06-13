@@ -7,7 +7,7 @@ from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import assume, given
+from hypothesis import assume, given, reproduce_failure, settings
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -21,7 +21,7 @@ from hypothesis.strategies import (
 )
 from orjson import JSONDecodeError
 from polars import Object, String, UInt64
-from pytest import approx, raises
+from pytest import approx, mark, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from tests.test_objects.objects import (
@@ -611,6 +611,9 @@ class TestSerializeAndDeserialize:
             assert is_equal(result, obj)
 
     @given(obj=objects(exception_instance=True, parsable=True))
+    @mark.only
+    @settings(max_examples=1000)
+    @reproduce_failure("6.135.7", b"AEECAUEPQQABQQ9BAAA=")
     def test_exception_instance(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={CustomError})
         with assume_does_not_raise(IsEqualError):

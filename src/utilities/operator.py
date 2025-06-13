@@ -69,9 +69,26 @@ def is_equal(
                 x_sorted = sort_iterable(x)
                 y_sorted = sort_iterable(y)
             except SortIterableError:
-                pass
-            else:
-                return is_equal(x_sorted, y_sorted, rel_tol=rel_tol, abs_tol=abs_tol)
+                x_in_y = all(
+                    any(
+                        is_equal(
+                            x_i, y_i, rel_tol=rel_tol, abs_tol=abs_tol, extra=extra
+                        )
+                        for y_i in y
+                    )
+                    for x_i in x
+                )
+                y_in_x = all(
+                    any(
+                        is_equal(
+                            x_i, y_i, rel_tol=rel_tol, abs_tol=abs_tol, extra=extra
+                        )
+                        for x_i in x
+                    )
+                    for y_i in y
+                )
+                return x_in_y and y_in_x
+            return is_equal(x_sorted, y_sorted, rel_tol=rel_tol, abs_tol=abs_tol)
         if isinstance(x, Sequence):
             y = cast("Sequence[Any]", y)
             if len(x) != len(y):
