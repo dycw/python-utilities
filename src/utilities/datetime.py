@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable
 from dataclasses import dataclass, replace
 from re import search, sub
 from typing import Any, Self, assert_never, overload, override
 
 from utilities.iterables import OneEmptyError, one
 from utilities.platform import SYSTEM
-from utilities.sentinel import Sentinel, sentinel
-from utilities.types import MaybeCallablePyDate, MaybeCallablePyDateTime, MaybeStr
+from utilities.types import MaybeStr
 from utilities.zoneinfo import UTC
 
 
@@ -64,67 +62,6 @@ class EnsureMonthError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to ensure month; got {self.month!r}"
-
-
-##
-
-
-@overload
-def get_date(*, date: MaybeCallablePyDate) -> dt.date: ...
-@overload
-def get_date(*, date: None) -> None: ...
-@overload
-def get_date(*, date: Sentinel) -> Sentinel: ...
-@overload
-def get_date(*, date: MaybeCallablePyDate | Sentinel) -> dt.date | Sentinel: ...
-@overload
-def get_date(
-    *, date: MaybeCallablePyDate | None | Sentinel = sentinel
-) -> dt.date | None | Sentinel: ...
-def get_date(
-    *, date: MaybeCallablePyDate | None | Sentinel = sentinel
-) -> dt.date | None | Sentinel:
-    """Get the date."""
-    match date:
-        case dt.date() | None | Sentinel():
-            return date
-        case Callable() as func:
-            return get_date(date=func())
-        case _ as never:
-            assert_never(never)
-
-
-##
-
-
-@overload
-def get_datetime(*, datetime: MaybeCallablePyDateTime) -> dt.datetime: ...
-@overload
-def get_datetime(*, datetime: None) -> None: ...
-@overload
-def get_datetime(*, datetime: Sentinel) -> Sentinel: ...
-def get_datetime(
-    *, datetime: MaybeCallablePyDateTime | None | Sentinel = sentinel
-) -> dt.datetime | None | Sentinel:
-    """Get the datetime."""
-    match datetime:
-        case dt.datetime() | None | Sentinel():
-            return datetime
-        case Callable() as func:
-            return get_datetime(datetime=func())
-        case _ as never:
-            assert_never(never)
-
-
-##
-
-
-_FRIDAY = 5
-
-
-def is_weekday(date: dt.date, /) -> bool:
-    """Check if a date is a weekday."""
-    return date.isoweekday() <= _FRIDAY
 
 
 ##
@@ -308,10 +245,5 @@ __all__ = [
     "date_to_month",
     "datetime_utc",
     "ensure_month",
-    "get_date",
-    "get_datetime",
-    "is_weekday",
-    "maybe_sub_pct_y",
-    "parse_month",
     "parse_two_digit_year",
 ]
