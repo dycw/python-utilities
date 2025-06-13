@@ -193,6 +193,7 @@ def make_objects(
             sub_set=sub_set,
             sub_tuple=sub_tuple,
         ),
+        max_leaves=10,
     )
 
 
@@ -324,7 +325,8 @@ class TestIsEqual:
         assert utilities.operator.is_equal(x, y, abs_tol=1e-8)
 
     @given(
-        x=dictionaries(text_ascii(), objects()), y=dictionaries(text_ascii(), objects())
+        x=dictionaries(text_ascii(), make_objects()),
+        y=dictionaries(text_ascii(), make_objects()),
     )
     def test_mappings(self, *, x: StrMapping, y: StrMapping) -> None:
         result = utilities.operator.is_equal(x, y)
