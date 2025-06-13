@@ -5,7 +5,14 @@ from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, datetimes, sampled_from, timezones
+from hypothesis.strategies import (
+    DataObject,
+    data,
+    datetimes,
+    just,
+    sampled_from,
+    timezones,
+)
 from pytest import raises
 
 from utilities.hypothesis import zoned_datetimes_whenever
@@ -51,7 +58,7 @@ class TestEnsureTimeZone:
     def test_standard_zoned_datetime(
         self, *, data: DataObject, time_zone: ZoneInfo
     ) -> None:
-        datetime = data.draw(datetimes(time_zone=time_zone))
+        datetime = data.draw(datetimes(timezones=just(time_zone)))
         result = ensure_time_zone(datetime)
         assert result is time_zone
 
