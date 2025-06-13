@@ -258,7 +258,7 @@ class TestThrottle:
         )
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        await sleep_td(0.1 * SECOND)
+        await sleep_td(0.2 * SECOND)
         testdir.runpytest().assert_outcomes(passed=1)
 
     @mark.parametrize("asyncio_first", [param(True), param(False)])
@@ -289,7 +289,7 @@ class TestThrottle:
         )
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        await sleep_td(0.1 * SECOND)
+        await sleep_td(0.2 * SECOND)
         testdir.runpytest().assert_outcomes(passed=1)
 
     @mark.flaky
