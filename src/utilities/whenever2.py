@@ -616,7 +616,6 @@ __all__ = [
     "get_today",
     "get_today_local",
     "mean_datetime",
-    "mean_datetime",
     "min_max_date",
     "to_date",
     "to_date_time_delta",
