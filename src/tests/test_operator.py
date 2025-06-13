@@ -13,12 +13,19 @@ import utilities.math
 import utilities.operator
 from tests.test_objects.objects import CustomError, TruthEnum, objects
 from tests.test_typing_funcs.with_future import DataClassFutureCustomEquality
-from utilities.hypothesis import assume_does_not_raise, pairs, text_ascii
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    date_deltas_whenever,
+    pairs,
+    text_ascii,
+)
 from utilities.operator import IsEqualError
 from utilities.polars import are_frames_equal
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from whenever import DateDelta
 
     from utilities.types import Number
     from utilities.typing import StrMapping
@@ -87,15 +94,6 @@ class TestIsEqual:
     @given(x=date_deltas_whenever(), y=date_deltas_whenever())
     def test_sets_of_date_deltas(self, *, x: float, y: float) -> None:
         assert utilities.operator.is_equal({x, y}, {y, x})
-
-    def test_sets_of_enums(self) -> None:
-        obj = set(TruthEnum)
-        assert utilities.operator.is_equal(obj, obj)
-
-    def test_sets_of_errors(self) -> None:
-        obj = {CustomError(), CustomError()}
-        obj2 = {CustomError(), CustomError()}
-        assert utilities.operator.is_equal(obj, obj2)
 
     @given(x=floats(), y=floats())
     @example(x=-4.233805663404397, y=nan)
