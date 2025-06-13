@@ -69,6 +69,8 @@ from utilities.datetime import (
     _ParseTwoDigitYearInvalidStringError,
     add_duration,
     add_weekdays,
+    are_equal_date_durations,
+    are_equal_dates_or_datetimes,
     are_equal_datetimes,
     check_date_not_datetime,
     date_duration_to_int,
@@ -225,6 +227,58 @@ class TestAddWeekdays:
         n1, n2 = ns
         expected = n1 <= n2
         assert result is expected
+
+
+class TestAreEqualDateDurations:
+    @given(x=integers(), y=integers())
+    def test_ints(self, *, x: int, y: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            result = are_equal_date_durations(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(x=integers(), y=integers())
+    def test_timedeltas(self, *, x: int, y: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            x_timedelta, y_timedelta = dt.timedelta(days=x), dt.timedelta(days=y)
+        result = are_equal_date_durations(x_timedelta, y_timedelta)
+        expected = x == y
+        assert result is expected
+
+    @given(data=data(), x=integers(), y=integers())
+    def test_int_vs_timedelta(self, *, data: DataObject, x: int, y: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            y_timedelta = dt.timedelta(days=y)
+        left, right = data.draw(permutations([x, y_timedelta]))
+        with assume_does_not_raise(OverflowError):
+            result = are_equal_date_durations(left, right)
+        expected = x == y
+        assert result is expected
+
+
+class TestAreEqualDateOrDateTimes:
+    @given(x=dates(), y=dates())
+    def test_dates(self, *, x: dt.date, y: dt.date) -> None:
+        result = are_equal_dates_or_datetimes(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(x=datetimes(), y=datetimes())
+    def test_datetimes(self, *, x: dt.datetime, y: dt.datetime) -> None:
+        result = are_equal_dates_or_datetimes(x, y)
+        expected = x == y
+        assert result is expected
+
+    @given(data=data(), x=dates(), y=datetimes())
+    def test_date_vs_datetime(
+        self, *, data: DataObject, x: dt.date, y: dt.datetime
+    ) -> None:
+        left, right = data.draw(permutations([x, y]))
+        with raises(
+            AreEqualDatesOrDateTimesError,
+            match=r"Cannot compare date and datetime \(.*, .*\)",
+        ):
+            _ = are_equal_dates_or_datetimes(left, right)
 
 
 class TestAreEqualDateTimes:
