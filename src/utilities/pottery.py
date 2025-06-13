@@ -29,7 +29,7 @@ async def yield_access(
     num: int = 1,
     timeout_acquire: TimeDelta | None = None,
     timeout_release: TimeDelta = 10 * SECOND,
-    sleep_delay: TimeDelta = MILLISECOND,
+    sleep: TimeDelta = MILLISECOND,
     throttle: TimeDelta | None = None,
 ) -> AsyncIterator[None]:
     """Acquire access to a locked resource, amongst 1 of multiple connections."""
@@ -49,7 +49,7 @@ async def yield_access(
     lock: AIORedlock | None = None  # skipif-ci-and-not-linux
     try:  # skipif-ci-and-not-linux
         lock = await _get_first_available_lock(
-            key, locks, num=num, timeout=timeout_acquire, sleep=sleep_delay
+            key, locks, num=num, timeout=timeout_acquire, sleep=sleep
         )
         yield
     finally:  # skipif-ci-and-not-linux
