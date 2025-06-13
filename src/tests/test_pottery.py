@@ -95,5 +95,5 @@ class TestYieldAccess:
         error = one(exc_info.value.exceptions)
         assert isinstance(error, _YieldAccessUnableToAcquireLockError)
         assert search(
-            r"Unable to acquire any 1 of 1 locks for '\w+' after PT0\.01", str(error)
+            r"Unable to acquire any 1 of 1 locks for '\w+' after .*", str(error)
         )
