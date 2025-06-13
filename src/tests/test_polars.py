@@ -14,7 +14,7 @@ from uuid import UUID, uuid4
 import hypothesis.strategies
 import numpy as np
 import polars as pl
-from hypothesis import HealthCheck, given, settings
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     booleans,
@@ -177,7 +177,7 @@ if TYPE_CHECKING:
     from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
     from polars.datatypes import DataTypeClass
 
-    from utilities.types import MaybeType, StrMapping, TimeZone, WeekDay
+    from utilities.types import MaybeType, StrMapping, WeekDay
 
 
 class TestACF:
@@ -975,11 +975,8 @@ class TestDataClassToDataFrame:
         df = dataclass_to_dataframe(obj, localns=locals())
         check_polars_dataframe(df, height=len(df), schema_list={"x": String})
 
-    @given(data=data())
-    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    def test_zoned_datetime(
-        self, *, data: DataObject, time_zone_name: TimeZone
-    ) -> None:
+    @given(data=data(), time_zone=timezones())
+    def test_zoned_datetime(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: dt.datetime
@@ -988,7 +985,7 @@ class TestDataClassToDataFrame:
             lists(
                 builds(
                     Example,
-                    x=zoned_datetimes_whenever(time_zone=time_zone_name).map(
+                    x=zoned_datetimes_whenever(time_zone=time_zone).map(
                         lambda d: d.py_datetime()
                     ),
                 ),
@@ -1001,9 +998,7 @@ class TestDataClassToDataFrame:
         ):
             df = dataclass_to_dataframe(objs, localns=locals())
         check_polars_dataframe(
-            df,
-            height=len(objs),
-            schema_list={"x": zoned_datetime(time_zone=time_zone_name)},
+            df, height=len(objs), schema_list={"x": zoned_datetime(time_zone=time_zone)}
         )
 
     def test_error_empty(self) -> None:
