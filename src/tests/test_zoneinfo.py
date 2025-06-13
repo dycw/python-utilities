@@ -50,7 +50,7 @@ class TestEnsureTimeZone:
     @given(data=data())
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     def test_standard_zoned_datetime(
-        self, *, data: DataObject, time_zone_name: str
+        self, *, data: DataObject, time_zone_name: TimeZone
     ) -> None:
         time_zone = ZoneInfo(time_zone_name)
         datetime = data.draw(datetimes(timezones=just(time_zone)))
@@ -60,7 +60,7 @@ class TestEnsureTimeZone:
     @given(data=data())
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     def test_whenever_zoned_datetime(
-        self, *, data: DataObject, time_zone_name: str
+        self, *, data: DataObject, time_zone_name: TimeZone
     ) -> None:
         time_zone = ZoneInfo(time_zone_name)
         datetime = data.draw(zoned_datetimes_whenever(time_zone=time_zone))
@@ -81,13 +81,14 @@ class TestEnsureTimeZone:
 
 
 class TestGetTimeZoneName:
-    @given(data=data(), time_zone=sampled_from(["Asia/Hong_Kong", "Asia/Tokyo", "UTC"]))
-    def test_main(self, *, data: DataObject, time_zone: TimeZone) -> None:
+    @given(data=data())
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    def test_main(self, *, data: DataObject, time_zone_name: TimeZone) -> None:
         zone_info_or_str: ZoneInfo | TimeZone = data.draw(
-            sampled_from([ZoneInfo(time_zone), time_zone])
+            sampled_from([ZoneInfo(time_zone_name), time_zone_name])
         )
         result = get_time_zone_name(zone_info_or_str)
-        assert result == time_zone
+        assert result == time_zone_name
 
     def test_local(self) -> None:
         result = get_time_zone_name("local")
