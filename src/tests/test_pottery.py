@@ -80,7 +80,7 @@ class TestYieldAccess:
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_error_unable_to_acquire_lock(self) -> None:
         key = unique_str()
-        delta = 0.1 * SECOND
+        delta = 0.01 * SECOND
 
         async def coroutine(redis: Redis, key: str, /) -> None:
             async with yield_access(
@@ -95,5 +95,5 @@ class TestYieldAccess:
         error = one(exc_info.value.exceptions)
         assert isinstance(error, _YieldAccessUnableToAcquireLockError)
         assert search(
-            r"Unable to acquire any 1 of 1 locks for '\w+' after .*", str(error)
+            r"Unable to acquire any 1 of 1 locks for '\w+' after PT0\.01", str(error)
         )
