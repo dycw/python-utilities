@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import Queue, sleep
+from asyncio import Queue
 from contextlib import asynccontextmanager
 from itertools import chain
 from re import search
@@ -25,7 +25,7 @@ from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_asyncio_classes.loopers import _REL, assert_looper_stats
 from tests.test_asyncio_classes.redis import LooperWithPublishAndSubscribeMixins
 from tests.test_operator import make_objects
-from utilities.asyncio import EnhancedTaskGroup, Looper, get_items_nowait
+from utilities.asyncio import EnhancedTaskGroup, Looper, get_items_nowait, sleep_td
 from utilities.hypothesis import int64s, pairs, text_ascii
 from utilities.iterables import one
 from utilities.operator import is_equal
@@ -45,13 +45,16 @@ from utilities.redis import (
 )
 from utilities.sentinel import SENTINEL_REPR, Sentinel, sentinel
 from utilities.text import unique_str
+from utilities.whenever2 import SECOND
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Mapping, Sequence
     from pathlib import Path
 
+    from whenever import TimeDelta
 
-_PUB_SUB_SLEEP = 0.1
+
+_PUB_SUB_SLEEP: TimeDelta = 0.1 * SECOND
 
 
 @fixture
@@ -126,10 +129,10 @@ class TestPublish:
             yield_test_redis() as redis,
             subscribe(redis, channel, queue, output="bytes"),
         ):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep_td(_PUB_SUB_SLEEP)
             for datum in data:
                 _ = await publish(redis, channel, datum)
-            await sleep(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
         assert queue.qsize() == len(data)
         results = get_items_nowait(queue)
         for result, datum in zip(results, data, strict=True):
@@ -147,10 +150,10 @@ class TestPublish:
             yield_redis() as redis,
             subscribe(redis, channel, queue, output=deserialize),
         ):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep_td(_PUB_SUB_SLEEP)
             for obj in objects:
                 _ = await publish(redis, channel, obj, serializer=serialize)
-            await sleep(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
         assert queue.qsize() == len(objects)
         results = get_items_nowait(queue)
         for result, obj in zip(results, objects, strict=True):
@@ -164,10 +167,10 @@ class TestPublish:
         channel = f"test_{unique_str()}"
         queue: Queue[str] = Queue()
         async with yield_redis() as redis, subscribe(redis, channel, queue):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
                 _ = await publish(redis, channel, message)
-            await sleep(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
         for result, message in zip(results, messages, strict=True):
@@ -192,12 +195,12 @@ class TestPublisherService:
         queue: Queue[str] = Queue()
         async with (
             yield_redis() as redis,
-            PublishService(freq=0.1, timeout=1.0, redis=redis) as service,
+            PublishService(freq=0.1 * SECOND, timeout=SECOND, redis=redis) as service,
             subscribe(redis, channel, queue),
         ):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep_td(_PUB_SUB_SLEEP)
             service.put_right_nowait(*((channel, m) for m in messages))
-            await sleep(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
         for result, message in zip(results, messages, strict=True):
@@ -211,7 +214,7 @@ class TestPublishServiceMixin:
     async def test_main(self, *, test_redis: Redis) -> None:
         service = LooperWithPublishAndSubscribeMixins(
             auto_start=True,
-            timeout=1.0,
+            timeout=SECOND,
             publish_service_redis=test_redis,
             subscribe_service_redis=test_redis,
         )
@@ -225,7 +228,7 @@ class TestPublishServiceMixin:
     async def test_task_group(self, *, test_redis: Redis) -> None:
         service = LooperWithPublishAndSubscribeMixins(
             auto_start=True,
-            timeout=1.0,
+            timeout=SECOND,
             publish_service_redis=test_redis,
             subscribe_service_redis=test_redis,
         )
@@ -240,7 +243,7 @@ class TestPublishServiceMixin:
         service1, service2 = [
             LooperWithPublishAndSubscribeMixins(
                 auto_start=True,
-                timeout=1.0,
+                timeout=SECOND,
                 publish_service_redis=test_redis,
                 subscribe_service_redis=test_redis,
             )
@@ -443,12 +446,13 @@ class TestRedisHashMapKey:
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_ttl(self, *, key: int, value: bool) -> None:
+        delta = 0.05 * SECOND
         async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(unique_str(), int, bool, ttl=0.05)
+            hm_key = redis_hash_map_key(unique_str(), int, bool, ttl=2 * delta)
             _ = await hm_key.set(redis, key, value)
-            await sleep(0.025)  # else next line may not work
+            await sleep_td(delta)  # else next line may not work
             assert await hm_key.exists(redis, key)
-            await sleep(0.05)
+            await sleep_td(2 * delta)
             assert not await redis.exists(hm_key.name)
 
     @given(mapping=dictionaries(int64s(), booleans()))
@@ -529,12 +533,13 @@ class TestRedisKey:
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_ttl(self, *, value: bool) -> None:
+        delta = 0.05 * SECOND
         async with yield_test_redis() as redis:
-            key = redis_key(unique_str(), bool, ttl=0.05)
+            key = redis_key(unique_str(), bool, ttl=2 * delta)
             _ = await key.set(redis, value)
-            await sleep(0.025)  # else next line may not work
+            await sleep_td(delta)  # else next line may not work
             assert await key.exists(redis)
-            await sleep(0.05)
+            await sleep_td(2 * delta)
             assert not await key.exists(redis)
 
 
@@ -550,10 +555,10 @@ class TestSubscribe:
             yield_redis() as redis,
             subscribe(redis, channel, queue, output="bytes"),
         ):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
                 await redis.publish(channel, message)
-            await sleep(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
         for result, message in zip(results, messages, strict=True):
@@ -571,10 +576,10 @@ class TestSubscribe:
             yield_redis() as redis,
             subscribe(redis, channel, queue, output=deserialize),
         ):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep_td(_PUB_SUB_SLEEP)
             for obj in objs:
                 await redis.publish(channel, serialize(obj))
-            await sleep(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
         assert queue.qsize() == len(objs)
         results = get_items_nowait(queue)
         for result, obj in zip(results, objs, strict=True):
@@ -602,10 +607,10 @@ class TestSubscribe:
             yield_redis() as redis,
             subscribe(redis, channel, queue, filter_=lambda text: len(text) >= 6),
         ):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
                 await redis.publish(channel, message)
-            await sleep(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
         assert queue.qsize() == len(long_messages)
         results = get_items_nowait(queue)
         for result in results:
@@ -623,10 +628,10 @@ class TestSubscribe:
             yield_redis() as redis,
             subscribe(redis, channel, queue, output="raw"),
         ):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
                 await redis.publish(channel, message)
-            await sleep(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
         for result, message in zip(results, messages, strict=True):
@@ -647,10 +652,10 @@ class TestSubscribe:
             yield_redis() as redis,
             subscribe(redis, channel, queue, output="raw"),
         ):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
                 await redis.publish(channel, message)
-            await sleep(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
         for result, message in zip(results, messages, strict=True):
@@ -670,12 +675,12 @@ class TestSubscribeService:
         channel = f"test_{unique_str()}"
         async with (
             yield_redis() as redis,
-            SubscribeService(timeout=1.0, redis=redis, channel=channel) as service,
+            SubscribeService(timeout=SECOND, redis=redis, channel=channel) as service,
         ):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep_td(_PUB_SUB_SLEEP)
             for obj in objects:
                 await redis.publish(channel, serialize(obj))
-            await sleep(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
         assert service.qsize() == len(objects)
         results = service.get_all_nowait()
         for result, obj in zip(results, objects, strict=True):
@@ -689,7 +694,7 @@ class TestSubscribeService:
         channel = f"test_{unique_str()}"
         async with yield_redis() as redis:
             looper = SubscribeService(
-                timeout=1.0, _debug=True, redis=redis, channel=channel
+                timeout=SECOND, _debug=True, redis=redis, channel=channel
             )
             async with looper, looper:
                 ...
