@@ -30,7 +30,7 @@ class TestCallMemoized:
         for _ in range(2):
             assert (await call_memoized(increment, delta)) == 1
             assert counter == 1
-        await sleep_td(2 * delta)
+        await sleep_td(delay=2 * delta)
         for _ in range(2):
             assert (await call_memoized(increment, delta)) == 2
             assert counter == 2
