@@ -14,7 +14,7 @@ from whenever import PlainDateTime
 from utilities.platform import IS_NOT_LINUX, IS_WINDOWS
 from utilities.re import ExtractGroupError, extract_group
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
-from utilities.whenever2 import MINUTE, get_now
+from utilities.whenever import MINUTE, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

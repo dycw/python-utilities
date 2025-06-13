@@ -45,12 +45,7 @@ from utilities.re import (
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
-from utilities.whenever2 import (
-    WheneverLogRecord,
-    format_compact,
-    get_now,
-    get_now_local,
-)
+from utilities.whenever import WheneverLogRecord, format_compact, get_now, get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping

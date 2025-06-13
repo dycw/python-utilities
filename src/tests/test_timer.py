@@ -9,7 +9,7 @@ from whenever import TimeDelta
 
 from utilities.asyncio import sleep_td
 from utilities.timer import Timer
-from utilities.whenever2 import SECOND, ZERO_TIME
+from utilities.whenever import SECOND, ZERO_TIME
 
 if TYPE_CHECKING:
     from collections.abc import Callable

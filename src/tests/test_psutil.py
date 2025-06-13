@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from pytest import approx, mark, param
 
 from utilities.psutil import MemoryMonitorService, MemoryUsage
-from utilities.whenever2 import SECOND
+from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from pathlib import Path

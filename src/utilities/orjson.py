@@ -47,7 +47,7 @@ from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
 from utilities.tzlocal import LOCAL_TIME_ZONE
 from utilities.version import Version, parse_version
-from utilities.whenever2 import from_timestamp
+from utilities.whenever import from_timestamp
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet

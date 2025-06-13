@@ -13,12 +13,7 @@ import utilities.math
 import utilities.operator
 from tests.test_objects.objects import CustomError, TruthEnum, objects
 from tests.test_typing_funcs.with_future import DataClassFutureCustomEquality
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    date_deltas_whenever,
-    pairs,
-    text_ascii,
-)
+from utilities.hypothesis import assume_does_not_raise, date_deltas, pairs, text_ascii
 from utilities.operator import IsEqualError
 from utilities.polars import are_frames_equal
 
@@ -52,7 +47,7 @@ class TestIsEqual:
         assert x != y
         assert utilities.operator.is_equal(x, y)
 
-    @given(deltas=pairs(date_deltas_whenever()))
+    @given(deltas=pairs(date_deltas()))
     def test_date_deltas(self, *, deltas: tuple[DateDelta, DateDelta]) -> None:
         x, y = deltas
         result = utilities.operator.is_equal(x, y)
@@ -71,8 +66,11 @@ class TestIsEqual:
     def test_exception_class(self) -> None:
         assert utilities.operator.is_equal(CustomError, CustomError)
 
-    @given(x=lists(integers()), y=lists(integers()))
-    def test_exception_instance(self, *, x: Sequence[int], y: Sequence[int]) -> None:
+    @given(ints=pairs(lists(integers())))
+    def test_exception_instance(
+        self, *, ints: tuple[Sequence[int], Sequence[int]]
+    ) -> None:
+        x, y = ints
         result = utilities.operator.is_equal(CustomError(*x), CustomError(*y))
         expected = x == y
         assert result is expected
@@ -84,15 +82,15 @@ class TestIsEqual:
         assert not utilities.operator.is_equal(x, y)
         assert utilities.operator.is_equal(x, y, abs_tol=1e-8)
 
-    @given(
-        x=dictionaries(text_ascii(), objects()), y=dictionaries(text_ascii(), objects())
-    )
-    def test_mappings(self, *, x: StrMapping, y: StrMapping) -> None:
+    @given(mappings=pairs(dictionaries(text_ascii(), objects())))
+    def test_mappings(self, *, mappings: tuple[StrMapping, StrMapping]) -> None:
+        x, y = mappings
         result = utilities.operator.is_equal(x, y)
         assert isinstance(result, bool)
 
-    @given(x=date_deltas_whenever(), y=date_deltas_whenever())
-    def test_sets_of_date_deltas(self, *, x: float, y: float) -> None:
+    @given(deltas=pairs(date_deltas()))
+    def test_sets_of_date_deltas(self, *, deltas: tuple[DateDelta, DateDelta]) -> None:
+        x, y = deltas
         assert utilities.operator.is_equal({x, y}, {y, x})
 
     def test_sets_of_enums(self) -> None:

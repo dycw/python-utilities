@@ -41,16 +41,16 @@ from tests.test_typing_funcs.with_future import (
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_path
 from utilities.hypothesis import (
-    dates_whenever,
+    dates,
     int64s,
     numbers,
     paths,
-    plain_datetimes_whenever,
+    plain_datetimes,
     text_ascii,
-    time_deltas_whenever,
-    times_whenever,
+    time_deltas,
+    times,
     versions,
-    zoned_datetimes_whenever,
+    zoned_datetimes,
 )
 from utilities.math import is_equal
 from utilities.parse import (
@@ -74,7 +74,7 @@ class TestSerializeAndParseObject:
         result = parse_object(bool, serialized)
         assert result is bool_
 
-    @given(date=dates_whenever())
+    @given(date=dates())
     def test_date(self, *, date: Date) -> None:
         serialized = serialize_object(date)
         result = parse_object(Date, serialized)
@@ -156,7 +156,7 @@ class TestSerializeAndParseObject:
         result = ensure_path(parse_object(Path, serialized))
         assert result == result.expanduser()
 
-    @given(datetime=plain_datetimes_whenever())
+    @given(datetime=plain_datetimes())
     def test_plain_datetime(self, *, datetime: PlainDateTime) -> None:
         serialized = serialize_object(datetime)
         result = parse_object(PlainDateTime, serialized)
@@ -200,13 +200,13 @@ class TestSerializeAndParseObject:
         result = parse_object(str, serialized)
         assert result == serialized
 
-    @given(time=times_whenever())
+    @given(time=times())
     def test_time(self, *, time: Time) -> None:
         serialized = serialize_object(time)
         result = parse_object(Time, serialized)
         assert result == time
 
-    @given(time_delta=time_deltas_whenever())
+    @given(time_delta=time_deltas())
     def test_time_delta(self, *, time_delta: TimeDelta) -> None:
         serialized = serialize_object(time_delta)
         result = parse_object(TimeDelta, serialized)
@@ -294,7 +294,7 @@ class TestSerializeAndParseObject:
         result = parse_object(Version, serialized)
         assert result == version
 
-    @given(datetime=zoned_datetimes_whenever())
+    @given(datetime=zoned_datetimes())
     def test_zoned_datetime(self, *, datetime: ZonedDateTime) -> None:
         serialized = serialize_object(datetime)
         result = parse_object(ZonedDateTime, serialized)

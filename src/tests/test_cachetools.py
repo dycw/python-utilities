@@ -7,8 +7,8 @@ from hypothesis.strategies import integers, none
 
 from utilities.asyncio import sleep_td
 from utilities.cachetools import TTLSet, cache
-from utilities.hypothesis import time_deltas_whenever
-from utilities.whenever2 import SECOND
+from utilities.hypothesis import time_deltas
+from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from whenever import TimeDelta
@@ -21,9 +21,7 @@ class TestCache:
     @example(max_size=1, max_duration=SECOND)
     @given(
         max_size=integers(1, 10) | none(),
-        max_duration=time_deltas_whenever(
-            min_value=0.1 * SECOND, max_value=10.0 * SECOND
-        )
+        max_duration=time_deltas(min_value=0.1 * SECOND, max_value=10.0 * SECOND)
         | none(),
     )
     def test_main(self, *, max_size: int, max_duration: TimeDelta) -> None:

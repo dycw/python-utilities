@@ -8,7 +8,7 @@ import whenever
 from click import Choice, Context, Parameter, ParamType
 from click.types import StringParamType
 
-from utilities.datetime import EnsureMonthError, ensure_month
+import utilities.whenever
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import EnsureStrError, ensure_str, get_class_name
 from utilities.iterables import is_iterable_not_str
@@ -25,12 +25,12 @@ from utilities.types import (
     TimeLike,
     ZonedDateTimeLike,
 )
+from utilities.whenever import _MonthParseCommonISOError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 
-    import utilities.datetime
-    from utilities.datetime import MonthLike
+    from utilities.whenever import MonthLike
 
 
 _T = TypeVar("_T")
@@ -185,11 +185,11 @@ class Month(ParamType):
     @override
     def convert(
         self, value: MonthLike, param: Parameter | None, ctx: Context | None
-    ) -> utilities.datetime.Month:
+    ) -> utilities.whenever.Month:
         """Convert a value into the `Month` type."""
         try:
-            return ensure_month(value)
-        except EnsureMonthError as error:
+            return utilities.whenever.Month.ensure(value)
+        except _MonthParseCommonISOError as error:
             self.fail(str(error), param, ctx)
 
 

@@ -52,13 +52,13 @@ from tests.test_typing_funcs.with_future import (
 from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
     assume_does_not_raise,
-    dates_whenever,
+    dates,
     int64s,
     paths,
     temp_paths,
     text_ascii,
     text_printable,
-    zoned_datetimes_whenever,
+    zoned_datetimes,
 )
 from utilities.iterables import always_iterable, one
 from utilities.logging import get_logging_level_number
@@ -82,7 +82,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.types import LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args
 from utilities.tzlocal import LOCAL_TIME_ZONE
-from utilities.whenever2 import MINUTE, SECOND, get_now
+from utilities.whenever import MINUTE, SECOND, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -198,12 +198,12 @@ class TestGetLogRecords:
         level=sampled_from(get_args(LogLevel)) | none(),
         min_level=sampled_from(get_args(LogLevel)) | none(),
         max_level=sampled_from(get_args(LogLevel)) | none(),
-        date=dates_whenever() | none(),
-        min_date=dates_whenever() | none(),
-        max_date=dates_whenever() | none(),
-        datetime=zoned_datetimes_whenever() | none(),
-        min_datetime=zoned_datetimes_whenever() | none(),
-        max_datetime=zoned_datetimes_whenever() | none(),
+        date=dates() | none(),
+        min_date=dates() | none(),
+        max_date=dates() | none(),
+        datetime=zoned_datetimes() | none(),
+        min_datetime=zoned_datetimes() | none(),
+        max_datetime=zoned_datetimes() | none(),
         func_name=booleans() | text_ascii() | none(),
         extra=booleans() | text_ascii() | sets(text_ascii()) | none(),
         log_file=booleans() | paths() | text_ascii() | none(),

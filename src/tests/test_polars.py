@@ -63,7 +63,7 @@ from utilities.hypothesis import (
     int64s,
     pairs,
     text_ascii,
-    zoned_datetimes_whenever,
+    zoned_datetimes,
 )
 from utilities.math import number_of_decimals
 from utilities.numpy import DEFAULT_RNG
@@ -168,7 +168,7 @@ from utilities.polars import (
 from utilities.random import get_state
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
-from utilities.whenever2 import get_now, get_today
+from utilities.whenever import get_now, get_today
 from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
@@ -304,7 +304,7 @@ class TestAppendDataClass:
 
     @given(
         data=fixed_dictionaries({
-            "datetime": zoned_datetimes_whenever().map(lambda d: d.py_datetime())
+            "datetime": zoned_datetimes().map(lambda d: d.py_datetime())
         })
     )
     def test_zoned_datetime(self, *, data: StrMapping) -> None:
@@ -986,7 +986,7 @@ class TestDataClassToDataFrame:
             lists(
                 builds(
                     Example,
-                    x=zoned_datetimes_whenever(time_zone=time_zone).map(
+                    x=zoned_datetimes(time_zone=time_zone).map(
                         lambda d: d.py_datetime()
                     ),
                 ),

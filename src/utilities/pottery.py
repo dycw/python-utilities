@@ -10,7 +10,7 @@ from redis.asyncio import Redis
 
 from utilities.asyncio import sleep_td, timeout_td
 from utilities.iterables import always_iterable
-from utilities.whenever2 import MILLISECOND, SECOND
+from utilities.whenever import MILLISECOND, SECOND
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterable

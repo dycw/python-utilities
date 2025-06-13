@@ -17,7 +17,7 @@ from utilities.hypothesis import (
     pairs,
     temp_paths,
     text_ascii,
-    zoned_datetimes_whenever,
+    zoned_datetimes,
 )
 from utilities.iterables import one
 from utilities.logging import (
@@ -38,7 +38,7 @@ from utilities.logging import (
 from utilities.text import unique_str
 from utilities.types import LogLevel
 from utilities.typing import get_args
-from utilities.whenever2 import format_compact, get_now
+from utilities.whenever import format_compact, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -315,7 +315,7 @@ class TestRotatingLogFile:
         assert result.start is None
         assert result.end is None
 
-    @given(index=integers(min_value=1), end=zoned_datetimes_whenever())
+    @given(index=integers(min_value=1), end=zoned_datetimes())
     def test_from_path_with_index_and_end(
         self, *, index: int, end: ZonedDateTime
     ) -> None:
@@ -328,10 +328,7 @@ class TestRotatingLogFile:
         assert result.start is None
         assert result.end == end.round()
 
-    @given(
-        index=integers(min_value=1),
-        datetimes=pairs(zoned_datetimes_whenever(), sorted=True),
-    )
+    @given(index=integers(min_value=1), datetimes=pairs(zoned_datetimes(), sorted=True))
     def test_from_path_with_index_start_and_end(
         self, *, index: int, datetimes: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
@@ -359,9 +356,7 @@ class TestRotatingLogFile:
         file = _RotatingLogFile(directory=root, stem="log", suffix=".txt", index=index)
         assert file.path == root.joinpath(f"log.{index}.txt")
 
-    @given(
-        root=temp_paths(), index=integers(min_value=1), end=zoned_datetimes_whenever()
-    )
+    @given(root=temp_paths(), index=integers(min_value=1), end=zoned_datetimes())
     def test_path_with_index_and_end(
         self, *, root: Path, index: int, end: ZonedDateTime
     ) -> None:
@@ -373,7 +368,7 @@ class TestRotatingLogFile:
     @given(
         root=temp_paths(),
         index=integers(min_value=1),
-        datetimes=pairs(zoned_datetimes_whenever(), sorted=True),
+        datetimes=pairs(zoned_datetimes(), sorted=True),
     )
     def test_path_with_index_start_and_end(
         self, *, root: Path, index: int, datetimes: tuple[ZonedDateTime, ZonedDateTime]

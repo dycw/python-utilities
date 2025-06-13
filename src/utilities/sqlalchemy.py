@@ -91,7 +91,7 @@ from utilities.iterables import (
 from utilities.reprlib import get_repr
 from utilities.text import snake_case
 from utilities.types import MaybeIterable, MaybeType, StrMapping, TupleOrStrMapping
-from utilities.whenever2 import SECOND
+from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from whenever import TimeDelta

@@ -1,26 +1,34 @@
 from __future__ import annotations
 
-import datetime as dt
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import cache
 from logging import LogRecord
 from statistics import fmean
-from typing import TYPE_CHECKING, Any, SupportsFloat, assert_never, overload, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Self,
+    SupportsFloat,
+    assert_never,
+    overload,
+    override,
+)
 
 from whenever import (
     Date,
     DateDelta,
     DateTimeDelta,
     PlainDateTime,
-    Time,
     TimeDelta,
     ZonedDateTime,
 )
 
 from utilities.math import sign
 from utilities.platform import get_strftime
+from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import MaybeStr
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
 
@@ -37,14 +45,14 @@ if TYPE_CHECKING:
 ## bounds
 
 
-DATE_MIN = Date.from_py_date(dt.date.min)
-DATE_MAX = Date.from_py_date(dt.date.max)
-TIME_MIN = Time.from_py_time(dt.time.min)
-TIME_MAX = Time.from_py_time(dt.time.max)
-
-
-PLAIN_DATE_TIME_MIN = PlainDateTime.from_py_datetime(dt.datetime.min)  # noqa: DTZ901
-PLAIN_DATE_TIME_MAX = PlainDateTime.from_py_datetime(dt.datetime.max)  # noqa: DTZ901
+PLAIN_DATE_TIME_MIN = PlainDateTime(1, 1, 1)
+PLAIN_DATE_TIME_MAX = PlainDateTime(
+    9999, 12, 31, hour=23, minute=59, second=59, nanosecond=999999999
+)
+DATE_MIN = PLAIN_DATE_TIME_MIN.date()
+DATE_MAX = PLAIN_DATE_TIME_MAX.date()
+TIME_MIN = PLAIN_DATE_TIME_MIN.time()
+TIME_MAX = PLAIN_DATE_TIME_MIN.time()
 ZONED_DATE_TIME_MIN = PLAIN_DATE_TIME_MIN.assume_tz(UTC.key)
 ZONED_DATE_TIME_MAX = PLAIN_DATE_TIME_MAX.assume_tz(UTC.key)
 
@@ -95,6 +103,10 @@ DATE_TIME_DELTA_PARSABLE_MAX = DateTimeDelta(
 )
 DATE_DELTA_PARSABLE_MIN = DateDelta(days=-999999)
 DATE_DELTA_PARSABLE_MAX = DateDelta(days=999999)
+
+
+DATE_TWO_DIGIT_YEAR_MIN = Date(1969, 1, 1)
+DATE_TWO_DIGIT_YEAR_MAX = Date(DATE_TWO_DIGIT_YEAR_MIN.year + 99, 12, 31)
 
 
 ## common constants
@@ -308,6 +320,124 @@ class _MinMaxDatePeriodError(MinMaxDateError):
         return (
             f"Min date must be at most max date; got {self.min_date} > {self.max_date}"
         )
+
+
+##
+
+
+@dataclass(order=True, unsafe_hash=True, slots=True)
+class Month:
+    """Represents a month in time."""
+
+    year: int
+    month: int
+
+    def __post_init__(self) -> None:
+        try:
+            _ = Date(self.year, self.month, 1)
+        except ValueError:
+            raise _MonthInvalidError(year=self.year, month=self.month) from None
+
+    @override
+    def __repr__(self) -> str:
+        return self.format_common_iso()
+
+    @override
+    def __str__(self) -> str:
+        return repr(self)
+
+    def __add__(self, other: Any, /) -> Self:
+        if not isinstance(other, int):  # pragma: no cover
+            return NotImplemented
+        years, month = divmod(self.month + other - 1, 12)
+        month += 1
+        year = self.year + years
+        return replace(self, year=year, month=month)
+
+    @overload
+    def __sub__(self, other: Self, /) -> int: ...
+    @overload
+    def __sub__(self, other: int, /) -> Self: ...
+    def __sub__(self, other: Self | int, /) -> Self | int:
+        if isinstance(other, int):  # pragma: no cover
+            return self + (-other)
+        if isinstance(other, type(self)):
+            self_as_int = 12 * self.year + self.month
+            other_as_int = 12 * other.year + other.month
+            return self_as_int - other_as_int
+        return NotImplemented  # pragma: no cover
+
+    @classmethod
+    def ensure(cls, obj: MonthLike, /) -> Month:
+        """Ensure the object is a month."""
+        match obj:
+            case Month() as month:
+                return month
+            case str() as text:
+                return cls.parse_common_iso(text)
+            case _ as never:
+                assert_never(never)
+
+    def format_common_iso(self) -> str:
+        return f"{self.year:04}-{self.month:02}"
+
+    @classmethod
+    def from_date(cls, date: Date, /) -> Self:
+        return cls(year=date.year, month=date.month)
+
+    @classmethod
+    def parse_common_iso(cls, text: str, /) -> Self:
+        try:
+            year, month = extract_groups(r"^(\d{2,4})[\-\. ]?(\d{2})$", text)
+        except ExtractGroupsError:
+            raise _MonthParseCommonISOError(text=text) from None
+        return cls(year=cls._parse_year(year), month=int(month))
+
+    def to_date(self, /, *, day: int = 1) -> Date:
+        return Date(self.year, self.month, day)
+
+    @classmethod
+    def _parse_year(cls, year: str, /) -> int:
+        match len(year):
+            case 4:
+                return int(year)
+            case 2:
+                min_year = DATE_TWO_DIGIT_YEAR_MIN.year
+                max_year = DATE_TWO_DIGIT_YEAR_MAX.year
+                years = range(min_year, max_year + 1)
+                (result,) = (y for y in years if y % 100 == int(year))
+                return result
+            case _:
+                raise _MonthParseCommonISOError(text=year) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class MonthError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _MonthInvalidError(MonthError):
+    year: int
+    month: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid year and month: {self.year}, {self.month}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _MonthParseCommonISOError(MonthError):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse month; got {self.text!r}"
+
+
+type DateOrMonth = Date | Month
+type MonthLike = MaybeStr[Month]
+MONTH_MIN = Month.from_date(DATE_MIN)
+MONTH_MAX = Month.from_date(DATE_MAX)
 
 
 ##
@@ -579,12 +709,16 @@ __all__ = [
     "DATE_TIME_DELTA_MIN",
     "DATE_TIME_DELTA_PARSABLE_MAX",
     "DATE_TIME_DELTA_PARSABLE_MIN",
+    "DATE_TWO_DIGIT_YEAR_MAX",
+    "DATE_TWO_DIGIT_YEAR_MIN",
     "DAY",
     "HOUR",
     "MICROSECOND",
     "MILLISECOND",
     "MINUTE",
     "MONTH",
+    "MONTH_MAX",
+    "MONTH_MIN",
     "NOW_LOCAL",
     "PLAIN_DATE_TIME_MAX",
     "PLAIN_DATE_TIME_MIN",
@@ -601,8 +735,12 @@ __all__ = [
     "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
+    "DateOrMonth",
     "MeanDateTimeError",
     "MinMaxDateError",
+    "Month",
+    "MonthError",
+    "MonthLike",
     "ToDaysError",
     "ToNanosError",
     "WheneverLogRecord",

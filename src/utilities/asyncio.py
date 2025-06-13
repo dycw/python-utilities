@@ -56,7 +56,7 @@ from utilities.types import (
     THashable,
     TSupportsRichComparison,
 )
-from utilities.whenever2 import SECOND, get_now
+from utilities.whenever import SECOND, get_now
 
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike

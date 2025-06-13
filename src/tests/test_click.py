@@ -21,6 +21,8 @@ from hypothesis.strategies import (
 )
 from pytest import mark, param
 
+import utilities
+import utilities.whenever
 from utilities.click import (
     CONTEXT_SETTINGS_HELP_OPTION_NAMES,
     Date,
@@ -42,18 +44,17 @@ from utilities.click import (
     TimeDelta,
     ZonedDateTime,
 )
-from utilities.datetime import serialize_month
 from utilities.hypothesis import (
-    date_deltas_whenever,
-    date_time_deltas_whenever,
-    dates_whenever,
+    date_deltas,
+    date_time_deltas,
+    dates,
     months,
     pairs,
-    plain_datetimes_whenever,
+    plain_datetimes,
     text_ascii,
-    time_deltas_whenever,
-    times_whenever,
-    zoned_datetimes_whenever,
+    time_deltas,
+    times,
+    zoned_datetimes,
 )
 from utilities.text import join_strs, strip_and_dedent
 
@@ -183,28 +184,26 @@ class TestParameters:
     @mark.parametrize(
         ("param", "exp_repr", "strategy", "serialize", "failable"),
         [
-            param(
-                Date(), "DATE", dates_whenever(), whenever.Date.format_common_iso, True
-            ),
-            param(
-                Enum(_ExampleEnum),
-                "ENUM[_ExampleEnum]",
-                sampled_from(_ExampleEnum),
-                attrgetter("name"),
-                True,
-            ),
+            param(Date(), "DATE", dates(), whenever.Date.format_common_iso, True),
             param(
                 DateDelta(),
                 "DATE DELTA",
-                date_deltas_whenever(parsable=True),
+                date_deltas(parsable=True),
                 whenever.DateDelta.format_common_iso,
                 True,
             ),
             param(
                 DateTimeDelta(),
                 "DATE-TIME DELTA",
-                date_time_deltas_whenever(parsable=True),
+                date_time_deltas(parsable=True),
                 whenever.DateTimeDelta.format_common_iso,
+                True,
+            ),
+            param(
+                Enum(_ExampleEnum),
+                "ENUM[_ExampleEnum]",
+                sampled_from(_ExampleEnum),
+                attrgetter("name"),
                 True,
             ),
             param(
@@ -235,28 +234,32 @@ class TestParameters:
                 _lift_serializer(attrgetter("name")),
                 True,
             ),
-            param(Month(), "MONTH", months(), serialize_month, True),
             param(
-                PlainDateTime(),
-                "PLAIN DATE-TIME",
-                plain_datetimes_whenever(),
-                whenever.PlainDateTime.format_common_iso,
+                Month(),
+                "MONTH",
+                months(),
+                utilities.whenever.Month.format_common_iso,
                 True,
             ),
             param(
-                Time(), "TIME", times_whenever(), whenever.Time.format_common_iso, True
+                PlainDateTime(),
+                "PLAIN DATE-TIME",
+                plain_datetimes(),
+                whenever.PlainDateTime.format_common_iso,
+                True,
             ),
+            param(Time(), "TIME", times(), whenever.Time.format_common_iso, True),
             param(
                 TimeDelta(),
                 "TIME-DELTA",
-                time_deltas_whenever(),
+                time_deltas(),
                 whenever.TimeDelta.format_common_iso,
                 True,
             ),
             param(
                 ZonedDateTime(),
                 "ZONED DATE-TIME",
-                zoned_datetimes_whenever(),
+                zoned_datetimes(),
                 whenever.ZonedDateTime.format_common_iso,
                 True,
             ),

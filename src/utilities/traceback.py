@@ -27,7 +27,7 @@ from utilities.reprlib import (
     yield_mapping_repr,
 )
 from utilities.version import get_version
-from utilities.whenever2 import format_compact, get_now, to_zoned_date_time
+from utilities.whenever import format_compact, get_now, to_zoned_date_time
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence

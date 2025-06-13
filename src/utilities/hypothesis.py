@@ -31,7 +31,6 @@ from hypothesis.strategies import (
     booleans,
     characters,
     composite,
-    dates,
     datetimes,
     floats,
     integers,
@@ -57,14 +56,6 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.datetime import (
-    MAX_DATE_TWO_DIGIT_YEAR,
-    MAX_MONTH,
-    MIN_DATE_TWO_DIGIT_YEAR,
-    MIN_MONTH,
-    Month,
-    date_to_month,
-)
 from utilities.functions import ensure_int, ensure_str
 from utilities.math import (
     MAX_FLOAT32,
@@ -87,7 +78,7 @@ from utilities.platform import IS_WINDOWS
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.version import Version
-from utilities.whenever2 import (
+from utilities.whenever import (
     DATE_DELTA_MAX,
     DATE_DELTA_MIN,
     DATE_DELTA_PARSABLE_MAX,
@@ -98,13 +89,18 @@ from utilities.whenever2 import (
     DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
     DATE_TIME_DELTA_PARSABLE_MIN,
+    DATE_TWO_DIGIT_YEAR_MAX,
+    DATE_TWO_DIGIT_YEAR_MIN,
     DAY,
+    MONTH_MAX,
+    MONTH_MIN,
     PLAIN_DATE_TIME_MAX,
     PLAIN_DATE_TIME_MIN,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
     TIME_MAX,
     TIME_MIN,
+    Month,
     to_date_time_delta,
     to_days,
     to_nanos,
@@ -180,7 +176,7 @@ def bool_arrays(
 
 
 @composite
-def date_deltas_whenever(
+def date_deltas(
     draw: DrawFn,
     /,
     *,
@@ -217,7 +213,7 @@ def date_deltas_whenever(
 
 
 @composite
-def date_time_deltas_whenever(
+def date_time_deltas(
     draw: DrawFn,
     /,
     *,
@@ -253,30 +249,13 @@ def date_time_deltas_whenever(
 
 
 @composite
-def dates_two_digit_year(
-    draw: DrawFn,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[dt.date] = MIN_DATE_TWO_DIGIT_YEAR,
-    max_value: MaybeSearchStrategy[dt.date] = MAX_DATE_TWO_DIGIT_YEAR,
-) -> dt.date:
-    """Strategy for generating dates with valid 2 digit years."""
-    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
-    min_value_ = max(min_value_, MIN_DATE_TWO_DIGIT_YEAR)
-    max_value_ = min(max_value_, MAX_DATE_TWO_DIGIT_YEAR)
-    return draw(dates(min_value=min_value_, max_value=max_value_))
-
-
-##
-
-
-@composite
-def dates_whenever(
+def dates(
     draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[Date | None] = None,
     max_value: MaybeSearchStrategy[Date | None] = None,
+    two_digit: MaybeSearchStrategy[bool] = False,
 ) -> Date:
     """Strategy for generating dates."""
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
@@ -294,9 +273,11 @@ def dates_whenever(
             ...
         case _ as never:
             assert_never(never)
-    py_date = draw(
-        dates(min_value=min_value_.py_date(), max_value=max_value_.py_date())
-    )
+    if draw2(draw, two_digit):
+        min_value_ = max(min_value_, DATE_TWO_DIGIT_YEAR_MIN)
+        max_value_ = min(max_value_, DATE_TWO_DIGIT_YEAR_MAX)
+    min_date, max_date = [d.py_date() for d in [min_value_, max_value_]]
+    py_date = draw(hypothesis.strategies.dates(min_value=min_date, max_value=max_date))
     return Date.from_py_date(py_date)
 
 
@@ -639,13 +620,29 @@ def months(
     draw: DrawFn,
     /,
     *,
-    min_value: MaybeSearchStrategy[Month] = MIN_MONTH,
-    max_value: MaybeSearchStrategy[Month] = MAX_MONTH,
+    min_value: MaybeSearchStrategy[Month | None] = None,
+    max_value: MaybeSearchStrategy[Month | None] = None,
+    two_digit: MaybeSearchStrategy[bool] = False,
 ) -> Month:
-    """Strategy for generating datetimes with the UTC timezone."""
-    min_value_, max_value_ = [draw2(draw, v).to_date() for v in [min_value, max_value]]
-    date = draw(dates(min_value=min_value_, max_value=max_value_))
-    return date_to_month(date)
+    """Strategy for generating months."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    match min_value_:
+        case None:
+            min_value_ = MONTH_MIN
+        case Month():
+            ...
+        case _ as never:
+            assert_never(never)
+    match max_value_:
+        case None:
+            max_value_ = MONTH_MAX
+        case Month():
+            ...
+        case _ as never:
+            assert_never(never)
+    min_date, max_date = [m.to_date() for m in [min_value_, max_value_]]
+    date = draw(dates(min_value=min_date, max_value=max_date, two_digit=two_digit))
+    return Month.from_date(date)
 
 
 ##
@@ -735,7 +732,7 @@ def paths() -> SearchStrategy[Path]:
 
 
 @composite
-def plain_datetimes_whenever(
+def plain_datetimes(
     draw: DrawFn,
     /,
     *,
@@ -1076,7 +1073,7 @@ def text_printable(
 
 
 @composite
-def time_deltas_whenever(
+def time_deltas(
     draw: DrawFn,
     /,
     *,
@@ -1111,7 +1108,7 @@ def time_deltas_whenever(
 
 
 @composite
-def times_whenever(
+def times(
     draw: DrawFn,
     /,
     *,
@@ -1212,7 +1209,7 @@ def versions(draw: DrawFn, /, *, suffix: MaybeSearchStrategy[bool] = False) -> V
 
 
 @composite
-def zoned_datetimes_whenever(
+def zoned_datetimes(
     draw: DrawFn,
     /,
     *,
@@ -1239,7 +1236,7 @@ def zoned_datetimes_whenever(
                 max_value_ = max_value_.to_tz(time_zone_.key).to_plain()
         case _ as never:
             assert_never(never)
-    plain = draw(plain_datetimes_whenever(min_value=min_value_, max_value=max_value_))
+    plain = draw(plain_datetimes(min_value=min_value_, max_value=max_value_))
     with (
         assume_does_not_raise(RepeatedTime),
         assume_does_not_raise(SkippedTime),
@@ -1259,10 +1256,9 @@ __all__ = [
     "Shape",
     "assume_does_not_raise",
     "bool_arrays",
-    "date_deltas_whenever",
-    "date_time_deltas_whenever",
-    "dates_two_digit_year",
-    "dates_whenever",
+    "date_deltas",
+    "date_time_deltas",
+    "dates",
     "draw2",
     "float32s",
     "float64s",
@@ -1279,7 +1275,7 @@ __all__ = [
     "numbers",
     "pairs",
     "paths",
-    "plain_datetimes_whenever",
+    "plain_datetimes",
     "random_states",
     "sentinels",
     "sets_fixed_length",
@@ -1294,11 +1290,11 @@ __all__ = [
     "text_clean",
     "text_digits",
     "text_printable",
-    "time_deltas_whenever",
-    "times_whenever",
+    "time_deltas",
+    "times",
     "triples",
     "uint32s",
     "uint64s",
     "versions",
-    "zoned_datetimes_whenever",
+    "zoned_datetimes",
 ]

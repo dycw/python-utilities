@@ -27,10 +27,10 @@ from utilities.altair import (
     vconcat_charts,
 )
 from utilities.functions import ensure_class
-from utilities.hypothesis import dates_whenever, text_ascii, zoned_datetimes_whenever
+from utilities.hypothesis import dates, text_ascii, zoned_datetimes
 from utilities.polars import DatetimeUTC, zoned_datetime
 from utilities.tzdata import HongKong, Tokyo
-from utilities.whenever2 import get_now
+from utilities.whenever import get_now
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -105,7 +105,7 @@ class TestPlotDataFrames:
         expected = dt.datetime(2000, 1, 1, 12, tzinfo=time_zone).replace(tzinfo=None)
         assert datetime == expected
 
-    @given(data=lists(tuples(dates_whenever(), floats(-10, 10))))
+    @given(data=lists(tuples(dates(), floats(-10, 10))))
     def test_tooltip_format_date(
         self, *, data: list[tuple[whenever.Date, float]]
     ) -> None:
@@ -116,7 +116,7 @@ class TestPlotDataFrames:
         )
         _ = plot_dataframes(df, x="index", y="value")
 
-    @given(data=lists(tuples(zoned_datetimes_whenever(), floats(-10, 10))))
+    @given(data=lists(tuples(zoned_datetimes(), floats(-10, 10))))
     def test_tooltip_format_date_time(
         self, *, data: list[tuple[ZonedDateTime, float]]
     ) -> None:

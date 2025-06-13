@@ -4,7 +4,7 @@ from ipaddress import IPv4Address
 
 from utilities.http import get_public_ip, yield_connection
 from utilities.pytest import throttle
-from utilities.whenever2 import MINUTE
+from utilities.whenever import MINUTE
 
 
 class TestGetPublicIP:

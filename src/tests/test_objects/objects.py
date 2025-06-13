@@ -35,18 +35,18 @@ from tests.test_typing_funcs.with_future import (
 )
 from utilities.hypothesis import (
     assume_does_not_raise,
-    date_deltas_whenever,
-    date_time_deltas_whenever,
-    dates_whenever,
+    date_deltas,
+    date_time_deltas,
+    dates,
     int64s,
     paths,
-    plain_datetimes_whenever,
+    plain_datetimes,
     text_ascii,
     text_printable,
-    time_deltas_whenever,
-    times_whenever,
+    time_deltas,
+    times,
     versions,
-    zoned_datetimes_whenever,
+    zoned_datetimes,
 )
 from utilities.math import MAX_INT64, MIN_INT64
 
@@ -78,18 +78,18 @@ def objects(
 ) -> SearchStrategy[Any]:
     base = (
         booleans()
-        | dates_whenever()
+        | dates()
         | floats(allow_nan=floats_allow_nan)
         | (int64s() if parsable else integers())
         | none()
         | paths()
-        | plain_datetimes_whenever()
+        | plain_datetimes()
         | text_printable().filter(lambda x: not x.startswith("["))
-        | time_deltas_whenever()
-        | times_whenever()
+        | time_deltas()
+        | times()
         | uuids()
         | versions()
-        | zoned_datetimes_whenever()
+        | zoned_datetimes()
     )
     if dataclass_custom_equality:
         base |= builds(DataClassFutureCustomEquality)
@@ -134,9 +134,7 @@ def objects(
     if extra_base is not None:
         base |= extra_base
     if not sortable:
-        base |= date_deltas_whenever(parsable=parsable) | date_time_deltas_whenever(
-            parsable=parsable
-        )
+        base |= date_deltas(parsable=parsable) | date_time_deltas(parsable=parsable)
     extend = partial(
         _extend,
         sub_frozenset=sub_frozenset,
