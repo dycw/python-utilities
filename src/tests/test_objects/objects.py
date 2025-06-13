@@ -40,7 +40,7 @@ from utilities.hypothesis import (
     dates_whenever,
     int64s,
     paths,
-    plain_datetimes_whenever,
+    plain_datetimes,
     text_ascii,
     text_printable,
     time_deltas_whenever,
@@ -83,7 +83,7 @@ def objects(
         | (int64s() if parsable else integers())
         | none()
         | paths()
-        | plain_datetimes_whenever()
+        | plain_datetimes()
         | text_printable().filter(lambda x: not x.startswith("["))
         | time_deltas_whenever()
         | times_whenever()

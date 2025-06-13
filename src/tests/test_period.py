@@ -12,7 +12,7 @@ from utilities.hypothesis import (
     date_deltas,
     dates_whenever,
     pairs,
-    plain_datetimes_whenever,
+    plain_datetimes,
     time_deltas_whenever,
     zoned_datetimes_whenever,
 )
@@ -244,7 +244,7 @@ class TestZonedDateTimePeriod:
         with raises(_PeriodInvalidError, match="Invalid period; got .* > .*"):
             _ = ZonedDateTimePeriod(end, start)
 
-    @given(datetimes=pairs(plain_datetimes_whenever(), sorted=True))
+    @given(datetimes=pairs(plain_datetimes(), sorted=True))
     def test_error_period_time_zone(
         self, *, datetimes: tuple[PlainDateTime, PlainDateTime]
     ) -> None:

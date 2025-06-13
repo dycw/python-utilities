@@ -49,7 +49,7 @@ from utilities.hypothesis import (
     dates_whenever,
     months,
     pairs,
-    plain_datetimes_whenever,
+    plain_datetimes,
     text_ascii,
     time_deltas_whenever,
     times_whenever,
@@ -239,7 +239,7 @@ class TestParameters:
             param(
                 PlainDateTime(),
                 "PLAIN DATE-TIME",
-                plain_datetimes_whenever(),
+                plain_datetimes(),
                 whenever.PlainDateTime.format_common_iso,
                 True,
             ),

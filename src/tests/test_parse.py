@@ -45,7 +45,7 @@ from utilities.hypothesis import (
     int64s,
     numbers,
     paths,
-    plain_datetimes_whenever,
+    plain_datetimes,
     text_ascii,
     time_deltas_whenever,
     times_whenever,
@@ -156,7 +156,7 @@ class TestSerializeAndParseObject:
         result = ensure_path(parse_object(Path, serialized))
         assert result == result.expanduser()
 
-    @given(datetime=plain_datetimes_whenever())
+    @given(datetime=plain_datetimes())
     def test_plain_datetime(self, *, datetime: PlainDateTime) -> None:
         serialized = serialize_object(datetime)
         result = parse_object(PlainDateTime, serialized)

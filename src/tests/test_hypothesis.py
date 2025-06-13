@@ -68,7 +68,7 @@ from utilities.hypothesis import (
     numbers,
     pairs,
     paths,
-    plain_datetimes_whenever,
+    plain_datetimes,
     random_states,
     sentinels,
     sets_fixed_length,
@@ -652,11 +652,11 @@ class TestPaths:
 class TestPlainDateTimesWhenever:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_value = data.draw(plain_datetimes_whenever() | none())
-        max_value = data.draw(plain_datetimes_whenever() | none())
+        min_value = data.draw(plain_datetimes() | none())
+        max_value = data.draw(plain_datetimes() | none())
         with assume_does_not_raise(InvalidArgument):
             datetime = data.draw(
-                plain_datetimes_whenever(min_value=min_value, max_value=max_value)
+                plain_datetimes(min_value=min_value, max_value=max_value)
             )
         assert isinstance(datetime, PlainDateTime)
         assert PlainDateTime.parse_common_iso(datetime.format_common_iso()) == datetime

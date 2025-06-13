@@ -22,7 +22,7 @@ from utilities.hypothesis import (
     date_deltas,
     date_time_deltas,
     dates_whenever,
-    plain_datetimes_whenever,
+    plain_datetimes,
     temp_paths,
     text_ascii,
     time_deltas_whenever,
@@ -49,11 +49,7 @@ class TestExtendedTSConverter:
                 date_time_deltas(parsable=True),
                 DateTimeDelta.format_common_iso,
             ),
-            param(
-                PlainDateTime,
-                plain_datetimes_whenever(),
-                PlainDateTime.format_common_iso,
-            ),
+            param(PlainDateTime, plain_datetimes(), PlainDateTime.format_common_iso),
             param(Time, times_whenever(), Time.format_common_iso),
             param(TimeDelta, time_deltas_whenever(), TimeDelta.format_common_iso),
             param(

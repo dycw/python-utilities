@@ -735,7 +735,7 @@ def paths() -> SearchStrategy[Path]:
 
 
 @composite
-def plain_datetimes_whenever(
+def plain_datetimes(
     draw: DrawFn,
     /,
     *,
@@ -1239,7 +1239,7 @@ def zoned_datetimes_whenever(
                 max_value_ = max_value_.to_tz(time_zone_.key).to_plain()
         case _ as never:
             assert_never(never)
-    plain = draw(plain_datetimes_whenever(min_value=min_value_, max_value=max_value_))
+    plain = draw(plain_datetimes(min_value=min_value_, max_value=max_value_))
     with (
         assume_does_not_raise(RepeatedTime),
         assume_does_not_raise(SkippedTime),
@@ -1279,7 +1279,7 @@ __all__ = [
     "numbers",
     "pairs",
     "paths",
-    "plain_datetimes_whenever",
+    "plain_datetimes",
     "random_states",
     "sentinels",
     "sets_fixed_length",
