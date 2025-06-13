@@ -4,7 +4,7 @@ from inspect import signature
 from pathlib import Path
 from random import Random
 from time import sleep
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from pytest import mark, param, raises
 
@@ -239,6 +239,8 @@ class TestRandomState:
 
 
 class TestThrottle:
+    delta: ClassVar[float] = 0.5
+
     @mark.flaky
     @mark.parametrize("on_try", [param(True), param(False)])
     def test_basic(self, *, testdir: Testdir, tmp_path: Path, on_try: bool) -> None:
@@ -248,14 +250,14 @@ class TestThrottle:
 
             from utilities.pytest import throttle
 
-            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds=0.1), on_try={on_try})
+            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}), on_try={on_try})
             def test_main() -> None:
                 assert True
             """
         )
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(0.2)
+        sleep(self.delta)
         testdir.runpytest().assert_outcomes(passed=1)
 
     @mark.flaky
@@ -274,7 +276,7 @@ class TestThrottle:
                 from utilities.pytest import throttle
 
                 @mark.asyncio
-                @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds=0.1), on_try={on_try})
+                @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}), on_try={on_try})
                 async def test_main() -> None:
                     assert True
                 """
@@ -288,7 +290,7 @@ class TestThrottle:
 
                 from utilities.pytest import throttle
 
-                @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds=0.1), on_try={on_try})
+                @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}), on_try={on_try})
                 @mark.asyncio
                 async def test_main() -> None:
                     assert True
@@ -296,7 +298,7 @@ class TestThrottle:
             )
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(0.2)
+        sleep(self.delta)
         testdir.runpytest().assert_outcomes(passed=1)
 
     @mark.flaky
@@ -319,16 +321,16 @@ class TestThrottle:
 
             from utilities.pytest import throttle
 
-            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds=0.1))
+            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}))
             def test_main(*, is_pass: bool) -> None:
                 assert is_pass
             """
         )
-        for delay in [0.2, 0.0]:
+        for delta_use in [self.delta, 0.0]:
             testdir.runpytest().assert_outcomes(failed=1)
             testdir.runpytest("--pass").assert_outcomes(passed=1)
             testdir.runpytest("--pass").assert_outcomes(skipped=1)
-            sleep(delay)
+            sleep(delta_use)
 
     @mark.flaky
     def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
@@ -351,18 +353,18 @@ class TestThrottle:
 
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, delta=TimeDelta(seconds=0.1), on_try=True)
+            @throttle(root={root_str!r}, delta=TimeDelta(seconds={self.delta}), on_try=True)
             def test_main(*, is_pass: bool) -> None:
                 assert is_pass
             """
         )
-        for delay in [0.2, 0.0]:
+        for delta_use in [self.delta, 0.0]:
             testdir.runpytest().assert_outcomes(failed=1)
             testdir.runpytest().assert_outcomes(skipped=1)
-            sleep(0.2)
+            sleep(self.delta)
             testdir.runpytest("--pass").assert_outcomes(passed=1)
             testdir.runpytest().assert_outcomes(skipped=1)
-            sleep(delay)
+            sleep(delta_use)
 
     @mark.flaky
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
@@ -375,14 +377,14 @@ class TestThrottle:
             from utilities.pytest import throttle
 
             @mark.parametrize("arg", [10 * printable])
-            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds=0.1))
+            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}))
             def test_main(*, arg: str) -> None:
                 assert True
             """
         )
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(0.2)
+        sleep(self.delta)
         testdir.runpytest().assert_outcomes(passed=1)
 
     def test_signature(self) -> None:
@@ -405,7 +407,7 @@ class TestThrottle:
 
             from utilities.pytest import throttle
 
-            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds=0.1))
+            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}))
             def test_main() -> None:
                 assert True
             """
