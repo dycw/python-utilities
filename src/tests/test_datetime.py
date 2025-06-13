@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import datetime as dt
-from re import search
 from typing import TYPE_CHECKING
 
-from hypothesis import assume, given
+from hypothesis import given
 from hypothesis.strategies import DataObject, data, dates, integers, sampled_from
 from pytest import mark, param, raises
 
@@ -17,12 +16,11 @@ from utilities.datetime import (
     _ParseTwoDigitYearInvalidStringError,
     date_to_month,
     ensure_month,
-    maybe_sub_pct_y,
     parse_month,
     parse_two_digit_year,
     serialize_month,
 )
-from utilities.hypothesis import months, text_clean
+from utilities.hypothesis import months
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -34,14 +32,6 @@ class TestDateToMonth:
     def test_main(self, *, date: dt.date) -> None:
         result = date_to_month(date).to_date(day=date.day)
         assert result == date
-
-
-class TestMaybeSubPctY:
-    @given(text=text_clean())
-    def test_main(self, *, text: str) -> None:
-        result = maybe_sub_pct_y(text)
-        _ = assume(not search("%Y", result))
-        assert not search("%Y", result)
 
 
 class TestMonth:
