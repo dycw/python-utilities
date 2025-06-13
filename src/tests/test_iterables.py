@@ -16,7 +16,6 @@ from hypothesis.strategies import (
     binary,
     booleans,
     data,
-    datetimes,
     dictionaries,
     floats,
     frozensets,
@@ -32,14 +31,9 @@ from hypothesis.strategies import (
 )
 from pytest import mark, param, raises
 
-from tests.test_operator import make_objects
+from tests.test_objects.objects import objects
 from utilities.functions import is_sequence_of
-from utilities.hypothesis import (
-    sentinels,
-    sets_fixed_length,
-    text_ascii,
-    zoned_datetimes,
-)
+from utilities.hypothesis import pairs, sentinels, sets_fixed_length, text_ascii
 from utilities.iterables import (
     CheckBijectionError,
     CheckDuplicatesError,
@@ -72,7 +66,6 @@ from utilities.iterables import (
     _RangePartitionsNumError,
     _RangePartitionsStopError,
     _RangePartitionsTotalError,
-    _sort_iterable_cmp_datetimes,
     _sort_iterable_cmp_floats,
     always_iterable,
     always_iterable_hashable,
@@ -130,7 +123,6 @@ from utilities.iterables import (
 from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
-    import datetime as dt
     from collections.abc import Iterable, Iterator, Mapping, Sequence
 
     from utilities.types import MaybeIterable, StrMapping
@@ -1213,10 +1205,9 @@ class TestResolveIncludeAndExclude:
 
 
 class TestSortIterable:
-    @given(
-        x=make_objects(floats_allow_nan=False), y=make_objects(floats_allow_nan=False)
-    )
-    def test_main(self, *, x: Any, y: Any) -> None:
+    @given(objs=pairs(objects(floats_allow_nan=False, sortable=True)))
+    def test_main(self, *, objs: tuple[Any, Any]) -> None:
+        x, y = objs
         result1 = sort_iterable([x, y])
         result2 = sort_iterable([y, x])
         assert result1 == result2
@@ -1261,14 +1252,6 @@ class TestSortIterable:
     def test_error(self) -> None:
         with raises(SortIterableError, match="Unable to sort .* and .*"):
             _ = sort_iterable([sentinel, sentinel])
-
-
-class TestSortIterablesCmpDateTimes:
-    @given(x=datetimes() | zoned_datetimes(), y=datetimes() | zoned_datetimes())
-    def test_main(self, *, x: dt.datetime, y: dt.datetime) -> None:
-        result1 = _sort_iterable_cmp_datetimes(x, y)
-        result2 = _sort_iterable_cmp_datetimes(y, x)
-        assert result1 == -result2
 
 
 class TestSortIterablesCmpFloats:

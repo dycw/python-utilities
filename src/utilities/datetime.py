@@ -11,7 +11,6 @@ from typing import (
     Literal,
     Self,
     SupportsFloat,
-    TypeGuard,
     assert_never,
     overload,
     override,
@@ -23,7 +22,7 @@ from utilities.platform import SYSTEM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import MaybeCallablePyDate, MaybeCallablePyDateTime, MaybeStr
 from utilities.typing import is_instance_gen
-from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
+from utilities.zoneinfo import UTC, ensure_time_zone
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -114,50 +113,6 @@ class AddWeekdaysError(Exception): ...
 ##
 
 
-def are_equal_date_durations(x: Duration, y: Duration, /) -> bool:
-    """Check if x == y for durations."""
-    x_timedelta = date_duration_to_timedelta(x)
-    y_timedelta = date_duration_to_timedelta(y)
-    return x_timedelta == y_timedelta
-
-
-##
-
-
-def are_equal_dates_or_datetimes(
-    x: DateOrDateTime, y: DateOrDateTime, /, *, strict: bool = False
-) -> bool:
-    """Check if x == y for dates/datetimes."""
-    if is_instance_gen(x, dt.date) and is_instance_gen(y, dt.date):
-        return x == y
-    if is_instance_gen(x, dt.datetime) and is_instance_gen(y, dt.datetime):
-        return are_equal_datetimes(x, y, strict=strict)
-    raise AreEqualDatesOrDateTimesError(x=x, y=y)
-
-
-@dataclass(kw_only=True, slots=True)
-class AreEqualDatesOrDateTimesError(Exception):
-    x: DateOrDateTime
-    y: DateOrDateTime
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot compare date and datetime ({self.x}, {self.y})"
-
-
-##
-
-
-def are_equal_datetime_durations(x: Duration, y: Duration, /) -> bool:
-    """Check if x == y for durations."""
-    x_timedelta = datetime_duration_to_timedelta(x)
-    y_timedelta = datetime_duration_to_timedelta(y)
-    return x_timedelta == y_timedelta
-
-
-##
-
-
 def are_equal_datetimes(
     x: dt.datetime, y: dt.datetime, /, *, strict: bool = False
 ) -> bool:
@@ -186,16 +141,6 @@ class AreEqualDateTimesError(Exception):
 ##
 
 
-def are_equal_months(x: DateOrMonth, y: DateOrMonth, /) -> bool:
-    """Check if x == y as months."""
-    x_month = Month.from_date(x) if isinstance(x, dt.date) else x
-    y_month = Month.from_date(y) if isinstance(y, dt.date) else y
-    return x_month == y_month
-
-
-##
-
-
 def check_date_not_datetime(date: dt.date, /) -> None:
     """Check if a date is not a datetime."""
     if not is_instance_gen(date, dt.date):
@@ -209,19 +154,6 @@ class CheckDateNotDateTimeError(Exception):
     @override
     def __str__(self) -> str:
         return f"Date must not be a datetime; got {self.date}"
-
-
-##
-
-
-def date_to_datetime(
-    date: dt.date, /, *, time: dt.time | None = None, time_zone: TimeZoneLike = UTC
-) -> dt.datetime:
-    """Expand a date into a datetime."""
-    check_date_not_datetime(date)
-    time_use = dt.time(0) if time is None else time
-    time_zone_use = ensure_time_zone(time_zone)
-    return dt.datetime.combine(date, time_use, tzinfo=time_zone_use)
 
 
 ##
@@ -337,32 +269,6 @@ def datetime_duration_to_microseconds(duration: Duration, /) -> int:
     )
 
 
-@overload
-def datetime_duration_to_milliseconds(
-    duration: Duration, /, *, strict: Literal[True]
-) -> int: ...
-@overload
-def datetime_duration_to_milliseconds(
-    duration: Duration, /, *, strict: bool = False
-) -> float: ...
-def datetime_duration_to_milliseconds(
-    duration: Duration, /, *, strict: bool = False
-) -> int | float:
-    """Compute the number of milliseconds in a datetime duration."""
-    timedelta = datetime_duration_to_timedelta(duration)
-    microseconds = datetime_duration_to_microseconds(timedelta)
-    milliseconds, remainder = divmod(microseconds, _MICROSECONDS_PER_MILLISECOND)
-    match remainder, strict:
-        case 0, _:
-            return milliseconds
-        case _, True:
-            raise TimedeltaToMillisecondsError(duration=duration, remainder=remainder)
-        case _, False:
-            return milliseconds + remainder / _MICROSECONDS_PER_MILLISECOND
-        case _ as never:
-            assert_never(never)
-
-
 @dataclass(kw_only=True, slots=True)
 class TimedeltaToMillisecondsError(Exception):
     duration: Duration
@@ -370,7 +276,7 @@ class TimedeltaToMillisecondsError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to convert {self.duration} to milliseconds; got {self.remainder} microsecond(s)"
+        return f"Unable to convert {self.duration} to milliseconds; got {self.remainder} microsecond(s)"  # pragma: no cover
 
 
 def datetime_duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
@@ -413,20 +319,6 @@ def datetime_utc(
 ##
 
 
-def days_since_epoch(date: dt.date, /) -> int:
-    """Compute the number of days since the epoch."""
-    check_date_not_datetime(date)
-    return timedelta_since_epoch(date).days
-
-
-def days_since_epoch_to_date(days: int, /) -> dt.date:
-    """Convert a number of days since the epoch to a date."""
-    return EPOCH_DATE + days * DAY
-
-
-##
-
-
 def ensure_month(month: MonthLike, /) -> Month:
     """Ensure the object is a month."""
     if isinstance(month, Month):
@@ -444,25 +336,6 @@ class EnsureMonthError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to ensure month; got {self.month!r}"
-
-
-##
-
-
-def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
-    """Format a plain datetime locally & in UTC."""
-    time_zone = ensure_time_zone(datetime)
-    if time_zone is UTC:
-        return datetime.strftime("%Y-%m-%d %H:%M:%S (%a, UTC)")
-    as_utc = datetime.astimezone(UTC)
-    local = get_time_zone_name(time_zone)
-    if datetime.year != as_utc.year:
-        return f"{datetime:%Y-%m-%d %H:%M:%S (%a}, {local}, {as_utc:%Y-%m-%d %H:%M:%S} UTC)"
-    if (datetime.month != as_utc.month) or (datetime.day != as_utc.day):
-        return (
-            f"{datetime:%Y-%m-%d %H:%M:%S (%a}, {local}, {as_utc:%m-%d %H:%M:%S} UTC)"
-        )
-    return f"{datetime:%Y-%m-%d %H:%M:%S (%a}, {local}, {as_utc:%H:%M:%S} UTC)"
 
 
 ##
@@ -691,14 +564,6 @@ def is_integral_timedelta(duration: Duration, /) -> bool:
 ##
 
 
-def is_plain_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
-    """Check if an object is a plain datetime."""
-    return isinstance(obj, dt.datetime) and (obj.tzinfo is None)
-
-
-##
-
-
 _FRIDAY = 5
 
 
@@ -714,14 +579,6 @@ def is_weekday(date: dt.date, /) -> bool:
 def is_zero_time(duration: Duration, /) -> bool:
     """Check if a timedelta is 0."""
     return datetime_duration_to_timedelta(duration) == ZERO_TIME
-
-
-##
-
-
-def is_zoned_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
-    """Check if an object is a zoned datetime."""
-    return isinstance(obj, dt.datetime) and (obj.tzinfo is not None)
 
 
 ##
@@ -834,54 +691,6 @@ def microseconds_since_epoch_to_datetime(
     epoch = EPOCH_NAIVE if time_zone is None else EPOCH_UTC
     timedelta = microseconds_to_timedelta(microseconds)
     return epoch + timedelta
-
-
-##
-
-
-@overload
-def milliseconds_since_epoch(
-    datetime: dt.datetime, /, *, strict: Literal[True]
-) -> int: ...
-@overload
-def milliseconds_since_epoch(
-    datetime: dt.datetime, /, *, strict: bool = False
-) -> float: ...
-def milliseconds_since_epoch(
-    datetime: dt.datetime, /, *, strict: bool = False
-) -> float:
-    """Compute the number of milliseconds since the epoch."""
-    microseconds = microseconds_since_epoch(datetime)
-    milliseconds, remainder = divmod(microseconds, _MICROSECONDS_PER_MILLISECOND)
-    if strict:
-        if remainder == 0:
-            return milliseconds
-        raise MillisecondsSinceEpochError(datetime=datetime, remainder=remainder)
-    return milliseconds + remainder / _MICROSECONDS_PER_MILLISECOND
-
-
-@dataclass(kw_only=True, slots=True)
-class MillisecondsSinceEpochError(Exception):
-    datetime: dt.datetime
-    remainder: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to convert {self.datetime} to milliseconds since epoch; got {self.remainder} microsecond(s)"
-
-
-def milliseconds_since_epoch_to_datetime(
-    milliseconds: int, /, *, time_zone: dt.tzinfo | None = None
-) -> dt.datetime:
-    """Convert a number of milliseconds since the epoch to a datetime."""
-    epoch = EPOCH_NAIVE if time_zone is None else EPOCH_UTC
-    timedelta = milliseconds_to_timedelta(milliseconds)
-    return epoch + timedelta
-
-
-def milliseconds_to_timedelta(milliseconds: int, /) -> dt.timedelta:
-    """Compute a timedelta given a number of milliseconds."""
-    return microseconds_to_timedelta(_MICROSECONDS_PER_MILLISECOND * milliseconds)
 
 
 ##
@@ -1065,70 +874,6 @@ def _round_to_weekday(
     while not is_weekday(date):
         date = add_weekdays(date, n=n)
     return date
-
-
-##
-
-
-def serialize_compact(date_or_datetime: DateOrDateTime, /) -> str:
-    """Serialize a date/datetime using a compact format."""
-    match date_or_datetime:
-        case dt.datetime() as datetime:
-            if datetime.tzinfo is None:
-                raise SerializeCompactError(datetime=datetime)
-            format_ = "%Y%m%dT%H%M%S"
-        case dt.date():
-            format_ = "%Y%m%d"
-        case _ as never:
-            assert_never(never)
-    return date_or_datetime.strftime(maybe_sub_pct_y(format_))
-
-
-@dataclass(kw_only=True, slots=True)
-class SerializeCompactError(Exception):
-    datetime: dt.datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to serialize plain datetime {self.datetime}"
-
-
-def parse_date_compact(text: str, /) -> dt.date:
-    """Parse a compact string into a date."""
-    try:
-        datetime = dt.datetime.strptime(text, "%Y%m%d").replace(tzinfo=UTC)
-    except ValueError:
-        raise ParseDateCompactError(text=text) from None
-    return datetime.date()
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseDateCompactError(Exception):
-    text: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse {self.text!r} into a date"
-
-
-def parse_datetime_compact(
-    text: str, /, *, time_zone: TimeZoneLike = UTC
-) -> dt.datetime:
-    """Parse a compact string into a datetime."""
-    time_zone = ensure_time_zone(time_zone)
-    try:
-        return dt.datetime.strptime(text, "%Y%m%dT%H%M%S").replace(tzinfo=time_zone)
-    except ValueError:
-        raise ParseDateTimeCompactError(text=text) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseDateTimeCompactError(Exception):
-    text: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse {self.text!r} into a datetime"
 
 
 ##
@@ -1323,46 +1068,32 @@ __all__ = [
     "AddDurationError",
     "AddWeekdaysError",
     "AreEqualDateTimesError",
-    "AreEqualDatesOrDateTimesError",
     "CheckDateNotDateTimeError",
     "DateOrMonth",
     "EnsureMonthError",
     "GetMinMaxDateError",
     "MeanDateTimeError",
     "MeanTimeDeltaError",
-    "MillisecondsSinceEpochError",
     "Month",
     "MonthError",
     "MonthLike",
-    "ParseDateCompactError",
-    "ParseDateTimeCompactError",
     "ParseMonthError",
-    "SerializeCompactError",
     "SubDurationError",
     "TimedeltaToMillisecondsError",
     "YieldDaysError",
     "YieldWeekdaysError",
     "add_duration",
     "add_weekdays",
-    "are_equal_date_durations",
-    "are_equal_dates_or_datetimes",
-    "are_equal_datetime_durations",
     "are_equal_datetimes",
-    "are_equal_months",
     "check_date_not_datetime",
     "date_duration_to_int",
     "date_duration_to_timedelta",
-    "date_to_datetime",
     "date_to_month",
     "datetime_duration_to_float",
     "datetime_duration_to_microseconds",
-    "datetime_duration_to_milliseconds",
     "datetime_duration_to_timedelta",
     "datetime_utc",
-    "days_since_epoch",
-    "days_since_epoch_to_date",
     "ensure_month",
-    "format_datetime_local_and_utc",
     "get_date",
     "get_datetime",
     "get_half_years",
@@ -1373,27 +1104,19 @@ __all__ = [
     "get_today",
     "get_years",
     "is_integral_timedelta",
-    "is_plain_datetime",
     "is_weekday",
     "is_zero_time",
-    "is_zoned_datetime",
     "maybe_sub_pct_y",
     "mean_datetime",
     "mean_timedelta",
     "microseconds_since_epoch",
     "microseconds_since_epoch_to_datetime",
     "microseconds_to_timedelta",
-    "milliseconds_since_epoch",
-    "milliseconds_since_epoch_to_datetime",
-    "milliseconds_to_timedelta",
-    "parse_date_compact",
-    "parse_datetime_compact",
     "parse_month",
     "parse_two_digit_year",
     "round_datetime",
     "round_to_next_weekday",
     "round_to_prev_weekday",
-    "serialize_compact",
     "serialize_month",
     "sub_duration",
     "timedelta_since_epoch",

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from collections.abc import Iterable
 from pathlib import Path
 from types import NoneType
@@ -9,7 +8,6 @@ from typing import Final, Literal
 from hypothesis import given
 from hypothesis.strategies import (
     booleans,
-    dates,
     dictionaries,
     floats,
     frozensets,
@@ -18,11 +16,19 @@ from hypothesis.strategies import (
     none,
     sampled_from,
     sets,
-    times,
 )
 from pytest import raises
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
 
-from tests.test_operator import TruthEnum
+from tests.test_objects.objects import TruthEnum
 from tests.test_typing_funcs.with_future import (
     DataClassFutureInt,
     DataClassFutureIntEven,
@@ -35,15 +41,16 @@ from tests.test_typing_funcs.with_future import (
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_path
 from utilities.hypothesis import (
-    datetime_durations,
+    dates_whenever,
     int64s,
     numbers,
     paths,
-    plain_datetimes,
+    plain_datetimes_whenever,
     text_ascii,
-    timedeltas_2w,
+    time_deltas_whenever,
+    times_whenever,
     versions,
-    zoned_datetimes,
+    zoned_datetimes_whenever,
 )
 from utilities.math import is_equal
 from utilities.parse import (
@@ -56,7 +63,7 @@ from utilities.parse import (
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.text import parse_bool
-from utilities.types import Duration, Number
+from utilities.types import Number
 from utilities.version import Version
 
 
@@ -67,29 +74,17 @@ class TestSerializeAndParseObject:
         result = parse_object(bool, serialized)
         assert result is bool_
 
-    @given(date=dates())
-    def test_date(self, *, date: dt.date) -> None:
+    @given(date=dates_whenever())
+    def test_date(self, *, date: Date) -> None:
         serialized = serialize_object(date)
-        result = parse_object(dt.date, serialized)
+        result = parse_object(Date, serialized)
         assert result == date
 
-    @given(datetime=plain_datetimes() | zoned_datetimes())
-    def test_datetime(self, *, datetime: dt.datetime) -> None:
-        serialized = serialize_object(datetime)
-        result = parse_object(dt.datetime, serialized)
-        assert result == datetime
-
-    @given(mapping=dictionaries(dates(), int64s()))
-    def test_dict(self, *, mapping: dict[dt.date, int]) -> None:
+    @given(mapping=dictionaries(int64s(), int64s()))
+    def test_dict(self, *, mapping: dict[int, int]) -> None:
         serialized = serialize_object(mapping)
-        result = parse_object(dict[dt.date, int], serialized)
+        result = parse_object(dict[int, int], serialized)
         assert result == mapping
-
-    @given(duration=datetime_durations(two_way=True))
-    def test_duration(self, *, duration: Duration) -> None:
-        serialized = serialize_object(duration)
-        result = parse_object(Duration, serialized)
-        assert result == duration
 
     @given(truth=sampled_from(TruthEnum))
     def test_enum(self, *, truth: TruthEnum) -> None:
@@ -103,11 +98,11 @@ class TestSerializeAndParseObject:
         result = parse_object(float, serialized)
         assert is_equal(result, float_)
 
-    @given(dates=frozensets(dates()))
-    def test_frozenset(self, *, dates: frozenset[dt.date]) -> None:
-        serialized = serialize_object(dates)
-        result = parse_object(frozenset[dt.date], serialized)
-        assert result == dates
+    @given(ints=frozensets(int64s()))
+    def test_frozenset(self, *, ints: frozenset[int]) -> None:
+        serialized = serialize_object(ints)
+        result = parse_object(frozenset[int], serialized)
+        assert result == ints
 
     @given(int_=integers())
     def test_int(self, *, int_: int) -> None:
@@ -115,11 +110,11 @@ class TestSerializeAndParseObject:
         result = parse_object(int, serialized)
         assert result == int_
 
-    @given(dates=lists(dates()))
-    def test_list(self, *, dates: list[dt.date]) -> None:
-        serialized = serialize_object(dates)
-        result = parse_object(list[dt.date], serialized)
-        assert result == dates
+    @given(ints=lists(int64s()))
+    def test_list(self, *, ints: list[int]) -> None:
+        serialized = serialize_object(ints)
+        result = parse_object(list[int], serialized)
+        assert result == ints
 
     @given(bool_=booleans())
     def test_literal_extra(self, *, bool_: bool) -> None:
@@ -161,6 +156,12 @@ class TestSerializeAndParseObject:
         result = ensure_path(parse_object(Path, serialized))
         assert result == result.expanduser()
 
+    @given(datetime=plain_datetimes_whenever())
+    def test_plain_datetime(self, *, datetime: PlainDateTime) -> None:
+        serialized = serialize_object(datetime)
+        result = parse_object(PlainDateTime, serialized)
+        assert result == datetime
+
     def test_nullable_number_none(self) -> None:
         serialized = serialize_object(None)
         result = parse_object(Number | None, serialized)
@@ -171,17 +172,6 @@ class TestSerializeAndParseObject:
         serialized = serialize_object(number)
         result = parse_object(Number | None, serialized)
         assert result == number
-
-    def test_nullable_duration_none(self) -> None:
-        serialized = serialize_object(None)
-        result = parse_object(Duration | None, serialized)
-        assert result is None
-
-    @given(duration=datetime_durations(two_way=True))
-    def test_nullable_duration_duration(self, *, duration: Duration) -> None:
-        serialized = serialize_object(duration)
-        result = parse_object(Duration | None, serialized)
-        assert result == duration
 
     def test_nullable_int_none(self) -> None:
         serialized = serialize_object(None)
@@ -199,28 +189,28 @@ class TestSerializeAndParseObject:
         result = parse_object(Sentinel, serialized)
         assert result is sentinel
 
-    @given(dates=sets(dates()))
-    def test_set(self, *, dates: set[dt.date]) -> None:
-        serialized = serialize_object(dates)
-        result = parse_object(set[dt.date], serialized)
-        assert result == dates
+    @given(ints=sets(int64s()))
+    def test_set(self, *, ints: set[int]) -> None:
+        serialized = serialize_object(ints)
+        result = parse_object(set[int], serialized)
+        assert result == ints
 
     @given(serialized=text_ascii())
     def test_to_serialized(self, *, serialized: str) -> None:
         result = parse_object(str, serialized)
         assert result == serialized
 
-    @given(time=times())
-    def test_time(self, *, time: dt.time) -> None:
+    @given(time=times_whenever())
+    def test_time(self, *, time: Time) -> None:
         serialized = serialize_object(time)
-        result = parse_object(dt.time, serialized)
+        result = parse_object(Time, serialized)
         assert result == time
 
-    @given(timedelta=timedeltas_2w())
-    def test_timedelta(self, *, timedelta: dt.timedelta) -> None:
-        serialized = serialize_object(timedelta)
-        result = parse_object(dt.timedelta, serialized)
-        assert result == timedelta
+    @given(time_delta=time_deltas_whenever())
+    def test_time_delta(self, *, time_delta: TimeDelta) -> None:
+        serialized = serialize_object(time_delta)
+        result = parse_object(TimeDelta, serialized)
+        assert result == time_delta
 
     @given(x=integers(), y=integers())
     def test_tuple(self, *, x: int, y: int) -> None:
@@ -304,6 +294,12 @@ class TestSerializeAndParseObject:
         result = parse_object(Version, serialized)
         assert result == version
 
+    @given(datetime=zoned_datetimes_whenever())
+    def test_zoned_datetime(self, *, datetime: ZonedDateTime) -> None:
+        serialized = serialize_object(datetime)
+        result = parse_object(ZonedDateTime, serialized)
+        assert result == datetime
+
 
 class TestParseObject:
     @given(text=sampled_from(["F_a_l_s_e", "T_r_u_e"]))
@@ -372,16 +368,23 @@ class TestParseObject:
     def test_error_date(self) -> None:
         with raises(
             _ParseObjectParseError,
-            match=r"Unable to parse <class 'datetime\.date'>; got 'invalid'",
+            match=r"Unable to parse <class 'whenever\.Date'>; got 'invalid'",
         ):
-            _ = parse_object(dt.date, "invalid")
+            _ = parse_object(Date, "invalid")
 
-    def test_error_datetime(self) -> None:
+    def test_error_date_delta(self) -> None:
         with raises(
             _ParseObjectParseError,
-            match=r"Unable to parse <class 'datetime\.datetime'>; got 'invalid'",
+            match=r"Unable to parse <class 'whenever\.DateDelta'>; got 'invalid'",
         ):
-            _ = parse_object(dt.datetime, "invalid")
+            _ = parse_object(DateDelta, "invalid")
+
+    def test_error_date_time_delta(self) -> None:
+        with raises(
+            _ParseObjectParseError,
+            match=r"Unable to parse <class 'whenever\.DateTimeDelta'>; got 'invalid'",
+        ):
+            _ = parse_object(DateTimeDelta, "invalid")
 
     def test_error_dict_extract_group(self) -> None:
         with raises(
@@ -396,12 +399,6 @@ class TestParseObject:
             match=r"Unable to parse dict\[int, int\]; got '\{invalid=invalid\}'",
         ):
             _ = parse_object(dict[int, int], "{invalid=invalid}")
-
-    def test_error_duration(self) -> None:
-        with raises(
-            _ParseObjectParseError, match=r"Unable to parse Duration; got 'invalid'"
-        ):
-            _ = parse_object(Duration, "invalid")
 
     def test_error_enum(self) -> None:
         with raises(
@@ -441,7 +438,7 @@ class TestParseObject:
         ):
             _ = parse_object(int, str(int_), extra={int | bool: int, int | float: int})
 
-    def test_error_union_type_extra(self) -> None:
+    def test_error_extra_union_type_extra(self) -> None:
         with raises(
             _ParseObjectParseError,
             match=r"Unable to parse tests\.test_typing_funcs\.with_future\.DataClassFutureIntEven \| tests\.test_typing_funcs\.with_future\.DataClassFutureIntOdd; got 'invalid'",
@@ -520,6 +517,13 @@ class TestParseObject:
         ):
             _ = parse_object(Number, "invalid")
 
+    def test_error_plain_datetime(self) -> None:
+        with raises(
+            _ParseObjectParseError,
+            match=r"Unable to parse <class 'whenever\.PlainDateTime'>; got 'invalid'",
+        ):
+            _ = parse_object(PlainDateTime, "invalid")
+
     def test_error_sentinel(self) -> None:
         with raises(
             _ParseObjectParseError,
@@ -543,16 +547,16 @@ class TestParseObject:
     def test_error_time(self) -> None:
         with raises(
             _ParseObjectParseError,
-            match=r"Unable to parse <class 'datetime\.time'>; got 'invalid'",
+            match=r"Unable to parse <class 'whenever\.Time'>; got 'invalid'",
         ):
-            _ = parse_object(dt.time, "invalid")
+            _ = parse_object(Time, "invalid")
 
-    def test_error_timedelta(self) -> None:
+    def test_error_time_delta(self) -> None:
         with raises(
             _ParseObjectParseError,
-            match=r"Unable to parse <class 'datetime\.timedelta'>; got 'invalid'",
+            match=r"Unable to parse <class 'whenever\.TimeDelta'>; got 'invalid'",
         ):
-            _ = parse_object(dt.timedelta, "invalid")
+            _ = parse_object(TimeDelta, "invalid")
 
     def test_error_tuple_extract_group(self) -> None:
         with raises(
@@ -595,6 +599,13 @@ class TestParseObject:
             match=r"Unable to parse <class 'utilities\.version\.Version'>; got 'invalid'",
         ):
             _ = parse_object(Version, "invalid")
+
+    def test_error_zoned_datetime(self) -> None:
+        with raises(
+            _ParseObjectParseError,
+            match=r"Unable to parse <class 'whenever\.ZonedDateTime'>; got 'invalid'",
+        ):
+            _ = parse_object(ZonedDateTime, "invalid")
 
 
 class TestSerializeObject:

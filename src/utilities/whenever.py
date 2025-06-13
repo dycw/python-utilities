@@ -1,27 +1,17 @@
 from __future__ import annotations
 
 import datetime as dt
-import re
 from contextlib import suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
 
-from whenever import (
-    Date,
-    DateTimeDelta,
-    PlainDateTime,
-    Time,
-    TimeZoneNotFoundError,
-    ZonedDateTime,
-)
+from whenever import DateTimeDelta, TimeZoneNotFoundError, ZonedDateTime
 
 from utilities.datetime import (
     _MICROSECONDS_PER_DAY,
     _MICROSECONDS_PER_SECOND,
     ZERO_TIME,
-    check_date_not_datetime,
     datetime_duration_to_microseconds,
-    parse_two_digit_year,
 )
 from utilities.math import ParseNumberError, parse_number
 from utilities.re import (
@@ -34,7 +24,6 @@ from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
     from utilities.types import Duration
-
 
 MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3652060, microseconds=-1)
 MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
@@ -84,56 +73,6 @@ class _CheckValidZonedDateTimeUnequalError(CheckValidZonedDateTimeError):
 ##
 
 
-_PARSE_DATE_YYMMDD_REGEX = re.compile(r"^(\d{2})(\d{2})(\d{2})$")
-
-
-def parse_date(date: str, /) -> dt.date:
-    """Parse a string into a date."""
-    try:
-        w_date = Date.parse_common_iso(date)
-    except ValueError:
-        try:
-            ((year2, month, day),) = _PARSE_DATE_YYMMDD_REGEX.findall(date)
-        except ValueError:
-            raise ParseDateError(date=date) from None
-        year = parse_two_digit_year(year2)
-        return dt.date(year=int(year), month=int(month), day=int(day))
-    return w_date.py_date()
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseDateError(Exception):
-    date: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse date; got {self.date!r}"
-
-
-##
-
-
-def parse_datetime(datetime: str, /) -> dt.datetime:
-    """Parse a string into a datetime."""
-    with suppress(ParsePlainDateTimeError):
-        return parse_plain_datetime(datetime)
-    with suppress(ParseZonedDateTimeError):
-        return parse_zoned_datetime(datetime)
-    raise ParseDateTimeError(datetime=datetime) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseDateTimeError(Exception):
-    datetime: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse datetime; got {self.datetime!r}"
-
-
-##
-
-
 def parse_duration(duration: str, /) -> Duration:
     """Parse a string into a Duration."""
     with suppress(ParseNumberError):
@@ -151,48 +90,6 @@ class ParseDurationError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to parse duration; got {self.duration!r}"
-
-
-##
-
-
-def parse_plain_datetime(datetime: str, /) -> dt.datetime:
-    """Parse a string into a plain datetime."""
-    try:
-        ldt = PlainDateTime.parse_common_iso(datetime)
-    except ValueError:
-        raise ParsePlainDateTimeError(datetime=datetime) from None
-    return ldt.py_datetime()
-
-
-@dataclass(kw_only=True, slots=True)
-class ParsePlainDateTimeError(Exception):
-    datetime: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse plain datetime; got {self.datetime!r}"
-
-
-##
-
-
-def parse_time(time: str, /) -> dt.time:
-    """Parse a string into a time."""
-    try:
-        w_time = Time.parse_common_iso(time)
-    except ValueError:
-        raise ParseTimeError(time=time) from None
-    return w_time.py_time()
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseTimeError(Exception):
-    time: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse time; got {self.time!r}"
 
 
 ##
@@ -245,47 +142,6 @@ class _ParseTimedeltaNanosecondError(ParseTimedeltaError):
 ##
 
 
-def parse_zoned_datetime(datetime: str, /) -> dt.datetime:
-    """Parse a string into a zoned datetime."""
-    try:
-        zdt = ZonedDateTime.parse_common_iso(datetime)
-    except ValueError:
-        raise ParseZonedDateTimeError(datetime=datetime) from None
-    return zdt.py_datetime()
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseZonedDateTimeError(Exception):
-    datetime: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse zoned datetime; got {self.datetime!r}"
-
-
-##
-
-
-def serialize_date(date: dt.date, /) -> str:
-    """Serialize a date."""
-    check_date_not_datetime(date)
-    return Date.from_py_date(date).format_common_iso()
-
-
-##
-
-
-def serialize_datetime(datetime: dt.datetime, /) -> str:
-    """Serialize a datetime."""
-    try:
-        return serialize_plain_datetime(datetime)
-    except SerializePlainDateTimeError:
-        return serialize_zoned_datetime(datetime)
-
-
-##
-
-
 def serialize_duration(duration: Duration, /) -> str:
     """Serialize a duration."""
     if isinstance(duration, int | float):
@@ -308,35 +164,6 @@ class SerializeDurationError(Exception):
 ##
 
 
-def serialize_plain_datetime(datetime: dt.datetime, /) -> str:
-    """Serialize a plain datetime."""
-    try:
-        pdt = PlainDateTime.from_py_datetime(datetime)
-    except ValueError:
-        raise SerializePlainDateTimeError(datetime=datetime) from None
-    return pdt.format_common_iso()
-
-
-@dataclass(kw_only=True, slots=True)
-class SerializePlainDateTimeError(Exception):
-    datetime: dt.datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to serialize plain datetime; got {self.datetime}"
-
-
-##
-
-
-def serialize_time(time: dt.time, /) -> str:
-    """Serialize a time."""
-    return Time.from_py_time(time).format_common_iso()
-
-
-##
-
-
 def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
     """Serialize a timedelta."""
     try:
@@ -353,31 +180,6 @@ class SerializeTimeDeltaError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to serialize timedelta; got {self.timedelta}"
-
-
-##
-
-
-def serialize_zoned_datetime(datetime: dt.datetime, /) -> str:
-    """Serialize a zoned datetime."""
-    if datetime.tzinfo is dt.UTC:
-        return serialize_zoned_datetime(  # skipif-ci-and-windows
-            datetime.replace(tzinfo=UTC)
-        )
-    try:
-        zdt = ZonedDateTime.from_py_datetime(datetime)
-    except ValueError:
-        raise SerializeZonedDateTimeError(datetime=datetime) from None
-    return zdt.format_common_iso()
-
-
-@dataclass(kw_only=True, slots=True)
-class SerializeZonedDateTimeError(Exception):
-    datetime: dt.datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to serialize zoned datetime; got {self.datetime}"
 
 
 ##
@@ -415,30 +217,14 @@ __all__ = [
     "MAX_SERIALIZABLE_TIMEDELTA",
     "MIN_SERIALIZABLE_TIMEDELTA",
     "CheckValidZonedDateTimeError",
-    "ParseDateError",
-    "ParseDateTimeError",
     "ParseDurationError",
-    "ParsePlainDateTimeError",
-    "ParseTimeError",
     "ParseTimedeltaError",
-    "ParseZonedDateTimeError",
     "SerializeDurationError",
-    "SerializePlainDateTimeError",
     "SerializeTimeDeltaError",
-    "SerializeZonedDateTimeError",
     "check_valid_zoned_datetime",
-    "parse_date",
-    "parse_datetime",
+    "check_valid_zoned_datetime",
     "parse_duration",
-    "parse_plain_datetime",
-    "parse_time",
     "parse_timedelta",
-    "parse_zoned_datetime",
-    "serialize_date",
-    "serialize_datetime",
     "serialize_duration",
-    "serialize_plain_datetime",
-    "serialize_time",
     "serialize_timedelta",
-    "serialize_zoned_datetime",
 ]

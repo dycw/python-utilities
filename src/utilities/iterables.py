@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import builtins
-import datetime as dt
 from collections import Counter
 from collections.abc import (
     Callable,
@@ -34,7 +33,7 @@ from typing import (
 )
 
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import ensure_hashable, ensure_not_none, ensure_str
+from utilities.functions import ensure_hashable, ensure_str
 from utilities.math import (
     _CheckIntegerEqualError,
     _CheckIntegerEqualOrApproxError,
@@ -45,7 +44,6 @@ from utilities.math import (
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import Sign, THashable, TSupportsAdd, TSupportsLT
-from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from types import NoneType
@@ -1326,9 +1324,6 @@ def _sort_iterable_cmp(x: Any, y: Any, /) -> Sign:
     if x is None:
         y = cast("NoneType", y)
         return 0
-    if isinstance(x, dt.datetime):
-        y = cast("dt.datetime", y)
-        return _sort_iterable_cmp_datetimes(x, y)
     if isinstance(x, float):
         y = cast("float", y)
         return _sort_iterable_cmp_floats(x, y)
@@ -1369,30 +1364,6 @@ class SortIterableError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to sort {get_repr(self.x)} and {get_repr(self.y)}"
-
-
-def _sort_iterable_cmp_datetimes(x: dt.datetime, y: dt.datetime, /) -> Sign:
-    """Compare two datetimes."""
-    match x.tzinfo, y.tzinfo:
-        case None, None:
-            return cast("Sign", (x > y) - (x < y))
-        case dt.tzinfo(), None:
-            return 1
-        case None, dt.tzinfo():
-            return -1
-        case dt.tzinfo(), dt.tzinfo():
-            x_utc = x.astimezone(tz=UTC)
-            y_utc = y.astimezone(tz=UTC)
-            result = cast("Sign", (x_utc > y_utc) - (x_utc < y_utc))
-            if result != 0:
-                return result
-            x_time_zone = ensure_not_none(ensure_not_none(x.tzinfo).tzname(x))
-            y_time_zone = ensure_not_none(ensure_not_none(y.tzinfo).tzname(y))
-            return cast(
-                "Sign", (x_time_zone > y_time_zone) - (x_time_zone < y_time_zone)
-            )
-        case _ as never:
-            assert_never(never)
 
 
 def _sort_iterable_cmp_floats(x: float, y: float, /) -> Sign:

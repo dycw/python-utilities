@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Self
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
-    booleans,
     data,
     dates,
     datetimes,
@@ -26,7 +25,6 @@ from pytest import mark, param, raises
 
 from utilities.dataclasses import replace_non_sentinel
 from utilities.datetime import (
-    _MICROSECONDS_PER_MILLISECOND,
     DAY,
     EPOCH_DATE,
     EPOCH_NAIVE,
@@ -46,22 +44,16 @@ from utilities.datetime import (
     ZERO_TIME,
     AddDurationError,
     AddWeekdaysError,
-    AreEqualDatesOrDateTimesError,
     AreEqualDateTimesError,
     CheckDateNotDateTimeError,
     EnsureMonthError,
     GetMinMaxDateError,
     MeanDateTimeError,
     MeanTimeDeltaError,
-    MillisecondsSinceEpochError,
     Month,
     MonthError,
-    ParseDateCompactError,
-    ParseDateTimeCompactError,
     ParseMonthError,
-    SerializeCompactError,
     SubDurationError,
-    TimedeltaToMillisecondsError,
     YieldDaysError,
     YieldWeekdaysError,
     _DateDurationToIntFloatError,
@@ -77,25 +69,16 @@ from utilities.datetime import (
     _ParseTwoDigitYearInvalidStringError,
     add_duration,
     add_weekdays,
-    are_equal_date_durations,
-    are_equal_dates_or_datetimes,
-    are_equal_datetime_durations,
     are_equal_datetimes,
-    are_equal_months,
     check_date_not_datetime,
     date_duration_to_int,
     date_duration_to_timedelta,
-    date_to_datetime,
     date_to_month,
     datetime_duration_to_float,
     datetime_duration_to_microseconds,
-    datetime_duration_to_milliseconds,
     datetime_duration_to_timedelta,
     datetime_utc,
-    days_since_epoch,
-    days_since_epoch_to_date,
     ensure_month,
-    format_datetime_local_and_utc,
     get_date,
     get_datetime,
     get_half_years,
@@ -106,27 +89,19 @@ from utilities.datetime import (
     get_today,
     get_years,
     is_integral_timedelta,
-    is_plain_datetime,
     is_weekday,
     is_zero_time,
-    is_zoned_datetime,
     maybe_sub_pct_y,
     mean_datetime,
     mean_timedelta,
     microseconds_since_epoch,
     microseconds_since_epoch_to_datetime,
     microseconds_to_timedelta,
-    milliseconds_since_epoch,
-    milliseconds_since_epoch_to_datetime,
-    milliseconds_to_timedelta,
-    parse_date_compact,
-    parse_datetime_compact,
     parse_month,
     parse_two_digit_year,
     round_datetime,
     round_to_next_weekday,
     round_to_prev_weekday,
-    serialize_compact,
     serialize_month,
     sub_duration,
     timedelta_since_epoch,
@@ -146,7 +121,6 @@ from utilities.hypothesis import (
 )
 from utilities.math import MAX_INT32, MIN_INT32, is_integral, round_to_float
 from utilities.sentinel import Sentinel, sentinel
-from utilities.tzdata import HongKong
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -253,83 +227,6 @@ class TestAddWeekdays:
         assert result is expected
 
 
-class TestAreEqualDateDurations:
-    @given(x=integers(), y=integers())
-    def test_ints(self, *, x: int, y: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            result = are_equal_date_durations(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(x=integers(), y=integers())
-    def test_timedeltas(self, *, x: int, y: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            x_timedelta, y_timedelta = dt.timedelta(days=x), dt.timedelta(days=y)
-        result = are_equal_date_durations(x_timedelta, y_timedelta)
-        expected = x == y
-        assert result is expected
-
-    @given(data=data(), x=integers(), y=integers())
-    def test_int_vs_timedelta(self, *, data: DataObject, x: int, y: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            y_timedelta = dt.timedelta(days=y)
-        left, right = data.draw(permutations([x, y_timedelta]))
-        with assume_does_not_raise(OverflowError):
-            result = are_equal_date_durations(left, right)
-        expected = x == y
-        assert result is expected
-
-
-class TestAreEqualDateOrDateTimes:
-    @given(x=dates(), y=dates())
-    def test_dates(self, *, x: dt.date, y: dt.date) -> None:
-        result = are_equal_dates_or_datetimes(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(x=datetimes(), y=datetimes())
-    def test_datetimes(self, *, x: dt.datetime, y: dt.datetime) -> None:
-        result = are_equal_dates_or_datetimes(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(data=data(), x=dates(), y=datetimes())
-    def test_date_vs_datetime(
-        self, *, data: DataObject, x: dt.date, y: dt.datetime
-    ) -> None:
-        left, right = data.draw(permutations([x, y]))
-        with raises(
-            AreEqualDatesOrDateTimesError,
-            match=r"Cannot compare date and datetime \(.*, .*\)",
-        ):
-            _ = are_equal_dates_or_datetimes(left, right)
-
-
-class TestAreEqualDateTimeDurations:
-    @given(x=integers(), y=integers())
-    def test_ints(self, *, x: int, y: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            result = are_equal_datetime_durations(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(x=timedeltas(), y=timedeltas())
-    def test_timedeltas(self, *, x: dt.timedelta, y: dt.timedelta) -> None:
-        result = are_equal_datetime_durations(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(data=data(), x=integers(), y=timedeltas())
-    def test_int_vs_timedelta(
-        self, *, data: DataObject, x: int, y: dt.timedelta
-    ) -> None:
-        left, right = data.draw(permutations([x, y]))
-        with assume_does_not_raise(OverflowError):
-            result = are_equal_datetime_durations(left, right)
-        expected = x == datetime_duration_to_float(y)
-        assert result is expected
-
-
 class TestAreEqualDateTimes:
     @given(x=datetimes(), y=datetimes())
     def test_local(self, *, x: dt.datetime, y: dt.datetime) -> None:
@@ -377,27 +274,6 @@ class TestAreEqualDateTimes:
             match=r"Cannot compare local and zoned datetimes \(.*, .*\)",
         ):
             _ = are_equal_datetimes(left, right)
-
-
-class TestAreEqualMonths:
-    @given(x=dates(), y=dates())
-    def test_dates(self, *, x: dt.date, y: dt.date) -> None:
-        result = are_equal_months(x, y)
-        expected = (x.year == y.year) and (x.month == y.month)
-        assert result is expected
-
-    @given(x=months(), y=months())
-    def test_months(self, *, x: Month, y: Month) -> None:
-        result = are_equal_months(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(data=data(), x=dates(), y=months())
-    def test_date_vs_month(self, *, data: DataObject, x: dt.date, y: Month) -> None:
-        left, right = data.draw(permutations([x, y]))
-        result = are_equal_months(left, right)
-        expected = (x.year == y.year) and (x.month == y.month)
-        assert result is expected
 
 
 class TestCheckDateNotDateTime:
@@ -534,45 +410,6 @@ class TestDateTimeDurationToMicrosecondsOrMilliseconds:
         result = datetime_duration_to_microseconds(timedelta)
         assert result == microseconds
 
-    @given(timedelta=timedeltas(), strict=booleans())
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_timedelta_to_milliseconds_exact(
-        self, *, timedelta: dt.timedelta, strict: bool
-    ) -> None:
-        _, remainder = divmod(timedelta.microseconds, _MICROSECONDS_PER_MILLISECOND)
-        _ = assume(remainder == 0)
-        milliseconds = datetime_duration_to_milliseconds(timedelta, strict=strict)
-        assert isinstance(milliseconds, int)
-        result = milliseconds_to_timedelta(milliseconds)
-        assert result == timedelta
-
-    @given(timedelta=timedeltas())
-    def test_timedelta_to_milliseconds_inexact(
-        self, *, timedelta: dt.timedelta
-    ) -> None:
-        _, remainder = divmod(timedelta.microseconds, _MICROSECONDS_PER_MILLISECOND)
-        _ = assume(remainder != 0)
-        milliseconds = datetime_duration_to_milliseconds(timedelta)
-        result = milliseconds_to_timedelta(round(milliseconds))
-        assert abs(result - timedelta) <= SECOND
-
-    @given(timedelta=timedeltas())
-    def test_timedelta_to_milliseconds_error(self, *, timedelta: dt.timedelta) -> None:
-        _, microseconds = divmod(timedelta.microseconds, _MICROSECONDS_PER_MILLISECOND)
-        _ = assume(microseconds != 0)
-        with raises(
-            TimedeltaToMillisecondsError,
-            match=r"Unable to convert .* to milliseconds; got .* microsecond\(s\)",
-        ):
-            _ = datetime_duration_to_milliseconds(timedelta, strict=True)
-
-    @given(milliseconds=int32s())
-    def test_milliseconds_to_timedelta(self, *, milliseconds: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            timedelta = milliseconds_to_timedelta(milliseconds)
-        result = datetime_duration_to_milliseconds(timedelta)
-        assert result == milliseconds
-
 
 class TestDateTimeDurationToTimeDelta:
     @given(n=int32s())
@@ -591,13 +428,6 @@ class TestDateTimeDurationToTimeDelta:
     def test_timedelta(self, *, duration: dt.timedelta) -> None:
         result = datetime_duration_to_timedelta(duration)
         assert result == duration
-
-
-class TestDateToDateTime:
-    @given(date=dates())
-    def test_main(self, *, date: dt.date) -> None:
-        result = date_to_datetime(date).date()
-        assert result == date
 
 
 class TestDateToMonth:
@@ -622,14 +452,6 @@ class TestDatetimeUTC:
         assert result == datetime
 
 
-class TestDaysSinceEpoch:
-    @given(date=dates())
-    def test_main(self, *, date: dt.date) -> None:
-        days = days_since_epoch(date)
-        result = days_since_epoch_to_date(days)
-        assert result == date
-
-
 class TestEpoch:
     def test_date(self) -> None:
         assert isinstance(EPOCH_DATE, dt.date)
@@ -641,37 +463,6 @@ class TestEpoch:
     def test_datetime(self, *, epoch: dt.datetime, time_zone: ZoneInfo | None) -> None:
         assert isinstance(EPOCH_UTC, dt.datetime)
         assert epoch.tzinfo is time_zone
-
-
-class TestFormatDateTimeLocalAndUTC:
-    @mark.parametrize(
-        ("datetime", "expected"),
-        [
-            param(
-                dt.datetime(2000, 1, 1, 2, 3, 4, tzinfo=UTC),
-                "2000-01-01 02:03:04 (Sat, UTC)",
-            ),
-            param(
-                dt.datetime(2000, 1, 1, 2, 3, 4, tzinfo=HongKong),
-                "2000-01-01 02:03:04 (Sat, Asia/Hong_Kong, 1999-12-31 18:03:04 UTC)",
-            ),
-            param(
-                dt.datetime(2000, 2, 1, 2, 3, 4, tzinfo=HongKong),
-                "2000-02-01 02:03:04 (Tue, Asia/Hong_Kong, 01-31 18:03:04 UTC)",
-            ),
-            param(
-                dt.datetime(2000, 2, 2, 2, 3, 4, tzinfo=HongKong),
-                "2000-02-02 02:03:04 (Wed, Asia/Hong_Kong, 02-01 18:03:04 UTC)",
-            ),
-            param(
-                dt.datetime(2000, 2, 2, 14, 3, 4, tzinfo=HongKong),
-                "2000-02-02 14:03:04 (Wed, Asia/Hong_Kong, 06:03:04 UTC)",
-            ),
-        ],
-    )
-    def test_main(self, *, datetime: dt.datetime, expected: str) -> None:
-        result = format_datetime_local_and_utc(datetime)
-        assert result == expected
 
 
 class TestGetDate:
@@ -875,20 +666,6 @@ class TestIsIntegralTimeDelta:
         assert not is_integral_timedelta(timedelta)
 
 
-class TestIsPlainDateTime:
-    @mark.parametrize(
-        ("obj", "expected"),
-        [
-            param(None, False),
-            param(dt.datetime(2000, 1, 1, tzinfo=UTC).replace(tzinfo=None), True),
-            param(dt.datetime(2000, 1, 1, tzinfo=UTC), False),
-        ],
-    )
-    def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = is_plain_datetime(obj)
-        assert result is expected
-
-
 class TestIsWeekday:
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
@@ -903,20 +680,6 @@ class TestIsZeroTime:
     def test_main(self, *, case: tuple[dt.timedelta, bool]) -> None:
         timedelta, expected = case
         result = is_zero_time(timedelta)
-        assert result is expected
-
-
-class TestIsZonedDateTime:
-    @mark.parametrize(
-        ("obj", "expected"),
-        [
-            param(None, False),
-            param(dt.datetime(2000, 1, 1, tzinfo=UTC).replace(tzinfo=None), False),
-            param(dt.datetime(2000, 1, 1, tzinfo=UTC), True),
-        ],
-    )
-    def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = is_zoned_datetime(obj)
         assert result is expected
 
 
@@ -977,40 +740,6 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
             datetime = microseconds_since_epoch_to_datetime(microseconds)
         result = microseconds_since_epoch(datetime)
         assert result == microseconds
-
-    @given(datetime=datetimes() | zoned_datetimes())
-    @mark.parametrize("strict", [param(True), param(False)])  # use mark.parametrize
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_datetime_to_milliseconds_exact(
-        self, *, datetime: dt.datetime, strict: bool
-    ) -> None:
-        _ = assume(datetime.microsecond == 0)
-        milliseconds = milliseconds_since_epoch(datetime, strict=strict)
-        if strict:
-            assert isinstance(milliseconds, int)
-        else:
-            assert milliseconds == round(milliseconds)
-        result = milliseconds_since_epoch_to_datetime(
-            round(milliseconds), time_zone=datetime.tzinfo
-        )
-        assert result == datetime
-
-    @given(datetime=datetimes() | zoned_datetimes())
-    def test_datetime_to_milliseconds_error(self, *, datetime: dt.datetime) -> None:
-        _, microseconds = divmod(datetime.microsecond, _MICROSECONDS_PER_MILLISECOND)
-        _ = assume(microseconds != 0)
-        with raises(
-            MillisecondsSinceEpochError,
-            match=r"Unable to convert .* to milliseconds since epoch; got .* microsecond\(s\)",
-        ):
-            _ = milliseconds_since_epoch(datetime, strict=True)
-
-    @given(milliseconds=integers())
-    def test_milliseconds_to_datetime(self, *, milliseconds: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            datetime = milliseconds_since_epoch_to_datetime(milliseconds)
-        result = milliseconds_since_epoch(datetime)
-        assert result == milliseconds
 
 
 class TestMonth:
@@ -1174,35 +903,6 @@ class TestRoundToWeekday:
         with assume_does_not_raise(OverflowError):
             result = func(date)
         assert operator(result, date)
-
-
-class TestSerializeAndParseCompact:
-    @given(date=dates())
-    def test_dates(self, *, date: dt.date) -> None:
-        result = parse_date_compact(serialize_compact(date))
-        assert result == date
-
-    @given(datetime=zoned_datetimes(round_="standard", timedelta=SECOND))
-    def test_datetimes(self, *, datetime: dt.datetime) -> None:
-        result = parse_datetime_compact(serialize_compact(datetime))
-        assert result == datetime
-
-    @given(datetime=datetimes())
-    def test_error_serialize(self, *, datetime: dt.datetime) -> None:
-        with raises(
-            SerializeCompactError, match="Unable to serialize plain datetime .*"
-        ):
-            _ = serialize_compact(datetime)
-
-    def test_error_parse_date(self) -> None:
-        with raises(ParseDateCompactError, match="Unable to parse '.*' into a date"):
-            _ = parse_date_compact("invalid")
-
-    def test_error_parse_datetime(self) -> None:
-        with raises(
-            ParseDateTimeCompactError, match="Unable to parse '.*' into a datetime"
-        ):
-            _ = parse_datetime_compact("invalid")
 
 
 class TestSubDuration:
