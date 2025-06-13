@@ -519,7 +519,7 @@ class TestSerializeAndDeserialize:
         result = deserialize(serialize(obj), objects={DataClassFutureInt})
         assert is_equal(result, obj)
 
-    @given(obj=objects(dataclass_int_default=True))
+    @given(obj=objects(dataclass_int_default=True, parsable=True))
     def test_dataclass_int_default(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassFutureIntDefault})
         assert is_equal(result, obj)
