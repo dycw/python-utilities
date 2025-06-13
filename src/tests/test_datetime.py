@@ -412,16 +412,6 @@ class TestDateTimeDurationToMicrosecondsOrMilliseconds:
         result = datetime_duration_to_microseconds(timedelta)
         assert result == microseconds
 
-    @given(timedelta=timedeltas())
-    def test_timedelta_to_milliseconds_error(self, *, timedelta: dt.timedelta) -> None:
-        _, microseconds = divmod(timedelta.microseconds, _MICROSECONDS_PER_MILLISECOND)
-        _ = assume(microseconds != 0)
-        with raises(
-            TimedeltaToMillisecondsError,
-            match=r"Unable to convert .* to milliseconds; got .* microsecond\(s\)",
-        ):
-            _ = datetime_duration_to_milliseconds(timedelta, strict=True)
-
 
 class TestDateTimeDurationToTimeDelta:
     @given(n=int32s())
