@@ -32,7 +32,7 @@ from hypothesis.strategies import (
 )
 from pytest import mark, param, raises
 
-from tests.test_operator import make_objects
+from tests.test_objects.objects import objects
 from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
     sentinels,
@@ -1213,9 +1213,7 @@ class TestResolveIncludeAndExclude:
 
 
 class TestSortIterable:
-    @given(
-        x=make_objects(floats_allow_nan=False), y=make_objects(floats_allow_nan=False)
-    )
+    @given(x=objects(floats_allow_nan=False), y=objects(floats_allow_nan=False))
     def test_main(self, *, x: Any, y: Any) -> None:
         result1 = sort_iterable([x, y])
         result2 = sort_iterable([y, x])

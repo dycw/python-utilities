@@ -67,6 +67,7 @@ def objects(
     exception_class: bool = False,
     exception_instance: bool = False,
     extra_base: SearchStrategy[Any] | None = None,
+    floats_allow_nan: bool = False,
     sub_frozenset: bool = False,
     sub_list: bool = False,
     sub_set: bool = False,
@@ -79,7 +80,7 @@ def objects(
         | date_deltas_whenever(parsable=parsable)
         | date_time_deltas_whenever(parsable=parsable)
         | dates_whenever()
-        | floats()
+        | floats(allow_nan=floats_allow_nan)
         | (int64s() if parsable else integers())
         | none()
         | paths()

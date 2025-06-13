@@ -4,11 +4,11 @@ from typing import Any
 
 from hypothesis import given
 
-from tests.test_operator import make_objects
+from tests.test_objects.objects import objects
 from utilities.hashlib import md5_hash
 
 
 class TestMD5Hash:
-    @given(obj=make_objects())
+    @given(obj=objects())
     def test_main(self, *, obj: Any) -> None:
         _ = md5_hash(obj)
