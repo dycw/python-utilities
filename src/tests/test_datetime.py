@@ -97,7 +97,6 @@ from utilities.datetime import (
     get_today,
     get_years,
     is_integral_timedelta,
-    is_plain_datetime,
     is_weekday,
     is_zero_time,
     is_zoned_datetime,
@@ -719,20 +718,6 @@ class TestIsIntegralTimeDelta:
         with assume_does_not_raise(OverflowError):
             timedelta = dt.timedelta(days=n) + frac
         assert not is_integral_timedelta(timedelta)
-
-
-class TestIsPlainDateTime:
-    @mark.parametrize(
-        ("obj", "expected"),
-        [
-            param(None, False),
-            param(dt.datetime(2000, 1, 1, tzinfo=UTC).replace(tzinfo=None), True),
-            param(dt.datetime(2000, 1, 1, tzinfo=UTC), False),
-        ],
-    )
-    def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = is_plain_datetime(obj)
-        assert result is expected
 
 
 class TestIsWeekday:
