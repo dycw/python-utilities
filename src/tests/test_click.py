@@ -186,13 +186,6 @@ class TestParameters:
         [
             param(Date(), "DATE", dates(), whenever.Date.format_common_iso, True),
             param(
-                Enum(_ExampleEnum),
-                "ENUM[_ExampleEnum]",
-                sampled_from(_ExampleEnum),
-                attrgetter("name"),
-                True,
-            ),
-            param(
                 DateDelta(),
                 "DATE DELTA",
                 date_deltas(parsable=True),
@@ -204,6 +197,13 @@ class TestParameters:
                 "DATE-TIME DELTA",
                 date_time_deltas(parsable=True),
                 whenever.DateTimeDelta.format_common_iso,
+                True,
+            ),
+            param(
+                Enum(_ExampleEnum),
+                "ENUM[_ExampleEnum]",
+                sampled_from(_ExampleEnum),
+                attrgetter("name"),
                 True,
             ),
             param(
