@@ -696,6 +696,45 @@ def microseconds_since_epoch_to_datetime(
 ##
 
 
+@overload
+def milliseconds_since_epoch(
+    datetime: dt.datetime, /, *, strict: Literal[True]
+) -> int: ...
+@overload
+def milliseconds_since_epoch(
+    datetime: dt.datetime, /, *, strict: bool = False
+) -> float: ...
+def milliseconds_since_epoch(
+    datetime: dt.datetime, /, *, strict: bool = False
+) -> float:
+    """Compute the number of milliseconds since the epoch."""
+    microseconds = microseconds_since_epoch(datetime)
+    milliseconds, remainder = divmod(microseconds, _MICROSECONDS_PER_MILLISECOND)
+    if strict:
+        if remainder == 0:
+            return milliseconds
+        raise MillisecondsSinceEpochError(datetime=datetime, remainder=remainder)
+    return milliseconds + remainder / _MICROSECONDS_PER_MILLISECOND
+
+
+@dataclass(kw_only=True, slots=True)
+class MillisecondsSinceEpochError(Exception):
+    datetime: dt.datetime
+    remainder: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to convert {self.datetime} to milliseconds since epoch; got {self.remainder} microsecond(s)"
+
+
+def milliseconds_to_timedelta(milliseconds: int, /) -> dt.timedelta:
+    """Compute a timedelta given a number of milliseconds."""
+    return microseconds_to_timedelta(_MICROSECONDS_PER_MILLISECOND * milliseconds)
+
+
+##
+
+
 @dataclass(order=True, unsafe_hash=True, slots=True)
 class Month:
     """Represents a month in time."""
@@ -1112,6 +1151,10 @@ __all__ = [
     "microseconds_since_epoch",
     "microseconds_since_epoch_to_datetime",
     "microseconds_to_timedelta",
+    "milliseconds_since_epoch",
+    "milliseconds_to_timedelta",
+    "parse_date_compact",
+    "parse_datetime_compact",
     "parse_month",
     "parse_two_digit_year",
     "round_datetime",
