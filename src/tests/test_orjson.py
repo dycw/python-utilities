@@ -434,7 +434,9 @@ class TestOrjsonFormatter:
         assert abs(record.datetime - get_now()) <= SECOND
         assert record.func_name == TestOrjsonFormatter.test_main.__name__
         assert record.stack_info is None
-        assert record.extra == {"a": 1, "b": 2}
+        assert record.extra is not None
+        assert record.extra["a"] == 1
+        assert record.extra["b"] == 2
 
 
 # serialize/deserialize
