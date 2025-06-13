@@ -96,8 +96,13 @@ class TestIsEqual:
         assert utilities.operator.is_equal({x, y}, {y, x})
 
     def test_sets_of_enums(self) -> None:
-        enums = set(TruthEnum)
-        assert utilities.operator.is_equal(enums, enums)
+        obj = set(TruthEnum)
+        assert utilities.operator.is_equal(obj, obj)
+
+    def test_sets_of_errors(self) -> None:
+        obj = {CustomError(), CustomError()}
+        obj2 = {CustomError(), CustomError()}
+        assert utilities.operator.is_equal(obj, obj2)
 
     @given(x=floats(), y=floats())
     @example(x=-4.233805663404397, y=nan)
