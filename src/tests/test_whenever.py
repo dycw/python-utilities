@@ -8,15 +8,11 @@ from hypothesis.strategies import sampled_from
 from pytest import raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
-from utilities.datetime import MICROSECOND
 from utilities.tzdata import HongKong
 from utilities.whenever import (
     _CheckValidZonedDateTimeUnequalError,
     check_valid_zoned_datetime,
 )
-
-_TIMEDELTA_MICROSECONDS = int(1e18) * MICROSECOND
-_TIMEDELTA_OVERFLOW = dt.timedelta(days=106751991, seconds=14454, microseconds=775808)
 
 
 @SKIPIF_CI_AND_WINDOWS
