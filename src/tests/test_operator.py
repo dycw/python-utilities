@@ -13,12 +13,19 @@ import utilities.math
 import utilities.operator
 from tests.test_objects.objects import CustomError, TruthEnum, objects
 from tests.test_typing_funcs.with_future import DataClassFutureCustomEquality
-from utilities.hypothesis import assume_does_not_raise, pairs, text_ascii
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    date_deltas_whenever,
+    pairs,
+    text_ascii,
+)
 from utilities.operator import IsEqualError
 from utilities.polars import are_frames_equal
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from whenever import DateDelta
 
     from utilities.types import Number
     from utilities.typing import StrMapping
@@ -32,18 +39,25 @@ class TestIsEqual:
 
     @given(objs=pairs(objects(all_=True)))
     def test_two_objects(self, *, objs: tuple[Any, Any]) -> None:
-        first, second = objs
+        x, y = objs
         with assume_does_not_raise(IsEqualError):
-            _ = utilities.operator.is_equal(first, second)
+            _ = utilities.operator.is_equal(x, y)
 
-    @given(x=integers())
-    def test_dataclass_custom_equality(self, *, x: int) -> None:
-        first, second = (
-            DataClassFutureCustomEquality(int_=x),
-            DataClassFutureCustomEquality(int_=x),
+    @given(int_=integers())
+    def test_dataclass_custom_equality(self, *, int_: int) -> None:
+        x, y = (
+            DataClassFutureCustomEquality(int_=int_),
+            DataClassFutureCustomEquality(int_=int_),
         )
-        assert first != second
-        assert utilities.operator.is_equal(first, second)
+        assert x != y
+        assert utilities.operator.is_equal(x, y)
+
+    @given(deltas=pairs(date_deltas_whenever()))
+    def test_date_deltas(self, *, deltas: tuple[DateDelta, DateDelta]) -> None:
+        x, y = deltas
+        result = utilities.operator.is_equal(x, y)
+        expected = x == y
+        assert result is expected
 
     def test_dataclass_of_numbers(self) -> None:
         @dataclass
@@ -76,6 +90,10 @@ class TestIsEqual:
     def test_mappings(self, *, x: StrMapping, y: StrMapping) -> None:
         result = utilities.operator.is_equal(x, y)
         assert isinstance(result, bool)
+
+    @given(x=date_deltas_whenever(), y=date_deltas_whenever())
+    def test_sets_of_date_deltas(self, *, x: float, y: float) -> None:
+        assert utilities.operator.is_equal({x, y}, {y, x})
 
     @given(x=floats(), y=floats())
     @example(x=-4.233805663404397, y=nan)

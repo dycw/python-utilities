@@ -68,9 +68,10 @@ def is_equal(
             try:
                 x_sorted = sort_iterable(x)
                 y_sorted = sort_iterable(y)
-            except SortIterableError as error:
-                raise IsEqualError(x=error.x, y=error.y) from None
-            return is_equal(x_sorted, y_sorted, rel_tol=rel_tol, abs_tol=abs_tol)
+            except SortIterableError:
+                pass
+            else:
+                return is_equal(x_sorted, y_sorted, rel_tol=rel_tol, abs_tol=abs_tol)
         if isinstance(x, Sequence):
             y = cast("Sequence[Any]", y)
             if len(x) != len(y):
