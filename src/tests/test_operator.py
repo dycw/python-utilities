@@ -88,8 +88,9 @@ class TestIsEqual:
         result = utilities.operator.is_equal(x, y)
         assert isinstance(result, bool)
 
-    @given(x=date_deltas(), y=date_deltas())
-    def test_sets_of_date_deltas(self, *, x: float, y: float) -> None:
+    @given(deltas=pairs(date_deltas()))
+    def test_sets_of_date_deltas(self, *, deltas: tuple[DateDelta, DateDelta]) -> None:
+        x, y = deltas
         assert utilities.operator.is_equal({x, y}, {y, x})
 
     def test_sets_of_enums(self) -> None:
