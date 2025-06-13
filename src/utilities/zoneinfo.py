@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, assert_never, cast, override
 from zoneinfo import ZoneInfo
 
+from whenever import ZonedDateTime
+
 from utilities.tzlocal import LOCAL_TIME_ZONE
 
 if TYPE_CHECKING:
@@ -22,6 +24,8 @@ def ensure_time_zone(obj: TimeZoneLike, /) -> ZoneInfo:
     match obj:
         case ZoneInfo() as zone_info:
             return zone_info
+        case ZonedDateTime() as datetime:
+            return ZoneInfo(datetime.tz)
         case "local":
             return LOCAL_TIME_ZONE
         case str() as key:
