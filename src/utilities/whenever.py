@@ -27,6 +27,7 @@ from whenever import (
 )
 
 from utilities.math import sign
+from utilities.platform import get_strftime
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import MaybeStr
