@@ -5,21 +5,7 @@ from math import nan
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import example, given
-from hypothesis.strategies import (
-    SearchStrategy,
-    booleans,
-    builds,
-    dictionaries,
-    floats,
-    integers,
-    just,
-    lists,
-    none,
-    recursive,
-    sampled_from,
-    tuples,
-    uuids,
-)
+from hypothesis.strategies import dictionaries, floats, integers, lists
 from polars import DataFrame, Int64
 from pytest import mark, param, raises
 
@@ -27,22 +13,7 @@ import utilities.math
 import utilities.operator
 from tests.test_objects.objects import CustomError, TruthEnum, objects
 from tests.test_typing_funcs.with_future import DataClassFutureCustomEquality
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    date_deltas_whenever,
-    date_time_deltas_whenever,
-    dates_whenever,
-    int64s,
-    pairs,
-    paths,
-    plain_datetimes_whenever,
-    text_ascii,
-    text_printable,
-    time_deltas_whenever,
-    times_whenever,
-    versions,
-    zoned_datetimes_whenever,
-)
+from utilities.hypothesis import assume_does_not_raise, pairs, text_ascii
 from utilities.operator import IsEqualError
 from utilities.polars import are_frames_equal
 
@@ -53,183 +24,13 @@ if TYPE_CHECKING:
     from utilities.typing import StrMapping
 
 
-def base_objects(
-    *,
-    dataclass_custom_equality: bool = False,
-    dataclass_default_in_init_child: bool = False,
-    dataclass_int: bool = False,
-    dataclass_int_default: bool = False,
-    dataclass_literal: bool = False,
-    dataclass_literal_nullable: bool = False,
-    dataclass_nested: bool = False,
-    dataclass_none: bool = False,
-    dataclass_type_literal: bool = False,
-    dataclass_type_literal_nullable: bool = False,
-) -> SearchStrategy[Any]:
-    base = (
-        booleans()
-        | builds(CustomError, int64s())
-        | date_deltas_whenever()
-        | date_time_deltas_whenever()
-        | dates_whenever()
-        | floats()
-        | int64s()
-        | just(CustomError)
-        | none()
-        | paths()
-        | plain_datetimes_whenever()
-        | sampled_from(TruthEnum)
-        | text_printable().filter(lambda x: not x.startswith("["))
-        | time_deltas_whenever()
-        | times_whenever()
-        | uuids()
-        | versions()
-        | zoned_datetimes_whenever()
-    )
-    if dataclass_custom_equality:
-        base |= builds(DataClassFutureCustomEquality)
-    if dataclass_default_in_init_child:
-        base |= builds(DataClassFutureDefaultInInitChild)
-    if dataclass_int:
-        base |= builds(DataClassFutureInt).filter(lambda obj: _is_int64(obj.int_))
-    if dataclass_int_default:
-        base |= builds(DataClassFutureIntDefault).filter(
-            lambda obj: _is_int64(obj.int_)
-        )
-    if dataclass_literal:
-        base |= builds(DataClassFutureLiteral, truth=sampled_from(["true", "false"]))
-    if dataclass_literal_nullable:
-        base |= builds(
-            DataClassFutureLiteralNullable,
-            truth=sampled_from(["true", "false"]) | none(),
-        )
-    if dataclass_nested:
-        base |= builds(DataClassFutureNestedInnerFirstOuter).filter(
-            lambda outer: _is_int64(outer.inner.int_)
-        ) | builds(DataClassFutureNestedOuterFirstOuter).filter(
-            lambda outer: _is_int64(outer.inner.int_)
-        )
-    if dataclass_none:
-        base |= builds(DataClassFutureNone)
-    if dataclass_type_literal:
-        base |= builds(
-            DataClassFutureTypeLiteral, truth=sampled_from(["true", "false"])
-        )
-    if dataclass_type_literal_nullable:
-        base |= builds(
-            DataClassFutureTypeLiteralNullable,
-            truth=sampled_from(["true", "false"]) | none(),
-        )
-    return base
-
-
-def make_objects(
-    *,
-    dataclass_custom_equality: bool = False,
-    dataclass_default_in_init_child: bool = False,
-    dataclass_int: bool = False,
-    dataclass_int_default: bool = False,
-    dataclass_literal: bool = False,
-    dataclass_literal_nullable: bool = False,
-    dataclass_nested: bool = False,
-    dataclass_none: bool = False,
-    dataclass_type_literal: bool = False,
-    dataclass_type_literal_nullable: bool = False,
-    extra_base: SearchStrategy[Any] | None = None,
-) -> SearchStrategy[Any]:
-    base = base_objects(
-        dataclass_custom_equality=dataclass_custom_equality,
-        dataclass_default_in_init_child=dataclass_default_in_init_child,
-        dataclass_int=dataclass_int,
-        dataclass_int_default=dataclass_int_default,
-        dataclass_literal=dataclass_literal,
-        dataclass_literal_nullable=dataclass_literal_nullable,
-        dataclass_nested=dataclass_nested,
-        dataclass_none=dataclass_none,
-        dataclass_type_literal=dataclass_type_literal,
-        dataclass_type_literal_nullable=dataclass_type_literal_nullable,
-    )
-    if extra_base is not None:
-        base |= extra_base
-    return recursive(base, partial(_extend), max_leaves=10)
-
-
-def _extend(strategy: SearchStrategy[Any], /) -> SearchStrategy[Any]:
-    lsts = lists(strategy)
-    sets = lsts.map(_into_set)
-    frozensets = lists(strategy).map(_into_set).map(frozenset)
-    return (
-        dictionaries(text_ascii(), strategy)
-        | frozensets
-        | frozensets.map(SubFrozenSet)
-        | lsts
-        | lists(strategy).map(SubList)
-        | sets
-        | sets.map(SubSet)
-        | tuples(strategy)
-        | tuples(strategy).map(SubTuple)
-    )
-
-
-def _is_int64(n: int, /) -> bool:
-    return MIN_INT64 <= n <= MAX_INT64
-
-
-def _into_set(elements: list[Any], /) -> set[Any]:
-    with assume_does_not_raise(TypeError, match="unhashable type"):
-        return set(elements)
-
-
-class CustomError(Exception): ...
-
-
-class SubFrozenSet(frozenset):
-    pass
-
-
-class SubList(list):
-    pass
-
-
-    from utilities.types import Number
-    from utilities.typing import StrMapping
-
-
 class TestIsEqual:
-    @given(
-        obj=make_objects(
-            dataclass_custom_equality=True,
-            dataclass_default_in_init_child=True,
-            dataclass_int=True,
-            dataclass_int_default=True,
-            dataclass_literal=True,
-            dataclass_literal_nullable=True,
-            dataclass_nested=True,
-            dataclass_none=True,
-            dataclass_type_literal=True,
-            dataclass_type_literal_nullable=True,
-        )
-    )
+    @given(obj=objects(all_=True))
     def test_one(self, *, obj: Any) -> None:
         with assume_does_not_raise(IsEqualError):
             assert utilities.operator.is_equal(obj, obj)
 
-    @given(
-        objs=pairs(
-            make_objects(
-                dataclass_custom_equality=True,
-                dataclass_default_in_init_child=True,
-                dataclass_int=True,
-                dataclass_int_default=True,
-                dataclass_literal=True,
-                dataclass_literal_nullable=True,
-                dataclass_nested=True,
-                dataclass_none=True,
-                dataclass_type_literal=True,
-                dataclass_type_literal_nullable=True,
-            )
-        )
-    )
+    @given(objs=pairs(objects(all_=True)))
     def test_two_objects(self, *, objs: tuple[Any, Any]) -> None:
         x, y = objs
         with assume_does_not_raise(IsEqualError):
@@ -277,8 +78,7 @@ class TestIsEqual:
         assert utilities.operator.is_equal(x, y, abs_tol=1e-8)
 
     @given(
-        x=dictionaries(text_ascii(), make_objects()),
-        y=dictionaries(text_ascii(), make_objects()),
+        x=dictionaries(text_ascii(), objects()), y=dictionaries(text_ascii(), objects())
     )
     def test_mappings(self, *, x: StrMapping, y: StrMapping) -> None:
         result = utilities.operator.is_equal(x, y)

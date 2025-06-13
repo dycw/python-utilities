@@ -443,7 +443,20 @@ class TestOrjsonFormatter:
 
 
 class TestSerializeAndDeserialize:
-    @given(obj=objects(all_=True, parsable=True))
+    @given(
+        obj=make_objects(
+            dataclass_custom_equality=True,
+            dataclass_default_in_init_child=False,
+            dataclass_int=True,
+            dataclass_int_default=True,
+            dataclass_literal=True,
+            dataclass_literal_nullable=True,
+            dataclass_nested=True,
+            dataclass_none=True,
+            dataclass_type_literal=True,
+            dataclass_type_literal_nullable=True,
+        )
+    )
     def test_all(self, *, obj: Any) -> None:
         with assume_does_not_raise(_SerializeIntegerError):
             ser = serialize(obj, globalns=globals())
