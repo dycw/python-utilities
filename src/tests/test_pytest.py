@@ -364,18 +364,20 @@ class TestThrottle:
     @mark.flaky
     async def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
         root_str = str(tmp_path)
-        contents = f"""
+        _ = testdir.makepyfile(
+            f"""
             from pytest import mark
-
             from string import printable
+            from whenever import TimeDelta
+
             from utilities.pytest import throttle
 
             @mark.parametrize('arg', [10 * printable])
-            @throttle(root={root_str!r}, duration=1.0)
+            @throttle(root={root_str!r}, duration=TimeDelta(seconds=0.1))
             def test_main(*, arg: str):
                 assert True
             """
-        _ = testdir.makepyfile(contents)
+        )
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
         await sleep_td(0.1 * SECOND)
