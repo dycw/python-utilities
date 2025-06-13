@@ -19,9 +19,6 @@ def date_to_month(date: dt.date, /) -> Month:
 ##
 
 
-##
-
-
 def ensure_month(month: MonthLike, /) -> Month:
     """Ensure the object is a month."""
     if isinstance(month, Month):
