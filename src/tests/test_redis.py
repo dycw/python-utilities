@@ -139,7 +139,7 @@ class TestPublish:
             assert isinstance(result, bytes)
             assert result == datum
 
-    @given(objects=lists(objects(), min_size=1))
+    @given(objects=lists(make_objects(), min_size=1))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
@@ -565,7 +565,7 @@ class TestSubscribe:
             assert isinstance(result, bytes)
             assert result == message
 
-    @given(objs=lists(objects(), min_size=1))
+    @given(objs=lists(make_objects(), min_size=1))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
@@ -667,7 +667,7 @@ class TestSubscribe:
 
 
 class TestSubscribeService:
-    @given(objects=lists(objects(), min_size=1))
+    @given(objects=lists(make_objects(), min_size=1))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX

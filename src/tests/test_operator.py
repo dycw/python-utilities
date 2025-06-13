@@ -21,7 +21,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from polars import DataFrame, Int64
-from pytest import raises
+from pytest import mark, param, raises
 
 import utilities.math
 import utilities.operator
@@ -65,29 +65,20 @@ def base_objects(
     dataclass_none: bool = False,
     dataclass_type_literal: bool = False,
     dataclass_type_literal_nullable: bool = False,
-    enum: bool = False,
-    exception_class: bool = False,
-    exception_instance: bool = False,
-    floats_min_value: Number | None = None,
-    floats_max_value: Number | None = None,
-    floats_allow_nan: bool | None = None,
-    floats_allow_infinity: bool | None = None,
 ) -> SearchStrategy[Any]:
     base = (
         booleans()
-        | floats(
-            min_value=floats_min_value,
-            max_value=floats_max_value,
-            allow_nan=floats_allow_nan,
-            allow_infinity=floats_allow_infinity,
-        )
+        | builds(CustomError, int64s())
         | date_deltas_whenever()
         | date_time_deltas_whenever()
         | dates_whenever()
+        | floats()
         | int64s()
+        | just(CustomError)
         | none()
         | paths()
         | plain_datetimes_whenever()
+        | sampled_from(TruthEnum)
         | text_printable().filter(lambda x: not x.startswith("["))
         | time_deltas_whenever()
         | times_whenever()
@@ -129,12 +120,6 @@ def base_objects(
             DataClassFutureTypeLiteralNullable,
             truth=sampled_from(["true", "false"]) | none(),
         )
-    if enum:
-        base |= sampled_from(TruthEnum)
-    if exception_class:
-        base |= just(CustomError)
-    if exception_instance:
-        base |= builds(CustomError, int64s())
     return base
 
 
@@ -150,18 +135,7 @@ def make_objects(
     dataclass_none: bool = False,
     dataclass_type_literal: bool = False,
     dataclass_type_literal_nullable: bool = False,
-    enum: bool = False,
-    exception_class: bool = False,
-    exception_instance: bool = False,
-    floats_min_value: Number | None = None,
-    floats_max_value: Number | None = None,
-    floats_allow_nan: bool | None = None,
-    floats_allow_infinity: bool | None = None,
     extra_base: SearchStrategy[Any] | None = None,
-    sub_frozenset: bool = False,
-    sub_list: bool = False,
-    sub_set: bool = False,
-    sub_tuple: bool = False,
 ) -> SearchStrategy[Any]:
     base = base_objects(
         dataclass_custom_equality=dataclass_custom_equality,
@@ -174,57 +148,27 @@ def make_objects(
         dataclass_none=dataclass_none,
         dataclass_type_literal=dataclass_type_literal,
         dataclass_type_literal_nullable=dataclass_type_literal_nullable,
-        enum=enum,
-        exception_class=exception_class,
-        exception_instance=exception_instance,
-        floats_min_value=floats_min_value,
-        floats_max_value=floats_max_value,
-        floats_allow_nan=floats_allow_nan,
-        floats_allow_infinity=floats_allow_infinity,
     )
     if extra_base is not None:
         base |= extra_base
-    return recursive(
-        base,
-        partial(
-            _extend,
-            sub_frozenset=sub_frozenset,
-            sub_list=sub_list,
-            sub_set=sub_set,
-            sub_tuple=sub_tuple,
-        ),
-        max_leaves=10,
-    )
+    return recursive(base, partial(_extend), max_leaves=10)
 
 
-def _extend(
-    strategy: SearchStrategy[Any],
-    /,
-    *,
-    sub_frozenset: bool = False,
-    sub_list: bool = False,
-    sub_set: bool = False,
-    sub_tuple: bool = False,
-) -> SearchStrategy[Any]:
+def _extend(strategy: SearchStrategy[Any], /) -> SearchStrategy[Any]:
     lsts = lists(strategy)
     sets = lsts.map(_into_set)
     frozensets = lists(strategy).map(_into_set).map(frozenset)
-    extension = (
+    return (
         dictionaries(text_ascii(), strategy)
         | frozensets
+        | frozensets.map(SubFrozenSet)
         | lsts
+        | lists(strategy).map(SubList)
         | sets
+        | sets.map(SubSet)
         | tuples(strategy)
+        | tuples(strategy).map(SubTuple)
     )
-    if sub_frozenset:
-        extension |= frozensets.map(SubFrozenSet)
-    if sub_list:
-        extension |= lists(strategy).map(SubList)
-    if sub_set:
-        extension |= sets.map(SubSet)
-    if sub_tuple:
-        extension |= tuples(strategy).map(SubTuple)
-    return extension
 
 
 def _is_int64(n: int, /) -> bool:
@@ -252,7 +196,20 @@ class SubList(list):
 
 
 class TestIsEqual:
-    @given(obj=objects(all_=True))
+    @given(
+        obj=make_objects(
+            dataclass_custom_equality=True,
+            dataclass_default_in_init_child=True,
+            dataclass_int=True,
+            dataclass_int_default=True,
+            dataclass_literal=True,
+            dataclass_literal_nullable=True,
+            dataclass_nested=True,
+            dataclass_none=True,
+            dataclass_type_literal=True,
+            dataclass_type_literal_nullable=True,
+        )
+    )
     def test_one(self, *, obj: Any) -> None:
         with assume_does_not_raise(IsEqualError):
             assert utilities.operator.is_equal(obj, obj)
@@ -270,11 +227,6 @@ class TestIsEqual:
                 dataclass_none=True,
                 dataclass_type_literal=True,
                 dataclass_type_literal_nullable=True,
-                enum=True,
-                sub_frozenset=True,
-                sub_list=True,
-                sub_set=True,
-                sub_tuple=True,
             )
         )
     )
@@ -349,6 +301,11 @@ class TestIsEqual:
     @example(x=-4.233805663404397, y=nan)
     def test_sets_of_floats(self, *, x: float, y: float) -> None:
         assert utilities.operator.is_equal({x, y}, {y, x})
+
+    def test_sets_of_unsortables(self) -> None:
+        obj = set(TruthEnum)
+        with raises(IsEqualError, match="Unable to sort .* and .*"):
+            _ = utilities.operator.is_equal(obj, obj)
 
     @mark.parametrize(
         ("x", "y", "expected"),
