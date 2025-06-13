@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
@@ -211,34 +210,6 @@ def _parse_object_type(
         try:
             return parse_version(text)
         except ParseVersionError:
-            raise _ParseObjectParseError(type_=cls, text=text) from None
-    if is_subclass_gen(cls, dt.date):
-        from utilities.whenever import ParseDateError, parse_date
-
-        try:
-            return parse_date(text)
-        except ParseDateError:
-            raise _ParseObjectParseError(type_=cls, text=text) from None
-    if is_subclass_gen(cls, dt.datetime):
-        from utilities.whenever import ParseDateTimeError, parse_datetime
-
-        try:
-            return parse_datetime(text)
-        except ParseDateTimeError:
-            raise _ParseObjectParseError(type_=cls, text=text) from None
-    if issubclass(cls, dt.time):
-        from utilities.whenever import ParseTimeError, parse_time
-
-        try:
-            return parse_time(text)
-        except ParseTimeError:
-            raise _ParseObjectParseError(type_=cls, text=text) from None
-    if issubclass(cls, dt.timedelta):
-        from utilities.whenever import ParseTimedeltaError, parse_timedelta
-
-        try:
-            return parse_timedelta(text)
-        except ParseTimedeltaError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
     raise _ParseObjectParseError(type_=cls, text=text)
 
