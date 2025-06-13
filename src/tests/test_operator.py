@@ -95,15 +95,14 @@ class TestIsEqual:
     def test_sets_of_date_deltas(self, *, x: float, y: float) -> None:
         assert utilities.operator.is_equal({x, y}, {y, x})
 
+    def test_sets_of_enums(self) -> None:
+        enums = set(TruthEnum)
+        assert utilities.operator.is_equal(enums, enums)
+
     @given(x=floats(), y=floats())
     @example(x=-4.233805663404397, y=nan)
     def test_sets_of_floats(self, *, x: float, y: float) -> None:
         assert utilities.operator.is_equal({x, y}, {y, x})
-
-    def test_sets_of_unsortables(self) -> None:
-        obj = set(TruthEnum)
-        with raises(IsEqualError, match="Unable to sort .* and .*"):
-            _ = utilities.operator.is_equal(obj, obj)
 
     @mark.parametrize(
         ("x", "y", "expected"),
