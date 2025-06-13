@@ -55,6 +55,7 @@ from polars._typing import IntoExprColumn, SchemaDict
 from polars.exceptions import ComputeError
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import raises
+from whenever import TimeZoneNotFoundError
 
 import utilities.polars
 from utilities.hypothesis import (
@@ -1083,7 +1084,8 @@ class TestDataClassToSchema:
 
     @given(time_zone=timezones())
     def test_date_or_datetime_as_zoned_datetime(self, *, time_zone: ZoneInfo) -> None:
-        now = get_now(time_zone=time_zone).py_datetime()
+        with assume_does_not_raise(TimeZoneNotFoundError):
+            now = get_now(time_zone=time_zone).py_datetime()
 
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -1214,7 +1216,8 @@ class TestDataClassToSchema:
 
     @given(time_zone=timezones())
     def test_zoned_datetime(self, *, time_zone: ZoneInfo) -> None:
-        now = get_now(time_zone=time_zone).py_datetime()
+        with assume_does_not_raise(TimeZoneNotFoundError):
+            now = get_now(time_zone=time_zone).py_datetime()
 
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -1227,8 +1230,9 @@ class TestDataClassToSchema:
 
     @given(start=timezones(), end=timezones())
     def test_zoned_datetime_nested(self, *, start: ZoneInfo, end: ZoneInfo) -> None:
-        now_start = get_now(time_zone=start).py_datetime()
-        now_end = get_now(time_zone=end).py_datetime()
+        with assume_does_not_raise(TimeZoneNotFoundError):
+            now_start = get_now(time_zone=start).py_datetime()
+            now_end = get_now(time_zone=end).py_datetime()
 
         @dataclass(kw_only=True, slots=True)
         class Inner:
