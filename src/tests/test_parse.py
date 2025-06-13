@@ -435,6 +435,7 @@ class TestParseObject:
             _ = parse_object(bool, text, extra={int: parser})
 
     @given(int_=integers())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_error_extra_non_unique(self, *, int_: int) -> None:
         with raises(
             _ParseObjectExtraNonUniqueError,
