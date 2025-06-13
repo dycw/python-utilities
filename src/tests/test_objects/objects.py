@@ -10,6 +10,7 @@ from hypothesis.strategies import (
     builds,
     dictionaries,
     floats,
+    integers,
     just,
     lists,
     none,
@@ -71,14 +72,15 @@ def objects(
     sub_set: bool = False,
     sub_tuple: bool = False,
     all_: bool = False,
+    parsable: bool = False,
 ) -> SearchStrategy[Any]:
     base = (
         booleans()
-        | date_deltas_whenever()
-        | date_time_deltas_whenever()
+        | date_deltas_whenever(parsable=parsable)
+        | date_time_deltas_whenever(parsable=parsable)
         | dates_whenever()
         | floats()
-        | int64s()
+        | (int64s() if parsable else integers())
         | none()
         | paths()
         | plain_datetimes_whenever()

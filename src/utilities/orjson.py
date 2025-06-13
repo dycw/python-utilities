@@ -22,7 +22,15 @@ from orjson import (
     dumps,
     loads,
 )
-from whenever import ZonedDateTime
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
@@ -38,26 +46,12 @@ from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
 from utilities.tzlocal import LOCAL_TIME_ZONE
-from utilities.uuid import UUID_PATTERN
 from utilities.version import Version, parse_version
-from utilities.whenever import (
-    parse_date,
-    parse_plain_datetime,
-    parse_time,
-    parse_timedelta,
-    parse_zoned_datetime,
-    serialize_date,
-    serialize_datetime,
-    serialize_time,
-    serialize_timedelta,
-)
 from utilities.whenever2 import from_timestamp
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from logging import _FormatStyle
-
-    from whenever import Date
 
     from utilities.types import Parallelism
 
@@ -69,26 +63,25 @@ if TYPE_CHECKING:
 class _Prefixes(Enum):
     dataclass = "dc"
     date = "d"
-    datetime = "dt"
+    date_delta = "dd"
+    date_time_delta = "D"
     enum = "e"
-    exception_class = "exc"
-    exception_instance = "exi"
+    exception_class = "Ex"
+    exception_instance = "ex"
     float_ = "fl"
     frozenset_ = "fr"
     list_ = "l"
-    nan = "nan"
-    none = "none"
+    none = "no"
     path = "p"
-    pos_inf = "pos_inf"
-    neg_inf = "neg_inf"
+    plain_date_time = "pd"
     set_ = "s"
-    timedelta = "td"
-    time = "tm"
+    time = "ti"
+    time_delta = "td"
     tuple_ = "tu"
     unserializable = "un"
     uuid = "uu"
     version = "v"
-    zoned_datetime = "zd"
+    zoned_date_time = "zd"
 
 
 type _DataclassHook = Callable[[type[Dataclass], StrMapping], StrMapping]
@@ -159,14 +152,12 @@ def _pre_process(
         # singletons
         case None:
             return f"[{_Prefixes.none.value}]"
-        case dt.datetime() as datetime:
-            return f"[{_Prefixes.datetime.value}]{serialize_datetime(datetime)}"
-        case dt.date() as date:  # after datetime
-            return f"[{_Prefixes.date.value}]{serialize_date(date)}"
-        case dt.time() as time:
-            return f"[{_Prefixes.time.value}]{serialize_time(time)}"
-        case dt.timedelta() as timedelta:
-            return f"[{_Prefixes.timedelta.value}]{serialize_timedelta(timedelta)}"
+        case Date() as date:
+            return f"[{_Prefixes.date.value}]{date}"
+        case DateDelta() as date:
+            return f"[{_Prefixes.date_delta.value}]{date}"
+        case DateTimeDelta() as date:
+            return f"[{_Prefixes.date_time_delta.value}]{date}"
         case Exception() as error_:
             return {
                 f"[{_Prefixes.exception_instance.value}|{type(error_).__qualname__}]": pre(
@@ -181,18 +172,24 @@ def _pre_process(
             if MIN_INT64 <= int_ <= MAX_INT64:
                 return int_
             raise _SerializeIntegerError(obj=int_)
-        case UUID() as uuid:
-            return f"[{_Prefixes.uuid.value}]{uuid}"
         case Path() as path:
             return f"[{_Prefixes.path.value}]{path!s}"
+        case PlainDateTime() as datetime:
+            return f"[{_Prefixes.plain_date_time.value}]{datetime}"
         case str() as str_:
             return str_
+        case Time() as time:
+            return f"[{_Prefixes.time.value}]{time}"
+        case TimeDelta() as time_delta:
+            return f"[{_Prefixes.time_delta.value}]{time_delta}"
         case type() as error_cls if issubclass(error_cls, Exception):
             return f"[{_Prefixes.exception_class.value}|{error_cls.__qualname__}]"
+        case UUID() as uuid:
+            return f"[{_Prefixes.uuid.value}]{uuid}"
         case Version() as version:
             return f"[{_Prefixes.version.value}]{version!s}"
         case ZonedDateTime() as datetime:
-            return f"[{_Prefixes.zoned_datetime.value}]{datetime}"
+            return f"[{_Prefixes.zoned_date_time.value}]{datetime}"
         # contains
         case Dataclass() as dataclass:
             asdict = dataclass_to_dict(
@@ -337,51 +334,36 @@ def deserialize(
     )
 
 
-_NONE_PATTERN = re.compile(r"^\[" + _Prefixes.none.value + r"\]$")
-_LOCAL_DATETIME_PATTERN = re.compile(
-    r"^\["
-    + _Prefixes.datetime.value
-    + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?)$"
-)
-_UUID_PATTERN = re.compile(r"^\[" + _Prefixes.uuid.value + r"\](" + UUID_PATTERN + ")$")
-_ZONED_DATETIME_PATTERN = re.compile(
-    r"^\["
-    + _Prefixes.datetime.value
-    + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?[\+\-]\d{2}:\d{2}(?::\d{2})?\[(?!(?:dt\.)).+?\])$"
-)
-_ZONED_DATETIME_PATTERN2 = re.compile(
-    r"^\["
-    + _Prefixes.zoned_datetime.value
-    + r"\](\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?[\+\-]\d{2}:\d{2}(?::\d{2})?\[(?!(?:dt\.)).+?\])$"
-)
-
-
-def _make_unit_pattern(prefix: _Prefixes, /) -> Pattern[str]:
-    return re.compile(r"^\[" + prefix.value + r"\](.+)$")
-
-
 (
     _DATE_PATTERN,
+    _DATE_DELTA_PATTERN,
+    _DATE_TIME_DELTA_PATTERN,
     _FLOAT_PATTERN,
+    _NONE_PATTERN,
     _PATH_PATTERN,
+    _PLAIN_DATE_TIME_PATTERN,
     _TIME_PATTERN,
-    _TIMEDELTA_PATTERN,
+    _TIME_DELTA_PATTERN,
+    _UUID_PATTERN,
     _VERSION_PATTERN,
-) = map(
-    _make_unit_pattern,
-    [
+    _ZONED_DATE_TIME_PATTERN,
+) = [
+    re.compile(r"^\[" + p.value + r"\](" + ".*" + ")$")
+    for p in [
         _Prefixes.date,
+        _Prefixes.date_delta,
+        _Prefixes.date_time_delta,
         _Prefixes.float_,
+        _Prefixes.none,
         _Prefixes.path,
+        _Prefixes.plain_date_time,
         _Prefixes.time,
-        _Prefixes.timedelta,
+        _Prefixes.time_delta,
+        _Prefixes.uuid,
         _Prefixes.version,
-    ],
-)
-
-
-def _make_container_pattern(prefix: _Prefixes, /) -> Pattern[str]:
-    return re.compile(r"^\[" + prefix.value + r"(?:\|(.+))?\]$")
+        _Prefixes.zoned_date_time,
+    ]
+]
 
 
 (
@@ -393,9 +375,9 @@ def _make_container_pattern(prefix: _Prefixes, /) -> Pattern[str]:
     _LIST_PATTERN,
     _SET_PATTERN,
     _TUPLE_PATTERN,
-) = map(
-    _make_container_pattern,
-    [
+) = [
+    re.compile(r"^\[" + p.value + r"(?:\|(.+))?\]$")
+    for p in [
         _Prefixes.dataclass,
         _Prefixes.enum,
         _Prefixes.exception_class,
@@ -404,8 +386,8 @@ def _make_container_pattern(prefix: _Prefixes, /) -> Pattern[str]:
         _Prefixes.list_,
         _Prefixes.set_,
         _Prefixes.tuple_,
-    ],
-)
+    ]
+]
 
 
 def _object_hook(
@@ -424,24 +406,26 @@ def _object_hook(
             if match := _NONE_PATTERN.search(text):
                 return None
             if match := _DATE_PATTERN.search(text):
-                return parse_date(match.group(1))
+                return Date.parse_common_iso(match.group(1))
+            if match := _DATE_DELTA_PATTERN.search(text):
+                return DateDelta.parse_common_iso(match.group(1))
+            if match := _DATE_TIME_DELTA_PATTERN.search(text):
+                return DateTimeDelta.parse_common_iso(match.group(1))
             if match := _FLOAT_PATTERN.search(text):
                 return float(match.group(1))
-            if match := _LOCAL_DATETIME_PATTERN.search(text):
-                return parse_plain_datetime(match.group(1))
             if match := _PATH_PATTERN.search(text):
                 return Path(match.group(1))
+            if match := _PLAIN_DATE_TIME_PATTERN.search(text):
+                return PlainDateTime.parse_common_iso(match.group(1))
             if match := _TIME_PATTERN.search(text):
-                return parse_time(match.group(1))
-            if match := _TIMEDELTA_PATTERN.search(text):
-                return parse_timedelta(match.group(1))
+                return Time.parse_common_iso(match.group(1))
+            if match := _TIME_DELTA_PATTERN.search(text):
+                return TimeDelta.parse_common_iso(match.group(1))
             if match := _UUID_PATTERN.search(text):
                 return UUID(match.group(1))
             if match := _VERSION_PATTERN.search(text):
                 return parse_version(match.group(1))
-            if match := _ZONED_DATETIME_PATTERN.search(text):
-                return parse_zoned_datetime(match.group(1))
-            if match := _ZONED_DATETIME_PATTERN2.search(text):
+            if match := _ZONED_DATE_TIME_PATTERN.search(text):
                 return ZonedDateTime.parse_common_iso(match.group(1))
             if (
                 exc_class := _object_hook_exception_class(
