@@ -8,6 +8,7 @@ from os import environ
 from re import MULTILINE, Pattern
 from typing import TYPE_CHECKING, Any
 
+from hypothesis import HealthCheck
 from pytest import fixture, mark, param
 from sqlalchemy import text
 
@@ -41,7 +42,7 @@ try:
 except ModuleNotFoundError:
     pass
 else:
-    setup_hypothesis_profiles()
+    setup_hypothesis_profiles(suppress_health_check={HealthCheck.differing_executors})
 
 
 # fixture - logging

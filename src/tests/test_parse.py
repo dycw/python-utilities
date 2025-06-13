@@ -5,7 +5,7 @@ from pathlib import Path
 from types import NoneType
 from typing import Final, Literal
 
-from hypothesis import HealthCheck, given, settings
+from hypothesis import given
 from hypothesis.strategies import (
     booleans,
     dictionaries,
@@ -68,21 +68,18 @@ from utilities.version import Version
 
 class TestSerializeAndParseObject:
     @given(bool_=booleans())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_bool(self, *, bool_: bool) -> None:
         serialized = serialize_object(bool_)
         result = parse_object(bool, serialized)
         assert result is bool_
 
     @given(date=dates_whenever())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_date(self, *, date: Date) -> None:
         serialized = serialize_object(date)
         result = parse_object(Date, serialized)
         assert result == date
 
     @given(mapping=dictionaries(int64s(), int64s()))
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_dict(self, *, mapping: dict[int, int]) -> None:
         serialized = serialize_object(mapping)
         result = parse_object(dict[int, int], serialized)
@@ -95,35 +92,30 @@ class TestSerializeAndParseObject:
         assert result is truth
 
     @given(float_=floats())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_float(self, *, float_: float) -> None:
         serialized = serialize_object(float_)
         result = parse_object(float, serialized)
         assert is_equal(result, float_)
 
     @given(ints=frozensets(int64s()))
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_frozenset(self, *, ints: frozenset[int]) -> None:
         serialized = serialize_object(ints)
         result = parse_object(frozenset[int], serialized)
         assert result == ints
 
     @given(int_=integers())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_int(self, *, int_: int) -> None:
         serialized = serialize_object(int_)
         result = parse_object(int, serialized)
         assert result == int_
 
     @given(ints=lists(int64s()))
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_list(self, *, ints: list[int]) -> None:
         serialized = serialize_object(ints)
         result = parse_object(list[int], serialized)
         assert result == ints
 
     @given(bool_=booleans())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_literal_extra(self, *, bool_: bool) -> None:
         text = serialize_object(bool_)
         result = parse_object(bool, text, extra={Literal["lit"]: parse_bool})
@@ -145,21 +137,18 @@ class TestSerializeAndParseObject:
         assert result is None
 
     @given(number=numbers())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_number(self, *, number: Number) -> None:
         serialized = serialize_object(number)
         result = parse_object(Number, serialized)
         assert result == number
 
     @given(path=paths())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_path(self, *, path: Path) -> None:
         serialized = serialize_object(path)
         result = parse_object(Path, serialized)
         assert result == path
 
     @given(path=paths())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_path_expanded(self, *, path: Path) -> None:
         path_use = Path("~", path)
         serialized = serialize_object(path_use)
@@ -167,7 +156,6 @@ class TestSerializeAndParseObject:
         assert result == result.expanduser()
 
     @given(datetime=plain_datetimes_whenever())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_plain_datetime(self, *, datetime: PlainDateTime) -> None:
         serialized = serialize_object(datetime)
         result = parse_object(PlainDateTime, serialized)
@@ -179,7 +167,6 @@ class TestSerializeAndParseObject:
         assert result is None
 
     @given(number=numbers())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_nullable_number_number(self, *, number: Number) -> None:
         serialized = serialize_object(number)
         result = parse_object(Number | None, serialized)
@@ -191,7 +178,6 @@ class TestSerializeAndParseObject:
         assert result is None
 
     @given(int_=integers())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_nullable_int_int(self, *, int_: int) -> None:
         serialized = serialize_object(int_)
         result = parse_object(int | None, serialized)
@@ -203,41 +189,35 @@ class TestSerializeAndParseObject:
         assert result is sentinel
 
     @given(ints=sets(int64s()))
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_set(self, *, ints: set[int]) -> None:
         serialized = serialize_object(ints)
         result = parse_object(set[int], serialized)
         assert result == ints
 
     @given(serialized=text_ascii())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_to_serialized(self, *, serialized: str) -> None:
         result = parse_object(str, serialized)
         assert result == serialized
 
     @given(time=times_whenever())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_time(self, *, time: Time) -> None:
         serialized = serialize_object(time)
         result = parse_object(Time, serialized)
         assert result == time
 
     @given(time_delta=time_deltas_whenever())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_time_delta(self, *, time_delta: TimeDelta) -> None:
         serialized = serialize_object(time_delta)
         result = parse_object(TimeDelta, serialized)
         assert result == time_delta
 
     @given(x=integers(), y=integers())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_tuple(self, *, x: int, y: int) -> None:
         serialized = serialize_object((x, y))
         result = parse_object(tuple[int, int], serialized)
         assert result == (x, y)
 
     @given(int_=integers())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_type_extra(self, *, int_: int) -> None:
         serialized = serialize_object(int_)
         result = parse_object(
@@ -254,7 +234,6 @@ class TestSerializeAndParseObject:
         assert result == truth
 
     @given(int_=integers())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_type_union_with_extra(self, *, int_: int) -> None:
         def parser(text: str, /) -> DataClassFutureIntEvenOrOddTypeUnion:
             int_ = int(text)
@@ -282,7 +261,6 @@ class TestSerializeAndParseObject:
         assert result == expected
 
     @given(int_=integers())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_union_with_extra(self, *, int_: int) -> None:
         def parser(text: str, /) -> DataClassFutureIntEvenOrOddUnion:
             int_ = int(text)
@@ -310,14 +288,12 @@ class TestSerializeAndParseObject:
         assert result == expected
 
     @given(version=versions())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_version(self, *, version: Version) -> None:
         serialized = serialize_object(version)
         result = parse_object(Version, serialized)
         assert result == version
 
     @given(datetime=zoned_datetimes_whenever())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_zoned_datetime(self, *, datetime: ZonedDateTime) -> None:
         serialized = serialize_object(datetime)
         result = parse_object(ZonedDateTime, serialized)
@@ -370,7 +346,6 @@ class TestParseObject:
         assert result is expected
 
     @given(value=text_ascii(min_size=10) | none())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_optional_type_with_union_extra_not_used(
         self, *, value: str | None
     ) -> None:
@@ -455,7 +430,6 @@ class TestParseObject:
             _ = parse_object(bool, text, extra={int: parser})
 
     @given(int_=integers())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_error_extra_non_unique(self, *, int_: int) -> None:
         with raises(
             _ParseObjectExtraNonUniqueError,
@@ -635,7 +609,6 @@ class TestParseObject:
 
 class TestSerializeObject:
     @given(bool_=booleans())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_bool_custom(self, *, bool_: bool) -> None:
         def serializer(bool_: bool, /) -> str:  # noqa: FBT001
             match bool_:
@@ -653,7 +626,6 @@ class TestSerializeObject:
         assert serialized == expected
 
     @given(bool_=booleans())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_bool_extra_not_used(self, *, bool_: bool) -> None:
         def serializer(int_: int, /) -> str:
             return f"({int_})"
@@ -663,7 +635,6 @@ class TestSerializeObject:
         assert serialized == expected
 
     @given(int_=integers())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_type_with_extra(self, *, int_: int) -> None:
         obj = DataClassFutureInt(int_=int_)
 
@@ -675,7 +646,6 @@ class TestSerializeObject:
         assert serialized == expected
 
     @given(int_=integers())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_type_union_with_extra(self, *, int_: int) -> None:
         match int_ % 2:
             case 0:
@@ -729,7 +699,6 @@ class TestSerializeObject:
             _ = serialize_object(Final, extra={})
 
     @given(bool_=booleans())
-    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_error_extra_non_unique(self, *, bool_: bool) -> None:
         with raises(
             _SerializeObjectExtraNonUniqueError,
