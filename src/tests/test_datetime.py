@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from math import isclose
 from operator import eq, gt, lt
 from re import search
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Self
 
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
@@ -16,7 +16,6 @@ from hypothesis.strategies import (
     floats,
     integers,
     none,
-    permutations,
     sampled_from,
     timedeltas,
     timezones,
@@ -42,8 +41,6 @@ from utilities.datetime import (
     WEEK,
     YEAR,
     ZERO_TIME,
-    AddWeekdaysError,
-    AreEqualDateTimesError,
     CheckDateNotDateTimeError,
     EnsureMonthError,
     GetMinMaxDateError,
@@ -63,8 +60,6 @@ from utilities.datetime import (
     _GetMinMaxDatePeriodError,
     _ParseTwoDigitYearInvalidIntegerError,
     _ParseTwoDigitYearInvalidStringError,
-    add_weekdays,
-    are_equal_datetimes,
     check_date_not_datetime,
     date_duration_to_int,
     date_duration_to_timedelta,
@@ -127,90 +122,6 @@ if TYPE_CHECKING:
         MaybeCallablePyDateTime,
         Number,
     )
-
-
-class TestAddWeekdays:
-    @given(date=dates(), n=integers(-10, 10))
-    @mark.parametrize("predicate", [param(gt), param(lt)])
-    def test_add(
-        self, *, date: dt.date, n: int, predicate: Callable[[Any, Any], bool]
-    ) -> None:
-        _ = assume(predicate(n, 0))
-        with assume_does_not_raise(OverflowError):
-            result = add_weekdays(date, n=n)
-        assert is_weekday(result)
-        assert predicate(result, date)
-
-    @given(date=dates())
-    def test_zero(self, *, date: dt.date) -> None:
-        _ = assume(is_weekday(date))
-        result = add_weekdays(date, n=0)
-        assert result == date
-
-    @given(date=dates())
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_error(self, *, date: dt.date) -> None:
-        _ = assume(not is_weekday(date))
-        with raises(AddWeekdaysError):
-            _ = add_weekdays(date, n=0)
-
-    @given(date=dates(), ns=pairs(integers(-10, 10)))
-    def test_two(self, *, date: dt.date, ns: tuple[int, int]) -> None:
-        with assume_does_not_raise(AddWeekdaysError, OverflowError):
-            weekday1, weekday2 = (add_weekdays(date, n=n) for n in ns)
-        result = weekday1 <= weekday2
-        n1, n2 = ns
-        expected = n1 <= n2
-        assert result is expected
-
-
-class TestAreEqualDateTimes:
-    @given(x=datetimes(), y=datetimes())
-    def test_local(self, *, x: dt.datetime, y: dt.datetime) -> None:
-        result = are_equal_datetimes(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(
-        x=zoned_datetimes(time_zone=timezones()),
-        y=zoned_datetimes(time_zone=timezones()),
-    )
-    def test_zoned_non_strict(self, *, x: dt.datetime, y: dt.datetime) -> None:
-        result = are_equal_datetimes(x, y)
-        expected = x == y
-        assert result is expected
-
-    @given(
-        x=zoned_datetimes(time_zone=UTC),
-        y=zoned_datetimes(time_zone=UTC),
-        time_zone1=timezones(),
-        time_zone2=timezones(),
-    )
-    def test_zoned_strict(
-        self,
-        *,
-        x: dt.datetime,
-        y: dt.datetime,
-        time_zone1: ZoneInfo,
-        time_zone2: ZoneInfo,
-    ) -> None:
-        with assume_does_not_raise(OverflowError, match="date value out of range"):
-            x1 = x.astimezone(time_zone1)
-            y2 = y.astimezone(time_zone2)
-        result = are_equal_datetimes(x1, y2, strict=True)
-        expected = (x == y) and (time_zone1 is time_zone2)
-        assert result is expected
-
-    @given(data=data(), x=datetimes(), y=zoned_datetimes(time_zone=timezones()))
-    def test_local_vs_zoned(
-        self, *, data: DataObject, x: dt.datetime, y: dt.datetime
-    ) -> None:
-        left, right = data.draw(permutations([x, y]))
-        with raises(
-            AreEqualDateTimesError,
-            match=r"Cannot compare local and zoned datetimes \(.*, .*\)",
-        ):
-            _ = are_equal_datetimes(left, right)
 
 
 class TestCheckDateNotDateTime:

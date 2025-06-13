@@ -1,248 +1,21 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from re import search, sub
-from typing import TYPE_CHECKING, Any, Literal, Self, assert_never, overload, override
+from typing import Any, Self, assert_never, overload, override
 
 from utilities.iterables import OneEmptyError, one
-from utilities.math import SafeRoundError, round_, safe_round
 from utilities.platform import SYSTEM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import MaybeCallablePyDate, MaybeCallablePyDateTime, MaybeStr
-from utilities.typing import is_instance_gen
-from utilities.zoneinfo import UTC, ensure_time_zone
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-    from utilities.types import DateOrDateTime, Duration, MathRoundMode, TimeZoneLike
-
-
-_DAYS_PER_YEAR = 365.25
-_MICROSECONDS_PER_SECOND = int(1e6)
-_SECONDS_PER_DAY = 24 * 60 * 60
-_MICROSECONDS_PER_DAY = _MICROSECONDS_PER_SECOND * _SECONDS_PER_DAY
-DATETIME_MIN_UTC = dt.datetime.min.replace(tzinfo=UTC)
-DATETIME_MAX_UTC = dt.datetime.max.replace(tzinfo=UTC)
-DATETIME_MIN_NAIVE = DATETIME_MIN_UTC.replace(tzinfo=None)
-DATETIME_MAX_NAIVE = DATETIME_MAX_UTC.replace(tzinfo=None)
-EPOCH_UTC = dt.datetime.fromtimestamp(0, tz=UTC)
-EPOCH_DATE = EPOCH_UTC.date()
-EPOCH_NAIVE = EPOCH_UTC.replace(tzinfo=None)
-ZERO_TIME = dt.timedelta(0)
-MICROSECOND = dt.timedelta(microseconds=1)
-MILLISECOND = dt.timedelta(milliseconds=1)
-SECOND = dt.timedelta(seconds=1)
-MINUTE = dt.timedelta(minutes=1)
-HOUR = dt.timedelta(hours=1)
-DAY = dt.timedelta(days=1)
-WEEK = dt.timedelta(weeks=1)
-
-
-##
-
-
-def add_weekdays(date: dt.date, /, *, n: int = 1) -> dt.date:
-    """Add a number of a weekdays to a given date.
-
-    If the initial date is a weekend, then moving to the adjacent weekday
-    counts as 1 move.
-    """
-    check_date_not_datetime(date)
-    if n == 0 and not is_weekday(date):
-        raise AddWeekdaysError(date)
-    if n >= 1:
-        for _ in range(n):
-            date = round_to_next_weekday(date + DAY)
-    elif n <= -1:
-        for _ in range(-n):
-            date = round_to_prev_weekday(date - DAY)
-    return date
-
-
-class AddWeekdaysError(Exception): ...
-
-
-##
-
-
-def are_equal_datetimes(
-    x: dt.datetime, y: dt.datetime, /, *, strict: bool = False
-) -> bool:
-    """Check if x == y for datetimes."""
-    match x.tzinfo is None, y.tzinfo is None:
-        case True, True:
-            return x == y
-        case False, False if x == y:
-            return (x.tzinfo is y.tzinfo) or not strict
-        case False, False if x != y:
-            return False
-        case _:
-            raise AreEqualDateTimesError(x=x, y=y)
-
-
-@dataclass(kw_only=True, slots=True)
-class AreEqualDateTimesError(Exception):
-    x: dt.datetime
-    y: dt.datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot compare local and zoned datetimes ({self.x}, {self.y})"
-
-
-##
-
-
-def check_date_not_datetime(date: dt.date, /) -> None:
-    """Check if a date is not a datetime."""
-    if not is_instance_gen(date, dt.date):
-        raise CheckDateNotDateTimeError(date=date)
-
-
-@dataclass(kw_only=True, slots=True)
-class CheckDateNotDateTimeError(Exception):
-    date: dt.date
-
-    @override
-    def __str__(self) -> str:
-        return f"Date must not be a datetime; got {self.date}"
-
-
-##
+from utilities.zoneinfo import UTC
 
 
 def date_to_month(date: dt.date, /) -> Month:
     """Collapse a date into a month."""
-    check_date_not_datetime(date)
     return Month(year=date.year, month=date.month)
-
-
-##
-
-
-def date_duration_to_int(duration: Duration, /) -> int:
-    """Ensure a date duration is a float."""
-    match duration:
-        case int():
-            return duration
-        case float():
-            try:
-                return safe_round(duration)
-            except SafeRoundError:
-                raise _DateDurationToIntFloatError(duration=duration) from None
-        case dt.timedelta():
-            if is_integral_timedelta(duration):
-                return duration.days
-            raise _DateDurationToIntTimeDeltaError(duration=duration) from None
-        case _ as never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class DateDurationToIntError(Exception):
-    duration: Duration
-
-
-@dataclass(kw_only=True, slots=True)
-class _DateDurationToIntFloatError(DateDurationToIntError):
-    @override
-    def __str__(self) -> str:
-        return f"Float duration must be integral; got {self.duration}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _DateDurationToIntTimeDeltaError(DateDurationToIntError):
-    @override
-    def __str__(self) -> str:
-        return f"Timedelta duration must be integral; got {self.duration}"
-
-
-def date_duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
-    """Ensure a date duration is a timedelta."""
-    match duration:
-        case int():
-            return dt.timedelta(days=duration)
-        case float():
-            try:
-                as_int = safe_round(duration)
-            except SafeRoundError:
-                raise _DateDurationToTimeDeltaFloatError(duration=duration) from None
-            return dt.timedelta(days=as_int)
-        case dt.timedelta():
-            if is_integral_timedelta(duration):
-                return duration
-            raise _DateDurationToTimeDeltaTimeDeltaError(duration=duration) from None
-        case _ as never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class DateDurationToTimeDeltaError(Exception):
-    duration: Duration
-
-
-@dataclass(kw_only=True, slots=True)
-class _DateDurationToTimeDeltaFloatError(DateDurationToTimeDeltaError):
-    @override
-    def __str__(self) -> str:
-        return f"Float duration must be integral; got {self.duration}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _DateDurationToTimeDeltaTimeDeltaError(DateDurationToTimeDeltaError):
-    @override
-    def __str__(self) -> str:
-        return f"Timedelta duration must be integral; got {self.duration}"
-
-
-##
-
-
-def datetime_duration_to_float(duration: Duration, /) -> float:
-    """Ensure a datetime duration is a float."""
-    match duration:
-        case int():
-            return float(duration)
-        case float():
-            return duration
-        case dt.timedelta():
-            return duration.total_seconds()
-        case _ as never:
-            assert_never(never)
-
-
-def datetime_duration_to_microseconds(duration: Duration, /) -> int:
-    """Compute the number of microseconds in a datetime duration."""
-    timedelta = datetime_duration_to_timedelta(duration)
-    return (
-        _MICROSECONDS_PER_DAY * timedelta.days
-        + _MICROSECONDS_PER_SECOND * timedelta.seconds
-        + timedelta.microseconds
-    )
-
-
-@dataclass(kw_only=True, slots=True)
-class TimedeltaToMillisecondsError(Exception):
-    duration: Duration
-    remainder: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to convert {self.duration} to milliseconds; got {self.remainder} microsecond(s)"  # pragma: no cover
-
-
-def datetime_duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
-    """Ensure a datetime duration is a timedelta."""
-    match duration:
-        case int() | float():
-            return dt.timedelta(seconds=duration)
-        case dt.timedelta():
-            return duration
-        case _ as never:
-            assert_never(never)
 
 
 ##
@@ -346,194 +119,12 @@ def get_datetime(
 ##
 
 
-def get_half_years(*, n: int = 1) -> dt.timedelta:
-    """Get a number of half-years as a timedelta."""
-    days_per_half_year = _DAYS_PER_YEAR / 2
-    return dt.timedelta(days=round(n * days_per_half_year))
-
-
-HALF_YEAR = get_half_years(n=1)
-
-##
-
-
-def get_min_max_date(
-    *,
-    min_date: dt.date | None = None,
-    max_date: dt.date | None = None,
-    min_age: Duration | None = None,
-    max_age: Duration | None = None,
-    time_zone: TimeZoneLike = UTC,
-) -> tuple[dt.date | None, dt.date | None]:
-    """Get the min/max date given a combination of dates/ages."""
-    today = get_today(time_zone=time_zone)
-    min_parts: Sequence[dt.date] = []
-    if min_date is not None:
-        if min_date > today:
-            raise _GetMinMaxDateMinDateError(min_date=min_date, today=today)
-        min_parts.append(min_date)
-    if max_age is not None:
-        if date_duration_to_timedelta(max_age) < ZERO_TIME:
-            raise _GetMinMaxDateMaxAgeError(max_age=max_age)
-        min_parts.append(sub_duration(today, duration=max_age))
-    min_date_use = max(min_parts, default=None)
-    max_parts: Sequence[dt.date] = []
-    if max_date is not None:
-        if max_date > today:
-            raise _GetMinMaxDateMaxDateError(max_date=max_date, today=today)
-        max_parts.append(max_date)
-    if min_age is not None:
-        if date_duration_to_timedelta(min_age) < ZERO_TIME:
-            raise _GetMinMaxDateMinAgeError(min_age=min_age)
-        max_parts.append(sub_duration(today, duration=min_age))
-    max_date_use = min(max_parts, default=None)
-    if (
-        (min_date_use is not None)
-        and (max_date_use is not None)
-        and (min_date_use > max_date_use)
-    ):
-        raise _GetMinMaxDatePeriodError(min_date=min_date_use, max_date=max_date_use)
-    return min_date_use, max_date_use
-
-
-@dataclass(kw_only=True, slots=True)
-class GetMinMaxDateError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _GetMinMaxDateMinDateError(GetMinMaxDateError):
-    min_date: dt.date
-    today: dt.date
-
-    @override
-    def __str__(self) -> str:
-        return f"Min date must be at most today; got {self.min_date} > {self.today}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _GetMinMaxDateMinAgeError(GetMinMaxDateError):
-    min_age: Duration
-
-    @override
-    def __str__(self) -> str:
-        return f"Min age must be non-negative; got {self.min_age}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _GetMinMaxDateMaxDateError(GetMinMaxDateError):
-    max_date: dt.date
-    today: dt.date
-
-    @override
-    def __str__(self) -> str:
-        return f"Max date must be at most today; got {self.max_date} > {self.today}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _GetMinMaxDateMaxAgeError(GetMinMaxDateError):
-    max_age: Duration
-
-    @override
-    def __str__(self) -> str:
-        return f"Max age must be non-negative; got {self.max_age}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _GetMinMaxDatePeriodError(GetMinMaxDateError):
-    min_date: dt.date
-    max_date: dt.date
-
-    @override
-    def __str__(self) -> str:
-        return (
-            f"Min date must be at most max date; got {self.min_date} > {self.max_date}"
-        )
-
-
-##
-
-
-def get_months(*, n: int = 1) -> dt.timedelta:
-    """Get a number of months as a timedelta."""
-    days_per_month = _DAYS_PER_YEAR / 12
-    return dt.timedelta(days=round(n * days_per_month))
-
-
-MONTH = get_months(n=1)
-
-
-##
-
-
-def get_now(*, time_zone: TimeZoneLike = UTC) -> dt.datetime:
-    """Get the current, timezone-aware time."""
-    return dt.datetime.now(tz=ensure_time_zone(time_zone))
-
-
-NOW_UTC = get_now(time_zone=UTC)
-
-
-##
-
-
-def get_quarters(*, n: int = 1) -> dt.timedelta:
-    """Get a number of quarters as a timedelta."""
-    days_per_quarter = _DAYS_PER_YEAR / 4
-    return dt.timedelta(days=round(n * days_per_quarter))
-
-
-QUARTER = get_quarters(n=1)
-
-
-##
-
-
-def get_today(*, time_zone: TimeZoneLike = UTC) -> dt.date:
-    """Get the current, timezone-aware date."""
-    return get_now(time_zone=time_zone).date()
-
-
-TODAY_UTC = get_today(time_zone=UTC)
-
-
-##
-
-
-def get_years(*, n: int = 1) -> dt.timedelta:
-    """Get a number of years as a timedelta."""
-    return dt.timedelta(days=round(n * _DAYS_PER_YEAR))
-
-
-YEAR = get_years(n=1)
-
-
-##
-
-
-def is_integral_timedelta(duration: Duration, /) -> bool:
-    """Check if a duration is integral."""
-    timedelta = datetime_duration_to_timedelta(duration)
-    return (timedelta.seconds == 0) and (timedelta.microseconds == 0)
-
-
-##
-
-
 _FRIDAY = 5
 
 
 def is_weekday(date: dt.date, /) -> bool:
     """Check if a date is a weekday."""
-    check_date_not_datetime(date)
     return date.isoweekday() <= _FRIDAY
-
-
-##
-
-
-def is_zero_time(duration: Duration, /) -> bool:
-    """Check if a timedelta is 0."""
-    return datetime_duration_to_timedelta(duration) == ZERO_TIME
 
 
 ##
@@ -550,34 +141,6 @@ def maybe_sub_pct_y(text: str, /) -> str:
             return sub("%Y", "%4Y", text)
         case _ as never:
             assert_never(never)
-
-
-##
-
-
-def microseconds_since_epoch(datetime: dt.datetime, /) -> int:
-    """Compute the number of microseconds since the epoch."""
-    return datetime_duration_to_microseconds(timedelta_since_epoch(datetime))
-
-
-def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
-    """Compute a timedelta given a number of microseconds."""
-    if microseconds == 0:
-        return ZERO_TIME
-    if microseconds >= 1:
-        days, remainder = divmod(microseconds, _MICROSECONDS_PER_DAY)
-        seconds, micros = divmod(remainder, _MICROSECONDS_PER_SECOND)
-        return dt.timedelta(days=days, seconds=seconds, microseconds=micros)
-    return -microseconds_to_timedelta(-microseconds)
-
-
-def microseconds_since_epoch_to_datetime(
-    microseconds: int, /, *, time_zone: dt.tzinfo | None = None
-) -> dt.datetime:
-    """Convert a number of microseconds since the epoch to a datetime."""
-    epoch = EPOCH_NAIVE if time_zone is None else EPOCH_UTC
-    timedelta = microseconds_to_timedelta(microseconds)
-    return epoch + timedelta
 
 
 ##
@@ -627,7 +190,6 @@ class Month:
 
     @classmethod
     def from_date(cls, date: dt.date, /) -> Self:
-        check_date_not_datetime(date)
         return cls(year=date.year, month=date.month)
 
     def to_date(self, /, *, day: int = 1) -> dt.date:
@@ -706,66 +268,6 @@ class _ParseTwoDigitYearInvalidStringError(Exception):
 ##
 
 
-def round_datetime(
-    datetime: dt.datetime,
-    duration: Duration,
-    /,
-    *,
-    mode: MathRoundMode = "standard",
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
-) -> dt.datetime:
-    """Round a datetime to a timedelta."""
-    if datetime.tzinfo is None:
-        dividend = microseconds_since_epoch(datetime)
-        divisor = datetime_duration_to_microseconds(duration)
-        quotient, remainder = divmod(dividend, divisor)
-        rnd_remainder = round_(
-            remainder / divisor, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol
-        )
-        rnd_quotient = quotient + rnd_remainder
-        microseconds = rnd_quotient * divisor
-        return microseconds_since_epoch_to_datetime(microseconds)
-    local = datetime.replace(tzinfo=None)
-    rounded = round_datetime(
-        local, duration, mode=mode, rel_tol=rel_tol, abs_tol=abs_tol
-    )
-    return rounded.replace(tzinfo=datetime.tzinfo)
-
-
-##
-
-
-def round_to_next_weekday(date: dt.date, /) -> dt.date:
-    """Round a date to the next weekday."""
-    return _round_to_weekday(date, prev_or_next="next")
-
-
-def round_to_prev_weekday(date: dt.date, /) -> dt.date:
-    """Round a date to the previous weekday."""
-    return _round_to_weekday(date, prev_or_next="prev")
-
-
-def _round_to_weekday(
-    date: dt.date, /, *, prev_or_next: Literal["prev", "next"]
-) -> dt.date:
-    """Round a date to the previous weekday."""
-    check_date_not_datetime(date)
-    match prev_or_next:
-        case "prev":
-            n = -1
-        case "next":
-            n = 1
-        case _ as never:
-            assert_never(never)
-    while not is_weekday(date):
-        date = add_weekdays(date, n=n)
-    return date
-
-
-##
-
-
 def serialize_month(month: Month, /) -> str:
     """Serialize a month."""
     return f"{month.year:04}-{month.month:02}"
@@ -792,182 +294,24 @@ class ParseMonthError(Exception):
         return f"Unable to parse month; got {self.month!r}"
 
 
-##
-
-
-def timedelta_since_epoch(date_or_datetime: DateOrDateTime, /) -> dt.timedelta:
-    """Compute the timedelta since the epoch."""
-    match date_or_datetime:
-        case dt.datetime() as datetime:
-            if datetime.tzinfo is None:
-                return datetime - EPOCH_NAIVE
-            return datetime.astimezone(UTC) - EPOCH_UTC
-        case dt.date() as date:
-            return date - EPOCH_DATE
-        case _ as never:
-            assert_never(never)
-
-
-##
-
-
-def yield_days(
-    *, start: dt.date | None = None, end: dt.date | None = None, days: int | None = None
-) -> Iterator[dt.date]:
-    """Yield the days in a range."""
-    match start, end, days:
-        case dt.date(), dt.date(), None:
-            check_date_not_datetime(start)
-            check_date_not_datetime(end)
-            date = start
-            while date <= end:
-                yield date
-                date += DAY
-        case dt.date(), None, int():
-            check_date_not_datetime(start)
-            date = start
-            for _ in range(days):
-                yield date
-                date += DAY
-        case None, dt.date(), int():
-            check_date_not_datetime(end)
-            date = end
-            for _ in range(days):
-                yield date
-                date -= DAY
-        case _:
-            raise YieldDaysError(start=start, end=end, days=days)
-
-
-@dataclass(kw_only=True, slots=True)
-class YieldDaysError(Exception):
-    start: dt.date | None
-    end: dt.date | None
-    days: int | None
-
-    @override
-    def __str__(self) -> str:
-        return (
-            f"Invalid arguments: start={self.start}, end={self.end}, days={self.days}"
-        )
-
-
-##
-
-
-def yield_weekdays(
-    *, start: dt.date | None = None, end: dt.date | None = None, days: int | None = None
-) -> Iterator[dt.date]:
-    """Yield the weekdays in a range."""
-    match start, end, days:
-        case dt.date(), dt.date(), None:
-            check_date_not_datetime(start)
-            check_date_not_datetime(end)
-            date = round_to_next_weekday(start)
-            while date <= end:
-                yield date
-                date = round_to_next_weekday(date + DAY)
-        case dt.date(), None, int():
-            check_date_not_datetime(start)
-            date = round_to_next_weekday(start)
-            for _ in range(days):
-                yield date
-                date = round_to_next_weekday(date + DAY)
-        case None, dt.date(), int():
-            check_date_not_datetime(end)
-            date = round_to_prev_weekday(end)
-            for _ in range(days):
-                yield date
-                date = round_to_prev_weekday(date - DAY)
-        case _:
-            raise YieldWeekdaysError(start=start, end=end, days=days)
-
-
-@dataclass(kw_only=True, slots=True)
-class YieldWeekdaysError(Exception):
-    start: dt.date | None
-    end: dt.date | None
-    days: int | None
-
-    @override
-    def __str__(self) -> str:
-        return (
-            f"Invalid arguments: start={self.start}, end={self.end}, days={self.days}"
-        )
-
-
 __all__ = [
-    "DATETIME_MAX_NAIVE",
-    "DATETIME_MAX_UTC",
-    "DATETIME_MIN_NAIVE",
-    "DATETIME_MIN_UTC",
-    "DAY",
-    "EPOCH_DATE",
-    "EPOCH_NAIVE",
-    "EPOCH_UTC",
-    "HALF_YEAR",
-    "HOUR",
     "MAX_DATE_TWO_DIGIT_YEAR",
     "MAX_MONTH",
-    "MILLISECOND",
-    "MINUTE",
     "MIN_DATE_TWO_DIGIT_YEAR",
     "MIN_MONTH",
-    "MONTH",
-    "NOW_UTC",
-    "QUARTER",
-    "SECOND",
-    "TODAY_UTC",
-    "WEEK",
-    "YEAR",
-    "ZERO_TIME",
-    "AddWeekdaysError",
-    "AreEqualDateTimesError",
-    "CheckDateNotDateTimeError",
     "DateOrMonth",
     "EnsureMonthError",
-    "GetMinMaxDateError",
     "Month",
     "MonthError",
     "MonthLike",
     "ParseMonthError",
-    "TimedeltaToMillisecondsError",
-    "YieldDaysError",
-    "YieldWeekdaysError",
-    "add_weekdays",
-    "are_equal_datetimes",
-    "check_date_not_datetime",
-    "date_duration_to_int",
-    "date_duration_to_timedelta",
     "date_to_month",
-    "datetime_duration_to_float",
-    "datetime_duration_to_microseconds",
-    "datetime_duration_to_timedelta",
     "datetime_utc",
     "ensure_month",
     "get_date",
     "get_datetime",
-    "get_half_years",
-    "get_min_max_date",
-    "get_months",
-    "get_now",
-    "get_quarters",
-    "get_today",
-    "get_years",
-    "is_integral_timedelta",
     "is_weekday",
-    "is_zero_time",
     "maybe_sub_pct_y",
-    "microseconds_since_epoch",
-    "microseconds_since_epoch_to_datetime",
-    "microseconds_to_timedelta",
     "parse_month",
     "parse_two_digit_year",
-    "round_datetime",
-    "round_to_next_weekday",
-    "round_to_prev_weekday",
-    "serialize_month",
-    "timedelta_since_epoch",
-    "yield_days",
-    "yield_weekdays",
 ]

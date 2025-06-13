@@ -100,6 +100,7 @@ DATE_DELTA_PARSABLE_MAX = DateDelta(days=999999)
 ## common constants
 
 
+ZERO_DATE = DateDelta()
 ZERO_TIME = TimeDelta()
 MICROSECOND = TimeDelta(microseconds=1)
 MILLISECOND = TimeDelta(milliseconds=1)
@@ -108,6 +109,8 @@ MINUTE = TimeDelta(minutes=1)
 HOUR = TimeDelta(hours=1)
 DAY = DateDelta(days=1)
 WEEK = DateDelta(weeks=1)
+MONTH = DateDelta(months=1)
+YEAR = DateDelta(years=1)
 
 
 ##
@@ -202,6 +205,80 @@ class MeanDateTimeError(Exception):
     @override
     def __str__(self) -> str:
         return "Mean requires at least 1 datetime"
+
+
+##
+
+
+def min_max_date(
+    *,
+    min_date: Date | None = None,
+    max_date: Date | None = None,
+    min_age: DateDelta | None = None,
+    max_age: DateDelta | None = None,
+    time_zone: TimeZoneLike = UTC,
+) -> tuple[Date | None, Date | None]:
+    """Ucompute the min/max date given a combination of dates/ages."""
+    today = get_today(time_zone=time_zone)
+    min_parts: list[Date] = []
+    if min_date is not None:
+        if min_date > today:
+            raise _GetMinMaxDateMinDateError(min_date=min_date, today=today)
+        min_parts.append(min_date)
+    if max_age is not None:
+        min_parts.append(today - max_age)
+    min_date_use = max(min_parts, default=None)
+    max_parts: list[Date] = []
+    if max_date is not None:
+        if max_date > today:
+            raise _GetMinMaxDateMaxDateError(max_date=max_date, today=today)
+        max_parts.append(max_date)
+    if min_age is not None:
+        max_parts.append(today - min_age)
+    max_date_use = min(max_parts, default=None)
+    if (
+        (min_date_use is not None)
+        and (max_date_use is not None)
+        and (min_date_use > max_date_use)
+    ):
+        raise _GetMinMaxDatePeriodError(min_date=min_date_use, max_date=max_date_use)
+    return min_date_use, max_date_use
+
+
+@dataclass(kw_only=True, slots=True)
+class GetMinMaxDateError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetMinMaxDateMinDateError(GetMinMaxDateError):
+    min_date: Date
+    today: Date
+
+    @override
+    def __str__(self) -> str:
+        return f"Min date must be at most today; got {self.min_date} > {self.today}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetMinMaxDateMaxDateError(GetMinMaxDateError):
+    max_date: Date
+    today: Date
+
+    @override
+    def __str__(self) -> str:
+        return f"Max date must be at most today; got {self.max_date} > {self.today}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetMinMaxDatePeriodError(GetMinMaxDateError):
+    min_date: Date
+    max_date: Date
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Min date must be at most max date; got {self.min_date} > {self.max_date}"
+        )
 
 
 ##
@@ -478,6 +555,7 @@ __all__ = [
     "MICROSECOND",
     "MILLISECOND",
     "MINUTE",
+    "MONTH",
     "NOW_LOCAL",
     "PLAIN_DATE_TIME_MAX",
     "PLAIN_DATE_TIME_MIN",
@@ -489,9 +567,12 @@ __all__ = [
     "TODAY_LOCAL",
     "TODAY_UTC",
     "WEEK",
+    "YEAR",
+    "ZERO_DATE",
     "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
+    "GetMinMaxDateError",
     "MeanDateTimeError",
     "ToDaysError",
     "ToNanosError",
@@ -506,6 +587,7 @@ __all__ = [
     "get_today_local",
     "mean_datetime",
     "mean_datetime",
+    "min_max_date",
     "to_date",
     "to_date_time_delta",
     "to_days",
