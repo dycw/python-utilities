@@ -71,7 +71,7 @@ class _Prefixes(Enum):
     float_ = "fl"
     frozenset_ = "fr"
     list_ = "l"
-    none = "none"
+    none = "no"
     path = "p"
     plain_date_time = "pd"
     set_ = "s"
