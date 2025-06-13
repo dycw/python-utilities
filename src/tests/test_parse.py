@@ -370,6 +370,7 @@ class TestParseObject:
         assert result is expected
 
     @given(value=text_ascii(min_size=10) | none())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_optional_type_with_union_extra_not_used(
         self, *, value: str | None
     ) -> None:
@@ -634,6 +635,7 @@ class TestParseObject:
 
 class TestSerializeObject:
     @given(bool_=booleans())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_bool_custom(self, *, bool_: bool) -> None:
         def serializer(bool_: bool, /) -> str:  # noqa: FBT001
             match bool_:
@@ -651,6 +653,7 @@ class TestSerializeObject:
         assert serialized == expected
 
     @given(bool_=booleans())
+    @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_bool_extra_not_used(self, *, bool_: bool) -> None:
         def serializer(int_: int, /) -> str:
             return f"({int_})"
