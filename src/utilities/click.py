@@ -26,6 +26,7 @@ from utilities.types import (
     TimeLike,
     ZonedDateTimeLike,
 )
+from utilities.whenever import _MonthParseCommonISOError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -187,7 +188,10 @@ class Month(ParamType):
         self, value: MonthLike, param: Parameter | None, ctx: Context | None
     ) -> utilities.whenever.Month:
         """Convert a value into the `Month` type."""
-        return utilities.whenever.Month.ensure(value)
+        try:
+            return utilities.whenever.Month.ensure(value)
+        except _MonthParseCommonISOError as error:
+            self.fail(str(error), param, ctx)
 
 
 class PlainDateTime(ParamType):
