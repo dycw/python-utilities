@@ -118,5 +118,5 @@ def _is_to_drop(table: str, /) -> bool:
         param("UTC"),
     ]
 )
-def time_zone_names(*, request: SubRequest) -> TimeZoneLike:
+def time_zone_name(*, request: SubRequest) -> TimeZoneLike:
     return request.param

@@ -5,8 +5,8 @@ from logging import DEBUG
 from typing import TYPE_CHECKING, ClassVar, Self
 from zoneinfo import ZoneInfo
 
-from hypothesis import given
-from hypothesis.strategies import integers, just, none, timezones
+from hypothesis import HealthCheck, given, settings
+from hypothesis.strategies import DataObject, data, integers, none
 from pytest import raises
 from whenever import (
     Date,
@@ -17,7 +17,6 @@ from whenever import (
     ZonedDateTime,
 )
 
-from tests.conftest import IS_CI
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -86,7 +85,11 @@ from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
-    from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime
+    from utilities.types import (
+        MaybeCallableDate,
+        MaybeCallableZonedDateTime,
+        TimeZoneLike,
+    )
 
 
 class TestDatetimeUTC:
@@ -116,33 +119,40 @@ class TestFormatCompact:
 
 
 class TestFromTimeStamp:
-    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
-    def test_main(self, *, datetime: ZonedDateTime) -> None:
-        datetime = datetime.round("second")
-        timestamp = datetime.to_tz(UTC.key).timestamp()
-        result = from_timestamp(timestamp, time_zone=ZoneInfo(datetime.tz))
+    @given(data=data())
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    def test_main(self, *, data: DataObject, time_zone_name: TimeZoneLike) -> None:
+        datetime = data.draw(zoned_datetimes_whenever(time_zone=time_zone_name)).round(
+            "second"
+        )
+        timestamp = datetime.timestamp()
+        result = from_timestamp(timestamp, time_zone=time_zone_name)
         assert result == datetime
 
-    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
-    def test_millis(self, *, datetime: ZonedDateTime) -> None:
-        datetime = datetime.round("millisecond")
-        timestamp = datetime.to_tz(UTC.key).timestamp_millis()
-        result = from_timestamp_millis(timestamp, time_zone=ZoneInfo(datetime.tz))
+    @given(data=data())
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    def test_millis(self, *, data: DataObject, time_zone_name: TimeZoneLike) -> None:
+        datetime = data.draw(zoned_datetimes_whenever(time_zone=time_zone_name)).round(
+            "millisecond"
+        )
+        timestamp = datetime.timestamp_millis()
+        result = from_timestamp_millis(timestamp, time_zone=time_zone_name)
         assert result == datetime
 
-    @given(datetime=zoned_datetimes_whenever(time_zone=UTC if IS_CI else timezones()))
-    def test_nanos(self, *, datetime: ZonedDateTime) -> None:
-        timestamp = datetime.to_tz(UTC.key).timestamp_nanos()
-        result = from_timestamp_nanos(timestamp, time_zone=ZoneInfo(datetime.tz))
+    @given(data=data())
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    def test_nanos(self, *, data: DataObject, time_zone_name: TimeZoneLike) -> None:
+        datetime = data.draw(zoned_datetimes_whenever(time_zone=time_zone_name))
+        timestamp = datetime.timestamp_nanos()
+        result = from_timestamp_nanos(timestamp, time_zone=time_zone_name)
         assert result == datetime
 
 
 class TestGetNow:
-    @given(time_zone=just(UTC) if IS_CI else timezones())
-    def test_function(self, *, time_zone: ZoneInfo) -> None:
-        now = get_now(time_zone=time_zone)
+    def test_function(self, *, time_zone_name: TimeZoneLike) -> None:
+        now = get_now(time_zone=time_zone_name)
         assert isinstance(now, ZonedDateTime)
-        assert now.tz == time_zone.key
+        assert now.tz == time_zone_name
 
     def test_constant(self) -> None:
         assert isinstance(NOW_UTC, ZonedDateTime)
