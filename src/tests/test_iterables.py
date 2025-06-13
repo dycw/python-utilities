@@ -1205,9 +1205,8 @@ class TestResolveIncludeAndExclude:
 
 
 class TestSortIterable:
-    @given(objs=pairs(objects(floats_allow_nan=False, sortable=True)))
-    def test_main(self, *, objs: tuple[Any, Any]) -> None:
-        x, y = objs
+    @given(x=objects(floats_allow_nan=False), y=objects(floats_allow_nan=False))
+    def test_main(self, *, x: Any, y: Any) -> None:
         result1 = sort_iterable([x, y])
         result2 = sort_iterable([y, x])
         assert result1 == result2

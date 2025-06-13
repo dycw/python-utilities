@@ -9,6 +9,6 @@ from utilities.hashlib import md5_hash
 
 
 class TestMD5Hash:
-    @given(obj=objects(parsable=True))
+    @given(obj=objects())
     def test_main(self, *, obj: Any) -> None:
         _ = md5_hash(obj)
