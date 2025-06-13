@@ -97,7 +97,6 @@ from utilities.datetime import (
     microseconds_since_epoch,
     microseconds_since_epoch_to_datetime,
     microseconds_to_timedelta,
-    milliseconds_to_timedelta,
     parse_date_compact,
     parse_datetime_compact,
     parse_month,
@@ -412,6 +411,16 @@ class TestDateTimeDurationToMicrosecondsOrMilliseconds:
             timedelta = microseconds_to_timedelta(microseconds)
         result = datetime_duration_to_microseconds(timedelta)
         assert result == microseconds
+
+    @given(timedelta=timedeltas())
+    def test_timedelta_to_milliseconds_error(self, *, timedelta: dt.timedelta) -> None:
+        _, microseconds = divmod(timedelta.microseconds, _MICROSECONDS_PER_MILLISECOND)
+        _ = assume(microseconds != 0)
+        with raises(
+            TimedeltaToMillisecondsError,
+            match=r"Unable to convert .* to milliseconds; got .* microsecond\(s\)",
+        ):
+            _ = datetime_duration_to_milliseconds(timedelta, strict=True)
 
 
 class TestDateTimeDurationToTimeDelta:
