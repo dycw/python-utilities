@@ -44,8 +44,6 @@ from utilities.datetime import (
     MIN_DATE_TWO_DIGIT_YEAR,
     MINUTE,
     date_duration_to_timedelta,
-    datetime_duration_to_float,
-    datetime_duration_to_timedelta,
     is_integral_timedelta,
     parse_two_digit_year,
 )
@@ -63,7 +61,6 @@ from utilities.hypothesis import (
     date_time_deltas_whenever,
     dates_two_digit_year,
     dates_whenever,
-    datetime_durations,
     draw2,
     float32s,
     float64s,
@@ -120,8 +117,6 @@ from utilities.math import (
     MIN_INT64,
     MIN_UINT32,
     MIN_UINT64,
-    is_at_least,
-    is_at_most,
 )
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
@@ -325,63 +320,6 @@ class TestDatesWhenever:
             assert date >= min_value
         if max_value is not None:
             assert date <= max_value
-
-
-class TestDateTimeDurations:
-    @given(
-        data=data(),
-        min_number=numbers() | none(),
-        max_number=numbers() | none(),
-        min_timedelta=timedeltas() | none(),
-        max_timedelta=timedeltas() | none(),
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        min_number: Number | None,
-        max_number: Number | None,
-        min_timedelta: dt.timedelta | None,
-        max_timedelta: dt.timedelta | None,
-    ) -> None:
-        duration = data.draw(
-            datetime_durations(
-                min_number=min_number,
-                max_number=max_number,
-                min_timedelta=min_timedelta,
-                max_timedelta=max_timedelta,
-            )
-        )
-        assert isinstance(duration, int | float | dt.timedelta)
-        match duration:
-            case int() | float():
-                if min_number is not None:
-                    assert is_at_least(duration, min_number, abs_tol=1e-6)
-                if max_number is not None:
-                    assert is_at_most(duration, max_number, abs_tol=1e-6)
-                if min_timedelta is not None:
-                    assert is_at_least(
-                        duration, datetime_duration_to_float(min_timedelta)
-                    )
-                if max_timedelta is not None:
-                    assert is_at_most(
-                        duration, datetime_duration_to_float(max_timedelta)
-                    )
-            case dt.timedelta():
-                if min_number is not None:
-                    assert duration >= datetime_duration_to_timedelta(min_number)
-                if max_number is not None:
-                    assert duration <= datetime_duration_to_timedelta(max_number)
-                if min_timedelta is not None:
-                    assert duration >= min_timedelta
-                if max_timedelta is not None:
-                    assert duration <= max_timedelta
-
-    @given(data=data())
-    def test_two_way(self, *, data: DataObject) -> None:
-        duration = data.draw(datetime_durations(two_way=True))
-        ser = serialize_duration(duration)
-        _ = parse_duration(ser)
 
 
 class TestDraw2:

@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import timezone
 from enum import Enum, auto
+from functools import partial
 from math import ceil, floor, inf, isclose, isfinite, nan
 from os import environ
 from pathlib import Path
@@ -68,10 +69,12 @@ from utilities.datetime import (
     MIN_DATE_TWO_DIGIT_YEAR,
     MIN_MONTH,
     Month,
+    date_duration_to_int,
+    date_duration_to_timedelta,
     date_to_month,
     round_datetime,
 )
-from utilities.functions import ensure_int, ensure_str
+from utilities.functions import ensure_int, ensure_str, max_nullable, min_nullable
 from utilities.math import (
     MAX_FLOAT32,
     MAX_FLOAT64,
@@ -117,14 +120,14 @@ from utilities.whenever2 import (
 from utilities.zoneinfo import UTC, ensure_time_zone
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Hashable, Iterable, Iterator
+    from collections.abc import Collection, Hashable, Iterable, Iterator, Sequence
     from zoneinfo import ZoneInfo
 
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
-    from utilities.types import MathRoundMode, Number, TimeZoneLike
+    from utilities.types import Duration, MathRoundMode, Number, TimeZoneLike
 
 
 _T = TypeVar("_T")
@@ -216,6 +219,68 @@ def date_deltas_whenever(
         max_days = min(max_days, to_days(DATE_DELTA_PARSABLE_MAX))
     days = draw(integers(min_value=min_days, max_value=max_days))
     return DateDelta(days=days)
+
+
+##
+
+
+@composite
+def date_durations(
+    draw: DrawFn,
+    /,
+    *,
+    min_int: MaybeSearchStrategy[int | None] = None,
+    max_int: MaybeSearchStrategy[int | None] = None,
+    min_timedelta: MaybeSearchStrategy[dt.timedelta | None] = None,
+    max_timedelta: MaybeSearchStrategy[dt.timedelta | None] = None,
+    two_way: bool = False,
+) -> Duration:
+    """Strategy for generating datetime durations."""
+    min_int_, max_int_ = [draw2(draw, v) for v in [min_int, max_int]]
+    min_timedelta_, max_timedelta_ = [
+        draw2(draw, v) for v in [min_timedelta, max_timedelta]
+    ]
+    min_parts: Sequence[dt.timedelta | None] = [dt.timedelta.min, min_timedelta_]
+    if min_int_ is not None:
+        with assume_does_not_raise(OverflowError):
+            min_parts.append(date_duration_to_timedelta(min_int_))
+    if two_way:
+        from utilities.whenever import MIN_SERIALIZABLE_TIMEDELTA
+
+        min_parts.append(MIN_SERIALIZABLE_TIMEDELTA)
+    min_timedelta_use = max_nullable(min_parts)
+    max_parts: Sequence[dt.timedelta | None] = [dt.timedelta.max, max_timedelta_]
+    if max_int_ is not None:
+        with assume_does_not_raise(OverflowError):
+            max_parts.append(date_duration_to_timedelta(max_int_))
+    if two_way:
+        from utilities.whenever import MAX_SERIALIZABLE_TIMEDELTA
+
+        max_parts.append(MAX_SERIALIZABLE_TIMEDELTA)
+    max_timedelta_use = min_nullable(max_parts)
+    _ = assume(min_timedelta_use <= max_timedelta_use)
+    st_timedeltas = (
+        timedeltas(min_value=min_timedelta_use, max_value=max_timedelta_use)
+        .map(_round_timedelta)
+        .filter(
+            partial(
+                _is_between_timedelta, min_=min_timedelta_use, max_=max_timedelta_use
+            )
+        )
+    )
+    st_integers = st_timedeltas.map(date_duration_to_int)
+    st_floats = st_integers.map(float)
+    return draw(st_integers | st_floats | st_timedeltas)
+
+
+def _round_timedelta(timedelta: dt.timedelta, /) -> dt.timedelta:
+    return dt.timedelta(days=timedelta.days)
+
+
+def _is_between_timedelta(
+    timedelta: dt.timedelta, /, *, min_: dt.timedelta, max_: dt.timedelta
+) -> bool:
+    return min_ <= timedelta <= max_
 
 
 ##
@@ -1390,6 +1455,7 @@ __all__ = [
     "assume_does_not_raise",
     "bool_arrays",
     "date_deltas_whenever",
+    "date_durations",
     "date_time_deltas_whenever",
     "dates_two_digit_year",
     "dates_whenever",

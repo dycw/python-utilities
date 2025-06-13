@@ -148,16 +148,6 @@ class AreEqualDatesOrDateTimesError(Exception):
 ##
 
 
-def are_equal_datetime_durations(x: Duration, y: Duration, /) -> bool:
-    """Check if x == y for durations."""
-    x_timedelta = datetime_duration_to_timedelta(x)
-    y_timedelta = datetime_duration_to_timedelta(y)
-    return x_timedelta == y_timedelta
-
-
-##
-
-
 def are_equal_datetimes(
     x: dt.datetime, y: dt.datetime, /, *, strict: bool = False
 ) -> bool:
@@ -1346,7 +1336,6 @@ __all__ = [
     "add_weekdays",
     "are_equal_date_durations",
     "are_equal_dates_or_datetimes",
-    "are_equal_datetime_durations",
     "are_equal_datetimes",
     "are_equal_months",
     "check_date_not_datetime",
