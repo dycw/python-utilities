@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from asyncio import timeout
 from logging import getLogger
 from typing import TYPE_CHECKING, ClassVar
@@ -12,7 +11,7 @@ from slack_sdk.webhook.async_client import AsyncWebhookClient
 from utilities.os import get_env_var
 from utilities.pytest import throttle
 from utilities.slack_sdk import SlackHandlerService, _get_client, send_to_slack
-from utilities.whenever2 import SECOND
+from utilities.whenever2 import MINUTE, SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -33,7 +32,7 @@ class TestSendToSlack:
             await send_to_slack("url", "message")
 
     @mark.skipif(get_env_var("SLACK", nullable=True) is None, reason="'SLACK' not set")
-    @throttle(delta=5 * dt.timedelta(minutes=5))
+    @throttle(delta=5 * MINUTE)
     async def test_real(self) -> None:
         url = get_env_var("SLACK")
         await send_to_slack(
@@ -66,7 +65,7 @@ class TestSlackHandlerService:
         assert messages == ["message"]
 
     @mark.skipif(get_env_var("SLACK", nullable=True) is None, reason="'SLACK' not set")
-    @throttle(delta=5 * dt.timedelta(minutes=5))
+    @throttle(delta=5 * MINUTE)
     async def test_real(self, *, tmp_path: Path) -> None:
         url = get_env_var("SLACK")
         logger = getLogger(str(tmp_path))
