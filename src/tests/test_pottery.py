@@ -17,7 +17,7 @@ from utilities.pottery import (
 )
 from utilities.text import unique_str
 from utilities.timer import Timer
-from utilities.whenever2 import SECOND
+from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis

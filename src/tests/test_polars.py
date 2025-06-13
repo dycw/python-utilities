@@ -168,7 +168,7 @@ from utilities.polars import (
 from utilities.random import get_state
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
-from utilities.whenever2 import get_now, get_today
+from utilities.whenever import get_now, get_today
 from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:

@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from uvicorn import Config, Server
 
 from utilities.asyncio import Looper
-from utilities.whenever2 import SECOND, get_now_local
+from utilities.whenever import SECOND, get_now_local
 
 if TYPE_CHECKING:
     from types import TracebackType

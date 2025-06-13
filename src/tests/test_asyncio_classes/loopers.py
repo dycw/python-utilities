@@ -8,7 +8,7 @@ from pytest import approx
 from tests.conftest import IS_CI
 from utilities.asyncio import Looper
 from utilities.contextlib import suppress_super_object_attribute_error
-from utilities.whenever2 import SECOND
+from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

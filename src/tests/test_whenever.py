@@ -30,7 +30,7 @@ from utilities.hypothesis import (
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
-from utilities.whenever2 import (
+from utilities.whenever import (
     DATE_DELTA_MAX,
     DATE_DELTA_MIN,
     DATE_DELTA_PARSABLE_MAX,

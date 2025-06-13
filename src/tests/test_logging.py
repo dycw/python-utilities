@@ -38,7 +38,7 @@ from utilities.logging import (
 from utilities.text import unique_str
 from utilities.types import LogLevel
 from utilities.typing import get_args
-from utilities.whenever2 import format_compact, get_now
+from utilities.whenever import format_compact, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Mapping

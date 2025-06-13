@@ -8,7 +8,7 @@ from hypothesis.strategies import integers, none
 from utilities.asyncio import sleep_td
 from utilities.cachetools import TTLSet, cache
 from utilities.hypothesis import time_deltas_whenever
-from utilities.whenever2 import SECOND
+from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from whenever import TimeDelta

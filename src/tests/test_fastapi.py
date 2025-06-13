@@ -5,7 +5,7 @@ from re import search
 
 from tests.conftest import SKIPIF_CI
 from utilities.fastapi import PingReceiver
-from utilities.whenever2 import SECOND
+from utilities.whenever import SECOND
 
 
 class TestPingReceiver:

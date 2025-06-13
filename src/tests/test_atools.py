@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from utilities.asyncio import sleep_td
 from utilities.atools import call_memoized
-from utilities.whenever2 import SECOND
+from utilities.whenever import SECOND
 
 
 class TestCallMemoized:

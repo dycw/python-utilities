@@ -24,7 +24,7 @@ from utilities.period import (
     _PeriodTimeZoneError,
 )
 from utilities.tzdata import USCentral, USEastern
-from utilities.whenever2 import DAY
+from utilities.whenever import DAY
 from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:

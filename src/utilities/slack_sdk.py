@@ -10,7 +10,7 @@ from slack_sdk.webhook.async_client import AsyncWebhookClient
 from utilities.asyncio import Looper, timeout_td
 from utilities.functools import cache
 from utilities.sentinel import Sentinel, sentinel
-from utilities.whenever2 import MINUTE, SECOND
+from utilities.whenever import MINUTE, SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Callable

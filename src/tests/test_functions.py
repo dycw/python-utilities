@@ -95,7 +95,7 @@ from utilities.functions import (
     yield_object_properties,
 )
 from utilities.sentinel import sentinel
-from utilities.whenever2 import NOW_UTC, ZERO_TIME, get_now, get_today
+from utilities.whenever import NOW_UTC, ZERO_TIME, get_now, get_today
 
 if TYPE_CHECKING:
     import datetime as dt

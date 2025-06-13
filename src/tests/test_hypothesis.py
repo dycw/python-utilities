@@ -110,7 +110,7 @@ from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sentinel import Sentinel
 from utilities.version import Version
-from utilities.whenever2 import to_days, to_nanos
+from utilities.whenever import to_days, to_nanos
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

@@ -24,7 +24,7 @@ from utilities.platform import (
     IS_WINDOWS,
 )
 from utilities.random import get_state
-from utilities.whenever2 import SECOND, get_now_local
+from utilities.whenever import SECOND, get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence

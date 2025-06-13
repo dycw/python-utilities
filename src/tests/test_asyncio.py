@@ -63,7 +63,7 @@ from utilities.iterables import one, unique_everseen
 from utilities.pytest import skipif_windows
 from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
-from utilities.whenever2 import SECOND, get_now
+from utilities.whenever import SECOND, get_now
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator

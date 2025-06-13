@@ -82,7 +82,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.types import LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args
 from utilities.tzlocal import LOCAL_TIME_ZONE
-from utilities.whenever2 import MINUTE, SECOND, get_now
+from utilities.whenever import MINUTE, SECOND, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

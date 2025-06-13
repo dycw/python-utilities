@@ -29,7 +29,7 @@ from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, identity
 from utilities.iterables import always_iterable, one
 from utilities.orjson import deserialize, serialize
-from utilities.whenever2 import MILLISECOND, SECOND
+from utilities.whenever import MILLISECOND, SECOND
 
 if TYPE_CHECKING:
     from collections.abc import (

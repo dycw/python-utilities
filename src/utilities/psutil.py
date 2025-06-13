@@ -11,7 +11,7 @@ from psutil import swap_memory, virtual_memory
 
 from utilities.asyncio import Looper
 from utilities.contextlib import suppress_super_object_attribute_error
-from utilities.whenever2 import SECOND, get_now
+from utilities.whenever import SECOND, get_now
 
 if TYPE_CHECKING:
     from logging import Logger

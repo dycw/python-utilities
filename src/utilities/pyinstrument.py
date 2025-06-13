@@ -8,7 +8,7 @@ from pyinstrument.profiler import Profiler
 
 from utilities.atomicwrites import writer
 from utilities.pathlib import get_path
-from utilities.whenever2 import format_compact, get_now
+from utilities.whenever import format_compact, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

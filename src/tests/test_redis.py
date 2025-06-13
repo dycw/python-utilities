@@ -45,7 +45,7 @@ from utilities.redis import (
 )
 from utilities.sentinel import SENTINEL_REPR, Sentinel, sentinel
 from utilities.text import unique_str
-from utilities.whenever2 import SECOND
+from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Mapping, Sequence

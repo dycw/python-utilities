@@ -11,7 +11,7 @@ from slack_sdk.webhook.async_client import AsyncWebhookClient
 from utilities.os import get_env_var
 from utilities.pytest import throttle
 from utilities.slack_sdk import SlackHandlerService, _get_client, send_to_slack
-from utilities.whenever2 import MINUTE, SECOND
+from utilities.whenever import MINUTE, SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

@@ -30,7 +30,7 @@ from utilities.functions import ensure_class
 from utilities.hypothesis import dates_whenever, text_ascii, zoned_datetimes_whenever
 from utilities.polars import DatetimeUTC, zoned_datetime
 from utilities.tzdata import HongKong, Tokyo
-from utilities.whenever2 import get_now
+from utilities.whenever import get_now
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:

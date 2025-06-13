@@ -81,7 +81,7 @@ from utilities.sqlalchemy import (
 )
 from utilities.text import strip_and_dedent
 from utilities.typing import get_args, get_literal_elements
-from utilities.whenever2 import SECOND, format_compact, get_now
+from utilities.whenever import SECOND, format_compact, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
