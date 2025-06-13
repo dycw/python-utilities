@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass, replace
-from re import search, sub
+from re import search
 from typing import Any, Self, assert_never, overload, override
 
 from utilities.iterables import OneEmptyError, one
-from utilities.platform import SYSTEM
 from utilities.types import MaybeStr
 from utilities.zoneinfo import UTC
 
@@ -36,22 +35,6 @@ class EnsureMonthError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to ensure month; got {self.month!r}"
-
-
-##
-
-
-def maybe_sub_pct_y(text: str, /) -> str:
-    """Substitute the `%Y' token with '%4Y' if necessary."""
-    match SYSTEM:
-        case "windows":  # skipif-not-windows
-            return text
-        case "mac":  # skipif-not-macos
-            return text
-        case "linux":  # skipif-not-linux
-            return sub("%Y", "%4Y", text)
-        case _ as never:
-            assert_never(never)
 
 
 ##

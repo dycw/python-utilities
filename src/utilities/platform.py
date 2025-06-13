@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from platform import system
+from re import sub
 from typing import TYPE_CHECKING, Literal, assert_never, override
 
 if TYPE_CHECKING:
@@ -69,6 +70,22 @@ MAX_PID = get_max_pid()
 ##
 
 
+def get_strftime(text: str, /) -> str:
+    """Get a platform-specific format string."""
+    match SYSTEM:
+        case "windows":  # skipif-not-windows
+            return text
+        case "mac":  # skipif-not-macos
+            return text
+        case "linux":  # skipif-not-linux
+            return sub("%Y", "%4Y", text)
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
 def maybe_yield_lower_case(text: Iterable[str], /) -> Iterator[str]:
     """Yield lower-cased text if the platform is case-insentive."""
     match SYSTEM:
@@ -94,6 +111,7 @@ __all__ = [
     "GetSystemError",
     "System",
     "get_max_pid",
+    "get_strftime",
     "get_system",
     "maybe_yield_lower_case",
 ]

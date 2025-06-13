@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from re import search
 from typing import TYPE_CHECKING, assert_never
 
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.strategies import sampled_from, sets
 
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import text_ascii, text_clean
 from utilities.platform import (
     IS_LINUX,
     IS_MAC,
@@ -17,6 +18,7 @@ from utilities.platform import (
     SYSTEM,
     System,
     get_max_pid,
+    get_strftime,
     get_system,
     maybe_yield_lower_case,
 )
@@ -49,6 +51,14 @@ class TestGetMaxPID:
                 assert isinstance(MAX_PID, int)
             case _ as never:
                 assert_never(never)
+
+
+class TestGetStrftime:
+    @given(text=text_clean())
+    def test_main(self, *, text: str) -> None:
+        result = get_strftime(text)
+        _ = assume(not search("%Y", result))
+        assert not search("%Y", result)
 
 
 class TestGetSystem:
