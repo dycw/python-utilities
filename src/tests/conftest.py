@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck
 from pytest import fixture, mark, param
-from sqlalchemy import text
 from whenever import PlainDateTime
 
 from utilities.platform import IS_NOT_LINUX, IS_WINDOWS
@@ -64,6 +63,8 @@ def set_log_factory() -> AbstractContextManager[None]:
 
 @fixture(params=[param("sqlite"), param("postgresql", marks=SKIPIF_CI)])
 async def test_engine(*, request: SubRequest, tmp_path: Path) -> Any:
+    from sqlalchemy import text
+
     from utilities.sqlalchemy import create_async_engine
 
     dialect = request.param
