@@ -67,6 +67,7 @@ pyinstrument = ["pyinstrument >= 5.0.2, < 5.1"]
 pytest = [
   "pytest >= 8.3.5, < 8.4",
   "pytest-asyncio >= 1.0.0, < 1.1",
+  "pytest-randomly >= 3.16.0, < 3.17",
   "pytest-xdist >= 3.7.0, < 3.8",
 ]
 pytest-regressions = ["pytest-regressions >= 2.8.0, < 2.9"]
@@ -115,7 +116,6 @@ test = [
   "pytest-cov >= 6.1.1, < 6.2",
   "pytest-instafail >= 0.5.0, < 0.6",
   "pytest-lazy-fixtures >= 1.1.4, < 1.2",
-  "pytest-randomly >= 3.16.0, < 3.17",
   "pytest-regressions >= 2.8.0, < 2.9",
   "pytest-rerunfailures >= 15.1, < 16",
   "pytest-rng >= 1.0.0, < 1.1",
