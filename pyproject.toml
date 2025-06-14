@@ -238,6 +238,9 @@ asyncio_mode = "auto"
 filterwarnings = [
   "error",
   "ignore:.*utcfromtimestamp.* is deprecated and scheduled for removal in a future version:DeprecationWarning",  # luigi
+  "ignore:The configuration option .*asyncio_default_fixture_loop_scope.* is unset:pytest.PytestDeprecationWarning",
+  # "ignore::CoverageWarning",# pytest-cov
+  # "ignore::PytestCovWarning",# pytest-cov
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
   "ignore:ResourceTracker called reentrantly for resource cleanup, which is unsupported:UserWarning",
   "ignore:Task .* without outputs has no custom complete.* method:UserWarning",  # luigi
@@ -250,6 +253,7 @@ filterwarnings = [
   "ignore:unclosed <socket.*socket .*>:ResourceWarning",  # redis
   "ignore:unclosed Connection <redis.*asyncio.*connection.*Connection.*>:ResourceWarning",  # redis
   "ignore:unclosed connection <asyncpg.*connection.*Connection.*>:ResourceWarning",  # asyncpg
+  "ignore:unclosed database in <sqlite3.Connection object at:ResourceWarning",  # pytest-cov
   "ignore:unclosed event loop <_UnixSelectorEventLoop .*>:ResourceWarning",  # redis
   "ignore:unclosed file <_io.*TextIOWrapper .*>:ResourceWarning",  # logging
   "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",  # redis
