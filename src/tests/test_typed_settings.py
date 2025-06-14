@@ -45,7 +45,7 @@ _T = TypeVar("_T")
 
 
 class TestExtendedTSConverter:
-    @given(data=data(), root=temp_paths(), app_name=text_ascii(min_size=1))
+    @given(data=data(), root=temp_paths(), app_name=app_names)
     @mark.parametrize(
         ("test_cls", "strategy", "serialize"),
         [
