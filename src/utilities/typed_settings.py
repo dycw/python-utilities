@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from ipaddress import IPv4Address, IPv6Address
+from pathlib import Path
+from re import search
 from typing import TYPE_CHECKING, Any, TypeVar, override
 
+import typed_settings
+from typed_settings import EnvLoader, FileLoader, find
 from typed_settings.converters import TSConverter
+from typed_settings.loaders import TomlFormat
 from whenever import (
     Date,
     DateDelta,
@@ -13,11 +20,21 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.iterables import always_iterable
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from typed_settings.loaders import Loader
+    from typed_settings.processors import Processor
+
+    from utilities.types import MaybeIterable, PathLike
+
 
 _T = TypeVar("_T")
+
+
+##
 
 
 class ExtendedTSConverter(TSConverter):
@@ -35,6 +52,8 @@ class ExtendedTSConverter(TSConverter):
             (Date, Date.parse_common_iso),
             (DateDelta, DateDelta.parse_common_iso),
             (DateTimeDelta, DateTimeDelta.parse_common_iso),
+            (IPv4Address, IPv4Address),
+            (IPv6Address, IPv6Address),
             (PlainDateTime, PlainDateTime.parse_common_iso),
             (Time, Time.parse_common_iso),
             (TimeDelta, TimeDelta.parse_common_iso),
@@ -58,4 +77,48 @@ def _make_converter(
     return hook
 
 
-__all__ = ["ExtendedTSConverter"]
+##
+
+_BASE_DIR: Path = Path()
+
+
+def load_settings(
+    cls: type[_T],
+    app_name: str,
+    /,
+    *,
+    filenames: MaybeIterable[str] = "settings.toml",
+    start_dir: PathLike | None = None,
+    loaders: MaybeIterable[Loader] | None = None,
+    processors: MaybeIterable[Processor] = (),
+    base_dir: Path = _BASE_DIR,
+) -> _T:
+    if not search(r"^[A-Za-z]+(?:_[A-Za-z]+)*$", app_name):
+        raise LoadSettingsError(appname=app_name)
+    filenames_use = list(always_iterable(filenames))
+    start_dir_use = None if start_dir is None else Path(start_dir)
+    files = [find(filename, start_dir=start_dir_use) for filename in filenames_use]
+    file_loader = FileLoader(formats={"*.toml": TomlFormat(app_name)}, files=files)
+    env_loader = EnvLoader(f"{app_name.upper()}__", nested_delimiter="__")
+    loaders_use: list[Loader] = [file_loader, env_loader]
+    if loaders is not None:
+        loaders_use.extend(always_iterable(loaders))
+    return typed_settings.load_settings(
+        cls,
+        loaders_use,
+        processors=list(always_iterable(processors)),
+        converter=ExtendedTSConverter(),
+        base_dir=base_dir,
+    )
+
+
+@dataclass(kw_only=True, slots=True)
+class LoadSettingsError(Exception):
+    appname: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid app name; got {self.appname!r}"
+
+
+__all__ = ["ExtendedTSConverter", "LoadSettingsError", "load_settings"]
