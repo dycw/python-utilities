@@ -31,7 +31,7 @@ dev = [
   "coverage-conditional-plugin >= 0.9.0, < 0.10",
   "dycw-pytest-only >= 2.1.1, < 2.2",
   "pyright[nodejs] >= 1.1.401, < 1.2",
-  "pytest-cov >= 6.1.1, < 6.2",
+  "pytest-cov >= 6.2.0, < 6.3",
 ]
 eventkit = ["eventkit >= 1.0.3, < 1.1"]
 fastapi = ["fastapi >= 0.115.11, < 0.116"]
@@ -114,7 +114,7 @@ test = [
   "hypothesis >= 6.135.2, < 6.136",
   "pytest >= 8.4.0, < 8.5",
   "pytest-asyncio >= 1.0.0, < 1.1",
-  "pytest-cov >= 6.1.1, < 6.2",
+  "pytest-cov >= 6.2.0, < 6.3",
   "pytest-instafail >= 0.5.0, < 0.6",
   "pytest-lazy-fixtures >= 1.1.4, < 1.2",
   "pytest-randomly >= 3.16.0, < 3.17",
