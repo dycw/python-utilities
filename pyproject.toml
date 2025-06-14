@@ -26,6 +26,10 @@ core = [
 cryptography = ["cryptography >= 45.0.4, < 45.1"]
 cvxpy = ["cvxpy >= 1.6.5, < 1.7"]
 dataclasses-test = ["orjson", "polars-lts-cpu"]
+dev = [
+  "pyright[nodejs] >= 1.1.401, < 1.2",
+  "coloredlogs >= 15.0.1, < 15.1",
+]
 eventkit = ["eventkit >= 1.0.3, < 1.1"]
 fastapi = ["fastapi >= 0.115.11, < 0.116"]
 fastapi-test = ["httpx", "uvicorn"]
@@ -82,18 +86,6 @@ statsmodels = ["statsmodels >= 0.14.4, < 0.15"]
 streamlit = ["streamlit >= 1.45.0, < 1.46"]
 typed-settings = ["typed-settings >= 24.6.0, < 24.7"]
 tzdata = ["tzdata >= 2025.2, < 2025.3"]
-zz-dev = [
-  "pyright[nodejs] >= 1.1.401, < 1.2",
-  "pytest >= 8.3.5, < 8.4",
-  "pytest-regressions >= 2.8.0, < 2.9",
-  "tomlkit >= 0.13.2, < 0.14",
-  "uvicorn >= 0.34.1, < 0.35",
-  "vegafusion >= 2.0.2, < 2.1",
-  "vegafusion-python-embed >= 1.6.9, < 1.7",
-  "vl-convert-python >= 1.8.0, < 1.9",
-  "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
-  "coloredlogs >= 15.0.1, < 15.1",
-]
 
 # project
 [project]
@@ -229,10 +221,10 @@ typeCheckingMode = "strict"
 addopts = [
   "-ra",
   "-vv",
-  "--color=yes",
-  # "--cov=utilities",
-  # "--cov-config=pyproject.toml",
-  # "--cov-report=html",
+  "--color=auto",
+  "--cov=utilities",
+  "--cov-config=pyproject.toml",
+  "--cov-report=html",
   "--durations=10",
   "--durations-min=10",
   "--strict-markers",

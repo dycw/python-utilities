@@ -73,8 +73,10 @@ def _run_command(path: Path, /) -> bool:
         code = check_call(cmd)
     except CalledProcessError:
         return False
+    if code == 0:
+        return True
     _LOGGER.error("pytest failed")
-    return code == 0
+    return False
 
 
 if __name__ == "__main__":
