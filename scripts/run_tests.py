@@ -2,17 +2,13 @@
 from __future__ import annotations
 
 from logging import getLogger
-from re import search
+from pathlib import Path
 from shlex import quote
-from subprocess import check_output, run
-from typing import TYPE_CHECKING
+from subprocess import run
 
 from utilities.git import get_repo_root
 from utilities.logging import basic_config
 from utilities.re import extract_group
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 _LOGGER = getLogger(__name__)
 
@@ -26,7 +22,8 @@ def main() -> None:
 
 def _run_test(path: Path, /) -> None:
     group = extract_group(r"^test_(\w+)$", path.stem).replace("_", "-")
-    if not search("aiolimiter", path.name):
+    path = Path(".pytest_cache", group)
+    if path.exists():
         return
     _LOGGER.info("Testing %r...", str(path))
     _ = run(
@@ -45,11 +42,7 @@ def _run_test(path: Path, /) -> None:
         ],
         check=True,
     )
-    if 0:
-        check_output(
-            f"uv sync --group={quote(group)} --active --no-dev --managed-python",
-            shell=True,
-        )
+    path.touch()
 
 
 if __name__ == "__main__":
