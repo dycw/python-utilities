@@ -7,7 +7,7 @@ from typing import TypeVar
 import typed_settings
 from hypothesis import given
 from hypothesis.strategies import DataObject, SearchStrategy, data, ip_addresses, tuples
-from pytest import mark, param
+from pytest import mark, param, raises
 from typed_settings import FileLoader, TomlFormat
 from whenever import (
     Date,
@@ -30,7 +30,11 @@ from utilities.hypothesis import (
     times,
     zoned_datetimes,
 )
-from utilities.typed_settings import ExtendedTSConverter
+from utilities.typed_settings import (
+    ExtendedTSConverter,
+    LoadSettingsError,
+    load_settings,
+)
 
 app_names = text_ascii(min_size=1).map(str.lower)
 
@@ -39,7 +43,7 @@ _T = TypeVar("_T")
 
 
 class TestExtendedTSConverter:
-    @given(data=data(), root=temp_paths(), appname=text_ascii(min_size=1))
+    @given(data=data(), root=temp_paths(), app_name=text_ascii(min_size=1))
     @mark.parametrize(
         ("test_cls", "strategy", "serialize"),
         [
@@ -63,7 +67,7 @@ class TestExtendedTSConverter:
         *,
         data: DataObject,
         root: Path,
-        appname: str,
+        app_name: str,
         test_cls: type[_T],
         strategy: SearchStrategy[_T],
         serialize: Callable[[_T], str],
@@ -81,15 +85,25 @@ class TestExtendedTSConverter:
         _ = hash(settings_default)
         file = Path(root, "file.toml")
         with file.open(mode="w") as fh:
-            _ = fh.write(f'[{appname}]\nvalue = "{serialize(value)}"')
+            _ = fh.write(f'[{app_name}]\nvalue = "{serialize(value)}"')
         settings_loaded = typed_settings.load_settings(
             Settings,
-            loaders=[FileLoader(formats={"*.toml": TomlFormat(appname)}, files=[file])],
+            loaders=[
+                FileLoader(formats={"*.toml": TomlFormat(app_name)}, files=[file])
+            ],
             converter=ExtendedTSConverter(),
         )
         assert settings_loaded.value == value
 
 
 class TestLoadSettings:
-    def test_error(self) -> None:
+    def test_main(self) -> None:
         pass
+
+    @mark.parametrize("app_name", [param("app_"), param("app1"), param("app__name")])
+    def test_error(self, *, app_name: str) -> None:
+        @dataclass(frozen=True, kw_only=True, slots=True)
+        class Settings: ...
+
+        with raises(LoadSettingsError, match="Invalid app name; got '.+'"):
+            _ = load_settings(Settings, app_name)

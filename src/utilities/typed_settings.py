@@ -84,7 +84,7 @@ _BASE_DIR: Path = Path()
 
 def load_settings(
     cls: type[_T],
-    appname: str,
+    app_name: str,
     /,
     *,
     files: MaybeIterable[str] = "settings.toml",
@@ -92,13 +92,13 @@ def load_settings(
     processors: Iterable[Processor] = (),
     base_dir: Path = _BASE_DIR,
 ) -> _T:
-    if not search(r"^[A-Za-z]+(?:_[A-Za-z]+)*$", appname):
-        raise LoadSettingsError(appname=appname)
+    if not search(r"^[A-Za-z]+(?:_[A-Za-z]+)*$", app_name):
+        raise LoadSettingsError(appname=app_name)
     files_use = list(always_iterable(files))
     file_loader = FileLoader(
-        formats={"*.toml": TomlFormat(appname)}, files=map(find, files_use)
+        formats={"*.toml": TomlFormat(app_name)}, files=map(find, files_use)
     )
-    env_loader = EnvLoader(f"{appname.upper()}__", nested_delimiter="__")
+    env_loader = EnvLoader(f"{app_name.upper()}__", nested_delimiter="__")
     loaders_use: list[Loader] = [file_loader, env_loader]
     if loaders is not None:
         loaders_use.extend(loaders_use)
