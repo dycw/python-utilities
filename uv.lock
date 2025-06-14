@@ -476,19 +476,6 @@ wheels = [
 ]
 
 [[package]]
-name = "coverage-conditional-plugin"
-version = "0.9.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "coverage" },
-    { name = "packaging" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/2e/6e/82f411d325a38cc24289060ca5f80d990ee8d026f4de9782006acf061f9b/coverage_conditional_plugin-0.9.0.tar.gz", hash = "sha256:6893dab0542695dbd5ea714281dae0dfec8d0e36480ba32d839e9fa7344f8215", size = 10579, upload-time = "2023-06-02T10:25:10.166Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/06/83/df10dd1911cb1695274da836e786ade7eaace9ed625b14056eb0bd6117d8/coverage_conditional_plugin-0.9.0-py3-none-any.whl", hash = "sha256:1b37bc469019d2ab5b01f5eee453abe1846b3431e64e209720c2a9ec4afb8130", size = 7317, upload-time = "2023-06-02T10:25:08.177Z" },
-]
-
-[[package]]
 name = "cryptography"
 version = "45.0.4"
 source = { registry = "https://pypi.org/simple" }
@@ -634,9 +621,11 @@ test = [
 ]
 
 [package.dev-dependencies]
+aiolimiter = [
+    { name = "aiolimiter" },
+]
 dev = [
     { name = "aiohttp" },
-    { name = "aiolimiter" },
     { name = "aiosqlite" },
     { name = "altair" },
     { name = "asyncpg" },
@@ -644,10 +633,8 @@ dev = [
     { name = "cachetools" },
     { name = "click" },
     { name = "coloredlogs" },
-    { name = "coverage-conditional-plugin" },
     { name = "cryptography" },
     { name = "cvxpy" },
-    { name = "dycw-pytest-only" },
     { name = "eventkit" },
     { name = "fastapi" },
     { name = "fpdf2" },
@@ -678,16 +665,7 @@ dev = [
     { name = "pyright", extra = ["nodejs"] },
     { name = "pyrsistent" },
     { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-instafail" },
-    { name = "pytest-lazy-fixtures" },
-    { name = "pytest-randomly" },
     { name = "pytest-regressions" },
-    { name = "pytest-rerunfailures" },
-    { name = "pytest-rng" },
-    { name = "pytest-timeout" },
-    { name = "pytest-xdist" },
     { name = "python-dotenv" },
     { name = "redis" },
     { name = "rich" },
@@ -704,6 +682,14 @@ dev = [
     { name = "vegafusion" },
     { name = "vegafusion-python-embed" },
     { name = "vl-convert-python" },
+]
+hypothesis = [
+    { name = "hypothesis" },
+]
+pytest = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-xdist" },
 ]
 
 [package.metadata]
@@ -730,10 +716,9 @@ requires-dist = [
 provides-extras = ["logging", "test"]
 
 [package.metadata.requires-dev]
+aiolimiter = [{ name = "aiolimiter", specifier = ">=1.2.1,<1.3" }]
 dev = [
     { name = "aiohttp", specifier = ">=3.12.12,<3.13" },
-    { name = "aiolimiter", specifier = ">=1.2.1" },
-    { name = "aiolimiter", specifier = ">=1.2.1,<1.3" },
     { name = "aiosqlite", specifier = ">=0.21.0,<0.22" },
     { name = "altair", specifier = ">=5.5.0,<5.6" },
     { name = "asyncpg", specifier = ">=0.30.0,<0.31" },
@@ -741,10 +726,8 @@ dev = [
     { name = "cachetools", specifier = ">=5.5.2,<5.6" },
     { name = "click", specifier = ">=8.2.1,<8.3" },
     { name = "coloredlogs", specifier = ">=15.0.1,<15.1" },
-    { name = "coverage-conditional-plugin", specifier = ">=0.9.0,<0.10" },
     { name = "cryptography", specifier = ">=45.0.4,<45.1" },
     { name = "cvxpy", specifier = ">=1.6.5,<1.7" },
-    { name = "dycw-pytest-only", specifier = ">=2.1.1,<2.2" },
     { name = "eventkit", specifier = ">=1.0.3,<1.1" },
     { name = "fastapi", specifier = ">=0.115.11,<0.116" },
     { name = "fpdf2", specifier = ">=2.8.3,<2.9" },
@@ -775,16 +758,7 @@ dev = [
     { name = "pyright", extras = ["nodejs"], specifier = ">=1.1.401,<1.2" },
     { name = "pyrsistent", specifier = ">=0.20.0,<0.21" },
     { name = "pytest", specifier = ">=8.3.5,<8.4" },
-    { name = "pytest-asyncio", specifier = ">=1.0.0,<1.1" },
-    { name = "pytest-cov", specifier = ">=6.1.1,<6.2" },
-    { name = "pytest-instafail", specifier = ">=0.5.0,<0.6" },
-    { name = "pytest-lazy-fixtures", specifier = ">=1.1.4,<1.2" },
-    { name = "pytest-randomly", specifier = ">=3.16.0,<3.17" },
     { name = "pytest-regressions", specifier = ">=2.8.0,<2.9" },
-    { name = "pytest-rerunfailures", specifier = ">=15.1,<16" },
-    { name = "pytest-rng", specifier = ">=1.0.0,<1.1" },
-    { name = "pytest-timeout", specifier = ">=2.4.0,<2.5" },
-    { name = "pytest-xdist", specifier = ">=3.7.0,<3.8" },
     { name = "python-dotenv", specifier = ">=1.1.0,<1.2" },
     { name = "redis", specifier = ">=6.2.0,<6.3" },
     { name = "rich", specifier = ">=14.0.0,<14.1" },
@@ -801,6 +775,12 @@ dev = [
     { name = "vegafusion", specifier = ">=2.0.2,<2.1" },
     { name = "vegafusion-python-embed", specifier = ">=1.6.9,<1.7" },
     { name = "vl-convert-python", specifier = ">=1.8.0,<1.9" },
+]
+hypothesis = [{ name = "hypothesis", specifier = ">=6.135.2,<6.136" }]
+pytest = [
+    { name = "pytest", specifier = ">=8.3.5,<8.4" },
+    { name = "pytest-asyncio", specifier = ">=1.0.0,<1.1" },
+    { name = "pytest-xdist", specifier = ">=3.7.0,<3.8" },
 ]
 
 [[package]]
