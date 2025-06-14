@@ -26,28 +26,12 @@ core = [
 cryptography = ["cryptography >= 45.0.4, < 45.1"]
 cvxpy = ["cvxpy >= 1.6.5, < 1.7"]
 dataclasses-test = ["orjson", "polars-lts-cpu"]
-dev = [
-  "greenlet >= 3.2.0, < 3.3",  # for sqlalchemy async
-  "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
-  "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
-  "pyright[nodejs] >= 1.1.401, < 1.2",
-  "pytest >= 8.3.5, < 8.4",
-  "pytest-regressions >= 2.8.0, < 2.9",
-  "scipy >= 1.15.3, < 1.16",
-  "sqlalchemy >= 2.0.41, < 2.1",
-  "tomlkit >= 0.13.2, < 0.14",
-  "uvicorn >= 0.34.1, < 0.35",
-  "vegafusion >= 2.0.2, < 2.1",
-  "vegafusion-python-embed >= 1.6.9, < 1.7",
-  "vl-convert-python >= 1.8.0, < 1.9",
-  "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
-  "coloredlogs >= 15.0.1, < 15.1",
-]
 eventkit = ["eventkit >= 1.0.3, < 1.1"]
 fastapi = ["fastapi >= 0.115.11, < 0.116"]
 fastapi-test = ["httpx", "uvicorn"]
 fpdf2 = ["fpdf2 >= 2.8.3, < 2.9"]
 hashlib-test = ["orjson"]
+http-test = ["orjson"]
 hypothesis = ["hypothesis >= 6.135.2, < 6.136"]
 hypothesis-test = ["luigi", "pathvalidate", "numpy", "pytest-rerunfailures"]
 inflect = ["inflect >= 7.5.0, < 7.6"]
@@ -56,6 +40,7 @@ libcst = ["libcst >= 1.8.0, < 1.9"]
 lightweight-charts = ["lightweight-charts >= 2.1, < 2.2"]
 lightweight-charts-test = ["polars-lts-cpu", "pyarrow"]
 luigi = ["luigi >= 3.6.0, < 3.7"]
+math-test = ["numpy"]
 memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
 more-itertools = ["more-itertools >= 10.7.0, < 10.8"]
 numpy = ["numpy >= 2.3.0, < 2.4"]
@@ -65,8 +50,10 @@ orjson = ["orjson >= 3.10.18, < 3.11"]
 orjson-test = ["polars-lts-cpu"]
 polars = ["polars-lts-cpu >= 1.30.0, < 1.31"]
 polars-ols = ["polars-ols >= 0.3.5, < 0.4"]
-polars-test = ["statsmodels"]
+polars-ols-test = ["scikit-learn"]
+polars-test = ["numpy", "statsmodels"]
 pottery = ["pottery >= 3.0.1, < 3.1"]
+pottery-test = ["orjson", "pytest-rerunfailures"]
 pqdm = ["pqdm >= 0.2.0, < 0.3"]
 psutil = ["psutil >= 7.0.0, < 7.1"]
 pydantic = ["pydantic >= 2.11.4, < 2.12"]
@@ -76,15 +63,36 @@ pytest = [
   "pytest-asyncio >= 1.0.0, < 1.1",
   "pytest-xdist >= 3.7.0, < 3.8",
 ]
+pytest-regressions = ["pytest-regressions >= 2.8.0, < 2.9"]
+pytest-regressions-test = ["polars-lts-cpu"]
+pytest-test = ["pytest-rerunfailures"]
 python-dotenv = ["python-dotenv >= 1.1.0, < 1.2"]
 redis = ["redis >= 6.2.0, < 6.3"]
+scipy = ["scipy >= 1.15.3, < 1.16"]
 sklearn = ["scikit-learn >= 1.7.0, < 1.8"]
 slack-sdk = ["slack-sdk >= 3.35.0, < 3.36"]
 slack-sdk-test = ["aiohttp"]
+sqlalchemy = ["sqlalchemy >= 2.0.41, < 2.1"]
+sqlalchemy-test = []
 statsmodels = ["statsmodels >= 0.14.4, < 0.15"]
 streamlit = ["streamlit >= 1.45.0, < 1.46"]
 typed-settings = ["typed-settings >= 24.6.0, < 24.7"]
 tzdata = ["tzdata >= 2025.2, < 2025.3"]
+zz-dev = [
+  "greenlet >= 3.2.0, < 3.3",  # for sqlalchemy async
+  "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
+  "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
+  "pyright[nodejs] >= 1.1.401, < 1.2",
+  "pytest >= 8.3.5, < 8.4",
+  "pytest-regressions >= 2.8.0, < 2.9",
+  "tomlkit >= 0.13.2, < 0.14",
+  "uvicorn >= 0.34.1, < 0.35",
+  "vegafusion >= 2.0.2, < 2.1",
+  "vegafusion-python-embed >= 1.6.9, < 1.7",
+  "vl-convert-python >= 1.8.0, < 1.9",
+  "asyncpg >= 0.30.0, < 0.31",  # for sqlalchemy async
+  "coloredlogs >= 15.0.1, < 15.1",
+]
 
 # project
 [project]
