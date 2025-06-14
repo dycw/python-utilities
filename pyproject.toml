@@ -29,6 +29,7 @@ dataclasses-test = ["orjson", "polars-lts-cpu"]
 dev = [
   "pyright[nodejs] >= 1.1.401, < 1.2",
   "coloredlogs >= 15.0.1, < 15.1",
+  "pytest-cov >= 6.1.1, < 6.2",
 ]
 eventkit = ["eventkit >= 1.0.3, < 1.1"]
 fastapi = ["fastapi >= 0.115.11, < 0.116"]

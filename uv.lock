@@ -597,6 +597,7 @@ dataclasses-test = [
 dev = [
     { name = "coloredlogs" },
     { name = "pyright", extra = ["nodejs"] },
+    { name = "pytest-cov" },
 ]
 eventkit = [
     { name = "eventkit" },
@@ -821,6 +822,7 @@ dataclasses-test = [
 dev = [
     { name = "coloredlogs", specifier = ">=15.0.1,<15.1" },
     { name = "pyright", extras = ["nodejs"], specifier = ">=1.1.401,<1.2" },
+    { name = "pytest-cov", specifier = ">=6.1.1,<6.2" },
 ]
 eventkit = [{ name = "eventkit", specifier = ">=1.0.3,<1.1" }]
 fastapi = [{ name = "fastapi", specifier = ">=0.115.11,<0.116" }]
