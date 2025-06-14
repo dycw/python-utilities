@@ -8,7 +8,7 @@ import typed_settings
 from hypothesis import given
 from hypothesis.strategies import DataObject, SearchStrategy, data, ip_addresses, tuples
 from pytest import mark, param, raises
-from typed_settings import FileLoader, TomlFormat
+from typed_settings import EnvLoader, FileLoader, TomlFormat
 from whenever import (
     Date,
     DateDelta,
@@ -30,6 +30,7 @@ from utilities.hypothesis import (
     times,
     zoned_datetimes,
 )
+from utilities.os import temp_environ
 from utilities.text import strip_and_dedent
 from utilities.typed_settings import (
     ExtendedTSConverter,
@@ -118,6 +119,23 @@ class TestLoadSettings:
         settings = load_settings(
             Settings, "app_name", filenames="file.toml", start_dir=root
         )
+        assert settings.datetime == datetime
+
+    @given(
+        prefix=app_names.map(lambda text: f"TEST_{text}".upper()),
+        datetime=zoned_datetimes(),
+    )
+    def test_loaders(self, *, prefix: str, datetime: ZonedDateTime) -> None:
+        key = f"{prefix}__DATETIME"
+
+        @dataclass(frozen=True, kw_only=True, slots=True)
+        class Settings:
+            datetime: ZonedDateTime
+
+        with temp_environ({key: datetime.format_common_iso()}):
+            settings = load_settings(
+                Settings, "app_name", loaders=[EnvLoader(prefix=f"{prefix}__")]
+            )
         assert settings.datetime == datetime
 
     @mark.parametrize("app_name", [param("app_"), param("app1"), param("app__name")])

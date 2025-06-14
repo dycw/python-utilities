@@ -23,7 +23,7 @@ from whenever import (
 from utilities.iterables import always_iterable
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable
 
     from typed_settings.loaders import Loader
     from typed_settings.processors import Processor
@@ -89,8 +89,8 @@ def load_settings(
     *,
     filenames: MaybeIterable[str] = "settings.toml",
     start_dir: PathLike | None = None,
-    loaders: Iterable[Loader] | None = None,
-    processors: Iterable[Processor] = (),
+    loaders: MaybeIterable[Loader] | None = None,
+    processors: MaybeIterable[Processor] = (),
     base_dir: Path = _BASE_DIR,
 ) -> _T:
     if not search(r"^[A-Za-z]+(?:_[A-Za-z]+)*$", app_name):
@@ -102,11 +102,11 @@ def load_settings(
     env_loader = EnvLoader(f"{app_name.upper()}__", nested_delimiter="__")
     loaders_use: list[Loader] = [file_loader, env_loader]
     if loaders is not None:
-        loaders_use.extend(loaders_use)
+        loaders_use.extend(always_iterable(loaders))
     return typed_settings.load_settings(
         cls,
         loaders_use,
-        processors=list(processors),
+        processors=list(always_iterable(processors)),
         converter=ExtendedTSConverter(),
         base_dir=base_dir,
     )
