@@ -118,7 +118,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.129.1"
+version = "0.132.3"
 
 [project.optional-dependencies]
 logging = [
@@ -360,7 +360,7 @@ zzz-test-zoneinfo = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.129.1"
+current_version = "0.132.3"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
