@@ -1,14 +1,14 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from ipaddress import IPv4Address, IPv6Address
-from operator import eq
 from pathlib import Path
 from typing import TypeVar
 
+import typed_settings
 from hypothesis import given
 from hypothesis.strategies import DataObject, SearchStrategy, data, ip_addresses, tuples
 from pytest import mark, param
-from typed_settings import FileLoader, TomlFormat, load_settings
+from typed_settings import FileLoader, TomlFormat
 from whenever import (
     Date,
     DateDelta,
@@ -69,24 +69,12 @@ class TestExtendedTSConverter:
         serialize: Callable[[_T], str],
     ) -> None:
         default, value = data.draw(tuples(strategy, strategy))
-        self._run_test(test_cls, default, root, appname, serialize, value, eq)
 
-    def _run_test(
-        self,
-        test_cls: type[_T],
-        default: _T,
-        root: Path,
-        appname: str,
-        serialize: Callable[[_T], str],
-        value: _T,
-        equal: Callable[[_T, _T], bool],
-        /,
-    ) -> None:
         @dataclass(frozen=True, kw_only=True, slots=True)
         class Settings:
             value: test_cls = default  # pyright: ignore[reportInvalidTypeForm]
 
-        settings_default = load_settings(
+        settings_default = typed_settings.load_settings(
             Settings, loaders=[], converter=ExtendedTSConverter()
         )
         assert settings_default.value == default
@@ -94,9 +82,14 @@ class TestExtendedTSConverter:
         file = Path(root, "file.toml")
         with file.open(mode="w") as fh:
             _ = fh.write(f'[{appname}]\nvalue = "{serialize(value)}"')
-        settings_loaded = load_settings(
+        settings_loaded = typed_settings.load_settings(
             Settings,
             loaders=[FileLoader(formats={"*.toml": TomlFormat(appname)}, files=[file])],
             converter=ExtendedTSConverter(),
         )
-        assert equal(settings_loaded.value, value)
+        assert settings_loaded.value == value
+
+
+class TestLoadSettings:
+    def test_error(self) -> None:
+        pass

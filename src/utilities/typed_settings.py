@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from ipaddress import IPv4Address, IPv6Address
+from pathlib import Path
+from re import search
 from typing import TYPE_CHECKING, Any, TypeVar, override
 
+import typed_settings
+from typed_settings import EnvLoader, FileLoader, find
 from typed_settings.converters import TSConverter
+from typed_settings.loaders import TomlFormat
 from whenever import (
     Date,
     DateDelta,
@@ -14,11 +20,21 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.iterables import always_iterable
+
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
+
+    from typed_settings.loaders import Loader
+    from typed_settings.processors import Processor
+
+    from utilities.types import MaybeIterable
 
 
 _T = TypeVar("_T")
+
+
+##
 
 
 class ExtendedTSConverter(TSConverter):
@@ -61,4 +77,47 @@ def _make_converter(
     return hook
 
 
-__all__ = ["ExtendedTSConverter"]
+##
+
+_BASE_DIR: Path = Path()
+
+
+def load_settings(
+    cls: type[_T],
+    appname: str,
+    /,
+    *,
+    files: MaybeIterable[str] = "settings.toml",
+    loaders: Iterable[Loader] | None = None,
+    processors: Iterable[Processor] = (),
+    base_dir: Path = _BASE_DIR,
+) -> _T:
+    if not search(r"^[A-Za-z]+(?:_[A-Za-z]+)*$", appname):
+        raise LoadSettingsError(appname=appname)
+    files_use = list(always_iterable(files))
+    file_loader = FileLoader(
+        formats={"*.toml": TomlFormat(appname)}, files=map(find, files_use)
+    )
+    env_loader = EnvLoader(f"{appname.upper()}__", nested_delimiter="__")
+    loaders_use: list[Loader] = [file_loader, env_loader]
+    if loaders is not None:
+        loaders_use.extend(loaders_use)
+    return typed_settings.load_settings(
+        cls,
+        loaders_use,
+        processors=list(processors),
+        converter=ExtendedTSConverter(),
+        base_dir=base_dir,
+    )
+
+
+@dataclass(kw_only=True, slots=True)
+class LoadSettingsError(Exception):
+    appname: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid app name; got {self.appname!r}"
+
+
+__all__ = ["ExtendedTSConverter", "LoadSettingsError", "load_settings"]
