@@ -186,7 +186,7 @@ class TestGetLogRecords:
             tuples(
                 sampled_from(get_args(LogLevel)),
                 text_ascii(),
-                dictionaries(text_ascii(), integers()),
+                dictionaries(text_ascii(), int64s()),
             )
         ),
         root=temp_paths(),

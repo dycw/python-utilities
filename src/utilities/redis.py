@@ -23,14 +23,8 @@ from typing import (
 
 from redis.asyncio import Redis
 
-from utilities.asyncio import EnhancedQueue, Looper, timeout_dur
+from utilities.asyncio import EnhancedQueue, Looper, sleep_td, timeout_td
 from utilities.contextlib import suppress_super_object_attribute_error
-from utilities.datetime import (
-    MILLISECOND,
-    SECOND,
-    datetime_duration_to_float,
-    datetime_duration_to_timedelta,
-)
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, identity
 from utilities.iterables import always_iterable, one

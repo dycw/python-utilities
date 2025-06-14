@@ -186,7 +186,7 @@ class TestPublish:
 
 
 class TestPublisherService:
-    @given(messages=lists(text_ascii(min_size=1), min_size=1, max_size=5))
+    @given(messages=lists(text_ascii(min_size=1), min_size=1))
     @mark.flaky
     @settings(max_examples=1, phases={Phase.generate})
     @SKIPIF_CI_AND_NOT_LINUX
