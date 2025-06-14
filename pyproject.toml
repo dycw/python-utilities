@@ -64,24 +64,25 @@ pytest = [
   "pytest-xdist >= 3.7.0, < 3.8",
 ]
 pytest-regressions = ["pytest-regressions >= 2.8.0, < 2.9"]
-pytest-regressions-test = ["polars-lts-cpu"]
+pytest-regressions-test = ["orjson", "polars-lts-cpu"]
 pytest-test = ["pytest-rerunfailures"]
 python-dotenv = ["python-dotenv >= 1.1.0, < 1.2"]
-redis = ["redis >= 6.2.0, < 6.3"]
+redis = ["redis >= 6.2.0, < 6.3", "orjson"]
+redis-test = ["pytest-rerunfailures"]
+reprlib-test = ["rich"]
 scipy = ["scipy >= 1.15.3, < 1.16"]
 sklearn = ["scikit-learn >= 1.7.0, < 1.8"]
 slack-sdk = ["slack-sdk >= 3.35.0, < 3.36"]
 slack-sdk-test = ["aiohttp"]
 sqlalchemy = ["sqlalchemy >= 2.0.41, < 2.1"]
-sqlalchemy-test = []
+sqlalchemy-polars = ["sqlalchemy", "polars-lts-cpu"]
+sqlalchemy-polars-test = ["aiosqlite", "asyncpg", "greenlet"]
+sqlalchemy-test = ["aiosqlite", "asyncpg", "greenlet"]
 statsmodels = ["statsmodels >= 0.14.4, < 0.15"]
 streamlit = ["streamlit >= 1.45.0, < 1.46"]
 typed-settings = ["typed-settings >= 24.6.0, < 24.7"]
 tzdata = ["tzdata >= 2025.2, < 2025.3"]
 zz-dev = [
-  "greenlet >= 3.2.0, < 3.3",  # for sqlalchemy async
-  "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
-  "psycopg2-binary >= 2.9.10, < 2.10",  # for sqlalchemy
   "pyright[nodejs] >= 1.1.401, < 1.2",
   "pytest >= 8.3.5, < 8.4",
   "pytest-regressions >= 2.8.0, < 2.9",

@@ -5,7 +5,7 @@ import datetime as dt
 from logging import getLogger
 from subprocess import CalledProcessError, check_call
 from time import sleep
-from tomllib import loads
+from tomllib import TOMLDecodeError, loads
 from typing import TYPE_CHECKING
 
 from utilities.git import get_repo_root
@@ -26,13 +26,28 @@ def main() -> None:
 
 
 def _run_test(path: Path, /) -> None:
-    root = get_repo_root()
-    hour = dt.datetime.now(dt.UTC).replace(minute=0, second=0, microsecond=0)
-    group = extract_group(r"^test_(\w+)$", path.stem).replace("_", "-")
-    marker = root.joinpath(".pytest_cache", f"{hour:%Y%m%dT%H}-{group}")
+    group = _get_group(path)
+    marker = _get_marker(group)
     if (group == "pytest") or marker.exists():
         return
     _LOGGER.info("Testing %r...", str(path))
+    while True:
+        if _run_command(path):
+            marker.touch()
+            return
+        sleep(1)
+
+
+def _get_group(path: Path, /) -> str:
+    return extract_group(r"^test_(\w+)$", path.stem).replace("_", "-")
+
+
+def _get_marker(group: str, /) -> Path:
+    hour = dt.datetime.now(dt.UTC).replace(minute=0, second=0, microsecond=0)
+    return get_repo_root().joinpath(".pytest_cache", f"{hour:%Y%m%dT%H}-{group}")
+
+
+def _run_command(path: Path, /) -> bool:
     cmd: list[str] = [
         "uv",
         "run",
@@ -42,25 +57,24 @@ def _run_test(path: Path, /) -> None:
         "--isolated",
         "--managed-python",
     ]
-    while True:
-        cmd_use: list[str] = cmd.copy()
-        groups: list[str] = loads(root.joinpath("pyproject.toml").read_text())[
-            "dependency-groups"
-        ]
-        if group in groups:
-            cmd_use.append(f"--only-group={group}")
-        if (test := f"{group}-test") in groups:
-            cmd_use.append(f"--only-group={test}")
-        cmd_use.extend(["pytest", "-nauto", str(path)])
-        try:
-            code = check_call(cmd_use)
-        except CalledProcessError:
-            sleep(1)
-        else:
-            if code == 0:
-                marker.touch()
-                return
-            sleep(1)
+    text = get_repo_root().joinpath("pyproject.toml").read_text()
+    try:
+        loaded = loads(text)
+    except TOMLDecodeError:
+        _LOGGER.exception("Invalid TOML document")
+        return False
+    groups: list[str] = loaded["dependency-groups"]
+    if (group := _get_group(path)) in groups:
+        cmd.append(f"--only-group={group}")
+    if (test := f"{group}-test") in groups:
+        cmd.append(f"--only-group={test}")
+    cmd.extend(["pytest", "-nauto", str(path)])
+    try:
+        code = check_call(cmd)
+    except CalledProcessError:
+        return False
+    _LOGGER.error("pytest failed")
+    return code == 0
 
 
 if __name__ == "__main__":
