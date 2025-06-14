@@ -241,7 +241,6 @@ class TestRandomState:
 class TestThrottle:
     delta: ClassVar[float] = 0.5
 
-    @mark.flaky
     @mark.parametrize("on_try", [param(True), param(False)])
     def test_basic(self, *, testdir: Testdir, tmp_path: Path, on_try: bool) -> None:
         _ = testdir.makepyfile(
@@ -260,7 +259,6 @@ class TestThrottle:
         sleep(self.delta)
         testdir.runpytest().assert_outcomes(passed=1)
 
-    @mark.flaky
     @mark.parametrize("asyncio_first", [param(True), param(False)])
     @mark.parametrize("on_try", [param(True), param(False)])
     def test_async(
@@ -301,7 +299,6 @@ class TestThrottle:
         sleep(self.delta)
         testdir.runpytest().assert_outcomes(passed=1)
 
-    @mark.flaky
     def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
@@ -332,7 +329,6 @@ class TestThrottle:
             testdir.runpytest("--pass").assert_outcomes(skipped=1)
             sleep(delta_use)
 
-    @mark.flaky
     def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
@@ -366,7 +362,6 @@ class TestThrottle:
             testdir.runpytest().assert_outcomes(skipped=1)
             sleep(delta_use)
 
-    @mark.flaky
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makepyfile(
             f"""
@@ -397,7 +392,6 @@ class TestThrottle:
 
         assert signature(func) == signature(other)
 
-    @mark.flaky
     def test_error_decoding_timestamp(
         self, *, testdir: Testdir, tmp_path: Path
     ) -> None:
