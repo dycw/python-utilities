@@ -30,6 +30,7 @@ from utilities.hypothesis import (
     times,
     zoned_datetimes,
 )
+from utilities.text import strip_and_dedent
 from utilities.typed_settings import (
     ExtendedTSConverter,
     LoadSettingsError,
@@ -82,10 +83,13 @@ class TestExtendedTSConverter:
             Settings, loaders=[], converter=ExtendedTSConverter()
         )
         assert settings_default.value == default
-        _ = hash(settings_default)
         file = Path(root, "file.toml")
-        with file.open(mode="w") as fh:
-            _ = fh.write(f'[{app_name}]\nvalue = "{serialize(value)}"')
+        _ = file.write_text(
+            strip_and_dedent(f"""
+                [{app_name}]
+                value = '{serialize(value)}'
+            """)
+        )
         settings_loaded = typed_settings.load_settings(
             Settings,
             loaders=[
@@ -97,8 +101,24 @@ class TestExtendedTSConverter:
 
 
 class TestLoadSettings:
-    def test_main(self) -> None:
-        pass
+    @given(root=temp_paths(), datetime=zoned_datetimes())
+    def test_main(self, *, root: Path, datetime: ZonedDateTime) -> None:
+        @dataclass(frozen=True, kw_only=True, slots=True)
+        class Settings:
+            datetime: ZonedDateTime
+
+        file = Path(root, "file.toml")
+        _ = file.write_text("")
+        _ = file.write_text(
+            strip_and_dedent(f"""
+                [app_name]
+                datetime = '{datetime.format_common_iso()}'
+            """)
+        )
+        settings = load_settings(
+            Settings, "app_name", filenames="file.toml", start_dir=root
+        )
+        assert settings.datetime == datetime
 
     @mark.parametrize("app_name", [param("app_"), param("app1"), param("app__name")])
     def test_error(self, *, app_name: str) -> None:

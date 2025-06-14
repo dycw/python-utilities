@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from typed_settings.loaders import Loader
     from typed_settings.processors import Processor
 
-    from utilities.types import MaybeIterable
+    from utilities.types import MaybeIterable, PathLike
 
 
 _T = TypeVar("_T")
@@ -87,17 +87,18 @@ def load_settings(
     app_name: str,
     /,
     *,
-    files: MaybeIterable[str] = "settings.toml",
+    filenames: MaybeIterable[str] = "settings.toml",
+    start_dir: PathLike | None = None,
     loaders: Iterable[Loader] | None = None,
     processors: Iterable[Processor] = (),
     base_dir: Path = _BASE_DIR,
 ) -> _T:
     if not search(r"^[A-Za-z]+(?:_[A-Za-z]+)*$", app_name):
         raise LoadSettingsError(appname=app_name)
-    files_use = list(always_iterable(files))
-    file_loader = FileLoader(
-        formats={"*.toml": TomlFormat(app_name)}, files=map(find, files_use)
-    )
+    filenames_use = list(always_iterable(filenames))
+    start_dir_use = None if start_dir is None else Path(start_dir)
+    files = [find(filename, start_dir=start_dir_use) for filename in filenames_use]
+    file_loader = FileLoader(formats={"*.toml": TomlFormat(app_name)}, files=files)
     env_loader = EnvLoader(f"{app_name.upper()}__", nested_delimiter="__")
     loaders_use: list[Loader] = [file_loader, env_loader]
     if loaders is not None:
