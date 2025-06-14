@@ -731,6 +731,7 @@ pytest-regressions-test = [
 ]
 pytest-test = [
     { name = "pytest-rerunfailures" },
+    { name = "pytest-rng" },
 ]
 python-dotenv = [
     { name = "python-dotenv" },
@@ -901,7 +902,10 @@ pytest-regressions-test = [
     { name = "orjson" },
     { name = "polars-lts-cpu" },
 ]
-pytest-test = [{ name = "pytest-rerunfailures" }]
+pytest-test = [
+    { name = "pytest-rerunfailures" },
+    { name = "pytest-rng" },
+]
 python-dotenv = [{ name = "python-dotenv", specifier = ">=1.1.0,<1.2" }]
 redis = [
     { name = "orjson" },

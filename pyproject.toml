@@ -72,7 +72,7 @@ pytest = [
 ]
 pytest-regressions = ["pytest-regressions >= 2.8.0, < 2.9"]
 pytest-regressions-test = ["orjson", "polars-lts-cpu"]
-pytest-test = ["pytest-rerunfailures"]
+pytest-test = ["pytest-rng", "pytest-rerunfailures"]
 python-dotenv = ["python-dotenv >= 1.1.0, < 1.2"]
 redis = ["redis >= 6.2.0, < 6.3", "orjson"]
 redis-test = ["pytest-rerunfailures"]
