@@ -1,10 +1,12 @@
 #!/usr/bin/env python
+
 from __future__ import annotations
 
 from logging import getLogger
 from pathlib import Path
 from shlex import quote
-from subprocess import run
+from subprocess import check_call
+from time import sleep
 
 from utilities.git import get_repo_root
 from utilities.logging import basic_config
@@ -26,8 +28,8 @@ def _run_test(path: Path, /) -> None:
     if marker.exists():
         return
     _LOGGER.info("Testing %r...", str(path))
-    _ = run(
-        [
+    while True:
+        code = check_call([
             "uv",
             "run",
             f"--only-group={quote(group)}",
@@ -37,13 +39,13 @@ def _run_test(path: Path, /) -> None:
             "--isolated",
             "--managed-python",
             "pytest",
-            "-x",
             "-nauto",
             str(path),
-        ],
-        check=True,
-    )
-    marker.touch()
+        ])
+        if code == 0:
+            marker.touch()
+            return
+        sleep(1)
 
 
 if __name__ == "__main__":

@@ -626,7 +626,9 @@ aiolimiter = [
 ]
 altair = [
     { name = "altair" },
+    { name = "img2pdf" },
     { name = "polars-lts-cpu" },
+    { name = "vl-convert-python" },
 ]
 core = [
     { name = "atomicwrites" },
@@ -728,7 +730,9 @@ provides-extras = ["logging", "test"]
 aiolimiter = [{ name = "aiolimiter", specifier = ">=1.2.1,<1.3" }]
 altair = [
     { name = "altair", specifier = ">=5.5.0,<5.6" },
+    { name = "img2pdf" },
     { name = "polars-lts-cpu" },
+    { name = "vl-convert-python" },
 ]
 core = [
     { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
