@@ -1,11 +1,12 @@
 from collections.abc import Callable
 from dataclasses import dataclass
+from ipaddress import IPv4Address, IPv6Address
 from operator import eq
 from pathlib import Path
 from typing import TypeVar
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, SearchStrategy, data, tuples
+from hypothesis.strategies import DataObject, SearchStrategy, data, ip_addresses, tuples
 from pytest import mark, param
 from typed_settings import FileLoader, TomlFormat, load_settings
 from whenever import (
@@ -49,6 +50,8 @@ class TestExtendedTSConverter:
                 date_time_deltas(parsable=True),
                 DateTimeDelta.format_common_iso,
             ),
+            param(IPv4Address, ip_addresses(v=4), IPv4Address),
+            param(IPv6Address, ip_addresses(v=6), IPv6Address),
             param(PlainDateTime, plain_datetimes(), PlainDateTime.format_common_iso),
             param(Time, times(), Time.format_common_iso),
             param(TimeDelta, time_deltas(), TimeDelta.format_common_iso),

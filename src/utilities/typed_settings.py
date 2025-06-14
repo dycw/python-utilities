@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from ipaddress import IPv4Address, IPv6Address
 from typing import TYPE_CHECKING, Any, TypeVar, override
 
 from typed_settings.converters import TSConverter
@@ -35,6 +36,8 @@ class ExtendedTSConverter(TSConverter):
             (Date, Date.parse_common_iso),
             (DateDelta, DateDelta.parse_common_iso),
             (DateTimeDelta, DateTimeDelta.parse_common_iso),
+            (IPv4Address, IPv4Address),
+            (IPv6Address, IPv6Address),
             (PlainDateTime, PlainDateTime.parse_common_iso),
             (Time, Time.parse_common_iso),
             (TimeDelta, TimeDelta.parse_common_iso),
