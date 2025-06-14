@@ -730,6 +730,7 @@ pytest-regressions-test = [
     { name = "polars-lts-cpu" },
 ]
 pytest-test = [
+    { name = "orjson" },
     { name = "pytest-rerunfailures" },
     { name = "pytest-rng" },
 ]
@@ -903,6 +904,7 @@ pytest-regressions-test = [
     { name = "polars-lts-cpu" },
 ]
 pytest-test = [
+    { name = "orjson" },
     { name = "pytest-rerunfailures" },
     { name = "pytest-rng" },
 ]

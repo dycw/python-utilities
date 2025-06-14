@@ -28,7 +28,7 @@ def main() -> None:
 def _run_test(path: Path, /) -> None:
     group = _get_group(path)
     marker = _get_marker(group)
-    if (group == "pytest") or marker.exists():
+    if marker.exists():
         return
     _LOGGER.info("Testing %r...", str(path))
     while True:
