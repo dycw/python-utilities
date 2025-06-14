@@ -16,14 +16,14 @@ _LOGGER = getLogger(__name__)
 def main() -> None:
     basic_config(obj=_LOGGER)
     path = get_repo_root().joinpath("src", "tests")
-    for path_i in path.glob("test_*.py"):
+    for path_i in sorted(path.glob("test_*.py")):
         _run_test(path_i)
 
 
 def _run_test(path: Path, /) -> None:
     group = extract_group(r"^test_(\w+)$", path.stem).replace("_", "-")
-    path = Path(".pytest_cache", group)
-    if path.exists():
+    marker = Path(".pytest_cache", group)
+    if marker.exists():
         return
     _LOGGER.info("Testing %r...", str(path))
     _ = run(
@@ -31,10 +31,14 @@ def _run_test(path: Path, /) -> None:
             "uv",
             "run",
             f"--only-group={quote(group)}",
+            "--only-group=core",
             "--only-group=hypothesis",
             "--only-group=pytest",
-            "--no-dev",
+            "--isolated",
             "--managed-python",
+            # "uv",
+            # "pip",
+            # "list",
             "pytest",
             "-x",
             "-nauto",
@@ -42,7 +46,7 @@ def _run_test(path: Path, /) -> None:
         ],
         check=True,
     )
-    path.touch()
+    marker.touch()
 
 
 if __name__ == "__main__":
