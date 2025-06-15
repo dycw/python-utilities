@@ -72,7 +72,7 @@ type Coroutine1[_T] = Coroutine[Any, Any, _T]
 type MaybeAwaitable[_T] = _T | Awaitable[_T]
 type MaybeCallableEvent = MaybeCallable[Event]
 type MaybeCoroutine1[_T] = _T | Coroutine1[_T]
-type CallableAwaitable[_T] = Callable[..., Coroutine1[_T]]
+type CallableCoroutine1[_T] = Callable[..., Coroutine1[_T]]
 
 
 # callable
@@ -296,7 +296,7 @@ type TimeZoneLike = (
 
 
 __all__ = [
-    "CallableAwaitable",
+    "CallableCoroutine1",
     "Coroutine1",
     "Dataclass",
     "DateDeltaLike",

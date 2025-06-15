@@ -9,7 +9,7 @@ from arq.constants import default_queue_name, expires_extra_ms
 from arq.cron import cron
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Iterable, Sequence
     from datetime import timezone
 
     from arq.connections import ArqRedis, RedisSettings
@@ -24,11 +24,17 @@ if TYPE_CHECKING:
     )
     from arq.worker import Function
 
-    from utilities.types import CallableAwaitable, Coroutine1
+    from utilities.types import CallableCoroutine1, Coroutine1, StrMapping
+
+_P = ParamSpec("_P")
+_T = TypeVar("_T")
+
+
+##
 
 
 def cron_raw(
-    coroutine: CallableAwaitable[Any],
+    coroutine: CallableCoroutine1[Any],
     /,
     *,
     name: str | None = None,
@@ -46,10 +52,15 @@ def cron_raw(
     keep_result: float | None = 0,
     keep_result_forever: bool | None = False,
     max_tries: int | None = 1,
+    args: Iterable[Any] | None = None,
+    kwargs: StrMapping | None = None,
 ) -> CronJob:
     """Create a cron job with a raw coroutine function."""
+    lifted = _lift_cron(
+        coroutine, *(() if args is None else args), **({} if kwargs is None else kwargs)
+    )
     return cron(
-        lift(coroutine),
+        lifted,
         name=name,
         month=month,
         day=day,
@@ -68,18 +79,27 @@ def cron_raw(
     )
 
 
+def _lift_cron(
+    func: Callable[_P, Coroutine1[_T]], *args: _P.args, **kwargs: _P.kwargs
+) -> WorkerCoroutine:
+    """Lift a coroutine function & call arg/kwargs for `cron`."""
+
+    @wraps(func)
+    async def wrapped(ctx: StrMapping, /) -> _T:
+        _ = ctx
+        return await func(*args, **kwargs)
+
+    return cast("Any", wrapped)
+
+
 ##
-
-
-_P = ParamSpec("_P")
-_T = TypeVar("_T")
 
 
 def lift(func: Callable[_P, Coroutine1[_T]]) -> WorkerCoroutine:
     """Lift a coroutine function to accept the required `ctx` argument."""
 
     @wraps(func)
-    async def wrapped(ctx: dict[Any, Any], *args: _P.args, **kwargs: _P.kwargs) -> _T:
+    async def wrapped(ctx: StrMapping, *args: _P.args, **kwargs: _P.kwargs) -> _T:
         _ = ctx
         return await func(*args, **kwargs)
 
@@ -107,7 +127,7 @@ class Worker(metaclass=_WorkerMeta):
     """Base class for all workers."""
 
     functions: Sequence[Function | WorkerCoroutine] = ()
-    functions_raw: Sequence[CallableAwaitable[Any]] = ()
+    functions_raw: Sequence[CallableCoroutine1[Any]] = ()
     queue_name: str | None = default_queue_name
     cron_jobs: Sequence[CronJob] | None = None
     redis_settings: RedisSettings | None = None
