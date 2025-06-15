@@ -148,7 +148,13 @@ class TestFreq:
     @given(freqs=pairs(freqs()))
     def test_eq(self, *, freqs: tuple[Freq, Freq]) -> None:
         x, y = freqs
-        _ = x == y
+        result = x == y
+        assert isinstance(result, bool)
+
+    @given(freq=freqs())
+    def test_eq_non_freq(self, *, freq: Freq) -> None:
+        result = freq == 0
+        assert not result
 
     @given(freq=freqs())
     def test_hashable(self, *, freq: Freq) -> None:
@@ -190,11 +196,6 @@ class TestFreq:
             match="Increment must be a proper divisor of 1000 for the 'millisecond' unit; got 3",
         ):
             _ = Freq(unit="millisecond", increment=3)
-
-    @given(freq=freqs())
-    def test_error_eq(self, *, freq: Freq) -> None:
-        with raises(TypeError):
-            _ = freq == 0
 
     def test_error_parse(self) -> None:
         with raises(_FreqParseError, match="Unable to parse frequency; got 's'"):
