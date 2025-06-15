@@ -29,7 +29,7 @@ from utilities.types import (
     TimeLike,
     ZonedDateTimeLike,
 )
-from utilities.whenever import FreqLike, _MonthParseCommonISOError
+from utilities.whenever import FreqLike, _FreqParseError, _MonthParseCommonISOError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -194,8 +194,8 @@ class Freq(ParamType):
                 return value
             case str():
                 try:
-                    e
-                except ParseObjectError as error:
+                    return utilities.whenever.Freq.parse(value)
+                except _FreqParseError as error:
                     self.fail(str(error), param, ctx)
             case _ as never:
                 assert_never(never)

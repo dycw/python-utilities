@@ -34,6 +34,7 @@ from utilities.click import (
     ExistingDirPath,
     ExistingFilePath,
     FilePath,
+    Freq,
     FrozenSetChoices,
     FrozenSetEnums,
     FrozenSetStrs,
@@ -51,6 +52,7 @@ from utilities.hypothesis import (
     date_deltas,
     date_time_deltas,
     dates,
+    freqs,
     months,
     pairs,
     plain_datetimes,
@@ -209,6 +211,7 @@ class TestParameters:
                 attrgetter("name"),
                 True,
             ),
+            param(Freq(), "FREQ", freqs(), utilities.whenever.Freq.serialize, True),
             param(
                 FrozenSetChoices(["a", "b", "c"]),
                 "FROZENSET[Choice(['a', 'b', 'c'])]",
@@ -299,9 +302,6 @@ class TestParameters:
         result = CliRunner().invoke(cli, ["--value=error"])
         expected = 2 if failable else 0
         assert result.exit_code == expected
-
-    def test_freq(self, *, arg) -> None:
-        pass
 
     @mark.parametrize(
         "param",
