@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
+from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
 from re import DOTALL
 from types import NoneType
@@ -176,14 +177,9 @@ def _parse_object_type(
             return parse_bool(text)
         except ParseBoolError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
-    if is_subclass_gen(cls, int):
+    if is_subclass_gen(cls, int | float | IPv4Address | IPv6Address):
         try:
-            return int(text)
-        except ValueError:
-            raise _ParseObjectParseError(type_=cls, text=text) from None
-    if issubclass(cls, float):
-        try:
-            return float(text)
+            return cls(text)
         except ValueError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(cls, Enum):
@@ -443,7 +439,16 @@ def serialize_object(
         with suppress(_SerializeObjectSerializeError):
             return _serialize_object_extra(obj, extra)
     if (obj is None) or isinstance(
-        obj, bool | int | float | str | Path | Sentinel | Version
+        obj,
+        bool
+        | int
+        | float
+        | str
+        | IPv4Address
+        | IPv6Address
+        | Path
+        | Sentinel
+        | Version,
     ):
         return str(obj)
     if isinstance(
