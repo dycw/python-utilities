@@ -979,6 +979,12 @@ async def yield_pubsub(
     await pubsub.subscribe(*channels)  # skipif-ci-and-not-linux
     try:  # skipif-ci-and-not-linux
         yield pubsub
+    except RuntimeError as error:  # pragma: no cover
+        from utilities.pytest import is_pytest
+
+        if is_pytest() and (error.args[0] == "no running event loop"):
+            return
+        raise
     finally:  # skipif-ci-and-not-linux
         await pubsub.unsubscribe(*channels)
         await pubsub.aclose()
