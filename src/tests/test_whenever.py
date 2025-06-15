@@ -30,6 +30,7 @@ from utilities.hypothesis import (
     assume_does_not_raise,
     date_deltas,
     dates,
+    freqs,
     months,
     pairs,
     sentinels,
@@ -64,12 +65,15 @@ from utilities.whenever import (
     ZERO_DAYS,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
+    Freq,
     MeanDateTimeError,
     MinMaxDateError,
     Month,
     ToDaysError,
     ToNanosError,
     WheneverLogRecord,
+    _FreqDayError,
+    _FreqInvalidError,
     _MinMaxDateMaxDateError,
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
@@ -126,6 +130,39 @@ class TestFormatCompact:
         assert parsed.nanosecond == 0
         expected = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
         assert parsed == expected
+
+
+class TestFreq:
+    @given(freq=freqs())
+    def test_main(self, *, freq: Freq) -> None:
+        _ = get_now().round(unit=freq.unit, increment=freq.increment, mode="floor")
+
+    def test_error_day(self) -> None:
+        with raises(
+            _FreqDayError, match="Increment must be 1 for the 'day' unit; got 2"
+        ):
+            _ = Freq(unit="day", increment=2)
+
+    def test_error_hour(self) -> None:
+        with raises(
+            _FreqInvalidError,
+            match="Increment must be a proper divisor of 24 for the 'hour' unit; got 5",
+        ):
+            _ = Freq(unit="hour", increment=5)
+
+    def test_error_minute(self) -> None:
+        with raises(
+            _FreqInvalidError,
+            match="Increment must be a proper divisor of 60 for the 'minute' unit; got 7",
+        ):
+            _ = Freq(unit="minute", increment=7)
+
+    def test_error_milliseond(self) -> None:
+        with raises(
+            _FreqInvalidError,
+            match="Increment must be a proper divisor of 1000 for the 'millisecond' unit; got 3",
+        ):
+            _ = Freq(unit="millisecond", increment=3)
 
 
 class TestFromTimeStamp:

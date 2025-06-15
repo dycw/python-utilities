@@ -28,7 +28,7 @@ from utilities.math import sign
 from utilities.platform import get_strftime
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import MaybeStr
+from utilities.types import DateTimeRoundUnit, MaybeStr
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
 
@@ -161,6 +161,61 @@ def format_compact(datetime: ZonedDateTime, /) -> str:
     """Convert a zoned datetime to the local time zone, then format."""
     py_datetime = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain().py_datetime()
     return py_datetime.strftime(get_strftime("%Y%m%dT%H%M%S"))
+
+
+##
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
+class Freq:
+    """A rounding frequency."""
+
+    unit: DateTimeRoundUnit = "second"
+    increment: int = 1
+
+    def __post_init__(self) -> None:
+        if (self.unit == "day") and (self.increment != 1):
+            raise _FreqDayError(increment=self.increment)
+        if (self.unit == "hour") and not (
+            (0 < self.increment < 24) and (24 % self.increment == 0)
+        ):
+            raise _FreqInvalidError(
+                unit=self.unit, increment=self.increment, divisor=24
+            )
+        if (self.unit in {"minute", "second"}) and not (
+            (0 < self.increment < 60) and (60 % self.increment == 0)
+        ):
+            raise _FreqInvalidError(
+                unit=self.unit, increment=self.increment, divisor=60
+            )
+        if (self.unit in {"millisecond", "microsecond", "nanosecond"}) and not (
+            (0 < self.increment < 1000) and (1000 % self.increment == 0)
+        ):
+            raise _FreqInvalidError(
+                unit=self.unit, increment=self.increment, divisor=1000
+            )
+
+
+@dataclass(kw_only=True, slots=True)
+class FreqError(Exception):
+    increment: int
+
+
+@dataclass(kw_only=True, slots=True)
+class _FreqDayError(FreqError):
+    @override
+    def __str__(self) -> str:
+        return f"Increment must be 1 for the 'day' unit; got {self.increment}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _FreqInvalidError(FreqError):
+    unit: DateTimeRoundUnit
+    divisor: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Increment must be a proper divisor of {self.divisor} for the {self.unit!r} unit; got {self.increment}"
 
 
 ##
@@ -736,6 +791,8 @@ __all__ = [
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
     "DateOrMonth",
+    "Freq",
+    "FreqError",
     "MeanDateTimeError",
     "MinMaxDateError",
     "Month",

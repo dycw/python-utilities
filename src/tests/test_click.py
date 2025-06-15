@@ -300,6 +300,9 @@ class TestParameters:
         expected = 2 if failable else 0
         assert result.exit_code == expected
 
+    def test_freq(self, *, arg) -> None:
+        pass
+
     @mark.parametrize(
         "param",
         [param(ListEnums(_ExampleEnum)), param(FrozenSetEnums(_ExampleEnum))],

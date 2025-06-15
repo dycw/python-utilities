@@ -51,6 +51,7 @@ from utilities.hypothesis import (
     float64s,
     float_arrays,
     floats_extra,
+    freqs,
     git_repos,
     hashables,
     int32s,
@@ -107,6 +108,7 @@ from utilities.version import Version
 from utilities.whenever import (
     DATE_TWO_DIGIT_YEAR_MAX,
     DATE_TWO_DIGIT_YEAR_MIN,
+    Freq,
     Month,
     to_days,
     to_nanos,
@@ -484,6 +486,13 @@ class TestFloatsExtra:
         if max_value is not None:
             assert x <= max_value
         assert x == round(x)
+
+
+class TestFreqs:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        freq = data.draw(freqs())
+        assert isinstance(freq, Freq)
 
 
 class TestGitRepos:

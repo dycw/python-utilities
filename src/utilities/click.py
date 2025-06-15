@@ -177,6 +177,31 @@ class Enum(ParamType, Generic[TEnum]):
         return _make_metavar(param, desc)
 
 
+class Freq(ParamType, Generic[TEnum]):
+    """An frequency-valued parameter."""
+
+    @override
+    def __repr__(self) -> str:
+        cls = get_class_name(self._enum)
+        return f"ENUM[{cls}]"
+
+    @override
+    def convert(
+        self, value: EnumLike[TEnum], param: Parameter | None, ctx: Context | None
+    ) -> TEnum:
+        """Convert a value into the `Enum` type."""
+        try:
+            return ensure_enum(value, self._enum, case_sensitive=self._case_sensitive)
+        except EnsureEnumError as error:
+            self.fail(str(error), param, ctx)
+
+    @override
+    def get_metavar(self, param: Parameter, ctx: Context) -> str | None:
+        _ = ctx
+        desc = ",".join(e.name for e in self._enum)
+        return _make_metavar(param, desc)
+
+
 class IPv4Address(ParamType):
     """An IPv4 address-valued parameter."""
 
@@ -519,6 +544,7 @@ __all__ = [
     "ExistingDirPath",
     "ExistingFilePath",
     "FilePath",
+    "Freq",
     "FrozenSetChoices",
     "FrozenSetEnums",
     "FrozenSetParameter",
