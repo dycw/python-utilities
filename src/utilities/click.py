@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ipaddress
 import pathlib
 from typing import TYPE_CHECKING, Generic, TypedDict, TypeVar, assert_never, override
 
@@ -12,12 +13,15 @@ import utilities.whenever
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import EnsureStrError, ensure_str, get_class_name
 from utilities.iterables import is_iterable_not_str
+from utilities.parse import ParseObjectError, parse_object
 from utilities.text import split_str
 from utilities.types import (
     DateDeltaLike,
     DateLike,
     DateTimeDeltaLike,
     EnumLike,
+    IPv4AddressLike,
+    IPv6AddressLike,
     MaybeStr,
     PlainDateTimeLike,
     TEnum,
@@ -171,6 +175,58 @@ class Enum(ParamType, Generic[TEnum]):
         _ = ctx
         desc = ",".join(e.name for e in self._enum)
         return _make_metavar(param, desc)
+
+
+class IPv4Address(ParamType):
+    """An IPv4 address-valued parameter."""
+
+    name = "ipv4 address"
+
+    @override
+    def __repr__(self) -> str:
+        return self.name.upper()
+
+    @override
+    def convert(
+        self, value: IPv4AddressLike, param: Parameter | None, ctx: Context | None
+    ) -> ipaddress.IPv4Address:
+        """Convert a value into the `IPv4Address` type."""
+        match value:
+            case ipaddress.IPv4Address():
+                return value
+            case str():
+                try:
+                    return parse_object(ipaddress.IPv4Address, value)
+                except ParseObjectError as error:
+                    self.fail(str(error), param, ctx)
+            case _ as never:
+                assert_never(never)
+
+
+class IPv6Address(ParamType):
+    """An IPv6 address-valued parameter."""
+
+    name = "ipv6 address"
+
+    @override
+    def __repr__(self) -> str:
+        return self.name.upper()
+
+    @override
+    def convert(
+        self, value: IPv6AddressLike, param: Parameter | None, ctx: Context | None
+    ) -> ipaddress.IPv6Address:
+        """Convert a value into the `IPv6Address` type."""
+        match value:
+            case ipaddress.IPv6Address():
+                return value
+            case str():
+                try:
+                    return parse_object(ipaddress.IPv6Address, value)
+                except ParseObjectError as error:
+                    self.fail(str(error), param, ctx)
+            case _ as never:
+                assert_never(never)
 
 
 class Month(ParamType):
@@ -467,6 +523,8 @@ __all__ = [
     "FrozenSetEnums",
     "FrozenSetParameter",
     "FrozenSetStrs",
+    "IPv4Address",
+    "IPv6Address",
     "ListEnums",
     "ListParameter",
     "ListStrs",

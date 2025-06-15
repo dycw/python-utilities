@@ -16,6 +16,7 @@ from hypothesis.strategies import (
     booleans,
     data,
     frozensets,
+    ip_addresses,
     lists,
     sampled_from,
 )
@@ -36,6 +37,8 @@ from utilities.click import (
     FrozenSetChoices,
     FrozenSetEnums,
     FrozenSetStrs,
+    IPv4Address,
+    IPv6Address,
     ListEnums,
     ListStrs,
     Month,
@@ -227,6 +230,8 @@ class TestParameters:
                 _lift_serializer(str, sort=True),
                 False,
             ),
+            param(IPv4Address(), "IPV4 ADDRESS", ip_addresses(v=4), str, True),
+            param(IPv6Address(), "IPV6 ADDRESS", ip_addresses(v=6), str, True),
             param(
                 ListEnums(_ExampleEnum),
                 "LIST[ENUM[_ExampleEnum]]",

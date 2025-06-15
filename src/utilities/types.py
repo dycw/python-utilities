@@ -4,6 +4,7 @@ import datetime as dt
 from asyncio import Event
 from collections.abc import Awaitable, Callable, Coroutine, Hashable, Iterable, Mapping
 from enum import Enum
+from ipaddress import IPv4Address, IPv6Address
 from logging import Logger
 from pathlib import Path
 from random import Random
@@ -110,6 +111,11 @@ TBaseException = TypeVar("TBaseException", bound=BaseException)
 THashable = TypeVar("THashable", bound=Hashable)
 THashable1 = TypeVar("THashable1", bound=Hashable)
 THashable2 = TypeVar("THashable2", bound=Hashable)
+
+
+# ipaddress
+IPv4AddressLike = MaybeStr[IPv4Address]
+IPv6AddressLike = MaybeStr[IPv6Address]
 
 
 # iterables
@@ -295,6 +301,8 @@ __all__ = [
     "DateTimeRoundUnit",
     "EnumLike",
     "ExcInfo",
+    "IPv4AddressLike",
+    "IPv6AddressLike",
     "IterableHashable",
     "LogLevel",
     "LoggerOrName",

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
 from types import NoneType
 from typing import Final, Literal
@@ -12,6 +13,7 @@ from hypothesis.strategies import (
     floats,
     frozensets,
     integers,
+    ip_addresses,
     lists,
     none,
     sampled_from,
@@ -109,6 +111,18 @@ class TestSerializeAndParseObject:
         serialized = serialize_object(int_)
         result = parse_object(int, serialized)
         assert result == int_
+
+    @given(address=ip_addresses(v=4))
+    def test_ipv4_address(self, *, address: IPv4Address) -> None:
+        serialized = serialize_object(address)
+        result = parse_object(IPv4Address, serialized)
+        assert result == address
+
+    @given(address=ip_addresses(v=6))
+    def test_ipv6_address(self, *, address: IPv6Address) -> None:
+        serialized = serialize_object(address)
+        result = parse_object(IPv6Address, serialized)
+        assert result == address
 
     @given(ints=lists(int64s()))
     def test_list(self, *, ints: list[int]) -> None:
