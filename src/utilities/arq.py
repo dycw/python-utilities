@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar, reveal_type
+from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar, cast
 
 from arq.constants import default_queue_name, expires_extra_ms
 
@@ -28,18 +28,12 @@ def lift(
     """Lift a coroutine function to accept the required `ctx` argument."""
 
     @wraps(func)
-    async def wrapped(ctx: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
+    async def wrapped(ctx: dict[str, Any], *args: _P.args, **kwargs: _P.kwargs) -> _T:
         _ = ctx
         return await func(*args, **kwargs)
 
-    return wrapped
+    return cast("Any", wrapped)
 
-
-@lift
-async def foo(x: int) -> float: ...
-
-
-reveal_type(foo)
 
 ##
 
@@ -81,4 +75,4 @@ class Worker:
     log_results: bool = True
 
 
-__all__ = ["Worker"]
+__all__ = ["Worker", "lift"]
