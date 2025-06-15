@@ -200,12 +200,6 @@ class Freq(ParamType):
             case _ as never:
                 assert_never(never)
 
-    @override
-    def get_metavar(self, param: Parameter, ctx: Context) -> str | None:
-        _ = ctx
-        desc = ",".join(e.name for e in self._enum)
-        return _make_metavar(param, desc)
-
 
 class IPv4Address(ParamType):
     """An IPv4 address-valued parameter."""
