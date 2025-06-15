@@ -72,12 +72,16 @@ type Coroutine1[_T] = Coroutine[Any, Any, _T]
 type MaybeAwaitable[_T] = _T | Awaitable[_T]
 type MaybeCallableEvent = MaybeCallable[Event]
 type MaybeCoroutine1[_T] = _T | Coroutine1[_T]
+type CallableCoroutine1[_T] = Callable[..., Coroutine1[_T]]
 
 
 # callable
 TCallable = TypeVar("TCallable", bound=Callable[..., Any])
 TCallable1 = TypeVar("TCallable1", bound=Callable[..., Any])
 TCallable2 = TypeVar("TCallable2", bound=Callable[..., Any])
+TCallableCoroutine1 = TypeVar(
+    "TCallableCoroutine1", bound=Callable[..., Coroutine1[Any]]
+)
 TCallableMaybeCoroutine1None = TypeVar(
     "TCallableMaybeCoroutine1None", bound=Callable[..., MaybeCoroutine1[None]]
 )
@@ -292,6 +296,7 @@ type TimeZoneLike = (
 
 
 __all__ = [
+    "CallableCoroutine1",
     "Coroutine1",
     "Dataclass",
     "DateDeltaLike",
@@ -346,6 +351,7 @@ __all__ = [
     "TCallable",
     "TCallable1",
     "TCallable2",
+    "TCallableCoroutine1",
     "TCallableMaybeCoroutine1None",
     "TDataclass",
     "TEnum",
