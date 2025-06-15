@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from functools import wraps
+from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar, reveal_type
 
 from arq.constants import default_queue_name, expires_extra_ms
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
     from datetime import timezone
 
     from arq.connections import ArqRedis, RedisSettings
@@ -14,6 +15,33 @@ if TYPE_CHECKING:
     from arq.jobs import Deserializer, Serializer
     from arq.typing import SecondsTimedelta, StartupShutdown, WorkerCoroutine
     from arq.worker import Function
+
+    from utilities.types import Coroutine1, StrMapping
+
+_P = ParamSpec("_P")
+_T = TypeVar("_T")
+
+
+def lift(
+    func: Callable[_P, Coroutine1[_T]],
+) -> Callable[Concatenate[StrMapping, _P], Coroutine1[_T]]:
+    """Lift a coroutine function to accept the required `ctx` argument."""
+
+    @wraps(func)
+    async def wrapped(ctx: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
+        _ = ctx
+        return await func(*args, **kwargs)
+
+    return wrapped
+
+
+@lift
+async def foo(x: int) -> float: ...
+
+
+reveal_type(foo)
+
+##
 
 
 @dataclass(kw_only=True)
