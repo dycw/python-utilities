@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from functools import wraps
 from itertools import chain
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast
@@ -99,13 +99,6 @@ class _WorkerMeta(type):
     ) -> type[Worker]:
         cls = cast("type[Worker]", super().__new__(mcs, name, bases, namespace))
         cls.functions = tuple(chain(cls.functions, map(lift, cls.functions_raw)))
-        if cls.cron_jobs_raw is not None:
-            lifted = (
-                replace(c, coroutine=lift(c.coroutine)) for c in cls.cron_jobs_raw
-            )
-            cls.cron_jobs = tuple(
-                chain([] if cls.cron_jobs is None else list(cls.cron_jobs), lifted)
-            )
         return cls
 
 
@@ -117,7 +110,6 @@ class Worker(metaclass=_WorkerMeta):
     functions_raw: Sequence[CallableAwaitable[Any]] = ()
     queue_name: str | None = default_queue_name
     cron_jobs: Sequence[CronJob] | None = None
-    cron_jobs_raw: Sequence[CronJob] | None = None
     redis_settings: RedisSettings | None = None
     redis_pool: ArqRedis | None = None
     burst: bool = False
@@ -148,4 +140,4 @@ class Worker(metaclass=_WorkerMeta):
     log_results: bool = True
 
 
-__all__ = ["Worker", "lift"]
+__all__ = ["Worker", "cron", "lift"]

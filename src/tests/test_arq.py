@@ -3,11 +3,10 @@ from __future__ import annotations
 from asyncio import sleep
 from typing import TYPE_CHECKING, Any, cast
 
-from arq.cron import cron
 from hypothesis import given
 from hypothesis.strategies import integers
 
-from utilities.arq import Worker, lift
+from utilities.arq import Worker, cron_raw, lift
 from utilities.iterables import one
 
 if TYPE_CHECKING:
@@ -52,8 +51,9 @@ class TestWorker:
             return x + y
 
         class Example(Worker):
-            cron_jobs_raw: Sequence[CronJob] = [cron(func)]
+            cron_jobs: Sequence[CronJob] | None = [cron_raw(func)]
 
-        func_use = cast("WorkerCoroutine", one(Example.functions))
-        result = await func_use({}, x, y)
+        assert Example.cron_jobs is not None
+        cron_job = one(Example.cron_jobs)
+        result = await cron_job.coroutine({}, x, y)
         assert result == (x + y)
