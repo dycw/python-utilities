@@ -7,7 +7,6 @@ from hypothesis import given
 from hypothesis.strategies import integers
 
 from utilities.arq import Worker, cron_raw, lift
-from utilities.hypothesis import settings_with_reduced_examples
 from utilities.iterables import one
 
 if TYPE_CHECKING:
@@ -21,7 +20,6 @@ if TYPE_CHECKING:
 
 class TestLift:
     @given(x=integers(), y=integers())
-    @settings_with_reduced_examples()
     async def test_main(self, *, x: int, y: int) -> None:
         @lift
         async def func(x: int, y: int, /) -> int:
@@ -34,7 +32,6 @@ class TestLift:
 
 class TestWorker:
     @given(x=integers(), y=integers())
-    @settings_with_reduced_examples()
     async def test_main(self, *, x: int, y: int) -> None:
         async def func(x: int, y: int, /) -> int:
             await sleep(0.01)
@@ -48,7 +45,6 @@ class TestWorker:
         assert result == (x + y)
 
     @given(x=integers(), y=integers())
-    @settings_with_reduced_examples()
     async def test_cron(self, *, x: int, y: int) -> None:
         async def func(x: int, y: int, /) -> int:
             await sleep(0.01)
