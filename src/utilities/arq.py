@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import wraps
 from itertools import chain
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast, override
 
 from arq.constants import default_queue_name, expires_extra_ms
 from arq.cron import cron
@@ -95,21 +95,8 @@ def _lift_cron(
 ##
 
 
-def lift(func: Callable[_P, Coroutine1[_T]]) -> WorkerCoroutine:
-    """Lift a coroutine function to accept the required `ctx` argument."""
-
-    @wraps(func)
-    async def wrapped(ctx: StrMapping, *args: _P.args, **kwargs: _P.kwargs) -> _T:
-        _ = ctx
-        return await func(*args, **kwargs)
-
-    return cast("Any", wrapped)
-
-
-##
-
-
 class _WorkerMeta(type):
+    @override
     def __new__(
         mcs: type[_WorkerMeta],
         name: str,
@@ -118,8 +105,19 @@ class _WorkerMeta(type):
         /,
     ) -> type[Worker]:
         cls = cast("type[Worker]", super().__new__(mcs, name, bases, namespace))
-        cls.functions = tuple(chain(cls.functions, map(lift, cls.functions_raw)))
+        cls.functions = tuple(chain(cls.functions, map(cls._lift, cls.functions_raw)))
         return cls
+
+    @classmethod
+    def _lift(cls, func: Callable[_P, Coroutine1[_T]]) -> WorkerCoroutine:
+        """Lift a coroutine function to accept the required `ctx` argument."""
+
+        @wraps(func)
+        async def wrapped(ctx: StrMapping, *args: _P.args, **kwargs: _P.kwargs) -> _T:
+            _ = ctx
+            return await func(*args, **kwargs)
+
+        return cast("Any", wrapped)
 
 
 @dataclass(kw_only=True)
@@ -160,4 +158,4 @@ class Worker(metaclass=_WorkerMeta):
     log_results: bool = True
 
 
-__all__ = ["Worker", "cron", "lift"]
+__all__ = ["Worker", "cron"]

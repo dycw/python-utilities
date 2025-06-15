@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, cast
 from hypothesis import given
 from hypothesis.strategies import integers
 
-from utilities.arq import Worker, cron_raw, lift
+from utilities.arq import Worker, cron_raw
 from utilities.iterables import one
 
 if TYPE_CHECKING:
@@ -16,18 +16,6 @@ if TYPE_CHECKING:
     from arq.typing import WorkerCoroutine
 
     from utilities.types import CallableCoroutine1
-
-
-class TestLift:
-    @given(x=integers(), y=integers())
-    async def test_main(self, *, x: int, y: int) -> None:
-        @lift
-        async def func(x: int, y: int, /) -> int:
-            await sleep(0.01)
-            return x + y
-
-        result = await func({}, x, y)
-        assert result == (x + y)
 
 
 class TestWorker:
