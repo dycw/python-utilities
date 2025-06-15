@@ -37,6 +37,8 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import DateTimeRoundUnit
+from utilities.typing import get_literal_elements
 from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.whenever import (
@@ -72,8 +74,9 @@ from utilities.whenever import (
     ToDaysError,
     ToNanosError,
     WheneverLogRecord,
-    _FreqDayError,
-    _FreqInvalidError,
+    _FreqDayIncrementError,
+    _FreqIncrementError,
+    _FreqParseError,
     _MinMaxDateMaxDateError,
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
@@ -137,32 +140,47 @@ class TestFreq:
     def test_main(self, *, freq: Freq) -> None:
         _ = get_now().round(unit=freq.unit, increment=freq.increment, mode="floor")
 
+    @given(unit=sampled_from(get_literal_elements(DateTimeRoundUnit)))
+    def test_abbreviate_and_expand(self, *, unit: DateTimeRoundUnit) -> None:
+        result = Freq._expand(Freq._abbreviate(unit))
+        assert result == unit
+
+    @given(freq=freqs())
+    def test_serialize_and_parse(self, *, freq: Freq) -> None:
+        result = Freq.parse(freq.serialize())
+        assert result == freq
+
     def test_error_day(self) -> None:
         with raises(
-            _FreqDayError, match="Increment must be 1 for the 'day' unit; got 2"
+            _FreqDayIncrementError,
+            match="Increment must be 1 for the 'day' unit; got 2",
         ):
             _ = Freq(unit="day", increment=2)
 
     def test_error_hour(self) -> None:
         with raises(
-            _FreqInvalidError,
+            _FreqIncrementError,
             match="Increment must be a proper divisor of 24 for the 'hour' unit; got 5",
         ):
             _ = Freq(unit="hour", increment=5)
 
     def test_error_minute(self) -> None:
         with raises(
-            _FreqInvalidError,
+            _FreqIncrementError,
             match="Increment must be a proper divisor of 60 for the 'minute' unit; got 7",
         ):
             _ = Freq(unit="minute", increment=7)
 
     def test_error_milliseond(self) -> None:
         with raises(
-            _FreqInvalidError,
+            _FreqIncrementError,
             match="Increment must be a proper divisor of 1000 for the 'millisecond' unit; got 3",
         ):
             _ = Freq(unit="millisecond", increment=3)
+
+    def test_error_parse(self) -> None:
+        with raises(_FreqParseError, match="Unable to parse frequency; got 's'"):
+            _ = Freq.parse("s")
 
 
 class TestFromTimeStamp:

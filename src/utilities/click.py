@@ -29,7 +29,7 @@ from utilities.types import (
     TimeLike,
     ZonedDateTimeLike,
 )
-from utilities.whenever import _MonthParseCommonISOError
+from utilities.whenever import FreqLike, _MonthParseCommonISOError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -177,23 +177,28 @@ class Enum(ParamType, Generic[TEnum]):
         return _make_metavar(param, desc)
 
 
-class Freq(ParamType, Generic[TEnum]):
+class Freq(ParamType):
     """An frequency-valued parameter."""
 
     @override
     def __repr__(self) -> str:
-        cls = get_class_name(self._enum)
-        return f"ENUM[{cls}]"
+        return "FREQ"
 
     @override
     def convert(
-        self, value: EnumLike[TEnum], param: Parameter | None, ctx: Context | None
-    ) -> TEnum:
-        """Convert a value into the `Enum` type."""
-        try:
-            return ensure_enum(value, self._enum, case_sensitive=self._case_sensitive)
-        except EnsureEnumError as error:
-            self.fail(str(error), param, ctx)
+        self, value: FreqLike, param: Parameter | None, ctx: Context | None
+    ) -> utilities.whenever.Freq:
+        """Convert a value into the `Freq` type."""
+        match value:
+            case utilities.whenever.Freq():
+                return value
+            case str():
+                try:
+                    e
+                except ParseObjectError as error:
+                    self.fail(str(error), param, ctx)
+            case _ as never:
+                assert_never(never)
 
     @override
     def get_metavar(self, param: Parameter, ctx: Context) -> str | None:
