@@ -236,6 +236,7 @@ asyncio_mode = "auto"
 filterwarnings = [
   "error",
   "ignore:.*utcfromtimestamp.* is deprecated and scheduled for removal in a future version:DeprecationWarning",  # luigi
+  "ignore:Exception ignored in.* <coroutine object .* at .*>:pytest.PytestUnraisableExceptionWarning",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
   "ignore:ResourceTracker called reentrantly for resource cleanup, which is unsupported:UserWarning",
   "ignore:Task .* without outputs has no custom complete.* method:UserWarning",  # luigi
