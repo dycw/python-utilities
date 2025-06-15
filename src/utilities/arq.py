@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import wraps
 from itertools import chain
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast
 
 from arq.constants import default_queue_name, expires_extra_ms
-
-from utilities.contextlib import suppress_super_object_attribute_error
+from arq.cron import cron
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -16,10 +15,61 @@ if TYPE_CHECKING:
     from arq.connections import ArqRedis, RedisSettings
     from arq.cron import CronJob
     from arq.jobs import Deserializer, Serializer
-    from arq.typing import SecondsTimedelta, StartupShutdown, WorkerCoroutine
+    from arq.typing import (
+        OptionType,
+        SecondsTimedelta,
+        StartupShutdown,
+        WeekdayOptionType,
+        WorkerCoroutine,
+    )
     from arq.worker import Function
 
     from utilities.types import CallableAwaitable, Coroutine1
+
+
+def cron_raw(
+    coroutine: CallableAwaitable[Any],
+    /,
+    *,
+    name: str | None = None,
+    month: OptionType = None,
+    day: OptionType = None,
+    weekday: WeekdayOptionType = None,
+    hour: OptionType = None,
+    minute: OptionType = None,
+    second: OptionType = 0,
+    microsecond: int = 123_456,
+    run_at_startup: bool = False,
+    unique: bool = True,
+    job_id: str | None = None,
+    timeout: SecondsTimedelta | None = None,
+    keep_result: float | None = 0,
+    keep_result_forever: bool | None = False,
+    max_tries: int | None = 1,
+) -> CronJob:
+    """Create a cron job with a raw coroutine function."""
+    return cron(
+        lift(coroutine),
+        name=name,
+        month=month,
+        day=day,
+        weekday=weekday,
+        hour=hour,
+        minute=minute,
+        second=second,
+        microsecond=microsecond,
+        run_at_startup=run_at_startup,
+        unique=unique,
+        job_id=job_id,
+        timeout=timeout,
+        keep_result=keep_result,
+        keep_result_forever=keep_result_forever,
+        max_tries=max_tries,
+    )
+
+
+##
+
 
 _P = ParamSpec("_P")
 _T = TypeVar("_T")
@@ -45,9 +95,17 @@ class _WorkerMeta(type):
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
+        /,
     ) -> type[Worker]:
         cls = cast("type[Worker]", super().__new__(mcs, name, bases, namespace))
         cls.functions = tuple(chain(cls.functions, map(lift, cls.functions_raw)))
+        if cls.cron_jobs_raw is not None:
+            lifted = (
+                replace(c, coroutine=lift(c.coroutine)) for c in cls.cron_jobs_raw
+            )
+            cls.cron_jobs = tuple(
+                chain([] if cls.cron_jobs is None else list(cls.cron_jobs), lifted)
+            )
         return cls
 
 
@@ -59,7 +117,7 @@ class Worker(metaclass=_WorkerMeta):
     functions_raw: Sequence[CallableAwaitable[Any]] = ()
     queue_name: str | None = default_queue_name
     cron_jobs: Sequence[CronJob] | None = None
-    cron_jobs_raw: Sequence[int] | None = None
+    cron_jobs_raw: Sequence[CronJob] | None = None
     redis_settings: RedisSettings | None = None
     redis_pool: ArqRedis | None = None
     burst: bool = False
@@ -88,11 +146,6 @@ class Worker(metaclass=_WorkerMeta):
     expires_extra_ms: int = expires_extra_ms
     timezone: timezone | None = None
     log_results: bool = True
-
-    def __post_init__(self) -> None:
-        with suppress_super_object_attribute_error():
-            super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
-        self.functions = list(chain(self.functions, map(lift, self.functions_raw)))
 
 
 __all__ = ["Worker", "lift"]
