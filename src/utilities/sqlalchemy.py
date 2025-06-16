@@ -298,12 +298,12 @@ def get_chunk_size(
     /,
     *,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    scaling: int = 1,
+    max_length: int = 1,
 ) -> int:
     """Get the maximum chunk size for an engine."""
     max_params = _get_dialect_max_params(engine_or_conn)
-    scaling_use = max(scaling, 1)
-    size = floor(chunk_size_frac * max_params / scaling_use)
+    scaling = max(max_length, 1)
+    size = floor(chunk_size_frac * max_params / scaling)
     return max(size, 1)
 
 
@@ -1100,7 +1100,7 @@ def _prepare_insert_or_upsert_items(
     }
     max_length = max(lengths, default=1)
     chunk_size = get_chunk_size(
-        engine, chunk_size_frac=chunk_size_frac, scaling=max_length
+        engine, chunk_size_frac=chunk_size_frac, max_length=max_length
     )
 
     def yield_pairs() -> Iterator[tuple[Insert, None]]:
