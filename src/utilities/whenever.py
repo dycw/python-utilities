@@ -243,7 +243,10 @@ class Freq:
 
     @classmethod
     def _expand(cls, unit: _DateTimeRoundUnitAbbrev, /) -> DateTimeRoundUnit:
-        (value,) = {k for k, v in cls._mapping.items() if v == unit}
+        values: set[DateTimeRoundUnit] = {
+            k for k, v in cls._mapping.items() if v == unit
+        }
+        (value,) = values
         return value
 
 
