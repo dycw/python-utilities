@@ -21,6 +21,7 @@ from whenever import (
 )
 
 from utilities.iterables import always_iterable
+from utilities.whenever import Freq
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -52,6 +53,7 @@ class ExtendedTSConverter(TSConverter):
             (Date, Date.parse_common_iso),
             (DateDelta, DateDelta.parse_common_iso),
             (DateTimeDelta, DateTimeDelta.parse_common_iso),
+            (Freq, Freq.parse),
             (IPv4Address, IPv4Address),
             (IPv6Address, IPv6Address),
             (PlainDateTime, PlainDateTime.parse_common_iso),

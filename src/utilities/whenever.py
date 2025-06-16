@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, replace
 from functools import cache
 from logging import LogRecord
@@ -8,9 +8,12 @@ from statistics import fmean
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
+    Literal,
     Self,
     SupportsFloat,
     assert_never,
+    cast,
     overload,
     override,
 )
@@ -28,7 +31,7 @@ from utilities.math import sign
 from utilities.platform import get_strftime
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import MaybeStr
+from utilities.types import DateTimeRoundUnit, MaybeStr
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
 
@@ -161,6 +164,127 @@ def format_compact(datetime: ZonedDateTime, /) -> str:
     """Convert a zoned datetime to the local time zone, then format."""
     py_datetime = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain().py_datetime()
     return py_datetime.strftime(get_strftime("%Y%m%dT%H%M%S"))
+
+
+##
+
+
+class Freq:
+    """A rounding frequency."""
+
+    unit: DateTimeRoundUnit
+    increment: int
+    _mapping: ClassVar[Mapping[DateTimeRoundUnit, _DateTimeRoundUnitAbbrev]] = {
+        "day": "D",
+        "hour": "H",
+        "minute": "M",
+        "second": "S",
+        "millisecond": "ms",
+        "microsecond": "us",
+        "nanosecond": "ns",
+    }
+
+    def __init__(
+        self, *, unit: DateTimeRoundUnit = "second", increment: int = 1
+    ) -> None:
+        super().__init__()
+        if (unit == "day") and (increment != 1):
+            raise _FreqDayIncrementError(increment=increment)
+        if (unit == "hour") and not ((0 < increment < 24) and (24 % increment == 0)):
+            raise _FreqIncrementError(unit=unit, increment=increment, divisor=24)
+        if (unit in {"minute", "second"}) and not (
+            (0 < increment < 60) and (60 % increment == 0)
+        ):
+            raise _FreqIncrementError(unit=unit, increment=increment, divisor=60)
+        if (unit in {"millisecond", "microsecond", "nanosecond"}) and not (
+            (0 < increment < 1000) and (1000 % increment == 0)
+        ):
+            raise _FreqIncrementError(unit=unit, increment=increment, divisor=1000)
+        self.unit = unit
+        self.increment = increment
+
+    @override
+    def __eq__(self, other: object, /) -> bool:
+        if not isinstance(other, Freq):
+            return NotImplemented
+        return (self.unit == other.unit) and (self.increment == other.increment)
+
+    @override
+    def __hash__(self) -> int:
+        return hash((self.unit, self.increment))
+
+    @override
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(unit={self.unit!r}, increment={self.increment})"
+
+    @classmethod
+    def parse(cls, text: str, /) -> Self:
+        try:
+            increment, abbrev = extract_groups(r"^(\d*)(D|H|M|S|ms|us|ns)$", text)
+        except ExtractGroupsError:
+            raise _FreqParseError(text=text) from None
+        return cls(
+            unit=cls._expand(cast("_DateTimeRoundUnitAbbrev", abbrev)),
+            increment=int(increment) if len(increment) >= 1 else 1,
+        )
+
+    def serialize(self) -> str:
+        if self.increment == 1:
+            return self._abbreviation
+        return f"{self.increment}{self._abbreviation}"
+
+    @classmethod
+    def _abbreviate(cls, unit: DateTimeRoundUnit, /) -> _DateTimeRoundUnitAbbrev:
+        return cls._mapping[unit]
+
+    @property
+    def _abbreviation(self) -> _DateTimeRoundUnitAbbrev:
+        return self._mapping[self.unit]
+
+    @classmethod
+    def _expand(cls, unit: _DateTimeRoundUnitAbbrev, /) -> DateTimeRoundUnit:
+        values: set[DateTimeRoundUnit] = {
+            k for k, v in cls._mapping.items() if v == unit
+        }
+        (value,) = values
+        return value
+
+
+type FreqLike = MaybeStr[Freq]
+type _DateTimeRoundUnitAbbrev = Literal["D", "H", "M", "S", "ms", "us", "ns"]
+
+
+@dataclass(kw_only=True, slots=True)
+class FreqError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _FreqDayIncrementError(FreqError):
+    increment: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Increment must be 1 for the 'day' unit; got {self.increment}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _FreqIncrementError(FreqError):
+    unit: DateTimeRoundUnit
+    increment: int
+    divisor: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Increment must be a proper divisor of {self.divisor} for the {self.unit!r} unit; got {self.increment}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _FreqParseError(FreqError):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse frequency; got {self.text!r}"
 
 
 ##
@@ -736,6 +860,9 @@ __all__ = [
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
     "DateOrMonth",
+    "Freq",
+    "FreqError",
+    "FreqLike",
     "MeanDateTimeError",
     "MinMaxDateError",
     "Month",

@@ -41,6 +41,7 @@ from utilities.hypothesis import (
     Shape,
     _Draw2DefaultGeneratedSentinelError,
     _Draw2InputResolvedToSentinelError,
+    _freq_units,
     assume_does_not_raise,
     bool_arrays,
     date_deltas,
@@ -51,6 +52,7 @@ from utilities.hypothesis import (
     float64s,
     float_arrays,
     floats_extra,
+    freqs,
     git_repos,
     hashables,
     int32s,
@@ -107,6 +109,7 @@ from utilities.version import Version
 from utilities.whenever import (
     DATE_TWO_DIGIT_YEAR_MAX,
     DATE_TWO_DIGIT_YEAR_MIN,
+    Freq,
     Month,
     to_days,
     to_nanos,
@@ -118,7 +121,7 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
     from utilities.tempfile import TemporaryDirectory
-    from utilities.types import Number
+    from utilities.types import DateTimeRoundUnit, Number
 
 
 class TestAssumeDoesNotRaise:
@@ -484,6 +487,15 @@ class TestFloatsExtra:
         if max_value is not None:
             assert x <= max_value
         assert x == round(x)
+
+
+class TestFreqs:
+    @given(data=data(), unit=_freq_units() | none())
+    def test_main(self, *, data: DataObject, unit: DateTimeRoundUnit | None) -> None:
+        freq = data.draw(freqs(unit=unit))
+        assert isinstance(freq, Freq)
+        if unit is not None:
+            assert freq.unit == unit
 
 
 class TestGitRepos:

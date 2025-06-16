@@ -29,7 +29,7 @@ from utilities.types import (
     TimeLike,
     ZonedDateTimeLike,
 )
-from utilities.whenever import _MonthParseCommonISOError
+from utilities.whenever import FreqLike, _FreqParseError, _MonthParseCommonISOError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -175,6 +175,30 @@ class Enum(ParamType, Generic[TEnum]):
         _ = ctx
         desc = ",".join(e.name for e in self._enum)
         return _make_metavar(param, desc)
+
+
+class Freq(ParamType):
+    """An frequency-valued parameter."""
+
+    @override
+    def __repr__(self) -> str:
+        return "FREQ"
+
+    @override
+    def convert(
+        self, value: FreqLike, param: Parameter | None, ctx: Context | None
+    ) -> utilities.whenever.Freq:
+        """Convert a value into the `Freq` type."""
+        match value:
+            case utilities.whenever.Freq():
+                return value
+            case str():
+                try:
+                    return utilities.whenever.Freq.parse(value)
+                except _FreqParseError as error:
+                    self.fail(str(error), param, ctx)
+            case _ as never:
+                assert_never(never)
 
 
 class IPv4Address(ParamType):
@@ -519,6 +543,7 @@ __all__ = [
     "ExistingDirPath",
     "ExistingFilePath",
     "FilePath",
+    "Freq",
     "FrozenSetChoices",
     "FrozenSetEnums",
     "FrozenSetParameter",
