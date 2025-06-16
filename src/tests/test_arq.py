@@ -38,7 +38,7 @@ class TestJobEnqueuer:
             return x + y
 
         redis = ArqRedis(db=15)
-        await job_enqueuer.settings(queue_name="test")(redis, func, x, y)
+        _ = await job_enqueuer.settings(queue_name="test")(redis, func, x, y)
 
 
 class TestWorker:
