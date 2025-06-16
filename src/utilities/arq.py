@@ -3,18 +3,21 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import wraps
 from itertools import chain
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast, override
+from typing import TYPE_CHECKING, Any, ParamSpec, Self, TypeVar, cast, override
 
 from arq.constants import default_queue_name, expires_extra_ms
 from arq.cron import cron
 
+from utilities.dataclasses import replace_non_sentinel
+from utilities.sentinel import Sentinel, sentinel
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
-    from datetime import timezone
+    from datetime import datetime, timedelta, timezone
 
     from arq.connections import ArqRedis, RedisSettings
     from arq.cron import CronJob
-    from arq.jobs import Deserializer, Serializer
+    from arq.jobs import Deserializer, Job, Serializer
     from arq.typing import (
         OptionType,
         SecondsTimedelta,
@@ -25,6 +28,7 @@ if TYPE_CHECKING:
     from arq.worker import Function
 
     from utilities.types import CallableCoroutine1, Coroutine1, StrMapping
+
 
 _P = ParamSpec("_P")
 _T = TypeVar("_T")
@@ -95,6 +99,64 @@ def _lift_cron(
 ##
 
 
+@dataclass(kw_only=True, slots=True)
+class _JobEnqueuer:
+    """Enqueuer of jobs."""
+
+    job_id: str | None = None
+    queue_name: str | None = None
+    defer_until: datetime | None = None
+    defer_by: int | float | timedelta | None = None
+    expires: int | float | timedelta | None = None
+    job_try: int | None = None
+
+    async def __call__(
+        self,
+        redis: ArqRedis,
+        function: Callable[_P, Coroutine1[_T]],
+        *args: _P.args,
+        **kwargs: _P.kwargs,
+    ) -> Job | None:
+        return await redis.enqueue_job(  # skipif-ci-and-not-linux
+            function.__name__,
+            *args,
+            _job_id=self.job_id,
+            _queue_name=self.queue_name,
+            _defer_until=self.defer_until,
+            _defer_by=self.defer_by,
+            _expires=self.expires,
+            _job_try=self.job_try,
+            **kwargs,
+        )
+
+    def settings(
+        self,
+        *,
+        job_id: str | None | Sentinel = sentinel,
+        queue_name: str | None | Sentinel = sentinel,
+        defer_until: datetime | None | Sentinel = sentinel,
+        defer_by: float | timedelta | None | Sentinel = sentinel,
+        expires: float | timedelta | None | Sentinel = sentinel,
+        job_try: int | None | Sentinel = sentinel,
+    ) -> Self:
+        """Replace elements of the enqueuer."""
+        return replace_non_sentinel(  # skipif-ci-and-not-linux
+            self,
+            job_id=job_id,
+            queue_name=queue_name,
+            defer_until=defer_until,
+            defer_by=defer_by,
+            expires=expires,
+            job_try=job_try,
+        )
+
+
+job_enqueuer = _JobEnqueuer()
+
+
+##
+
+
 class _WorkerMeta(type):
     @override
     def __new__(
@@ -158,4 +220,4 @@ class Worker(metaclass=_WorkerMeta):
     log_results: bool = True
 
 
-__all__ = ["Worker", "cron"]
+__all__ = ["Worker", "cron", "job_enqueuer"]
