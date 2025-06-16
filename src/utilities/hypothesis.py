@@ -506,20 +506,26 @@ def floats_extra(
 
 
 @composite
-def freqs(draw: DrawFn, /) -> Freq:
-    units: list[DateTimeRoundUnit] = get_literal_elements(DateTimeRoundUnit)
-    unit = draw(sampled_from(units))
-    match unit:
+def freqs(
+    draw: DrawFn, /, *, unit: MaybeSearchStrategy[DateTimeRoundUnit | None] = None
+) -> Freq:
+    unit_ = draw2(draw, unit, _freq_units())
+    match unit_:
         case "day":
-            return Freq(unit=unit)
+            return Freq(unit=unit_)
         case "hour":
-            return Freq(unit=unit, increment=draw(_freq_increments(24)))
+            return Freq(unit=unit_, increment=draw(_freq_increments(24)))
         case "minute" | "second":
-            return Freq(unit=unit, increment=draw(_freq_increments(60)))
+            return Freq(unit=unit_, increment=draw(_freq_increments(60)))
         case "millisecond" | "microsecond" | "nanosecond":
-            return Freq(unit=unit, increment=draw(_freq_increments(1000)))
+            return Freq(unit=unit_, increment=draw(_freq_increments(1000)))
     increment = draw(integers(1))
-    return Freq(unit=unit, increment=increment)
+    return Freq(unit=unit_, increment=increment)
+
+
+@composite
+def _freq_units(draw: DrawFn, /) -> DateTimeRoundUnit:
+    return draw(sampled_from(get_literal_elements(DateTimeRoundUnit)))
 
 
 @composite

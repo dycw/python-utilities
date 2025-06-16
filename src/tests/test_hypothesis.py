@@ -104,6 +104,8 @@ from utilities.math import (
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sentinel import Sentinel
+from utilities.types import DateTimeRoundUnit
+from utilities.typing import get_literal_elements
 from utilities.version import Version
 from utilities.whenever import (
     DATE_TWO_DIGIT_YEAR_MAX,
@@ -490,9 +492,11 @@ class TestFloatsExtra:
 
 class TestFreqs:
     @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        freq = data.draw(freqs())
+    @mark.parametrize("unit", get_literal_elements(DateTimeRoundUnit))
+    def test_main(self, *, data: DataObject, unit: DateTimeRoundUnit) -> None:
+        freq = data.draw(freqs(unit=unit))
         assert isinstance(freq, Freq)
+        assert freq.unit == unit
 
 
 class TestGitRepos:
