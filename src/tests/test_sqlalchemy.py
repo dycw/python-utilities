@@ -284,7 +284,7 @@ class TestGetChunkSize:
         self, *, chunk_size_frac: float, scaling: int, test_engine: AsyncEngine
     ) -> None:
         result = get_chunk_size(
-            test_engine, chunk_size_frac=chunk_size_frac, scaling=scaling
+            test_engine, chunk_size_frac=chunk_size_frac, max_length=scaling
         )
         assert result >= 1
 
