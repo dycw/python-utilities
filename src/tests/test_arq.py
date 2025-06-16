@@ -7,6 +7,7 @@ from arq.connections import ArqRedis
 from hypothesis import given
 from hypothesis.strategies import integers
 
+from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from utilities.arq import Worker, cron_raw, job_enqueuer
 from utilities.iterables import one
 
@@ -32,6 +33,7 @@ class TestCronRaw:
 
 class TestJobEnqueuer:
     @given(x=integers(), y=integers())
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, x: int, y: int) -> None:
         async def func(x: int, y: int, /) -> int:
             await sleep(0.01)

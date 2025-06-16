@@ -117,7 +117,7 @@ class _JobEnqueuer:
         *args: _P.args,
         **kwargs: _P.kwargs,
     ) -> Job | None:
-        return await redis.enqueue_job(
+        return await redis.enqueue_job(  # skipif-ci-and-not-linux
             function.__name__,
             *args,
             _job_id=self.job_id,
@@ -140,7 +140,7 @@ class _JobEnqueuer:
         job_try: int | None | Sentinel = sentinel,
     ) -> Self:
         """Replace elements of the enqueuer."""
-        return replace_non_sentinel(
+        return replace_non_sentinel(  # skipif-ci-and-not-linux
             self,
             job_id=job_id,
             queue_name=queue_name,
