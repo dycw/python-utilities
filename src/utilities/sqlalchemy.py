@@ -298,11 +298,13 @@ def get_chunk_size(
     /,
     *,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    scaling: float = 1.0,
+    scaling: int = 1,
 ) -> int:
     """Get the maximum chunk size for an engine."""
     max_params = _get_dialect_max_params(engine_or_conn)
-    return max(floor(chunk_size_frac * max_params / scaling), 1)
+    scaling_use = max(scaling, 1)
+    size = floor(chunk_size_frac * max_params / scaling_use)
+    return max(size, 1)
 
 
 ##

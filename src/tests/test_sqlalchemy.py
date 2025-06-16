@@ -274,14 +274,14 @@ class TestEnsureTablesDropped:
 
 
 class TestGetChunkSize:
-    @given(chunk_size_frac=floats(0.0, 1.0), scaling=floats(0.1, 10.0))
+    @given(chunk_size_frac=floats(0.0, 1.0), scaling=integers(0, 10))
     @settings(
         max_examples=1,
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_main(
-        self, *, chunk_size_frac: float, scaling: float, test_engine: AsyncEngine
+        self, *, chunk_size_frac: float, scaling: int, test_engine: AsyncEngine
     ) -> None:
         result = get_chunk_size(
             test_engine, chunk_size_frac=chunk_size_frac, scaling=scaling
