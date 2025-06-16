@@ -521,8 +521,6 @@ def freqs(
             return Freq(unit=unit_, increment=draw(_freq_increments(1000)))
         case _ as never:
             assert_never(never)
-    increment = draw(integers(1))
-    return Freq(unit=unit_, increment=increment)
 
 
 @composite
