@@ -82,6 +82,9 @@ TCallable2 = TypeVar("TCallable2", bound=Callable[..., Any])
 TCallableCoroutine1 = TypeVar(
     "TCallableCoroutine1", bound=Callable[..., Coroutine1[Any]]
 )
+TCallableCoroutine1None = TypeVar(
+    "TCallableCoroutine1None", bound=Callable[..., Coroutine1[None]]
+)
 TCallableMaybeCoroutine1None = TypeVar(
     "TCallableMaybeCoroutine1None", bound=Callable[..., MaybeCoroutine1[None]]
 )
@@ -352,6 +355,7 @@ __all__ = [
     "TCallable1",
     "TCallable2",
     "TCallableCoroutine1",
+    "TCallableCoroutine1None",
     "TCallableMaybeCoroutine1None",
     "TDataclass",
     "TEnum",
