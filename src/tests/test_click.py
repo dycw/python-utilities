@@ -371,12 +371,10 @@ class TestParameters:
         assert result.exit_code == 2
 
     @mark.parametrize(("param", "name"), [param(c.param, c.name) for c in cases])
-    @mark.skip
     def test_name(self, *, param: ParamType, name: str) -> None:
         assert param.name == name
 
     @mark.parametrize(("param", "name"), [param(c.param, c.name) for c in cases])
-    @mark.skip
     def test_repr(self, *, param: ParamType, name: str) -> None:
         assert repr(param) == name.upper()
 
