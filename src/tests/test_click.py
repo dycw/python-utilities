@@ -40,6 +40,7 @@ from utilities.click import (
     FrozenSetStrs,
     IPv4Address,
     IPv6Address,
+    ListChoices,
     ListEnums,
     ListStrs,
     Month,
@@ -187,6 +188,7 @@ def _lift_serializer(
 class _Case(Generic[_T]):
     param: ParamType
     name: str
+    repr: str | None = None
     strategy: SearchStrategy[_T]
     serialize: Callable[[_T], str]
     failable: bool = False
@@ -217,7 +219,8 @@ class TestParameters:
         ),
         _Case(
             param=Enum(_ExampleEnum),
-            name="enum[_exampleenum]",
+            name="enum[_ExampleEnum]",
+            repr="ENUM[_ExampleEnum]",
             strategy=sampled_from(_ExampleEnum),
             serialize=attrgetter("name"),
             failable=True,
@@ -231,21 +234,24 @@ class TestParameters:
         ),
         _Case(
             param=FrozenSetChoices(["a", "b", "c"]),
-            name="frozenset[choice(['a', 'b', 'c'])]",
+            name="frozenset[choice]",
+            repr="FROZENSET[Choice(['a', 'b', 'c'])]",
             strategy=frozensets(sampled_from(["a", "b", "c"])),
             serialize=_lift_serializer(str, sort=True),
             failable=True,
         ),
         _Case(
             param=FrozenSetEnums(_ExampleEnum),
-            name="frozenset[enum[_exampleenum]]",
+            name="frozenset[enum[_ExampleEnum]]",
+            repr="FROZENSET[ENUM[_ExampleEnum]]",
             strategy=frozensets(sampled_from(_ExampleEnum)),
             serialize=_lift_serializer(attrgetter("name"), sort=True),
             failable=True,
         ),
         _Case(
             param=FrozenSetStrs(),
-            name="frozenset[string]",
+            name="frozenset[text]",
+            repr="FROZENSET[STRING]",
             strategy=frozensets(text_ascii()),
             serialize=_lift_serializer(str, sort=True),
         ),
@@ -264,8 +270,17 @@ class TestParameters:
             failable=True,
         ),
         _Case(
+            param=ListChoices(["a", "b", "c"]),
+            name="list[choice]",
+            repr="LIST[Choice(['a', 'b', 'c'])]",
+            strategy=frozensets(sampled_from(["a", "b", "c"])),
+            serialize=_lift_serializer(str, sort=True),
+            failable=True,
+        ),
+        _Case(
             param=ListEnums(_ExampleEnum),
-            name="list[enum[_exampleenum]]",
+            name="list[enum[_ExampleEnum]]",
+            repr="LIST[ENUM[_ExampleEnum]]",
             strategy=lists(sampled_from(_ExampleEnum)),
             serialize=_lift_serializer(attrgetter("name")),
             failable=True,
@@ -374,9 +389,12 @@ class TestParameters:
     def test_name(self, *, param: ParamType, name: str) -> None:
         assert param.name == name
 
-    @mark.parametrize(("param", "name"), [param(c.param, c.name) for c in cases])
-    def test_repr(self, *, param: ParamType, name: str) -> None:
-        assert repr(param) == name.upper()
+    @mark.parametrize(
+        ("param", "repr_", "name"), [param(c.param, c.repr, c.name) for c in cases]
+    )
+    def test_repr(self, *, param: ParamType, repr_: str | None, name: str) -> None:
+        expected = name.upper() if repr_ is None else repr_
+        assert repr(param) == expected
 
     @mark.parametrize(
         "param",
