@@ -34,8 +34,9 @@ def bucket_mapping[T, U, UH: Hashable](
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[T], U],
-    list: bool = False,
+    transform: Callable[[_T], _U],
+    list_: bool = False,
+    tuple_: bool = False,
     unique: Literal[True],
 ) -> Mapping[UH, U]: ...
 @overload
@@ -44,8 +45,9 @@ def bucket_mapping[T, U, UH: Hashable](
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[T], U] | None = None,
-    list: bool = False,
+    transform: Callable[[_T], _U] | None = None,
+    list_: bool = False,
+    tuple_: bool = False,
     unique: Literal[True],
 ) -> Mapping[UH, T]: ...
 @overload
@@ -54,44 +56,49 @@ def bucket_mapping[T, U, UH: Hashable](
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[T], U],
-    list: Literal[True],
-) -> Mapping[UH, Sequence[U]]: ...
+    transform: Callable[[_T], _U],
+    list_: Literal[True],
+    tuple_: bool = False,
+) -> Mapping[THashable, Sequence[_U]]: ...
 @overload
 def bucket_mapping[T, U, UH: Hashable](
     iterable: Iterable[T],
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[T], U],
-    list: bool = False,
-) -> Mapping[UH, Iterator[U]]: ...
+    transform: Callable[[_T], _U],
+    list_: bool = False,
+    tuple_: bool = False,
+) -> Mapping[THashable, Iterator[_U]]: ...
 @overload
 def bucket_mapping[T, U, UH: Hashable](
     iterable: Iterable[T],
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[T], U] | None = None,
-    list: Literal[True],
-) -> Mapping[UH, Sequence[T]]: ...
+    transform: Callable[[_T], _U] | None = None,
+    list_: Literal[True],
+    tuple_: bool = False,
+) -> Mapping[THashable, Sequence[_T]]: ...
 @overload
 def bucket_mapping[T, U, UH: Hashable](
     iterable: Iterable[T],
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[T], U] | None = None,
-    list: bool = False,
-) -> Mapping[UH, Iterator[T]]: ...
+    transform: Callable[[_T], _U] | None = None,
+    list_: bool = False,
+    tuple_: bool = False,
+) -> Mapping[THashable, Iterator[_T]]: ...
 @overload
 def bucket_mapping[T, U, UH: Hashable](
     iterable: Iterable[T],
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[T], U] | None = None,
-    list: bool = False,
+    transform: Callable[[_T], _U] | None = None,
+    list_: bool = False,
+    tuple_: bool = False,
     unique: bool = False,
 ) -> (
     Mapping[UH, Iterator[T]]
@@ -106,8 +113,9 @@ def bucket_mapping[T, U, UH: Hashable](
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[T], U] | None = None,
-    list: bool = False,  # noqa: A002
+    transform: Callable[[_T], _U] | None = None,
+    list_: bool = False,
+    tuple_: bool = False,
     unique: bool = False,
 ) -> (
     Mapping[UH, Iterator[T]]
@@ -120,7 +128,7 @@ def bucket_mapping[T, U, UH: Hashable](
     """Bucket the values of iterable into a mapping."""
     b = bucket(iterable, func)
     mapping = {key: b[key] for key in b}
-    match transform, list:
+    match transform, list_:
         case None, False:
             ...
         case None, True:
