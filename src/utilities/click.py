@@ -180,9 +180,11 @@ class Enum(ParamType, Generic[TEnum]):
 class Freq(ParamType):
     """An frequency-valued parameter."""
 
+    name = "date delta"
+
     @override
     def __repr__(self) -> str:
-        return "FREQ"
+        return self.name.upper()
 
     @override
     def convert(

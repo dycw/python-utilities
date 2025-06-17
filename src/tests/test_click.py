@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import enum
+from dataclasses import dataclass
 from enum import auto
 from operator import attrgetter
 from re import search
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar
 
 import whenever
 from click import ParamType, argument, command, echo, option
@@ -66,6 +67,8 @@ from utilities.text import join_strs, strip_and_dedent
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
     from pathlib import Path
+
+    from _pytest.mark import ParameterSet
 
 
 _T = TypeVar("_T")
@@ -184,94 +187,213 @@ def _lift_serializer(
     return wrapped
 
 
+@dataclass(kw_only=True, slots=True)
+class _Case(Generic[_T]):
+    param: ParamType
+    name: str
+    strategy: SearchStrategy[_T]
+    serialize: Callable[[_T], str]
+    failable: bool = False
+
+
 class TestParameters:
+    cases: ClassVar[list[_Case]] = [
+        _Case(
+            param=Date(),
+            name="DATE",
+            strategy=dates(),
+            serialize=whenever.Date.format_common_iso,
+            failable=True,
+        ),
+        _Case(
+            param=DateDelta(),
+            name="date delta",
+            strategy=date_deltas(parsable=True),
+            serialize=whenever.DateDelta.format_common_iso,
+            failable=True,
+        ),
+        _Case(
+            param=DateTimeDelta(),
+            name="date-time delta",
+            strategy=date_time_deltas(parsable=True),
+            serialize=whenever.DateTimeDelta.format_common_iso,
+            failable=True,
+        ),
+        _Case(
+            param=Enum(_ExampleEnum),
+            name="enum[_exampleenum]",
+            strategy=sampled_from(_ExampleEnum),
+            serialize=attrgetter("name"),
+            failable=True,
+        ),
+        _Case(
+            param=Freq(),
+            name="freq",
+            strategy=freqs(),
+            serialize=utilities.whenever.Freq.serialize,
+            failable=True,
+        ),
+        _Case(
+            param=FrozenSetChoices(["a", "b", "c"]),
+            name="frozenset[choice(['a', 'b', 'c'])]",
+            strategy=frozensets(sampled_from(["a", "b", "c"])),
+            serialize=_lift_serializer(str, sort=True),
+            failable=True,
+        ),
+        _Case(
+            param=FrozenSetEnums(_ExampleEnum),
+            name="frozenset[enum[_exampleenum]]",
+            strategy=frozensets(sampled_from(_ExampleEnum)),
+            serialize=_lift_serializer(attrgetter("name"), sort=True),
+            failable=True,
+        ),
+        _Case(
+            param=FrozenSetStrs(),
+            name="frozenset[string]",
+            strategy=frozensets(text_ascii()),
+            serialize=_lift_serializer(str, sort=True),
+        ),
+        _Case(
+            param=IPv4Address(),
+            name="ipv4 address",
+            strategy=ip_addresses(v=4),
+            serialize=str,
+            failable=True,
+        ),
+        _Case(
+            param=IPv6Address(),
+            name="ipv6 address",
+            strategy=ip_addresses(v=6),
+            serialize=str,
+            failable=True,
+        ),
+        _Case(
+            param=ListEnums(_ExampleEnum),
+            name="list[enum[_exampleenum]]",
+            strategy=lists(sampled_from(_ExampleEnum)),
+            serialize=_lift_serializer(attrgetter("name")),
+            failable=True,
+        ),
+        _Case(
+            param=Month(),
+            name="month",
+            strategy=months(),
+            serialize=utilities.whenever.Month.format_common_iso,
+            failable=True,
+        ),
+        _Case(
+            param=PlainDateTime(),
+            name="plain date-time",
+            strategy=plain_datetimes(),
+            serialize=whenever.PlainDateTime.format_common_iso,
+            failable=True,
+        ),
+        _Case(
+            param=Time(),
+            name="time",
+            strategy=times(),
+            serialize=whenever.Time.format_common_iso,
+            failable=True,
+        ),
+        _Case(
+            param=TimeDelta(),
+            name="time-delta",
+            strategy=time_deltas(),
+            serialize=whenever.TimeDelta.format_common_iso,
+            failable=True,
+        ),
+        _Case(
+            param=ZonedDateTime(),
+            name="zoned date-time",
+            strategy=zoned_datetimes(),
+            serialize=whenever.ZonedDateTime.format_common_iso,
+            failable=True,
+        ),
+    ]
+    cases_odl: ClassVar[list[ParameterSet]] = [
+        param(Date(), "DATE", dates(), whenever.Date.format_common_iso, True),
+        param(
+            DateDelta(),
+            "DATE DELTA",
+            date_deltas(parsable=True),
+            whenever.DateDelta.format_common_iso,
+            True,
+        ),
+        param(
+            DateTimeDelta(),
+            "DATE-TIME DELTA",
+            date_time_deltas(parsable=True),
+            whenever.DateTimeDelta.format_common_iso,
+            True,
+        ),
+        param(
+            Enum(_ExampleEnum),
+            "ENUM[_ExampleEnum]",
+            sampled_from(_ExampleEnum),
+            attrgetter("name"),
+            True,
+        ),
+        param(Freq(), "FREQ", freqs(), utilities.whenever.Freq.serialize, True),
+        param(
+            FrozenSetChoices(["a", "b", "c"]),
+            "FROZENSET[Choice(['a', 'b', 'c'])]",
+            frozensets(sampled_from(["a", "b", "c"])),
+            _lift_serializer(str, sort=True),
+            True,
+        ),
+        param(
+            FrozenSetEnums(_ExampleEnum),
+            "FROZENSET[ENUM[_ExampleEnum]]",
+            frozensets(sampled_from(_ExampleEnum)),
+            _lift_serializer(attrgetter("name"), sort=True),
+            True,
+        ),
+        param(
+            FrozenSetStrs(),
+            "FROZENSET[STRING]",
+            frozensets(text_ascii()),
+            _lift_serializer(str, sort=True),
+            False,
+        ),
+        param(IPv4Address(), "IPV4 ADDRESS", ip_addresses(v=4), str, True),
+        param(IPv6Address(), "IPV6 ADDRESS", ip_addresses(v=6), str, True),
+        param(
+            ListEnums(_ExampleEnum),
+            "LIST[ENUM[_ExampleEnum]]",
+            lists(sampled_from(_ExampleEnum)),
+            _lift_serializer(attrgetter("name")),
+            True,
+        ),
+        param(
+            Month(), "MONTH", months(), utilities.whenever.Month.format_common_iso, True
+        ),
+        param(
+            PlainDateTime(),
+            "PLAIN DATE-TIME",
+            plain_datetimes(),
+            whenever.PlainDateTime.format_common_iso,
+            True,
+        ),
+        param(Time(), "TIME", times(), whenever.Time.format_common_iso, True),
+        param(
+            TimeDelta(),
+            "TIME-DELTA",
+            time_deltas(),
+            whenever.TimeDelta.format_common_iso,
+            True,
+        ),
+        param(
+            ZonedDateTime(),
+            "ZONED DATE-TIME",
+            zoned_datetimes(),
+            whenever.ZonedDateTime.format_common_iso,
+            True,
+        ),
+    ]
+
     @given(data=data(), use_value=booleans())
     @mark.parametrize(
-        ("param", "exp_repr", "strategy", "serialize", "failable"),
-        [
-            param(Date(), "DATE", dates(), whenever.Date.format_common_iso, True),
-            param(
-                DateDelta(),
-                "DATE DELTA",
-                date_deltas(parsable=True),
-                whenever.DateDelta.format_common_iso,
-                True,
-            ),
-            param(
-                DateTimeDelta(),
-                "DATE-TIME DELTA",
-                date_time_deltas(parsable=True),
-                whenever.DateTimeDelta.format_common_iso,
-                True,
-            ),
-            param(
-                Enum(_ExampleEnum),
-                "ENUM[_ExampleEnum]",
-                sampled_from(_ExampleEnum),
-                attrgetter("name"),
-                True,
-            ),
-            param(Freq(), "FREQ", freqs(), utilities.whenever.Freq.serialize, True),
-            param(
-                FrozenSetChoices(["a", "b", "c"]),
-                "FROZENSET[Choice(['a', 'b', 'c'])]",
-                frozensets(sampled_from(["a", "b", "c"])),
-                _lift_serializer(str, sort=True),
-                True,
-            ),
-            param(
-                FrozenSetEnums(_ExampleEnum),
-                "FROZENSET[ENUM[_ExampleEnum]]",
-                frozensets(sampled_from(_ExampleEnum)),
-                _lift_serializer(attrgetter("name"), sort=True),
-                True,
-            ),
-            param(
-                FrozenSetStrs(),
-                "FROZENSET[STRING]",
-                frozensets(text_ascii()),
-                _lift_serializer(str, sort=True),
-                False,
-            ),
-            param(IPv4Address(), "IPV4 ADDRESS", ip_addresses(v=4), str, True),
-            param(IPv6Address(), "IPV6 ADDRESS", ip_addresses(v=6), str, True),
-            param(
-                ListEnums(_ExampleEnum),
-                "LIST[ENUM[_ExampleEnum]]",
-                lists(sampled_from(_ExampleEnum)),
-                _lift_serializer(attrgetter("name")),
-                True,
-            ),
-            param(
-                Month(),
-                "MONTH",
-                months(),
-                utilities.whenever.Month.format_common_iso,
-                True,
-            ),
-            param(
-                PlainDateTime(),
-                "PLAIN DATE-TIME",
-                plain_datetimes(),
-                whenever.PlainDateTime.format_common_iso,
-                True,
-            ),
-            param(Time(), "TIME", times(), whenever.Time.format_common_iso, True),
-            param(
-                TimeDelta(),
-                "TIME-DELTA",
-                time_deltas(),
-                whenever.TimeDelta.format_common_iso,
-                True,
-            ),
-            param(
-                ZonedDateTime(),
-                "ZONED DATE-TIME",
-                zoned_datetimes(),
-                whenever.ZonedDateTime.format_common_iso,
-                True,
-            ),
-        ],
+        ("param", "exp_repr", "strategy", "serialize", "failable"), cases_odl
     )
     def test_main(
         self,
@@ -302,6 +424,121 @@ class TestParameters:
         result = CliRunner().invoke(cli, ["--value=error"])
         expected = 2 if failable else 0
         assert result.exit_code == expected
+
+    @given(data=data(), use_value=booleans())
+    @mark.parametrize(
+        ("param", "exp_repr", "strategy", "serialize", "failable"), cases_odl
+    )
+    def test_default(
+        self,
+        *,
+        data: DataObject,
+        param: ParamType,
+        exp_repr: str,
+        strategy: SearchStrategy[Any],
+        serialize: Callable[[Any], str],
+        use_value: bool,
+        failable: bool,
+    ) -> None:
+        default = data.draw(strategy)
+
+        @command()
+        @option("--value", type=param, default=default)
+        def cli(*, value: Any) -> None:
+            echo(f"value = {serialize(value)}")
+
+        result = CliRunner().invoke(cli, args=[])
+        assert result.exit_code == 0
+        expected_str = serialize(default)
+        assert result.stdout == f"value = {expected_str}\n"
+
+    @given(data=data(), use_value=booleans())
+    @mark.parametrize(
+        ("param", "exp_repr", "strategy", "serialize", "failable"), cases_odl
+    )
+    def test_cli_value(
+        self,
+        *,
+        data: DataObject,
+        param: ParamType,
+        exp_repr: str,
+        strategy: SearchStrategy[Any],
+        serialize: Callable[[Any], str],
+        use_value: bool,
+        failable: bool,
+    ) -> None:
+        @command()
+        @option("--value", type=param)
+        def cli(*, value: Any) -> None:
+            echo(f"value = {serialize(value)}")
+
+        value = data.draw(strategy)
+        ser = serialize(value)
+        result = CliRunner().invoke(cli, args=[f"--value={ser}"])
+        assert result.exit_code == 0
+        assert result.stdout == f"value = {ser}\n"
+
+    @given(data=data(), use_value=booleans())
+    @mark.parametrize(
+        ("param", "exp_repr", "strategy", "serialize", "failable"), cases_odl
+    )
+    def test_cli_fail(
+        self,
+        *,
+        data: DataObject,
+        param: ParamType,
+        exp_repr: str,
+        strategy: SearchStrategy[Any],
+        serialize: Callable[[Any], str],
+        use_value: bool,
+        failable: bool,
+    ) -> None:
+        if not failable:
+            return
+
+        @command()
+        @option("--value", type=param)
+        def cli(*, value: Any) -> None:
+            echo(f"value = {serialize(value)}")
+
+        result = CliRunner().invoke(cli, args=["--value=invalid"])
+        assert result.exit_code == 2
+
+    @given(data=data(), use_value=booleans())
+    @mark.parametrize(
+        ("param", "exp_repr", "strategy", "serialize", "failable"), cases_odl
+    )
+    @mark.skip
+    def test_name(
+        self,
+        *,
+        data: DataObject,
+        param: ParamType,
+        exp_repr: str,
+        strategy: SearchStrategy[Any],
+        serialize: Callable[[Any], str],
+        use_value: bool,
+        failable: bool,
+    ) -> None:
+        assert param.name == exp_repr
+
+    @given(data=data(), use_value=booleans())
+    @mark.parametrize(
+        ("param", "exp_repr", "strategy", "serialize", "failable"), cases_odl
+    )
+    @mark.skip
+    def test_repr(
+        self,
+        *,
+        data: DataObject,
+        param: ParamType,
+        exp_repr: str,
+        strategy: SearchStrategy[Any],
+        serialize: Callable[[Any], str],
+        use_value: bool,
+        failable: bool,
+    ) -> None:
+        assert repr(param) == exp_repr.upper()
 
     @mark.parametrize(
         "param",
