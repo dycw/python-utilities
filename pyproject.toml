@@ -53,7 +53,7 @@ memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
 more-itertools = ["more-itertools >= 10.7.0, < 10.8"]
 numpy = ["numpy >= 2.3.0, < 2.4"]
 operator = ["polars-lts-cpu"]
-optuna = ["optuna >= 4.3.0, < 4.4"]
+optuna = ["optuna >= 4.4.0, < 4.5"]
 orjson = ["orjson >= 3.10.18, < 3.11"]
 orjson-test = ["polars-lts-cpu"]
 polars = ["polars-lts-cpu >= 1.30.0, < 1.31"]
@@ -104,7 +104,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.133.3"
+version = "0.133.2"
 
 [project.optional-dependencies]
 logging = [
@@ -118,6 +118,7 @@ test = [
   "pytest-cov >= 6.1.1, < 6.2",
   "pytest-instafail >= 0.5.0, < 0.6",
   "pytest-lazy-fixtures >= 1.1.4, < 1.2",
+  "pytest-randomly >= 3.16.0, < 3.17",
   "pytest-regressions >= 2.8.0, < 2.9",
   "pytest-rerunfailures >= 15.1, < 16",
   "pytest-rng >= 1.0.0, < 1.1",
@@ -130,7 +131,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.133.3"
+current_version = "0.133.2"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
