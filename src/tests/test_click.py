@@ -14,7 +14,6 @@ from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
-    booleans,
     data,
     frozensets,
     ip_addresses,
@@ -55,7 +54,6 @@ from utilities.hypothesis import (
     dates,
     freqs,
     months,
-    pairs,
     plain_datetimes,
     text_ascii,
     time_deltas,
@@ -67,8 +65,6 @@ from utilities.text import join_strs, strip_and_dedent
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
     from pathlib import Path
-
-    from _pytest.mark import ParameterSet
 
 
 _T = TypeVar("_T")
@@ -200,7 +196,7 @@ class TestParameters:
     cases: ClassVar[list[_Case]] = [
         _Case(
             param=Date(),
-            name="DATE",
+            name="date",
             strategy=dates(),
             serialize=whenever.Date.format_common_iso,
             failable=True,
@@ -310,135 +306,19 @@ class TestParameters:
             failable=True,
         ),
     ]
-    cases_odl: ClassVar[list[ParameterSet]] = [
-        param(Date(), "DATE", dates(), whenever.Date.format_common_iso, True),
-        param(
-            DateDelta(),
-            "DATE DELTA",
-            date_deltas(parsable=True),
-            whenever.DateDelta.format_common_iso,
-            True,
-        ),
-        param(
-            DateTimeDelta(),
-            "DATE-TIME DELTA",
-            date_time_deltas(parsable=True),
-            whenever.DateTimeDelta.format_common_iso,
-            True,
-        ),
-        param(
-            Enum(_ExampleEnum),
-            "ENUM[_ExampleEnum]",
-            sampled_from(_ExampleEnum),
-            attrgetter("name"),
-            True,
-        ),
-        param(Freq(), "FREQ", freqs(), utilities.whenever.Freq.serialize, True),
-        param(
-            FrozenSetChoices(["a", "b", "c"]),
-            "FROZENSET[Choice(['a', 'b', 'c'])]",
-            frozensets(sampled_from(["a", "b", "c"])),
-            _lift_serializer(str, sort=True),
-            True,
-        ),
-        param(
-            FrozenSetEnums(_ExampleEnum),
-            "FROZENSET[ENUM[_ExampleEnum]]",
-            frozensets(sampled_from(_ExampleEnum)),
-            _lift_serializer(attrgetter("name"), sort=True),
-            True,
-        ),
-        param(
-            FrozenSetStrs(),
-            "FROZENSET[STRING]",
-            frozensets(text_ascii()),
-            _lift_serializer(str, sort=True),
-            False,
-        ),
-        param(IPv4Address(), "IPV4 ADDRESS", ip_addresses(v=4), str, True),
-        param(IPv6Address(), "IPV6 ADDRESS", ip_addresses(v=6), str, True),
-        param(
-            ListEnums(_ExampleEnum),
-            "LIST[ENUM[_ExampleEnum]]",
-            lists(sampled_from(_ExampleEnum)),
-            _lift_serializer(attrgetter("name")),
-            True,
-        ),
-        param(
-            Month(), "MONTH", months(), utilities.whenever.Month.format_common_iso, True
-        ),
-        param(
-            PlainDateTime(),
-            "PLAIN DATE-TIME",
-            plain_datetimes(),
-            whenever.PlainDateTime.format_common_iso,
-            True,
-        ),
-        param(Time(), "TIME", times(), whenever.Time.format_common_iso, True),
-        param(
-            TimeDelta(),
-            "TIME-DELTA",
-            time_deltas(),
-            whenever.TimeDelta.format_common_iso,
-            True,
-        ),
-        param(
-            ZonedDateTime(),
-            "ZONED DATE-TIME",
-            zoned_datetimes(),
-            whenever.ZonedDateTime.format_common_iso,
-            True,
-        ),
-    ]
 
-    @given(data=data(), use_value=booleans())
+    @given(data=data())
     @mark.parametrize(
-        ("param", "exp_repr", "strategy", "serialize", "failable"), cases_odl
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        param: ParamType,
-        exp_repr: str,
-        strategy: SearchStrategy[Any],
-        serialize: Callable[[Any], str],
-        use_value: bool,
-        failable: bool,
-    ) -> None:
-        assert repr(param) == exp_repr
-
-        default, value = data.draw(pairs(strategy))
-
-        @command()
-        @option("--value", type=param, default=default)
-        def cli(*, value: Any) -> None:
-            echo(f"value = {serialize(value)}")
-
-        args = [f"--value={serialize(value)}"] if use_value else None
-        result = CliRunner().invoke(cli, args=args)
-        assert result.exit_code == 0
-        expected_str = serialize(value if use_value else default)
-        assert result.stdout == f"value = {expected_str}\n"
-
-        result = CliRunner().invoke(cli, ["--value=error"])
-        expected = 2 if failable else 0
-        assert result.exit_code == expected
-
-    @given(data=data(), use_value=booleans())
-    @mark.parametrize(
-        ("param", "exp_repr", "strategy", "serialize", "failable"), cases_odl
+        ("param", "strategy", "serialize"),
+        [param(c.param, c.strategy, c.serialize) for c in cases],
     )
     def test_default(
         self,
         *,
         data: DataObject,
         param: ParamType,
-        exp_repr: str,
         strategy: SearchStrategy[Any],
         serialize: Callable[[Any], str],
-        use_value: bool,
-        failable: bool,
     ) -> None:
         default = data.draw(strategy)
 
@@ -449,23 +329,20 @@ class TestParameters:
 
         result = CliRunner().invoke(cli, args=[])
         assert result.exit_code == 0
-        expected_str = serialize(default)
-        assert result.stdout == f"value = {expected_str}\n"
+        assert result.stdout == f"value = {serialize(default)}\n"
 
-    @given(data=data(), use_value=booleans())
+    @given(data=data())
     @mark.parametrize(
-        ("param", "exp_repr", "strategy", "serialize", "failable"), cases_odl
+        ("param", "strategy", "serialize"),
+        [param(c.param, c.strategy, c.serialize) for c in cases],
     )
     def test_cli_value(
         self,
         *,
         data: DataObject,
         param: ParamType,
-        exp_repr: str,
         strategy: SearchStrategy[Any],
         serialize: Callable[[Any], str],
-        use_value: bool,
-        failable: bool,
     ) -> None:
         @command()
         @option("--value", type=param)
@@ -478,24 +355,13 @@ class TestParameters:
         assert result.exit_code == 0
         assert result.stdout == f"value = {ser}\n"
 
-    @given(data=data(), use_value=booleans())
     @mark.parametrize(
-        ("param", "exp_repr", "strategy", "serialize", "failable"), cases_odl
+        ("param", "serialize"),
+        [param(c.param, c.serialize) for c in cases if c.failable],
     )
     def test_cli_fail(
-        self,
-        *,
-        data: DataObject,
-        param: ParamType,
-        exp_repr: str,
-        strategy: SearchStrategy[Any],
-        serialize: Callable[[Any], str],
-        use_value: bool,
-        failable: bool,
+        self, *, param: ParamType, serialize: Callable[[Any], str]
     ) -> None:
-        if not failable:
-            return
-
         @command()
         @option("--value", type=param)
         def cli(*, value: Any) -> None:
@@ -504,41 +370,15 @@ class TestParameters:
         result = CliRunner().invoke(cli, args=["--value=invalid"])
         assert result.exit_code == 2
 
-    @given(data=data(), use_value=booleans())
-    @mark.parametrize(
-        ("param", "exp_repr", "strategy", "serialize", "failable"), cases_odl
-    )
+    @mark.parametrize(("param", "name"), [param(c.param, c.name) for c in cases])
     @mark.skip
-    def test_name(
-        self,
-        *,
-        data: DataObject,
-        param: ParamType,
-        exp_repr: str,
-        strategy: SearchStrategy[Any],
-        serialize: Callable[[Any], str],
-        use_value: bool,
-        failable: bool,
-    ) -> None:
-        assert param.name == exp_repr
+    def test_name(self, *, param: ParamType, name: str) -> None:
+        assert param.name == name
 
-    @given(data=data(), use_value=booleans())
-    @mark.parametrize(
-        ("param", "exp_repr", "strategy", "serialize", "failable"), cases_odl
-    )
+    @mark.parametrize(("param", "name"), [param(c.param, c.name) for c in cases])
     @mark.skip
-    def test_repr(
-        self,
-        *,
-        data: DataObject,
-        param: ParamType,
-        exp_repr: str,
-        strategy: SearchStrategy[Any],
-        serialize: Callable[[Any], str],
-        use_value: bool,
-        failable: bool,
-    ) -> None:
-        assert repr(param) == exp_repr.upper()
+    def test_repr(self, *, param: ParamType, name: str) -> None:
+        assert repr(param) == name.upper()
 
     @mark.parametrize(
         "param",
