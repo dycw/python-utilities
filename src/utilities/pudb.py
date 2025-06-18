@@ -57,8 +57,8 @@ def _call_pudb(error: Exception, /, *, env_var: str = _ENV_VAR) -> NoReturn:
         _ = get_env_var(env_var)
     except GetEnvVarError:
         raise error from None
-    post_mortem()
-    raise error
+    post_mortem()  # pragma: no cover
+    raise error  # pragma: no cover
 
 
 __all__ = ["call_pudb"]
