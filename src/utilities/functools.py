@@ -18,16 +18,19 @@ def cache[F: Callable](func: F, /) -> F:
 ##
 
 
+_MAX_SIZE = 128
+
+
 @overload
 def lru_cache[F: Callable](
-    func: F, /, *, max_size: int = ..., typed: bool = ...
+    func: F, /, *, max_size: int = _MAX_SIZE, typed: bool = False
 ) -> F: ...
 @overload
 def lru_cache[F: Callable](
-    func: None = None, /, *, max_size: int = ..., typed: bool = ...
+    func: None = None, /, *, max_size: int = _MAX_SIZE, typed: bool = False
 ) -> Callable[[F], F]: ...
 def lru_cache[F: Callable](
-    func: F | None = None, /, *, max_size: int = 128, typed: bool = False
+    func: F | None = None, /, *, max_size: int = _MAX_SIZE, typed: bool = False
 ) -> F | Callable[[F], F]:
     """Typed version of `lru_cache`."""
     if func is None:
