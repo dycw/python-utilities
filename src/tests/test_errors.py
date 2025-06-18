@@ -25,7 +25,7 @@ class TestReprError:
     async def test_group(self) -> None:
         class Custom1Error(Exception): ...
 
-        async def Coro() -> None:
+        async def coroutine1() -> None:
             raise Custom1Error
 
         class Custom2Error(Exception): ...
@@ -36,7 +36,7 @@ class TestReprError:
 
         with raises(ExceptionGroup) as exc_info:  # noqa: PT012
             async with TaskGroup() as tg:
-                _ = tg.create_task(Coro())
+                _ = tg.create_task(coroutine1())
                 _ = tg.create_task(coroutine2())
         error = exc_info.value
         assert isinstance(error, ExceptionGroup)

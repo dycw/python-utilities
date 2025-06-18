@@ -18,16 +18,7 @@ from itertools import chain
 from math import floor
 from operator import ge, le
 from re import search
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    TypeGuard,
-    TypeVar,
-    assert_never,
-    cast,
-    override,
-)
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, assert_never, cast, override
 
 from sqlalchemy import (
     URL,
@@ -96,7 +87,6 @@ from utilities.whenever import SECOND
 if TYPE_CHECKING:
     from whenever import TimeDelta
 
-_T = TypeVar("_T")
 type _EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConnection
 type Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
 type ORMInstOrClass = DeclarativeBase | type[DeclarativeBase]
@@ -958,8 +948,8 @@ def _is_pair_of_tuple_or_str_mapping_and_table(
 
 
 def _is_pair_with_predicate_and_table[T](
-    obj: Any, predicate: Callable[[Any], TypeGuard[_T]], /
-) -> TypeGuard[tuple[_T, TableOrORMInstOrClass]]:
+    obj: Any, predicate: Callable[[Any], TypeGuard[T]], /
+) -> TypeGuard[tuple[T, TableOrORMInstOrClass]]:
     """Check if an object is pair and a table."""
     return (
         isinstance(obj, tuple)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from asyncio import Event
-from collections.abc import Awaitable, Callable, Coroutine, Hashable, Iterable, Mapping
+from collections.abc import Callable, Coroutine, Hashable, Iterable, Mapping
 from enum import Enum
 from ipaddress import IPv4Address, IPv6Address
 from logging import Logger
