@@ -41,19 +41,12 @@ from utilities.math import (
 )
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import SupportsAdd, SupportsLT
 
 if TYPE_CHECKING:
     from types import NoneType
 
-    from utilities.types import (
-        MaybeIterable,
-        MaybeIterableHashable,
-        Sign,
-        StrMapping,
-        THashable,
-        TSupportsAdd,
-        TSupportsLT,
-    )
+    from utilities.types import MaybeIterable, MaybeIterableHashable, Sign, StrMapping
 
 
 ##
@@ -686,7 +679,7 @@ class _CheckUniqueModuloCaseDuplicateLowerCaseStringsError(CheckUniqueModuloCase
 ##
 
 
-def cmp_nullable(x: TSupportsLT | None, y: TSupportsLT | None, /) -> Sign:
+def cmp_nullable[T: SupportsLT](x: T | None, y: T | None, /) -> Sign:
     """Compare two nullable objects."""
     match x, y:
         case None, None:
@@ -859,7 +852,7 @@ def groupby_lists[T, U](
 ##
 
 
-def hashable_to_iterable(obj: THashable | None, /) -> tuple[THashable, ...] | None:
+def hashable_to_iterable[T: Hashable](obj: T | None, /) -> tuple[T, ...] | None:
     """Lift a hashable singleton to an iterable of hashables."""
     return None if obj is None else (obj,)
 
@@ -1126,7 +1119,7 @@ class OneStrNonUniqueError(OneStrError):
 ##
 
 
-def one_unique(*iterables: Iterable[THashable]) -> THashable:
+def one_unique[T: Hashable](*iterables: Iterable[T]) -> T:
     """Return the set-unique value in a set of iterables."""
     try:
         return one(set(chain(*iterables)))
@@ -1376,9 +1369,9 @@ def _sort_iterable_cmp_floats(x: float, y: float, /) -> Sign:
 ##
 
 
-def sum_mappings[K, TSupportsAdd](
-    *mappings: Mapping[K, TSupportsAdd],
-) -> Mapping[K, TSupportsAdd]:
+def sum_mappings[K: Hashable, V: SupportsAdd](
+    *mappings: Mapping[K, V],
+) -> Mapping[K, V]:
     """Sum the values of a set of mappings."""
     return reduce_mappings(add, mappings, initial=0)
 
