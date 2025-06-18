@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
 from re import search
-from typing import TYPE_CHECKING, Any, TypeVar, override
+from typing import TYPE_CHECKING, Any, override
 
 import typed_settings
 from typed_settings import EnvLoader, FileLoader, find
@@ -30,9 +30,6 @@ if TYPE_CHECKING:
     from typed_settings.processors import Processor
 
     from utilities.types import MaybeIterable, PathLike
-
-
-_T = TypeVar("_T")
 
 
 ##
@@ -65,10 +62,10 @@ class ExtendedTSConverter(TSConverter):
         self.scalar_converters |= extras
 
 
-def _make_converter(
-    cls: type[_T], parser: Callable[[str], _T], /
+def _make_converter[T](
+    cls: type[T], parser: Callable[[str], T], /
 ) -> Callable[[Any, type[Any]], Any]:
-    def hook(value: _T | str, _: type[_T] = cls, /) -> Any:
+    def hook(value: T | str, _: type[T] = cls, /) -> Any:
         if not isinstance(value, (cls, str)):  # pragma: no cover
             msg = f"Invalid type {type(value).__name__!r}; expected '{cls.__name__}' or 'str'"
             raise TypeError(msg)
@@ -85,7 +82,7 @@ _BASE_DIR: Path = Path()
 
 
 def load_settings[T](
-    cls: type[_T],
+    cls: type[T],
     app_name: str,
     /,
     *,
@@ -94,7 +91,7 @@ def load_settings[T](
     loaders: MaybeIterable[Loader] | None = None,
     processors: MaybeIterable[Processor] = (),
     base_dir: Path = _BASE_DIR,
-) -> _T:
+) -> T:
     if not search(r"^[A-Za-z]+(?:_[A-Za-z]+)*$", app_name):
         raise LoadSettingsError(appname=app_name)
     filenames_use = list(always_iterable(filenames))
