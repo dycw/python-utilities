@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 import polars as pl
 import sqlalchemy
-from hypothesis import HealthCheck, Phase, given, reproduce_failure, settings
+from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -139,7 +139,6 @@ _CASES_INSERT: list[
 class TestInsertDataFrame:
     @given(data=data())
     @mark.parametrize(("strategy", "pl_dtype", "col_type", "check"), _CASES_INSERT)
-    @reproduce_failure("6.135.11", b"AAFBACgAAAAAAAAAAAA=")
     @settings(
         max_examples=1,
         phases={Phase.generate},

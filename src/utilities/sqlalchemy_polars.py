@@ -87,7 +87,7 @@ async def insert_dataframe(
     mapping = _insert_dataframe_map_df_schema_to_table(
         df.schema, table_or_orm, snake=snake
     )
-    items = df.select(mapping).rename(mapping).to_dicts()
+    items = df.select(*mapping).rename(mapping).to_dicts()
     if len(items) == 0:
         if not df.is_empty():
             raise InsertDataFrameError(df=df)
