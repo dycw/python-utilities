@@ -9,13 +9,13 @@ from hypothesis.strategies import sampled_from
 from pytest import mark, param
 
 from utilities.platform import SYSTEM
-from utilities.types import Number, PathLike, TDataclass, TimeZone
+from utilities.types import Dataclass, Number, PathLike, TimeZone
 from utilities.typing import get_literal_elements
 
 
 class TestDataClassProtocol:
     def test_main(self) -> None:
-        def identity(x: TDataclass, /) -> TDataclass:
+        def identity[T: Dataclass](x: T, /) -> T:
             return x
 
         @dataclass(kw_only=True, slots=True)

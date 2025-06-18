@@ -10,16 +10,7 @@ from pathlib import Path
 from re import search
 from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
 from subprocess import check_call
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    TypeVar,
-    assert_never,
-    cast,
-    overload,
-    override,
-)
+from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 
 import hypothesis.strategies
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
@@ -121,7 +112,6 @@ if TYPE_CHECKING:
     from utilities.types import Number, TimeZoneLike
 
 
-_T = TypeVar("_T")
 type MaybeSearchStrategy[_T] = _T | SearchStrategy[_T]
 type Shape = int | tuple[int, ...]
 
@@ -288,48 +278,48 @@ def dates(
 
 
 @overload
-def draw2(
+def draw2[T](
     data_or_draw: DataObject | DrawFn,
-    maybe_strategy: MaybeSearchStrategy[_T],
+    maybe_strategy: MaybeSearchStrategy[T],
     /,
     *,
     sentinel: bool = False,
-) -> _T: ...
+) -> T: ...
 @overload
-def draw2(
+def draw2[T](
     data_or_draw: DataObject | DrawFn,
-    maybe_strategy: MaybeSearchStrategy[_T | None | Sentinel],
-    default: SearchStrategy[_T | None],
+    maybe_strategy: MaybeSearchStrategy[T | None | Sentinel],
+    default: SearchStrategy[T | None],
     /,
     *,
     sentinel: Literal[True],
-) -> _T | None: ...
+) -> T | None: ...
 @overload
-def draw2(
+def draw2[T](
     data_or_draw: DataObject | DrawFn,
-    maybe_strategy: MaybeSearchStrategy[_T | None],
-    default: SearchStrategy[_T],
+    maybe_strategy: MaybeSearchStrategy[T | None],
+    default: SearchStrategy[T],
     /,
     *,
     sentinel: Literal[False] = False,
-) -> _T: ...
+) -> T: ...
 @overload
-def draw2(
+def draw2[T](
     data_or_draw: DataObject | DrawFn,
-    maybe_strategy: MaybeSearchStrategy[_T | None | Sentinel],
-    default: SearchStrategy[_T] | None = None,
+    maybe_strategy: MaybeSearchStrategy[T | None | Sentinel],
+    default: SearchStrategy[T] | None = None,
     /,
     *,
     sentinel: bool = False,
-) -> _T | None: ...
-def draw2(
+) -> T | None: ...
+def draw2[T](
     data_or_draw: DataObject | DrawFn,
-    maybe_strategy: MaybeSearchStrategy[_T | None | Sentinel],
-    default: SearchStrategy[_T | None] | None = None,
+    maybe_strategy: MaybeSearchStrategy[T | None | Sentinel],
+    default: SearchStrategy[T | None] | None = None,
     /,
     *,
     sentinel: bool = False,
-) -> _T | None:
+) -> T | None:
     """Draw an element from a strategy, unless you require it to be non-nullable."""
     draw = data_or_draw.draw if isinstance(data_or_draw, DataObject) else data_or_draw
     if isinstance(maybe_strategy, SearchStrategy):
@@ -628,15 +618,15 @@ def int64s(
 
 
 @composite
-def lists_fixed_length(
+def lists_fixed_length[T](
     draw: DrawFn,
-    strategy: SearchStrategy[_T],
+    strategy: SearchStrategy[T],
     size: MaybeSearchStrategy[int],
     /,
     *,
     unique: MaybeSearchStrategy[bool] = False,
     sorted: MaybeSearchStrategy[bool] = False,  # noqa: A002
-) -> list[_T]:
+) -> list[T]:
     """Strategy for generating lists of a fixed length."""
     size_ = draw2(draw, size)
     elements = draw(
@@ -737,18 +727,18 @@ def numbers(
 ##
 
 
-def pairs(
-    strategy: SearchStrategy[_T],
+def pairs[T](
+    strategy: SearchStrategy[T],
     /,
     *,
     unique: MaybeSearchStrategy[bool] = False,
     sorted: MaybeSearchStrategy[bool] = False,  # noqa: A002
-) -> SearchStrategy[tuple[_T, _T]]:
+) -> SearchStrategy[tuple[T, T]]:
     """Strategy for generating pairs of elements."""
     return lists_fixed_length(strategy, 2, unique=unique, sorted=sorted).map(_pairs_map)
 
 
-def _pairs_map(elements: list[_T], /) -> tuple[_T, _T]:
+def _pairs_map[T](elements: list[T], /) -> tuple[T, T]:
     first, second = elements
     return first, second
 
@@ -824,9 +814,9 @@ def sentinels() -> SearchStrategy[Sentinel]:
 
 
 @composite
-def sets_fixed_length(
-    draw: DrawFn, strategy: SearchStrategy[_T], size: MaybeSearchStrategy[int], /
-) -> set[_T]:
+def sets_fixed_length[T](
+    draw: DrawFn, strategy: SearchStrategy[T], size: MaybeSearchStrategy[int], /
+) -> set[T]:
     """Strategy for generating lists of a fixed length."""
     size_ = draw2(draw, size)
     return draw(sets(strategy, min_size=size_, max_size=size_))
@@ -1177,20 +1167,20 @@ def times(
 ##
 
 
-def triples(
-    strategy: SearchStrategy[_T],
+def triples[T](
+    strategy: SearchStrategy[T],
     /,
     *,
     unique: MaybeSearchStrategy[bool] = False,
     sorted: MaybeSearchStrategy[bool] = False,  # noqa: A002
-) -> SearchStrategy[tuple[_T, _T, _T]]:
+) -> SearchStrategy[tuple[T, T, T]]:
     """Strategy for generating triples of elements."""
     return lists_fixed_length(strategy, 3, unique=unique, sorted=sorted).map(
         _triples_map
     )
 
 
-def _triples_map(elements: list[_T], /) -> tuple[_T, _T, _T]:
+def _triples_map[T](elements: list[T], /) -> tuple[T, T, T]:
     first, second, third = elements
     return first, second, third
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from asyncio import Event
-from collections.abc import Awaitable, Callable, Coroutine, Hashable, Iterable, Mapping
+from collections.abc import Callable, Coroutine, Hashable, Iterable, Mapping
 from enum import Enum
 from ipaddress import IPv4Address, IPv6Address
 from logging import Logger
@@ -58,36 +58,19 @@ type OpenMode = Literal[
     "x+b",
     "a+b",
 ]
-type MaybeCallable[_T] = _T | Callable[[], _T]
-type MaybeStr[_T] = _T | str
-type MaybeType[_T] = _T | type[_T]
+type MaybeCallable[T] = T | Callable[[], T]
+type MaybeStr[T] = T | str
+type MaybeType[T] = T | type[T]
 type StrMapping = Mapping[str, Any]
 type StrStrMapping = Mapping[str, str]
-type TypeLike[_T] = type[_T] | tuple[type[_T], ...]
+type TypeLike[T] = type[T] | tuple[type[T], ...]
 type TupleOrStrMapping = tuple[Any, ...] | StrMapping
 
 
 # asyncio
-type Coroutine1[_T] = Coroutine[Any, Any, _T]
-type MaybeAwaitable[_T] = _T | Awaitable[_T]
+type Coro[T] = Coroutine[Any, Any, T]
 type MaybeCallableEvent = MaybeCallable[Event]
-type MaybeCoroutine1[_T] = _T | Coroutine1[_T]
-type CallableCoroutine1[_T] = Callable[..., Coroutine1[_T]]
-
-
-# callable
-TCallable = TypeVar("TCallable", bound=Callable[..., Any])
-TCallable1 = TypeVar("TCallable1", bound=Callable[..., Any])
-TCallable2 = TypeVar("TCallable2", bound=Callable[..., Any])
-TCallableCoroutine1 = TypeVar(
-    "TCallableCoroutine1", bound=Callable[..., Coroutine1[Any]]
-)
-TCallableCoroutine1None = TypeVar(
-    "TCallableCoroutine1None", bound=Callable[..., Coroutine1[None]]
-)
-TCallableMaybeCoroutine1None = TypeVar(
-    "TCallableMaybeCoroutine1None", bound=Callable[..., MaybeCoroutine1[None]]
-)
+type MaybeCoro[T] = T | Coro[T]
 
 
 # concurrent
@@ -102,22 +85,8 @@ class Dataclass(Protocol):
     __dataclass_fields__: ClassVar[dict[str, Any]]
 
 
-TDataclass = TypeVar("TDataclass", bound=Dataclass)
-
-
 # enum
-type EnumLike[_TEnum: Enum] = MaybeStr[_TEnum]
-TEnum = TypeVar("TEnum", bound=Enum)
-
-
-# exceptions
-TBaseException = TypeVar("TBaseException", bound=BaseException)
-
-
-# hashable
-THashable = TypeVar("THashable", bound=Hashable)
-THashable1 = TypeVar("THashable1", bound=Hashable)
-THashable2 = TypeVar("THashable2", bound=Hashable)
+type EnumLike[E: Enum] = MaybeStr[E]
 
 
 # ipaddress
@@ -164,15 +133,9 @@ class SupportsAbs(Protocol[_T_co]):
     def __abs__(self) -> _T_co: ...  # pragma: no cover
 
 
-TSupportsAbs = TypeVar("TSupportsAbs", bound=SupportsAbs)
-
-
 @runtime_checkable
 class SupportsAdd(Protocol[_T_contra, _T_co]):
     def __add__(self, x: _T_contra, /) -> _T_co: ...  # pragma: no cover
-
-
-TSupportsAdd = TypeVar("TSupportsAdd", bound=SupportsAdd)
 
 
 @runtime_checkable
@@ -180,15 +143,9 @@ class SupportsBytes(Protocol):
     def __bytes__(self) -> bytes: ...  # pragma: no cover
 
 
-TSupportsBytes = TypeVar("TSupportsBytes", bound=SupportsBytes)
-
-
 @runtime_checkable
 class SupportsComplex(Protocol):
     def __complex__(self) -> complex: ...  # pragma: no cover
-
-
-TSupportsComplex = TypeVar("TSupportsComplex", bound=SupportsComplex)
 
 
 @runtime_checkable
@@ -196,15 +153,9 @@ class SupportsFloat(Protocol):
     def __float__(self) -> float: ...  # pragma: no cover
 
 
-TSupportsFloat = TypeVar("TSupportsFloat", bound=SupportsFloat)
-
-
 @runtime_checkable
 class SupportsGT(Protocol[_T_contra]):
     def __gt__(self, other: _T_contra, /) -> bool: ...  # pragma: no cover
-
-
-TSupportsGT = TypeVar("TSupportsGT", bound=SupportsGT)
 
 
 @runtime_checkable
@@ -212,15 +163,9 @@ class SupportsIndex(Protocol):
     def __index__(self) -> int: ...  # pragma: no cover
 
 
-TSupportsIndex = TypeVar("TSupportsIndex", bound=SupportsIndex)
-
-
 @runtime_checkable
 class SupportsInt(Protocol):
     def __int__(self) -> int: ...  # pragma: no cover
-
-
-TSupportsInt = TypeVar("TSupportsInt", bound=SupportsInt)
 
 
 @runtime_checkable
@@ -228,13 +173,7 @@ class SupportsLT(Protocol[_T_contra]):
     def __lt__(self, other: _T_contra, /) -> bool: ...  # pragma: no cover
 
 
-TSupportsLT = TypeVar("TSupportsLT", bound=SupportsLT)
-
-
 SupportsRichComparison = SupportsLT[Any] | SupportsGT[Any]
-TSupportsRichComparison = TypeVar(
-    "TSupportsRichComparison", bound=SupportsRichComparison
-)
 
 
 @runtime_checkable
@@ -299,8 +238,7 @@ type TimeZoneLike = (
 
 
 __all__ = [
-    "CallableCoroutine1",
-    "Coroutine1",
+    "Coro",
     "Dataclass",
     "DateDeltaLike",
     "DateLike",
@@ -315,13 +253,12 @@ __all__ = [
     "LogLevel",
     "LoggerOrName",
     "MathRoundMode",
-    "MaybeAwaitable",
     "MaybeCallable",
     "MaybeCallableDate",
     "MaybeCallableEvent",
     "MaybeCallablePathLike",
     "MaybeCallableZonedDateTime",
-    "MaybeCoroutine1",
+    "MaybeCoro",
     "MaybeIterable",
     "MaybeIterableHashable",
     "MaybeStr",
@@ -350,27 +287,6 @@ __all__ = [
     "SupportsLT",
     "SupportsRichComparison",
     "SupportsRound",
-    "TBaseException",
-    "TCallable",
-    "TCallable1",
-    "TCallable2",
-    "TCallableCoroutine1",
-    "TCallableCoroutine1None",
-    "TCallableMaybeCoroutine1None",
-    "TDataclass",
-    "TEnum",
-    "THashable",
-    "THashable1",
-    "THashable2",
-    "TSupportsAbs",
-    "TSupportsAdd",
-    "TSupportsBytes",
-    "TSupportsComplex",
-    "TSupportsGT",
-    "TSupportsIndex",
-    "TSupportsInt",
-    "TSupportsLT",
-    "TSupportsRichComparison",
     "TimeDeltaLike",
     "TimeLike",
     "TimeZone",

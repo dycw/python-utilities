@@ -3,16 +3,7 @@ from __future__ import annotations
 from asyncio import iscoroutinefunction
 from dataclasses import dataclass
 from functools import wraps
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    Self,
-    TypeVar,
-    assert_never,
-    cast,
-    override,
-)
+from typing import TYPE_CHECKING, Any, Self, assert_never, cast, override
 
 from eventkit import (
     Constant,
@@ -39,32 +30,28 @@ from eventkit import (
 from utilities.functions import apply_decorators
 from utilities.iterables import always_iterable
 from utilities.logging import get_logger
-from utilities.types import TCallable, TCallableMaybeCoroutine1None, TypeLike
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from utilities.types import Coroutine1, LoggerOrName, MaybeCoroutine1, MaybeIterable
-
-
-_TEvent = TypeVar("_TEvent", bound=Event)
+    from utilities.types import Coro, LoggerOrName, MaybeCoro, MaybeIterable, TypeLike
 
 
 ##
 
 
-def add_listener(
-    event: _TEvent,
-    listener: Callable[..., MaybeCoroutine1[None]],
+def add_listener[E: Event, F: Callable](
+    event: E,
+    listener: Callable[..., MaybeCoro[None]],
     /,
     *,
-    error: Callable[[Event, BaseException], MaybeCoroutine1[None]] | None = None,
+    error: Callable[[Event, BaseException], MaybeCoro[None]] | None = None,
     ignore: TypeLike[BaseException] | None = None,
     logger: LoggerOrName | None = None,
-    decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
-    done: Callable[..., MaybeCoroutine1[None]] | None = None,
+    decorators: MaybeIterable[Callable[[F], F]] | None = None,
+    done: Callable[..., MaybeCoro[None]] | None = None,
     keep_ref: bool = False,
-) -> _TEvent:
+) -> E:
     """Connect a listener to an event."""
     lifted = lift_listener(
         listener,
@@ -74,14 +61,14 @@ def add_listener(
         logger=logger,
         decorators=decorators,
     )
-    return cast("_TEvent", event.connect(lifted, done=done, keep_ref=keep_ref))
+    return cast("E", event.connect(lifted, done=done, keep_ref=keep_ref))
 
 
 ##
 
 
 @dataclass(repr=False, kw_only=True)
-class LiftedEvent(Generic[TCallableMaybeCoroutine1None]):
+class LiftedEvent[F: Callable[..., MaybeCoro[None]]]:
     """A lifted version of `Event`."""
 
     event: Event
@@ -98,16 +85,16 @@ class LiftedEvent(Generic[TCallableMaybeCoroutine1None]):
     def value(self) -> Any:
         return self.event.value()  # pragma: no cover
 
-    def connect(
+    def connect[F2: Callable](
         self,
-        listener: TCallableMaybeCoroutine1None,
+        listener: F,
         /,
         *,
-        error: Callable[[Event, BaseException], MaybeCoroutine1[None]] | None = None,
+        error: Callable[[Event, BaseException], MaybeCoro[None]] | None = None,
         ignore: TypeLike[BaseException] | None = None,
         logger: LoggerOrName | None = None,
-        decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
-        done: Callable[..., MaybeCoroutine1[None]] | None = None,
+        decorators: MaybeIterable[Callable[[F2], F2]] | None = None,
+        done: Callable[..., MaybeCoro[None]] | None = None,
         keep_ref: bool = False,
     ) -> Event:
         return add_listener(
@@ -256,26 +243,26 @@ class LiftedEvent(Generic[TCallableMaybeCoroutine1None]):
 ##
 
 
-class TypedEvent(Event, Generic[TCallableMaybeCoroutine1None]):
+class TypedEvent[F: Callable[..., MaybeCoro[None]]](Event):
     """A typed version of `Event`."""
 
     @override
-    def connect(
+    def connect[F2: Callable](
         self,
-        listener: TCallableMaybeCoroutine1None,
-        error: Callable[[Self, BaseException], MaybeCoroutine1[None]] | None = None,
-        done: Callable[[Self], MaybeCoroutine1[None]] | None = None,
+        listener: F,
+        error: Callable[[Self, BaseException], MaybeCoro[None]] | None = None,
+        done: Callable[[Self], MaybeCoro[None]] | None = None,
         keep_ref: bool = False,
         *,
         ignore: TypeLike[BaseException] | None = None,
         logger: LoggerOrName | None = None,
-        decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
+        decorators: MaybeIterable[Callable[[F2], F2]] | None = None,
     ) -> Self:
         lifted = lift_listener(
             listener,
             self,
             error=cast(
-                "Callable[[Event, BaseException], MaybeCoroutine1[None]] | None", error
+                "Callable[[Event, BaseException], MaybeCoro[None]] | None", error
             ),
             ignore=ignore,
             logger=logger,
@@ -289,16 +276,16 @@ class TypedEvent(Event, Generic[TCallableMaybeCoroutine1None]):
 ##
 
 
-def lift_listener(
-    listener: Callable[..., MaybeCoroutine1[None]],
+def lift_listener[F1: Callable[..., MaybeCoro[None]], F2: Callable](
+    listener: F1,
     event: Event,
     /,
     *,
-    error: Callable[[Event, BaseException], MaybeCoroutine1[None]] | None = None,
+    error: Callable[[Event, BaseException], MaybeCoro[None]] | None = None,
     ignore: TypeLike[BaseException] | None = None,
     logger: LoggerOrName | None = None,
-    decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
-) -> Callable[..., MaybeCoroutine1[None]]:
+    decorators: MaybeIterable[Callable[[F2], F2]] | None = None,
+) -> F1:
     match error, bool(iscoroutinefunction(listener)):
         case None, False:
             listener_typed = cast("Callable[..., None]", listener)
@@ -315,7 +302,7 @@ def lift_listener(
             lifted = listener_no_error_sync
 
         case None, True:
-            listener_typed = cast("Callable[..., Coroutine1[None]]", listener)
+            listener_typed = cast("Callable[..., Coro[None]]", listener)
 
             @wraps(listener)
             async def listener_no_error_async(*args: Any, **kwargs: Any) -> None:
@@ -346,11 +333,11 @@ def lift_listener(
                 case False, True:
                     listener_typed = cast("Callable[..., None]", listener)
                     error_typed = cast(
-                        "Callable[[Event, Exception], Coroutine1[None]]", error
+                        "Callable[[Event, Exception], Coro[None]]", error
                     )
                     raise LiftListenerError(listener=listener_typed, error=error_typed)
                 case True, _:
-                    listener_typed = cast("Callable[..., Coroutine1[None]]", listener)
+                    listener_typed = cast("Callable[..., Coro[None]]", listener)
 
                     @wraps(listener)
                     async def listener_have_error_async(
@@ -363,8 +350,7 @@ def lift_listener(
                                 return None
                             if iscoroutinefunction(error):
                                 error_typed = cast(
-                                    "Callable[[Event, Exception], Coroutine1[None]]",
-                                    error,
+                                    "Callable[[Event, Exception], Coro[None]]", error
                                 )
                                 return await error_typed(event, exc)
                             error_typed = cast(
@@ -380,13 +366,13 @@ def lift_listener(
 
     if decorators is not None:
         lifted = apply_decorators(lifted, *always_iterable(decorators))
-    return lifted
+    return cast("F1", lifted)
 
 
 @dataclass(kw_only=True, slots=True)
 class LiftListenerError(Exception):
     listener: Callable[..., None]
-    error: Callable[[Event, Exception], Coroutine1[None]]
+    error: Callable[[Event, Exception], Coro[None]]
 
     @override
     def __str__(self) -> str:

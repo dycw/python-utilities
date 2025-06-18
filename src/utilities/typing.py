@@ -13,7 +13,6 @@ from typing import (
     Optional,  # pyright: ignore[reportDeprecated]
     TypeAliasType,
     TypeGuard,
-    TypeVar,
     Union,  # pyright: ignore[reportDeprecated]
     get_origin,
     overload,
@@ -37,16 +36,6 @@ from whenever import (
 from utilities.iterables import unique_everseen
 from utilities.sentinel import Sentinel
 from utilities.types import StrMapping
-
-_T = TypeVar("_T")
-_T1 = TypeVar("_T1")
-_T2 = TypeVar("_T2")
-_T3 = TypeVar("_T3")
-_T4 = TypeVar("_T4")
-_T5 = TypeVar("_T5")
-
-
-##
 
 
 def get_args(obj: Any, /, *, optional_drop_none: bool = False) -> tuple[Any, ...]:
@@ -223,23 +212,25 @@ def is_frozenset_type(obj: Any, /) -> bool:
 
 
 @overload
-def is_instance_gen(obj: Any, type_: type[_T], /) -> TypeGuard[_T]: ...
+def is_instance_gen[T](obj: Any, type_: type[T], /) -> TypeGuard[T]: ...
 @overload
-def is_instance_gen(obj: Any, type_: tuple[_T1], /) -> TypeGuard[_T1]: ...
+def is_instance_gen[T1](obj: Any, type_: tuple[T1], /) -> TypeGuard[T1]: ...
 @overload
-def is_instance_gen(obj: Any, type_: tuple[_T1, _T2], /) -> TypeGuard[_T1 | _T2]: ...
+def is_instance_gen[T1, T2](
+    obj: Any, type_: tuple[T1, T2], /
+) -> TypeGuard[T1 | T2]: ...
 @overload
-def is_instance_gen(
-    obj: Any, type_: tuple[_T1, _T2, _T3], /
-) -> TypeGuard[_T1 | _T2 | _T3]: ...
+def is_instance_gen[T1, T2, T3](
+    obj: Any, type_: tuple[T1, T2, T3], /
+) -> TypeGuard[T1 | T2 | T3]: ...
 @overload
-def is_instance_gen(
-    obj: Any, type_: tuple[_T1, _T2, _T3, _T4], /
-) -> TypeGuard[_T1 | _T2 | _T3 | _T4]: ...
+def is_instance_gen[T1, T2, T3, T4](
+    obj: Any, type_: tuple[T1, T2, T3, T4], /
+) -> TypeGuard[T1 | T2 | T3 | T4]: ...
 @overload
-def is_instance_gen(
-    obj: Any, type_: tuple[_T1, _T2, _T3, _T4, _T5], /
-) -> TypeGuard[_T1 | _T2 | _T3 | _T4 | _T5]: ...
+def is_instance_gen[T1, T2, T3, T4, T5](
+    obj: Any, type_: tuple[T1, T2, T3, T4, T5], /
+) -> TypeGuard[T1 | T2 | T3 | T4 | T5]: ...
 @overload
 def is_instance_gen(obj: Any, type_: Any, /) -> bool: ...
 def is_instance_gen(obj: Any, type_: Any, /) -> bool:
@@ -265,7 +256,7 @@ def is_instance_gen(obj: Any, type_: Any, /) -> bool:
     raise IsInstanceGenError(obj=obj, type_=type_)
 
 
-def _is_instance_gen_type(obj: Any, type_: type[_T], /) -> TypeGuard[_T]:
+def _is_instance_gen_type[T](obj: Any, type_: type[T], /) -> TypeGuard[T]:
     return (
         isinstance(obj, type_)
         and not (
@@ -368,29 +359,27 @@ def is_set_type(obj: Any, /) -> bool:
 
 
 @overload
-def is_subclass_gen(cls: type[Any], parent: type[_T], /) -> TypeGuard[type[_T]]: ...
+def is_subclass_gen[T](cls: type[Any], parent: type[T], /) -> TypeGuard[type[T]]: ...
 @overload
-def is_subclass_gen(
-    cls: type[Any], parent: tuple[type[_T1]], /
-) -> TypeGuard[type[_T1]]: ...
+def is_subclass_gen[T1](
+    cls: type[Any], parent: tuple[type[T1]], /
+) -> TypeGuard[type[T1]]: ...
 @overload
-def is_subclass_gen(
-    cls: type[Any], parent: tuple[type[_T1], type[_T2]], /
-) -> TypeGuard[type[_T1 | _T2]]: ...
+def is_subclass_gen[T1, T2](
+    cls: type[Any], parent: tuple[type[T1], type[T2]], /
+) -> TypeGuard[type[T1 | T2]]: ...
 @overload
-def is_subclass_gen(
-    cls: type[Any], parent: tuple[type[_T1], type[_T2], type[_T3]], /
-) -> TypeGuard[type[_T1 | _T2 | _T3]]: ...
+def is_subclass_gen[T1, T2, T3](
+    cls: type[Any], parent: tuple[type[T1], type[T2], type[T3]], /
+) -> TypeGuard[type[T1 | T2 | T3]]: ...
 @overload
-def is_subclass_gen(
-    cls: type[Any], parent: tuple[type[_T1], type[_T2], type[_T3], type[_T4]], /
-) -> TypeGuard[type[_T1 | _T2 | _T3 | _T4]]: ...
+def is_subclass_gen[T1, T2, T3, T4](
+    cls: type[Any], parent: tuple[type[T1], type[T2], type[T3], type[T4]], /
+) -> TypeGuard[type[T1 | T2 | T3 | T4]]: ...
 @overload
-def is_subclass_gen(
-    cls: type[Any],
-    parent: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]],
-    /,
-) -> TypeGuard[type[_T1 | _T2 | _T3 | _T4 | _T5]]: ...
+def is_subclass_gen[T1, T2, T3, T4, T5](
+    cls: type[Any], parent: tuple[type[T1], type[T2], type[T3], type[T4], type[T5]], /
+) -> TypeGuard[type[T1 | T2 | T3 | T4 | T5]]: ...
 @overload
 def is_subclass_gen(cls: Any, parent: Any, /) -> bool: ...
 def is_subclass_gen(cls: Any, parent: Any, /) -> bool:
@@ -426,7 +415,7 @@ def is_subclass_gen(cls: Any, parent: Any, /) -> bool:
     raise IsSubclassGenError(cls=cls)
 
 
-def _is_subclass_gen_type(cls: type[Any], parent: type[_T], /) -> TypeGuard[type[_T]]:
+def _is_subclass_gen_type[T](cls: type[Any], parent: type[T], /) -> TypeGuard[type[T]]:
     return (
         issubclass(cls, parent)
         and not (

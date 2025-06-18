@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeVar, override
+from typing import TYPE_CHECKING, override
 
 from pydantic import BaseModel
 
@@ -10,8 +10,6 @@ from utilities.atomicwrites import writer
 
 if TYPE_CHECKING:
     from utilities.types import PathLike
-
-_TBaseModel = TypeVar("_TBaseModel", bound=BaseModel)
 
 
 class HashableBaseModel(BaseModel):
@@ -22,7 +20,7 @@ class HashableBaseModel(BaseModel):
         return hash((type(self), *self.__dict__.values()))
 
 
-def load_model(model: type[_TBaseModel], path: PathLike, /) -> _TBaseModel:
+def load_model[T: BaseModel](model: type[T], path: PathLike, /) -> T:
     path = Path(path)
     try:
         with path.open() as fh:

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator, MutableSet
+from collections.abc import Callable, Hashable, Iterable, Iterator, MutableSet
 from math import inf
 from time import monotonic
-from typing import TYPE_CHECKING, Any, TypeVar, override
+from typing import TYPE_CHECKING, Any, override
 
 import cachetools
 from cachetools.func import ttl_cache
@@ -11,14 +11,8 @@ from cachetools.func import ttl_cache
 if TYPE_CHECKING:
     from whenever import TimeDelta
 
-    from utilities.types import TCallable
 
-_K = TypeVar("_K")
-_T = TypeVar("_T")
-_V = TypeVar("_V")
-
-
-class TTLCache(cachetools.TTLCache[_K, _V]):
+class TTLCache[K: Hashable, V](cachetools.TTLCache[K, V]):
     """A TTL-cache."""
 
     def __init__(
@@ -40,15 +34,15 @@ class TTLCache(cachetools.TTLCache[_K, _V]):
 ##
 
 
-class TTLSet(MutableSet[_T]):
+class TTLSet[T: Hashable](MutableSet[T]):
     """A TTL-set."""
 
-    _cache: TTLCache[_T, None]
+    _cache: TTLCache[T, None]
 
     @override
     def __init__(
         self,
-        iterable: Iterable[_T] | None = None,
+        iterable: Iterable[T] | None = None,
         /,
         *,
         max_size: int | None = None,
@@ -71,7 +65,7 @@ class TTLSet(MutableSet[_T]):
         return self._cache.__contains__(x)
 
     @override
-    def __iter__(self) -> Iterator[_T]:
+    def __iter__(self) -> Iterator[T]:
         return self._cache.__iter__()
 
     @override
@@ -87,24 +81,24 @@ class TTLSet(MutableSet[_T]):
         return set(self._cache).__str__()
 
     @override
-    def add(self, value: _T) -> None:
+    def add(self, value: T) -> None:
         self._cache[value] = None
 
     @override
-    def discard(self, value: _T) -> None:
+    def discard(self, value: T) -> None:
         del self._cache[value]
 
 
 ##
 
 
-def cache(
+def cache[F: Callable](
     *,
     max_size: int | None = None,
     max_duration: TimeDelta | None = None,
     timer: Callable[[], float] = monotonic,
     typed_: bool = False,
-) -> Callable[[TCallable], TCallable]:
+) -> Callable[[F], F]:
     """Decorate a function with `max_size` and/or `ttl` settings."""
     return ttl_cache(
         maxsize=inf if max_size is None else max_size,

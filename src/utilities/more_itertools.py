@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import builtins
+from collections.abc import Hashable
 from dataclasses import dataclass
 from itertools import islice
 from textwrap import indent
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generic,
     Literal,
     TypeGuard,
-    TypeVar,
     assert_never,
     cast,
     overload,
@@ -24,107 +23,99 @@ from utilities.functions import get_class_name
 from utilities.iterables import OneNonUniqueError, one
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import THashable
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 
 
-_T = TypeVar("_T")
-_U = TypeVar("_U")
-
-
-##
-
-
 @overload
-def bucket_mapping(
-    iterable: Iterable[_T],
-    func: Callable[[_T], THashable],
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U],
+    transform: Callable[[T], U],
     list: bool = False,
     unique: Literal[True],
-) -> Mapping[THashable, _U]: ...
+) -> Mapping[UH, U]: ...
 @overload
-def bucket_mapping(
-    iterable: Iterable[_T],
-    func: Callable[[_T], THashable],
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U] | None = None,
+    transform: Callable[[T], U] | None = None,
     list: bool = False,
     unique: Literal[True],
-) -> Mapping[THashable, _T]: ...
+) -> Mapping[UH, T]: ...
 @overload
-def bucket_mapping(
-    iterable: Iterable[_T],
-    func: Callable[[_T], THashable],
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U],
+    transform: Callable[[T], U],
     list: Literal[True],
-) -> Mapping[THashable, Sequence[_U]]: ...
+) -> Mapping[UH, Sequence[U]]: ...
 @overload
-def bucket_mapping(
-    iterable: Iterable[_T],
-    func: Callable[[_T], THashable],
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U],
+    transform: Callable[[T], U],
     list: bool = False,
-) -> Mapping[THashable, Iterator[_U]]: ...
+) -> Mapping[UH, Iterator[U]]: ...
 @overload
-def bucket_mapping(
-    iterable: Iterable[_T],
-    func: Callable[[_T], THashable],
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U] | None = None,
+    transform: Callable[[T], U] | None = None,
     list: Literal[True],
-) -> Mapping[THashable, Sequence[_T]]: ...
+) -> Mapping[UH, Sequence[T]]: ...
 @overload
-def bucket_mapping(
-    iterable: Iterable[_T],
-    func: Callable[[_T], THashable],
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U] | None = None,
+    transform: Callable[[T], U] | None = None,
     list: bool = False,
-) -> Mapping[THashable, Iterator[_T]]: ...
+) -> Mapping[UH, Iterator[T]]: ...
 @overload
-def bucket_mapping(
-    iterable: Iterable[_T],
-    func: Callable[[_T], THashable],
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U] | None = None,
+    transform: Callable[[T], U] | None = None,
     list: bool = False,
     unique: bool = False,
 ) -> (
-    Mapping[THashable, Iterator[_T]]
-    | Mapping[THashable, Iterator[_U]]
-    | Mapping[THashable, Sequence[_T]]
-    | Mapping[THashable, Sequence[_U]]
-    | Mapping[THashable, _T]
-    | Mapping[THashable, _U]
+    Mapping[UH, Iterator[T]]
+    | Mapping[UH, Iterator[U]]
+    | Mapping[UH, Sequence[T]]
+    | Mapping[UH, Sequence[U]]
+    | Mapping[UH, T]
+    | Mapping[UH, U]
 ): ...
-def bucket_mapping(
-    iterable: Iterable[_T],
-    func: Callable[[_T], THashable],
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U] | None = None,
+    transform: Callable[[T], U] | None = None,
     list: bool = False,  # noqa: A002
     unique: bool = False,
 ) -> (
-    Mapping[THashable, Iterator[_T]]
-    | Mapping[THashable, Iterator[_U]]
-    | Mapping[THashable, Sequence[_T]]
-    | Mapping[THashable, Sequence[_U]]
-    | Mapping[THashable, _T]
-    | Mapping[THashable, _U]
+    Mapping[UH, Iterator[T]]
+    | Mapping[UH, Iterator[U]]
+    | Mapping[UH, Sequence[T]]
+    | Mapping[UH, Sequence[U]]
+    | Mapping[UH, T]
+    | Mapping[UH, U]
 ):
     """Bucket the values of iterable into a mapping."""
     b = bucket(iterable, func)
@@ -143,7 +134,7 @@ def bucket_mapping(
     if not unique:
         return mapping
     results = {}
-    error_no_transform: dict[THashable, tuple[_T, _T]] = {}
+    error_no_transform: dict[UH, tuple[T, T]] = {}
     for key, value in mapping.items():
         try:
             results[key] = one(value)
@@ -155,8 +146,8 @@ def bucket_mapping(
 
 
 @dataclass(kw_only=True, slots=True)
-class BucketMappingError(Exception, Generic[THashable, _U]):
-    errors: Mapping[THashable, tuple[_U, _U]]
+class BucketMappingError[K: Hashable, V](Exception):
+    errors: Mapping[K, tuple[V, V]]
 
     @override
     def __str__(self) -> str:
@@ -171,9 +162,9 @@ class BucketMappingError(Exception, Generic[THashable, _U]):
 ##
 
 
-def partition_list(
-    pred: Callable[[_T], bool], iterable: Iterable[_T], /
-) -> tuple[list[_T], list[_T]]:
+def partition_list[T](
+    pred: Callable[[T], bool], iterable: Iterable[T], /
+) -> tuple[list[T], list[T]]:
     """Partition with lists."""
     false, true = partition(pred, iterable)
     return list(false), list(true)
@@ -182,48 +173,48 @@ def partition_list(
 ##
 
 
-def partition_typeguard(
-    pred: Callable[[_T], TypeGuard[_U]], iterable: Iterable[_T], /
-) -> tuple[Iterator[_T], Iterator[_U]]:
+def partition_typeguard[T, U](
+    pred: Callable[[T], TypeGuard[U]], iterable: Iterable[T], /
+) -> tuple[Iterator[T], Iterator[U]]:
     """Partition with a typeguarded function."""
     false, true = partition(pred, iterable)
-    true = cast("Iterator[_U]", true)
+    true = cast("Iterator[U]", true)
     return false, true
 
 
 ##
 
 
-class peekable(_peekable, Generic[_T]):  # noqa: N801
+class peekable[T](_peekable):  # noqa: N801
     """Peekable which supports dropwhile/takewhile methods."""
 
-    def __init__(self, iterable: Iterable[_T], /) -> None:
+    def __init__(self, iterable: Iterable[T], /) -> None:
         super().__init__(iterable)
 
     @override
-    def __iter__(self) -> Iterator[_T]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __iter__(self) -> Iterator[T]:  # pyright: ignore[reportIncompatibleMethodOverride]
         while bool(self):
             yield next(self)
 
     @override
-    def __next__(self) -> _T:
+    def __next__(self) -> T:
         return super().__next__()
 
-    def dropwhile(self, predicate: Callable[[_T], bool], /) -> None:
+    def dropwhile(self, predicate: Callable[[T], bool], /) -> None:
         while bool(self) and predicate(self.peek()):
             _ = next(self)
 
     @overload
-    def peek(self, *, default: Sentinel = sentinel) -> _T: ...
+    def peek(self, *, default: Sentinel = sentinel) -> T: ...
     @overload
-    def peek(self, *, default: _U) -> _T | _U: ...
+    def peek[U](self, *, default: U) -> T | U: ...
     @override
     def peek(self, *, default: Any = sentinel) -> Any:  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(default, Sentinel):
             return super().peek()
         return super().peek(default=default)
 
-    def takewhile(self, predicate: Callable[[_T], bool], /) -> Iterator[_T]:
+    def takewhile(self, predicate: Callable[[T], bool], /) -> Iterator[T]:
         while bool(self) and predicate(self.peek()):
             yield next(self)
 
@@ -232,11 +223,11 @@ class peekable(_peekable, Generic[_T]):  # noqa: N801
 
 
 @dataclass(kw_only=True, slots=True)
-class Split(Generic[_T]):
+class Split[T]:
     """An iterable split into head/tail."""
 
-    head: _T
-    tail: _T
+    head: T
+    tail: T
 
     @override
     def __repr__(self) -> str:
@@ -250,15 +241,15 @@ class Split(Generic[_T]):
         return f"{cls}(\n{joined}\n)"
 
 
-def yield_splits(
-    iterable: Iterable[_T],
+def yield_splits[T](
+    iterable: Iterable[T],
     head: int,
     tail: int,
     /,
     *,
     min_frac: float | None = None,
     freq: int | None = None,
-) -> Iterator[Split[Sequence[_T]]]:
+) -> Iterator[Split[Sequence[T]]]:
     """Yield the splits of an iterable."""
     it1 = _yield_splits1(iterable, head + tail)
     it2 = _yield_splits2(it1, head, tail, min_frac=min_frac)
@@ -267,9 +258,9 @@ def yield_splits(
     return islice(it3, 0, None, freq_use)
 
 
-def _yield_splits1(
-    iterable: Iterable[_T], total: int, /
-) -> Iterator[tuple[Literal["head", "body"], Sequence[_T]]]:
+def _yield_splits1[T](
+    iterable: Iterable[T], total: int, /
+) -> Iterator[tuple[Literal["head", "body"], Sequence[T]]]:
     peek = peekable(iterable)
     for i in range(1, total + 1):
         if len(result := peek[:i]) < i:
@@ -283,14 +274,14 @@ def _yield_splits1(
             break
 
 
-def _yield_splits2(
-    iterable: Iterable[tuple[Literal["head", "body"], Sequence[_T]],],
+def _yield_splits2[T](
+    iterable: Iterable[tuple[Literal["head", "body"], Sequence[T]],],
     head: int,
     tail: int,
     /,
     *,
     min_frac: float | None = None,
-) -> Iterator[tuple[Iterable[_T], int, int]]:
+) -> Iterator[tuple[Iterable[T], int, int]]:
     min_length = head if min_frac is None else min_frac * head
     for kind, window in iterable:
         len_win = len(window)
@@ -307,13 +298,13 @@ def _yield_splits2(
                 assert_never(never)
 
 
-def _yield_splits3(
-    iterable: Iterable[tuple[Iterable[_T], int, int]], /
-) -> Iterator[Split[Sequence[_T]]]:
+def _yield_splits3[T](
+    iterable: Iterable[tuple[Iterable[T], int, int]], /
+) -> Iterator[Split[Sequence[T]]]:
     for window, len_head, len_tail in iterable:
         head_win, tail_win = split_into(window, [len_head, len_tail])
         yield cast(
-            "Split[Sequence[_T]]", Split(head=list(head_win), tail=list(tail_win))
+            "Split[Sequence[T]]", Split(head=list(head_win), tail=list(tail_win))
         )
 
 

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import auto
 from operator import attrgetter
 from re import search
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import whenever
 from click import ParamType, argument, command, echo, option
@@ -66,9 +66,6 @@ from utilities.text import join_strs, strip_and_dedent
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
     from pathlib import Path
-
-
-_T = TypeVar("_T")
 
 
 class TestContextSettingsHelpOptionNames:
@@ -175,22 +172,22 @@ class _ExampleEnum(enum.Enum):
     c = auto()
 
 
-def _lift_serializer(
-    serializer: Callable[[_T], str], /, *, sort: bool = False
-) -> Callable[[Iterable[_T]], str]:
-    def wrapped(values: Iterable[_T], /) -> str:
+def _lift_serializer[T](
+    serializer: Callable[[T], str], /, *, sort: bool = False
+) -> Callable[[Iterable[T]], str]:
+    def wrapped(values: Iterable[T], /) -> str:
         return join_strs(map(serializer, values), sort=sort)
 
     return wrapped
 
 
 @dataclass(kw_only=True, slots=True)
-class _Case(Generic[_T]):
+class _Case[T]:
     param: ParamType
     name: str
     repr: str | None = None
-    strategy: SearchStrategy[_T]
-    serialize: Callable[[_T], str]
+    strategy: SearchStrategy[T]
+    serialize: Callable[[T], str]
     failable: bool = False
 
 

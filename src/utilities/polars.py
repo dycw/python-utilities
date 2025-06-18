@@ -10,17 +10,7 @@ from functools import partial, reduce
 from itertools import chain, product
 from math import ceil, log
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    Literal,
-    TypeVar,
-    assert_never,
-    cast,
-    overload,
-    override,
-)
+from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -127,7 +117,6 @@ if TYPE_CHECKING:
     from utilities.types import Dataclass, MaybeIterable, StrMapping, TimeZoneLike
 
 
-_T = TypeVar("_T")
 type ExprLike = MaybeStr[Expr]
 DatetimeHongKong = Datetime(time_zone="Asia/Hong_Kong")
 DatetimeTokyo = Datetime(time_zone="Asia/Tokyo")
@@ -286,10 +275,10 @@ def append_dataclass(df: DataFrame, obj: Dataclass, /) -> DataFrame:
 
 
 @dataclass(kw_only=True, slots=True)
-class AppendDataClassError(Exception, Generic[_T]):
-    left: AbstractSet[_T]
-    right: AbstractSet[_T]
-    extra: AbstractSet[_T]
+class AppendDataClassError[T](Exception):
+    left: AbstractSet[T]
+    right: AbstractSet[T]
+    extra: AbstractSet[T]
 
     @override
     def __str__(self) -> str:

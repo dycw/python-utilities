@@ -11,21 +11,17 @@ from utilities.dataclasses import _ParseDataClassMissingValuesError, parse_datac
 from utilities.iterables import MergeStrMappingsError, merge_str_mappings
 from utilities.pathlib import get_root
 from utilities.reprlib import get_repr
+from utilities.types import Dataclass
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
     from collections.abc import Set as AbstractSet
 
-    from utilities.types import (
-        MaybeCallablePathLike,
-        ParseObjectExtra,
-        StrMapping,
-        TDataclass,
-    )
+    from utilities.types import MaybeCallablePathLike, ParseObjectExtra, StrMapping
 
 
-def load_settings(
-    cls: type[TDataclass],
+def load_settings[T: Dataclass](
+    cls: type[T],
     /,
     *,
     path: MaybeCallablePathLike | None = Path.cwd,
@@ -35,7 +31,7 @@ def load_settings(
     head: bool = False,
     case_sensitive: bool = False,
     extra_parsers: ParseObjectExtra | None = None,
-) -> TDataclass:
+) -> T:
     """Load a set of settings from the `.env` file."""
     path = get_root(path=path).joinpath(".env")
     if not path.exists():

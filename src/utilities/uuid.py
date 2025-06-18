@@ -8,6 +8,7 @@ from utilities.random import get_state
 if TYPE_CHECKING:
     from utilities.types import Seed
 
+
 UUID_PATTERN = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 UUID_EXACT_PATTERN = f"^{UUID_PATTERN}$"
 

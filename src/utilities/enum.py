@@ -2,26 +2,29 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, StrEnum
-from typing import Generic, Literal, assert_never, overload, override
+from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.functions import ensure_str
 from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
-from utilities.types import EnumLike, TEnum
+
+if TYPE_CHECKING:
+    from utilities.types import EnumLike
+
 
 ##
 
 
 @overload
-def ensure_enum(
-    value: None, enum: type[TEnum], /, *, case_sensitive: bool = False
+def ensure_enum[E: Enum](
+    value: None, enum: type[E], /, *, case_sensitive: bool = False
 ) -> None: ...
 @overload
-def ensure_enum(
-    value: EnumLike[TEnum], enum: type[TEnum], /, *, case_sensitive: bool = False
-) -> TEnum: ...
-def ensure_enum(
-    value: EnumLike[TEnum] | None, enum: type[TEnum], /, *, case_sensitive: bool = False
-) -> TEnum | None:
+def ensure_enum[E: Enum](
+    value: EnumLike[E], enum: type[E], /, *, case_sensitive: bool = False
+) -> E: ...
+def ensure_enum[E: Enum](
+    value: EnumLike[E] | None, enum: type[E], /, *, case_sensitive: bool = False
+) -> E | None:
     """Ensure the object is a member of the enum."""
     if value is None:
         return None
@@ -36,9 +39,9 @@ def ensure_enum(
 
 
 @dataclass(kw_only=True, slots=True)
-class EnsureEnumError(Exception, Generic[TEnum]):
-    value: EnumLike[TEnum]
-    enum: type[TEnum]
+class EnsureEnumError[E: Enum](Exception):
+    value: EnumLike[E]
+    enum: type[E]
 
 
 @dataclass(kw_only=True, slots=True)
@@ -58,9 +61,9 @@ class _EnsureEnumParseError(EnsureEnumError):
 ##
 
 
-def parse_enum(
-    value: str, enum: type[TEnum], /, *, case_sensitive: bool = False
-) -> TEnum:
+def parse_enum[E: Enum](
+    value: str, enum: type[E], /, *, case_sensitive: bool = False
+) -> E:
     """Parse a string into the enum."""
     by_name = _parse_enum_one(value, enum, "names", case_sensitive=case_sensitive)
     if not issubclass(enum, StrEnum):
@@ -99,14 +102,14 @@ def parse_enum(
 type _NamesOrValues = Literal["names", "values"]
 
 
-def _parse_enum_one(
+def _parse_enum_one[E: Enum](
     value: str,
-    enum: type[TEnum],
+    enum: type[E],
     names_or_values: _NamesOrValues,
     /,
     *,
     case_sensitive: bool = False,
-) -> TEnum | None:
+) -> E | None:
     """Pair one aspect of the enums."""
     match names_or_values:
         case "names":
@@ -132,9 +135,9 @@ def _parse_enum_one(
 
 
 @dataclass(kw_only=True, slots=True)
-class ParseEnumError(Exception, Generic[TEnum]):
+class ParseEnumError[E: Enum](Exception):
     value: str
-    enum: type[TEnum]
+    enum: type[E]
 
 
 @dataclass(kw_only=True, slots=True)

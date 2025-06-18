@@ -7,7 +7,7 @@ from itertools import chain
 from operator import neg
 from pathlib import Path
 from types import NoneType
-from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -106,11 +106,6 @@ if TYPE_CHECKING:
     from utilities.types import Number
 
 
-_P = ParamSpec("_P")
-_R = TypeVar("_R")
-_T = TypeVar("_T")
-
-
 class TestApplyDecorators:
     @given(n=integers())
     def test_main(self, *, n: int) -> None:
@@ -119,9 +114,9 @@ class TestApplyDecorators:
         def negate(x: int, /) -> int:
             return -x
 
-        def increment(func: Callable[_P, _R], /) -> Callable[_P, _R]:
+        def increment[**P, T](func: Callable[P, T], /) -> Callable[P, T]:
             @wraps(func)
-            def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            def wrapped(*args: P.args, **kwargs: P.kwargs) -> T:
                 nonlocal counter
                 counter += 1
                 return func(*args, **kwargs)
@@ -538,7 +533,7 @@ class TestGetFuncNameAndGetFuncQualName:
 
     def test_decorated(self) -> None:
         @wraps(identity)
-        def wrapped(x: _T, /) -> _T:
+        def wrapped[T](x: T, /) -> T:
             return identity(x)
 
         assert get_func_name(wrapped) == "identity"
@@ -557,7 +552,7 @@ class TestGetFuncNameAndGetFuncQualName:
 
     def test_object(self) -> None:
         class Example:
-            def __call__(self, x: _T, /) -> _T:
+            def __call__[T](self, x: T, /) -> T:
                 return identity(x)
 
         obj = Example()
@@ -566,7 +561,7 @@ class TestGetFuncNameAndGetFuncQualName:
 
     def test_obj_method(self) -> None:
         class Example:
-            def obj_method(self, x: _T) -> _T:
+            def obj_method[T](self, x: T) -> T:
                 return identity(x)
 
         obj = Example()
@@ -579,7 +574,7 @@ class TestGetFuncNameAndGetFuncQualName:
     def test_obj_classmethod(self) -> None:
         class Example:
             @classmethod
-            def obj_classmethod(cls: _T) -> _T:
+            def obj_classmethod[T](cls: T) -> T:
                 return identity(cls)
 
         assert get_func_name(Example.obj_classmethod) == "Example.obj_classmethod"
@@ -591,7 +586,7 @@ class TestGetFuncNameAndGetFuncQualName:
     def test_obj_staticmethod(self) -> None:
         class Example:
             @staticmethod
-            def obj_staticmethod(x: _T) -> _T:
+            def obj_staticmethod[T](x: T) -> T:
                 return identity(x)
 
         assert get_func_name(Example.obj_staticmethod) == "Example.obj_staticmethod"

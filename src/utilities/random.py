@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from random import Random, SystemRandom
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -9,7 +9,6 @@ if TYPE_CHECKING:
     from utilities.types import Seed
 
 
-_T = TypeVar("_T")
 SYSTEM_RANDOM = SystemRandom()
 
 
@@ -54,7 +53,7 @@ def get_state(*, seed: Seed | None = None) -> Random:
 
 
 ##
-def shuffle(iterable: Iterable[_T], /, *, seed: Seed | None = None) -> list[_T]:
+def shuffle[T](iterable: Iterable[T], /, *, seed: Seed | None = None) -> list[T]:
     """Shuffle an iterable."""
     copy = list(iterable).copy()
     state = get_state(seed=seed)

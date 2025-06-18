@@ -101,6 +101,10 @@ class TestTimer:
             await sleep_td(2 * delta)
         assert timer >= delta
 
+    def test_hashable(self) -> None:
+        timer = Timer()
+        _ = hash(timer)
+
     @mark.parametrize("func", [param(repr), param(str)])
     async def test_repr_and_str(self, *, func: Callable[[Timer], str]) -> None:
         with Timer() as timer:

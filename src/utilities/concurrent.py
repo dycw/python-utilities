@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
-from typing import TYPE_CHECKING, Any, TypeVar, assert_never
+from typing import TYPE_CHECKING, Any, assert_never
 
 from utilities.iterables import apply_to_tuple
 from utilities.os import get_cpu_use
@@ -15,11 +15,8 @@ if TYPE_CHECKING:
     from utilities.os import IntOrAll
 
 
-_T = TypeVar("_T")
-
-
-def concurrent_map(
-    func: Callable[..., _T],
+def concurrent_map[T](
+    func: Callable[..., T],
     /,
     *iterables: Iterable[Any],
     parallelism: Parallelism = "processes",
@@ -31,7 +28,7 @@ def concurrent_map(
     thread_name_prefix: str = "",
     timeout: float | None = None,
     chunksize: int = 1,
-) -> list[_T]:
+) -> list[T]:
     """Concurrent map."""
     return concurrent_starmap(
         func,
@@ -51,8 +48,8 @@ def concurrent_map(
 ##
 
 
-def concurrent_starmap(
-    func: Callable[..., _T],
+def concurrent_starmap[T](
+    func: Callable[..., T],
     iterable: Iterable[tuple[Any, ...]],
     /,
     *,
@@ -65,7 +62,7 @@ def concurrent_starmap(
     thread_name_prefix: str = "",
     timeout: float | None = None,
     chunksize: int = 1,
-) -> list[_T]:
+) -> list[T]:
     """Concurrent map."""
     max_workers_use = get_cpu_use(n=max_workers)
     apply = partial(apply_to_tuple, func)

@@ -2,16 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    TypeVar,
-    assert_never,
-    cast,
-    overload,
-    override,
-)
+from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 
 import luigi
 from luigi import Parameter, PathParameter, Target, Task
@@ -27,9 +18,6 @@ if TYPE_CHECKING:
     from utilities.types import DateTimeRoundUnit, LogLevel, PathLike, ZonedDateTimeLike
 
 
-_T = TypeVar("_T")
-
-
 # parameters
 
 
@@ -40,7 +28,7 @@ class ZonedDateTimeParameter(Parameter):
     _increment: int
 
     @override
-    def __init__(
+    def __init__[T](
         self,
         default: Any = _no_value,
         is_global: bool = False,
@@ -49,7 +37,7 @@ class ZonedDateTimeParameter(Parameter):
         config_path: None = None,
         positional: bool = True,
         always_in_help: bool = False,
-        batch_method: Callable[[Iterable[_T]], _T] | None = None,
+        batch_method: Callable[[Iterable[T]], T] | None = None,
         visibility: ParameterVisibility = ParameterVisibility.PUBLIC,
         *,
         unit: DateTimeRoundUnit = "second",

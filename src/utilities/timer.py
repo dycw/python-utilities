@@ -46,6 +46,12 @@ class Timer:
         self._end = get_now_local()
         return False
 
+    # hash
+
+    @override
+    def __hash__(self) -> int:
+        return hash((id(self), self._start, self._end))
+
     # repr
 
     @override

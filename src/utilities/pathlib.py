@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
     from utilities.types import MaybeCallablePathLike, PathLike
 
+
 PWD = Path.cwd()
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, TypeVar, cast, override
+from typing import TYPE_CHECKING, Any, cast, override
 
 import utilities.math
 from utilities.functions import is_dataclass_instance
@@ -13,17 +13,15 @@ from utilities.reprlib import get_repr
 if TYPE_CHECKING:
     from utilities.types import Dataclass, Number
 
-_T = TypeVar("_T")
 
-
-def is_equal(
+def is_equal[T](
     x: Any,
     y: Any,
     /,
     *,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
-    extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
+    extra: Mapping[type[T], Callable[[T, T], bool]] | None = None,
 ) -> bool:
     """Check if two objects are equal."""
     if type(x) is type(y):
@@ -34,8 +32,8 @@ def is_equal(
             except StopIteration:
                 pass
             else:
-                x = cast("_T", x)
-                y = cast("_T", y)
+                x = cast("T", x)
+                y = cast("T", y)
                 return cmp(x, y)
 
         # singletons

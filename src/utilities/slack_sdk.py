@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from slack_sdk.webhook import WebhookResponse
     from whenever import TimeDelta
 
-    from utilities.types import Coroutine1
+    from utilities.types import Coro
 
 
 _TIMEOUT: TimeDelta = MINUTE
@@ -48,7 +48,7 @@ class SlackHandlerService(Handler, Looper[str]):
         timeout: TimeDelta | None = None,
         _debug: bool = False,
         level: int = NOTSET,
-        sender: Callable[[str, str], Coroutine1[None]] = _send_adapter,
+        sender: Callable[[str, str], Coro[None]] = _send_adapter,
         send_timeout: TimeDelta = SECOND,
     ) -> None:
         Looper.__init__(  # Looper first
