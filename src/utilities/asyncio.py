@@ -223,6 +223,7 @@ class EnhancedTaskGroup(TaskGroup):
     _semaphore: Semaphore | None
     _timeout: TimeDelta | None
     _error: MaybeType[BaseException]
+    _debug: bool
     _stack: AsyncExitStack
     _timeout_cm: _AsyncGeneratorContextManager[None] | None
 
@@ -233,11 +234,13 @@ class EnhancedTaskGroup(TaskGroup):
         max_tasks: int | None = None,
         timeout: TimeDelta | None = None,
         error: MaybeType[BaseException] = TimeoutError,
+        debug: bool = False,
     ) -> None:
         super().__init__()
         self._semaphore = None if max_tasks is None else Semaphore(max_tasks)
         self._timeout = timeout
         self._error = error
+        self._debug = debug
         self._stack = AsyncExitStack()
         self._timeout_cm = None
 
@@ -254,7 +257,14 @@ class EnhancedTaskGroup(TaskGroup):
         tb: TracebackType | None,
     ) -> None:
         _ = await self._stack.__aexit__(et, exc, tb)
-        _ = await super().__aexit__(et, exc, tb)
+        match self._debug:
+            case True:
+                with suppress(Exception):
+                    _ = await super().__aexit__(et, exc, tb)
+            case False:
+                _ = await super().__aexit__(et, exc, tb)
+            case _ as never:
+                assert_never(never)
 
     @override
     def create_task[T](
@@ -275,6 +285,21 @@ class EnhancedTaskGroup(TaskGroup):
         """Have the TaskGroup start an asynchronous context manager."""
         _ = self._stack.push_async_callback(cm.__aexit__, None, None, None)
         return self.create_task(cm.__aenter__())
+
+    async def run_or_create_task[T](
+        self,
+        coro: _CoroutineLike[T],
+        *,
+        name: str | None = None,
+        context: Context | None = None,
+    ) -> T | Task[T]:
+        match self._debug:
+            case True:
+                return await coro
+            case False:
+                return self.create_task(coro, name=name, context=context)
+            case _ as never:
+                assert_never(never)
 
     async def _wrap_with_semaphore[T](
         self, semaphore: Semaphore, coroutine: _CoroutineLike[T], /

@@ -175,6 +175,29 @@ class TestEnhancedTaskGroup:
             await sleep_td(self.delta)
         assert looper._core_attempts >= 1
 
+    async def test_debug_true(self) -> None:
+        class CustomError(Exception): ...
+
+        async def func() -> None:
+            await sleep_td(self.delta)
+            raise CustomError
+
+        with raises(CustomError):
+            async with EnhancedTaskGroup(debug=True) as tg:
+                _ = await tg.run_or_create_task(func())
+
+    async def test_debug_false(self) -> None:
+        class CustomError(Exception): ...
+
+        async def func() -> None:
+            await sleep_td(self.delta)
+            raise CustomError
+
+        with raises(ExceptionGroup) as exc_info:
+            async with EnhancedTaskGroup(debug=False) as tg:
+                _ = await tg.run_or_create_task(func())
+        assert isinstance(one(exc_info.value.exceptions), CustomError)
+
     async def test_max_tasks_disabled(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup() as tg:
