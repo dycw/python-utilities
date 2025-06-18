@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, assert_never
+from typing import TYPE_CHECKING, Any, Literal, assert_never
 
 from pqdm import processes, threads
 from tqdm.auto import tqdm as tqdm_auto
@@ -20,12 +20,11 @@ if TYPE_CHECKING:
     from utilities.types import Parallelism
 
 
-_T = TypeVar("_T")
 type _ExceptionBehaviour = Literal["ignore", "immediate", "deferred"]
 
 
 def pqdm_map[T](
-    func: Callable[..., _T],
+    func: Callable[..., T],
     /,
     *iterables: Iterable[Any],
     parallelism: Parallelism = "processes",
@@ -35,7 +34,7 @@ def pqdm_map[T](
     tqdm_class: tqdm_type = tqdm_auto,  # pyright: ignore[reportArgumentType]
     desc: str | None | Sentinel = sentinel,
     **kwargs: Any,
-) -> list[_T]:
+) -> list[T]:
     """Parallel map, powered by `pqdm`."""
     return pqdm_starmap(
         func,
@@ -51,7 +50,7 @@ def pqdm_map[T](
 
 
 def pqdm_starmap[T](
-    func: Callable[..., _T],
+    func: Callable[..., T],
     iterable: Iterable[tuple[Any, ...]],
     /,
     *,
@@ -62,7 +61,7 @@ def pqdm_starmap[T](
     tqdm_class: tqdm_type = tqdm_auto,  # pyright: ignore[reportArgumentType]
     desc: str | None | Sentinel = sentinel,
     **kwargs: Any,
-) -> list[_T]:
+) -> list[T]:
     """Parallel starmap, powered by `pqdm`."""
     apply = partial(apply_to_varargs, func)
     n_jobs_use = get_cpu_use(n=n_jobs)

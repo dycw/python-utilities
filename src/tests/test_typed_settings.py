@@ -2,7 +2,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
-from typing import TypeVar
 
 import typed_settings
 from hypothesis import given
@@ -43,9 +42,6 @@ from utilities.whenever import Freq
 app_names = text_ascii(min_size=1).map(str.lower)
 
 
-_T = TypeVar("_T")
-
-
 class TestExtendedTSConverter:
     @given(data=data(), root=temp_paths(), app_name=app_names)
     @mark.parametrize(
@@ -67,15 +63,15 @@ class TestExtendedTSConverter:
             param(ZonedDateTime, zoned_datetimes(), ZonedDateTime.format_common_iso),
         ],
     )
-    def test_main(
+    def test_main[T](
         self,
         *,
         data: DataObject,
         root: Path,
         app_name: str,
-        test_cls: type[_T],
-        strategy: SearchStrategy[_T],
-        serialize: Callable[[_T], str],
+        test_cls: type[T],
+        strategy: SearchStrategy[T],
+        serialize: Callable[[T], str],
     ) -> None:
         default, value = data.draw(tuples(strategy, strategy))
 
