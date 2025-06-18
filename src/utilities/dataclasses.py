@@ -3,15 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from contextlib import suppress
 from dataclasses import MISSING, dataclass, field, fields, replace
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    Literal,
-    assert_never,
-    overload,
-    override,
-)
+from typing import TYPE_CHECKING, Any, Literal, assert_never, overload, override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
@@ -42,20 +34,20 @@ from utilities.text import (
     _SplitKeyValuePairsSplitError,
     split_key_value_pairs,
 )
-from utilities.types import (
-    ParseObjectExtra,
-    SerializeObjectExtra,
-    StrStrMapping,
-    TDataclass,
-    TSupportsLT,
-)
+from utilities.types import SupportsLT
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
     from collections.abc import Set as AbstractSet
 
-    from utilities.types import Dataclass, StrMapping
+    from utilities.types import (
+        Dataclass,
+        ParseObjectExtra,
+        SerializeObjectExtra,
+        StrMapping,
+        StrStrMapping,
+    )
 
 
 def dataclass_repr[T](
@@ -137,7 +129,7 @@ def dataclass_repr[T](
 ##
 
 
-def dataclass_to_dict(
+def dataclass_to_dict[T](
     obj: Dataclass,
     /,
     *,
@@ -148,7 +140,7 @@ def dataclass_to_dict(
     exclude: Iterable[str] | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
-    extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
+    extra: Mapping[type[T], Callable[[T, T], bool]] | None = None,
     defaults: bool = False,
     final: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
     recursive: bool = False,
@@ -213,7 +205,7 @@ def dataclass_to_dict(
 ##
 
 
-def is_nullable_lt(x: TSupportsLT | None, y: TSupportsLT | None, /) -> bool | None:
+def is_nullable_lt[T: SupportsLT](x: T | None, y: T | None, /) -> bool | None:
     """Compare two nullable fields."""
     match cmp_nullable(x, y):
         case 1:
@@ -229,8 +221,8 @@ def is_nullable_lt(x: TSupportsLT | None, y: TSupportsLT | None, /) -> bool | No
 ##
 
 
-def mapping_to_dataclass(
-    cls: type[TDataclass],
+def mapping_to_dataclass[T: Dataclass](
+    cls: type[T],
     mapping: StrMapping,
     /,
     *,
@@ -241,7 +233,7 @@ def mapping_to_dataclass(
     head: bool = False,
     case_sensitive: bool = False,
     allow_extra: bool = False,
-) -> TDataclass:
+) -> T:
     """Construct a dataclass from a mapping."""
     if fields is None:
         fields_use = list(
@@ -294,12 +286,12 @@ def mapping_to_dataclass(
 
 
 @dataclass(kw_only=True, slots=True)
-class MappingToDataclassError(Exception, Generic[TDataclass]):
-    cls: type[TDataclass]
+class MappingToDataclassError[T: Dataclass](Exception):
+    cls: type[T]
 
 
 @dataclass(kw_only=True, slots=True)
-class _MappingToDataClassEmptyError(MappingToDataclassError[TDataclass]):
+class _MappingToDataClassEmptyError(MappingToDataclassError):
     key: str
     head: bool = False
     case_sensitive: bool = False
@@ -312,7 +304,7 @@ class _MappingToDataClassEmptyError(MappingToDataclassError[TDataclass]):
 
 
 @dataclass(kw_only=True, slots=True)
-class _MappingToDataClassNonUniqueError(MappingToDataclassError[TDataclass]):
+class _MappingToDataClassNonUniqueError(MappingToDataclassError):
     key: str
     head: bool = False
     case_sensitive: bool = False
@@ -332,7 +324,7 @@ class _MappingToDataClassNonUniqueError(MappingToDataclassError[TDataclass]):
 
 
 @dataclass(kw_only=True, slots=True)
-class _MappingToDataClassMissingValuesError(MappingToDataclassError[TDataclass]):
+class _MappingToDataClassMissingValuesError(MappingToDataclassError):
     fields: AbstractSet[str]
 
     @override
@@ -388,15 +380,15 @@ def one_field(
 
 
 @dataclass(kw_only=True, slots=True)
-class OneFieldError(Exception, Generic[TDataclass]):
-    cls: type[TDataclass]
+class OneFieldError[T: Dataclass](Exception):
+    cls: type[T]
     key: str
     head: bool = False
     case_sensitive: bool = False
 
 
 @dataclass(kw_only=True, slots=True)
-class _OneFieldEmptyError(OneFieldError[TDataclass]):
+class _OneFieldEmptyError(OneFieldError):
     @override
     def __str__(self) -> str:
         return _empty_error_str(
@@ -405,7 +397,7 @@ class _OneFieldEmptyError(OneFieldError[TDataclass]):
 
 
 @dataclass(kw_only=True, slots=True)
-class _OneFieldNonUniqueError(OneFieldError[TDataclass]):
+class _OneFieldNonUniqueError(OneFieldError):
     first: str
     second: str
 
@@ -426,19 +418,19 @@ class _OneFieldNonUniqueError(OneFieldError[TDataclass]):
 
 @overload
 def replace_non_sentinel(
-    obj: Any, /, *, in_place: Literal[True], **kwargs: Any
+    obj: Dataclass, /, *, in_place: Literal[True], **kwargs: Any
 ) -> None: ...
 @overload
-def replace_non_sentinel(
-    obj: TDataclass, /, *, in_place: Literal[False] = False, **kwargs: Any
-) -> TDataclass: ...
+def replace_non_sentinel[T: Dataclass](
+    obj: T, /, *, in_place: Literal[False] = False, **kwargs: Any
+) -> T: ...
 @overload
-def replace_non_sentinel(
-    obj: TDataclass, /, *, in_place: bool = False, **kwargs: Any
-) -> TDataclass | None: ...
-def replace_non_sentinel(
-    obj: TDataclass, /, *, in_place: bool = False, **kwargs: Any
-) -> TDataclass | None:
+def replace_non_sentinel[T: Dataclass](
+    obj: T, /, *, in_place: bool = False, **kwargs: Any
+) -> T | None: ...
+def replace_non_sentinel[T: Dataclass](
+    obj: T, /, *, in_place: bool = False, **kwargs: Any
+) -> T | None:
     """Replace attributes on a dataclass, filtering out sentinel values."""
     if in_place:
         for k, v in kwargs.items():
@@ -453,7 +445,7 @@ def replace_non_sentinel(
 ##
 
 
-def serialize_dataclass(
+def serialize_dataclass[T](
     obj: Dataclass,
     /,
     *,
@@ -464,7 +456,7 @@ def serialize_dataclass(
     exclude: Iterable[str] | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
-    extra_equal: Mapping[type[_U], Callable[[_U, _U], bool]] | None = None,
+    extra_equal: Mapping[type[T], Callable[[T, T], bool]] | None = None,
     defaults: bool = False,
     list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
@@ -500,9 +492,9 @@ def serialize_dataclass(
     )
 
 
-def parse_dataclass(
+def parse_dataclass[T: Dataclass](
     text_or_mapping: str | StrStrMapping,
-    cls: type[TDataclass],
+    cls: type[T],
     /,
     *,
     list_separator: str = LIST_SEPARATOR,
@@ -515,7 +507,7 @@ def parse_dataclass(
     case_sensitive: bool = False,
     allow_extra_keys: bool = False,
     extra_parsers: ParseObjectExtra | None = None,
-) -> TDataclass:
+) -> T:
     """Construct a dataclass from a string or a mapping or strings."""
     match text_or_mapping:
         case str() as text:
@@ -589,9 +581,9 @@ def parse_dataclass(
         raise _ParseDataClassMissingValuesError(cls=cls, fields=error.fields) from None
 
 
-def _parse_dataclass_split_key_value_pairs(
+def _parse_dataclass_split_key_value_pairs[T: Dataclass](
     text: str,
-    cls: type[TDataclass],
+    cls: type[T],
     /,
     *,
     list_separator: str = LIST_SEPARATOR,
@@ -649,12 +641,12 @@ def _parse_dataclass_parse_text(
 
 
 @dataclass(kw_only=True, slots=True)
-class ParseDataClassError(Exception, Generic[TDataclass]):
-    cls: type[TDataclass]
+class ParseDataClassError[T: Dataclass](Exception):
+    cls: type[T]
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseDataClassSplitKeyValuePairsSplitError(ParseDataClassError[TDataclass]):
+class _ParseDataClassSplitKeyValuePairsSplitError(ParseDataClassError):
     text: str
 
     @override
@@ -663,9 +655,7 @@ class _ParseDataClassSplitKeyValuePairsSplitError(ParseDataClassError[TDataclass
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseDataClassSplitKeyValuePairsDuplicateKeysError(
-    ParseDataClassError[TDataclass]
-):
+class _ParseDataClassSplitKeyValuePairsDuplicateKeysError(ParseDataClassError):
     counts: Mapping[str, int]
 
     @override
@@ -674,7 +664,7 @@ class _ParseDataClassSplitKeyValuePairsDuplicateKeysError(
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseDataClassTextParseError(ParseDataClassError[TDataclass]):
+class _ParseDataClassTextParseError(ParseDataClassError):
     field: _YieldFieldsClass[Any]
     text: str
 
@@ -684,7 +674,7 @@ class _ParseDataClassTextParseError(ParseDataClassError[TDataclass]):
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseDataClassTextExtraNonUniqueError(ParseDataClassError[TDataclass]):
+class _ParseDataClassTextExtraNonUniqueError(ParseDataClassError):
     field: _YieldFieldsClass[Any]
     first: type[Any]
     second: type[Any]
@@ -695,9 +685,7 @@ class _ParseDataClassTextExtraNonUniqueError(ParseDataClassError[TDataclass]):
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseDataClassStrMappingToFieldMappingEmptyError(
-    ParseDataClassError[TDataclass]
-):
+class _ParseDataClassStrMappingToFieldMappingEmptyError(ParseDataClassError):
     key: str
     head: bool = False
     case_sensitive: bool = False
@@ -712,9 +700,7 @@ class _ParseDataClassStrMappingToFieldMappingEmptyError(
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseDataClassStrMappingToFieldMappingNonUniqueError(
-    ParseDataClassError[TDataclass]
-):
+class _ParseDataClassStrMappingToFieldMappingNonUniqueError(ParseDataClassError):
     key: str
     head: bool = False
     case_sensitive: bool = False
@@ -735,7 +721,7 @@ class _ParseDataClassStrMappingToFieldMappingNonUniqueError(
 
 
 @dataclass(kw_only=True, slots=True)
-class _ParseDataClassMissingValuesError(ParseDataClassError[TDataclass]):
+class _ParseDataClassMissingValuesError(ParseDataClassError):
     fields: AbstractSet[str]
 
     @override
@@ -747,9 +733,9 @@ class _ParseDataClassMissingValuesError(ParseDataClassError[TDataclass]):
 ##
 
 
-def str_mapping_to_field_mapping[T](
-    cls: type[TDataclass],
-    mapping: Mapping[str, _T],
+def str_mapping_to_field_mapping[T: Dataclass, U](
+    cls: type[T],
+    mapping: Mapping[str, U],
     /,
     *,
     fields: Iterable[_YieldFieldsClass[Any]] | None = None,
@@ -759,7 +745,7 @@ def str_mapping_to_field_mapping[T](
     head: bool = False,
     case_sensitive: bool = False,
     allow_extra: bool = False,
-) -> Mapping[_YieldFieldsClass[Any], _T]:
+) -> Mapping[_YieldFieldsClass[Any], U]:
     """Convert a string-mapping into a field-mapping."""
     keys_to_fields: Mapping[str, _YieldFieldsClass[Any]] = {}
     for key in mapping:
@@ -792,8 +778,8 @@ def str_mapping_to_field_mapping[T](
 
 
 @dataclass(kw_only=True, slots=True)
-class StrMappingToFieldMappingError(Exception, Generic[TDataclass]):
-    cls: type[TDataclass]
+class StrMappingToFieldMappingError[T: Dataclass](Exception):
+    cls: type[T]
     key: str
     head: bool = False
     case_sensitive: bool = False
