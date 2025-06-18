@@ -144,7 +144,6 @@ class TestInsertDataFrame:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    @mark.only
     async def test_main(
         self,
         *,
