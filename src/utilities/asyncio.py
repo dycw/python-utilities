@@ -16,7 +16,7 @@ from asyncio import (
     create_task,
     sleep,
 )
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Hashable, Iterable, Iterator
 from contextlib import (
     AbstractAsyncContextManager,
     AsyncExitStack,
@@ -30,16 +30,7 @@ from itertools import chain
 from logging import DEBUG, Logger, getLogger
 from subprocess import PIPE
 from sys import stderr, stdout
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Self,
-    TextIO,
-    TypeVar,
-    assert_never,
-    overload,
-    override,
-)
+from typing import TYPE_CHECKING, Any, Self, TextIO, assert_never, overload, override
 
 from typing_extensions import deprecated
 
@@ -48,13 +39,7 @@ from utilities.errors import repr_error
 from utilities.functions import ensure_int, ensure_not_none
 from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import (
-    DateTimeRoundUnit,
-    MaybeCallableEvent,
-    MaybeType,
-    THashable,
-    TSupportsRichComparison,
-)
+from utilities.types import SupportsRichComparison
 from utilities.whenever import SECOND, get_now
 
 if TYPE_CHECKING:
@@ -68,11 +53,10 @@ if TYPE_CHECKING:
 
     from whenever import TimeDelta, ZonedDateTime
 
+    from utilities.types import DateTimeRoundUnit, MaybeCallableEvent, MaybeType
 
-_T = TypeVar("_T")
 
-
-class EnhancedQueue(Queue[_T]):
+class EnhancedQueue[T](Queue[T]):
     """An asynchronous deque."""
 
     @override
@@ -81,39 +65,39 @@ class EnhancedQueue(Queue[_T]):
         self._finished: Event
         self._getters: deque[Any]
         self._putters: deque[Any]
-        self._queue: deque[_T]
+        self._queue: deque[T]
         self._unfinished_tasks: int
 
     @override
     @deprecated("Use `get_left`/`get_right` instead")
-    async def get(self) -> _T:
+    async def get(self) -> T:
         raise RuntimeError  # pragma: no cover
 
     @override
     @deprecated("Use `get_left_nowait`/`get_right_nowait` instead")
-    def get_nowait(self) -> _T:
+    def get_nowait(self) -> T:
         raise RuntimeError  # pragma: no cover
 
     @override
     @deprecated("Use `put_left`/`put_right` instead")
-    async def put(self, item: _T) -> None:
+    async def put(self, item: T) -> None:
         raise RuntimeError(item)  # pragma: no cover
 
     @override
     @deprecated("Use `put_left_nowait`/`put_right_nowait` instead")
-    def put_nowait(self, item: _T) -> None:
+    def put_nowait(self, item: T) -> None:
         raise RuntimeError(item)  # pragma: no cover
 
     # get all
 
-    async def get_all(self, *, reverse: bool = False) -> Sequence[_T]:
+    async def get_all(self, *, reverse: bool = False) -> Sequence[T]:
         """Remove and return all items from the queue."""
         first = await (self.get_right() if reverse else self.get_left())
         return list(chain([first], self.get_all_nowait(reverse=reverse)))
 
-    def get_all_nowait(self, *, reverse: bool = False) -> Sequence[_T]:
+    def get_all_nowait(self, *, reverse: bool = False) -> Sequence[T]:
         """Remove and return all items from the queue without blocking."""
-        items: Sequence[_T] = []
+        items: Sequence[T] = []
         while True:
             try:
                 items.append(
@@ -124,49 +108,49 @@ class EnhancedQueue(Queue[_T]):
 
     # get left/right
 
-    async def get_left(self) -> _T:
+    async def get_left(self) -> T:
         """Remove and return an item from the start of the queue."""
         return await self._get_left_or_right(self._get)
 
-    async def get_right(self) -> _T:
+    async def get_right(self) -> T:
         """Remove and return an item from the end of the queue."""
         return await self._get_left_or_right(self._get_right)
 
-    def get_left_nowait(self) -> _T:
+    def get_left_nowait(self) -> T:
         """Remove and return an item from the start of the queue without blocking."""
         return self._get_left_or_right_nowait(self._get)
 
-    def get_right_nowait(self) -> _T:
+    def get_right_nowait(self) -> T:
         """Remove and return an item from the end of the queue without blocking."""
         return self._get_left_or_right_nowait(self._get_right)
 
     # put left/right
 
-    async def put_left(self, *items: _T) -> None:
+    async def put_left(self, *items: T) -> None:
         """Put items into the queue at the start."""
         return await self._put_left_or_right(self._put_left, *items)
 
-    async def put_right(self, *items: _T) -> None:
+    async def put_right(self, *items: T) -> None:
         """Put items into the queue at the end."""
         return await self._put_left_or_right(self._put, *items)
 
-    def put_left_nowait(self, *items: _T) -> None:
+    def put_left_nowait(self, *items: T) -> None:
         """Put items into the queue at the start without blocking."""
         self._put_left_or_right_nowait(self._put_left, *items)
 
-    def put_right_nowait(self, *items: _T) -> None:
+    def put_right_nowait(self, *items: T) -> None:
         """Put items into the queue at the end without blocking."""
         self._put_left_or_right_nowait(self._put, *items)
 
     # private
 
-    def _put_left(self, item: _T) -> None:
+    def _put_left(self, item: T) -> None:
         self._queue.appendleft(item)
 
-    def _get_right(self) -> _T:
+    def _get_right(self) -> T:
         return self._queue.pop()
 
-    async def _get_left_or_right(self, getter_use: Callable[[], _T], /) -> _T:
+    async def _get_left_or_right(self, getter_use: Callable[[], T], /) -> T:
         while self.empty():  # pragma: no cover
             getter = self._get_loop().create_future()  # pyright: ignore[reportAttributeAccessIssue]
             self._getters.append(getter)
@@ -181,7 +165,7 @@ class EnhancedQueue(Queue[_T]):
                 raise
         return getter_use()
 
-    def _get_left_or_right_nowait(self, getter: Callable[[], _T], /) -> _T:
+    def _get_left_or_right_nowait(self, getter: Callable[[], T], /) -> T:
         if self.empty():
             raise QueueEmpty
         item = getter()
@@ -189,14 +173,14 @@ class EnhancedQueue(Queue[_T]):
         return item
 
     async def _put_left_or_right(
-        self, putter_use: Callable[[_T], None], /, *items: _T
+        self, putter_use: Callable[[T], None], /, *items: T
     ) -> None:
         """Put an item into the queue."""
         for item in items:
             await self._put_left_or_right_one(putter_use, item)
 
     async def _put_left_or_right_one(
-        self, putter_use: Callable[[_T], None], item: _T, /
+        self, putter_use: Callable[[T], None], item: T, /
     ) -> None:
         """Put an item into the queue."""
         while self.full():  # pragma: no cover
@@ -214,13 +198,13 @@ class EnhancedQueue(Queue[_T]):
         return putter_use(item)
 
     def _put_left_or_right_nowait(
-        self, putter: Callable[[_T], None], /, *items: _T
+        self, putter: Callable[[T], None], /, *items: T
     ) -> None:
         for item in items:
             self._put_left_or_right_nowait_one(putter, item)
 
     def _put_left_or_right_nowait_one(
-        self, putter: Callable[[_T], None], item: _T, /
+        self, putter: Callable[[T], None], item: T, /
     ) -> None:
         if self.full():  # pragma: no cover
             raise QueueFull
@@ -273,13 +257,13 @@ class EnhancedTaskGroup(TaskGroup):
         _ = await super().__aexit__(et, exc, tb)
 
     @override
-    def create_task(
+    def create_task[T](
         self,
-        coro: _CoroutineLike[_T],
+        coro: _CoroutineLike[T],
         *,
         name: str | None = None,
         context: Context | None = None,
-    ) -> Task[_T]:
+    ) -> Task[T]:
         if self._semaphore is None:
             coroutine = coro
         else:
@@ -287,18 +271,18 @@ class EnhancedTaskGroup(TaskGroup):
         coroutine = self._wrap_with_timeout(coroutine)
         return super().create_task(coroutine, name=name, context=context)
 
-    def create_task_context(self, cm: AbstractAsyncContextManager[_T], /) -> Task[_T]:
+    def create_task_context[T](self, cm: AbstractAsyncContextManager[T], /) -> Task[T]:
         """Have the TaskGroup start an asynchronous context manager."""
         _ = self._stack.push_async_callback(cm.__aexit__, None, None, None)
         return self.create_task(cm.__aenter__())
 
-    async def _wrap_with_semaphore(
-        self, semaphore: Semaphore, coroutine: _CoroutineLike[_T], /
-    ) -> _T:
+    async def _wrap_with_semaphore[T](
+        self, semaphore: Semaphore, coroutine: _CoroutineLike[T], /
+    ) -> T:
         async with semaphore:
             return await coroutine
 
-    async def _wrap_with_timeout(self, coroutine: _CoroutineLike[_T], /) -> _T:
+    async def _wrap_with_timeout[T](self, coroutine: _CoroutineLike[T], /) -> T:
         async with timeout_td(self._timeout, error=self._error):
             return await coroutine
 
@@ -361,7 +345,7 @@ class Looper[T]:
     # internal objects
     _lock: Lock = field(default_factory=Lock, init=False, repr=False, hash=False)
     _logger: Logger = field(init=False, repr=False, hash=False)
-    _queue: EnhancedQueue[_T] = field(
+    _queue: EnhancedQueue[T] = field(
         default_factory=EnhancedQueue, init=False, repr=False, hash=False
     )
     _stack: AsyncExitStack = field(
@@ -447,15 +431,15 @@ class Looper[T]:
         """Check if the queue is empty."""
         return self._queue.empty()
 
-    def get_all_nowait(self, *, reverse: bool = False) -> Sequence[_T]:
+    def get_all_nowait(self, *, reverse: bool = False) -> Sequence[T]:
         """Remove and return all items from the queue without blocking."""
         return self._queue.get_all_nowait(reverse=reverse)
 
-    def get_left_nowait(self) -> _T:
+    def get_left_nowait(self) -> T:
         """Remove and return an item from the start of the queue without blocking."""
         return self._queue.get_left_nowait()
 
-    def get_right_nowait(self) -> _T:
+    def get_right_nowait(self) -> T:
         """Remove and return an item from the end of the queue without blocking."""
         return self._queue.get_right_nowait()
 
@@ -513,11 +497,11 @@ class Looper[T]:
     async def _initialize_core(self) -> None:
         """Core part of initializing the looper."""
 
-    def put_left_nowait(self, *items: _T) -> None:
+    def put_left_nowait(self, *items: T) -> None:
         """Put items into the queue at the start without blocking."""
         self._queue.put_left_nowait(*items)
 
-    def put_right_nowait(self, *items: _T) -> None:
+    def put_right_nowait(self, *items: T) -> None:
         """Put items into the queue at the end without blocking."""
         self._queue.put_right_nowait(*items)
 
@@ -827,45 +811,47 @@ class _LooperStats:
 ##
 
 
-class UniquePriorityQueue(PriorityQueue[tuple[TSupportsRichComparison, THashable]]):
+class UniquePriorityQueue[T: SupportsRichComparison, U: Hashable](
+    PriorityQueue[tuple[T, U]]
+):
     """Priority queue with unique tasks."""
 
     @override
     def __init__(self, maxsize: int = 0) -> None:
         super().__init__(maxsize)
-        self._set: set[THashable] = set()
+        self._set: set[U] = set()
 
     @override
-    def _get(self) -> tuple[TSupportsRichComparison, THashable]:
+    def _get(self) -> tuple[T, U]:
         item = super()._get()
         _, value = item
         self._set.remove(value)
         return item
 
     @override
-    def _put(self, item: tuple[TSupportsRichComparison, THashable]) -> None:
+    def _put(self, item: tuple[T, U]) -> None:
         _, value = item
         if value not in self._set:
             super()._put(item)
             self._set.add(value)
 
 
-class UniqueQueue(Queue[THashable]):
+class UniqueQueue[T: Hashable](Queue[T]):
     """Queue with unique tasks."""
 
     @override
     def __init__(self, maxsize: int = 0) -> None:
         super().__init__(maxsize)
-        self._set: set[THashable] = set()
+        self._set: set[T] = set()
 
     @override
-    def _get(self) -> THashable:
+    def _get(self) -> T:
         item = super()._get()
         self._set.remove(item)
         return item
 
     @override
-    def _put(self, item: THashable) -> None:
+    def _put(self, item: T) -> None:
         if item not in self._set:
             super()._put(item)
             self._set.add(item)
@@ -902,7 +888,7 @@ def get_event(
 ##
 
 
-async def get_items[T](queue: Queue[_T], /, *, max_size: int | None = None) -> list[_T]:
+async def get_items[T](queue: Queue[T], /, *, max_size: int | None = None) -> list[T]:
     """Get items from a queue; if empty then wait."""
     try:
         items = [await queue.get()]
@@ -915,11 +901,9 @@ async def get_items[T](queue: Queue[_T], /, *, max_size: int | None = None) -> l
     return items
 
 
-def get_items_nowait[T](
-    queue: Queue[_T], /, *, max_size: int | None = None
-) -> list[_T]:
+def get_items_nowait[T](queue: Queue[T], /, *, max_size: int | None = None) -> list[T]:
     """Get items from a queue; no waiting."""
-    items: list[_T] = []
+    items: list[T] = []
     if max_size is None:
         while True:
             try:
@@ -938,13 +922,13 @@ def get_items_nowait[T](
 ##
 
 
-async def put_items(items: Iterable[_T], queue: Queue[_T], /) -> None:
+async def put_items[T](items: Iterable[T], queue: Queue[T], /) -> None:
     """Put items into a queue; if full then wait."""
     for item in items:
         await queue.put(item)
 
 
-def put_items_nowait(items: Iterable[_T], queue: Queue[_T], /) -> None:
+def put_items_nowait[T](items: Iterable[T], queue: Queue[T], /) -> None:
     """Put items into a queue; no waiting."""
     for item in items:
         queue.put_nowait(item)

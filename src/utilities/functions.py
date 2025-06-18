@@ -14,16 +14,7 @@ from types import (
     MethodWrapperType,
     WrapperDescriptorType,
 )
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    TypeGuard,
-    TypeVar,
-    cast,
-    overload,
-    override,
-)
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, cast, overload, override
 
 from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
@@ -33,28 +24,16 @@ from utilities.types import (
     Dataclass,
     Number,
     StrMapping,
+    SupportsRichComparison,
     TCallable,
     TCallable1,
     TCallable2,
-    TSupportsRichComparison,
     TupleOrStrMapping,
     TypeLike,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Container, Hashable, Sized
-
-
-_T = TypeVar("_T")
-_T1 = TypeVar("_T1")
-_T2 = TypeVar("_T2")
-_T3 = TypeVar("_T3")
-_T4 = TypeVar("_T4")
-_T5 = TypeVar("_T5")
-_U = TypeVar("_U")
-
-
-##
 
 
 def apply_decorators(
@@ -122,68 +101,64 @@ class EnsureBytesError(Exception):
 
 
 @overload
-def ensure_class[T](obj: Any, cls: type[_T], /, *, nullable: bool) -> _T | None: ...
+def ensure_class[T](obj: Any, cls: type[T], /, *, nullable: bool) -> T | None: ...
 @overload
 def ensure_class[T](
-    obj: Any, cls: type[_T], /, *, nullable: Literal[False] = False
-) -> _T: ...
+    obj: Any, cls: type[T], /, *, nullable: Literal[False] = False
+) -> T: ...
 @overload
 def ensure_class[T1, T2](
-    obj: Any, cls: tuple[type[_T1], type[_T2]], /, *, nullable: bool
-) -> _T1 | _T2 | None: ...
+    obj: Any, cls: tuple[type[T1], type[T2]], /, *, nullable: bool
+) -> T1 | T2 | None: ...
 @overload
 def ensure_class[T1, T2](
-    obj: Any, cls: tuple[type[_T1], type[_T2]], /, *, nullable: Literal[False] = False
-) -> _T1 | _T2: ...
+    obj: Any, cls: tuple[type[T1], type[T2]], /, *, nullable: Literal[False] = False
+) -> T1 | T2: ...
 @overload
 def ensure_class[T1, T2, T3](
-    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3]], /, *, nullable: bool
-) -> _T1 | _T2 | _T3 | None: ...
+    obj: Any, cls: tuple[type[T1], type[T2], type[T3]], /, *, nullable: bool
+) -> T1 | T2 | T3 | None: ...
 @overload
 def ensure_class[T1, T2, T3](
     obj: Any,
-    cls: tuple[type[_T1], type[_T2], type[_T3]],
+    cls: tuple[type[T1], type[T2], type[T3]],
     /,
     *,
     nullable: Literal[False] = False,
-) -> _T1 | _T2 | _T3: ...
+) -> T1 | T2 | T3: ...
+@overload
+def ensure_class[T1, T2, T3, T4](
+    obj: Any, cls: tuple[type[T1], type[T2], type[T3], type[T4]], /, *, nullable: bool
+) -> T1 | T2 | T3 | T4 | None: ...
 @overload
 def ensure_class[T1, T2, T3, T4](
     obj: Any,
-    cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4]],
-    /,
-    *,
-    nullable: bool,
-) -> _T1 | _T2 | _T3 | _T4 | None: ...
-@overload
-def ensure_class[T1, T2, T3, T4](
-    obj: Any,
-    cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4]],
+    cls: tuple[type[T1], type[T2], type[T3], type[T4]],
     /,
     *,
     nullable: Literal[False] = False,
-) -> _T1 | _T2 | _T3 | _T4: ...
+) -> T1 | T2 | T3 | T4: ...
 @overload
 def ensure_class[T1, T2, T3, T4, T5](
     obj: Any,
-    cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]],
+    cls: tuple[type[T1], type[T2], type[T3], type[T4], type[T5]],
     /,
     *,
     nullable: bool,
-) -> _T1 | _T2 | _T3 | _T4 | _T5 | None: ...
+) -> T1 | T2 | T3 | T4 | T5 | None: ...
 @overload
 def ensure_class[T1, T2, T3, T4, T5](
     obj: Any,
-    cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]],
+    cls: tuple[type[T1], type[T2], type[T3], type[T4], type[T5]],
     /,
     *,
     nullable: Literal[False] = False,
-) -> _T1 | _T2 | _T3 | _T4 | _T5: ...
+) -> T1 | T2 | T3 | T4 | T5: ...
 @overload
 def ensure_class[T](
-    obj: Any, cls: TypeLike[_T], /, *, nullable: bool = False
+    obj: Any, cls: TypeLike[T], /, *, nullable: bool = False
 ) -> Any: ...
-def ensure_class[T](obj: Any, cls: TypeLike[_T], /, *, nullable: bool = False) -> Any:
+def ensure_class[T](obj: Any, cls: TypeLike[T], /, *, nullable: bool = False) -> Any:
     """Ensure an object is of the required class."""
     if isinstance(obj, cls) or ((obj is None) and nullable):
         return obj
@@ -304,15 +279,15 @@ class EnsureIntError(Exception):
 
 @overload
 def ensure_member[T](
-    obj: Any, container: Container[_T], /, *, nullable: bool
-) -> _T | None: ...
+    obj: Any, container: Container[T], /, *, nullable: bool
+) -> T | None: ...
 @overload
 def ensure_member[T](
-    obj: Any, container: Container[_T], /, *, nullable: Literal[False] = False
-) -> _T: ...
+    obj: Any, container: Container[T], /, *, nullable: Literal[False] = False
+) -> T: ...
 def ensure_member[T](
-    obj: Any, container: Container[_T], /, *, nullable: bool = False
-) -> _T | None:
+    obj: Any, container: Container[T], /, *, nullable: bool = False
+) -> T | None:
     """Ensure an object is a member of the container."""
     if (obj in container) or ((obj is None) and nullable):
         return obj
@@ -335,7 +310,7 @@ class EnsureMemberError(Exception):
 ##
 
 
-def ensure_not_none[T](obj: _T | None, /, *, desc: str = "Object") -> _T:
+def ensure_not_none[T](obj: T | None, /, *, desc: str = "Object") -> T:
     """Ensure an object is not None."""
     if obj is None:
         raise EnsureNotNoneError(desc=desc)
@@ -577,7 +552,7 @@ class EnsureZonedDateTimeError(Exception):
 ##
 
 
-def first[T](pair: tuple[_T, Any], /) -> _T:
+def first[T](pair: tuple[T, Any], /) -> T:
     """Get the first element in a pair."""
     return pair[0]
 
@@ -586,10 +561,10 @@ def first[T](pair: tuple[_T, Any], /) -> _T:
 
 
 @overload
-def get_class[T](obj: type[_T], /) -> type[_T]: ...
+def get_class[T](obj: type[T], /) -> type[T]: ...
 @overload
-def get_class[T](obj: _T, /) -> type[_T]: ...
-def get_class(obj: _T | type[_T], /) -> type[_T]:
+def get_class[T](obj: T, /) -> type[T]: ...
+def get_class[T](obj: T | type[T], /) -> type[T]:
     """Get the class of an object, unless it is already a class."""
     return obj if isinstance(obj, type) else type(obj)
 
@@ -653,7 +628,7 @@ def get_func_qualname(obj: Callable[..., Any], /) -> str:
 ##
 
 
-def identity[T](obj: _T, /) -> _T:
+def identity[T](obj: T, /) -> T:
     """Return the object itself."""
     return obj
 
@@ -690,30 +665,30 @@ def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:
 
 
 @overload
-def is_iterable_of[T](obj: Any, cls: type[_T], /) -> TypeGuard[Iterable[_T]]: ...
+def is_iterable_of[T](obj: Any, cls: type[T], /) -> TypeGuard[Iterable[T]]: ...
 @overload
 def is_iterable_of[T1](
-    obj: Any, cls: tuple[type[_T1]], /
-) -> TypeGuard[Iterable[_T1]]: ...
+    obj: Any, cls: tuple[type[T1]], /
+) -> TypeGuard[Iterable[T1]]: ...
 @overload
 def is_iterable_of[T1, T2](
-    obj: Any, cls: tuple[type[_T1], type[_T2]], /
-) -> TypeGuard[Iterable[_T1 | _T2]]: ...
+    obj: Any, cls: tuple[type[T1], type[T2]], /
+) -> TypeGuard[Iterable[T1 | T2]]: ...
 @overload
 def is_iterable_of[T1, T2, T3](
-    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3]], /
-) -> TypeGuard[Iterable[_T1 | _T2 | _T3]]: ...
+    obj: Any, cls: tuple[type[T1], type[T2], type[T3]], /
+) -> TypeGuard[Iterable[T1 | T2 | T3]]: ...
 @overload
 def is_iterable_of[T1, T2, T3, T4](
-    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4]], /
-) -> TypeGuard[Iterable[_T1 | _T2 | _T3 | _T4]]: ...
+    obj: Any, cls: tuple[type[T1], type[T2], type[T3], type[T4]], /
+) -> TypeGuard[Iterable[T1 | T2 | T3 | T4]]: ...
 @overload
 def is_iterable_of[T1, T2, T3, T4, T5](
-    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]], /
-) -> TypeGuard[Iterable[_T1 | _T2 | _T3 | _T4 | _T5]]: ...
+    obj: Any, cls: tuple[type[T1], type[T2], type[T3], type[T4], type[T5]], /
+) -> TypeGuard[Iterable[T1 | T2 | T3 | T4 | T5]]: ...
 @overload
-def is_iterable_of[T](obj: Any, cls: TypeLike[_T], /) -> TypeGuard[Iterable[_T]]: ...
-def is_iterable_of[T](obj: Any, cls: TypeLike[_T], /) -> TypeGuard[Iterable[_T]]:
+def is_iterable_of[T](obj: Any, cls: TypeLike[T], /) -> TypeGuard[Iterable[T]]: ...
+def is_iterable_of[T](obj: Any, cls: TypeLike[T], /) -> TypeGuard[Iterable[T]]:
     """Check if an object is a iterable of tuple or string mappings."""
     return isinstance(obj, Iterable) and all(map(make_isinstance(cls), obj))
 
@@ -738,30 +713,30 @@ def is_not_none(obj: Any, /) -> bool:
 
 
 @overload
-def is_sequence_of[T](obj: Any, cls: type[_T], /) -> TypeGuard[Sequence[_T]]: ...
+def is_sequence_of[T](obj: Any, cls: type[T], /) -> TypeGuard[Sequence[T]]: ...
 @overload
 def is_sequence_of[T1](
-    obj: Any, cls: tuple[type[_T1]], /
-) -> TypeGuard[Sequence[_T1]]: ...
+    obj: Any, cls: tuple[type[T1]], /
+) -> TypeGuard[Sequence[T1]]: ...
 @overload
 def is_sequence_of[T1, T2](
-    obj: Any, cls: tuple[type[_T1], type[_T2]], /
-) -> TypeGuard[Sequence[_T1 | _T2]]: ...
+    obj: Any, cls: tuple[type[T1], type[T2]], /
+) -> TypeGuard[Sequence[T1 | T2]]: ...
 @overload
 def is_sequence_of[T1, T2, T3](
-    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3]], /
-) -> TypeGuard[Sequence[_T1 | _T2 | _T3]]: ...
+    obj: Any, cls: tuple[type[T1], type[T2], type[T3]], /
+) -> TypeGuard[Sequence[T1 | T2 | T3]]: ...
 @overload
 def is_sequence_of[T1, T2, T3, T4](
-    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4]], /
-) -> TypeGuard[Sequence[_T1 | _T2 | _T3 | _T4]]: ...
+    obj: Any, cls: tuple[type[T1], type[T2], type[T3], type[T4]], /
+) -> TypeGuard[Sequence[T1 | T2 | T3 | T4]]: ...
 @overload
 def is_sequence_of[T1, T2, T3, T4, T5](
-    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]], /
-) -> TypeGuard[Sequence[_T1 | _T2 | _T3 | _T4 | _T5]]: ...
+    obj: Any, cls: tuple[type[T1], type[T2], type[T3], type[T4], type[T5]], /
+) -> TypeGuard[Sequence[T1 | T2 | T3 | T4 | T5]]: ...
 @overload
-def is_sequence_of[T](obj: Any, cls: TypeLike[_T], /) -> TypeGuard[Sequence[_T]]: ...
-def is_sequence_of[T](obj: Any, cls: TypeLike[_T], /) -> TypeGuard[Sequence[_T]]:
+def is_sequence_of[T](obj: Any, cls: TypeLike[T], /) -> TypeGuard[Sequence[T]]: ...
+def is_sequence_of[T](obj: Any, cls: TypeLike[T], /) -> TypeGuard[Sequence[T]]:
     """Check if an object is a sequence of tuple or string mappings."""
     return isinstance(obj, Sequence) and is_iterable_of(obj, cls)
 
@@ -824,35 +799,33 @@ def is_tuple_or_str_mapping(obj: Any, /) -> TypeGuard[TupleOrStrMapping]:
 
 
 @overload
-def make_isinstance[T](cls: type[_T], /) -> Callable[[Any], TypeGuard[_T]]: ...
+def make_isinstance[T](cls: type[T], /) -> Callable[[Any], TypeGuard[T]]: ...
 @overload
-def make_isinstance[T1](
-    cls: tuple[type[_T1]], /
-) -> Callable[[Any], TypeGuard[_T1]]: ...
+def make_isinstance[T1](cls: tuple[type[T1]], /) -> Callable[[Any], TypeGuard[T1]]: ...
 @overload
 def make_isinstance[T1, T2](
-    cls: tuple[type[_T1], type[_T2]], /
-) -> Callable[[Any], TypeGuard[_T1 | _T2]]: ...
+    cls: tuple[type[T1], type[T2]], /
+) -> Callable[[Any], TypeGuard[T1 | T2]]: ...
 @overload
 def make_isinstance[T1, T2, T3](
-    cls: tuple[type[_T1], type[_T2], type[_T3]], /
-) -> Callable[[Any], TypeGuard[_T1 | _T2 | _T3]]: ...
+    cls: tuple[type[T1], type[T2], type[T3]], /
+) -> Callable[[Any], TypeGuard[T1 | T2 | T3]]: ...
 @overload
 def make_isinstance[T1, T2, T3, T4](
-    cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4]], /
-) -> Callable[[Any], TypeGuard[_T1 | _T2 | _T3 | _T4]]: ...
+    cls: tuple[type[T1], type[T2], type[T3], type[T4]], /
+) -> Callable[[Any], TypeGuard[T1 | T2 | T3 | T4]]: ...
 @overload
 def make_isinstance[T1, T2, T3, T4, T5](
-    cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]], /
-) -> Callable[[Any], TypeGuard[_T1 | _T2 | _T3 | _T4 | _T5]]: ...
+    cls: tuple[type[T1], type[T2], type[T3], type[T4], type[T5]], /
+) -> Callable[[Any], TypeGuard[T1 | T2 | T3 | T4 | T5]]: ...
 @overload
-def make_isinstance[T](cls: TypeLike[_T], /) -> Callable[[Any], TypeGuard[_T]]: ...
-def make_isinstance[T](cls: TypeLike[_T], /) -> Callable[[Any], TypeGuard[_T]]:
+def make_isinstance[T](cls: TypeLike[T], /) -> Callable[[Any], TypeGuard[T]]: ...
+def make_isinstance[T](cls: TypeLike[T], /) -> Callable[[Any], TypeGuard[T]]:
     """Make a curried `isinstance` function."""
     return partial(_make_instance_core, cls=cls)
 
 
-def _make_instance_core[T](obj: Any, /, *, cls: TypeLike[_T]) -> TypeGuard[_T]:
+def _make_instance_core[T](obj: Any, /, *, cls: TypeLike[T]) -> TypeGuard[T]:
     return isinstance(obj, cls)
 
 
@@ -860,12 +833,8 @@ def _make_instance_core[T](obj: Any, /, *, cls: TypeLike[_T]) -> TypeGuard[_T]:
 
 
 def map_object[T](
-    func: Callable[[Any], Any],
-    obj: _T,
-    /,
-    *,
-    before: Callable[[Any], Any] | None = None,
-) -> _T:
+    func: Callable[[Any], Any], obj: T, /, *, before: Callable[[Any], Any] | None = None
+) -> T:
     """Map a function over an object, across a variety of structures."""
     if before is not None:
         obj = before(obj)
@@ -886,19 +855,16 @@ def map_object[T](
 
 
 @overload
-def min_nullable(
-    iterable: Iterable[TSupportsRichComparison | None], /, *, default: Sentinel = ...
-) -> TSupportsRichComparison: ...
+def min_nullable[T: SupportsRichComparison](
+    iterable: Iterable[T | None], /, *, default: Sentinel = ...
+) -> T: ...
 @overload
-def min_nullable[U](
-    iterable: Iterable[TSupportsRichComparison | None], /, *, default: _U = ...
-) -> TSupportsRichComparison | _U: ...
-def min_nullable[U](
-    iterable: Iterable[TSupportsRichComparison | None],
-    /,
-    *,
-    default: _U | Sentinel = sentinel,
-) -> TSupportsRichComparison | _U:
+def min_nullable[T: SupportsRichComparison, U](
+    iterable: Iterable[T | None], /, *, default: U = ...
+) -> T | U: ...
+def min_nullable[T: SupportsRichComparison, U](
+    iterable: Iterable[T | None], /, *, default: U | Sentinel = sentinel
+) -> T | U:
     """Compute the minimum of a set of values; ignoring nulls."""
     values = (i for i in iterable if i is not None)
     if isinstance(default, Sentinel):
