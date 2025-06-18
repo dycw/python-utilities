@@ -34,10 +34,43 @@ def bucket_mapping[T, U, UH: Hashable](
     /,
     *,
     pre: Callable[[T], U],
-    post: Literal["list", "tuple", "set", "frozenset", "unique"] | None = None,
-    list_: bool = False,
-    tuple_: bool = False,
-    unique: Literal[True],
+    post: Literal["list"],
+) -> Mapping[UH, list[U]]: ...
+@overload
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
+    /,
+    *,
+    pre: Callable[[T], U],
+    post: Literal["tuple"],
+) -> Mapping[UH, tuple[U, ...]]: ...
+@overload
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
+    /,
+    *,
+    pre: Callable[[T], U],
+    post: Literal["set"],
+) -> Mapping[UH, set[U]]: ...
+@overload
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
+    /,
+    *,
+    pre: Callable[[T], U],
+    post: Literal["frozenset"],
+) -> Mapping[UH, frozenset[U]]: ...
+@overload
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
+    /,
+    *,
+    pre: Callable[[T], U] | None = None,
+    post: Literal["unique"],
 ) -> Mapping[UH, U]: ...
 @overload
 def bucket_mapping[T, U, UH: Hashable](
@@ -46,49 +79,61 @@ def bucket_mapping[T, U, UH: Hashable](
     /,
     *,
     pre: Callable[[T], U] | None = None,
-    list_: bool = False,
-    tuple_: bool = False,
-    unique: Literal[True],
-) -> Mapping[UH, T]: ...
-@overload
-def bucket_mapping[T, U, UH: Hashable](
-    iterable: Iterable[T],
-    func: Callable[[T], UH],
-    /,
-    *,
-    pre: Callable[[T], U],
-    list_: Literal[True],
-    tuple_: bool = False,
-) -> Mapping[UH, Sequence[U]]: ...
-@overload
-def bucket_mapping[T, U, UH: Hashable](
-    iterable: Iterable[T],
-    func: Callable[[T], UH],
-    /,
-    *,
-    pre: Callable[[T], U],
-    list_: bool = False,
-    tuple_: bool = False,
+    post: None = None,
 ) -> Mapping[UH, Iterator[U]]: ...
 @overload
-def bucket_mapping[T, U, UH: Hashable](
+def bucket_mapping[T, UH: Hashable](
     iterable: Iterable[T],
     func: Callable[[T], UH],
     /,
     *,
-    pre: Callable[[T], U] | None = None,
-    list_: Literal[True],
-    tuple_: bool = False,
-) -> Mapping[UH, Sequence[T]]: ...
+    pre: None = None,
+    post: Literal["list"],
+) -> Mapping[UH, list[T]]: ...
 @overload
-def bucket_mapping[T, U, UH: Hashable](
+def bucket_mapping[T, UH: Hashable](
     iterable: Iterable[T],
     func: Callable[[T], UH],
     /,
     *,
-    pre: Callable[[T], U] | None = None,
-    list_: bool = False,
-    tuple_: bool = False,
+    pre: None = None,
+    post: Literal["tuple"],
+) -> Mapping[UH, tuple[T, ...]]: ...
+@overload
+def bucket_mapping[T, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
+    /,
+    *,
+    pre: None = None,
+    post: Literal["set"],
+) -> Mapping[UH, set[T]]: ...
+@overload
+def bucket_mapping[T, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
+    /,
+    *,
+    pre: None = None,
+    post: Literal["frozenset"],
+) -> Mapping[UH, frozenset[T]]: ...
+@overload
+def bucket_mapping[T, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
+    /,
+    *,
+    pre: None = None,
+    post: Literal["unique"],
+) -> Mapping[UH, T]: ...
+@overload
+def bucket_mapping[T, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
+    /,
+    *,
+    pre: None = None,
+    post: None = None,
 ) -> Mapping[UH, Iterator[T]]: ...
 @overload
 def bucket_mapping[T, U, UH: Hashable](
@@ -100,10 +145,16 @@ def bucket_mapping[T, U, UH: Hashable](
     post: Literal["list", "tuple", "set", "frozenset", "unique"] | None = None,
 ) -> (
     Mapping[UH, Iterator[T]]
-    | Mapping[UH, Iterator[U]]
-    | Mapping[UH, Sequence[T]]
-    | Mapping[UH, Sequence[U]]
+    | Mapping[UH, list[T]]
+    | Mapping[UH, tuple[T, ...]]
+    | Mapping[UH, set[T]]
+    | Mapping[UH, frozenset[T]]
     | Mapping[UH, T]
+    | Mapping[UH, Iterator[U]]
+    | Mapping[UH, list[U]]
+    | Mapping[UH, tuple[U, ...]]
+    | Mapping[UH, set[U]]
+    | Mapping[UH, frozenset[U]]
     | Mapping[UH, U]
 ): ...
 def bucket_mapping[T, U, UH: Hashable](
@@ -115,16 +166,16 @@ def bucket_mapping[T, U, UH: Hashable](
     post: Literal["list", "tuple", "set", "frozenset", "unique"] | None = None,
 ) -> (
     Mapping[UH, Iterator[T]]
-    | Mapping[UH, Iterator[U]]
     | Mapping[UH, list[T]]
-    | Mapping[UH, list[U]]
     | Mapping[UH, tuple[T, ...]]
-    | Mapping[UH, tuple[U, ...]]
     | Mapping[UH, set[T]]
-    | Mapping[UH, set[U]]
     | Mapping[UH, frozenset[T]]
-    | Mapping[UH, frozenset[U]]
     | Mapping[UH, T]
+    | Mapping[UH, Iterator[U]]
+    | Mapping[UH, list[U]]
+    | Mapping[UH, tuple[U, ...]]
+    | Mapping[UH, set[U]]
+    | Mapping[UH, frozenset[U]]
     | Mapping[UH, U]
 ):
     """Bucket the values of iterable into a mapping."""
