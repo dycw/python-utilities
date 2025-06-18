@@ -73,10 +73,6 @@ type MaybeCallableEvent = MaybeCallable[Event]
 type MaybeCoro[T] = T | Coro[T]
 
 
-# callable
-type CallableOf[T] = Callable[..., T]
-
-
 # concurrent
 type Parallelism = Literal["processes", "threads"]
 
@@ -242,7 +238,6 @@ type TimeZoneLike = (
 
 
 __all__ = [
-    "CallableOf",
     "Coro",
     "Dataclass",
     "DateDeltaLike",
