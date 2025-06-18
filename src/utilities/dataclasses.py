@@ -8,7 +8,6 @@ from typing import (
     Any,
     Generic,
     Literal,
-    TypeVar,
     assert_never,
     overload,
     override,
@@ -59,14 +58,7 @@ if TYPE_CHECKING:
     from utilities.types import Dataclass, StrMapping
 
 
-_T = TypeVar("_T")
-_U = TypeVar("_U")
-
-
-##
-
-
-def dataclass_repr(
+def dataclass_repr[T](
     obj: Dataclass,
     /,
     *,
@@ -77,7 +69,7 @@ def dataclass_repr(
     exclude: Iterable[str] | None = None,
     rel_tol: float | None = None,
     abs_tol: float | None = None,
-    extra: Mapping[type[_T], Callable[[_T, _T], bool]] | None = None,
+    extra: Mapping[type[T], Callable[[T, T], bool]] | None = None,
     defaults: bool = False,
     recursive: bool = False,
 ) -> str:
@@ -915,10 +907,10 @@ def yield_fields(
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
 class _YieldFieldsInstance[T]:
     name: str
-    value: _T = field(hash=False)
+    value: T = field(hash=False)
     type_: Any = field(hash=False)
-    default: _T | Sentinel = field(default=sentinel, hash=False)
-    default_factory: Callable[[], _T] | Sentinel = field(default=sentinel, hash=False)
+    default: T | Sentinel = field(default=sentinel, hash=False)
+    default_factory: Callable[[], T] | Sentinel = field(default=sentinel, hash=False)
     repr: bool = True
     hash_: bool | None = None
     init: bool = True
@@ -926,12 +918,12 @@ class _YieldFieldsInstance[T]:
     metadata: StrMapping = field(default_factory=dict, hash=False)
     kw_only: bool | Sentinel = sentinel
 
-    def equals_default(
+    def equals_default[U](
         self,
         *,
         rel_tol: float | None = None,
         abs_tol: float | None = None,
-        extra: Mapping[type[_U], Callable[[_U, _U], bool]] | None = None,
+        extra: Mapping[type[U], Callable[[U, U], bool]] | None = None,
     ) -> bool:
         """Check if the field value equals its default."""
         if isinstance(self.default, Sentinel) and isinstance(
@@ -954,14 +946,14 @@ class _YieldFieldsInstance[T]:
             self.value, expected, rel_tol=rel_tol, abs_tol=abs_tol, extra=extra
         )
 
-    def keep(
+    def keep[U](
         self,
         *,
         include: Iterable[str] | None = None,
         exclude: Iterable[str] | None = None,
         rel_tol: float | None = None,
         abs_tol: float | None = None,
-        extra: Mapping[type[_U], Callable[[_U, _U], bool]] | None = None,
+        extra: Mapping[type[U], Callable[[U, U], bool]] | None = None,
         defaults: bool = False,
     ) -> bool:
         """Whether to include a field."""
@@ -977,8 +969,8 @@ class _YieldFieldsInstance[T]:
 class _YieldFieldsClass[T]:
     name: str
     type_: Any = field(hash=False)
-    default: _T | Sentinel = field(default=sentinel, hash=False)
-    default_factory: Callable[[], _T] | Sentinel = field(default=sentinel, hash=False)
+    default: T | Sentinel = field(default=sentinel, hash=False)
+    default_factory: Callable[[], T] | Sentinel = field(default=sentinel, hash=False)
     repr: bool = True
     hash_: bool | None = None
     init: bool = True
