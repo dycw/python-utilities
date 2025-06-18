@@ -48,6 +48,7 @@ class Timer:
 
     # hash
 
+    @override
     def __hash__(self) -> int:
         return hash((id(self), self._start, self._end))
 
