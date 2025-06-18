@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import wraps
 from itertools import chain
-from typing import TYPE_CHECKING, Any, ParamSpec, Self, TypeVar, cast, override
+from typing import TYPE_CHECKING, Any, Self, cast, override
 
 from arq.constants import default_queue_name, expires_extra_ms
 from arq.cron import cron
@@ -27,18 +27,11 @@ if TYPE_CHECKING:
     )
     from arq.worker import Function
 
-    from utilities.types import CallableCoro, Coro, StrMapping
-
-
-_P = ParamSpec("_P")
-_T = TypeVar("_T")
-
-
-##
+    from utilities.types import Coro, StrMapping
 
 
 def cron_raw(
-    coroutine: CallableCoro[Any],
+    coroutine: Callable[..., Coro[Any]],
     /,
     *,
     name: str | None = None,
@@ -83,13 +76,13 @@ def cron_raw(
     )
 
 
-def _lift_cron(
-    func: Callable[_P, Coro[_T]], *args: _P.args, **kwargs: _P.kwargs
+def _lift_cron[**P, T](
+    func: Callable[P, Coro[T]], *args: P.args, **kwargs: P.kwargs
 ) -> WorkerCoroutine:
     """Lift a coroutine function & call arg/kwargs for `cron`."""
 
     @wraps(func)
-    async def wrapped(ctx: StrMapping, /) -> _T:
+    async def wrapped(ctx: StrMapping, /) -> T:
         _ = ctx
         return await func(*args, **kwargs)
 
@@ -110,12 +103,12 @@ class _JobEnqueuer:
     expires: int | float | timedelta | None = None
     job_try: int | None = None
 
-    async def __call__(
+    async def __call__[**P, T](
         self,
         redis: ArqRedis,
-        function: Callable[_P, Coro[_T]],
-        *args: _P.args,
-        **kwargs: _P.kwargs,
+        function: Callable[P, Coro[T]],
+        *args: P.args,
+        **kwargs: P.kwargs,
     ) -> Job | None:
         return await redis.enqueue_job(  # skipif-ci-and-not-linux
             function.__name__,
@@ -171,11 +164,11 @@ class _WorkerMeta(type):
         return cls
 
     @classmethod
-    def _lift(cls, func: Callable[_P, Coro[_T]]) -> WorkerCoroutine:
+    def _lift[**P, T](cls, func: Callable[P, Coro[T]]) -> WorkerCoroutine:
         """Lift a coroutine function to accept the required `ctx` argument."""
 
         @wraps(func)
-        async def wrapped(ctx: StrMapping, *args: _P.args, **kwargs: _P.kwargs) -> _T:
+        async def wrapped(ctx: StrMapping, *args: P.args, **kwargs: P.kwargs) -> T:
             _ = ctx
             return await func(*args, **kwargs)
 
@@ -187,7 +180,7 @@ class Worker(metaclass=_WorkerMeta):
     """Base class for all workers."""
 
     functions: Sequence[Function | WorkerCoroutine] = ()
-    functions_raw: Sequence[CallableCoro[Any]] = ()
+    functions_raw: Sequence[Callable[..., Coro[Any]]] = ()
     queue_name: str | None = default_queue_name
     cron_jobs: Sequence[CronJob] | None = None
     redis_settings: RedisSettings | None = None
