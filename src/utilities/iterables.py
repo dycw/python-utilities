@@ -22,7 +22,6 @@ from operator import add, itemgetter, or_
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generic,
     Literal,
     TypeGuard,
     assert_never,
@@ -842,7 +841,7 @@ def groupby_lists[T](
     iterable: Iterable[T], /, *, key: None = None
 ) -> Iterator[tuple[T, list[T]]]: ...
 @overload
-def groupby_lists[U](
+def groupby_lists[T, U](
     iterable: Iterable[T], /, *, key: Callable[[T], U]
 ) -> Iterator[tuple[U, list[T]]]: ...
 def groupby_lists[T, U](
@@ -981,7 +980,7 @@ class OneError[T](Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class OneEmptyError(OneError[T]):
+class OneEmptyError[T](OneError[T]):
     @override
     def __str__(self) -> str:
         return f"Iterable(s) {get_repr(self.iterables)} must not be empty"
@@ -1377,7 +1376,9 @@ def _sort_iterable_cmp_floats(x: float, y: float, /) -> Sign:
 ##
 
 
-def sum_mappings[K](*mappings: Mapping[K, TSupportsAdd]) -> Mapping[K, TSupportsAdd]:
+def sum_mappings[K, TSupportsAdd](
+    *mappings: Mapping[K, TSupportsAdd],
+) -> Mapping[K, TSupportsAdd]:
     """Sum the values of a set of mappings."""
     return reduce_mappings(add, mappings, initial=0)
 
@@ -1419,7 +1420,7 @@ def transpose(iterable: Iterable[tuple[Any]]) -> tuple[list[Any], ...]:  # pyrig
 ##
 
 
-def unique_everseen(
+def unique_everseen[T](
     iterable: Iterable[T], /, *, key: Callable[[T], Any] | None = None
 ) -> Iterator[T]:
     """Yield unique elements, preserving order."""
