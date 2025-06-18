@@ -95,7 +95,7 @@ class Dataclass(Protocol):
 
 
 # enum
-type EnumLike[_TEnum: Enum] = MaybeStr[_TEnum]
+type EnumLike[E: Enum] = MaybeStr[E]
 
 
 # ipaddress
