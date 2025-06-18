@@ -51,6 +51,7 @@ from utilities.typing import (
     is_union_type,
 )
 from utilities.version import ParseVersionError, Version, parse_version
+from utilities.whenever import Month
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -189,7 +190,16 @@ def _parse_object_type(
             raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(
         cls,
-        (Date, DateDelta, DateTimeDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime),
+        (
+            Date,
+            DateDelta,
+            DateTimeDelta,
+            Month,
+            PlainDateTime,
+            Time,
+            TimeDelta,
+            ZonedDateTime,
+        ),
     ):
         try:
             return cls.parse_common_iso(text)
@@ -453,7 +463,16 @@ def serialize_object(
         return str(obj)
     if isinstance(
         obj,
-        (Date, DateDelta, DateTimeDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime),
+        (
+            Date,
+            DateDelta,
+            DateTimeDelta,
+            Month,
+            PlainDateTime,
+            Time,
+            TimeDelta,
+            ZonedDateTime,
+        ),
     ):
         return obj.format_common_iso()
     if isinstance(obj, Enum):
