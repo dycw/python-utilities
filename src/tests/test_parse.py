@@ -45,6 +45,7 @@ from utilities.functions import ensure_path
 from utilities.hypothesis import (
     dates,
     int64s,
+    months,
     numbers,
     paths,
     plain_datetimes,
@@ -67,6 +68,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.text import parse_bool
 from utilities.types import Number
 from utilities.version import Version
+from utilities.whenever import Month
 
 
 class TestSerializeAndParseObject:
@@ -140,6 +142,12 @@ class TestSerializeAndParseObject:
     def test_literal(self, *, truth: Literal["true", "false"]) -> None:
         result = parse_object(TrueOrFalseFutureLit, truth)
         assert result == truth
+
+    @given(month=months())
+    def test_month(self, *, month: Month) -> None:
+        serialized = serialize_object(month)
+        result = parse_object(Month, serialized)
+        assert result == month
 
     def test_none(self) -> None:
         serialized = serialize_object(None)
