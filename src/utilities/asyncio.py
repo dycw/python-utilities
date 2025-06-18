@@ -220,10 +220,10 @@ class EnhancedQueue[T](Queue[T]):
 class EnhancedTaskGroup(TaskGroup):
     """Task group with enhanced features."""
 
-    _debug: bool
     _semaphore: Semaphore | None
     _timeout: TimeDelta | None
     _error: MaybeType[BaseException]
+    _debug: bool
     _stack: AsyncExitStack
     _timeout_cm: _AsyncGeneratorContextManager[None] | None
 
@@ -231,16 +231,16 @@ class EnhancedTaskGroup(TaskGroup):
     def __init__(
         self,
         *,
-        debug: bool = False,
         max_tasks: int | None = None,
         timeout: TimeDelta | None = None,
         error: MaybeType[BaseException] = TimeoutError,
+        debug: bool = False,
     ) -> None:
         super().__init__()
-        self._debug = debug
         self._semaphore = None if max_tasks is None else Semaphore(max_tasks)
         self._timeout = timeout
         self._error = error
+        self._debug = debug
         self._stack = AsyncExitStack()
         self._timeout_cm = None
 
