@@ -7,7 +7,6 @@ from textwrap import indent
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generic,
     Literal,
     TypeGuard,
     TypeVar,
@@ -24,10 +23,11 @@ from utilities.functions import get_class_name
 from utilities.iterables import OneNonUniqueError, one
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import THashable
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+
+    from utilities.types import THashable
 
 
 _T = TypeVar("_T")
@@ -155,8 +155,8 @@ def bucket_mapping(
 
 
 @dataclass(kw_only=True, slots=True)
-class BucketMappingError(Exception, Generic[THashable, _U]):
-    errors: Mapping[THashable, tuple[_U, _U]]
+class BucketMappingError[THashable, U](Exception):
+    errors: Mapping[THashable, tuple[U, U]]
 
     @override
     def __str__(self) -> str:
