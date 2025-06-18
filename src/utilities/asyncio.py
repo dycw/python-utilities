@@ -256,11 +256,11 @@ class EnhancedTaskGroup(TaskGroup):
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
+        _ = await self._stack.__aexit__(et, exc, tb)
         match self._debug:
             case True:
-                _ = await self._stack.__aexit__(et, exc, tb)
+                ...
             case False:
-                _ = await self._stack.__aexit__(et, exc, tb)
                 _ = await super().__aexit__(et, exc, tb)
             case _ as never:
                 assert_never(never)
