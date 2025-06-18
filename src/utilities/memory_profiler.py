@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from memory_profiler import memory_usage
 from typing_extensions import ParamSpec
@@ -15,14 +15,14 @@ _T = TypeVar("_T")
 
 
 @dataclass(kw_only=True, slots=True)
-class Output(Generic[_T]):
+class Output[T]:
     """A function output, and its memory usage."""
 
     value: _T
     memory: float
 
 
-def memory_profiled(func: Callable[_P, _T], /) -> Callable[_P, Output[_T]]:
+def memory_profiled[**P, T](func: Callable[_P, _T], /) -> Callable[_P, Output[_T]]:
     """Call a function, but also profile its maximum memory usage."""
 
     @wraps(func)

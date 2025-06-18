@@ -66,7 +66,7 @@ _T5 = TypeVar("_T5")
 ##
 
 
-def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
+def always_iterable[T](obj: MaybeIterable[_T], /) -> Iterable[_T]:
     """Typed version of `always_iterable`."""
     obj = cast("Any", obj)
     if isinstance(obj, str | bytes):
@@ -80,7 +80,7 @@ def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
 ##
 
 
-def always_iterable_hashable(
+def always_iterable_hashable[T](
     obj: MaybeIterable[_T] | None, /
 ) -> MaybeIterableHashable[_T] | None:
     """Ensure an object is always hashable."""
@@ -112,7 +112,7 @@ def apply_bijection(
 
 
 @dataclass(kw_only=True, slots=True)
-class ApplyBijectionError(Exception, Generic[_T]):
+class ApplyBijectionError[T](Exception):
     keys: list[_T]
     counts: Mapping[_T, int]
 
@@ -125,7 +125,7 @@ class _ApplyBijectionDuplicateKeysError(ApplyBijectionError[_T]):
 
 
 @dataclass(kw_only=True, slots=True)
-class _ApplyBijectionDuplicateValuesError(ApplyBijectionError[_T], Generic[_T, _U]):
+class _ApplyBijectionDuplicateValuesError[T, U](ApplyBijectionError[T]):
     values: list[_U]
 
     @override
@@ -136,7 +136,7 @@ class _ApplyBijectionDuplicateValuesError(ApplyBijectionError[_T], Generic[_T, _
 ##
 
 
-def apply_to_tuple(func: Callable[..., _T], args: tuple[Any, ...], /) -> _T:
+def apply_to_tuple[T](func: Callable[..., _T], args: tuple[Any, ...], /) -> _T:
     """Apply a function to a tuple of args."""
     return apply_to_varargs(func, *args)
 
@@ -144,7 +144,7 @@ def apply_to_tuple(func: Callable[..., _T], args: tuple[Any, ...], /) -> _T:
 ##
 
 
-def apply_to_varargs(func: Callable[..., _T], *args: Any) -> _T:
+def apply_to_varargs[T](func: Callable[..., _T], *args: Any) -> _T:
     """Apply a function to a variable number of arguments."""
     return func(*args)
 
@@ -153,14 +153,14 @@ def apply_to_varargs(func: Callable[..., _T], *args: Any) -> _T:
 
 
 @overload
-def chain_mappings(
+def chain_mappings[K, V](
     *mappings: Mapping[_K, _V], list: Literal[True]
 ) -> Mapping[_K, Sequence[_V]]: ...
 @overload
-def chain_mappings(
+def chain_mappings[K, V](
     *mappings: Mapping[_K, _V], list: bool = False
 ) -> Mapping[_K, Iterable[_V]]: ...
-def chain_mappings(
+def chain_mappings[K, V](
     *mappings: Mapping[_K, _V],
     list: bool = False,  # noqa: A002
 ) -> Mapping[_K, Iterable[_V]]:
@@ -189,7 +189,7 @@ def _chain_mappings_one(
 ##
 
 
-def chain_maybe_iterables(*maybe_iterables: MaybeIterable[_T]) -> Iterable[_T]:
+def chain_maybe_iterables[T](*maybe_iterables: MaybeIterable[_T]) -> Iterable[_T]:
     """Chain a set of maybe iterables."""
     iterables = map(always_iterable, maybe_iterables)
     return chain.from_iterable(iterables)
@@ -198,7 +198,7 @@ def chain_maybe_iterables(*maybe_iterables: MaybeIterable[_T]) -> Iterable[_T]:
 ##
 
 
-def chain_nullable(*maybe_iterables: Iterable[_T | None] | None) -> Iterable[_T]:
+def chain_nullable[T](*maybe_iterables: Iterable[_T | None] | None) -> Iterable[_T]:
     """Chain a set of values; ignoring nulls."""
     iterables = (mi for mi in maybe_iterables if mi is not None)
     values = ((i for i in it if i is not None) for it in iterables)
@@ -280,7 +280,7 @@ type _CheckIterablesEqualState = Literal["left_longer", "right_longer"]
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckIterablesEqualError(Exception, Generic[_T]):
+class CheckIterablesEqualError[T](Exception):
     left: list[_T]
     right: list[_T]
     errors: list[tuple[int, _T, _T]]
@@ -434,7 +434,7 @@ def check_mappings_equal(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckMappingsEqualError(Exception, Generic[_K, _V]):
+class CheckMappingsEqualError[K, V](Exception):
     left: Mapping[_K, _V]
     right: Mapping[_K, _V]
     left_extra: AbstractSet[_K]
@@ -484,7 +484,7 @@ def check_sets_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckSetsEqualError(Exception, Generic[_T]):
+class CheckSetsEqualError[T](Exception):
     left: AbstractSet[_T]
     right: AbstractSet[_T]
     left_extra: AbstractSet[_T]
@@ -531,7 +531,7 @@ def check_submapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> No
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckSubMappingError(Exception, Generic[_K, _V]):
+class CheckSubMappingError[K, V](Exception):
     left: Mapping[_K, _V]
     right: Mapping[_K, _V]
     extra: AbstractSet[_K]
@@ -570,7 +570,7 @@ def check_subset(left: Iterable[Any], right: Iterable[Any], /) -> None:
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckSubSetError(Exception, Generic[_T]):
+class CheckSubSetError[T](Exception):
     left: AbstractSet[_T]
     right: AbstractSet[_T]
     extra: AbstractSet[_T]
@@ -602,7 +602,7 @@ def check_supermapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> 
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckSuperMappingError(Exception, Generic[_K, _V]):
+class CheckSuperMappingError[K, V](Exception):
     left: Mapping[_K, _V]
     right: Mapping[_K, _V]
     extra: AbstractSet[_K]
@@ -641,7 +641,7 @@ def check_superset(left: Iterable[Any], right: Iterable[Any], /) -> None:
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckSuperSetError(Exception, Generic[_T]):
+class CheckSuperSetError[T](Exception):
     left: AbstractSet[_T]
     right: AbstractSet[_T]
     extra: AbstractSet[_T]
@@ -711,7 +711,7 @@ def cmp_nullable(x: TSupportsLT | None, y: TSupportsLT | None, /) -> Sign:
 ##
 
 
-def chunked(iterable: Iterable[_T], n: int, /) -> Iterator[Sequence[_T]]:
+def chunked[T](iterable: Iterable[_T], n: int, /) -> Iterator[Sequence[_T]]:
     """Break an iterable into lists of length n."""
     return iter(partial(take, n, iter(iterable)), [])
 
@@ -769,7 +769,7 @@ class EnsureIterableNotStrError(Exception):
 ##
 
 
-def expanding_window(iterable: Iterable[_T], /) -> islice[list[_T]]:
+def expanding_window[T](iterable: Iterable[_T], /) -> islice[list[_T]]:
     """Yield an expanding window over an iterable."""
 
     def func(acc: Iterable[_T], el: _T, /) -> list[_T]:
@@ -844,7 +844,7 @@ def ungroup_consecutive_integers(
 
 
 @overload
-def groupby_lists(
+def groupby_lists[T](
     iterable: Iterable[_T], /, *, key: None = None
 ) -> Iterator[tuple[_T, list[_T]]]: ...
 @overload
@@ -912,7 +912,7 @@ def map_mapping(
 ##
 
 
-def merge_mappings(*mappings: Mapping[_K, _V]) -> Mapping[_K, _V]:
+def merge_mappings[K, V](*mappings: Mapping[_K, _V]) -> Mapping[_K, _V]:
     """Merge a set of mappings."""
     return reduce(or_, map(dict, mappings), {})
 
@@ -920,7 +920,7 @@ def merge_mappings(*mappings: Mapping[_K, _V]) -> Mapping[_K, _V]:
 ##
 
 
-def merge_sets(*iterables: Iterable[_T]) -> AbstractSet[_T]:
+def merge_sets[T](*iterables: Iterable[_T]) -> AbstractSet[_T]:
     """Merge a set of sets."""
     return reduce(or_, map(set, iterables), set())
 
@@ -967,7 +967,7 @@ class MergeStrMappingsError(Exception):
 ##
 
 
-def one(*iterables: Iterable[_T]) -> _T:
+def one[T](*iterables: Iterable[_T]) -> _T:
     """Return the unique value in a set of iterables."""
     it = iter(chain(*iterables))
     try:
@@ -982,7 +982,7 @@ def one(*iterables: Iterable[_T]) -> _T:
 
 
 @dataclass(kw_only=True, slots=True)
-class OneError(Exception, Generic[_T]):
+class OneError[T](Exception):
     iterables: tuple[Iterable[_T], ...]
 
 
@@ -994,7 +994,7 @@ class OneEmptyError(OneError[_T]):
 
 
 @dataclass(kw_only=True, slots=True)
-class OneNonUniqueError(OneError, Generic[_T]):
+class OneNonUniqueError[T](OneError):
     first: _T
     second: _T
 
@@ -1006,7 +1006,7 @@ class OneNonUniqueError(OneError, Generic[_T]):
 ##
 
 
-def one_maybe(*objs: MaybeIterable[_T]) -> _T:
+def one_maybe[T](*objs: MaybeIterable[_T]) -> _T:
     """Return the unique value in a set of values/iterables."""
     try:
         return one(chain_maybe_iterables(*objs))
@@ -1030,7 +1030,7 @@ class OneMaybeEmptyError(OneMaybeError):
 
 
 @dataclass(kw_only=True, slots=True)
-class OneMaybeNonUniqueError(OneMaybeError, Generic[_T]):
+class OneMaybeNonUniqueError[T](OneMaybeError):
     objs: tuple[MaybeIterable[_T], ...]
     first: _T
     second: _T
@@ -1170,7 +1170,7 @@ class OneUniqueNonUniqueError(OneUniqueError, Generic[THashable]):
 ##
 
 
-def pairwise_tail(iterable: Iterable[_T], /) -> Iterator[tuple[_T, _T | Sentinel]]:
+def pairwise_tail[T](iterable: Iterable[_T], /) -> Iterator[tuple[_T, _T | Sentinel]]:
     """Return pairwise elements, with the last paired with the sentinel."""
     return pairwise(chain(iterable, [sentinel]))
 
@@ -1178,7 +1178,9 @@ def pairwise_tail(iterable: Iterable[_T], /) -> Iterator[tuple[_T, _T | Sentinel
 ##
 
 
-def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterator[Mapping[_K, _V]]:
+def product_dicts[K, V](
+    mapping: Mapping[_K, Iterable[_V]], /
+) -> Iterator[Mapping[_K, _V]]:
     """Return the cartesian product of the values in a mapping, as mappings."""
     keys = list(mapping)
     for values in product(*mapping.values()):
@@ -1287,7 +1289,7 @@ def resolve_include_and_exclude(
 
 
 @dataclass(kw_only=True, slots=True)
-class ResolveIncludeAndExcludeError(Exception, Generic[_T]):
+class ResolveIncludeAndExcludeError[T](Exception):
     include: Iterable[_T]
     exclude: Iterable[_T]
 
@@ -1302,7 +1304,7 @@ class ResolveIncludeAndExcludeError(Exception, Generic[_T]):
 ##
 
 
-def sort_iterable(iterable: Iterable[_T], /) -> list[_T]:
+def sort_iterable[T](iterable: Iterable[_T], /) -> list[_T]:
     """Sort an iterable across types."""
     return sorted(iterable, key=cmp_to_key(_sort_iterable_cmp))
 
@@ -1385,7 +1387,7 @@ def _sort_iterable_cmp_floats(x: float, y: float, /) -> Sign:
 ##
 
 
-def sum_mappings(*mappings: Mapping[_K, TSupportsAdd]) -> Mapping[_K, TSupportsAdd]:
+def sum_mappings[K](*mappings: Mapping[_K, TSupportsAdd]) -> Mapping[_K, TSupportsAdd]:
     """Sum the values of a set of mappings."""
     return reduce_mappings(add, mappings, initial=0)
 
@@ -1393,7 +1395,7 @@ def sum_mappings(*mappings: Mapping[_K, TSupportsAdd]) -> Mapping[_K, TSupportsA
 ##
 
 
-def take(n: int, iterable: Iterable[_T], /) -> Sequence[_T]:
+def take[T](n: int, iterable: Iterable[_T], /) -> Sequence[_T]:
     """Return first n items of the iterable as a list."""
     return list(islice(iterable, n))
 
@@ -1402,21 +1404,21 @@ def take(n: int, iterable: Iterable[_T], /) -> Sequence[_T]:
 
 
 @overload
-def transpose(iterable: Iterable[tuple[_T1]], /) -> tuple[list[_T1]]: ...
+def transpose[T1](iterable: Iterable[tuple[_T1]], /) -> tuple[list[_T1]]: ...
 @overload
-def transpose(
+def transpose[T1, T2](
     iterable: Iterable[tuple[_T1, _T2]], /
 ) -> tuple[list[_T1], list[_T2]]: ...
 @overload
-def transpose(
+def transpose[T1, T2, T3](
     iterable: Iterable[tuple[_T1, _T2, _T3]], /
 ) -> tuple[list[_T1], list[_T2], list[_T3]]: ...
 @overload
-def transpose(
+def transpose[T1, T2, T3, T4](
     iterable: Iterable[tuple[_T1, _T2, _T3, _T4]], /
 ) -> tuple[list[_T1], list[_T2], list[_T3], list[_T4]]: ...
 @overload
-def transpose(
+def transpose[T1, T2, T3, T4, T5](
     iterable: Iterable[tuple[_T1, _T2, _T3, _T4, _T5]], /
 ) -> tuple[list[_T1], list[_T2], list[_T3], list[_T4], list[_T5]]: ...
 def transpose(iterable: Iterable[tuple[Any]]) -> tuple[list[Any], ...]:  # pyright: ignore[reportInconsistentOverload]

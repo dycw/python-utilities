@@ -383,7 +383,7 @@ class ZonedDateTime(ParamType):
 # parameters - frozenset
 
 
-class FrozenSetParameter(ParamType, Generic[_TParam, _T]):
+class FrozenSetParameter[TParam: ParamType, T](ParamType):
     """A frozenset-valued parameter."""
 
     @override
@@ -468,7 +468,7 @@ class FrozenSetStrs(FrozenSetParameter[StringParamType, str]):
 # parameters - list
 
 
-class ListParameter(ParamType, Generic[_TParam, _T]):
+class ListParameter[TParam: ParamType, T](ParamType):
     """A list-valued parameter."""
 
     @override

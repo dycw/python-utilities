@@ -24,7 +24,7 @@ _T = TypeVar("_T")
 type _ExceptionBehaviour = Literal["ignore", "immediate", "deferred"]
 
 
-def pqdm_map(
+def pqdm_map[T](
     func: Callable[..., _T],
     /,
     *iterables: Iterable[Any],
@@ -50,7 +50,7 @@ def pqdm_map(
     )
 
 
-def pqdm_starmap(
+def pqdm_starmap[T](
     func: Callable[..., _T],
     iterable: Iterable[tuple[Any, ...]],
     /,

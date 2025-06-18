@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Generic, Self, TypedDict, TypeVar, override
+from typing import TYPE_CHECKING, Self, TypedDict, TypeVar, override
 from zoneinfo import ZoneInfo
 
 from whenever import Date, DateDelta, TimeDelta, ZonedDateTime
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 _TPeriod = TypeVar("_TPeriod", Date, ZonedDateTime)
 
 
-class _PeriodAsDict(TypedDict, Generic[_TPeriod]):
+class _PeriodAsDict[TPeriod: (Date, ZonedDateTime)](TypedDict):
     start: _TPeriod
     end: _TPeriod
 
@@ -132,7 +132,7 @@ class PeriodError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
-class _PeriodInvalidError(PeriodError, Generic[_TPeriod]):
+class _PeriodInvalidError[TPeriod: (Date, ZonedDateTime)](PeriodError):
     start: _TPeriod
     end: _TPeriod
 

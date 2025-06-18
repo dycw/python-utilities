@@ -194,7 +194,7 @@ def partition_typeguard(
 ##
 
 
-class peekable(_peekable, Generic[_T]):  # noqa: N801
+class peekable[T](_peekable):  # noqa: N801
     """Peekable which supports dropwhile/takewhile methods."""
 
     def __init__(self, iterable: Iterable[_T], /) -> None:
@@ -232,7 +232,7 @@ class peekable(_peekable, Generic[_T]):  # noqa: N801
 
 
 @dataclass(kw_only=True, slots=True)
-class Split(Generic[_T]):
+class Split[T]:
     """An iterable split into head/tail."""
 
     head: _T
@@ -250,7 +250,7 @@ class Split(Generic[_T]):
         return f"{cls}(\n{joined}\n)"
 
 
-def yield_splits(
+def yield_splits[T](
     iterable: Iterable[_T],
     head: int,
     tail: int,
@@ -267,7 +267,7 @@ def yield_splits(
     return islice(it3, 0, None, freq_use)
 
 
-def _yield_splits1(
+def _yield_splits1[T](
     iterable: Iterable[_T], total: int, /
 ) -> Iterator[tuple[Literal["head", "body"], Sequence[_T]]]:
     peek = peekable(iterable)
@@ -283,7 +283,7 @@ def _yield_splits1(
             break
 
 
-def _yield_splits2(
+def _yield_splits2[T](
     iterable: Iterable[tuple[Literal["head", "body"], Sequence[_T]],],
     head: int,
     tail: int,
@@ -307,7 +307,7 @@ def _yield_splits2(
                 assert_never(never)
 
 
-def _yield_splits3(
+def _yield_splits3[T](
     iterable: Iterable[tuple[Iterable[_T], int, int]], /
 ) -> Iterator[Split[Sequence[_T]]]:
     for window, len_head, len_tail in iterable:

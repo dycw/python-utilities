@@ -54,7 +54,7 @@ def get_state(*, seed: Seed | None = None) -> Random:
 
 
 ##
-def shuffle(iterable: Iterable[_T], /, *, seed: Seed | None = None) -> list[_T]:
+def shuffle[T](iterable: Iterable[_T], /, *, seed: Seed | None = None) -> list[_T]:
     """Shuffle an iterable."""
     copy = list(iterable).copy()
     state = get_state(seed=seed)

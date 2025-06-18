@@ -755,7 +755,7 @@ class _ParseDataClassMissingValuesError(ParseDataClassError[TDataclass]):
 ##
 
 
-def str_mapping_to_field_mapping(
+def str_mapping_to_field_mapping[T](
     cls: type[TDataclass],
     mapping: Mapping[str, _T],
     /,
@@ -913,7 +913,7 @@ def yield_fields(
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
-class _YieldFieldsInstance(Generic[_T]):
+class _YieldFieldsInstance[T]:
     name: str
     value: _T = field(hash=False)
     type_: Any = field(hash=False)
@@ -974,7 +974,7 @@ class _YieldFieldsInstance(Generic[_T]):
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
-class _YieldFieldsClass(Generic[_T]):
+class _YieldFieldsClass[T]:
     name: str
     type_: Any = field(hash=False)
     default: _T | Sentinel = field(default=sentinel, hash=False)

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import auto
 from operator import attrgetter
 from re import search
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
 import whenever
 from click import ParamType, argument, command, echo, option
@@ -175,7 +175,7 @@ class _ExampleEnum(enum.Enum):
     c = auto()
 
 
-def _lift_serializer(
+def _lift_serializer[T](
     serializer: Callable[[_T], str], /, *, sort: bool = False
 ) -> Callable[[Iterable[_T]], str]:
     def wrapped(values: Iterable[_T], /) -> str:
@@ -185,7 +185,7 @@ def _lift_serializer(
 
 
 @dataclass(kw_only=True, slots=True)
-class _Case(Generic[_T]):
+class _Case[T]:
     param: ParamType
     name: str
     repr: str | None = None

@@ -33,7 +33,6 @@ from sys import stderr, stdout
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generic,
     Self,
     TextIO,
     TypeVar,
@@ -321,7 +320,7 @@ class _LooperNoTaskError(LooperError):
 
 
 @dataclass(kw_only=True, unsafe_hash=True)
-class Looper(Generic[_T]):
+class Looper[T]:
     """A looper of a core coroutine, handling errors."""
 
     auto_start: bool = field(default=False, repr=False)
@@ -903,7 +902,7 @@ def get_event(
 ##
 
 
-async def get_items(queue: Queue[_T], /, *, max_size: int | None = None) -> list[_T]:
+async def get_items[T](queue: Queue[_T], /, *, max_size: int | None = None) -> list[_T]:
     """Get items from a queue; if empty then wait."""
     try:
         items = [await queue.get()]
@@ -916,7 +915,9 @@ async def get_items(queue: Queue[_T], /, *, max_size: int | None = None) -> list
     return items
 
 
-def get_items_nowait(queue: Queue[_T], /, *, max_size: int | None = None) -> list[_T]:
+def get_items_nowait[T](
+    queue: Queue[_T], /, *, max_size: int | None = None
+) -> list[_T]:
     """Get items from a queue; no waiting."""
     items: list[_T] = []
     if max_size is None:

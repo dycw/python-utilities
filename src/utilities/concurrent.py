@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 
 
-def concurrent_map(
+def concurrent_map[T](
     func: Callable[..., _T],
     /,
     *iterables: Iterable[Any],
@@ -51,7 +51,7 @@ def concurrent_map(
 ##
 
 
-def concurrent_starmap(
+def concurrent_starmap[T](
     func: Callable[..., _T],
     iterable: Iterable[tuple[Any, ...]],
     /,

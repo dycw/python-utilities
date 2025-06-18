@@ -957,7 +957,7 @@ def _is_pair_of_tuple_or_str_mapping_and_table(
     return _is_pair_with_predicate_and_table(obj, is_tuple_or_str_mapping)
 
 
-def _is_pair_with_predicate_and_table(
+def _is_pair_with_predicate_and_table[T](
     obj: Any, predicate: Callable[[Any], TypeGuard[_T]], /
 ) -> TypeGuard[tuple[_T, TableOrORMInstOrClass]]:
     """Check if an object is pair and a table."""

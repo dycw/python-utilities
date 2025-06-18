@@ -84,7 +84,7 @@ def _make_converter(
 _BASE_DIR: Path = Path()
 
 
-def load_settings(
+def load_settings[T](
     cls: type[_T],
     app_name: str,
     /,

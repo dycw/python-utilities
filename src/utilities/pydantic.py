@@ -22,7 +22,9 @@ class HashableBaseModel(BaseModel):
         return hash((type(self), *self.__dict__.values()))
 
 
-def load_model(model: type[_TBaseModel], path: PathLike, /) -> _TBaseModel:
+def load_model[TBaseModel: BaseModel](
+    model: type[_TBaseModel], path: PathLike, /
+) -> _TBaseModel:
     path = Path(path)
     try:
         with path.open() as fh:

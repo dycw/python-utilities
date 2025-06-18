@@ -53,7 +53,7 @@ _TEvent = TypeVar("_TEvent", bound=Event)
 ##
 
 
-def add_listener(
+def add_listener[TEvent: Event](
     event: _TEvent,
     listener: Callable[..., MaybeCoroutine1[None]],
     /,

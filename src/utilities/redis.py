@@ -9,7 +9,6 @@ from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generic,
     Literal,
     Self,
     TypedDict,
@@ -74,7 +73,7 @@ _PUBLISH_TIMEOUT: TimeDelta = SECOND
 
 
 @dataclass(kw_only=True)
-class RedisHashMapKey(Generic[_K, _V]):
+class RedisHashMapKey[K, V]:
     """A hashmap key in a redis store."""
 
     name: str
@@ -356,7 +355,7 @@ def redis_hash_map_key(
     error: type[Exception] = TimeoutError,
     ttl: TimeDelta | None = None,
 ) -> RedisHashMapKey[_K, _V]: ...
-def redis_hash_map_key(
+def redis_hash_map_key[K, V](
     name: str,
     key: TypeLike[_K],
     value: TypeLike[_V],
@@ -389,7 +388,7 @@ def redis_hash_map_key(
 
 
 @dataclass(kw_only=True)
-class RedisKey(Generic[_T]):
+class RedisKey[T]:
     """A key in a redis store."""
 
     name: str
@@ -518,7 +517,7 @@ def redis_key(
     error: type[Exception] = TimeoutError,
     ttl: TimeDelta | None = None,
 ) -> RedisKey[_T]: ...
-def redis_key(
+def redis_key[T](
     name: str,
     type_: TypeLike[_T],
     /,
@@ -643,7 +642,7 @@ class PublishService(Looper[tuple[str, _T]]):
 
 
 @dataclass(kw_only=True)
-class PublishServiceMixin(Generic[_T]):
+class PublishServiceMixin[T]:
     """Mix-in for the publish service."""
 
     # base - looper
@@ -922,7 +921,7 @@ class SubscribeService(Looper[_T]):
 
 
 @dataclass(kw_only=True)
-class SubscribeServiceMixin(Generic[_T]):
+class SubscribeServiceMixin[T]:
     """Mix-in for the subscribe service."""
 
     # base - looper
@@ -1037,7 +1036,7 @@ def _serialize(obj: _T, /, *, serializer: Callable[[_T], bytes] | None = None) -
     return serializer_use(obj)  # skipif-ci-and-not-linux
 
 
-def _deserialize(
+def _deserialize[T](
     data: bytes, /, *, deserializer: Callable[[bytes], _T] | None = None
 ) -> _T:
     if deserializer is None:  # skipif-ci-and-not-linux

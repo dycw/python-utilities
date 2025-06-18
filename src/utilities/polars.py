@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generic,
     Literal,
     TypeVar,
     assert_never,
@@ -286,7 +285,7 @@ def append_dataclass(df: DataFrame, obj: Dataclass, /) -> DataFrame:
 
 
 @dataclass(kw_only=True, slots=True)
-class AppendDataClassError(Exception, Generic[_T]):
+class AppendDataClassError[T](Exception):
     left: AbstractSet[_T]
     right: AbstractSet[_T]
     extra: AbstractSet[_T]

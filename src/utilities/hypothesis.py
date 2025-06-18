@@ -288,7 +288,7 @@ def dates(
 
 
 @overload
-def draw2(
+def draw2[T](
     data_or_draw: DataObject | DrawFn,
     maybe_strategy: MaybeSearchStrategy[_T],
     /,
@@ -628,7 +628,7 @@ def int64s(
 
 
 @composite
-def lists_fixed_length(
+def lists_fixed_length[T](
     draw: DrawFn,
     strategy: SearchStrategy[_T],
     size: MaybeSearchStrategy[int],
@@ -737,7 +737,7 @@ def numbers(
 ##
 
 
-def pairs(
+def pairs[T](
     strategy: SearchStrategy[_T],
     /,
     *,
@@ -748,7 +748,7 @@ def pairs(
     return lists_fixed_length(strategy, 2, unique=unique, sorted=sorted).map(_pairs_map)
 
 
-def _pairs_map(elements: list[_T], /) -> tuple[_T, _T]:
+def _pairs_map[T](elements: list[_T], /) -> tuple[_T, _T]:
     first, second = elements
     return first, second
 
@@ -824,7 +824,7 @@ def sentinels() -> SearchStrategy[Sentinel]:
 
 
 @composite
-def sets_fixed_length(
+def sets_fixed_length[T](
     draw: DrawFn, strategy: SearchStrategy[_T], size: MaybeSearchStrategy[int], /
 ) -> set[_T]:
     """Strategy for generating lists of a fixed length."""
@@ -1177,7 +1177,7 @@ def times(
 ##
 
 
-def triples(
+def triples[T](
     strategy: SearchStrategy[_T],
     /,
     *,
@@ -1190,7 +1190,7 @@ def triples(
     )
 
 
-def _triples_map(elements: list[_T], /) -> tuple[_T, _T, _T]:
+def _triples_map[T](elements: list[_T], /) -> tuple[_T, _T, _T]:
     first, second, third = elements
     return first, second, third
 
