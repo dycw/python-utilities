@@ -17,7 +17,6 @@ from types import (
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generic,
     Literal,
     TypeGuard,
     TypeVar,
@@ -26,7 +25,6 @@ from typing import (
     override,
 )
 
-from typing_extensions import ParamSpec
 from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
 from utilities.reprlib import get_repr, get_repr_and_class
@@ -47,7 +45,6 @@ if TYPE_CHECKING:
     from collections.abc import Container, Hashable, Sized
 
 
-_P = ParamSpec("_P")
 _T = TypeVar("_T")
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
@@ -913,7 +910,7 @@ def min_nullable[U](
 
 
 @dataclass(kw_only=True, slots=True)
-class MinNullableError(Exception, Generic[TSupportsRichComparison]):
+class MinNullableError[TSupportsRichComparison](Exception):
     values: Iterable[TSupportsRichComparison]
 
     @override
@@ -922,19 +919,19 @@ class MinNullableError(Exception, Generic[TSupportsRichComparison]):
 
 
 @overload
-def max_nullable(
+def max_nullable[TSupportsRichComparison](
     iterable: Iterable[TSupportsRichComparison | None], /, *, default: Sentinel = ...
 ) -> TSupportsRichComparison: ...
 @overload
-def max_nullable[U](
-    iterable: Iterable[TSupportsRichComparison | None], /, *, default: _U = ...
-) -> TSupportsRichComparison | _U: ...
-def max_nullable[U](
+def max_nullable[TSupportsRichComparison, U](
+    iterable: Iterable[TSupportsRichComparison | None], /, *, default: U = ...
+) -> TSupportsRichComparison | U: ...
+def max_nullable[TSupportsRichComparison, U](
     iterable: Iterable[TSupportsRichComparison | None],
     /,
     *,
-    default: _U | Sentinel = sentinel,
-) -> TSupportsRichComparison | _U:
+    default: U | Sentinel = sentinel,
+) -> TSupportsRichComparison | U:
     """Compute the maximum of a set of values; ignoring nulls."""
     values = (i for i in iterable if i is not None)
     if isinstance(default, Sentinel):
@@ -946,7 +943,7 @@ def max_nullable[U](
 
 
 @dataclass(kw_only=True, slots=True)
-class MaxNullableError(Exception, Generic[TSupportsRichComparison]):
+class MaxNullableError[TSupportsRichComparison](Exception):
     values: Iterable[TSupportsRichComparison]
 
     @override
@@ -957,11 +954,11 @@ class MaxNullableError(Exception, Generic[TSupportsRichComparison]):
 ##
 
 
-def not_func[**P](func: Callable[_P, bool], /) -> Callable[_P, bool]:
+def not_func[**P](func: Callable[P, bool], /) -> Callable[P, bool]:
     """Lift a boolean-valued function to return its conjugation."""
 
     @wraps(func)
-    def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> bool:
+    def wrapped(*args: P.args, **kwargs: P.kwargs) -> bool:
         return not func(*args, **kwargs)
 
     return wrapped
@@ -970,7 +967,7 @@ def not_func[**P](func: Callable[_P, bool], /) -> Callable[_P, bool]:
 ##
 
 
-def second[U](pair: tuple[Any, _U], /) -> _U:
+def second[U](pair: tuple[Any, U], /) -> U:
     """Get the second element in a pair."""
     return pair[1]
 
