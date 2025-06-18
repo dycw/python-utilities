@@ -12,11 +12,11 @@ from utilities.arq import Worker, cron_raw, job_enqueuer
 from utilities.iterables import one
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from arq.typing import WorkerCoroutine
 
-    from utilities.types import CallableCoro
+    from utilities.types import Coro
 
 
 class TestCronRaw:
@@ -51,7 +51,7 @@ class TestWorker:
             return x + y
 
         class Example(Worker):
-            functions_raw: Sequence[CallableCoro[Any]] = [func]
+            functions_raw: Sequence[Callable[..., Coro[Any]]] = [func]
 
         func_use = cast("WorkerCoroutine", one(Example.functions))
         result = await func_use({}, x, y)
