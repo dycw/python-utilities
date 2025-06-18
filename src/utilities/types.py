@@ -75,12 +75,6 @@ type MaybeCoro[T] = T | Coro[T]
 
 # callable
 type CallableOf[T] = Callable[..., T]
-type CallableOfCoro[T] = CallableOf[Coro[T]]
-type CallableOfCoroNone = CallableOfCoro[None]
-type CallableOfMaybeCoro[T] = CallableOf[MaybeCoro[T]]
-type CallableOfMaybeCoroNone = CallableOfMaybeCoro[None]
-type FullCallable[**P, T] = Callable[P, T]
-type FullCallableCoroutine[**P, T] = FullCallable[P, Coro[T]]
 
 
 # concurrent
@@ -249,10 +243,6 @@ type TimeZoneLike = (
 
 __all__ = [
     "CallableOf",
-    "CallableOfCoro",
-    "CallableOfCoroNone",
-    "CallableOfMaybeCoro",
-    "CallableOfMaybeCoroNone",
     "Coro",
     "Dataclass",
     "DateDeltaLike",
@@ -262,8 +252,6 @@ __all__ = [
     "DateTimeRoundUnit",
     "EnumLike",
     "ExcInfo",
-    "FullCallable",
-    "FullCallableCoroutine",
     "IPv4AddressLike",
     "IPv6AddressLike",
     "IterableHashable",
