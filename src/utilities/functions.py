@@ -25,9 +25,6 @@ from utilities.types import (
     Number,
     StrMapping,
     SupportsRichComparison,
-    TCallable,
-    TCallable1,
-    TCallable2,
     TupleOrStrMapping,
     TypeLike,
 )
@@ -36,14 +33,14 @@ if TYPE_CHECKING:
     from collections.abc import Container, Hashable, Sized
 
 
-def apply_decorators(
-    func: TCallable1, /, *decorators: Callable[[TCallable2], TCallable2]
-) -> TCallable1:
+def apply_decorators[F1: Callable, F2: Callable](
+    func: F1, /, *decorators: Callable[[F2], F2]
+) -> F1:
     """Apply a set of decorators to a function."""
     return reduce(_apply_decorators_one, decorators, func)
 
 
-def _apply_decorators_one(acc: TCallable, el: Callable[[Any], Any], /) -> TCallable:
+def _apply_decorators_one[F: Callable](acc: F, el: Callable[[Any], Any], /) -> F:
     return el(acc)
 
 
@@ -876,8 +873,8 @@ def min_nullable[T: SupportsRichComparison, U](
 
 
 @dataclass(kw_only=True, slots=True)
-class MinNullableError[TSupportsRichComparison](Exception):
-    values: Iterable[TSupportsRichComparison]
+class MinNullableError[T: SupportsRichComparison](Exception):
+    values: Iterable[T]
 
     @override
     def __str__(self) -> str:
@@ -885,19 +882,16 @@ class MinNullableError[TSupportsRichComparison](Exception):
 
 
 @overload
-def max_nullable[TSupportsRichComparison](
-    iterable: Iterable[TSupportsRichComparison | None], /, *, default: Sentinel = ...
-) -> TSupportsRichComparison: ...
+def max_nullable[T: SupportsRichComparison](
+    iterable: Iterable[T | None], /, *, default: Sentinel = ...
+) -> T: ...
 @overload
-def max_nullable[TSupportsRichComparison, U](
-    iterable: Iterable[TSupportsRichComparison | None], /, *, default: U = ...
-) -> TSupportsRichComparison | U: ...
-def max_nullable[TSupportsRichComparison, U](
-    iterable: Iterable[TSupportsRichComparison | None],
-    /,
-    *,
-    default: U | Sentinel = sentinel,
-) -> TSupportsRichComparison | U:
+def max_nullable[T: SupportsRichComparison, U](
+    iterable: Iterable[T | None], /, *, default: U = ...
+) -> T | U: ...
+def max_nullable[T: SupportsRichComparison, U](
+    iterable: Iterable[T | None], /, *, default: U | Sentinel = sentinel
+) -> T | U:
     """Compute the maximum of a set of values; ignoring nulls."""
     values = (i for i in iterable if i is not None)
     if isinstance(default, Sentinel):
