@@ -3,16 +3,7 @@ from __future__ import annotations
 from asyncio import iscoroutinefunction
 from dataclasses import dataclass
 from functools import wraps
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    Self,
-    TypeVar,
-    assert_never,
-    cast,
-    override,
-)
+from typing import TYPE_CHECKING, Any, Self, assert_never, cast, override
 
 from eventkit import (
     Constant,
@@ -39,32 +30,35 @@ from eventkit import (
 from utilities.functions import apply_decorators
 from utilities.iterables import always_iterable
 from utilities.logging import get_logger
-from utilities.types import TCallable, TCallableMaybeCoroutine1None, TypeLike
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from utilities.types import Coroutine1, LoggerOrName, MaybeCoroutine1, MaybeIterable
-
-
-_TEvent = TypeVar("_TEvent", bound=Event)
+    from utilities.types import (
+        Coroutine1,
+        LoggerOrName,
+        MaybeCoroutine1,
+        MaybeIterable,
+        TCallable,
+        TypeLike,
+    )
 
 
 ##
 
 
-def add_listener[TEvent: Event](
-    event: _TEvent,
+def add_listener[E: Event, F: Callable](
+    event: E,
     listener: Callable[..., MaybeCoroutine1[None]],
     /,
     *,
     error: Callable[[Event, BaseException], MaybeCoroutine1[None]] | None = None,
     ignore: TypeLike[BaseException] | None = None,
     logger: LoggerOrName | None = None,
-    decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
+    decorators: MaybeIterable[Callable[[F], F]] | None = None,
     done: Callable[..., MaybeCoroutine1[None]] | None = None,
     keep_ref: bool = False,
-) -> _TEvent:
+) -> E:
     """Connect a listener to an event."""
     lifted = lift_listener(
         listener,
@@ -74,14 +68,14 @@ def add_listener[TEvent: Event](
         logger=logger,
         decorators=decorators,
     )
-    return cast("_TEvent", event.connect(lifted, done=done, keep_ref=keep_ref))
+    return event.connect(lifted, done=done, keep_ref=keep_ref)
 
 
 ##
 
 
 @dataclass(repr=False, kw_only=True)
-class LiftedEvent(Generic[TCallableMaybeCoroutine1None]):
+class LiftedEvent[F: Callable[..., MaybeCoroutine1[None]]]:
     """A lifted version of `Event`."""
 
     event: Event
@@ -100,7 +94,7 @@ class LiftedEvent(Generic[TCallableMaybeCoroutine1None]):
 
     def connect(
         self,
-        listener: TCallableMaybeCoroutine1None,
+        listener: F,
         /,
         *,
         error: Callable[[Event, BaseException], MaybeCoroutine1[None]] | None = None,
@@ -256,13 +250,13 @@ class LiftedEvent(Generic[TCallableMaybeCoroutine1None]):
 ##
 
 
-class TypedEvent(Event, Generic[TCallableMaybeCoroutine1None]):
+class TypedEvent[F: Callable[..., MaybeCoroutine1[None]]](Event):
     """A typed version of `Event`."""
 
     @override
     def connect(
         self,
-        listener: TCallableMaybeCoroutine1None,
+        listener: F,
         error: Callable[[Self, BaseException], MaybeCoroutine1[None]] | None = None,
         done: Callable[[Self], MaybeCoroutine1[None]] | None = None,
         keep_ref: bool = False,
