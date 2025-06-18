@@ -56,7 +56,7 @@ operator = ["polars-lts-cpu"]
 optuna = ["optuna >= 4.4.0, < 4.5"]
 orjson = ["orjson >= 3.10.18, < 3.11"]
 orjson-test = ["polars-lts-cpu"]
-polars = ["polars >= 1.30.0, < 1.31", "polars-lts-cpu >= 1.30.0, < 1.31"]
+polars = ["polars-lts-cpu >= 1.31.0, < 1.32"]
 polars-ols = ["polars-ols >= 0.3.5, < 0.4"]
 polars-ols-test = ["scikit-learn"]
 polars-test = ["numpy", "statsmodels"]
@@ -89,7 +89,7 @@ sqlalchemy-polars = ["sqlalchemy", "polars-lts-cpu"]
 sqlalchemy-polars-test = ["aiosqlite", "asyncpg", "greenlet"]
 sqlalchemy-test = ["aiosqlite", "asyncpg", "greenlet"]
 statsmodels = ["statsmodels >= 0.14.4, < 0.15"]
-streamlit = ["streamlit >= 1.45.0, < 1.46"]
+streamlit = ["streamlit >= 1.46.0, < 1.47"]
 typed-settings = ["typed-settings >= 24.6.0, < 24.7"]
 tzdata = ["tzdata >= 2025.2, < 2025.3"]
 
@@ -105,7 +105,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.135.0"
+version = "0.134.5"
 
 [project.optional-dependencies]
 logging = [
@@ -132,7 +132,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.135.0"
+current_version = "0.134.5"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
