@@ -34,14 +34,7 @@ from utilities.logging import get_logger
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from utilities.types import (
-        Coro,
-        LoggerOrName,
-        MaybeCoro,
-        MaybeIterable,
-        TCallable,
-        TypeLike,
-    )
+    from utilities.types import Coro, LoggerOrName, MaybeCoro, MaybeIterable, TypeLike
 
 
 ##
@@ -92,7 +85,7 @@ class LiftedEvent[F: Callable[..., MaybeCoro[None]]]:
     def value(self) -> Any:
         return self.event.value()  # pragma: no cover
 
-    def connect(
+    def connect[F2: Callable](
         self,
         listener: F,
         /,
@@ -100,7 +93,7 @@ class LiftedEvent[F: Callable[..., MaybeCoro[None]]]:
         error: Callable[[Event, BaseException], MaybeCoro[None]] | None = None,
         ignore: TypeLike[BaseException] | None = None,
         logger: LoggerOrName | None = None,
-        decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
+        decorators: MaybeIterable[Callable[[F2], F2]] | None = None,
         done: Callable[..., MaybeCoro[None]] | None = None,
         keep_ref: bool = False,
     ) -> Event:
@@ -254,7 +247,7 @@ class TypedEvent[F: Callable[..., MaybeCoro[None]]](Event):
     """A typed version of `Event`."""
 
     @override
-    def connect(
+    def connect[F2: Callable](
         self,
         listener: F,
         error: Callable[[Self, BaseException], MaybeCoro[None]] | None = None,
@@ -263,7 +256,7 @@ class TypedEvent[F: Callable[..., MaybeCoro[None]]](Event):
         *,
         ignore: TypeLike[BaseException] | None = None,
         logger: LoggerOrName | None = None,
-        decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
+        decorators: MaybeIterable[Callable[[F2], F2]] | None = None,
     ) -> Self:
         lifted = lift_listener(
             listener,
@@ -283,16 +276,16 @@ class TypedEvent[F: Callable[..., MaybeCoro[None]]](Event):
 ##
 
 
-def lift_listener(
-    listener: Callable[..., MaybeCoro[None]],
+def lift_listener[F1: Callable[..., MaybeCoro[None]], F2: Callable](
+    listener: F1,
     event: Event,
     /,
     *,
     error: Callable[[Event, BaseException], MaybeCoro[None]] | None = None,
     ignore: TypeLike[BaseException] | None = None,
     logger: LoggerOrName | None = None,
-    decorators: MaybeIterable[Callable[[TCallable], TCallable]] | None = None,
-) -> Callable[..., MaybeCoro[None]]:
+    decorators: MaybeIterable[Callable[[F2], F2]] | None = None,
+) -> F1:
     match error, bool(iscoroutinefunction(listener)):
         case None, False:
             listener_typed = cast("Callable[..., None]", listener)
@@ -373,7 +366,7 @@ def lift_listener(
 
     if decorators is not None:
         lifted = apply_decorators(lifted, *always_iterable(decorators))
-    return lifted
+    return cast("F1", lifted)
 
 
 @dataclass(kw_only=True, slots=True)
