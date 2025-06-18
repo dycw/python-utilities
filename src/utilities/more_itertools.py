@@ -214,14 +214,14 @@ def _bucket_mapping_unique[K: Hashable, V](
     mapping: Mapping[K, Iterable[V]], /
 ) -> Mapping[K, V]:
     results: dict[K, V] = {}
-    error_no_pre: dict[K, tuple[V, V]] = {}
+    errors: dict[K, tuple[V, V]] = {}
     for key, value in mapping.items():
         try:
             results[key] = one(value)
         except OneNonUniqueError as error:
-            error_no_pre[key] = (error.first, error.second)
-    if len(error_no_pre) >= 1:
-        raise BucketMappingError(errors=error_no_pre)
+            errors[key] = (error.first, error.second)
+    if len(errors) >= 1:
+        raise BucketMappingError(errors=errors)
     return results
 
 
