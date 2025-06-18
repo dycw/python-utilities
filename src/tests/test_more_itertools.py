@@ -34,6 +34,42 @@ class TestBucketMapping:
         assert list(mapping["b"]) == ["b1", "b2", "b3"]
         assert list(mapping["c"]) == ["c1", "c2"]
 
+    def test_list(self) -> None:
+        mapping = bucket_mapping(self.iterable, lambda x: x[0], post="list")
+        assert set(mapping) == {"a", "b", "c"}
+        for value in mapping.values():
+            assert isinstance(value, list)
+        assert mapping["a"] == ["a1", "a2"]
+        assert mapping["b"] == ["b1", "b2", "b3"]
+        assert mapping["c"] == ["c1", "c2"]
+
+    def test_tuple(self) -> None:
+        mapping = bucket_mapping(self.iterable, lambda x: x[0], post="tuple")
+        assert set(mapping) == {"a", "b", "c"}
+        for value in mapping.values():
+            assert isinstance(value, tuple)
+        assert mapping["a"] == ("a1", "a2")
+        assert mapping["b"] == ("b1", "b2", "b3")
+        assert mapping["c"] == ("c1", "c2")
+
+    def test_set(self) -> None:
+        mapping = bucket_mapping(self.iterable, lambda x: x[0], post="set")
+        assert set(mapping) == {"a", "b", "c"}
+        for value in mapping.values():
+            assert isinstance(value, set)
+        assert mapping["a"] == {"a1", "a2"}
+        assert mapping["b"] == {"b1", "b2", "b3"}
+        assert mapping["c"] == {"c1", "c2"}
+
+    def test_frozenset(self) -> None:
+        mapping = bucket_mapping(self.iterable, lambda x: x[0], post="frozenset")
+        assert frozenset(mapping) == {"a", "b", "c"}
+        for value in mapping.values():
+            assert isinstance(value, frozenset)
+        assert mapping["a"] == frozenset(["a1", "a2"])
+        assert mapping["b"] == frozenset(["b1", "b2", "b3"])
+        assert mapping["c"] == frozenset(["c1", "c2"])
+
     def test_pre(self) -> None:
         mapping = bucket_mapping(
             self.iterable, lambda x: x[0], pre=lambda x: int(x[-1])
@@ -45,15 +81,6 @@ class TestBucketMapping:
         assert list(mapping["a"]) == [1, 2]
         assert list(mapping["b"]) == [1, 2, 3]
         assert list(mapping["c"]) == [1, 2]
-
-    def test_list(self) -> None:
-        mapping = bucket_mapping(self.iterable, lambda x: x[0], post="list")
-        assert set(mapping) == {"a", "b", "c"}
-        for value in mapping.values():
-            assert isinstance(value, list)
-        assert mapping["a"] == ["a1", "a2"]
-        assert mapping["b"] == ["b1", "b2", "b3"]
-        assert mapping["c"] == ["c1", "c2"]
 
     def test_pre_and_list(self) -> None:
         mapping = bucket_mapping(
