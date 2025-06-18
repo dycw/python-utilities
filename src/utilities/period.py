@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Self, TypedDict, TypeVar, override
+from typing import TYPE_CHECKING, Self, TypedDict, override
 from zoneinfo import ZoneInfo
 
 from whenever import Date, DateDelta, TimeDelta, ZonedDateTime
@@ -14,12 +14,10 @@ from utilities.zoneinfo import get_time_zone_name
 if TYPE_CHECKING:
     from utilities.types import TimeZoneLike
 
-_TPeriod = TypeVar("_TPeriod", Date, ZonedDateTime)
 
-
-class _PeriodAsDict[TPeriod: (Date, ZonedDateTime)](TypedDict):
-    start: _TPeriod
-    end: _TPeriod
+class _PeriodAsDict[T: (Date, ZonedDateTime)](TypedDict):
+    start: T
+    end: T
 
 
 @dataclass(repr=False, order=True, unsafe_hash=True, kw_only=False)
@@ -132,9 +130,9 @@ class PeriodError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
-class _PeriodInvalidError[TPeriod: (Date, ZonedDateTime)](PeriodError):
-    start: _TPeriod
-    end: _TPeriod
+class _PeriodInvalidError[T: (Date, ZonedDateTime)](PeriodError):
+    start: T
+    end: T
 
     @override
     def __str__(self) -> str:
