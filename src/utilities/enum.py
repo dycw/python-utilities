@@ -8,7 +8,7 @@ from utilities.functions import ensure_str
 from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 
 if TYPE_CHECKING:
-    from utilities.types import E, EnumLike
+    from utilities.types import EnumLike
 
 ##
 
