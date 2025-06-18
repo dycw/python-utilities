@@ -627,6 +627,7 @@ dev = [
     { name = "coloredlogs" },
     { name = "coverage-conditional-plugin" },
     { name = "dycw-pytest-only" },
+    { name = "pudb" },
     { name = "pyright", extra = ["nodejs"] },
     { name = "pytest-cov" },
 ]
@@ -739,6 +740,7 @@ pyinstrument = [
     { name = "pyinstrument" },
 ]
 pytest = [
+    { name = "pudb" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-randomly" },
@@ -862,6 +864,7 @@ dev = [
     { name = "coloredlogs", specifier = ">=15.0.1,<15.1" },
     { name = "coverage-conditional-plugin", specifier = ">=0.9.0,<0.10" },
     { name = "dycw-pytest-only", specifier = ">=2.1.1,<2.2" },
+    { name = "pudb", specifier = ">=2025.1,<2025.2" },
     { name = "pyright", extras = ["nodejs"], specifier = ">=1.1.401,<1.2" },
     { name = "pytest-cov", specifier = ">=6.1.1,<6.2" },
 ]
@@ -919,6 +922,7 @@ pudb = [{ name = "pudb", specifier = ">=2025.1,<2025.2" }]
 pydantic = [{ name = "pydantic", specifier = ">=2.11.4,<2.12" }]
 pyinstrument = [{ name = "pyinstrument", specifier = ">=5.0.2,<5.1" }]
 pytest = [
+    { name = "pudb", specifier = ">=2025.1,<2025.2" },
     { name = "pytest", specifier = ">=8.3.5,<8.4" },
     { name = "pytest-asyncio", specifier = ">=1.0.0,<1.1" },
     { name = "pytest-randomly", specifier = ">=3.16.0,<3.17" },
