@@ -61,7 +61,7 @@ def add_listener[E: Event, F: Callable](
         logger=logger,
         decorators=decorators,
     )
-    return event.connect(lifted, done=done, keep_ref=keep_ref)
+    return cast("E", event.connect(lifted, done=done, keep_ref=keep_ref))
 
 
 ##
