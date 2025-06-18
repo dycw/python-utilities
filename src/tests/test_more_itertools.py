@@ -63,7 +63,7 @@ class TestBucketMapping:
 
     def test_frozenset(self) -> None:
         mapping = bucket_mapping(self.iterable, lambda x: x[0], post="frozenset")
-        assert frozenset(mapping) == {"a", "b", "c"}
+        assert set(mapping) == {"a", "b", "c"}
         for value in mapping.values():
             assert isinstance(value, frozenset)
         assert mapping["a"] == frozenset(["a1", "a2"])
