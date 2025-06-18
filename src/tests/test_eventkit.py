@@ -6,7 +6,7 @@ from functools import wraps
 from io import StringIO
 from logging import StreamHandler, getLogger
 from re import search
-from typing import TYPE_CHECKING, Literal, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Literal
 
 from eventkit import Event
 from hypothesis import given
@@ -24,10 +24,6 @@ from utilities.hypothesis import temp_paths, text_ascii
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-
-_P = ParamSpec("_P")
-_R = TypeVar("_R")
 
 
 class TestAddListener:
@@ -210,9 +206,9 @@ class TestAddListener:
             nonlocal counter
             counter += 1
 
-        def increment(func: Callable[_P, _R], /) -> Callable[_P, _R]:
+        def increment[**P, R](func: Callable[P, R], /) -> Callable[P, R]:
             @wraps(func)
-            def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
                 nonlocal counter
                 counter += 1
                 return func(*args, **kwargs)
