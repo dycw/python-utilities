@@ -554,7 +554,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.134.5"
+version = "0.135.1"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -704,7 +704,6 @@ orjson-test = [
     { name = "polars-lts-cpu" },
 ]
 polars = [
-    { name = "polars" },
     { name = "polars-lts-cpu" },
 ]
 polars-ols = [
