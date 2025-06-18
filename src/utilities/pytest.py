@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
     from whenever import TimeDelta
 
-    from utilities.types import Coroutine1, PathLike, TCallableMaybeCoroutine1None
+    from utilities.types import Coro, PathLike, TCallableMaybeCoroNone
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
@@ -169,19 +169,19 @@ def random_state(*, seed: int) -> Random:
 
 def throttle(
     *, root: PathLike | None = None, delta: TimeDelta = SECOND, on_try: bool = False
-) -> Callable[[TCallableMaybeCoroutine1None], TCallableMaybeCoroutine1None]:
+) -> Callable[[TCallableMaybeCoroNone], TCallableMaybeCoroNone]:
     """Throttle a test. On success by default, on try otherwise."""
     return cast("Any", partial(_throttle_inner, root=root, delta=delta, on_try=on_try))
 
 
 def _throttle_inner(
-    func: TCallableMaybeCoroutine1None,
+    func: TCallableMaybeCoroNone,
     /,
     *,
     root: PathLike | None = None,
     delta: TimeDelta = SECOND,
     on_try: bool = False,
-) -> TCallableMaybeCoroutine1None:
+) -> TCallableMaybeCoroNone:
     """Throttle a test function/method."""
     match bool(iscoroutinefunction(func)), on_try:
         case False, False:
@@ -211,7 +211,7 @@ def _throttle_inner(
                 *args: _P.args, **kwargs: _P.kwargs
             ) -> None:
                 _skipif_recent(root=root, delta=delta)
-                await cast("Callable[..., Coroutine1[None]]", func)(*args, **kwargs)
+                await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
                 _write(root=root)
 
             return cast("Any", throttle_async_on_pass)
@@ -224,7 +224,7 @@ def _throttle_inner(
             ) -> None:
                 _skipif_recent(root=root, delta=delta)
                 _write(root=root)
-                await cast("Callable[..., Coroutine1[None]]", func)(*args, **kwargs)
+                await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
 
             return cast("Any", throttle_async_on_try)
 

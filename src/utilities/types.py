@@ -68,18 +68,19 @@ type TupleOrStrMapping = tuple[Any, ...] | StrMapping
 
 
 # asyncio
-type Coroutine1[T] = Coroutine[Any, Any, T]
-type MaybeAwaitable[T] = T | Awaitable[T]
+type Coro[T] = Coroutine[Any, Any, T]
 type MaybeCallableEvent = MaybeCallable[Event]
-type MaybeCoroutine1[T] = T | Coroutine1[T]
+type MaybeCoro[T] = T | Coro[T]
 
 
 # callable
 type CallableOf[T] = Callable[..., T]
-type CallableOfCoroutine1[T] = CallableOf[Coroutine1[T]]
-type CallableOfCoroutine1None = CallableOfCoroutine1[None]
-type CallableOfMaybeCoroutine1[T] = CallableOf[MaybeCoroutine1[T]]
-type CallableOfMaybeCoroutine1None = CallableOfMaybeCoroutine1[None]
+type CallableOfCoro[T] = CallableOf[Coro[T]]
+type CallableOfCoroNone = CallableOfCoro[None]
+type CallableOfMaybeCoro[T] = CallableOf[MaybeCoro[T]]
+type CallableOfMaybeCoroNone = CallableOfMaybeCoro[None]
+type FullCallable[**P, T] = Callable[P, T]
+type FullCallableCoroutine[**P, T] = FullCallable[P, Coro[T]]
 
 
 # concurrent
@@ -247,8 +248,12 @@ type TimeZoneLike = (
 
 
 __all__ = [
-    "CallableOfCoroutine1",
-    "Coroutine1",
+    "CallableOf",
+    "CallableOfCoro",
+    "CallableOfCoroNone",
+    "CallableOfMaybeCoro",
+    "CallableOfMaybeCoroNone",
+    "Coro",
     "Dataclass",
     "DateDeltaLike",
     "DateLike",
@@ -257,19 +262,20 @@ __all__ = [
     "DateTimeRoundUnit",
     "EnumLike",
     "ExcInfo",
+    "FullCallable",
+    "FullCallableCoroutine",
     "IPv4AddressLike",
     "IPv6AddressLike",
     "IterableHashable",
     "LogLevel",
     "LoggerOrName",
     "MathRoundMode",
-    "MaybeAwaitable",
     "MaybeCallable",
     "MaybeCallableDate",
     "MaybeCallableEvent",
     "MaybeCallablePathLike",
     "MaybeCallableZonedDateTime",
-    "MaybeCoroutine1",
+    "MaybeCoro",
     "MaybeIterable",
     "MaybeIterableHashable",
     "MaybeStr",

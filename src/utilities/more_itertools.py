@@ -185,7 +185,7 @@ def partition_typeguard[T, U](
 ##
 
 
-class peekable[T, U](_peekable[T]):  # noqa: N801
+class peekable[T](_peekable):  # noqa: N801
     """Peekable which supports dropwhile/takewhile methods."""
 
     def __init__(self, iterable: Iterable[T], /) -> None:
@@ -207,7 +207,7 @@ class peekable[T, U](_peekable[T]):  # noqa: N801
     @overload
     def peek(self, *, default: Sentinel = sentinel) -> T: ...
     @overload
-    def peek(self, *, default: U) -> T | U: ...
+    def peek[U](self, *, default: U) -> T | U: ...
     @override
     def peek(self, *, default: Any = sentinel) -> Any:  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(default, Sentinel):

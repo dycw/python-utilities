@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
     from arq.typing import WorkerCoroutine
 
-    from utilities.types import CallableCoroutine1
+    from utilities.types import CallableCoro
 
 
 class TestCronRaw:
@@ -51,7 +51,7 @@ class TestWorker:
             return x + y
 
         class Example(Worker):
-            functions_raw: Sequence[CallableCoroutine1[Any]] = [func]
+            functions_raw: Sequence[CallableCoro[Any]] = [func]
 
         func_use = cast("WorkerCoroutine", one(Example.functions))
         result = await func_use({}, x, y)

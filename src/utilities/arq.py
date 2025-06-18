@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     )
     from arq.worker import Function
 
-    from utilities.types import CallableCoroutine1, Coroutine1, StrMapping
+    from utilities.types import CallableCoro, Coro, StrMapping
 
 
 _P = ParamSpec("_P")
@@ -38,7 +38,7 @@ _T = TypeVar("_T")
 
 
 def cron_raw(
-    coroutine: CallableCoroutine1[Any],
+    coroutine: CallableCoro[Any],
     /,
     *,
     name: str | None = None,
@@ -84,7 +84,7 @@ def cron_raw(
 
 
 def _lift_cron(
-    func: Callable[_P, Coroutine1[_T]], *args: _P.args, **kwargs: _P.kwargs
+    func: Callable[_P, Coro[_T]], *args: _P.args, **kwargs: _P.kwargs
 ) -> WorkerCoroutine:
     """Lift a coroutine function & call arg/kwargs for `cron`."""
 
@@ -113,7 +113,7 @@ class _JobEnqueuer:
     async def __call__(
         self,
         redis: ArqRedis,
-        function: Callable[_P, Coroutine1[_T]],
+        function: Callable[_P, Coro[_T]],
         *args: _P.args,
         **kwargs: _P.kwargs,
     ) -> Job | None:
@@ -171,7 +171,7 @@ class _WorkerMeta(type):
         return cls
 
     @classmethod
-    def _lift(cls, func: Callable[_P, Coroutine1[_T]]) -> WorkerCoroutine:
+    def _lift(cls, func: Callable[_P, Coro[_T]]) -> WorkerCoroutine:
         """Lift a coroutine function to accept the required `ctx` argument."""
 
         @wraps(func)
@@ -187,7 +187,7 @@ class Worker(metaclass=_WorkerMeta):
     """Base class for all workers."""
 
     functions: Sequence[Function | WorkerCoroutine] = ()
-    functions_raw: Sequence[CallableCoroutine1[Any]] = ()
+    functions_raw: Sequence[CallableCoro[Any]] = ()
     queue_name: str | None = default_queue_name
     cron_jobs: Sequence[CronJob] | None = None
     redis_settings: RedisSettings | None = None
