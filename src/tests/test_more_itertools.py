@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Collection, Iterator
 from re import escape
 from typing import TYPE_CHECKING, Any, ClassVar, TypeGuard
 
@@ -23,31 +23,20 @@ if TYPE_CHECKING:
 
 class TestBucketMapping:
     iterable: ClassVar[list[str]] = ["a1", "b1", "c1", "a2", "b2", "c2", "b3"]
+    iterable_unique: ClassVar[list[str]] = ["a1", "b2", "c3"]
 
     def test_main(self) -> None:
         mapping = bucket_mapping(self.iterable, lambda x: x[0])
         assert set(mapping) == {"a", "b", "c"}
         for value in mapping.values():
             assert isinstance(value, Iterator)
-            assert not isinstance(value, list)
+            assert not isinstance(value, Collection)
         assert list(mapping["a"]) == ["a1", "a2"]
         assert list(mapping["b"]) == ["b1", "b2", "b3"]
         assert list(mapping["c"]) == ["c1", "c2"]
 
-    def test_transform(self) -> None:
-        mapping = bucket_mapping(
-            self.iterable, lambda x: x[0], transform=lambda x: int(x[-1])
-        )
-        assert set(mapping) == {"a", "b", "c"}
-        for value in mapping.values():
-            assert isinstance(value, Iterator)
-            assert not isinstance(value, list)
-        assert list(mapping["a"]) == [1, 2]
-        assert list(mapping["b"]) == [1, 2, 3]
-        assert list(mapping["c"]) == [1, 2]
-
     def test_list(self) -> None:
-        mapping = bucket_mapping(self.iterable, lambda x: x[0], list=True)
+        mapping = bucket_mapping(self.iterable, lambda x: x[0], post="list")
         assert set(mapping) == {"a", "b", "c"}
         for value in mapping.values():
             assert isinstance(value, list)
@@ -55,9 +44,53 @@ class TestBucketMapping:
         assert mapping["b"] == ["b1", "b2", "b3"]
         assert mapping["c"] == ["c1", "c2"]
 
-    def test_transform_and_list(self) -> None:
+    def test_tuple(self) -> None:
+        mapping = bucket_mapping(self.iterable, lambda x: x[0], post="tuple")
+        assert set(mapping) == {"a", "b", "c"}
+        for value in mapping.values():
+            assert isinstance(value, tuple)
+        assert mapping["a"] == ("a1", "a2")
+        assert mapping["b"] == ("b1", "b2", "b3")
+        assert mapping["c"] == ("c1", "c2")
+
+    def test_set(self) -> None:
+        mapping = bucket_mapping(self.iterable, lambda x: x[0], post="set")
+        assert set(mapping) == {"a", "b", "c"}
+        for value in mapping.values():
+            assert isinstance(value, set)
+        assert mapping["a"] == {"a1", "a2"}
+        assert mapping["b"] == {"b1", "b2", "b3"}
+        assert mapping["c"] == {"c1", "c2"}
+
+    def test_frozenset(self) -> None:
+        mapping = bucket_mapping(self.iterable, lambda x: x[0], post="frozenset")
+        assert set(mapping) == {"a", "b", "c"}
+        for value in mapping.values():
+            assert isinstance(value, frozenset)
+        assert mapping["a"] == frozenset({"a1", "a2"})
+        assert mapping["b"] == frozenset({"b1", "b2", "b3"})
+        assert mapping["c"] == frozenset({"c1", "c2"})
+
+    def test_unique(self) -> None:
+        mapping = bucket_mapping(self.iterable_unique, lambda x: x[0], post="unique")
+        expected = {"a": "a1", "b": "b2", "c": "c3"}
+        assert mapping == expected
+
+    def test_pre(self) -> None:
         mapping = bucket_mapping(
-            self.iterable, lambda x: x[0], transform=lambda x: int(x[-1]), list=True
+            self.iterable, lambda x: x[0], pre=lambda x: int(x[-1])
+        )
+        assert set(mapping) == {"a", "b", "c"}
+        for value in mapping.values():
+            assert isinstance(value, Iterator)
+            assert not isinstance(value, Collection)
+        assert list(mapping["a"]) == [1, 2]
+        assert list(mapping["b"]) == [1, 2, 3]
+        assert list(mapping["c"]) == [1, 2]
+
+    def test_pre_and_list(self) -> None:
+        mapping = bucket_mapping(
+            self.iterable, lambda x: x[0], pre=lambda x: int(x[-1]), post="list"
         )
         assert set(mapping) == {"a", "b", "c"}
         for value in mapping.values():
@@ -66,19 +99,45 @@ class TestBucketMapping:
         assert mapping["b"] == [1, 2, 3]
         assert mapping["c"] == [1, 2]
 
-    iterable_unique: ClassVar[list[str]] = ["a1", "b2", "c3"]
+    def test_pre_and_tuple(self) -> None:
+        mapping = bucket_mapping(
+            self.iterable, lambda x: x[0], pre=lambda x: int(x[-1]), post="tuple"
+        )
+        assert set(mapping) == {"a", "b", "c"}
+        for value in mapping.values():
+            assert isinstance(value, tuple)
+        assert mapping["a"] == (1, 2)
+        assert mapping["b"] == (1, 2, 3)
+        assert mapping["c"] == (1, 2)
 
-    def test_unique(self) -> None:
-        mapping = bucket_mapping(self.iterable_unique, lambda x: x[0], unique=True)
-        expected = {"a": "a1", "b": "b2", "c": "c3"}
-        assert mapping == expected
+    def test_pre_and_set(self) -> None:
+        mapping = bucket_mapping(
+            self.iterable, lambda x: x[0], pre=lambda x: int(x[-1]), post="set"
+        )
+        assert set(mapping) == {"a", "b", "c"}
+        for value in mapping.values():
+            assert isinstance(value, set)
+        assert mapping["a"] == {1, 2}
+        assert mapping["b"] == {1, 2, 3}
+        assert mapping["c"] == {1, 2}
 
-    def test_transform_and_unique(self) -> None:
+    def test_pre_and_frozenset(self) -> None:
+        mapping = bucket_mapping(
+            self.iterable, lambda x: x[0], pre=lambda x: int(x[-1]), post="frozenset"
+        )
+        assert set(mapping) == {"a", "b", "c"}
+        for value in mapping.values():
+            assert isinstance(value, frozenset)
+        assert mapping["a"] == frozenset({1, 2})
+        assert mapping["b"] == frozenset({1, 2, 3})
+        assert mapping["c"] == frozenset({1, 2})
+
+    def test_pre_and_unique(self) -> None:
         mapping = bucket_mapping(
             self.iterable_unique,
             lambda x: x[0],
-            transform=lambda x: int(x[-1]),
-            unique=True,
+            pre=lambda x: int(x[-1]),
+            post="unique",
         )
         expected = {"a": 1, "b": 2, "c": 3}
         assert mapping == expected
@@ -90,9 +149,9 @@ class TestBucketMapping:
                 "Buckets must contain exactly one item each; got 'a' (#1: 'a1', #2: 'a2'), 'b' (#1: 'b1', #2: 'b2'), 'c' (#1: 'c1', #2: 'c2')"
             ),
         ):
-            _ = bucket_mapping(self.iterable, lambda x: x[0], unique=True)
+            _ = bucket_mapping(self.iterable, lambda x: x[0], post="unique")
 
-    def test_error_transform_and_unique(self) -> None:
+    def test_error_pre_and_unique(self) -> None:
         with raises(
             BucketMappingError,
             match=escape(
@@ -100,10 +159,7 @@ class TestBucketMapping:
             ),
         ):
             _ = bucket_mapping(
-                self.iterable,
-                lambda x: x[0],
-                transform=lambda x: int(x[-1]),
-                unique=True,
+                self.iterable, lambda x: x[0], pre=lambda x: int(x[-1]), post="unique"
             )
 
 
