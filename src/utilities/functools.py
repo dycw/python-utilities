@@ -9,13 +9,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-_T = TypeVar("_T")
-
-
-##
-
-
-def cache(func: TCallable, /) -> TCallable:
+def cache[F: Callable](func: F, /) -> F:
     """Typed version of `cache`."""
     typed_cache = cast("Callable[[F], F]", _cache)
     return typed_cache(func)
@@ -28,16 +22,16 @@ _MAX_SIZE = 128
 
 
 @overload
-def lru_cache(
-    func: TCallable, /, *, max_size: int = _MAX_SIZE, typed: bool = False
-) -> TCallable: ...
+def lru_cache[F: Callable](
+    func: F, /, *, max_size: int = _MAX_SIZE, typed: bool = False
+) -> F: ...
 @overload
-def lru_cache(
+def lru_cache[F: Callable](
     func: None = None, /, *, max_size: int = _MAX_SIZE, typed: bool = False
-) -> Callable[[TCallable], TCallable]: ...
-def lru_cache(
-    func: TCallable | None = None, /, *, max_size: int = _MAX_SIZE, typed: bool = False
-) -> TCallable | Callable[[TCallable], TCallable]:
+) -> Callable[[F], F]: ...
+def lru_cache[F: Callable](
+    func: F | None = None, /, *, max_size: int = _MAX_SIZE, typed: bool = False
+) -> F | Callable[[F], F]:
     """Typed version of `lru_cache`."""
     if func is None:
         result = partial(lru_cache, max_size=max_size, typed=typed)
