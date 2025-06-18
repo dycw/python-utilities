@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 from optuna import create_study
 from sqlalchemy import URL
 
+from utilities.types import Dataclass
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
@@ -14,7 +16,7 @@ if TYPE_CHECKING:
     from optuna.samplers import BaseSampler
     from optuna.study import StudyDirection
 
-    from utilities.types import PathLike, TDataclass
+    from utilities.types import PathLike
 
 
 def create_sqlite_study(
@@ -45,7 +47,7 @@ def create_sqlite_study(
 ##
 
 
-def get_best_params(study: Study, cls: type[TDataclass], /) -> TDataclass:
+def get_best_params[T: Dataclass](study: Study, cls: type[T], /) -> T:
     """Get the best params as a dataclass."""
     return cls(**study.best_params)
 
@@ -53,10 +55,8 @@ def get_best_params(study: Study, cls: type[TDataclass], /) -> TDataclass:
 ##
 
 
-def make_objective(
-    suggest_params: Callable[[Trial], TDataclass],
-    objective: Callable[[TDataclass], float],
-    /,
+def make_objective[T: Dataclass](
+    suggest_params: Callable[[Trial], T], objective: Callable[[T], float], /
 ) -> Callable[[Trial], float]:
     """Make an objective given separate trialling & evaluating functions."""
 

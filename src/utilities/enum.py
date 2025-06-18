@@ -10,6 +10,7 @@ from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 if TYPE_CHECKING:
     from utilities.types import EnumLike
 
+
 ##
 
 
