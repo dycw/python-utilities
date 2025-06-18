@@ -11,25 +11,23 @@ from utilities.os import GetEnvVarError, get_env_var
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from utilities.types import TCallable
-
 
 _ENV_VAR = "DEBUG"
 
 
 @overload
-def call_pudb(func: TCallable, /, *, env_var: str = _ENV_VAR) -> TCallable: ...
+def call_pudb[F: Callable](func: F, /, *, env_var: str = _ENV_VAR) -> F: ...
 @overload
-def call_pudb(
+def call_pudb[F: Callable](
     func: None = None, /, *, env_var: str = _ENV_VAR
-) -> Callable[[TCallable], TCallable]: ...
-def call_pudb(
-    func: TCallable | None = None, /, *, env_var: str = _ENV_VAR
-) -> TCallable | Callable[[TCallable], TCallable]:
+) -> Callable[[F], F]: ...
+def call_pudb[F: Callable](
+    func: F | None = None, /, *, env_var: str = _ENV_VAR
+) -> F | Callable[[F], F]:
     """Call `pudb` upon failure, if the required environment variable is set."""
     if func is None:
         result = partial(call_pudb, env_var=env_var)
-        return cast("Callable[[TCallable], TCallable]", result)
+        return cast("Callable[[F], F]", result)
 
     if not iscoroutinefunction(func):
 
@@ -40,7 +38,7 @@ def call_pudb(
             except Exception as error:  # noqa: BLE001
                 _call_pudb(error, env_var=env_var)
 
-        return cast("TCallable", wrapped_sync)
+        return cast("F", wrapped_sync)
 
     @wraps(func)
     async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
@@ -49,7 +47,7 @@ def call_pudb(
         except Exception as error:  # noqa: BLE001
             _call_pudb(error, env_var=env_var)
 
-    return cast("TCallable", wrapped_async)
+    return cast("F", wrapped_async)
 
 
 def _call_pudb(error: Exception, /, *, env_var: str = _ENV_VAR) -> NoReturn:
