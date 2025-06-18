@@ -4,8 +4,6 @@ from asyncio import iscoroutinefunction
 from functools import partial, wraps
 from typing import TYPE_CHECKING, Any, NoReturn, cast, overload
 
-from pudb import post_mortem
-
 from utilities.os import GetEnvVarError, get_env_var
 
 if TYPE_CHECKING:
@@ -55,6 +53,8 @@ def _call_pudb(error: Exception, /, *, env_var: str = _ENV_VAR) -> NoReturn:
         _ = get_env_var(env_var)
     except GetEnvVarError:
         raise error from None
+    from pudb import post_mortem  # pragma: no cover
+
     post_mortem()  # pragma: no cover
     raise error  # pragma: no cover
 
