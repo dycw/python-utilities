@@ -259,7 +259,8 @@ class EnhancedTaskGroup(TaskGroup):
         _ = await self._stack.__aexit__(et, exc, tb)
         match self._debug:
             case True:
-                ...
+                with suppress(Exception):
+                    _ = await super().__aexit__(et, exc, tb)
             case False:
                 _ = await super().__aexit__(et, exc, tb)
             case _ as never:
