@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 import ipaddress
 import pathlib
-from typing import TYPE_CHECKING, TypedDict, TypeVar, assert_never, override
+from typing import TYPE_CHECKING, TypedDict, assert_never, override
 
 import click
 import whenever
@@ -35,9 +35,6 @@ if TYPE_CHECKING:
         ZonedDateTimeLike,
     )
     from utilities.whenever import MonthLike
-
-
-_T = TypeVar("_T")
 
 
 FilePath = click.Path(file_okay=True, dir_okay=False, path_type=pathlib.Path)
@@ -475,11 +472,8 @@ class ListParameter[P: ParamType, T](ParamType):
 
     @override
     def convert(
-        self,
-        value: MaybeStr[Iterable[_T]],
-        param: Parameter | None,
-        ctx: Context | None,
-    ) -> list[_T]:
+        self, value: MaybeStr[Iterable[T]], param: Parameter | None, ctx: Context | None
+    ) -> list[T]:
         """Convert a value into the `List` type."""
         if is_iterable_not_str(value):
             return list(value)
