@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import builtins
-from collections.abc import Hashable
+from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from itertools import islice
 from textwrap import indent
@@ -25,7 +24,7 @@ from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+    from collections.abc import Iterable, Iterator, Mapping, Sequence
 
 
 @overload
@@ -34,7 +33,8 @@ def bucket_mapping[T, U, UH: Hashable](
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U],
+    pre: Callable[[T], U],
+    post: Literal["list", "tuple", "set", "frozenset", "unique"] | None = None,
     list_: bool = False,
     tuple_: bool = False,
     unique: Literal[True],
@@ -45,7 +45,7 @@ def bucket_mapping[T, U, UH: Hashable](
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U] | None = None,
+    pre: Callable[[T], U] | None = None,
     list_: bool = False,
     tuple_: bool = False,
     unique: Literal[True],
@@ -56,50 +56,48 @@ def bucket_mapping[T, U, UH: Hashable](
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U],
+    pre: Callable[[T], U],
     list_: Literal[True],
     tuple_: bool = False,
-) -> Mapping[THashable, Sequence[_U]]: ...
+) -> Mapping[UH, Sequence[U]]: ...
 @overload
 def bucket_mapping[T, U, UH: Hashable](
     iterable: Iterable[T],
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U],
+    pre: Callable[[T], U],
     list_: bool = False,
     tuple_: bool = False,
-) -> Mapping[THashable, Iterator[_U]]: ...
+) -> Mapping[UH, Iterator[U]]: ...
 @overload
 def bucket_mapping[T, U, UH: Hashable](
     iterable: Iterable[T],
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U] | None = None,
+    pre: Callable[[T], U] | None = None,
     list_: Literal[True],
     tuple_: bool = False,
-) -> Mapping[THashable, Sequence[_T]]: ...
+) -> Mapping[UH, Sequence[T]]: ...
 @overload
 def bucket_mapping[T, U, UH: Hashable](
     iterable: Iterable[T],
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U] | None = None,
+    pre: Callable[[T], U] | None = None,
     list_: bool = False,
     tuple_: bool = False,
-) -> Mapping[THashable, Iterator[_T]]: ...
+) -> Mapping[UH, Iterator[T]]: ...
 @overload
 def bucket_mapping[T, U, UH: Hashable](
     iterable: Iterable[T],
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U] | None = None,
-    list_: bool = False,
-    tuple_: bool = False,
-    unique: bool = False,
+    pre: Callable[[T], U] | None = None,
+    post: Literal["list", "tuple", "set", "frozenset", "unique"] | None = None,
 ) -> (
     Mapping[UH, Iterator[T]]
     | Mapping[UH, Iterator[U]]
@@ -113,43 +111,66 @@ def bucket_mapping[T, U, UH: Hashable](
     func: Callable[[T], UH],
     /,
     *,
-    transform: Callable[[_T], _U] | None = None,
-    list_: bool = False,
-    tuple_: bool = False,
-    unique: bool = False,
+    pre: Callable[[T], U] | None = None,
+    post: Literal["list", "tuple", "set", "frozenset", "unique"] | None = None,
 ) -> (
     Mapping[UH, Iterator[T]]
     | Mapping[UH, Iterator[U]]
-    | Mapping[UH, Sequence[T]]
-    | Mapping[UH, Sequence[U]]
+    | Mapping[UH, list[T]]
+    | Mapping[UH, list[U]]
+    | Mapping[UH, tuple[T, ...]]
+    | Mapping[UH, tuple[U, ...]]
+    | Mapping[UH, set[T]]
+    | Mapping[UH, set[U]]
+    | Mapping[UH, frozenset[T]]
+    | Mapping[UH, frozenset[U]]
     | Mapping[UH, T]
     | Mapping[UH, U]
 ):
     """Bucket the values of iterable into a mapping."""
-    b = bucket(iterable, func)
-    mapping = {key: b[key] for key in b}
-    match transform, list_:
-        case None, False:
-            ...
-        case None, True:
-            mapping = {k: builtins.list(v) for k, v in mapping.items()}
-        case _, False:
-            mapping = {k: map(transform, v) for k, v in mapping.items()}
-        case _, True:
-            mapping = {k: builtins.list(map(transform, v)) for k, v in mapping.items()}
+    bckt = bucket(iterable, func)
+    mapping = {key: bckt[key] for key in bckt}
+    match pre, post:
+        case None, None:
+            return mapping
+        case None, "list":
+            return {k: list(v) for k, v in mapping.items()}
+        case None, "tuple":
+            return {k: tuple(v) for k, v in mapping.items()}
+        case None, "set":
+            return {k: set(v) for k, v in mapping.items()}
+        case None, "frozenset":
+            return {k: frozenset(v) for k, v in mapping.items()}
+        case None, "unique":
+            return _bucket_mapping_unique(mapping)
+        case Callable(), None:
+            return {k: map(pre, v) for k, v in mapping.items()}
+        case Callable(), "list":
+            return {k: list(map(pre, v)) for k, v in mapping.items()}
+        case Callable(), "tuple":
+            return {k: tuple(map(pre, v)) for k, v in mapping.items()}
+        case Callable(), "set":
+            return {k: set(map(pre, v)) for k, v in mapping.items()}
+        case Callable(), "frozenset":
+            return {k: frozenset(map(pre, v)) for k, v in mapping.items()}
+        case Callable(), "unique":
+            return _bucket_mapping_unique({k: map(pre, v) for k, v in mapping.items()})
         case _ as never:
             assert_never(never)
-    if not unique:
-        return mapping
-    results = {}
-    error_no_transform: dict[UH, tuple[T, T]] = {}
+
+
+def _bucket_mapping_unique[K: Hashable, V](
+    mapping: Mapping[K, Iterable[V]], /
+) -> Mapping[K, V]:
+    results: dict[K, V] = {}
+    error_no_pre: dict[K, tuple[V, V]] = {}
     for key, value in mapping.items():
         try:
             results[key] = one(value)
         except OneNonUniqueError as error:
-            error_no_transform[key] = (error.first, error.second)
-    if len(error_no_transform) >= 1:
-        raise BucketMappingError(errors=error_no_transform)
+            error_no_pre[key] = (error.first, error.second)
+    if len(error_no_pre) >= 1:
+        raise BucketMappingError(errors=error_no_pre)
     return results
 
 
