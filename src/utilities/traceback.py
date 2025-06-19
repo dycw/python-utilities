@@ -275,7 +275,9 @@ def _make_except_hook_inner(
     if pudb is not None:  # pragma: no cover
         match pudb:
             case str() as env_var:
-                call_pudb = get_env_var(env_var, nullable=True) is not None
+                call_pudb = (
+                    get_env_var(env_var, case_sensitive=True, nullable=True) is not None
+                )
             case Callable() as func:
                 call_pudb = func()
             case _ as never:
