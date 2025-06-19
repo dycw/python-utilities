@@ -66,6 +66,7 @@ from utilities.functions import (
     is_string_mapping,
     is_tuple,
     is_tuple_or_str_mapping,
+    yield_object_attributes,
 )
 from utilities.iterables import (
     CheckLengthError,
@@ -1036,21 +1037,31 @@ class _MapMappingToTableSnakeMapNonUniqueError(_MapMappingToTableError):
 
 def _orm_inst_to_dict(obj: DeclarativeBase, /) -> StrMapping:
     """Map an ORM instance to a dictionary."""
-    cls = type(obj)
+    attrs = {
+        k for k, _ in yield_object_attributes(obj, static_type=InstrumentedAttribute)
+    }
+    return {
+        name: _orm_inst_to_dict_one(obj, attrs, name) for name in get_column_names(obj)
+    }
 
-    def is_attr(attr: str, key: str, /) -> str | None:
-        if isinstance(value := getattr(cls, attr), InstrumentedAttribute) and (
-            value.name == key
-        ):
-            return attr
-        return None
 
-    def yield_items() -> Iterator[tuple[str, Any]]:
-        for key in get_column_names(cls):
-            attr = one(attr for attr in dir(cls) if is_attr(attr, key) is not None)
-            yield key, getattr(obj, attr)
+def _orm_inst_to_dict_one(
+    obj: DeclarativeBase, attrs: AbstractSet[str], name: str, /
+) -> Any:
+    attr = one(
+        attr for attr in attrs if _orm_inst_to_dict_predicate(type(obj), attr, name)
+    )
+    return getattr(obj, attr)
 
-    return dict(yield_items())
+
+def _orm_inst_to_dict_predicate(
+    cls: type[DeclarativeBase], attr: str, name: str, /
+) -> bool:
+    cls_attr = getattr(cls, attr)
+    try:
+        return cls_attr.name == name
+    except AttributeError:
+        return False
 
 
 ##
