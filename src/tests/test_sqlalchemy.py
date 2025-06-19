@@ -17,10 +17,16 @@ from hypothesis.strategies import (
     tuples,
 )
 from pytest import mark, param, raises
-from sqlalchemy import Boolean, Column, Integer, MetaData, Table, select
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, MetaData, Table, select
 from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
-from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    MappedAsDataclass,
+    mapped_column,
+    relationship,
+)
 
 from tests.test_asyncio_classes.loopers import _BACKOFF, _FREQ, assert_looper_stats
 from utilities.asyncio import Looper
@@ -79,7 +85,7 @@ from utilities.sqlalchemy import (
     upsert_items,
     yield_primary_key_columns,
 )
-from utilities.text import strip_and_dedent
+from utilities.text import strip_and_dedent, unique_str
 from utilities.typing import get_args, get_literal_elements
 from utilities.whenever import SECOND, format_compact, get_now
 
@@ -298,7 +304,7 @@ class TestGetColumnNames:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = _table_names()
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -317,7 +323,7 @@ class TestGetColumns:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = _table_names()
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -378,7 +384,7 @@ class TestGetPrimaryKeyValues:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = _table_names()
 
             id1: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
             id2: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
@@ -400,7 +406,7 @@ class TestGetTable:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = _table_names()
 
             id: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -412,7 +418,7 @@ class TestGetTable:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = _table_names()
 
             id: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -439,7 +445,7 @@ class TestGetTableName:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = _table_names()
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -454,7 +460,7 @@ class TestHashPrimaryKeyValues:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = _table_names()
 
             id1: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
             id2: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
@@ -694,7 +700,7 @@ class TestIsORM:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = _table_names()
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -705,7 +711,7 @@ class TestIsORM:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = _table_names()
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -728,7 +734,7 @@ class TestIsTableOrORM:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = _table_names()
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -739,7 +745,7 @@ class TestIsTableOrORM:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = _table_names()
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -983,7 +989,7 @@ class TestNormalizeInsertItem:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = _table_names()
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -996,7 +1002,7 @@ class TestORMInstToDict:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = _table_names()
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
@@ -1010,7 +1016,7 @@ class TestORMInstToDict:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = "example"
+            __tablename__ = _table_names()
 
             ID: Mapped[int] = mapped_column(
                 Integer, kw_only=True, primary_key=True, name="id"
@@ -1019,6 +1025,42 @@ class TestORMInstToDict:
         example = Example(ID=id_)
         result = _orm_inst_to_dict(example)
         expected = {"id": id_}
+        assert result == expected
+
+    @given(parent_id=integers(), child_id=integers())
+    @mark.only
+    def test_relationship(self, *, parent_id: int, child_id: int) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Parent(Base):
+            __tablename__ = _table_names()
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+
+            children: Mapped[list[Child]] = relationship(
+                "Child", init=False, back_populates="parent"
+            )
+
+        class Child(Base):
+            __tablename__ = _table_names()
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            parent_id: Mapped[int] = mapped_column(
+                ForeignKey(f"{Parent.__tablename__}.id_"), kw_only=True, nullable=False
+            )
+
+            parent: Mapped[Parent] = relationship(
+                "Parent", init=False, back_populates="children"
+            )
+
+        parent = Parent(id_=parent_id)
+        result = _orm_inst_to_dict(parent)
+        expected = {"id_": parent_id}
+        assert result == expected
+
+        child = Child(id_=child_id, parent_id=parent_id)
+        result = _orm_inst_to_dict(child)
+        expected = {"id_": child_id, "parent_id": parent_id}
         assert result == expected
 
 
@@ -1254,6 +1296,38 @@ class TestUpsertItems:
         )
         _ = await self._run_test(
             test_engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
+        )
+
+    @mark.only
+    async def test_mapped_class_with_rel(self, *, test_engine: AsyncEngine) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass):
+            pass
+
+        class Parent(Base):
+            __tablename__ = _table_names()
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
+
+            children: Mapped[list[Child]] = relationship(
+                "Child", init=False, back_populates="parent"
+            )
+
+        class Child(Base):
+            __tablename__ = "child"
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            parent_id: Mapped[int] = mapped_column(
+                ForeignKey(f"{Parent.__tablename__}.id_"), kw_only=True, nullable=False
+            )
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
+
+            parent: Mapped[Parent] = relationship(
+                "Parent", init=False, back_populates="children"
+            )
+
+        await self._run_test(
+            test_engine, Parent, Parent(id_=1, value=True), expected={(1, True)}
         )
 
     @given(triples=_upsert_lists(nullable=True, min_size=1))
