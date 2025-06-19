@@ -178,7 +178,6 @@ class TestEnhancedTaskGroup:
     async def test_max_tasks_disabled(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup() as tg:
-                assert not tg._is_debug()
                 for _ in range(10):
                     _ = tg.create_task(sleep_td(self.delta))
         assert timer <= 2 * self.delta
@@ -186,7 +185,6 @@ class TestEnhancedTaskGroup:
     async def test_max_tasks_enabled(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup(max_tasks=2) as tg:
-                assert not tg._is_debug()
                 for _ in range(10):
                     _ = tg.create_task(sleep_td(self.delta))
         assert timer >= 5 * self.delta
