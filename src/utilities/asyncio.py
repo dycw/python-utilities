@@ -220,6 +220,7 @@ class EnhancedQueue[T](Queue[T]):
 class EnhancedTaskGroup(TaskGroup):
     """Task group with enhanced features."""
 
+    _max_tasks: int | None
     _semaphore: Semaphore | None
     _timeout: TimeDelta | None
     _error: MaybeType[BaseException]
@@ -237,7 +238,11 @@ class EnhancedTaskGroup(TaskGroup):
         debug: MaybeCallableBool = False,
     ) -> None:
         super().__init__()
-        self._semaphore = None if max_tasks is None else Semaphore(max_tasks)
+        self._max_tasks = max_tasks
+        if (max_tasks is None) or (max_tasks <= 0):
+            self._semaphore = None
+        else:
+            self._semaphore = Semaphore(max_tasks)
         self._timeout = timeout
         self._error = error
         self._debug = debug
@@ -300,6 +305,11 @@ class EnhancedTaskGroup(TaskGroup):
                 return self.create_task(coro, name=name, context=context)
             case _ as never:
                 assert_never(never)
+
+    def _is_debug(self) -> bool:
+        return to_bool(bool_=self._debug) or (
+            (self._max_tasks is not None) and (self._max_tasks <= 0)
+        )
 
     async def _wrap_with_semaphore[T](
         self, semaphore: Semaphore, coroutine: _CoroutineLike[T], /
