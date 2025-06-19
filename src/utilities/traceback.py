@@ -11,7 +11,7 @@ from itertools import repeat
 from pathlib import Path
 from socket import gethostname
 from traceback import TracebackException
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, assert_never, override
 
 from utilities.atomicwrites import writer
 from utilities.errors import repr_error
@@ -31,7 +31,7 @@ from utilities.version import get_version
 from utilities.whenever import format_compact, get_now, to_zoned_date_time
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Iterator, Sequence
     from traceback import FrameSummary
     from types import TracebackType
 
@@ -240,7 +240,7 @@ def _make_except_hook_inner(
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
     slack_url: str | None = None,
-    pudb_env_var: str | None = None,
+    pudb: str | Callable[[], bool] | None = None,
 ) -> None:
     """Exception hook to log the traceback."""
     _ = (exc_type, traceback)
@@ -272,12 +272,18 @@ def _make_except_hook_inner(
 
         send = f"```{slim}```"
         run(send_to_slack(slack_url, send))
-    if (pudb_env_var is not None) and (  # pragma: no cover
-        get_env_var(pudb_env_var, nullable=True) is not None
-    ):
-        from pudb import post_mortem
+    if pudb is not None:  # pragma: no cover
+        match pudb:
+            case str() as env_var:
+                call_pudb = get_env_var(env_var, nullable=True) is not None
+            case Callable() as func:
+                call_pudb = func()
+            case _ as never:
+                assert_never(never)
+        if call_pudb:
+            from pudb import post_mortem
 
-        post_mortem()
+            post_mortem()
 
 
 @dataclass(kw_only=True, slots=True)
