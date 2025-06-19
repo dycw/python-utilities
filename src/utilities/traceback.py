@@ -285,7 +285,7 @@ def _make_except_hook_inner(
         if call_pudb:
             from pudb import post_mortem
 
-            post_mortem()
+            post_mortem(tb=traceback, e_type=exc_type, e_value=exc_val)
 
 
 @dataclass(kw_only=True, slots=True)
