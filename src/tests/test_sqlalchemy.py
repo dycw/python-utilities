@@ -1294,7 +1294,6 @@ class TestUpsertItems:
             test_engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
         )
 
-    @mark.only
     @given(parent=_upsert_triples(), child=_upsert_triples())
     @settings(
         max_examples=1,
