@@ -48,7 +48,12 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import ArgumentError, DatabaseError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.ext.asyncio import create_async_engine as _create_async_engine
-from sqlalchemy.orm import DeclarativeBase, class_mapper, declared_attr
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    InstrumentedAttribute,
+    class_mapper,
+    declared_attr,
+)
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
@@ -61,6 +66,7 @@ from utilities.functions import (
     is_string_mapping,
     is_tuple,
     is_tuple_or_str_mapping,
+    yield_object_attributes,
 )
 from utilities.iterables import (
     CheckLengthError,
@@ -1031,7 +1037,32 @@ class _MapMappingToTableSnakeMapNonUniqueError(_MapMappingToTableError):
 
 def _orm_inst_to_dict(obj: DeclarativeBase, /) -> StrMapping:
     """Map an ORM instance to a dictionary."""
-    return {name: getattr(obj, name) for name in get_column_names(obj)}
+    attrs: dict[str, InstrumentedAttribute] = dict(
+        yield_object_attributes(obj, static_type=InstrumentedAttribute)
+    )
+    return {
+        name: _orm_inst_to_dict_one(obj, set(attrs), name)
+        for name in get_column_names(obj)
+    }
+
+
+def _orm_inst_to_dict_one(
+    obj: DeclarativeBase, attrs: AbstractSet[str], name: str, /
+) -> Any:
+    attr = one(
+        attr for attr in attrs if _orm_inst_to_dict_is_attr(type(obj), attr, name)
+    )
+    return getattr(obj, attr)
+
+
+def _orm_inst_to_dict_is_attr(
+    cls: type[DeclarativeBase], attr: str, name: str, /
+) -> bool:
+    cls_attr = getattr(cls, attr)
+    try:
+        return cls_attr.name == name
+    except AttributeError:
+        return False
 
 
 ##
