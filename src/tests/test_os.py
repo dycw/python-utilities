@@ -21,6 +21,7 @@ from utilities.os import (
     get_cpu_count,
     get_cpu_use,
     get_env_var,
+    is_debug,
     temp_environ,
 )
 from utilities.pytest import skipif_windows
@@ -115,6 +116,12 @@ class TestGetEnvVar:
             GetEnvVarError, match=r"No environment variable .*(\(modulo case\))?"
         ):
             _ = get_env_var(key, case_sensitive=case_sensitive)
+
+
+class TestIsDebug:
+    def test_main(self) -> None:
+        result = is_debug()
+        assert isinstance(result, bool)
 
 
 class TestTempEnviron:
