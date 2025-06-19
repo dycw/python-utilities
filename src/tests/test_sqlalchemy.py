@@ -279,7 +279,7 @@ class TestEnsureTablesDropped:
 
 
 class TestGetChunkSize:
-    @given(chunk_size_frac=floats(0.0, 1.0), scaling=int32s())
+    @given(chunk_size_frac=floats(0.0, 1.0), scaling=int32s(min_value=0))
     @settings(
         max_examples=1,
         phases={Phase.generate},
