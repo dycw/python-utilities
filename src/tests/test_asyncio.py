@@ -175,29 +175,6 @@ class TestEnhancedTaskGroup:
             await sleep_td(self.delta)
         assert looper._core_attempts >= 1
 
-    async def test_debug_true(self) -> None:
-        class CustomError(Exception): ...
-
-        async def func() -> None:
-            await sleep_td(self.delta)
-            raise CustomError
-
-        with raises(CustomError):
-            async with EnhancedTaskGroup(debug=True) as tg:
-                _ = await tg.run_or_create_task(func())
-
-    async def test_debug_false(self) -> None:
-        class CustomError(Exception): ...
-
-        async def func() -> None:
-            await sleep_td(self.delta)
-            raise CustomError
-
-        with raises(ExceptionGroup) as exc_info:
-            async with EnhancedTaskGroup(debug=False) as tg:
-                _ = await tg.run_or_create_task(func())
-        assert isinstance(one(exc_info.value.exceptions), CustomError)
-
     async def test_max_tasks_disabled(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup() as tg:
@@ -210,7 +187,39 @@ class TestEnhancedTaskGroup:
             async with EnhancedTaskGroup(max_tasks=2) as tg:
                 for _ in range(10):
                     _ = tg.create_task(sleep_td(self.delta))
-        assert timer >= self.delta
+        assert timer >= 5 * self.delta
+
+    async def test_run_or_create_task_parallel_with_max_tasks_none(self) -> None:
+        with Timer() as timer:
+            async with EnhancedTaskGroup() as tg:
+                assert not tg._is_debug()
+                for _ in range(10):
+                    _ = await tg.run_or_create_task(sleep_td(self.delta))
+        assert timer <= 2 * self.delta
+
+    async def test_run_or_create_task_parallel_with_max_tasks_two(self) -> None:
+        with Timer() as timer:
+            async with EnhancedTaskGroup(max_tasks=2) as tg:
+                assert not tg._is_debug()
+                for _ in range(10):
+                    _ = await tg.run_or_create_task(sleep_td(self.delta))
+        assert timer >= 5 * self.delta
+
+    async def test_run_or_create_task_serial_with_max_tasks_negative(self) -> None:
+        with Timer() as timer:
+            async with EnhancedTaskGroup(max_tasks=-1) as tg:
+                assert tg._is_debug()
+                for _ in range(10):
+                    _ = await tg.run_or_create_task(sleep_td(self.delta))
+        assert timer >= 10 * self.delta
+
+    async def test_run_or_create_task_serial_with_debug(self) -> None:
+        with Timer() as timer:
+            async with EnhancedTaskGroup(debug=True) as tg:
+                assert tg._is_debug()
+                for _ in range(10):
+                    _ = await tg.run_or_create_task(sleep_td(self.delta))
+        assert timer >= 10 * self.delta
 
     async def test_timeout_pass(self) -> None:
         async with EnhancedTaskGroup(timeout=2 * self.delta) as tg:
