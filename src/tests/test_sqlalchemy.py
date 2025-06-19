@@ -296,7 +296,9 @@ class TestGetChunkSize:
 
 class TestGetColumnNames:
     def test_table(self) -> None:
-        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        table = Table(
+            _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
+        )
         self._run_test(table)
 
     def test_mapped_class(self) -> None:
@@ -315,7 +317,9 @@ class TestGetColumnNames:
 
 class TestGetColumns:
     def test_table(self) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        table = Table(
+            _table_names(), MetaData(), Column("id", Integer, primary_key=True)
+        )
         self._run_test(table)
 
     def test_mapped_class(self) -> None:
@@ -397,7 +401,9 @@ class TestGetPrimaryKeyValues:
 
 class TestGetTable:
     def test_table(self) -> None:
-        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        table = Table(
+            _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
+        )
         result = get_table(table)
         assert result is table
 
@@ -435,22 +441,23 @@ class TestGetTable:
 
 class TestGetTableName:
     def test_table(self) -> None:
-        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        name = _table_names()
+        table = Table(name, MetaData(), Column("id_", Integer, primary_key=True))
         result = get_table_name(table)
-        expected = "example"
-        assert result == expected
+        assert result == name
 
     def test_mapped_class(self) -> None:
+        name = _table_names()
+
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = _table_names()
+            __tablename__ = name
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         result = get_table_name(Example)
-        expected = "example"
-        assert result == expected
+        assert result == name
 
 
 class TestHashPrimaryKeyValues:
@@ -1548,7 +1555,7 @@ class TestUpsertServiceMixin:
 class TestYieldPrimaryKeyColumns:
     def test_main(self) -> None:
         table = Table(
-            "example",
+            _table_names(),
             MetaData(),
             Column("id1", Integer, primary_key=True),
             Column("id2", Integer, primary_key=True),
@@ -1565,7 +1572,7 @@ class TestYieldPrimaryKeyColumns:
 
     def test_autoincrement(self) -> None:
         table = Table(
-            "example",
+            _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True, autoincrement=True),
             Column("x", Integer),
