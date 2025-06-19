@@ -554,7 +554,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.135.2"
+version = "0.136.0"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -570,6 +570,7 @@ logging = [
 test = [
     { name = "dycw-pytest-only" },
     { name = "hypothesis" },
+    { name = "pudb" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -729,9 +730,6 @@ pqdm = [
 psutil = [
     { name = "psutil" },
 ]
-pudb = [
-    { name = "pudb" },
-]
 pydantic = [
     { name = "pydantic" },
 ]
@@ -818,6 +816,7 @@ requires-dist = [
     { name = "coloredlogs", marker = "extra == 'logging'", specifier = ">=15.0.1,<15.1" },
     { name = "dycw-pytest-only", marker = "extra == 'test'", specifier = ">=2.1.1,<2.2" },
     { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.135.2,<6.136" },
+    { name = "pudb", marker = "extra == 'test'", specifier = ">=2025.1,<2025.2" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.3.5,<8.4" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=1.0.0,<1.1" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=6.1.1,<6.2" },
@@ -917,7 +916,6 @@ pottery-test = [
 ]
 pqdm = [{ name = "pqdm", specifier = ">=0.2.0,<0.3" }]
 psutil = [{ name = "psutil", specifier = ">=7.0.0,<7.1" }]
-pudb = [{ name = "pudb", specifier = ">=2025.1,<2025.2" }]
 pydantic = [{ name = "pydantic", specifier = ">=2.11.4,<2.12" }]
 pyinstrument = [{ name = "pyinstrument", specifier = ">=5.0.2,<5.1" }]
 pytest = [
