@@ -48,12 +48,7 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import ArgumentError, DatabaseError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.ext.asyncio import create_async_engine as _create_async_engine
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    InstrumentedAttribute,
-    class_mapper,
-    declared_attr,
-)
+from sqlalchemy.orm import DeclarativeBase, class_mapper, declared_attr
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 

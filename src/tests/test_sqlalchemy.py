@@ -10,7 +10,6 @@ from hypothesis.strategies import (
     SearchStrategy,
     booleans,
     floats,
-    integers,
     lists,
     none,
     sets,
@@ -85,7 +84,7 @@ from utilities.sqlalchemy import (
     upsert_items,
     yield_primary_key_columns,
 )
-from utilities.text import strip_and_dedent, unique_str
+from utilities.text import strip_and_dedent
 from utilities.typing import get_args, get_literal_elements
 from utilities.whenever import SECOND, format_compact, get_now
 
@@ -157,7 +156,7 @@ class TestCheckEngine:
 
 
 class TestColumnwiseMinMax:
-    @given(values=sets(pairs(integers(0, 10) | none()), min_size=1))
+    @given(values=sets(pairs(int32s() | none()), min_size=1))
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -280,7 +279,7 @@ class TestEnsureTablesDropped:
 
 
 class TestGetChunkSize:
-    @given(chunk_size_frac=floats(0.0, 1.0), scaling=integers(0, 10))
+    @given(chunk_size_frac=floats(0.0, 1.0), scaling=int32s())
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -379,7 +378,7 @@ class TestGetDialectMaxParams:
 
 
 class TestGetPrimaryKeyValues:
-    @given(id1=integers(), id2=integers(), value=booleans())
+    @given(id1=int32s(), id2=int32s(), value=booleans())
     def test_main(self, *, id1: int, id2: int, value: bool) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
@@ -455,7 +454,7 @@ class TestGetTableName:
 
 
 class TestHashPrimaryKeyValues:
-    @given(id1=integers(), id2=integers(), value=booleans())
+    @given(id1=int32s(), id2=int32s(), value=booleans())
     def test_main(self, *, id1: int, id2: int, value: bool) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
@@ -477,7 +476,7 @@ class TestHashPrimaryKeyValues:
 
 
 class TestInsertItems:
-    @given(id_=integers(0, 10))
+    @given(id_=int32s())
     @mark.parametrize("case", [param("tuple"), param("dict")])
     @settings(
         max_examples=1,
@@ -495,7 +494,7 @@ class TestInsertItems:
                 item = {"id_": id_}, table
         await self._run_test(test_engine, table, {id_}, item)
 
-    @given(ids=sets(integers(0, 10), min_size=1))
+    @given(ids=sets(int32s(), min_size=1))
     @mark.parametrize(
         "case",
         [
@@ -534,7 +533,7 @@ class TestInsertItems:
                 item = [({"id_": id_}, table) for id_ in ids]
         await self._run_test(test_engine, table, ids, item)
 
-    @given(ids=sets(integers(0, 1000), min_size=10, max_size=100))
+    @given(ids=sets(int32s(), min_size=10, max_size=100))
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -546,7 +545,7 @@ class TestInsertItems:
             test_engine, table, ids, [({"id_": id_}, table) for id_ in ids]
         )
 
-    @given(id_=integers(0, 10))
+    @given(id_=int32s())
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -556,7 +555,7 @@ class TestInsertItems:
         cls = self._make_mapped_class()
         await self._run_test(test_engine, cls, {id_}, cls(id_=id_))
 
-    @given(ids=sets(integers(0, 10), min_size=1))
+    @given(ids=sets(int32s(), min_size=1))
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -568,7 +567,7 @@ class TestInsertItems:
         cls = self._make_mapped_class()
         await self._run_test(test_engine, cls, ids, [cls(id_=id_) for id_ in ids])
 
-    @given(id_=integers(0, 10))
+    @given(id_=int32s())
     @mark.parametrize("key", [param("Id_"), param("id_")])
     @settings(
         max_examples=1,
@@ -580,7 +579,7 @@ class TestInsertItems:
         item = {key: id_}, table
         await self._run_test(test_engine, table, {id_}, item, snake=True)
 
-    @given(id_=integers(0, 10))
+    @given(id_=int32s())
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -756,7 +755,7 @@ class TestIsTableOrORM:
 
 
 class TestMapMappingToTable:
-    @given(id_=integers(0, 10), value=booleans())
+    @given(id_=int32s(), value=booleans())
     def test_main(self, *, id_: int, value: bool) -> None:
         mapping = {"id_": id_, "value": value}
         table = Table(
@@ -768,7 +767,7 @@ class TestMapMappingToTable:
         result = _map_mapping_to_table(mapping, table)
         assert result == mapping
 
-    @given(id_=integers(0, 10), value=booleans())
+    @given(id_=int32s(), value=booleans())
     @mark.parametrize("key1", [param("Id_"), param("id_")])
     @mark.parametrize("key2", [param("Value"), param("value")])
     def test_snake(self, *, key1: str, id_: int, key2: str, value: bool) -> None:
@@ -783,7 +782,7 @@ class TestMapMappingToTable:
         expected = {"id_": id_, "value": value}
         assert result == expected
 
-    @given(id_=integers(0, 10), value=booleans(), extra=booleans())
+    @given(id_=int32s(), value=booleans(), extra=booleans())
     def test_error_extra_columns(self, *, id_: int, value: bool, extra: bool) -> None:
         mapping = {"id_": id_, "value": value, "extra": extra}
         table = Table(
@@ -798,7 +797,7 @@ class TestMapMappingToTable:
         ):
             _ = _map_mapping_to_table(mapping, table)
 
-    @given(id_=integers(0, 10), value=booleans())
+    @given(id_=int32s(), value=booleans())
     def test_error_snake_empty_error(self, *, id_: int, value: bool) -> None:
         mapping = {"id_": id_, "invalid": value}
         table = Table(
@@ -813,7 +812,7 @@ class TestMapMappingToTable:
         ):
             _ = _map_mapping_to_table(mapping, table, snake=True)
 
-    @given(id_=integers(0, 10), value=booleans())
+    @given(id_=int32s(), value=booleans())
     def test_error_snake_non_unique_error(self, *, id_: int, value: bool) -> None:
         mapping = {"id_": id_, "value": value}
         table = Table(
@@ -833,9 +832,7 @@ class TestMapMappingToTable:
 class TestMigrateData:
     @given(
         values=lists(
-            tuples(integers(0, 10), booleans() | none()),
-            min_size=1,
-            unique_by=lambda x: x[0],
+            tuples(int32s(), booleans() | none()), min_size=1, unique_by=lambda x: x[0]
         )
     )
     @settings(
@@ -870,7 +867,7 @@ class TestMigrateData:
 
 
 class TestNormalizeInsertItem:
-    @given(id_=integers(0, 10))
+    @given(id_=int32s())
     @mark.parametrize("case", [param("tuple"), param("dict")])
     @settings(
         max_examples=1,
@@ -890,7 +887,7 @@ class TestNormalizeInsertItem:
         expected = _NormalizedItem(mapping={"id_": id_}, table=table)
         assert result == expected
 
-    @given(ids=sets(integers(0, 10)))
+    @given(ids=sets(int32s()))
     @mark.parametrize("case", [param("tuple"), param("dict")])
     @settings(
         max_examples=1,
@@ -910,7 +907,7 @@ class TestNormalizeInsertItem:
         expected = [_NormalizedItem(mapping={"id_": id_}, table=table) for id_ in ids]
         assert result == expected
 
-    @given(ids=sets(integers()))
+    @given(ids=sets(int32s()))
     @mark.parametrize("case", [param("tuple"), param("dict")])
     @settings(
         max_examples=1,
@@ -930,14 +927,14 @@ class TestNormalizeInsertItem:
         expected = [_NormalizedItem(mapping={"id_": id_}, table=table) for id_ in ids]
         assert result == expected
 
-    @given(id_=integers())
+    @given(id_=int32s())
     def test_mapped_class(self, *, id_: int) -> None:
         cls = self._mapped_class
         result = one(_normalize_insert_item(cls(id_=id_)))
         expected = _NormalizedItem(mapping={"id_": id_}, table=get_table(cls))
         assert result == expected
 
-    @given(ids=sets(integers(0, 10), min_size=1))
+    @given(ids=sets(int32s(), min_size=1))
     def test_mapped_classes(self, *, ids: set[int]) -> None:
         cls = self._mapped_class
         result = list(_normalize_insert_item([cls(id_=id_) for id_ in ids]))
@@ -946,7 +943,7 @@ class TestNormalizeInsertItem:
         ]
         assert result == expected
 
-    @given(id_=integers(0, 10))
+    @given(id_=int32s())
     @mark.parametrize("case", [param("tuple"), param("dict")])
     @settings(
         max_examples=1,
@@ -997,7 +994,7 @@ class TestNormalizeInsertItem:
 
 
 class TestORMInstToDict:
-    @given(id_=integers())
+    @given(id_=int32s())
     def test_main(self, *, id_: int) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
@@ -1011,7 +1008,7 @@ class TestORMInstToDict:
         expected = {"id_": id_}
         assert result == expected
 
-    @given(id_=integers())
+    @given(id_=int32s())
     def test_explicitly_named_column(self, *, id_: int) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
@@ -1027,8 +1024,7 @@ class TestORMInstToDict:
         expected = {"id": id_}
         assert result == expected
 
-    @given(parent_id=integers(), child_id=integers())
-    @mark.only
+    @given(parent_id=int32s(), child_id=int32s())
     def test_relationship(self, *, parent_id: int, child_id: int) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
@@ -1299,7 +1295,19 @@ class TestUpsertItems:
         )
 
     @mark.only
-    async def test_mapped_class_with_rel(self, *, test_engine: AsyncEngine) -> None:
+    @given(parent=_upsert_triples(), child=_upsert_triples())
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    async def test_mapped_class_with_rel(
+        self,
+        *,
+        parent: tuple[int, bool, bool],
+        child: tuple[int, bool, bool],
+        test_engine: AsyncEngine,
+    ) -> None:
         class Base(DeclarativeBase, MappedAsDataclass):
             pass
 
@@ -1314,7 +1322,7 @@ class TestUpsertItems:
             )
 
         class Child(Base):
-            __tablename__ = "child"
+            __tablename__ = _table_names()
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
             parent_id: Mapped[int] = mapped_column(
@@ -1326,8 +1334,25 @@ class TestUpsertItems:
                 "Parent", init=False, back_populates="children"
             )
 
+        parent_id, parent_init, _ = parent
+        child_id, child_init, child_post = child
         await self._run_test(
-            test_engine, Parent, Parent(id_=1, value=True), expected={(1, True)}
+            test_engine,
+            Parent,
+            Parent(id_=parent_id, value=parent_init),
+            expected={(parent_id, parent_init)},
+        )
+        await self._run_test(
+            test_engine,
+            Child,
+            Child(id_=child_id, parent_id=parent_id, value=child_init),
+            expected={(child_id, parent_id, child_init)},
+        )
+        await self._run_test(
+            test_engine,
+            Child,
+            Child(id_=child_id, parent_id=parent_id, value=child_post),
+            expected={(child_id, parent_id, child_post)},
         )
 
     @given(triples=_upsert_lists(nullable=True, min_size=1))
@@ -1351,7 +1376,7 @@ class TestUpsertItems:
         }
         _ = await self._run_test(test_engine, cls, post, expected=post_expected)
 
-    @given(id_=integers(0, 10), x_init=booleans(), x_post=booleans(), y=booleans())
+    @given(id_=int32s(), x_init=booleans(), x_post=booleans(), y=booleans())
     @mark.parametrize("selected_or_all", get_literal_elements(_SelectedOrAll))
     @settings(
         max_examples=1,
@@ -1395,7 +1420,7 @@ class TestUpsertItems:
             expected={expected},
         )
 
-    @given(id_=integers(0, 10))
+    @given(id_=int32s())
     @settings(
         max_examples=1,
         phases={Phase.generate},
