@@ -1049,12 +1049,12 @@ def _orm_inst_to_dict_one(
     obj: DeclarativeBase, attrs: AbstractSet[str], name: str, /
 ) -> Any:
     attr = one(
-        attr for attr in attrs if _orm_inst_to_dict_is_attr(type(obj), attr, name)
+        attr for attr in attrs if _orm_inst_to_dict_predicate(type(obj), attr, name)
     )
     return getattr(obj, attr)
 
 
-def _orm_inst_to_dict_is_attr(
+def _orm_inst_to_dict_predicate(
     cls: type[DeclarativeBase], attr: str, name: str, /
 ) -> bool:
     cls_attr = getattr(cls, attr)
