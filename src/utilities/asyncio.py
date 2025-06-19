@@ -36,10 +36,10 @@ from typing_extensions import deprecated
 
 from utilities.dataclasses import replace_non_sentinel
 from utilities.errors import repr_error
-from utilities.functions import ensure_int, ensure_not_none
+from utilities.functions import ensure_int, ensure_not_none, to_bool
 from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import SupportsRichComparison
+from utilities.types import MaybeCallableBool, SupportsRichComparison
 from utilities.whenever import SECOND, get_now
 
 if TYPE_CHECKING:
@@ -223,7 +223,7 @@ class EnhancedTaskGroup(TaskGroup):
     _semaphore: Semaphore | None
     _timeout: TimeDelta | None
     _error: MaybeType[BaseException]
-    _debug: bool
+    _debug: MaybeCallableBool
     _stack: AsyncExitStack
     _timeout_cm: _AsyncGeneratorContextManager[None] | None
 
@@ -234,7 +234,7 @@ class EnhancedTaskGroup(TaskGroup):
         max_tasks: int | None = None,
         timeout: TimeDelta | None = None,
         error: MaybeType[BaseException] = TimeoutError,
-        debug: bool = False,
+        debug: MaybeCallableBool = False,
     ) -> None:
         super().__init__()
         self._semaphore = None if max_tasks is None else Semaphore(max_tasks)
@@ -257,7 +257,7 @@ class EnhancedTaskGroup(TaskGroup):
         tb: TracebackType | None,
     ) -> None:
         _ = await self._stack.__aexit__(et, exc, tb)
-        match self._debug:
+        match to_bool(bool_=self._debug):
             case True:
                 with suppress(Exception):
                     _ = await super().__aexit__(et, exc, tb)
@@ -293,7 +293,7 @@ class EnhancedTaskGroup(TaskGroup):
         name: str | None = None,
         context: Context | None = None,
     ) -> T | Task[T]:
-        match self._debug:
+        match to_bool(bool_=self._debug):
             case True:
                 return await coro
             case False:

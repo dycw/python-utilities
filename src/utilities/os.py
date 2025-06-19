@@ -123,6 +123,14 @@ class GetEnvVarError(Exception):
 ##
 
 
+def is_debug() -> bool:
+    """Check if we are in `DEBUG` mode."""
+    return get_env_var("DEBUG", nullable=True) is not None
+
+
+##
+
+
 @contextmanager
 def temp_environ(
     env: Mapping[str, str | None] | None = None, **env_kwargs: str | None
@@ -154,5 +162,6 @@ __all__ = [
     "get_cpu_count",
     "get_cpu_use",
     "get_env_var",
+    "is_debug",
     "temp_environ",
 ]
