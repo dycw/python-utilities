@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, override
 from utilities.atomicwrites import writer
 from utilities.errors import repr_error
 from utilities.iterables import OneEmptyError, one
+from utilities.os import get_env_var
 from utilities.pathlib import get_path
 from utilities.reprlib import (
     RICH_EXPAND_ALL,
@@ -202,6 +203,7 @@ def make_except_hook(
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
     slack_url: str | None = None,
+    pudb_env_var: str | None = None,
 ) -> Callable[
     [type[BaseException] | None, BaseException | None, TracebackType | None], None
 ]:
@@ -218,6 +220,7 @@ def make_except_hook(
         max_depth=max_depth,
         expand_all=expand_all,
         slack_url=slack_url,
+        pudb_env_var=pudb_env_var,
     )
 
 
@@ -237,6 +240,7 @@ def _make_except_hook_inner(
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
     slack_url: str | None = None,
+    pudb_env_var: str | None = None,
 ) -> None:
     """Exception hook to log the traceback."""
     _ = (exc_type, traceback)
@@ -268,6 +272,12 @@ def _make_except_hook_inner(
 
         send = f"```{slim}```"
         run(send_to_slack(slack_url, send))
+    if (pudb_env_var is not None) and (  # pragma: no cover
+        get_env_var(pudb_env_var, nullable=True) is not None
+    ):
+        from pudb import post_mortem
+
+        post_mortem()
 
 
 @dataclass(kw_only=True, slots=True)
