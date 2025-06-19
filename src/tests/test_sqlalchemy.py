@@ -1152,7 +1152,7 @@ class TestPrepareInsertOrUpsertItemsMergeItems:
 class TestSelectableToString:
     async def test_main(self, *, test_engine: AsyncEngine) -> None:
         table = Table(
-            _table_names(),
+            "example",
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),

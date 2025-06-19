@@ -86,7 +86,7 @@ from sqlalchemy import (
 from sqlalchemy.exc import DuplicateColumnError, OperationalError, ProgrammingError
 
 from tests.test_sqlalchemy import _table_names, _upsert_lists
-from utilities.hypothesis import text_ascii, zoned_datetimes
+from utilities.hypothesis import int32s, text_ascii, zoned_datetimes
 from utilities.math import is_equal
 from utilities.polars import DatetimeUTC, check_polars_dataframe
 from utilities.sqlalchemy import ensure_tables_created
@@ -128,12 +128,12 @@ _CASES_SELECT: list[
         eq,
     ),
     (floats(allow_nan=False) | none(), Float64, Float, is_equal),
-    (integers(-10, 10) | none(), Int64, Integer, eq),
+    (int32s() | none(), Int64, Integer, eq),
     (text_ascii() | none(), pl.String, sqlalchemy.String, eq),
 ]
 _CASES_INSERT: list[
     tuple[SearchStrategy[Any], PolarsDataType, Any, Callable[[Any, Any], bool]]
-] = [*_CASES_SELECT, (integers(-10, 10) | none(), Int32, Integer, eq)]
+] = [*_CASES_SELECT, (int32s() | none(), Int32, Integer, eq)]
 
 
 class TestInsertDataFrame:
@@ -438,10 +438,7 @@ class TestSelectToDataFrame:
         expected = DataFrame({"value": values}, schema={"value": pl.Boolean})
         assert_frame_equal(result, expected)
 
-    @given(
-        values=lists(integers(0, 100), min_size=1, unique=True),
-        batch_size=integers(1, 10),
-    )
+    @given(values=lists(int32s(), min_size=1, unique=True), batch_size=integers(1, 10))
     @settings(
         max_examples=1,
         phases={Phase.generate},
@@ -457,7 +454,7 @@ class TestSelectToDataFrame:
 
     @given(
         data=data(),
-        values=lists(integers(0, 100), min_size=1, unique=True),
+        values=lists(int32s(), min_size=1, unique=True),
         in_clauses_chunk_size=integers(1, 10),
     )
     @settings(
@@ -496,7 +493,7 @@ class TestSelectToDataFrame:
 
     @given(
         data=data(),
-        values=lists(integers(0, 100), min_size=1, unique=True),
+        values=lists(int32s(), min_size=1, unique=True),
         batch_size=integers(1, 10),
         in_clauses_chunk_size=integers(1, 10),
     )
@@ -656,7 +653,7 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
 
 class TestSelectToDataFrameYieldSelectsWithInClauses:
     @given(
-        values=sets(integers(), min_size=1),
+        values=sets(int32s(), min_size=1),
         in_clauses_chunk_size=integers(1, 10) | none(),
         chunk_size_frac=floats(0.1, 10.0),
     )
