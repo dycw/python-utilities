@@ -14,7 +14,6 @@ altair-test = [
   "img2pdf",
   "vl-convert-python",
 ]
-arq = ["arq >= 0.26.3, < 0.27"]
 atools = ["atools >= 0.14.2, < 0.15"]
 cachetools = ["cachetools >= 6.1.0, < 6.2"]
 click = ["click >= 8.2.1, < 8.3"]
@@ -106,7 +105,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.136.3"
+version = "0.136.4"
 
 [project.optional-dependencies]
 logging = [
@@ -134,7 +133,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.136.3"
+current_version = "0.136.4"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
