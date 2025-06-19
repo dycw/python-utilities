@@ -203,7 +203,7 @@ def make_except_hook(
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
     slack_url: str | None = None,
-    pudb_env_var: str | None = None,
+    pudb: str | None = None,
 ) -> Callable[
     [type[BaseException] | None, BaseException | None, TracebackType | None], None
 ]:
@@ -220,7 +220,7 @@ def make_except_hook(
         max_depth=max_depth,
         expand_all=expand_all,
         slack_url=slack_url,
-        pudb_env_var=pudb_env_var,
+        pudb=pudb,
     )
 
 
