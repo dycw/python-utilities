@@ -646,10 +646,15 @@ class TestIsPairOfSequenceOfTupleOrStringMappingAndTable:
         ("obj", "expected"),
         [
             param(None, False),
-            param(([(1, 2, 3)], Table("example", MetaData())), True),
-            param(([{"a": 1, "b": 2, "c": 3}], Table("example", MetaData())), True),
+            param(([(1, 2, 3)], Table(_table_names(), MetaData())), True),
             param(
-                ([(1, 2, 3), {"a": 1, "b": 2, "c": 3}], Table("example", MetaData())),
+                ([{"a": 1, "b": 2, "c": 3}], Table(_table_names(), MetaData())), True
+            ),
+            param(
+                (
+                    [(1, 2, 3), {"a": 1, "b": 2, "c": 3}],
+                    Table(_table_names(), MetaData()),
+                ),
                 True,
             ),
         ],
@@ -664,8 +669,8 @@ class TestIsPairOfStrMappingAndTable:
         ("obj", "expected"),
         [
             param(None, False),
-            param(((1, 2, 3), Table("example", MetaData())), False),
-            param(({"a": 1, "b": 2, "c": 3}, Table("example", MetaData())), True),
+            param(((1, 2, 3), Table(_table_names(), MetaData())), False),
+            param(({"a": 1, "b": 2, "c": 3}, Table(_table_names(), MetaData())), True),
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
@@ -678,8 +683,8 @@ class TestIsPairOfTupleAndTable:
         ("obj", "expected"),
         [
             param(None, False),
-            param(((1, 2, 3), Table("example", MetaData())), True),
-            param(({"a": 1, "b": 2, "c": 3}, Table("example", MetaData())), False),
+            param(((1, 2, 3), Table(_table_names(), MetaData())), True),
+            param(({"a": 1, "b": 2, "c": 3}, Table(_table_names(), MetaData())), False),
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
@@ -692,8 +697,8 @@ class TestIsPairOfTupleStrMappingAndTable:
         ("obj", "expected"),
         [
             param(None, False),
-            param(((1, 2, 3), Table("example", MetaData())), True),
-            param(({"a": 1, "b": 2, "c": 3}, Table("example", MetaData())), True),
+            param(((1, 2, 3), Table(_table_names(), MetaData())), True),
+            param(({"a": 1, "b": 2, "c": 3}, Table(_table_names(), MetaData())), True),
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
@@ -724,7 +729,9 @@ class TestIsORM:
         assert is_table_or_orm(Example)
 
     def test_table(self) -> None:
-        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        table = Table(
+            _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
+        )
         assert not is_orm(table)
 
     def test_none(self) -> None:
@@ -733,7 +740,9 @@ class TestIsORM:
 
 class TestIsTableOrORM:
     def test_table(self) -> None:
-        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        table = Table(
+            _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
+        )
         assert is_table_or_orm(table)
 
     def test_orm_inst(self) -> None:
@@ -766,7 +775,7 @@ class TestMapMappingToTable:
     def test_main(self, *, id_: int, value: bool) -> None:
         mapping = {"id_": id_, "value": value}
         table = Table(
-            "example",
+            _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean),
@@ -780,7 +789,7 @@ class TestMapMappingToTable:
     def test_snake(self, *, key1: str, id_: int, key2: str, value: bool) -> None:
         mapping = {key1: id_, key2: value}
         table = Table(
-            "example",
+            _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean),
@@ -793,7 +802,7 @@ class TestMapMappingToTable:
     def test_error_extra_columns(self, *, id_: int, value: bool, extra: bool) -> None:
         mapping = {"id_": id_, "value": value, "extra": extra}
         table = Table(
-            "example",
+            _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean),
@@ -808,7 +817,7 @@ class TestMapMappingToTable:
     def test_error_snake_empty_error(self, *, id_: int, value: bool) -> None:
         mapping = {"id_": id_, "invalid": value}
         table = Table(
-            "example",
+            _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean),
@@ -823,7 +832,7 @@ class TestMapMappingToTable:
     def test_error_snake_non_unique_error(self, *, id_: int, value: bool) -> None:
         mapping = {"id_": id_, "value": value}
         table = Table(
-            "example",
+            _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean),
@@ -958,7 +967,9 @@ class TestNormalizeInsertItem:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     def test_snake(self, *, case: Literal["tuple", "dict"], id_: int) -> None:
-        table = Table("example", MetaData(), Column("Id_", Integer, primary_key=True))
+        table = Table(
+            _table_names(), MetaData(), Column("Id_", Integer, primary_key=True)
+        )
         match case:
             case "tuple":
                 item = (id_,), table
@@ -973,7 +984,8 @@ class TestNormalizeInsertItem:
         [
             param((None,), id="tuple, not pair"),
             param(
-                (None, Table("example", MetaData())), id="pair, first element invalid"
+                (None, Table(_table_names(), MetaData())),
+                id="pair, first element invalid",
             ),
             param(((1, 2, 3), None), id="pair, second element invalid"),
             param([None], id="iterable, invalid"),
@@ -986,7 +998,9 @@ class TestNormalizeInsertItem:
 
     @property
     def _table(self) -> Table:
-        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        return Table(
+            _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
+        )
 
     @property
     def _mapped_class(self) -> type[DeclarativeBase]:
@@ -1138,7 +1152,7 @@ class TestPrepareInsertOrUpsertItemsMergeItems:
 class TestSelectableToString:
     async def test_main(self, *, test_engine: AsyncEngine) -> None:
         table = Table(
-            "example",
+            _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
@@ -1178,7 +1192,7 @@ class TestTupleToMapping:
     )
     def test_main(self, *, values: tuple[Any, ...], expected: StrMapping) -> None:
         table = Table(
-            "example",
+            _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
