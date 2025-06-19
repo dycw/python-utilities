@@ -262,7 +262,7 @@ class EnhancedTaskGroup(TaskGroup):
         tb: TracebackType | None,
     ) -> None:
         _ = await self._stack.__aexit__(et, exc, tb)
-        match to_bool(bool_=self._debug):
+        match self._is_debug():
             case True:
                 with suppress(Exception):
                     _ = await super().__aexit__(et, exc, tb)
@@ -298,7 +298,7 @@ class EnhancedTaskGroup(TaskGroup):
         name: str | None = None,
         context: Context | None = None,
     ) -> T | Task[T]:
-        match to_bool(bool_=self._debug):
+        match self._is_debug():
             case True:
                 return await coro
             case False:
