@@ -1037,12 +1037,11 @@ class _MapMappingToTableSnakeMapNonUniqueError(_MapMappingToTableError):
 
 def _orm_inst_to_dict(obj: DeclarativeBase, /) -> StrMapping:
     """Map an ORM instance to a dictionary."""
-    attrs: dict[str, InstrumentedAttribute] = dict(
-        yield_object_attributes(obj, static_type=InstrumentedAttribute)
-    )
+    attrs = {
+        k for k, _ in yield_object_attributes(obj, static_type=InstrumentedAttribute)
+    }
     return {
-        name: _orm_inst_to_dict_one(obj, set(attrs), name)
-        for name in get_column_names(obj)
+        name: _orm_inst_to_dict_one(obj, attrs, name) for name in get_column_names(obj)
     }
 
 
