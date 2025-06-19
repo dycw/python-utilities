@@ -144,7 +144,6 @@ class TestEnhancedQueue:
         assert res == expected
 
 
-@mark.only
 class TestEnhancedTaskGroup:
     delta: ClassVar[TimeDelta] = 0.05 * SECOND
 
