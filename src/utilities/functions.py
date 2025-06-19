@@ -14,7 +14,16 @@ from types import (
     MethodWrapperType,
     WrapperDescriptorType,
 )
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, cast, overload, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypeGuard,
+    assert_never,
+    cast,
+    overload,
+    override,
+)
 
 from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
@@ -22,6 +31,7 @@ from utilities.reprlib import get_repr, get_repr_and_class
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import (
     Dataclass,
+    MaybeCallableBool,
     Number,
     StrMapping,
     SupportsRichComparison,
@@ -930,6 +940,28 @@ def not_func[**P](func: Callable[P, bool], /) -> Callable[P, bool]:
 def second[U](pair: tuple[Any, U], /) -> U:
     """Get the second element in a pair."""
     return pair[1]
+
+
+##
+
+
+@overload
+def to_bool(*, bool_: MaybeCallableBool) -> bool: ...
+@overload
+def to_bool(*, bool_: None) -> None: ...
+@overload
+def to_bool(*, bool_: Sentinel) -> Sentinel: ...
+def to_bool(
+    *, bool_: MaybeCallableBool | None | Sentinel = sentinel
+) -> bool | None | Sentinel:
+    """Get the bool."""
+    match bool_:
+        case bool() | None | Sentinel():
+            return bool_
+        case Callable() as func:
+            return to_bool(bool_=func())
+        case _ as never:
+            assert_never(never)
 
 
 ##

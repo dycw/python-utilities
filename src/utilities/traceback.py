@@ -14,8 +14,8 @@ from typing import TYPE_CHECKING, override
 
 from utilities.atomicwrites import writer
 from utilities.errors import repr_error
+from utilities.functions import to_bool
 from utilities.iterables import OneEmptyError, one
-from utilities.os import is_debug
 from utilities.pathlib import get_path
 from utilities.reprlib import (
     RICH_EXPAND_ALL,
@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from utilities.types import (
+        MaybeCallableBool,
         MaybeCallablePathLike,
         MaybeCallableZonedDateTime,
         PathLike,
@@ -202,6 +203,7 @@ def make_except_hook(
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
     slack_url: str | None = None,
+    pudb: MaybeCallableBool = False,
 ) -> Callable[
     [type[BaseException] | None, BaseException | None, TracebackType | None], None
 ]:
@@ -218,6 +220,7 @@ def make_except_hook(
         max_depth=max_depth,
         expand_all=expand_all,
         slack_url=slack_url,
+        pudb=pudb,
     )
 
 
@@ -237,6 +240,7 @@ def _make_except_hook_inner(
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
     slack_url: str | None = None,
+    pudb: MaybeCallableBool = False,
 ) -> None:
     """Exception hook to log the traceback."""
     _ = (exc_type, traceback)
@@ -268,7 +272,7 @@ def _make_except_hook_inner(
 
         send = f"```{slim}```"
         run(send_to_slack(slack_url, send))
-    if is_debug():  # pragma: no cover
+    if to_bool(bool_=pudb):  # pragma: no cover
         from pudb import post_mortem
 
         post_mortem(tb=traceback, e_type=exc_type, e_value=exc_val)
