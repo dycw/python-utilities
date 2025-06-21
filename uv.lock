@@ -639,6 +639,7 @@ hypothesis = [
     { name = "hypothesis" },
 ]
 hypothesis-test = [
+    { name = "libcst" },
     { name = "luigi" },
     { name = "numpy" },
     { name = "pathvalidate" },
@@ -863,6 +864,7 @@ hashlib-test = [{ name = "orjson" }]
 http-test = [{ name = "orjson" }]
 hypothesis = [{ name = "hypothesis", specifier = ">=6.135.2,<6.136" }]
 hypothesis-test = [
+    { name = "libcst" },
     { name = "luigi" },
     { name = "numpy" },
     { name = "pathvalidate" },
