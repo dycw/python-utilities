@@ -557,11 +557,18 @@ def hashables() -> SearchStrategy[Hashable]:
 
 
 @composite
-def import_froms(draw: DrawFn, /) -> ImportFrom:
+def import_froms(
+    draw: DrawFn,
+    /,
+    *,
+    min_depth: MaybeSearchStrategy[int | None] = None,
+    max_depth: MaybeSearchStrategy[int | None] = None,
+) -> ImportFrom:
     """Strategy for generating import-froms."""
-    from utilities.libcst import generate_import, generate_import_froms
+    from utilities.libcst import generate_import
 
-    path = draw(paths())
+    min_depth_, max_depth_ = [draw2(draw, d) for d in [min_depth, max_depth]]
+    draw(paths(min_depth=1 if min_depth_ is None else min_depth_, max_depth=max_depth_))
     return generate_import()
 
 
@@ -570,7 +577,7 @@ def import_froms(draw: DrawFn, /) -> ImportFrom:
 
 def imports() -> SearchStrategy[Import]:
     """Strategy for generating imports."""
-    from utilities.libcst import generate_import, generate_import_froms
+    from utilities.libcst import generate_import
 
     return generate_import()
 
