@@ -91,6 +91,7 @@ sqlalchemy-test = ["aiosqlite", "asyncpg", "greenlet"]
 statsmodels = ["statsmodels >= 0.14.4, < 0.15"]
 streamlit = ["streamlit >= 1.46.0, < 1.47"]
 typed-settings = ["typed-settings >= 24.6.0, < 24.7"]
+typed-settings-test = ["libcst"]
 tzdata = ["tzdata >= 2025.2, < 2025.3"]
 
 # project
@@ -105,7 +106,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.136.4"
+version = "0.136.5"
 
 [project.optional-dependencies]
 logging = [
@@ -133,7 +134,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.136.4"
+current_version = "0.136.5"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
