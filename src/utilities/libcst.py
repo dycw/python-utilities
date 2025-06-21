@@ -54,6 +54,8 @@ def generate_import_from(
         case _, str():
             alias = ImportAlias(name=Name(name), asname=AsName(Name(asname)))
             names = [alias]
+        case _ as never:
+            assert_never(never)
     return ImportFrom(module=split_dotted_str(module), names=names)
 
 
