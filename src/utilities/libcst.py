@@ -23,16 +23,6 @@ from libcst import (
 from utilities.errors import ImpossibleCaseError
 
 
-def generate_from_import(
-    module: str, name: str, /, *, asname: str | None = None
-) -> ImportFrom:
-    """Generate an `ImportFrom` object."""
-    alias = ImportAlias(
-        name=Name(name), asname=AsName(Name(asname)) if asname else None
-    )
-    return ImportFrom(module=split_dotted_str(module), names=[alias])
-
-
 def generate_f_string(var: str, suffix: str, /) -> FormattedString:
     """Generate an f-string."""
     return FormattedString([
@@ -47,6 +37,16 @@ def generate_import(module: str, /, *, asname: str | None = None) -> Import:
         name=split_dotted_str(module), asname=AsName(Name(asname)) if asname else None
     )
     return Import(names=[alias])
+
+
+def generate_import_from(
+    module: str, name: str, /, *, asname: str | None = None
+) -> ImportFrom:
+    """Generate an `ImportFrom` object."""
+    alias = ImportAlias(
+        name=Name(name), asname=AsName(Name(asname)) if asname else None
+    )
+    return ImportFrom(module=split_dotted_str(module), names=[alias])
 
 
 ##
@@ -170,8 +170,8 @@ def render_module(source: str | Module, /) -> str:
 __all__ = [
     "ParseImportError",
     "generate_f_string",
-    "generate_from_import",
     "generate_import",
+    "generate_import_from",
     "join_dotted_str",
     "parse_import",
     "render_module",

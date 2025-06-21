@@ -106,6 +106,7 @@ if TYPE_CHECKING:
     from collections.abc import Collection, Hashable, Iterable, Iterator
 
     from hypothesis.database import ExampleDatabase
+    from libcst import Import, ImportFrom
     from numpy.random import RandomState
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
@@ -556,6 +557,59 @@ def hashables() -> SearchStrategy[Hashable]:
 
 
 @composite
+def import_froms(
+    draw: DrawFn,
+    /,
+    *,
+    min_depth: MaybeSearchStrategy[int | None] = None,
+    max_depth: MaybeSearchStrategy[int | None] = None,
+) -> ImportFrom:
+    """Strategy for generating import-froms."""
+    from utilities.libcst import generate_import_from
+
+    min_depth_, max_depth_ = [draw2(draw, d) for d in [min_depth, max_depth]]
+    path = draw(
+        paths(
+            min_depth=1 if min_depth_ is None else max(min_depth_, 1),
+            max_depth=max_depth_,
+        )
+    )
+    module = ".".join(path.parts)
+    name = draw(text_ascii(min_size=1))
+    asname = draw(text_ascii(min_size=1) | none())
+    return generate_import_from(module, name, asname=asname)
+
+
+##
+
+
+@composite
+def imports(
+    draw: DrawFn,
+    /,
+    *,
+    min_depth: MaybeSearchStrategy[int | None] = None,
+    max_depth: MaybeSearchStrategy[int | None] = None,
+) -> Import:
+    """Strategy for generating imports."""
+    from utilities.libcst import generate_import
+
+    min_depth_, max_depth_ = [draw2(draw, d) for d in [min_depth, max_depth]]
+    path = draw(
+        paths(
+            min_depth=1 if min_depth_ is None else max(min_depth_, 1),
+            max_depth=max_depth_,
+        )
+    )
+    module = ".".join(path.parts)
+    asname = draw(text_ascii(min_size=1) | none())
+    return generate_import(module, asname=asname)
+
+
+##
+
+
+@composite
 def int_arrays(
     draw: DrawFn,
     /,
@@ -746,11 +800,32 @@ def _pairs_map[T](elements: list[T], /) -> tuple[T, T]:
 ##
 
 
-def paths() -> SearchStrategy[Path]:
+@composite
+def paths(
+    draw: DrawFn,
+    /,
+    *,
+    min_depth: MaybeSearchStrategy[int | None] = None,
+    max_depth: MaybeSearchStrategy[int | None] = None,
+) -> Path:
     """Strategy for generating `Path`s."""
+    min_depth_, max_depth_ = [draw2(draw, d) for d in [min_depth, max_depth]]
+    parts = draw(
+        lists(
+            _path_parts(),
+            min_size=0 if min_depth_ is None else min_depth_,
+            max_size=max_depth_,
+        )
+    )
+    return Path(*parts)
+
+
+@composite
+def _path_parts(draw: DrawFn, /) -> str:
+    part = draw(text_ascii(min_size=1, max_size=10))
     reserved = {"AUX", "NUL"}
-    strategy = text_ascii(min_size=1, max_size=10).filter(lambda x: x not in reserved)
-    return lists(strategy, max_size=10).map(lambda parts: Path(*parts))
+    _ = assume(part not in reserved)
+    return part
 
 
 ##
@@ -1292,6 +1367,8 @@ __all__ = [
     "freqs",
     "git_repos",
     "hashables",
+    "import_froms",
+    "imports",
     "int32s",
     "int64s",
     "int_arrays",

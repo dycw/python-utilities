@@ -41,7 +41,7 @@ fpdf2 = ["fpdf2 >= 2.8.3, < 2.9"]
 hashlib-test = ["orjson"]
 http-test = ["orjson"]
 hypothesis = ["hypothesis >= 6.135.2, < 6.136"]
-hypothesis-test = ["luigi", "pathvalidate", "numpy", "pytest-rerunfailures"]
+hypothesis-test = ["libcst", "luigi", "pathvalidate", "numpy", "pytest-rerunfailures"]
 inflect = ["inflect >= 7.5.0, < 7.6"]
 jupyter-test = ["pandas", "polars"]
 libcst = ["libcst >= 1.8.0, < 1.9"]
@@ -105,7 +105,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.136.4"
+version = "0.136.5"
 
 [project.optional-dependencies]
 logging = [
@@ -133,7 +133,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.136.4"
+current_version = "0.136.5"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"

@@ -21,6 +21,7 @@ from hypothesis.strategies import (
     sets,
     timezones,
 )
+from libcst import Import, ImportFrom
 from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
@@ -55,6 +56,8 @@ from utilities.hypothesis import (
     freqs,
     git_repos,
     hashables,
+    import_froms,
+    imports,
     int32s,
     int64s,
     int_arrays,
@@ -88,6 +91,8 @@ from utilities.hypothesis import (
     versions,
     zoned_datetimes,
 )
+from utilities.iterables import one
+from utilities.libcst import parse_import
 from utilities.math import (
     MAX_FLOAT32,
     MAX_FLOAT64,
@@ -514,6 +519,36 @@ class TestHashables:
         _ = hash(x)
 
 
+class TestImports:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_depth = data.draw(integers(0, 10) | none())
+        max_depth = data.draw(integers(0, 10) | none())
+        with assume_does_not_raise(InvalidArgument):
+            imp = data.draw(imports(min_depth=min_depth, max_depth=max_depth))
+        assert isinstance(imp, Import)
+        parsed = one(parse_import(imp))
+        if min_depth is not None:
+            assert len(parsed.module.split(".")) >= min_depth
+        if max_depth is not None:
+            assert len(parsed.module.split(".")) <= max_depth
+
+
+class TestImportFroms:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_depth = data.draw(integers(0, 10) | none())
+        max_depth = data.draw(integers(0, 10) | none())
+        with assume_does_not_raise(InvalidArgument):
+            imp = data.draw(import_froms(min_depth=min_depth, max_depth=max_depth))
+        assert isinstance(imp, ImportFrom)
+        parsed = one(parse_import(imp))
+        if min_depth is not None:
+            assert len(parsed.module.split(".")) >= min_depth
+        if max_depth is not None:
+            assert len(parsed.module.split(".")) <= max_depth
+
+
 class TestIntArrays:
     @given(
         data=data(),
@@ -648,10 +683,17 @@ class TestPairs:
 class TestPaths:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        path = data.draw(paths())
+        min_depth = data.draw(integers(0, 10) | none())
+        max_depth = data.draw(integers(0, 10) | none())
+        with assume_does_not_raise(InvalidArgument):
+            path = data.draw(paths(min_depth=min_depth, max_depth=max_depth))
         assert isinstance(path, Path)
         assert not path.is_absolute()
         validate_filepath(str(path))
+        if min_depth is not None:
+            assert len(path.parts) >= min_depth
+        if max_depth is not None:
+            assert len(path.parts) <= max_depth
 
 
 class TestPlainDateTimes:
