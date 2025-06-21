@@ -43,10 +43,28 @@ def generate_import_from(
     module: str, name: str, /, *, asname: str | None = None
 ) -> ImportFrom:
     """Generate an `ImportFrom` object."""
-    alias = ImportAlias(
-        name=Name(name), asname=AsName(Name(asname)) if asname else None
-    )
-    return ImportFrom(module=split_dotted_str(module), names=[alias])
+    match name, asname:
+        case "*", None:
+            names = ImportStar()
+        case "*", str():
+            raise GenerateImportFromError(module=module, asname=asname)
+        case _, None:
+            alias = ImportAlias(name=Name(name))
+            names = [alias]
+        case _, str():
+            alias = ImportAlias(name=Name(name), asname=AsName(Name(asname)))
+            names = [alias]
+    return ImportFrom(module=split_dotted_str(module), names=names)
+
+
+@dataclass(kw_only=True, slots=True)
+class GenerateImportFromError(Exception):
+    module: str
+    asname: str | None = None
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid import: 'from {self.module} import * as {self.asname}'"
 
 
 ##
@@ -168,6 +186,7 @@ def render_module(source: str | Module, /) -> str:
 
 
 __all__ = [
+    "GenerateImportFromError",
     "ParseImportError",
     "generate_f_string",
     "generate_import",
