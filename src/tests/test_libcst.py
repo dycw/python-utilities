@@ -22,6 +22,7 @@ from pytest import raises
 from tests.conftest import SKIPIF_CI
 from utilities.iterables import one
 from utilities.libcst import (
+    GenerateImportFromError,
     _ParseImportAliasError,
     _ParseImportEmptyModuleError,
     generate_f_string,
@@ -63,8 +64,10 @@ class TestGenerateImportFrom:
         case=sampled_from([
             ("foo", "bar", None, "from foo import bar"),
             ("foo", "bar", "bar2", "from foo import bar as bar2"),
+            ("foo", "*", None, "from foo import *"),
             ("foo.bar", "baz", None, "from foo.bar import baz"),
             ("foo.bar", "baz", "baz2", "from foo.bar import baz as baz2"),
+            ("foo.bar", "*", None, "from foo.bar import *"),
         ])
     )
     def test_main(self, *, case: tuple[str, str, str | None, str]) -> None:
@@ -72,6 +75,13 @@ class TestGenerateImportFrom:
         imp = generate_import_from(module, name, asname=asname)
         result = Module([SimpleStatementLine([imp])]).code.strip("\n")
         assert result == expected
+
+    def test_error(self) -> None:
+        with raises(
+            GenerateImportFromError,
+            match=r"Invalid import: 'from foo import \* as bar'",
+        ):
+            _ = generate_import_from("foo", "*", asname="bar")
 
 
 class TestParseImport:
