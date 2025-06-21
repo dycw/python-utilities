@@ -590,7 +590,7 @@ def imports(
     *,
     min_depth: MaybeSearchStrategy[int | None] = None,
     max_depth: MaybeSearchStrategy[int | None] = None,
-) -> SearchStrategy[Import]:
+) -> Import:
     """Strategy for generating imports."""
     from utilities.libcst import generate_import
 
