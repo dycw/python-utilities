@@ -25,8 +25,8 @@ from utilities.libcst import (
     _ParseImportAliasError,
     _ParseImportEmptyModuleError,
     generate_f_string,
-    generate_from_import,
     generate_import,
+    generate_import_froms,
     join_dotted_str,
     parse_import,
     render_module,
@@ -42,22 +42,6 @@ class TestGenerateFString:
         assert result == expected
 
 
-class TestGenerateFromImport:
-    @given(
-        case=sampled_from([
-            ("foo", "bar", None, "from foo import bar"),
-            ("foo", "bar", "bar2", "from foo import bar as bar2"),
-            ("foo.bar", "baz", None, "from foo.bar import baz"),
-            ("foo.bar", "baz", "baz2", "from foo.bar import baz as baz2"),
-        ])
-    )
-    def test_main(self, *, case: tuple[str, str, str | None, str]) -> None:
-        module, name, asname, expected = case
-        imp = generate_from_import(module, name, asname=asname)
-        result = Module([SimpleStatementLine([imp])]).code.strip("\n")
-        assert result == expected
-
-
 class TestGenerateImport:
     @given(
         case=sampled_from([
@@ -70,6 +54,22 @@ class TestGenerateImport:
     def test_main(self, *, case: tuple[str, str | None, str]) -> None:
         module, asname, expected = case
         imp = generate_import(module, asname=asname)
+        result = Module([SimpleStatementLine([imp])]).code.strip("\n")
+        assert result == expected
+
+
+class TestGenerateImportFroms:
+    @given(
+        case=sampled_from([
+            ("foo", "bar", None, "from foo import bar"),
+            ("foo", "bar", "bar2", "from foo import bar as bar2"),
+            ("foo.bar", "baz", None, "from foo.bar import baz"),
+            ("foo.bar", "baz", "baz2", "from foo.bar import baz as baz2"),
+        ])
+    )
+    def test_main(self, *, case: tuple[str, str, str | None, str]) -> None:
+        module, name, asname, expected = case
+        imp = generate_import_froms(module, name, asname=asname)
         result = Module([SimpleStatementLine([imp])]).code.strip("\n")
         assert result == expected
 
