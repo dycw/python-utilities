@@ -26,7 +26,7 @@ from utilities.libcst import (
     _ParseImportEmptyModuleError,
     generate_f_string,
     generate_import,
-    generate_import_froms,
+    generate_import_from,
     join_dotted_str,
     parse_import,
     render_module,
@@ -58,7 +58,7 @@ class TestGenerateImport:
         assert result == expected
 
 
-class TestGenerateImportFroms:
+class TestGenerateImportFrom:
     @given(
         case=sampled_from([
             ("foo", "bar", None, "from foo import bar"),
@@ -69,7 +69,7 @@ class TestGenerateImportFroms:
     )
     def test_main(self, *, case: tuple[str, str, str | None, str]) -> None:
         module, name, asname, expected = case
-        imp = generate_import_froms(module, name, asname=asname)
+        imp = generate_import_from(module, name, asname=asname)
         result = Module([SimpleStatementLine([imp])]).code.strip("\n")
         assert result == expected
 

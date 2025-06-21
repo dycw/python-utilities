@@ -565,21 +565,45 @@ def import_froms(
     max_depth: MaybeSearchStrategy[int | None] = None,
 ) -> ImportFrom:
     """Strategy for generating import-froms."""
-    from utilities.libcst import generate_import
+    from utilities.libcst import generate_import_from
 
     min_depth_, max_depth_ = [draw2(draw, d) for d in [min_depth, max_depth]]
-    draw(paths(min_depth=1 if min_depth_ is None else min_depth_, max_depth=max_depth_))
-    return generate_import()
+    path = draw(
+        paths(
+            min_depth=1 if min_depth_ is None else max(min_depth_, 1),
+            max_depth=max_depth_,
+        )
+    )
+    module = ".".join(path.parts)
+    name = draw(text_ascii(min_size=1))
+    asname = draw(text_ascii(min_size=1) | none())
+    return generate_import_from(module, name, asname=asname)
 
 
 ##
 
 
-def imports() -> SearchStrategy[Import]:
+@composite
+def imports(
+    draw: DrawFn,
+    /,
+    *,
+    min_depth: MaybeSearchStrategy[int | None] = None,
+    max_depth: MaybeSearchStrategy[int | None] = None,
+) -> SearchStrategy[Import]:
     """Strategy for generating imports."""
     from utilities.libcst import generate_import
 
-    return generate_import()
+    min_depth_, max_depth_ = [draw2(draw, d) for d in [min_depth, max_depth]]
+    path = draw(
+        paths(
+            min_depth=1 if min_depth_ is None else max(min_depth_, 1),
+            max_depth=max_depth_,
+        )
+    )
+    module = ".".join(path.parts)
+    asname = draw(text_ascii(min_size=1) | none())
+    return generate_import(module, asname=asname)
 
 
 ##

@@ -91,6 +91,8 @@ from utilities.hypothesis import (
     versions,
     zoned_datetimes,
 )
+from utilities.iterables import one
+from utilities.libcst import parse_import
 from utilities.math import (
     MAX_FLOAT32,
     MAX_FLOAT64,
@@ -520,15 +522,31 @@ class TestHashables:
 class TestImports:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        imp = data.draw(imports())
+        min_depth = data.draw(integers(0, 10) | none())
+        max_depth = data.draw(integers(0, 10) | none())
+        with assume_does_not_raise(InvalidArgument):
+            imp = data.draw(imports(min_depth=min_depth, max_depth=max_depth))
         assert isinstance(imp, Import)
+        parsed = one(parse_import(imp))
+        if min_depth is not None:
+            assert len(parsed.module.split(".")) >= min_depth
+        if max_depth is not None:
+            assert len(parsed.module.split(".")) <= max_depth
 
 
 class TestImportFroms:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        imp = data.draw(import_froms())
+        min_depth = data.draw(integers(0, 10) | none())
+        max_depth = data.draw(integers(0, 10) | none())
+        with assume_does_not_raise(InvalidArgument):
+            imp = data.draw(import_froms(min_depth=min_depth, max_depth=max_depth))
         assert isinstance(imp, ImportFrom)
+        parsed = one(parse_import(imp))
+        if min_depth is not None:
+            assert len(parsed.module.split(".")) >= min_depth
+        if max_depth is not None:
+            assert len(parsed.module.split(".")) <= max_depth
 
 
 class TestIntArrays:

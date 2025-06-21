@@ -39,7 +39,7 @@ def generate_import(module: str, /, *, asname: str | None = None) -> Import:
     return Import(names=[alias])
 
 
-def generate_import_froms(
+def generate_import_from(
     module: str, name: str, /, *, asname: str | None = None
 ) -> ImportFrom:
     """Generate an `ImportFrom` object."""
@@ -171,7 +171,7 @@ __all__ = [
     "ParseImportError",
     "generate_f_string",
     "generate_import",
-    "generate_import_froms",
+    "generate_import_from",
     "join_dotted_str",
     "parse_import",
     "render_module",
