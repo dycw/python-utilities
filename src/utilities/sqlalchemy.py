@@ -86,6 +86,8 @@ from utilities.types import MaybeIterable, MaybeType, StrMapping, TupleOrStrMapp
 from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
+    from enum import StrEnum
+
     from whenever import TimeDelta
 
 type _EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConnection
@@ -279,6 +281,14 @@ async def ensure_tables_dropped(
                 await conn.run_sync(table.drop)
             except DatabaseError as err:
                 _ensure_tables_maybe_reraise(err, match)
+
+
+##
+
+
+def enum_values(enum: type[StrEnum], /) -> list[str]:
+    """Get the values of a StrEnum."""
+    return [e.value for e in enum]
 
 
 ##
@@ -1171,6 +1181,7 @@ __all__ = [
     "create_async_engine",
     "ensure_tables_created",
     "ensure_tables_dropped",
+    "enum_values",
     "get_chunk_size",
     "get_column_names",
     "get_columns",

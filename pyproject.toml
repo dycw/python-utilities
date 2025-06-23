@@ -51,7 +51,7 @@ luigi = ["luigi >= 3.6.0, < 3.7"]
 math-test = ["numpy"]
 memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
 more-itertools = ["more-itertools >= 10.7.0, < 10.8"]
-numpy = ["numpy >= 2.3.0, < 2.4"]
+numpy = ["numpy >= 2.3.1, < 2.4"]
 operator = ["polars-lts-cpu"]
 optuna = ["optuna >= 4.4.0, < 4.5"]
 orjson = ["orjson >= 3.10.18, < 3.11"]
@@ -80,7 +80,7 @@ python-dotenv = ["python-dotenv >= 1.1.0, < 1.2"]
 redis = ["redis >= 6.2.0, < 6.3", "orjson"]
 redis-test = ["pytest-rerunfailures"]
 reprlib-test = ["rich"]
-scipy = ["scipy >= 1.15.3, < 1.16"]
+scipy = ["scipy >= 1.16.0, < 1.17"]
 sklearn = ["scikit-learn >= 1.7.0, < 1.8"]
 slack-sdk = ["slack-sdk >= 3.35.0, < 3.36"]
 slack-sdk-test = ["aiohttp"]
@@ -105,7 +105,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.136.6"
+version = "0.136.7"
 
 [project.optional-dependencies]
 logging = [
@@ -133,7 +133,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.136.6"
+current_version = "0.136.7"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
