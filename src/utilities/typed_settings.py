@@ -57,7 +57,7 @@ class ExtendedTSConverter(TSConverter):
             (Freq, Freq.parse),
             (IPv4Address, IPv4Address),
             (IPv6Address, IPv6Address),
-            (Path, partial(_parse_path, pwd=Path.cwd(), resolve=resolve_paths)),
+            (Path, partial(_parse_path, resolve=resolve_paths, pwd=Path.cwd())),
             (PlainDateTime, PlainDateTime.parse_common_iso),
             (Time, Time.parse_common_iso),
             (TimeDelta, TimeDelta.parse_common_iso),
@@ -82,7 +82,7 @@ def _make_converter[T](
 
 
 def _parse_path(
-    path: str, /, *, pwd: MaybeCallablePathLike | None = None, resolve: bool = False
+    path: str, /, *, resolve: bool = False, pwd: MaybeCallablePathLike | None = None
 ) -> Path:
     path = substitute_environ(path, **environ)
     match resolve:
