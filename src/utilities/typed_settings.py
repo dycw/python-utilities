@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import partial
 from ipaddress import IPv4Address, IPv6Address
+from os import environ
 from pathlib import Path
 from re import search
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, Any, assert_never, override
 
 import typed_settings
 from typed_settings import EnvLoader, FileLoader, find
@@ -21,6 +23,8 @@ from whenever import (
 )
 
 from utilities.iterables import always_iterable
+from utilities.pathlib import get_path
+from utilities.string import substitute_environ
 from utilities.whenever import Freq
 
 if TYPE_CHECKING:
@@ -29,7 +33,7 @@ if TYPE_CHECKING:
     from typed_settings.loaders import Loader
     from typed_settings.processors import Processor
 
-    from utilities.types import MaybeIterable, PathLike
+    from utilities.types import MaybeCallablePathLike, MaybeIterable, PathLike
 
 
 ##
@@ -53,6 +57,7 @@ class ExtendedTSConverter(TSConverter):
             (Freq, Freq.parse),
             (IPv4Address, IPv4Address),
             (IPv6Address, IPv6Address),
+            (Path, partial(_parse_path, pwd=Path.cwd(), resolve=resolve_paths)),
             (PlainDateTime, PlainDateTime.parse_common_iso),
             (Time, Time.parse_common_iso),
             (TimeDelta, TimeDelta.parse_common_iso),
@@ -74,6 +79,19 @@ def _make_converter[T](
         return value
 
     return hook
+
+
+def _parse_path(
+    path: str, /, *, pwd: MaybeCallablePathLike | None = None, resolve: bool = False
+) -> Path:
+    path = substitute_environ(path, **environ)
+    match resolve:
+        case True:
+            return get_path(path=pwd).joinpath(path).resolve()
+        case False:
+            return Path(path)
+        case _ as never:
+            assert_never(never)
 
 
 ##
