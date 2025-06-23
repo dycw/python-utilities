@@ -2,10 +2,18 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
+from typing import assert_never
 
 import typed_settings
 from hypothesis import given
-from hypothesis.strategies import DataObject, SearchStrategy, data, ip_addresses, tuples
+from hypothesis.strategies import (
+    DataObject,
+    SearchStrategy,
+    booleans,
+    data,
+    ip_addresses,
+    tuples,
+)
 from pytest import mark, param, raises
 from typed_settings import EnvLoader, FileLoader, TomlFormat
 from whenever import (
@@ -23,6 +31,7 @@ from utilities.hypothesis import (
     date_time_deltas,
     dates,
     freqs,
+    paths,
     plain_datetimes,
     temp_paths,
     text_ascii,
@@ -98,6 +107,68 @@ class TestExtendedTSConverter:
             converter=ExtendedTSConverter(),
         )
         assert settings_loaded.value == value
+
+    @given(
+        root=temp_paths(),
+        app_name=app_names,
+        env_name=text_ascii(min_size=1).map(lambda text: f"TEST_{text}".upper()),
+        env_value=text_ascii(min_size=1),
+    )
+    def test_path_env_var(
+        self, *, root: str, app_name: str, env_name: str, env_value: str
+    ) -> None:
+        @dataclass(frozen=True, kw_only=True, slots=True)
+        class Settings:
+            value: Path
+
+        file = Path(root, "file.toml")
+        _ = file.write_text(
+            strip_and_dedent(f"""
+                [{app_name}]
+                value = '${env_name}'
+            """)
+        )
+        with temp_environ({env_name: env_value}):
+            settings = typed_settings.load_settings(
+                Settings,
+                loaders=[
+                    FileLoader(formats={"*.toml": TomlFormat(app_name)}, files=[file])
+                ],
+                converter=ExtendedTSConverter(resolve_paths=False),
+            )
+        expected = Path(env_value)
+        assert settings.value == expected
+
+    @given(root=temp_paths(), app_name=app_names, path=paths(), resolve=booleans())
+    def test_path_resolution(
+        self, *, root: str, app_name: str, path: Path, resolve: bool
+    ) -> None:
+        @dataclass(frozen=True, kw_only=True, slots=True)
+        class Settings:
+            value: Path
+
+        file = Path(root, "file.toml")
+        _ = file.write_text(
+            strip_and_dedent(f"""
+                [{app_name}]
+                value = '{path!s}'
+            """)
+        )
+        settings = typed_settings.load_settings(
+            Settings,
+            loaders=[
+                FileLoader(formats={"*.toml": TomlFormat(app_name)}, files=[file])
+            ],
+            converter=ExtendedTSConverter(resolve_paths=resolve),
+        )
+        match resolve:
+            case True:
+                expected = Path.cwd().joinpath(path)
+            case False:
+                expected = Path(path)
+            case _ as never:
+                assert_never(never)
+        assert settings.value == expected
 
 
 class TestLoadSettings:
