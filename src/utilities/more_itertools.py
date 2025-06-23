@@ -28,59 +28,14 @@ if TYPE_CHECKING:
 
 
 @overload
-def bucket_mapping[T, U, UH: Hashable](
+def bucket_mapping[T, UH: Hashable](
     iterable: Iterable[T],
     func: Callable[[T], UH],
     /,
     *,
-    pre: Callable[[T], U],
-    post: Literal["list"],
-) -> Mapping[UH, list[U]]: ...
-@overload
-def bucket_mapping[T, U, UH: Hashable](
-    iterable: Iterable[T],
-    func: Callable[[T], UH],
-    /,
-    *,
-    pre: Callable[[T], U],
-    post: Literal["tuple"],
-) -> Mapping[UH, tuple[U, ...]]: ...
-@overload
-def bucket_mapping[T, U, UH: Hashable](
-    iterable: Iterable[T],
-    func: Callable[[T], UH],
-    /,
-    *,
-    pre: Callable[[T], U],
-    post: Literal["set"],
-) -> Mapping[UH, set[U]]: ...
-@overload
-def bucket_mapping[T, U, UH: Hashable](
-    iterable: Iterable[T],
-    func: Callable[[T], UH],
-    /,
-    *,
-    pre: Callable[[T], U],
-    post: Literal["frozenset"],
-) -> Mapping[UH, frozenset[U]]: ...
-@overload
-def bucket_mapping[T, U, UH: Hashable](
-    iterable: Iterable[T],
-    func: Callable[[T], UH],
-    /,
-    *,
-    pre: Callable[[T], U] | None = None,
-    post: Literal["unique"],
-) -> Mapping[UH, U]: ...
-@overload
-def bucket_mapping[T, U, UH: Hashable](
-    iterable: Iterable[T],
-    func: Callable[[T], UH],
-    /,
-    *,
-    pre: Callable[[T], U] | None = None,
+    pre: None = None,
     post: None = None,
-) -> Mapping[UH, Iterator[U]]: ...
+) -> Mapping[UH, Iterator[T]]: ...
 @overload
 def bucket_mapping[T, UH: Hashable](
     iterable: Iterable[T],
@@ -127,14 +82,59 @@ def bucket_mapping[T, UH: Hashable](
     post: Literal["unique"],
 ) -> Mapping[UH, T]: ...
 @overload
-def bucket_mapping[T, UH: Hashable](
+def bucket_mapping[T, U, UH: Hashable](
     iterable: Iterable[T],
     func: Callable[[T], UH],
     /,
     *,
-    pre: None = None,
+    pre: Callable[[T], U] | None = None,
     post: None = None,
-) -> Mapping[UH, Iterator[T]]: ...
+) -> Mapping[UH, Iterator[U]]: ...
+@overload
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
+    /,
+    *,
+    pre: Callable[[T], U],
+    post: Literal["list"],
+) -> Mapping[UH, list[U]]: ...
+@overload
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
+    /,
+    *,
+    pre: Callable[[T], U],
+    post: Literal["tuple"],
+) -> Mapping[UH, tuple[U, ...]]: ...
+@overload
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
+    /,
+    *,
+    pre: Callable[[T], U],
+    post: Literal["set"],
+) -> Mapping[UH, set[U]]: ...
+@overload
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
+    /,
+    *,
+    pre: Callable[[T], U],
+    post: Literal["frozenset"],
+) -> Mapping[UH, frozenset[U]]: ...
+@overload
+def bucket_mapping[T, U, UH: Hashable](
+    iterable: Iterable[T],
+    func: Callable[[T], UH],
+    /,
+    *,
+    pre: Callable[[T], U] | None = None,
+    post: Literal["unique"],
+) -> Mapping[UH, U]: ...
 @overload
 def bucket_mapping[T, U, UH: Hashable](
     iterable: Iterable[T],
