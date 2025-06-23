@@ -108,7 +108,6 @@ class TestExtendedTSConverter:
         )
         assert settings_loaded.value == value
 
-    @mark.only
     @given(
         root=temp_paths(),
         app_name=app_names,
@@ -140,7 +139,6 @@ class TestExtendedTSConverter:
         expected = Path(env_value)
         assert settings.value == expected
 
-    @mark.only
     @given(root=temp_paths(), app_name=app_names, path=paths(), resolve=booleans())
     def test_path_resolution(
         self, *, root: str, app_name: str, path: Path, resolve: bool
