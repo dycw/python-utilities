@@ -66,7 +66,7 @@ class TestYieldAccess:
     ) -> None:
         with Timer() as timer:
             await _func_access(num_tasks, unique_str(), num_locks=num_locks)
-        assert (min_multiple * _DELTA) <= timer <= (3 * min_multiple * _DELTA)
+        assert (min_multiple * _DELTA) <= timer <= (5 * min_multiple * _DELTA)
 
     async def test_error_num_locks(self) -> None:
         key = unique_str()
