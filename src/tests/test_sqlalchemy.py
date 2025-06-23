@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum, StrEnum, auto
 from itertools import chain
 from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
 from uuid import uuid4
@@ -69,6 +70,8 @@ from utilities.sqlalchemy import (
     create_async_engine,
     ensure_tables_created,
     ensure_tables_dropped,
+    enum_name,
+    enum_values,
     get_chunk_size,
     get_column_names,
     get_columns,
@@ -276,6 +279,25 @@ class TestEnsureTablesDropped:
         with raises(DatabaseError):
             async with engine.begin() as conn:
                 _ = await conn.execute(sel)
+
+
+class TestEnumName:
+    def test_main(self) -> None:
+        class Example(Enum): ...
+
+        result = enum_name(Example)
+        assert result == "example_enum"
+
+
+class TestEnumValues:
+    def test_main(self) -> None:
+        class Example(StrEnum):
+            true = auto()
+            false = auto()
+
+        result = enum_values(Example)
+        expected = ["true", "false"]
+        assert result == expected
 
 
 class TestGetChunkSize:
