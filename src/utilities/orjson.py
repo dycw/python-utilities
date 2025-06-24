@@ -176,6 +176,8 @@ def _pre_process(
             if MIN_INT64 <= int_ <= MAX_INT64:
                 return int_
             raise _SerializeIntegerError(obj=int_)
+        case MonthDay() as month_day:
+            return f"[{_Prefixes.month_day.value}]{month_day!s}"
         case Path() as path:
             return f"[{_Prefixes.path.value}]{path!s}"
         case PlainDateTime() as datetime:
@@ -191,7 +193,9 @@ def _pre_process(
         case UUID() as uuid:
             return f"[{_Prefixes.uuid.value}]{uuid}"
         case Version() as version:
-            return f"[{_Prefixes.version.value}]{version!s}"
+            return f"[{_Prefixes.version.value}]{version}"
+        case YearMonth() as year_month:
+            return f"[{_Prefixes.year_month.value}]{year_month}"
         case ZonedDateTime() as datetime:
             return f"[{_Prefixes.zoned_date_time.value}]{datetime}"
         # contains
