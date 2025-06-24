@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, TypedDict, assert_never, override
 import click
 import whenever
 from click import Choice, Context, Parameter, ParamType
-from click.types import StringParamType
+from click.types import IntParamType, StringParamType
 
 import utilities.whenever
 from utilities.enum import EnsureEnumError, ensure_enum
@@ -478,6 +478,14 @@ class FrozenSetEnums[E: enum.Enum](FrozenSetParameter[Enum[E], E]):
         super().__init__(Enum(enum, case_sensitive=case_sensitive), separator=separator)
 
 
+class FrozenSetInts(FrozenSetParameter[IntParamType, int]):
+    """A frozenset-of-ints-valued parameter."""
+
+    @override
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(IntParamType(), separator=separator)
+
+
 class FrozenSetStrs(FrozenSetParameter[StringParamType, str]):
     """A frozenset-of-strs-valued parameter."""
 
@@ -555,6 +563,14 @@ class ListEnums[E: enum.Enum](ListParameter[Enum[E], E]):
         super().__init__(Enum(enum, case_sensitive=case_sensitive), separator=separator)
 
 
+class ListInts(ListParameter[IntParamType, int]):
+    """A list-of-ints-valued parameter."""
+
+    @override
+    def __init__(self, *, separator: str = ",") -> None:
+        super().__init__(IntParamType(), separator=separator)
+
+
 class ListStrs(ListParameter[StringParamType, str]):
     """A list-of-strs-valued parameter."""
 
@@ -590,6 +606,7 @@ __all__ = [
     "IPv6Address",
     "ListChoices",
     "ListEnums",
+    "ListInts",
     "ListParameter",
     "ListStrs",
     "MonthDay",
