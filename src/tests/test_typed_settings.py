@@ -2,7 +2,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
-from typing import assert_never
+from typing import Any, ClassVar, assert_never
 
 import typed_settings
 from hypothesis import given
@@ -20,9 +20,11 @@ from whenever import (
     Date,
     DateDelta,
     DateTimeDelta,
+    MonthDay,
     PlainDateTime,
     Time,
     TimeDelta,
+    YearMonth,
     ZonedDateTime,
 )
 
@@ -31,12 +33,14 @@ from utilities.hypothesis import (
     date_time_deltas,
     dates,
     freqs,
+    month_days,
     paths,
     plain_datetimes,
     temp_paths,
     text_ascii,
     time_deltas,
     times,
+    year_months,
     zoned_datetimes,
 )
 from utilities.os import temp_environ
@@ -51,47 +55,88 @@ from utilities.whenever import Freq
 app_names = text_ascii(min_size=1).map(str.lower)
 
 
+@dataclass(kw_only=True, slots=True)
+class _Case[T]:
+    cls: type[T]
+    strategy: SearchStrategy[T]
+    serialize: Callable[[T], str]
+
+
 class TestExtendedTSConverter:
+    cases: ClassVar[list[_Case]] = [
+        _Case(cls=Date, strategy=dates(), serialize=Date.format_common_iso),
+        _Case(
+            cls=DateDelta,
+            strategy=date_deltas(parsable=True),
+            serialize=DateDelta.format_common_iso,
+        ),
+        _Case(
+            cls=DateTimeDelta,
+            strategy=date_time_deltas(parsable=True),
+            serialize=DateTimeDelta.format_common_iso,
+        ),
+        _Case(cls=Freq, strategy=freqs(), serialize=Freq.serialize),
+        _Case(cls=IPv4Address, strategy=ip_addresses(v=4), serialize=str),
+        _Case(cls=IPv6Address, strategy=ip_addresses(v=6), serialize=str),
+        _Case(
+            cls=MonthDay, strategy=month_days(), serialize=MonthDay.format_common_iso
+        ),
+        _Case(
+            cls=PlainDateTime,
+            strategy=plain_datetimes(),
+            serialize=PlainDateTime.format_common_iso,
+        ),
+        _Case(cls=Time, strategy=times(), serialize=Time.format_common_iso),
+        _Case(
+            cls=TimeDelta, strategy=time_deltas(), serialize=TimeDelta.format_common_iso
+        ),
+        _Case(
+            cls=YearMonth, strategy=year_months(), serialize=YearMonth.format_common_iso
+        ),
+        _Case(
+            cls=ZonedDateTime,
+            strategy=zoned_datetimes(),
+            serialize=ZonedDateTime.format_common_iso,
+        ),
+    ]
+
+    @given(data=data())
+    @mark.parametrize(("cls", "strategy"), [param(c.cls, c.strategy) for c in cases])
+    def test_default(
+        self, *, data: DataObject, cls: type[Any], strategy: SearchStrategy[Any]
+    ) -> None:
+        default = data.draw(strategy)
+
+        @dataclass(frozen=True, kw_only=True, slots=True)
+        class Settings:
+            value: cls = default  # pyright: ignore[reportInvalidTypeForm]
+
+        loaded = typed_settings.load_settings(
+            Settings, loaders=[], converter=ExtendedTSConverter()
+        )
+        assert loaded.value == default
+
     @given(data=data(), root=temp_paths(), app_name=app_names)
     @mark.parametrize(
-        ("test_cls", "strategy", "serialize"),
-        [
-            param(Date, dates(), Date.format_common_iso),
-            param(DateDelta, date_deltas(parsable=True), DateDelta.format_common_iso),
-            param(
-                DateTimeDelta,
-                date_time_deltas(parsable=True),
-                DateTimeDelta.format_common_iso,
-            ),
-            param(Freq, freqs(), Freq.serialize),
-            param(IPv4Address, ip_addresses(v=4), IPv4Address),
-            param(IPv6Address, ip_addresses(v=6), IPv6Address),
-            param(PlainDateTime, plain_datetimes(), PlainDateTime.format_common_iso),
-            param(Time, times(), Time.format_common_iso),
-            param(TimeDelta, time_deltas(), TimeDelta.format_common_iso),
-            param(ZonedDateTime, zoned_datetimes(), ZonedDateTime.format_common_iso),
-        ],
+        ("cls", "strategy", "serialize"),
+        [param(c.cls, c.strategy, c.serialize) for c in cases],
     )
-    def test_main[T](
+    def test_loaded(
         self,
         *,
         data: DataObject,
         root: Path,
         app_name: str,
-        test_cls: type[T],
-        strategy: SearchStrategy[T],
-        serialize: Callable[[T], str],
+        cls: type[Any],
+        strategy: SearchStrategy[Any],
+        serialize: Callable[[Any], str],
     ) -> None:
         default, value = data.draw(tuples(strategy, strategy))
 
         @dataclass(frozen=True, kw_only=True, slots=True)
         class Settings:
-            value: test_cls = default  # pyright: ignore[reportInvalidTypeForm]
+            value: cls = default  # pyright: ignore[reportInvalidTypeForm]
 
-        settings_default = typed_settings.load_settings(
-            Settings, loaders=[], converter=ExtendedTSConverter()
-        )
-        assert settings_default.value == default
         file = Path(root, "file.toml")
         _ = file.write_text(
             strip_and_dedent(f"""
@@ -99,14 +144,14 @@ class TestExtendedTSConverter:
                 value = '{serialize(value)}'
             """)
         )
-        settings_loaded = typed_settings.load_settings(
+        loaded = typed_settings.load_settings(
             Settings,
             loaders=[
                 FileLoader(formats={"*.toml": TomlFormat(app_name)}, files=[file])
             ],
             converter=ExtendedTSConverter(),
         )
-        assert settings_loaded.value == value
+        assert loaded.value == value
 
     @given(
         root=temp_paths(),

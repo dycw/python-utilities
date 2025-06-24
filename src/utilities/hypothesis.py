@@ -38,12 +38,14 @@ from whenever import (
     Date,
     DateDelta,
     DateTimeDelta,
+    MonthDay,
     PlainDateTime,
     RepeatedTime,
     SkippedTime,
     Time,
     TimeDelta,
     TimeZoneNotFoundError,
+    YearMonth,
     ZonedDateTime,
 )
 
@@ -76,8 +78,6 @@ from utilities.whenever import (
     DATE_DELTA_MIN,
     DATE_DELTA_PARSABLE_MAX,
     DATE_DELTA_PARSABLE_MIN,
-    DATE_MAX,
-    DATE_MIN,
     DATE_TIME_DELTA_MAX,
     DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
@@ -85,16 +85,9 @@ from utilities.whenever import (
     DATE_TWO_DIGIT_YEAR_MAX,
     DATE_TWO_DIGIT_YEAR_MIN,
     DAY,
-    MONTH_MAX,
-    MONTH_MIN,
-    PLAIN_DATE_TIME_MAX,
-    PLAIN_DATE_TIME_MIN,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
-    TIME_MAX,
-    TIME_MIN,
     Freq,
-    Month,
     to_date_time_delta,
     to_days,
     to_nanos,
@@ -255,14 +248,14 @@ def dates(
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
         case None:
-            min_value_ = DATE_MIN
+            min_value_ = Date.MIN
         case Date():
             ...
         case _ as never:
             assert_never(never)
     match max_value_:
         case None:
-            max_value_ = DATE_MAX
+            max_value_ = Date.MAX
         case Date():
             ...
         case _ as never:
@@ -695,33 +688,32 @@ def lists_fixed_length[T](
 
 
 @composite
-def months(
+def month_days(
     draw: DrawFn,
     /,
     *,
-    min_value: MaybeSearchStrategy[Month | None] = None,
-    max_value: MaybeSearchStrategy[Month | None] = None,
-    two_digit: MaybeSearchStrategy[bool] = False,
-) -> Month:
-    """Strategy for generating months."""
+    min_value: MaybeSearchStrategy[MonthDay | None] = None,
+    max_value: MaybeSearchStrategy[MonthDay | None] = None,
+) -> MonthDay:
+    """Strategy for generating month-days."""
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
         case None:
-            min_value_ = MONTH_MIN
-        case Month():
+            min_value_ = MonthDay.MIN
+        case MonthDay():
             ...
         case _ as never:
             assert_never(never)
     match max_value_:
         case None:
-            max_value_ = MONTH_MAX
-        case Month():
+            max_value_ = MonthDay.MAX
+        case MonthDay():
             ...
         case _ as never:
             assert_never(never)
-    min_date, max_date = [m.to_date() for m in [min_value_, max_value_]]
-    date = draw(dates(min_value=min_date, max_value=max_date, two_digit=two_digit))
-    return Month.from_date(date)
+    min_date, max_date = [m.in_year(2000) for m in [min_value_, max_value_]]
+    date = draw(dates(min_value=min_date, max_value=max_date))
+    return date.month_day()
 
 
 ##
@@ -843,14 +835,14 @@ def plain_datetimes(
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
         case None:
-            min_value_ = PLAIN_DATE_TIME_MIN
+            min_value_ = PlainDateTime.MIN
         case PlainDateTime():
             ...
         case _ as never:
             assert_never(never)
     match max_value_:
         case None:
-            max_value_ = PLAIN_DATE_TIME_MAX
+            max_value_ = PlainDateTime.MAX
         case PlainDateTime():
             ...
         case _ as never:
@@ -1219,14 +1211,14 @@ def times(
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
         case None:
-            min_value_ = TIME_MIN
+            min_value_ = Time()
         case Time():
             ...
         case _ as never:
             assert_never(never)
     match max_value_:
         case None:
-            max_value_ = TIME_MAX
+            max_value_ = Time.MAX
         case Time():
             ...
         case _ as never:
@@ -1309,6 +1301,39 @@ def versions(draw: DrawFn, /, *, suffix: MaybeSearchStrategy[bool] = False) -> V
 
 
 @composite
+def year_months(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[YearMonth | None] = None,
+    max_value: MaybeSearchStrategy[YearMonth | None] = None,
+    two_digit: MaybeSearchStrategy[bool] = False,
+) -> YearMonth:
+    """Strategy for generating months."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    match min_value_:
+        case None:
+            min_value_ = YearMonth.MIN
+        case YearMonth():
+            ...
+        case _ as never:
+            assert_never(never)
+    match max_value_:
+        case None:
+            max_value_ = YearMonth.MAX
+        case YearMonth():
+            ...
+        case _ as never:
+            assert_never(never)
+    min_date, max_date = [m.on_day(1) for m in [min_value_, max_value_]]
+    date = draw(dates(min_value=min_date, max_value=max_date, two_digit=two_digit))
+    return date.year_month()
+
+
+##
+
+
+@composite
 def zoned_datetimes(
     draw: DrawFn,
     /,
@@ -1345,7 +1370,7 @@ def zoned_datetimes(
     ):
         zoned = plain.assume_tz(time_zone_.key, disambiguate="raise")
     with assume_does_not_raise(OverflowError, match="date value out of range"):
-        if not ((DATE_MIN + DAY) <= zoned.date() <= (DATE_MAX - DAY)):
+        if not ((Date.MIN + DAY) <= zoned.date() <= (Date.MAX - DAY)):
             _ = zoned.py_datetime()
     return zoned
 
@@ -1373,7 +1398,7 @@ __all__ = [
     "int64s",
     "int_arrays",
     "lists_fixed_length",
-    "months",
+    "month_days",
     "namespace_mixins",
     "numbers",
     "pairs",
@@ -1399,5 +1424,6 @@ __all__ = [
     "uint32s",
     "uint64s",
     "versions",
+    "year_months",
     "zoned_datetimes",
 ]

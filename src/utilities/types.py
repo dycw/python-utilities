@@ -25,9 +25,11 @@ from whenever import (
     Date,
     DateDelta,
     DateTimeDelta,
+    MonthDay,
     PlainDateTime,
     Time,
     TimeDelta,
+    YearMonth,
     ZonedDateTime,
 )
 
@@ -214,9 +216,11 @@ type DateLike = MaybeStr[Date]
 type DateTimeDeltaLike = MaybeStr[DateTimeDelta]
 type MaybeCallableDate = MaybeCallable[Date]
 type MaybeCallableZonedDateTime = MaybeCallable[ZonedDateTime]
+type MonthDayLike = MaybeStr[MonthDay]
 type PlainDateTimeLike = MaybeStr[PlainDateTime]
 type TimeDeltaLike = MaybeStr[TimeDelta]
 type TimeLike = MaybeStr[Time]
+type YearMonthLike = MaybeStr[YearMonth]
 type ZonedDateTimeLike = MaybeStr[ZonedDateTime]
 type DateTimeRoundUnit = Literal[
     "day", "hour", "minute", "second", "millisecond", "microsecond", "nanosecond"
@@ -265,6 +269,7 @@ __all__ = [
     "MaybeIterableHashable",
     "MaybeStr",
     "MaybeType",
+    "MonthDayLike",
     "Number",
     "OpenMode",
     "OptExcInfo",
@@ -296,5 +301,6 @@ __all__ = [
     "TupleOrStrMapping",
     "TypeLike",
     "WeekDay",
+    "YearMonthLike",
     "ZonedDateTimeLike",
 ]

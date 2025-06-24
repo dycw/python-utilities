@@ -26,9 +26,11 @@ from whenever import (
     Date,
     DateDelta,
     DateTimeDelta,
+    MonthDay,
     PlainDateTime,
     Time,
     TimeDelta,
+    YearMonth,
     ZonedDateTime,
 )
 
@@ -71,6 +73,7 @@ class _Prefixes(Enum):
     float_ = "fl"
     frozenset_ = "fr"
     list_ = "l"
+    month_day = "md"
     none = "none"
     path = "p"
     plain_date_time = "pd"
@@ -81,6 +84,7 @@ class _Prefixes(Enum):
     unserializable = "un"
     uuid = "uu"
     version = "v"
+    year_month = "ym"
     zoned_date_time = "zd"
 
 
@@ -172,6 +176,8 @@ def _pre_process(
             if MIN_INT64 <= int_ <= MAX_INT64:
                 return int_
             raise _SerializeIntegerError(obj=int_)
+        case MonthDay() as month_day:
+            return f"[{_Prefixes.month_day.value}]{month_day!s}"
         case Path() as path:
             return f"[{_Prefixes.path.value}]{path!s}"
         case PlainDateTime() as datetime:
@@ -187,7 +193,9 @@ def _pre_process(
         case UUID() as uuid:
             return f"[{_Prefixes.uuid.value}]{uuid}"
         case Version() as version:
-            return f"[{_Prefixes.version.value}]{version!s}"
+            return f"[{_Prefixes.version.value}]{version}"
+        case YearMonth() as year_month:
+            return f"[{_Prefixes.year_month.value}]{year_month}"
         case ZonedDateTime() as datetime:
             return f"[{_Prefixes.zoned_date_time.value}]{datetime}"
         # contains
@@ -339,6 +347,7 @@ def deserialize(
     _DATE_DELTA_PATTERN,
     _DATE_TIME_DELTA_PATTERN,
     _FLOAT_PATTERN,
+    _MONTH_DAY_PATTERN,
     _NONE_PATTERN,
     _PATH_PATTERN,
     _PLAIN_DATE_TIME_PATTERN,
@@ -346,6 +355,7 @@ def deserialize(
     _TIME_DELTA_PATTERN,
     _UUID_PATTERN,
     _VERSION_PATTERN,
+    _YEAR_MONTH_PATTERN,
     _ZONED_DATE_TIME_PATTERN,
 ) = [
     re.compile(r"^\[" + p.value + r"\](" + ".*" + ")$")
@@ -354,6 +364,7 @@ def deserialize(
         _Prefixes.date_delta,
         _Prefixes.date_time_delta,
         _Prefixes.float_,
+        _Prefixes.month_day,
         _Prefixes.none,
         _Prefixes.path,
         _Prefixes.plain_date_time,
@@ -361,6 +372,7 @@ def deserialize(
         _Prefixes.time_delta,
         _Prefixes.uuid,
         _Prefixes.version,
+        _Prefixes.year_month,
         _Prefixes.zoned_date_time,
     ]
 ]
@@ -413,6 +425,8 @@ def _object_hook(
                 return DateTimeDelta.parse_common_iso(match.group(1))
             if match := _FLOAT_PATTERN.search(text):
                 return float(match.group(1))
+            if match := _MONTH_DAY_PATTERN.search(text):
+                return MonthDay.parse_common_iso(match.group(1))
             if match := _PATH_PATTERN.search(text):
                 return Path(match.group(1))
             if match := _PLAIN_DATE_TIME_PATTERN.search(text):
@@ -425,6 +439,8 @@ def _object_hook(
                 return UUID(match.group(1))
             if match := _VERSION_PATTERN.search(text):
                 return parse_version(match.group(1))
+            if match := _YEAR_MONTH_PATTERN.search(text):
+                return YearMonth.parse_common_iso(match.group(1))
             if match := _ZONED_DATE_TIME_PATTERN.search(text):
                 return ZonedDateTime.parse_common_iso(match.group(1))
             if (

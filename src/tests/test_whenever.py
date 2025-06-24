@@ -6,15 +6,8 @@ from typing import TYPE_CHECKING, ClassVar, Self
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import (
-    DataObject,
-    data,
-    integers,
-    none,
-    sampled_from,
-    timezones,
-)
-from pytest import mark, param, raises
+from hypothesis.strategies import integers, none, sampled_from, timezones
+from pytest import raises
 from whenever import (
     Date,
     DateDelta,
@@ -32,7 +25,6 @@ from utilities.hypothesis import (
     date_deltas,
     dates,
     freqs,
-    months,
     pairs,
     plain_datetimes,
     sentinels,
@@ -49,8 +41,6 @@ from utilities.whenever import (
     DATE_DELTA_MIN,
     DATE_DELTA_PARSABLE_MAX,
     DATE_DELTA_PARSABLE_MIN,
-    DATE_MAX,
-    DATE_MIN,
     DATE_TIME_DELTA_MAX,
     DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
@@ -60,8 +50,6 @@ from utilities.whenever import (
     MINUTE,
     NOW_LOCAL,
     NOW_UTC,
-    PLAIN_DATE_TIME_MAX,
-    PLAIN_DATE_TIME_MIN,
     SECOND,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
@@ -73,7 +61,6 @@ from utilities.whenever import (
     Freq,
     MeanDateTimeError,
     MinMaxDateError,
-    Month,
     ToDaysError,
     ToNanosError,
     WheneverLogRecord,
@@ -83,8 +70,6 @@ from utilities.whenever import (
     _MinMaxDateMaxDateError,
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
-    _MonthInvalidError,
-    _MonthParseCommonISOError,
     datetime_utc,
     format_compact,
     from_timestamp,
@@ -107,8 +92,6 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from utilities.sentinel import Sentinel
     from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime
 
@@ -141,7 +124,9 @@ class TestFormatCompact:
         result = format_compact(time)
         assert isinstance(result, str)
         parsed = Time.parse_common_iso(result)
-        assert parsed == time
+        assert parsed.nanosecond == 0
+        expected = time.round()
+        assert parsed == expected
 
     @given(datetime=plain_datetimes())
     def test_plain_datetime(self, *, datetime: PlainDateTime) -> None:
@@ -325,14 +310,6 @@ class TestMeanDateTime:
 
 
 class TestMinMax:
-    def test_date_min(self) -> None:
-        with raises(ValueError, match="Resulting date out of range"):
-            _ = DATE_MIN - DateDelta(days=1)
-
-    def test_date_max(self) -> None:
-        with raises(ValueError, match="Resulting date out of range"):
-            _ = DATE_MAX + DateDelta(days=1)
-
     def test_date_delta_min(self) -> None:
         with raises(ValueError, match="Addition result out of bounds"):
             _ = DATE_DELTA_MIN - DateDelta(days=1)
@@ -375,11 +352,11 @@ class TestMinMax:
 
     def test_plain_date_time_min(self) -> None:
         with raises(ValueError, match=r"Result of subtract\(\) out of range"):
-            _ = PLAIN_DATE_TIME_MIN.subtract(nanoseconds=1, ignore_dst=True)
+            _ = PlainDateTime.MIN.subtract(nanoseconds=1, ignore_dst=True)
 
     def test_plain_date_time_max(self) -> None:
         with raises(ValueError, match=r"Result of add\(\) out of range"):
-            _ = PLAIN_DATE_TIME_MAX.add(microseconds=1, ignore_dst=True)
+            _ = PlainDateTime.MAX.add(microseconds=1, ignore_dst=True)
 
     def test_time_delta_min(self) -> None:
         nanos = TIME_DELTA_MIN.in_nanoseconds()
@@ -464,109 +441,6 @@ class TestMinMaxDate:
             match="Min date must be at most max date; got .* > .*",
         ):
             _ = min_max_date(min_date=dates[1], max_date=dates[0])
-
-
-class TestMonth:
-    @mark.parametrize(
-        ("month", "n", "expected"),
-        [
-            param(Month(2000, 1), -2, Month(1999, 11)),
-            param(Month(2000, 1), -1, Month(1999, 12)),
-            param(Month(2000, 1), 0, Month(2000, 1)),
-            param(Month(2000, 1), 1, Month(2000, 2)),
-            param(Month(2000, 1), 2, Month(2000, 3)),
-            param(Month(2000, 1), 11, Month(2000, 12)),
-            param(Month(2000, 1), 12, Month(2001, 1)),
-        ],
-    )
-    def test_add(self, *, month: Month, n: int, expected: Month) -> None:
-        result = month + n
-        assert result == expected
-
-    @given(month=months())
-    def test_common_iso(self, *, month: Month) -> None:
-        result = Month.parse_common_iso(month.format_common_iso())
-        assert result == month
-
-    @given(data=data(), month=months())
-    def test_ensure(self, *, data: DataObject, month: Month) -> None:
-        str_or_value = data.draw(sampled_from([month, month.format_common_iso()]))
-        result = Month.ensure(str_or_value)
-        assert result == month
-
-    @mark.parametrize(
-        ("x", "y", "expected"),
-        [
-            param(Month(2000, 1), Month(1999, 11), 2),
-            param(Month(2000, 1), Month(1999, 12), 1),
-            param(Month(2000, 1), Month(2000, 1), 0),
-            param(Month(2000, 1), Month(2000, 2), -1),
-            param(Month(2000, 1), Month(2000, 3), -2),
-            param(Month(2000, 1), Month(2000, 12), -11),
-            param(Month(2000, 1), Month(2001, 1), -12),
-        ],
-    )
-    def test_diff(self, *, x: Month, y: Month, expected: int) -> None:
-        result = x - y
-        assert result == expected
-
-    @given(month=months())
-    def test_hashable(self, *, month: Month) -> None:
-        _ = hash(month)
-
-    @mark.parametrize(
-        ("text", "expected"),
-        [
-            param("2000-01", Month(2000, 1)),
-            param("2000.01", Month(2000, 1)),
-            param("2000 01", Month(2000, 1)),
-            param("200001", Month(2000, 1)),
-            param("20-01", Month(2020, 1)),
-            param("20.01", Month(2020, 1)),
-        ],
-    )
-    def test_parse_common_iso(self, *, text: str, expected: Month) -> None:
-        result = Month.parse_common_iso(text)
-        assert result == expected
-
-    @mark.parametrize("func", [param(repr), param(str)])
-    def test_repr(self, *, func: Callable[..., str]) -> None:
-        result = func(Month(2000, 12))
-        expected = "2000-12"
-        assert result == expected
-
-    @mark.parametrize(
-        ("month", "n", "expected"),
-        [
-            param(Month(2000, 1), -2, Month(2000, 3)),
-            param(Month(2000, 1), -1, Month(2000, 2)),
-            param(Month(2000, 1), 0, Month(2000, 1)),
-            param(Month(2000, 1), 1, Month(1999, 12)),
-            param(Month(2000, 1), 2, Month(1999, 11)),
-            param(Month(2000, 1), 12, Month(1999, 1)),
-            param(Month(2000, 1), 13, Month(1998, 12)),
-        ],
-    )
-    def test_subtract(self, *, month: Month, n: int, expected: Month) -> None:
-        result = month - n
-        assert result == expected
-
-    @given(date=dates())
-    def test_to_and_from_date(self, *, date: Date) -> None:
-        month = Month.from_date(date)
-        result = month.to_date(day=date.day)
-        assert result == date
-
-    def test_error_invalid(self) -> None:
-        with raises(_MonthInvalidError, match=r"Invalid year and month: \d+, \d+"):
-            _ = Month(2000, 13)
-
-    @mark.parametrize("text", [param("invalid"), param("202-01")])
-    def test_error_parse_common_iso(self, *, text: str) -> None:
-        with raises(
-            _MonthParseCommonISOError, match=r"Unable to parse month; got '.*'"
-        ):
-            _ = Month.parse_common_iso(text)
 
 
 class TestToDate:
