@@ -39,6 +39,7 @@ from utilities.hypothesis import (
     date_time_deltas,
     dates,
     int64s,
+    month_days,
     paths,
     plain_datetimes,
     text_ascii,
@@ -46,6 +47,7 @@ from utilities.hypothesis import (
     time_deltas,
     times,
     versions,
+    year_months,
     zoned_datetimes,
 )
 from utilities.math import MAX_INT64, MIN_INT64
@@ -81,6 +83,7 @@ def objects(
         | dates()
         | floats(allow_nan=floats_allow_nan)
         | (int64s() if parsable else integers())
+        | month_days()
         | none()
         | paths()
         | plain_datetimes()
@@ -89,6 +92,7 @@ def objects(
         | times()
         | uuids()
         | versions()
+        | year_months()
         | zoned_datetimes()
     )
     if dataclass_custom_equality:
