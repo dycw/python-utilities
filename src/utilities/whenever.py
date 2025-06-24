@@ -25,6 +25,7 @@ from whenever import (
     PlainDateTime,
     Time,
     TimeDelta,
+    YearMonth,
     ZonedDateTime,
 )
 
@@ -670,6 +671,18 @@ def to_zoned_date_time(
 ##
 
 
+def two_digit_year_month(year: int, month: int, /) -> YearMonth:
+    """Construct a year-month from a 2-digit year."""
+    min_year = DATE_TWO_DIGIT_YEAR_MIN.year
+    max_year = DATE_TWO_DIGIT_YEAR_MAX.year
+    years = range(min_year, max_year + 1)
+    (year_use,) = (y for y in years if y % 100 == year)
+    return YearMonth(year_use, month)
+
+
+##
+
+
 class WheneverLogRecord(LogRecord):
     """Log record powered by `whenever`."""
 
@@ -774,4 +787,5 @@ __all__ = [
     "to_local_plain",
     "to_nanos",
     "to_zoned_date_time",
+    "two_digit_year_month",
 ]
