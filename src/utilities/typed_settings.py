@@ -16,9 +16,11 @@ from whenever import (
     Date,
     DateDelta,
     DateTimeDelta,
+    MonthDay,
     PlainDateTime,
     Time,
     TimeDelta,
+    YearMonth,
     ZonedDateTime,
 )
 
@@ -57,10 +59,12 @@ class ExtendedTSConverter(TSConverter):
             (Freq, Freq.parse),
             (IPv4Address, IPv4Address),
             (IPv6Address, IPv6Address),
+            (MonthDay, MonthDay.parse_common_iso),
             (Path, partial(_parse_path, resolve=resolve_paths, pwd=Path.cwd())),
             (PlainDateTime, PlainDateTime.parse_common_iso),
             (Time, Time.parse_common_iso),
             (TimeDelta, TimeDelta.parse_common_iso),
+            (YearMonth, YearMonth.parse_common_iso),
             (ZonedDateTime, ZonedDateTime.parse_common_iso),
         ]
         extras = {cls: _make_converter(cls, func) for cls, func in cases}
