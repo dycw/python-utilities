@@ -815,7 +815,7 @@ requires-dist = [
     { name = "pytest-xdist", marker = "extra == 'test'", specifier = ">=3.7.0,<3.8" },
     { name = "typing-extensions", specifier = ">=4.14.0,<4.15" },
     { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.8.5,<0.9" },
+    { name = "whenever", specifier = ">=0.8.6,<0.9" },
 ]
 provides-extras = ["logging", "test"]
 
@@ -834,7 +834,7 @@ core = [
     { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
     { name = "typing-extensions", specifier = ">=4.14.0,<4.15" },
     { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.8.5,<0.9" },
+    { name = "whenever", specifier = ">=0.8.6,<0.9" },
 ]
 cryptography = [{ name = "cryptography", specifier = ">=45.0.4,<45.1" }]
 cvxpy = [{ name = "cvxpy", specifier = ">=1.6.5,<1.7" }]
@@ -920,7 +920,7 @@ pytest-test = [
     { name = "pytest-rerunfailures" },
     { name = "pytest-rng" },
 ]
-python-dotenv = [{ name = "python-dotenv", specifier = ">=1.1.0,<1.2" }]
+python-dotenv = [{ name = "python-dotenv", specifier = ">=1.1.1,<1.2" }]
 redis = [
     { name = "orjson" },
     { name = "redis", specifier = ">=6.2.0,<6.3" },

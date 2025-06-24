@@ -21,7 +21,7 @@ core = [
   "atomicwrites >= 1.4.1, < 1.5",
   "typing-extensions >= 4.14.0, < 4.15",
   "tzlocal >= 5.3.1, < 5.4",
-  "whenever >= 0.8.5, < 0.9",
+  "whenever >= 0.8.6, < 0.9",
 ]
 cryptography = ["cryptography >= 45.0.4, < 45.1"]
 cvxpy = ["cvxpy >= 1.6.5, < 1.7"]
@@ -76,7 +76,7 @@ pytest = [
 pytest-regressions = ["pytest-regressions >= 2.8.0, < 2.9"]
 pytest-regressions-test = ["orjson", "polars-lts-cpu"]
 pytest-test = ["orjson", "pytest-rng", "pytest-rerunfailures"]
-python-dotenv = ["python-dotenv >= 1.1.0, < 1.2"]
+python-dotenv = ["python-dotenv >= 1.1.1, < 1.2"]
 redis = ["redis >= 6.2.0, < 6.3", "orjson"]
 redis-test = ["pytest-rerunfailures"]
 reprlib-test = ["rich"]
@@ -100,7 +100,7 @@ dependencies = [
   "atomicwrites >= 1.4.1, < 1.5",
   "typing-extensions >= 4.14.0, < 4.15",
   "tzlocal >= 5.3.1, < 5.4",
-  "whenever >= 0.8.5, < 0.9",
+  "whenever >= 0.8.6, < 0.9",
 ]
 name = "dycw-utilities"
 readme = "README.md"
