@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
+    booleans,
     data,
     integers,
     none,
@@ -20,6 +21,7 @@ from whenever import (
     DateDelta,
     DateTimeDelta,
     PlainDateTime,
+    Time,
     TimeDelta,
     TimeZoneNotFoundError,
     ZonedDateTime,
@@ -34,6 +36,7 @@ from utilities.hypothesis import (
     months,
     pairs,
     sentinels,
+    times,
     zoned_datetimes,
 )
 from utilities.sentinel import Sentinel, sentinel
@@ -125,13 +128,30 @@ class TestDatetimeUTC:
 
 
 class TestFormatCompact:
-    @given(datetime=zoned_datetimes())
-    def test_main(self, *, datetime: ZonedDateTime) -> None:
-        result = format_compact(datetime)
+    @given(date=dates())
+    def test_date(self, *, date: Date) -> None:
+        result = format_compact(date)
+        assert isinstance(result, str)
+        parsed = Date.parse_common_iso(result)
+        assert parsed == date
+
+    @given(time=times())
+    def test_time(self, *, time: Time) -> None:
+        result = format_compact(time)
+        assert isinstance(result, str)
+        parsed = Time.parse_common_iso(result)
+        assert parsed == time
+
+    @given(datetime=zoned_datetimes(), local=booleans())
+    def test_datetime(self, *, datetime: ZonedDateTime, local: bool) -> None:
+        result = format_compact(datetime, local=local)
         assert isinstance(result, str)
         parsed = PlainDateTime.parse_common_iso(result)
         assert parsed.nanosecond == 0
-        expected = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
+        if local:
+            expected = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
+        else:
+            expected = datetime.round().to_plain()
         assert parsed == expected
 
 

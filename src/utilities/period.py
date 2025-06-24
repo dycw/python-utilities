@@ -9,6 +9,7 @@ from whenever import Date, DateDelta, TimeDelta, ZonedDateTime
 from utilities.dataclasses import replace_non_sentinel
 from utilities.functions import get_class_name
 from utilities.sentinel import Sentinel, sentinel
+from utilities.whenever import format_compact
 from utilities.zoneinfo import get_time_zone_name
 
 if TYPE_CHECKING:
@@ -54,15 +55,15 @@ class DatePeriod:
         return self.end - self.start
 
     def format_compact(self) -> str:
-        """Format the datetime in a compact fashion."""
-        start = self.start.py_date().strftime("%Y%m%d")
+        """Format the period in a compact fashion."""
+        fc, start, end = format_compact, self.start, self.end
         if self.start == self.end:
-            return f"{start}="
+            return f"{fc(start)}="
         if self.start.year_month() == self.end.year_month():
-            return f"{start}-{self.end.py_date():%d}"
+            return f"{fc(start)}-{fc(end, fmt='%d')}"
         if self.start.year == self.end.year:
-            return f"{start}-{self.end.py_date():%m%d}"
-        return f"{start}-{self.end.py_date():%Y%m%d}"
+            return f"{fc(start)}-{fc(end, fmt='%m%d')}"
+        return f"{fc(start)}-{fc(end)}"
 
     def replace(
         self, *, start: Date | Sentinel = sentinel, end: Date | Sentinel = sentinel
@@ -111,6 +112,39 @@ class ZonedDateTimePeriod:
     def delta(self) -> TimeDelta:
         """The duration of the period."""
         return self.end - self.start
+
+    def format_compact(self) -> str:
+        """Format the period in a compact fashion."""
+        fc, start, end = format_compact, self.start, self.end
+        if start == end:
+            if end.second != 0:
+                return f"{fc(start)}="
+            if end.minute != 0:
+                raise NotImplementedError
+            raise NotImplementedError
+        if start.date() == end.date():
+            if end.second != 0:
+                return f"{fc(start.to_plain())}-{fc(end, fmt='%H%M%S')}"
+            if end.minute != 0:
+                return f"{fc(start.to_plain())}-{fc(end, fmt='%H%M')}"
+            return f"{fc(start.to_plain())}-{fc(end, fmt='%H')}"
+        if start.date().year_month() == end.date().year_month():
+            if end.second != 0:
+                return f"{fc(start.to_plain())}-{fc(end, fmt='%dT%H%M%S')}"
+            if end.minute != 0:
+                return f"{fc(start.to_plain())}-{fc(end, fmt='%dT%H%M')}"
+            return f"{fc(start.to_plain())}-{fc(end, fmt='%dT%H')}"
+        if start.year == end.year:
+            if end.second != 0:
+                return f"{fc(start.to_plain())}-{fc(end, fmt='%m%dT%H%M%S')}"
+            if end.minute != 0:
+                return f"{fc(start.to_plain())}-{fc(end, fmt='%m%dT%H%M')}"
+            return f"{fc(start.to_plain())}-{fc(end, fmt='%m%dT%H')}"
+        if end.second != 0:
+            return f"{fc(start.to_plain())}-{fc(end)}"
+        if end.minute != 0:
+            return f"{fc(start.to_plain())}-{fc(end, fmt='%Y%m%dT%H%M')}"
+        return f"{fc(start.to_plain())}-{fc(end, fmt='%Y%m%dT%H')}"
 
     def replace(
         self,

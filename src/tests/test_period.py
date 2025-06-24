@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import DataObject, data
 from pytest import mark, param, raises
-from whenever import Date
+from whenever import Date, ZonedDateTime
 
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -31,7 +31,7 @@ from utilities.zoneinfo import UTC, get_time_zone_name
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from whenever import DateDelta, PlainDateTime, TimeDelta, ZonedDateTime
+    from whenever import DateDelta, PlainDateTime, TimeDelta
 
 
 class TestDatePeriod:
@@ -162,6 +162,101 @@ class TestZonedDateTimePeriod:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
         assert period.delta == (end - start)
+
+    @mark.parametrize(
+        ("end", "expected"),
+        [
+            param(
+                ZonedDateTime(2000, 1, 1, 10, 20, 30, tz=UTC.key),
+                "20000101T102030[UTC]=",
+            ),
+            param(
+                ZonedDateTime(2000, 1, 1, 10, 20, 31, tz=UTC.key),
+                "20000101T102030-102031[UTC]",
+            ),
+            param(
+                ZonedDateTime(2000, 1, 1, 10, 20, 59, tz=UTC.key),
+                "20000101T102030-102059[UTC]",
+            ),
+            param(
+                ZonedDateTime(2000, 1, 1, 10, 21, tz=UTC.key),
+                "20000101T102030-1021[UTC]",
+            ),
+            param(
+                ZonedDateTime(2000, 1, 1, 10, 21, 1, tz=UTC.key),
+                "20000101T102030-102101[UTC]",
+            ),
+            param(
+                ZonedDateTime(2000, 1, 1, 10, 59, 59, tz=UTC.key),
+                "20000101T102030-105959[UTC]",
+            ),
+            param(ZonedDateTime(2000, 1, 1, 11, tz=UTC.key), "20000101T102030-11[UTC]"),
+            param(
+                ZonedDateTime(2000, 1, 1, 11, 0, 1, tz=UTC.key),
+                "20000101T102030-110001[UTC]",
+            ),
+            param(
+                ZonedDateTime(2000, 1, 1, 23, 59, 59, tz=UTC.key),
+                "20000101T102030-235959[UTC]",
+            ),
+            param(ZonedDateTime(2000, 1, 2, tz=UTC.key), "20000101T102030-02T00[UTC]"),
+            param(
+                ZonedDateTime(2000, 1, 2, 0, 0, 1, tz=UTC.key),
+                "20000101T102030-02T000001[UTC]",
+            ),
+            param(
+                ZonedDateTime(2000, 1, 2, 0, 0, 59, tz=UTC.key),
+                "20000101T102030-02T000059[UTC]",
+            ),
+            param(
+                ZonedDateTime(2000, 1, 2, 0, 1, tz=UTC.key),
+                "20000101T102030-02T0001[UTC]",
+            ),
+            param(
+                ZonedDateTime(2000, 1, 31, 23, 59, 59, tz=UTC.key),
+                "20000101T102030-31T235959[UTC]",
+            ),
+            param(
+                ZonedDateTime(2000, 2, 1, tz=UTC.key), "20000101T102030-0201T00[UTC]"
+            ),
+            param(
+                ZonedDateTime(2000, 2, 1, 0, 0, 1, tz=UTC.key),
+                "20000101T102030-0201T000001[UTC]",
+            ),
+            param(
+                ZonedDateTime(2000, 2, 1, 0, 0, 59, tz=UTC.key),
+                "20000101T102030-0201T000059[UTC]",
+            ),
+            param(
+                ZonedDateTime(2000, 2, 1, 0, 1, tz=UTC.key),
+                "20000101T102030-0201T0001[UTC]",
+            ),
+            param(
+                ZonedDateTime(2000, 12, 31, 23, 59, 59, tz=UTC.key),
+                "20000101T102030-1231T235959[UTC]",
+            ),
+            param(
+                ZonedDateTime(2001, 1, 1, tz=UTC.key),
+                "20000101T102030-20010101T00[UTC]",
+            ),
+            param(
+                ZonedDateTime(2001, 1, 1, 0, 0, 1, tz=UTC.key),
+                "20000101T102030-20010101T000001[UTC]",
+            ),
+            param(
+                ZonedDateTime(2001, 1, 1, 0, 0, 59, tz=UTC.key),
+                "20000101T102030-20010101T0000059[UTC]",
+            ),
+            param(
+                ZonedDateTime(2001, 1, 1, 0, 1, tz=UTC.key),
+                "20000101T102030-20010101T0001[UTC]",
+            ),
+        ],
+    )
+    def test_format_compact(self, *, end: ZonedDateTime, expected: str) -> None:
+        start = ZonedDateTime(2000, 1, 1, 10, 20, 30, tz=UTC.key)
+        period = ZonedDateTimePeriod(start, end)
+        assert period.format_compact() == expected
 
     @given(datetimes=pairs(zoned_datetimes(), sorted=True))
     def test_hashable(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:

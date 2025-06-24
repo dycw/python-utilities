@@ -533,9 +533,9 @@ class _RotatingLogFile:
             case int() as index, None, None:
                 tail = str(index)
             case int() as index, None, ZonedDateTime() as end:
-                tail = f"{index}__{format_compact(end)}"
+                tail = f"{index}__{format_compact(end, local=True)}"
             case int() as index, ZonedDateTime() as start, ZonedDateTime() as end:
-                tail = f"{index}__{format_compact(start)}__{format_compact(end)}"
+                tail = f"{index}__{format_compact(start, local=True)}__{format_compact(end, local=True)}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(
                     case=[f"{self.index=}", f"{self.start=}", f"{self.end=}"]
