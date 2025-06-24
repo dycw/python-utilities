@@ -38,7 +38,7 @@ from utilities.logging import (
 from utilities.text import unique_str
 from utilities.types import LogLevel
 from utilities.typing import get_args
-from utilities.whenever import format_compact, get_now
+from utilities.whenever import format_compact, get_now, to_local_plain
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -192,7 +192,7 @@ class TestComputeRolloverActions:
 
         await sleep(1)
         tmp_path.joinpath("log.txt").touch()
-        now = format_compact(get_now().to_plain())
+        now = format_compact(to_local_plain(get_now()))
         tmp_path.joinpath(f"log.99__{now}__{now}.txt").touch()
         actions = _compute_rollover_actions(tmp_path, "log", ".txt")
         assert len(actions.deletions) == 2
@@ -319,7 +319,7 @@ class TestRotatingLogFile:
     def test_from_path_with_index_and_end(
         self, *, index: int, end: ZonedDateTime
     ) -> None:
-        path = Path(f"log.{index}__{format_compact(end.to_plain())}.txt")
+        path = Path(f"log.{index}__{format_compact(to_local_plain(end))}.txt")
         result = _RotatingLogFile.from_path(path, "log", ".txt")
         assert result is not None
         assert result.stem == "log"
@@ -334,7 +334,7 @@ class TestRotatingLogFile:
     ) -> None:
         start, end = datetimes
         path = Path(
-            f"log.{index}__{format_compact(start.to_plain())}__{format_compact(end.to_plain())}.txt"
+            f"log.{index}__{format_compact(to_local_plain(start))}__{format_compact(to_local_plain(end))}.txt"
         )
         result = _RotatingLogFile.from_path(path, "log", ".txt")
         assert result is not None
@@ -366,7 +366,7 @@ class TestRotatingLogFile:
             directory=root, stem="log", suffix=".txt", index=index, end=end
         )
         assert file.path == root.joinpath(
-            f"log.{index}__{format_compact(end.to_plain())}.txt"
+            f"log.{index}__{format_compact(to_local_plain(end))}.txt"
         )
 
     @given(
@@ -382,7 +382,7 @@ class TestRotatingLogFile:
             directory=root, stem="log", suffix=".txt", index=index, start=start, end=end
         )
         assert file.path == root.joinpath(
-            f"log.{index}__{format_compact(start.to_plain())}__{format_compact(end.to_plain())}.txt"
+            f"log.{index}__{format_compact(to_local_plain(start))}__{format_compact(to_local_plain(end))}.txt"
         )
 
 
