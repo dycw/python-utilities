@@ -96,8 +96,8 @@ def _yield_header_lines(
     """Yield the header lines."""
     now = get_now_local()
     start_use = to_zoned_date_time(date_time=start)
-    yield f"Date/time | {format_compact(now.to_plain())}"
-    start_str = "" if start_use is None else format_compact(start_use.to_plain())
+    yield f"Date/time | {format_compact(now, local=True)}"
+    start_str = "" if start_use is None else format_compact(start_use, local=True)
     yield f"Started   | {start_str}"
     delta = None if start_use is None else (now - start_use)
     delta_str = "" if delta is None else delta.format_common_iso()
@@ -256,7 +256,7 @@ def _make_except_hook_inner(
     if path is not None:
         path = (
             get_path(path=path)
-            .joinpath(format_compact(get_now_local().to_plain()))
+            .joinpath(format_compact(get_now(), local=True))
             .with_suffix(".txt")
         )
         full = format_exception_stack(

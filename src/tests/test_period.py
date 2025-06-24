@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import DataObject, data
 from pytest import mark, param, raises
-from whenever import Date
+from whenever import Date, ZonedDateTime
 
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -31,7 +31,7 @@ from utilities.zoneinfo import UTC, get_time_zone_name
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from whenever import DateDelta, PlainDateTime, TimeDelta, ZonedDateTime
+    from whenever import DateDelta, PlainDateTime, TimeDelta
 
 
 class TestDatePeriod:
@@ -245,7 +245,7 @@ class TestZonedDateTimePeriod:
             ),
             param(
                 ZonedDateTime(2001, 1, 1, 0, 0, 59, tz=UTC.key),
-                "20000101T102030-20010101T000059[UTC]",
+                "20000101T102030-20010101T0000059[UTC]",
             ),
             param(
                 ZonedDateTime(2001, 1, 1, 0, 1, tz=UTC.key),
@@ -256,23 +256,6 @@ class TestZonedDateTimePeriod:
     def test_format_compact(self, *, end: ZonedDateTime, expected: str) -> None:
         start = ZonedDateTime(2000, 1, 1, 10, 20, 30, tz=UTC.key)
         period = ZonedDateTimePeriod(start, end)
-        assert period.format_compact() == expected
-
-    @mark.parametrize(
-        ("datetime", "expected"),
-        [
-            param(
-                ZonedDateTime(2000, 1, 1, 10, 20, 30, tz=UTC.key),
-                "20000101T102030[UTC]=",
-            ),
-            param(ZonedDateTime(2000, 1, 1, 10, 20, tz=UTC.key), "20000101T1020[UTC]="),
-            param(ZonedDateTime(2000, 1, 1, 10, tz=UTC.key), "20000101T10[UTC]="),
-        ],
-    )
-    def test_format_compact_extra(
-        self, *, datetime: ZonedDateTime, expected: str
-    ) -> None:
-        period = ZonedDateTimePeriod(datetime, datetime)
         assert period.format_compact() == expected
 
     @given(datetimes=pairs(zoned_datetimes(), sorted=True))

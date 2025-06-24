@@ -22,7 +22,7 @@ def profile(*, path: MaybeCallablePathLike | None = Path.cwd) -> Iterator[None]:
     with Profiler() as profiler:
         yield
     filename = get_path(path=path).joinpath(
-        f"profile__{format_compact(get_now_local().to_plain())}.html"
+        f"profile__{format_compact(get_now(), local=True)}.html"
     )
     with writer(filename) as temp, temp.open(mode="w") as fh:
         _ = fh.write(profiler.output_html())

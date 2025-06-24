@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
+    booleans,
     data,
     integers,
     none,
@@ -142,22 +143,16 @@ class TestFormatCompact:
         parsed = Time.parse_common_iso(result)
         assert parsed == time
 
-    @given(datetime=plain_datetimes())
-    def test_plain_datetime(self, *, datetime: PlainDateTime) -> None:
-        result = format_compact(datetime)
+    @given(datetime=zoned_datetimes(), local=booleans())
+    def test_datetime(self, *, datetime: ZonedDateTime, local: bool) -> None:
+        result = format_compact(datetime, local=local)
         assert isinstance(result, str)
         parsed = PlainDateTime.parse_common_iso(result)
         assert parsed.nanosecond == 0
-        expected = datetime.round()
-        assert parsed == expected
-
-    @given(datetime=zoned_datetimes())
-    def test_zoned_datetime(self, *, datetime: ZonedDateTime) -> None:
-        result = format_compact(datetime)
-        assert isinstance(result, str)
-        parsed = ZonedDateTime.parse_common_iso(result)
-        assert parsed.nanosecond == 0
-        expected = datetime.round()
+        if local:
+            expected = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
+        else:
+            expected = datetime.round().to_plain()
         assert parsed == expected
 
 

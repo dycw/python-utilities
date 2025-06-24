@@ -161,10 +161,25 @@ def datetime_utc(
 ##
 
 
-def format_compact(datetime: ZonedDateTime, /) -> str:
-    """Format the datetime in a compact fashion."""
-    py_datetime = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain().py_datetime()
-    return py_datetime.strftime(get_strftime("%Y%m%dT%H%M%S"))
+def format_compact(
+    obj: Date | Time | PlainDateTime | ZonedDateTime, /, *, fmt: str | None = None
+) -> str:
+    """Format the date/datetime in a compact fashion."""
+    match obj:
+        case Date() as date:
+            obj_use = date.py_date()
+            fmt_use = "%Y%m%d" if fmt is None else fmt
+        case Time() as time:
+            obj_use = time.py_time()
+            fmt_use = "%H%M%S" if fmt is None else fmt
+        case PlainDateTime() as datetime:
+            obj_use = datetime.round().py_datetime()
+            fmt_use = "%Y%m%dT%H%M%S" if fmt is None else fmt
+        case ZonedDateTime() as datetime:
+            return f"{format_compact(datetime.to_plain(), fmt=fmt)}[{datetime.tz}]"
+        case _ as never:
+            assert_never(never)
+    return obj_use.strftime(get_strftime(fmt_use))
 
 
 ##

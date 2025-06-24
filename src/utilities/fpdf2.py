@@ -47,7 +47,7 @@ def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
         def footer(self) -> None:
             self.set_y(-15)
             self.set_font(family="Helvetica", style="I", size=8)
-            page_no, now = (self.page_no(), format_compact(get_now_local().to_plain()))
+            page_no, now = self.page_no(), format_compact(get_now(), local=True)
             text = f"page {page_no}/{{}}; {now}"
             _ = self.cell(
                 w=0,

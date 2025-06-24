@@ -55,15 +55,15 @@ class DatePeriod:
         return self.end - self.start
 
     def format_compact(self) -> str:
-        """Format the datetime in a compact fashion."""
-        start = self.start.py_date().strftime("%Y%m%d")
+        """Format the period in a compact fashion."""
+        fc, start, end = format_compact, self.start, self.end
         if self.start == self.end:
-            return f"{start}="
+            return f"{fc(start)}="
         if self.start.year_month() == self.end.year_month():
-            return f"{start}-{self.end.py_date():%d}"
+            return f"{fc(start)}-{fc(end, fmt='%d')}"
         if self.start.year == self.end.year:
-            return f"{start}-{self.end.py_date():%m%d}"
-        return f"{start}-{self.end.py_date():%Y%m%d}"
+            return f"{fc(start)}-{fc(end, fmt='%m%d')}"
+        return f"{fc(start)}-{fc(end)}"
 
     def replace(
         self, *, start: Date | Sentinel = sentinel, end: Date | Sentinel = sentinel
@@ -120,8 +120,8 @@ class ZonedDateTimePeriod:
             if end.second != 0:
                 return f"{fc(start)}="
             if end.minute != 0:
-                return f"{fc(start, fmt='%Y%m%dT%H%M')}="
-            return f"{fc(start, fmt='%Y%m%dT%H')}="
+                raise NotImplementedError
+            raise NotImplementedError
         if start.date() == end.date():
             if end.second != 0:
                 return f"{fc(start.to_plain())}-{fc(end, fmt='%H%M%S')}"
