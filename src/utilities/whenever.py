@@ -668,9 +668,9 @@ def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
 ##
 
 
-def to_local_plain(datetime: ZonedDateTime, /) -> PlainDateTime:
+def to_local_plain(date_time: ZonedDateTime, /) -> PlainDateTime:
     """Convert a datetime to its local/plain variant."""
-    return datetime.to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
+    return date_time.to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
 
 
 ##
