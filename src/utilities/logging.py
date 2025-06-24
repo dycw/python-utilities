@@ -45,7 +45,7 @@ from utilities.re import (
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
-from utilities.whenever import WheneverLogRecord, format_compact, get_now, get_now_local
+from utilities.whenever import WheneverLogRecord, format_compact, get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
@@ -378,7 +378,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         if not self.delay:  # pragma: no cover
             self.stream = self._open()
         self._time_handler.rolloverAt = (  # skipif-ci-and-windows
-            self._time_handler.computeRollover(get_now().timestamp())
+            self._time_handler.computeRollover(get_now_local().timestamp())
         )
 
     def _should_rollover(self, record: LogRecord, /) -> bool:
@@ -533,9 +533,9 @@ class _RotatingLogFile:
             case int() as index, None, None:
                 tail = str(index)
             case int() as index, None, ZonedDateTime() as end:
-                tail = f"{index}__{format_compact(end, local=True)}"
+                tail = f"{index}__{format_compact(end.to_plain())}"
             case int() as index, ZonedDateTime() as start, ZonedDateTime() as end:
-                tail = f"{index}__{format_compact(start, local=True)}__{format_compact(end, local=True)}"
+                tail = f"{index}__{format_compact(start.to_plain())}__{format_compact(end.to_plain())}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(
                     case=[f"{self.index=}", f"{self.start=}", f"{self.end=}"]
