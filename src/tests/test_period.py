@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import DataObject, data
 from pytest import mark, param, raises
-from whenever import Date, ZonedDateTime
+from whenever import Date
 
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -31,7 +31,7 @@ from utilities.zoneinfo import UTC, get_time_zone_name
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from whenever import DateDelta, PlainDateTime, TimeDelta
+    from whenever import DateDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 
 class TestDatePeriod:

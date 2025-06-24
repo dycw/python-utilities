@@ -55,15 +55,15 @@ class DatePeriod:
         return self.end - self.start
 
     def format_compact(self) -> str:
-        """Format the period in a compact fashion."""
-        fc, start, end = format_compact, self.start, self.end
+        """Format the datetime in a compact fashion."""
+        start = self.start.py_date().strftime("%Y%m%d")
         if self.start == self.end:
-            return f"{fc(start)}="
+            return f"{start}="
         if self.start.year_month() == self.end.year_month():
-            return f"{fc(start)}-{fc(end, fmt='%d')}"
+            return f"{start}-{self.end.py_date():%d}"
         if self.start.year == self.end.year:
-            return f"{fc(start)}-{fc(end, fmt='%m%d')}"
-        return f"{fc(start)}-{fc(end)}"
+            return f"{start}-{self.end.py_date():%m%d}"
+        return f"{start}-{self.end.py_date():%Y%m%d}"
 
     def replace(
         self, *, start: Date | Sentinel = sentinel, end: Date | Sentinel = sentinel
