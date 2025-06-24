@@ -4,8 +4,9 @@ from re import search
 from typing import TYPE_CHECKING
 
 from hypothesis import HealthCheck, given, settings
-from hypothesis.strategies import DataObject, data, sampled_from
-from pytest import raises
+from hypothesis.strategies import DataObject, data
+from pytest import mark, param, raises
+from whenever import Date
 
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -30,7 +31,7 @@ from utilities.zoneinfo import UTC, get_time_zone_name
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from whenever import Date, DateDelta, PlainDateTime, TimeDelta, ZonedDateTime
+    from whenever import DateDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 
 class TestDatePeriod:
@@ -58,13 +59,30 @@ class TestDatePeriod:
         period = DatePeriod(start, end)
         assert period.delta == (end - start)
 
+    @mark.parametrize(
+        ("end", "expected"),
+        [
+            param(Date(2000, 1, 1), "20000101="),
+            param(Date(2000, 1, 2), "20000101-02"),
+            param(Date(2000, 1, 31), "20000101-31"),
+            param(Date(2000, 2, 1), "20000101-0201"),
+            param(Date(2000, 2, 29), "20000101-0229"),
+            param(Date(2000, 12, 31), "20000101-1231"),
+            param(Date(2001, 1, 1), "20000101-20010101"),
+        ],
+    )
+    def test_format_compact(self, *, end: Date, expected: str) -> None:
+        period = DatePeriod(Date(2000, 1, 1), end)
+        assert period.format_compact() == expected
+
     @given(dates=pairs(dates(), sorted=True))
     def test_hashable(self, *, dates: tuple[Date, Date]) -> None:
         start, end = dates
         period = DatePeriod(start, end)
         _ = hash(period)
 
-    @given(dates=pairs(dates(), sorted=True), func=sampled_from([repr, str]))
+    @given(dates=pairs(dates(), sorted=True))
+    @mark.parametrize("func", [param(repr), param(str)])
     def test_repr(self, *, dates: tuple[Date, Date], func: Callable[..., str]) -> None:
         start, end = dates
         period = DatePeriod(start, end)
@@ -151,11 +169,8 @@ class TestZonedDateTimePeriod:
         period = ZonedDateTimePeriod(start, end)
         _ = hash(period)
 
-    @given(
-        data=data(),
-        datetimes=pairs(zoned_datetimes(), sorted=True),
-        func=sampled_from([repr, str]),
-    )
+    @given(data=data(), datetimes=pairs(zoned_datetimes(), sorted=True))
+    @mark.parametrize("func", [param(repr), param(str)])
     def test_repr(
         self,
         *,

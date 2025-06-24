@@ -161,7 +161,7 @@ def datetime_utc(
 
 
 def format_compact(datetime: ZonedDateTime, /) -> str:
-    """Convert a zoned datetime to the local time zone, then format."""
+    """Format the datetime in a compact fashion."""
     py_datetime = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain().py_datetime()
     return py_datetime.strftime(get_strftime("%Y%m%dT%H%M%S"))
 
