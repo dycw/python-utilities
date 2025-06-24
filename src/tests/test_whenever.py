@@ -16,6 +16,7 @@ from whenever import (
     Time,
     TimeDelta,
     TimeZoneNotFoundError,
+    YearMonth,
     ZonedDateTime,
 )
 
@@ -88,6 +89,7 @@ from utilities.whenever import (
     to_nanos,
     to_time_delta,
     to_zoned_date_time,
+    two_digit_year_month,
 )
 from utilities.zoneinfo import UTC
 
@@ -551,6 +553,13 @@ class TestToZonedDateTime:
     @given(date_time=zoned_datetimes())
     def test_callable(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time=lambda: date_time) == date_time
+
+
+class TestTwoDigitYearMonth:
+    def test_parse_common_iso(self) -> None:
+        result = two_digit_year_month(0, 1)
+        expected = YearMonth(2000, 1)
+        assert result == expected
 
 
 class TestWheneverLogRecord:
