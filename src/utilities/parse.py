@@ -13,9 +13,11 @@ from whenever import (
     Date,
     DateDelta,
     DateTimeDelta,
+    MonthDay,
     PlainDateTime,
     Time,
     TimeDelta,
+    YearMonth,
     ZonedDateTime,
 )
 
@@ -51,7 +53,6 @@ from utilities.typing import (
     is_union_type,
 )
 from utilities.version import ParseVersionError, Version, parse_version
-from utilities.whenever import Month
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -194,10 +195,11 @@ def _parse_object_type(
             Date,
             DateDelta,
             DateTimeDelta,
-            Month,
+            MonthDay,
             PlainDateTime,
             Time,
             TimeDelta,
+            YearMonth,
             ZonedDateTime,
         ),
     ):
@@ -467,10 +469,11 @@ def serialize_object(
             Date,
             DateDelta,
             DateTimeDelta,
-            Month,
+            MonthDay,
             PlainDateTime,
             Time,
             TimeDelta,
+            YearMonth,
             ZonedDateTime,
         ),
     ):

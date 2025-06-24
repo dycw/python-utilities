@@ -43,10 +43,11 @@ from utilities.click import (
     ListChoices,
     ListEnums,
     ListStrs,
-    Month,
+    MonthDay,
     PlainDateTime,
     Time,
     TimeDelta,
+    YearMonth,
     ZonedDateTime,
 )
 from utilities.hypothesis import (
@@ -54,11 +55,12 @@ from utilities.hypothesis import (
     date_time_deltas,
     dates,
     freqs,
-    months,
+    month_days,
     plain_datetimes,
     text_ascii,
     time_deltas,
     times,
+    year_months,
     zoned_datetimes,
 )
 from utilities.text import join_strs, strip_and_dedent
@@ -283,10 +285,10 @@ class TestParameters:
             failable=True,
         ),
         _Case(
-            param=Month(),
-            name="month",
-            strategy=months(),
-            serialize=utilities.whenever.Month.format_common_iso,
+            param=MonthDay(),
+            name="month-day",
+            strategy=month_days(),
+            serialize=whenever.MonthDay.format_common_iso,
             failable=True,
         ),
         _Case(
@@ -308,6 +310,13 @@ class TestParameters:
             name="time-delta",
             strategy=time_deltas(),
             serialize=whenever.TimeDelta.format_common_iso,
+            failable=True,
+        ),
+        _Case(
+            param=YearMonth(),
+            name="year-month",
+            strategy=year_months(),
+            serialize=whenever.YearMonth.format_common_iso,
             failable=True,
         ),
         _Case(

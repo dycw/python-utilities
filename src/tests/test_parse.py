@@ -24,9 +24,11 @@ from whenever import (
     Date,
     DateDelta,
     DateTimeDelta,
+    MonthDay,
     PlainDateTime,
     Time,
     TimeDelta,
+    YearMonth,
     ZonedDateTime,
 )
 
@@ -45,7 +47,7 @@ from utilities.functions import ensure_path
 from utilities.hypothesis import (
     dates,
     int64s,
-    months,
+    month_days,
     numbers,
     paths,
     plain_datetimes,
@@ -53,6 +55,7 @@ from utilities.hypothesis import (
     time_deltas,
     times,
     versions,
+    year_months,
     zoned_datetimes,
 )
 from utilities.math import is_equal
@@ -68,7 +71,6 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.text import parse_bool
 from utilities.types import Number
 from utilities.version import Version
-from utilities.whenever import Month
 
 
 class TestSerializeAndParseObject:
@@ -143,11 +145,11 @@ class TestSerializeAndParseObject:
         result = parse_object(TrueOrFalseFutureLit, truth)
         assert result == truth
 
-    @given(month=months())
-    def test_month(self, *, month: Month) -> None:
-        serialized = serialize_object(month)
-        result = parse_object(Month, serialized)
-        assert result == month
+    @given(month_day=month_days())
+    def test_month_day(self, *, month_day: MonthDay) -> None:
+        serialized = serialize_object(month_day)
+        result = parse_object(MonthDay, serialized)
+        assert result == month_day
 
     def test_none(self) -> None:
         serialized = serialize_object(None)
@@ -315,6 +317,12 @@ class TestSerializeAndParseObject:
         serialized = serialize_object(version)
         result = parse_object(Version, serialized)
         assert result == version
+
+    @given(year_month=year_months())
+    def test_year_month(self, *, year_month: YearMonth) -> None:
+        serialized = serialize_object(year_month)
+        result = parse_object(YearMonth, serialized)
+        assert result == year_month
 
     @given(datetime=zoned_datetimes())
     def test_zoned_datetime(self, *, datetime: ZonedDateTime) -> None:
@@ -507,6 +515,13 @@ class TestParseObject:
         ):
             _ = parse_object(list[int], "[invalid]")
 
+    def test_error_month_day(self) -> None:
+        with raises(
+            _ParseObjectParseError,
+            match=r"Unable to parse <class 'whenever\.MonthDay'>; got 'invalid'",
+        ):
+            _ = parse_object(MonthDay, "invalid")
+
     def test_error_none(self) -> None:
         with raises(
             _ParseObjectParseError, match="Unable to parse None; got 'invalid'"
@@ -621,6 +636,13 @@ class TestParseObject:
             match=r"Unable to parse <class 'utilities\.version\.Version'>; got 'invalid'",
         ):
             _ = parse_object(Version, "invalid")
+
+    def test_error_year_month(self) -> None:
+        with raises(
+            _ParseObjectParseError,
+            match=r"Unable to parse <class 'whenever\.YearMonth'>; got 'invalid'",
+        ):
+            _ = parse_object(YearMonth, "invalid")
 
     def test_error_zoned_datetime(self) -> None:
         with raises(

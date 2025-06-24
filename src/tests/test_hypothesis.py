@@ -34,6 +34,7 @@ from whenever import (
     Time,
     TimeDelta,
     TimeZoneNotFoundError,
+    YearMonth,
     ZonedDateTime,
 )
 
@@ -62,7 +63,7 @@ from utilities.hypothesis import (
     int64s,
     int_arrays,
     lists_fixed_length,
-    months,
+    month_days,
     namespace_mixins,
     numbers,
     pairs,
@@ -89,6 +90,7 @@ from utilities.hypothesis import (
     uint32s,
     uint64s,
     versions,
+    year_months,
     zoned_datetimes,
 )
 from utilities.iterables import one
@@ -115,7 +117,6 @@ from utilities.whenever import (
     DATE_TWO_DIGIT_YEAR_MAX,
     DATE_TWO_DIGIT_YEAR_MIN,
     Freq,
-    Month,
     to_days,
     to_nanos,
 )
@@ -611,24 +612,19 @@ class TestListsFixedLength:
             assert sorted(result) == result
 
 
-class TestMonths:
-    @given(data=data(), two_digit=booleans())
-    def test_main(self, *, data: DataObject, two_digit: bool) -> None:
-        min_value = data.draw(months() | none())
-        max_value = data.draw(months() | none())
+class TestMonthDays:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value = data.draw(month_days() | none())
+        max_value = data.draw(month_days() | none())
         with assume_does_not_raise(InvalidArgument):
-            month = data.draw(
-                months(min_value=min_value, max_value=max_value, two_digit=two_digit)
-            )
-        assert isinstance(month, Month)
-        assert Month.parse_common_iso(month.format_common_iso()) == month
+            month_day = data.draw(month_days(min_value=min_value, max_value=max_value))
+        assert isinstance(month_day, YearMonth)
+        assert YearMonth.parse_common_iso(month_day.format_common_iso()) == month_day
         if min_value is not None:
-            assert month >= min_value
+            assert month_day >= min_value
         if max_value is not None:
-            assert month <= max_value
-        if two_digit:
-            assert month.to_date() >= DATE_TWO_DIGIT_YEAR_MIN
-            assert month.to_date() <= DATE_TWO_DIGIT_YEAR_MAX
+            assert month_day <= max_value
 
 
 class TestNamespaceMixins:
@@ -1008,6 +1004,28 @@ class TestVersions:
             assert version.suffix is not None
         else:
             assert version.suffix is None
+
+
+class TestYearMonths:
+    @given(data=data(), two_digit=booleans())
+    def test_main(self, *, data: DataObject, two_digit: bool) -> None:
+        min_value = data.draw(year_months() | none())
+        max_value = data.draw(year_months() | none())
+        with assume_does_not_raise(InvalidArgument):
+            year_month = data.draw(
+                year_months(
+                    min_value=min_value, max_value=max_value, two_digit=two_digit
+                )
+            )
+        assert isinstance(year_month, YearMonth)
+        assert YearMonth.parse_common_iso(year_month.format_common_iso()) == year_month
+        if min_value is not None:
+            assert year_month >= min_value
+        if max_value is not None:
+            assert year_month <= max_value
+        if two_digit:
+            assert year_month.on_day(1) >= DATE_TWO_DIGIT_YEAR_MIN
+            assert year_month.on_day(28) <= DATE_TWO_DIGIT_YEAR_MAX
 
 
 class TestZonedDateTimes:
