@@ -49,8 +49,6 @@ from utilities.whenever import (
     DATE_DELTA_MIN,
     DATE_DELTA_PARSABLE_MAX,
     DATE_DELTA_PARSABLE_MIN,
-    DATE_MAX,
-    DATE_MIN,
     DATE_TIME_DELTA_MAX,
     DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
@@ -60,8 +58,6 @@ from utilities.whenever import (
     MINUTE,
     NOW_LOCAL,
     NOW_UTC,
-    PLAIN_DATE_TIME_MAX,
-    PLAIN_DATE_TIME_MIN,
     SECOND,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
@@ -327,11 +323,11 @@ class TestMeanDateTime:
 class TestMinMax:
     def test_date_min(self) -> None:
         with raises(ValueError, match="Resulting date out of range"):
-            _ = DATE_MIN - DateDelta(days=1)
+            _ = Date.MIN - DateDelta(days=1)
 
     def test_date_max(self) -> None:
         with raises(ValueError, match="Resulting date out of range"):
-            _ = DATE_MAX + DateDelta(days=1)
+            _ = Date.MAX + DateDelta(days=1)
 
     def test_date_delta_min(self) -> None:
         with raises(ValueError, match="Addition result out of bounds"):
@@ -375,11 +371,11 @@ class TestMinMax:
 
     def test_plain_date_time_min(self) -> None:
         with raises(ValueError, match=r"Result of subtract\(\) out of range"):
-            _ = PLAIN_DATE_TIME_MIN.subtract(nanoseconds=1, ignore_dst=True)
+            _ = PlainDateTime.MIN.subtract(nanoseconds=1, ignore_dst=True)
 
     def test_plain_date_time_max(self) -> None:
         with raises(ValueError, match=r"Result of add\(\) out of range"):
-            _ = PLAIN_DATE_TIME_MAX.add(microseconds=1, ignore_dst=True)
+            _ = PlainDateTime.MAX.add(microseconds=1, ignore_dst=True)
 
     def test_time_delta_min(self) -> None:
         nanos = TIME_DELTA_MIN.in_nanoseconds()

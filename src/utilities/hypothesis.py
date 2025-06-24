@@ -76,8 +76,6 @@ from utilities.whenever import (
     DATE_DELTA_MIN,
     DATE_DELTA_PARSABLE_MAX,
     DATE_DELTA_PARSABLE_MIN,
-    DATE_MAX,
-    DATE_MIN,
     DATE_TIME_DELTA_MAX,
     DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
@@ -87,12 +85,8 @@ from utilities.whenever import (
     DAY,
     MONTH_MAX,
     MONTH_MIN,
-    PLAIN_DATE_TIME_MAX,
-    PLAIN_DATE_TIME_MIN,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
-    TIME_MAX,
-    TIME_MIN,
     Freq,
     Month,
     to_date_time_delta,
@@ -255,14 +249,14 @@ def dates(
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
         case None:
-            min_value_ = DATE_MIN
+            min_value_ = Date.MIN
         case Date():
             ...
         case _ as never:
             assert_never(never)
     match max_value_:
         case None:
-            max_value_ = DATE_MAX
+            max_value_ = Date.MAX
         case Date():
             ...
         case _ as never:
@@ -843,14 +837,14 @@ def plain_datetimes(
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
         case None:
-            min_value_ = PLAIN_DATE_TIME_MIN
+            min_value_ = PlainDateTime.MIN
         case PlainDateTime():
             ...
         case _ as never:
             assert_never(never)
     match max_value_:
         case None:
-            max_value_ = PLAIN_DATE_TIME_MAX
+            max_value_ = PlainDateTime.MAX
         case PlainDateTime():
             ...
         case _ as never:
@@ -1219,14 +1213,14 @@ def times(
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
         case None:
-            min_value_ = TIME_MIN
+            min_value_ = Time.MIN
         case Time():
             ...
         case _ as never:
             assert_never(never)
     match max_value_:
         case None:
-            max_value_ = TIME_MAX
+            max_value_ = Time.MAX
         case Time():
             ...
         case _ as never:
@@ -1345,7 +1339,7 @@ def zoned_datetimes(
     ):
         zoned = plain.assume_tz(time_zone_.key, disambiguate="raise")
     with assume_does_not_raise(OverflowError, match="date value out of range"):
-        if not ((DATE_MIN + DAY) <= zoned.date() <= (DATE_MAX - DAY)):
+        if not ((Date.MIN + DAY) <= zoned.date() <= (Date.MAX - DAY)):
             _ = zoned.py_datetime()
     return zoned
 

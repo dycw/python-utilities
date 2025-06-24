@@ -49,16 +49,8 @@ if TYPE_CHECKING:
 ## bounds
 
 
-PLAIN_DATE_TIME_MIN = PlainDateTime(1, 1, 1)
-PLAIN_DATE_TIME_MAX = PlainDateTime(
-    9999, 12, 31, hour=23, minute=59, second=59, nanosecond=999999999
-)
-DATE_MIN = PLAIN_DATE_TIME_MIN.date()
-DATE_MAX = PLAIN_DATE_TIME_MAX.date()
-TIME_MIN = PLAIN_DATE_TIME_MIN.time()
-TIME_MAX = PLAIN_DATE_TIME_MIN.time()
-ZONED_DATE_TIME_MIN = PLAIN_DATE_TIME_MIN.assume_tz(UTC.key)
-ZONED_DATE_TIME_MAX = PLAIN_DATE_TIME_MAX.assume_tz(UTC.key)
+ZONED_DATE_TIME_MIN = PlainDateTime.MIN.assume_tz(UTC.key)
+ZONED_DATE_TIME_MAX = PlainDateTime.MAX.assume_tz(UTC.key)
 
 
 DATE_TIME_DELTA_MIN = DateTimeDelta(
@@ -576,8 +568,8 @@ class _MonthParseCommonISOError(MonthError):
 
 type DateOrMonth = Date | Month
 type MonthLike = MaybeStr[Month]
-MONTH_MIN = Month.from_date(DATE_MIN)
-MONTH_MAX = Month.from_date(DATE_MAX)
+MONTH_MIN = Month.from_date(Date.MIN)
+MONTH_MAX = Month.from_date(Date.MAX)
 
 
 ##
@@ -851,8 +843,6 @@ __all__ = [
     "DATE_DELTA_MIN",
     "DATE_DELTA_PARSABLE_MAX",
     "DATE_DELTA_PARSABLE_MIN",
-    "DATE_MAX",
-    "DATE_MIN",
     "DATE_TIME_DELTA_MAX",
     "DATE_TIME_DELTA_MIN",
     "DATE_TIME_DELTA_PARSABLE_MAX",
@@ -868,13 +858,9 @@ __all__ = [
     "MONTH_MAX",
     "MONTH_MIN",
     "NOW_LOCAL",
-    "PLAIN_DATE_TIME_MAX",
-    "PLAIN_DATE_TIME_MIN",
     "SECOND",
     "TIME_DELTA_MAX",
     "TIME_DELTA_MIN",
-    "TIME_MAX",
-    "TIME_MIN",
     "TODAY_LOCAL",
     "TODAY_UTC",
     "WEEK",
