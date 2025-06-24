@@ -20,9 +20,11 @@ from whenever import (
     Date,
     DateDelta,
     DateTimeDelta,
+    MonthDay,
     PlainDateTime,
     Time,
     TimeDelta,
+    YearMonth,
     ZonedDateTime,
 )
 
@@ -31,12 +33,14 @@ from utilities.hypothesis import (
     date_time_deltas,
     dates,
     freqs,
+    month_days,
     paths,
     plain_datetimes,
     temp_paths,
     text_ascii,
     time_deltas,
     times,
+    year_months,
     zoned_datetimes,
 )
 from utilities.os import temp_environ
@@ -72,8 +76,11 @@ class TestExtendedTSConverter:
             serialize=DateTimeDelta.format_common_iso,
         ),
         _Case(cls=Freq, strategy=freqs(), serialize=Freq.serialize),
-        _Case(cls=IPv4Address, strategy=ip_addresses(v=4), serialize=IPv4Address),
-        _Case(cls=IPv6Address, strategy=ip_addresses(v=6), serialize=IPv6Address),
+        _Case(cls=IPv4Address, strategy=ip_addresses(v=4), serialize=str),
+        _Case(cls=IPv6Address, strategy=ip_addresses(v=6), serialize=str),
+        _Case(
+            cls=MonthDay, strategy=month_days(), serialize=MonthDay.format_common_iso
+        ),
         _Case(
             cls=PlainDateTime,
             strategy=plain_datetimes(),
@@ -82,6 +89,9 @@ class TestExtendedTSConverter:
         _Case(cls=Time, strategy=times(), serialize=Time.format_common_iso),
         _Case(
             cls=TimeDelta, strategy=time_deltas(), serialize=TimeDelta.format_common_iso
+        ),
+        _Case(
+            cls=YearMonth, strategy=year_months(), serialize=YearMonth.format_common_iso
         ),
         _Case(
             cls=ZonedDateTime,
