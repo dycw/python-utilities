@@ -20,6 +20,7 @@ from whenever import (
     DateDelta,
     DateTimeDelta,
     PlainDateTime,
+    Time,
     TimeDelta,
     TimeZoneNotFoundError,
     ZonedDateTime,
@@ -33,7 +34,9 @@ from utilities.hypothesis import (
     freqs,
     months,
     pairs,
+    plain_datetimes,
     sentinels,
+    times,
     zoned_datetimes,
 )
 from utilities.sentinel import Sentinel, sentinel
@@ -125,13 +128,36 @@ class TestDatetimeUTC:
 
 
 class TestFormatCompact:
-    @given(datetime=zoned_datetimes())
-    def test_main(self, *, datetime: ZonedDateTime) -> None:
+    @given(date=dates())
+    def test_date(self, *, date: Date) -> None:
+        result = format_compact(date)
+        assert isinstance(result, str)
+        parsed = Date.parse_common_iso(result)
+        assert parsed == date
+
+    @given(time=times())
+    def test_time(self, *, time: Time) -> None:
+        result = format_compact(time)
+        assert isinstance(result, str)
+        parsed = Time.parse_common_iso(result)
+        assert parsed == time
+
+    @given(datetime=plain_datetimes())
+    def test_plain_datetime(self, *, datetime: PlainDateTime) -> None:
         result = format_compact(datetime)
         assert isinstance(result, str)
         parsed = PlainDateTime.parse_common_iso(result)
         assert parsed.nanosecond == 0
-        expected = datetime.round().to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
+        expected = datetime.round()
+        assert parsed == expected
+
+    @given(datetime=zoned_datetimes())
+    def test_zoned_datetime(self, *, datetime: ZonedDateTime) -> None:
+        result = format_compact(datetime)
+        assert isinstance(result, str)
+        parsed = ZonedDateTime.parse_common_iso(result)
+        assert parsed.nanosecond == 0
+        expected = datetime.round()
         assert parsed == expected
 
 
