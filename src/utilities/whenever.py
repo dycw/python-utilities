@@ -33,7 +33,7 @@ from utilities.platform import get_strftime
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import DateTimeRoundUnit, MaybeStr
-from utilities.tzlocal import LOCAL_TIME_ZONE
+from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
@@ -668,6 +668,14 @@ def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
 ##
 
 
+def to_local_plain(date_time: ZonedDateTime, /) -> PlainDateTime:
+    """Convert a datetime to its local/plain variant."""
+    return date_time.to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
+
+
+##
+
+
 def to_nanos(delta: DateTimeDelta, /) -> int:
     """Compute the number of nanoseconds in a date-time delta."""
     months, days, _, _ = delta.in_months_days_secs_nanos()
@@ -901,6 +909,7 @@ __all__ = [
     "to_date",
     "to_date_time_delta",
     "to_days",
+    "to_local_plain",
     "to_nanos",
     "to_zoned_date_time",
 ]

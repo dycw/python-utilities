@@ -31,6 +31,7 @@ from utilities.whenever import (
     format_compact,
     get_now,
     get_now_local,
+    to_local_plain,
     to_zoned_date_time,
 )
 
@@ -96,8 +97,8 @@ def _yield_header_lines(
     """Yield the header lines."""
     now = get_now_local()
     start_use = to_zoned_date_time(date_time=start)
-    yield f"Date/time | {format_compact(now.to_plain())}"
-    start_str = "" if start_use is None else format_compact(start_use.to_plain())
+    yield f"Date/time | {format_compact(now)}"
+    start_str = "" if start_use is None else format_compact(start_use)
     yield f"Started   | {start_str}"
     delta = None if start_use is None else (now - start_use)
     delta_str = "" if delta is None else delta.format_common_iso()
@@ -256,7 +257,7 @@ def _make_except_hook_inner(
     if path is not None:
         path = (
             get_path(path=path)
-            .joinpath(format_compact(get_now_local().to_plain()))
+            .joinpath(format_compact(to_local_plain(get_now())))
             .with_suffix(".txt")
         )
         full = format_exception_stack(

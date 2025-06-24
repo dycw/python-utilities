@@ -45,7 +45,12 @@ from utilities.re import (
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
-from utilities.whenever import WheneverLogRecord, format_compact, get_now_local
+from utilities.whenever import (
+    WheneverLogRecord,
+    format_compact,
+    get_now_local,
+    to_local_plain,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
@@ -533,9 +538,9 @@ class _RotatingLogFile:
             case int() as index, None, None:
                 tail = str(index)
             case int() as index, None, ZonedDateTime() as end:
-                tail = f"{index}__{format_compact(end.to_plain())}"
+                tail = f"{index}__{format_compact(to_local_plain(end))}"
             case int() as index, ZonedDateTime() as start, ZonedDateTime() as end:
-                tail = f"{index}__{format_compact(start.to_plain())}__{format_compact(end.to_plain())}"
+                tail = f"{index}__{format_compact(to_local_plain(start))}__{format_compact(to_local_plain(end))}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(
                     case=[f"{self.index=}", f"{self.start=}", f"{self.end=}"]

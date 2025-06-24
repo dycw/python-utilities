@@ -99,6 +99,7 @@ from utilities.whenever import (
     to_date,
     to_date_time_delta,
     to_days,
+    to_local_plain,
     to_nanos,
     to_time_delta,
     to_zoned_date_time,
@@ -634,6 +635,13 @@ class TestToDays:
         delta = DateDelta(months=1)
         with raises(ToDaysError, match="Date delta must not contain months; got 1"):
             _ = to_days(delta)
+
+
+class TestToLocalPlain:
+    @given(date_time=zoned_datetimes())
+    def test_main(self, *, date_time: ZonedDateTime) -> None:
+        result = to_local_plain(date_time)
+        assert isinstance(result, PlainDateTime)
 
 
 class TestToZonedDateTime:
