@@ -120,8 +120,8 @@ class ZonedDateTimePeriod:
             if end.second != 0:
                 return f"{fc(start)}="
             if end.minute != 0:
-                raise NotImplementedError
-            raise NotImplementedError
+                return f"{fc(start, fmt='%Y%m%dT%H%M')}="
+            return f"{fc(start, fmt='%Y%m%dT%H')}="
         if start.date() == end.date():
             if end.second != 0:
                 return f"{fc(start.to_plain())}-{fc(end, fmt='%H%M%S')}"
