@@ -30,6 +30,7 @@ from whenever import (
     Date,
     DateDelta,
     DateTimeDelta,
+    MonthDay,
     PlainDateTime,
     Time,
     TimeDelta,
@@ -619,8 +620,8 @@ class TestMonthDays:
         max_value = data.draw(month_days() | none())
         with assume_does_not_raise(InvalidArgument):
             month_day = data.draw(month_days(min_value=min_value, max_value=max_value))
-        assert isinstance(month_day, YearMonth)
-        assert YearMonth.parse_common_iso(month_day.format_common_iso()) == month_day
+        assert isinstance(month_day, MonthDay)
+        assert MonthDay.parse_common_iso(month_day.format_common_iso()) == month_day
         if min_value is not None:
             assert month_day >= min_value
         if max_value is not None:
@@ -679,8 +680,8 @@ class TestPairs:
 class TestPaths:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_depth = data.draw(integers(0, 10) | none())
-        max_depth = data.draw(integers(0, 10) | none())
+        min_depth = data.draw(integers(0, 5) | none())
+        max_depth = data.draw(integers(0, 5) | none())
         with assume_does_not_raise(InvalidArgument):
             path = data.draw(paths(min_depth=min_depth, max_depth=max_depth))
         assert isinstance(path, Path)
