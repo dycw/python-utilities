@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from dataclasses import dataclass
 from itertools import chain
 from os import chdir
@@ -11,6 +11,7 @@ from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_output
 from typing import TYPE_CHECKING, assert_never, overload, override
 
+from utilities.errors import ImpossibleCaseError
 from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
@@ -73,23 +74,50 @@ def get_path(
 def get_root(*, path: MaybeCallablePathLike | None = None) -> Path:
     """Get the root of a path."""
     path = get_path(path=path)
+    path_dir = path.parent if path.is_file() else path
     try:
         output = check_output(
-            ["git", "rev-parse", "--show-toplevel"], stderr=PIPE, cwd=path, text=True
+            ["git", "rev-parse", "--show-toplevel"],
+            stderr=PIPE,
+            cwd=path_dir,
+            text=True,
         )
     except CalledProcessError as error:
         # newer versions of git report "Not a git repository", whilst older
         # versions report "not a git repository"
         if not search("fatal: not a git repository", error.stderr, flags=IGNORECASE):
             raise  # pragma: no cover
+        root_git = None
     else:
-        return Path(output.strip("\n"))
-    all_paths = list(chain([path], path.parents))
-    with suppress(StopIteration):
-        return next(
-            p for p in all_paths if any(p_i.name == ".envrc" for p_i in p.iterdir())
+        root_git = Path(output.strip("\n")).resolve()
+    all_paths = list(chain([path_dir], path_dir.parents))
+    try:
+        root_envrc = next(
+            p.resolve()
+            for p in all_paths
+            if any(p_i.name == ".envrc" for p_i in p.iterdir())
         )
-    raise GetRootError(path=path)
+    except StopIteration:
+        root_envrc = None
+    match root_git, root_envrc:
+        case None, None:
+            raise GetRootError(path=path)
+        case Path(), None:
+            return root_git
+        case None, Path():
+            return root_envrc
+        case Path(), Path():
+            if root_git == root_envrc:
+                return root_git
+            if is_sub_path(root_git, root_envrc, strict=True):
+                return root_git
+            if is_sub_path(root_envrc, root_git, strict=True):
+                return root_envrc
+            raise ImpossibleCaseError(  # pragma: no cover
+                case=[f"{root_git=}", f"{root_envrc=}"]
+            )
+        case _ as never:
+            assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -99,6 +127,15 @@ class GetRootError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to determine root from {str(self.path)!r}"
+
+
+##
+
+
+def is_sub_path(x: PathLike, y: PathLike, /, *, strict: bool = False) -> bool:
+    """Check if a path is a sub path of another."""
+    x, y = [Path(i).resolve() for i in [x, y]]
+    return x.is_relative_to(y) and not (strict and y.is_relative_to(x))
 
 
 ##
@@ -123,4 +160,12 @@ def temp_cwd(path: PathLike, /) -> Iterator[None]:
         chdir(prev)
 
 
-__all__ = ["PWD", "ensure_suffix", "expand_path", "get_path", "list_dir", "temp_cwd"]
+__all__ = [
+    "PWD",
+    "ensure_suffix",
+    "expand_path",
+    "get_path",
+    "is_sub_path",
+    "list_dir",
+    "temp_cwd",
+]
