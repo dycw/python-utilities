@@ -70,7 +70,7 @@ from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
-from utilities.types import DateTimeRoundUnit, PathLike
+from utilities.types import DateTimeRoundUnit
 from utilities.typing import get_literal_elements
 from utilities.version import Version
 from utilities.whenever import (
@@ -522,22 +522,20 @@ def _freq_increments(draw: DrawFn, n: int, /) -> int:
 
 
 @composite
-def git_repos(
-    draw: DrawFn, /, *, root: MaybeSearchStrategy[PathLike | None] = None
-) -> Path:
-    root_ = draw2(draw, root, temp_paths())
-    with temp_cwd(root_):
+def git_repos(draw: DrawFn, /) -> Path:
+    path = draw(temp_paths())
+    with temp_cwd(path):
         _ = check_call(["git", "init", "-b", "master"])
         _ = check_call(["git", "config", "user.name", "User"])
         _ = check_call(["git", "config", "user.email", "a@z.com"])
-        file = Path(root_, "file")
+        file = Path(path, "file")
         file.touch()
         file_str = str(file)
         _ = check_call(["git", "add", file_str])
         _ = check_call(["git", "commit", "-m", "add"])
         _ = check_call(["git", "rm", file_str])
         _ = check_call(["git", "commit", "-m", "rm"])
-    return Path(root_)
+    return path
 
 
 ##
