@@ -47,6 +47,71 @@ def expand_path(path: PathLike, /) -> Path:
 ##
 
 
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class ModulePath:
+    path: Path
+
+    def __post_init__(self) -> None:
+        if self.path.suffix is None:
+            raise ModulePathError(path=self.path)
+
+
+def module_path(path: PathLike, /, *, root: PathLike | None = None) -> Path:
+    """Get a module path."""
+    path = Path(path)
+    if root is not None:
+        ...
+
+
+class TestNodeIdToPath:
+    @mark.parametrize(
+        ("node_id", "expected"),
+        [
+            param(
+                "src/tests/module/test_funcs.py::TestClass::test_main",
+                Path("src.tests.module.test_funcs", "TestClass__test_main"),
+            ),
+            param(
+                "src/tests/module/test_funcs.py::TestClass::test_main[param1, param2]",
+                Path(
+                    "src.tests.module.test_funcs",
+                    "TestClass__test_main[param1, param2]",
+                ),
+            ),
+            param(
+                "src/tests/module/test_funcs.py::TestClass::test_main[EUR.USD]",
+                Path("src.tests.module.test_funcs", "TestClass__test_main[EUR.USD]"),
+            ),
+            param(
+                "python/package/src/tests/module/test_funcs.py::TestClass::test_main",
+                Path("src.tests.module.test_funcs", "TestClass__test_main[EUR.USD]"),
+            ),
+        ],
+    )
+    def test_main(self, *, node_id: str, expected: Path) -> None:
+        result = node_id_to_path(node_id)
+        assert result == expected
+
+    def test_head(self) -> None:
+        node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
+        result = node_id_to_path(node_id, head="src/tests")
+        expected = Path("module.test_funcs", "TestClass__test_main")
+        assert result == expected
+
+    def test_suffix(self) -> None:
+        node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
+        result = node_id_to_path(node_id, head="src/tests", suffix=".sv")
+        expected = Path("module.test_funcs", "TestClass__test_main.sv")
+        assert result == expected
+
+    def test_error_file_suffix(self) -> None:
+        with raises(NodeIdToPathError, match="Node ID must be a Python file; got .*"):
+            _ = node_id_to_path("src/tests/module/test_funcs.csv::TestClass::test_main")
+
+
+##
+
+
 @overload
 def get_path(*, path: MaybeCallablePathLike | None) -> Path: ...
 @overload

@@ -50,6 +50,10 @@ class TestNodeIdToPath:
                 "src/tests/module/test_funcs.py::TestClass::test_main[EUR.USD]",
                 Path("src.tests.module.test_funcs", "TestClass__test_main[EUR.USD]"),
             ),
+            param(
+                "python/package/src/tests/module/test_funcs.py::TestClass::test_main",
+                Path("src.tests.module.test_funcs", "TestClass__test_main[EUR.USD]"),
+            ),
         ],
     )
     def test_main(self, *, node_id: str, expected: Path) -> None:
@@ -58,13 +62,13 @@ class TestNodeIdToPath:
 
     def test_head(self) -> None:
         node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
-        result = node_id_to_path(node_id, head=Path("src/tests"))
+        result = node_id_to_path(node_id, head="src/tests")
         expected = Path("module.test_funcs", "TestClass__test_main")
         assert result == expected
 
     def test_suffix(self) -> None:
         node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
-        result = node_id_to_path(node_id, head=Path("src/tests"), suffix=".sv")
+        result = node_id_to_path(node_id, head="src/tests", suffix=".sv")
         expected = Path("module.test_funcs", "TestClass__test_main.sv")
         assert result == expected
 
