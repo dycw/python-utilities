@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from io import StringIO
 from logging import DEBUG, WARNING, FileHandler, StreamHandler, getLogger
+from math import inf, isnan, nan
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any
@@ -21,7 +22,7 @@ from hypothesis.strategies import (
 )
 from orjson import JSONDecodeError
 from polars import Object, String, UInt64
-from pytest import approx, raises
+from pytest import approx, mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from tests.test_objects.objects import (
@@ -618,6 +619,15 @@ class TestSerializeAndDeserialize:
         result = deserialize(serialize(obj), objects={CustomError})
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
+
+    @mark.parametrize("value", [param(inf, -inf)])
+    def test_inf(self, *, value: float) -> None:
+        result = deserialize(serialize(value))
+        assert result == value
+
+    def test_nan(self) -> None:
+        result = deserialize(serialize(nan))
+        assert isnan(result)
 
     def test_none(self) -> None:
         result = deserialize(serialize(None))
