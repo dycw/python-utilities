@@ -8,8 +8,8 @@ from time import sleep
 from tomllib import TOMLDecodeError, loads
 from typing import TYPE_CHECKING
 
-from utilities.git import get_repo_root
 from utilities.logging import basic_config
+from utilities.pathlib import get_repo_root
 from utilities.re import extract_group
 
 if TYPE_CHECKING:
