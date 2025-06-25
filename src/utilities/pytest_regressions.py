@@ -4,7 +4,7 @@ from contextlib import suppress
 from json import loads
 from pathlib import Path
 from shutil import copytree
-from typing import TYPE_CHECKING, Any, assert_never
+from typing import TYPE_CHECKING, Any, assert_never, cast
 
 from pytest_regressions.file_regression import FileRegressionFixture
 
@@ -137,10 +137,9 @@ def polars_regression(
 
 
 def _get_path(request: FixtureRequest, /) -> Path:
+    path = Path(cast("Any", request).fspath)
     tail = node_id_to_path(request.node.nodeid, head=_PATH_TESTS)
-    return get_root(path=Path(request.fspath)).joinpath(
-        _PATH_TESTS, "regressions", tail
-    )
+    return get_root(path=path).joinpath(_PATH_TESTS, "regressions", tail)
 
 
 __all__ = [
