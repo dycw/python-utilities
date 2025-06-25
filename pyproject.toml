@@ -106,7 +106,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.138.5"
+version = "0.138.8"
 
 [project.optional-dependencies]
 logging = [
@@ -134,7 +134,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.138.5"
+current_version = "0.138.8"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
