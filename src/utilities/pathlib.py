@@ -222,6 +222,8 @@ def module_path(
     path = Path(path)
     if root is not None:
         path = get_tail(path, root, disambiguate=disambiguate)
+    parts = path.with_suffix("").parts
+    return ".".join(parts)
 
 
 ##

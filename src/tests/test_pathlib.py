@@ -25,6 +25,7 @@ from utilities.pathlib import (
     get_tail,
     is_sub_path,
     list_dir,
+    module_path,
     temp_cwd,
 )
 from utilities.sentinel import Sentinel, sentinel
@@ -253,6 +254,16 @@ class TestListDir:
         result = list_dir(root)
         expected = sorted(Path(root, f"{n}.txt") for n in nums)
         assert result == expected
+
+
+class TestModulePath:
+    @mark.parametrize(
+        ("root", "expected"),
+        [param(None, "foo.bar.baz"), param("foo", "bar.baz"), param("foo/bar", "baz")],
+    )
+    def test_main(self, *, root: PathLike | None, expected: Path) -> None:
+        module = module_path("foo/bar/baz.py", root=root)
+        assert module == expected
 
 
 class TestTempCWD:
