@@ -537,7 +537,7 @@ def git_repos(
         _ = check_call(["git", "commit", "-m", "add"])
         _ = check_call(["git", "rm", file_str])
         _ = check_call(["git", "commit", "-m", "rm"])
-    return root_
+    return Path(root_)
 
 
 ##
