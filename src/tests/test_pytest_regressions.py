@@ -12,18 +12,12 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureNestedOuterFirstInner,
     DataClassFutureNestedOuterFirstOuter,
 )
-from utilities.pytest_regressions import (
-    PolarsRegressionFixture,
-    orjson_regression,
-    polars_regression,
-)
 
 if TYPE_CHECKING:
-    from utilities.pytest_regressions import OrjsonRegressionFixture
-
-
-_ = orjson_regression
-_ = polars_regression
+    from utilities.pytest_regressions import (
+        OrjsonRegressionFixture,
+        PolarsRegressionFixture,
+    )
 
 
 class TestMultipleRegressionFixtures:
