@@ -13,7 +13,7 @@ from whenever import ZonedDateTime
 from utilities.atomicwrites import writer
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
-from utilities.pathlib import ensure_suffix, get_root, get_tail
+from utilities.pathlib import ensure_suffix, get_root, get_tail, module_path
 from utilities.platform import (
     IS_LINUX,
     IS_MAC,
@@ -134,7 +134,7 @@ def node_id_to_path(
     path = path_file.with_suffix("")
     if root is not None:
         path = get_tail(path, root)
-    path = Path(".".join(path.parts), "__".join(parts))
+    path = Path(module_path(path), "__".join(parts))
     if suffix is not None:
         path = ensure_suffix(path, suffix)
     return path
