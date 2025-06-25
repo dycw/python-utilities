@@ -620,7 +620,7 @@ class TestSerializeAndDeserialize:
         with assume_does_not_raise(IsEqualError):
             assert is_equal(result, obj)
 
-    @mark.parametrize("value", [param(inf, -inf)])
+    @mark.parametrize("value", [param(inf), param(-inf)])
     def test_inf(self, *, value: float) -> None:
         result = deserialize(serialize(value))
         assert result == value
