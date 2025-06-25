@@ -142,7 +142,7 @@ def get_tail(
     path_parts, head_parts = [Path(p).parts for p in [path, head]]
     len_path, len_head = map(len, [path_parts, head_parts])
     if len_head > len_path:
-        raise ValueError
+        raise _GetTailLengthError(path=path, head=head)
     candidates = {
         i + len_head: path_parts[i : i + len_head]
         for i in range(len_path + 1 - len_head)
@@ -178,6 +178,13 @@ def _get_tail_core(path: PathLike, i: int, /) -> Path:
 class GetTailError(Exception):
     path: PathLike
     head: PathLike
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetTailLengthError(GetTailError):
+    @override
+    def __str__(self) -> str:
+        return f"Unable to get the tail of {str(self.path)!r} with head of length {len(self.head)}"
 
 
 @dataclass(kw_only=True, slots=True)

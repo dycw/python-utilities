@@ -16,6 +16,7 @@ from utilities.pathlib import (
     GetRootError,
     _GetTailDisambiguate,
     _GetTailEmptyError,
+    _GetTailLengthError,
     _GetTailNonUniqueError,
     ensure_suffix,
     expand_path,
@@ -199,6 +200,13 @@ class TestGetTail:
     ) -> None:
         tail = get_tail(path, head, disambiguate=disambiguate)
         assert tail == expected
+
+    def test_error_length(self) -> None:
+        with raises(
+            _GetTailLengthError,
+            match="Unable to get the tail of 'foo' with head of length 2",
+        ):
+            _ = get_tail("foo", "bar/baz")
 
     def test_error_empty(self) -> None:
         with raises(
