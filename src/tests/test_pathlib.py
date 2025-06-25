@@ -165,6 +165,24 @@ class TestGetRepoRoot:
 
 class TestGetRoot:
     @given(repo=git_repos(), tail=paths())
+    @settings(max_examples=1)
+    def test_repo_only(self, *, repo: Path, tail: Path) -> None:
+        root = get_root(path=repo.joinpath(tail))
+        expected = repo.resolve()
+        assert root == expected
+
+    @given(tail=paths())
+    @settings(
+        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
+    def test_package_only(self, *, tmp_path: Path, tail: Path) -> None:
+        tmp_path.joinpath("pyproject.toml").touch()
+        path = tmp_path.joinpath(tail)
+        result = get_root(path=path)
+        expected = tmp_path.resolve()
+        assert result == expected
+
+    @given(repo=git_repos(), tail=paths())
     @settings(
         max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
     )
