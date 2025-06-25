@@ -3,8 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from utilities.pathlib import get_root
-
 if TYPE_CHECKING:
     from pytest import FixtureRequest
 
@@ -42,6 +40,7 @@ else:
 
 
 def _get_path(request: FixtureRequest, /) -> Path:
+    from utilities.pathlib import get_root
     from utilities.pytest import node_id_to_path
 
     head = Path("src", "tests")
