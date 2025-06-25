@@ -104,7 +104,6 @@ class TestGetPath:
         assert get_path(path=lambda: path) == path
 
 
-@mark.only
 class TestGetRoot:
     @given(data=data())
     @settings(
