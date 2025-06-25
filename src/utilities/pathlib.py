@@ -71,6 +71,34 @@ def get_path(
 ##
 
 
+def get_repo_root(*, path: PathLike = PWD) -> Path:
+    """Get the repo root."""
+    try:
+        output = check_output(
+            ["git", "rev-parse", "--show-toplevel"], stderr=PIPE, cwd=path, text=True
+        )
+    except CalledProcessError as error:
+        # newer versions of git report "Not a git repository", whilst older
+        # versions report "not a git repository"
+        if search("fatal: not a git repository", error.stderr, flags=IGNORECASE):
+            raise GetRepoRootError(cwd=path) from error
+        raise  # pragma: no cover
+    else:
+        return Path(output.strip("\n"))
+
+
+@dataclass(kw_only=True, slots=True)
+class GetRepoRootError(Exception):
+    cwd: PathLike
+
+    @override
+    def __str__(self) -> str:
+        return f"Path is not part of a `git` repository: {self.cwd}"
+
+
+##
+
+
 def get_root(*, path: MaybeCallablePathLike | None = None) -> Path:
     """Get the root of a path."""
     path = get_path(path=path)
@@ -259,10 +287,12 @@ def temp_cwd(path: PathLike, /) -> Iterator[None]:
 
 __all__ = [
     "PWD",
+    "GetRepoRootError",
     "GetTailError",
     "ensure_suffix",
     "expand_path",
     "get_path",
+    "get_repo_root",
     "get_tail",
     "is_sub_path",
     "list_dir",

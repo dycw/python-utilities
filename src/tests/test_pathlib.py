@@ -13,6 +13,7 @@ from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import git_repos, paths, temp_paths
 from utilities.pathlib import (
+    GetRepoRootError,
     GetRootError,
     _GetTailDisambiguate,
     _GetTailEmptyError,
@@ -21,6 +22,7 @@ from utilities.pathlib import (
     ensure_suffix,
     expand_path,
     get_path,
+    get_repo_root,
     get_root,
     get_tail,
     is_sub_path,
@@ -104,6 +106,21 @@ class TestGetPath:
     @given(path=paths())
     def test_callable(self, *, path: Path) -> None:
         assert get_path(path=lambda: path) == path
+
+
+class TestGetRepoRoot:
+    @given(repo=git_repos())
+    @settings(max_examples=1)
+    def test_main(self, *, repo: Path) -> None:
+        root = get_repo_root(path=repo)
+        expected = repo.resolve()
+        assert root == expected
+
+    def test_error(self, *, tmp_path: Path) -> None:
+        with raises(
+            GetRepoRootError, match="Path is not part of a `git` repository: .*"
+        ):
+            _ = get_repo_root(path=tmp_path)
 
 
 class TestGetRoot:
