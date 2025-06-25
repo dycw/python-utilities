@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from shutil import copytree
 from typing import TYPE_CHECKING, Self
 
-from hypothesis import given, settings
-from hypothesis.strategies import integers, sets
+from hypothesis import HealthCheck, given, settings
+from hypothesis.strategies import DataObject, data, integers, sets
 from pytest import mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
@@ -17,13 +18,15 @@ from utilities.pathlib import (
     expand_path,
     get_path,
     get_root,
+    is_sub_path,
     list_dir,
     temp_cwd,
 )
 from utilities.sentinel import Sentinel, sentinel
+from utilities.tempfile import TemporaryDirectory
 
 if TYPE_CHECKING:
-    from utilities.types import MaybeCallablePathLike
+    from utilities.types import MaybeCallablePathLike, PathLike
 
 
 class TestEnsureSuffix:
@@ -98,32 +101,99 @@ class TestGetPath:
 
 
 class TestGetRoot:
-    @given(repo=git_repos())
-    @settings(max_examples=1)
-    def test_git(self, *, repo: Path) -> None:
-        root = get_root(path=repo)
+    @given(data=data(), repo=git_repos())
+    @settings(
+        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
+    def test_git_dir(self, *, data: DataObject, repo: Path) -> None:
+        path = repo.joinpath(data.draw(paths()))
+        path.mkdir(parents=True, exist_ok=True)
+        root = get_root(path=path)
         expected = repo.resolve()
         assert root == expected
 
-    @given(root=temp_paths())
-    @settings(max_examples=1)
-    def test_envrc(self, *, root: Path) -> None:
-        root.joinpath(".envrc").touch()
-        result = get_root(path=root)
-        assert result == root
+    @given(data=data(), repo=git_repos())
+    @settings(
+        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
+    def test_git_file(self, *, data: DataObject, repo: Path) -> None:
+        path = repo.joinpath(data.draw(paths(min_depth=1)))
+        path.touch()
+        root = get_root(path=path)
+        expected = repo.resolve()
+        assert root == expected
 
-    @given(root=temp_paths())
-    @settings(max_examples=1)
-    def test_envrc_from_inside(self, *, root: Path) -> None:
-        root.joinpath(".envrc").touch()
-        path = root.joinpath("foo", "bar", "baz")
-        path.mkdir(parents=True)
+    @given(data=data())
+    @settings(
+        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
+    def test_envrc(self, *, data: DataObject, tmp_path: Path) -> None:
+        tmp_path.joinpath(".envrc").touch()
+        path = tmp_path.joinpath(data.draw(paths()))
         result = get_root(path=path)
-        assert result == root
+        expected = tmp_path.resolve()
+        assert result == expected
+
+    @given(data=data(), repo=git_repos())
+    @settings(
+        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
+    def test_git_and_envrc(self, *, data: DataObject, repo: Path) -> None:
+        repo.joinpath(".envrc").touch()
+        path = repo.joinpath(data.draw(paths()))
+        root = get_root(path=path)
+        expected = repo.resolve()
+        assert root == expected
+
+    @given(data=data(), repo=git_repos())
+    @settings(
+        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
+    def test_git_with_envrc_inside(self, *, data: DataObject, repo: Path) -> None:
+        path = repo.joinpath(data.draw(paths(min_depth=1)))
+        path.mkdir(parents=True)
+        path.joinpath(".envrc").touch()
+        root = get_root(path=path)
+        expected = path.resolve()
+        assert root == expected
+
+    @given(data=data(), repo=git_repos())
+    @settings(
+        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
+    def test_envrc_with_git_inside(self, *, data: DataObject, repo: Path) -> None:
+        with TemporaryDirectory() as temp:
+            temp.joinpath(".envrc").touch()
+            path = temp.joinpath(data.draw(paths(min_depth=1)))
+            copytree(repo, path)
+            root = get_root(path=path)
+            expected = path.resolve()
+            assert root == expected
 
     def test_error(self, *, tmp_path: Path) -> None:
         with raises(GetRootError, match="Unable to determine root from '.*'"):
             _ = get_root(path=tmp_path)
+
+
+class TestIsSubPath:
+    @mark.parametrize(
+        ("x", "y", "strict", "expected"),
+        [
+            param("foo", "foo", False, True),
+            param("foo", "foo", True, False),
+            param("foo/bar", "foo", False, True),
+            param("foo/bar", "foo", True, True),
+            param("foo/bar", "foo/baz", False, False),
+            param("foo/bar", "foo/baz", True, False),
+            param("foo", "foo/bar", False, False),
+            param("foo", "foo/bar", True, False),
+        ],
+    )
+    def test_main(
+        self, *, x: PathLike, y: PathLike, strict: bool, expected: bool
+    ) -> None:
+        result = is_sub_path(x, y, strict=strict)
+        assert result is expected
 
 
 class TestListDir:
