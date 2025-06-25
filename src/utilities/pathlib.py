@@ -132,10 +132,8 @@ class GetRootError(Exception):
 ##
 
 
-def is_sub_path(x: PathLike, y: PathLike, /, *, strict: bool = False) -> bool:
-    """Check if a path is a sub path of another."""
-    x, y = [Path(i).resolve() for i in [x, y]]
-    return x.is_relative_to(y) and not (strict and y.is_relative_to(x))
+def get_tail(path: PathLike, head: PathLike, /) -> Path:
+    """Get the tail of a path following a head match."""
 
 
 ##
