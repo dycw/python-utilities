@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import sampled_from
@@ -12,12 +12,12 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureNestedOuterFirstInner,
     DataClassFutureNestedOuterFirstOuter,
 )
-from utilities.pytest_regressions import (
-    OrjsonRegressionFixture,
-    PolarsRegressionFixture,
-)
 
-_ = {OrjsonRegressionFixture, PolarsRegressionFixture}
+if TYPE_CHECKING:
+    from utilities.pytest_regressions import (
+        OrjsonRegressionFixture,
+        PolarsRegressionFixture,
+    )
 
 
 class TestMultipleRegressionFixtures:
