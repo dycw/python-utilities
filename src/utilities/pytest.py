@@ -140,18 +140,6 @@ def node_id_to_path(
     return path
 
 
-# {
-#     'node_id': 'python/ib-addons/src/tests/test_functions.py::TestRequestFuturesNotional::test_main',
-#     'head': PosixPath('src/tests'),
-#     'suffix': None,
-#     'path_file': PosixPath('python/ib-addons/src/tests/test_functions.py'),
-#     'parts': ['TestRequestFuturesNotional', 'test_main'],
-#     'path': PosixPath('python/ib-addons/src/tests/test_functions'),
-#     'rich': <module 'rich' from '/Users/derekwan/work/qrt2/python/ib-addons/.venv/lib/python3.13/site-packages/rich/__init__.py'>
-# }
-#
-
-
 @dataclass(kw_only=True, slots=True)
 class NodeIdToPathError(Exception):
     node_id: str
