@@ -8,8 +8,8 @@ from time import sleep
 from tomllib import TOMLDecodeError, loads
 from typing import TYPE_CHECKING
 
-from utilities.git import get_repo_root
 from utilities.logging import basic_config
+from utilities.pathlib import get_root
 from utilities.re import extract_group
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ _LOGGER = getLogger(__name__)
 
 def main() -> None:
     basic_config(obj=_LOGGER)
-    path = get_repo_root().joinpath("src", "tests")
+    path = get_root().joinpath("src", "tests")
     for path_i in sorted(path.glob("test_*.py")):
         _run_test(path_i)
 
@@ -44,7 +44,7 @@ def _get_group(path: Path, /) -> str:
 
 def _get_marker(group: str, /) -> Path:
     hour = dt.datetime.now(dt.UTC).replace(minute=0, second=0, microsecond=0)
-    return get_repo_root().joinpath(".pytest_cache", f"{hour:%Y%m%dT%H}-{group}")
+    return get_root().joinpath(".pytest_cache", f"{hour:%Y%m%dT%H}-{group}")
 
 
 def _run_command(path: Path, /) -> bool:
@@ -57,7 +57,7 @@ def _run_command(path: Path, /) -> bool:
         "--isolated",
         "--managed-python",
     ]
-    text = get_repo_root().joinpath("pyproject.toml").read_text()
+    text = get_root().joinpath("pyproject.toml").read_text()
     try:
         loaded = loads(text)
     except TOMLDecodeError:
