@@ -136,28 +136,28 @@ type _GetTailDisambiguate = Literal["raise", "earlier", "later"]
 
 
 def get_tail(
-    path: PathLike, head: PathLike, /, *, disambiguate: _GetTailDisambiguate = "raise"
+    path: PathLike, root: PathLike, /, *, disambiguate: _GetTailDisambiguate = "raise"
 ) -> Path:
-    """Get the tail of a path following a head match."""
-    path_parts, head_parts = [Path(p).parts for p in [path, head]]
-    len_path, len_head = map(len, [path_parts, head_parts])
-    if len_head > len_path:
-        raise _GetTailLengthError(path=path, head=head, len_head=len_head)
+    """Get the tail of a path following a root match."""
+    path_parts, root_parts = [Path(p).parts for p in [path, root]]
+    len_path, len_root = map(len, [path_parts, root_parts])
+    if len_root > len_path:
+        raise _GetTailLengthError(path=path, root=root, len_root=len_root)
     candidates = {
-        i + len_head: path_parts[i : i + len_head]
-        for i in range(len_path + 1 - len_head)
+        i + len_root: path_parts[i : i + len_root]
+        for i in range(len_path + 1 - len_root)
     }
-    matches = {k: v for k, v in candidates.items() if v == head_parts}
+    matches = {k: v for k, v in candidates.items() if v == root_parts}
     match len(matches), disambiguate:
         case 0, _:
-            raise _GetTailEmptyError(path=path, head=head)
+            raise _GetTailEmptyError(path=path, root=root)
         case 1, _:
             return _get_tail_core(path, next(iter(matches)))
         case _, "raise":
             first, second, *_ = matches
             raise _GetTailNonUniqueError(
                 path=path,
-                head=head,
+                root=root,
                 first=_get_tail_core(path, first),
                 second=_get_tail_core(path, second),
             )
@@ -177,16 +177,16 @@ def _get_tail_core(path: PathLike, i: int, /) -> Path:
 @dataclass(kw_only=True, slots=True)
 class GetTailError(Exception):
     path: PathLike
-    head: PathLike
+    root: PathLike
 
 
 @dataclass(kw_only=True, slots=True)
 class _GetTailLengthError(GetTailError):
-    len_head: int
+    len_root: int
 
     @override
     def __str__(self) -> str:
-        return f"Unable to get the tail of {str(self.path)!r} with head of length {self.len_head}"
+        return f"Unable to get the tail of {str(self.path)!r} with root of length {self.len_root}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -194,7 +194,7 @@ class _GetTailEmptyError(GetTailError):
     @override
     def __str__(self) -> str:
         return (
-            f"Unable to get the tail of {str(self.path)!r} with head {str(self.head)!r}"
+            f"Unable to get the tail of {str(self.path)!r} with root {str(self.root)!r}"
         )
 
 
@@ -205,7 +205,7 @@ class _GetTailNonUniqueError(GetTailError):
 
     @override
     def __str__(self) -> str:
-        return f"Path {str(self.path)!r} must contain exactly one tail with head {str(self.head)!r}; got {str(self.first)!r}, {str(self.second)!r} and perhaps more"
+        return f"Path {str(self.path)!r} must contain exactly one tail with root {str(self.root)!r}; got {str(self.first)!r}, {str(self.second)!r} and perhaps more"
 
 
 ##

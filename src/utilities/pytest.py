@@ -13,7 +13,7 @@ from whenever import ZonedDateTime
 from utilities.atomicwrites import writer
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
-from utilities.pathlib import ensure_suffix, get_root
+from utilities.pathlib import ensure_suffix, get_root, get_tail
 from utilities.platform import (
     IS_LINUX,
     IS_MAC,
@@ -124,7 +124,7 @@ def is_pytest() -> bool:
 
 
 def node_id_to_path(
-    node_id: str, /, *, head: PathLike | None = None, suffix: str | None = None
+    node_id: str, /, *, root: PathLike | None = None, suffix: str | None = None
 ) -> Path:
     """Map a node ID to a path."""
     path_file, *parts = node_id.split("::")
@@ -132,8 +132,9 @@ def node_id_to_path(
     if path_file.suffix != ".py":
         raise NodeIdToPathError(node_id=node_id)
     path = path_file.with_suffix("")
-    if head is not None:
-        path = path.relative_to(head)
+    if root is not None:
+        path = get_tail(path, root)
+        path = path.relative_to(root)
     path = Path(".".join(path.parts), "__".join(parts))
     if suffix is not None:
         path = ensure_suffix(path, suffix)
