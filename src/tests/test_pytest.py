@@ -49,18 +49,22 @@ class TestNodeIdPath:
                 "src/tests/module/test_funcs.py::TestClass::test_main[EUR.USD]",
                 Path("src.tests.module.test_funcs/TestClass__test_main[EUR.USD]"),
             ),
-            param(
-                "python/package/src/tests/module/test_funcs.py::TestClass::test_main",
-                Path("src.tests.module.test_funcs/TestClass__test_main[EUR.USD]"),
-            ),
         ],
     )
     def test_main(self, *, node_id: str, expected: Path) -> None:
         result = node_id_path(node_id)
         assert result == expected
 
-    def test_root(self) -> None:
-        node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
+    @mark.parametrize(
+        "node_id",
+        [
+            param("src/tests/module/test_funcs.py::TestClass::test_main"),
+            param(
+                "python/package/src/tests/module/test_funcs.py::TestClass::test_main"
+            ),
+        ],
+    )
+    def test_root(self, *, node_id: str) -> None:
         result = node_id_path(node_id, root="src/tests")
         expected = Path("module.test_funcs/TestClass__test_main")
         assert result == expected
