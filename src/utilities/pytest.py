@@ -12,7 +12,6 @@ from whenever import ZonedDateTime
 
 from utilities.atomicwrites import writer
 from utilities.functools import cache
-from utilities.git import get_repo_root
 from utilities.hashlib import md5_hash
 from utilities.pathlib import ensure_suffix, get_root
 from utilities.platform import (
