@@ -16,7 +16,7 @@ from utilities.atomicwrites import writer
 from utilities.errors import repr_error
 from utilities.functions import to_bool
 from utilities.iterables import OneEmptyError, one
-from utilities.pathlib import get_path
+from utilities.pathlib import get_path, module_path
 from utilities.reprlib import (
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
@@ -181,7 +181,7 @@ def _path_to_dots(path: PathLike, /) -> str:
         if (new_path := _trim_path(path, pattern)) is not None:
             break
     path_use = Path(path) if new_path is None else new_path
-    return ".".join(path_use.with_suffix("").parts)
+    return module_path(path_use)
 
 
 def _trim_path(path: PathLike, pattern: str, /) -> Path | None:
