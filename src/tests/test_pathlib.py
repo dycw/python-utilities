@@ -165,7 +165,7 @@ class TestGetRoot:
         with TemporaryDirectory() as temp:
             temp.joinpath(".envrc").touch()
             path = temp.joinpath(data.draw(paths(min_depth=1)))
-            copytree(repo, path)
+            _ = copytree(repo, path)
             root = get_root(path=path)
             expected = path.resolve()
             assert root == expected
