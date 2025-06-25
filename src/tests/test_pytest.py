@@ -50,10 +50,6 @@ class TestNodeIdToPath:
                 "src/tests/module/test_funcs.py::TestClass::test_main[EUR.USD]",
                 Path("src.tests.module.test_funcs", "TestClass__test_main[EUR.USD]"),
             ),
-            param(
-                "python/package/src/tests/module/test_funcs.py::TestClass::test_main",
-                Path("src.tests.module.test_funcs", "TestClass__test_main[EUR.USD]"),
-            ),
         ],
     )
     def test_main(self, *, node_id: str, expected: Path) -> None:
