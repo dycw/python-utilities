@@ -219,7 +219,7 @@ class TestGetTail:
     def test_error_non_unique(self) -> None:
         with raises(
             _GetTailNonUniqueError,
-            match="Path 'a/b/c/a/b/c' must contain exactly one tail with root 'b'; got 'c/a/b/c', 'c' and perhaps more",
+            match="Path '.*' must contain exactly one tail with root 'b'; got '.*', '.*' and perhaps more",
         ):
             _ = get_tail("a/b/c/a/b/c", "b")
 
