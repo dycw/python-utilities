@@ -14,6 +14,9 @@ from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import git_repos, paths, temp_paths
 from utilities.pathlib import (
     GetRootError,
+    _GetTailDisambiguate,
+    _GetTailEmptyError,
+    _GetTailNonUniqueError,
     ensure_suffix,
     expand_path,
     get_path,
@@ -176,13 +179,41 @@ class TestGetRoot:
             _ = get_root(path=tmp_path)
 
 
+@mark.only
 class TestGetTail:
     @mark.parametrize(
-        ("path", "head", "expected"), [param("foo/bar/baz", "foo", "bar/baz")]
+        ("path", "head", "disambiguate", "expected"),
+        [
+            param("foo/bar/baz", "foo", "raise", Path("bar/baz")),
+            param("foo/bar/baz", "foo/bar", "raise", Path("baz")),
+            param("a/b/c/d/a/b/c/d/e", "b/c", "earlier", Path("d/a/b/c/d/e")),
+            param("a/b/c/d/a/b/c/d/e", "b/c", "later", Path("d/e")),
+        ],
     )
-    @mark.only
-    def test_main(self, *, path: PathLike, head: PathLike, expected: Path) -> None:
-        assert get_tail(path, head) == expected
+    def test_main(
+        self,
+        *,
+        path: PathLike,
+        head: PathLike,
+        disambiguate: _GetTailDisambiguate,
+        expected: Path,
+    ) -> None:
+        tail = get_tail(path, head, disambiguate=disambiguate)
+        assert tail == expected
+
+    def test_error_empty(self) -> None:
+        with raises(
+            _GetTailEmptyError,
+            match="Unable to get the tail of 'foo/bar' with head 'baz'",
+        ):
+            _ = get_tail("foo/bar", "baz")
+
+    def test_error_non_unique(self) -> None:
+        with raises(
+            _GetTailNonUniqueError,
+            match="Path 'a/b/c/a/b/c' must contain exactly one tail with head 'b'; got 'c/a/b/c', 'c' and perhaps more",
+        ):
+            _ = get_tail("a/b/c/a/b/c", "b")
 
 
 class TestIsSubPath:

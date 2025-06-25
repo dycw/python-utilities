@@ -9,7 +9,7 @@ from os.path import expandvars
 from pathlib import Path
 from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_output
-from typing import TYPE_CHECKING, assert_never, overload, override
+from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.sentinel import Sentinel, sentinel
@@ -132,8 +132,71 @@ class GetRootError(Exception):
 ##
 
 
-def get_tail(path: PathLike, head: PathLike, /) -> Path:
+type _GetTailDisambiguate = Literal["raise", "earlier", "later"]
+
+
+def get_tail(
+    path: PathLike, head: PathLike, /, *, disambiguate: _GetTailDisambiguate = "raise"
+) -> Path:
     """Get the tail of a path following a head match."""
+    path_parts, head_parts = [Path(p).parts for p in [path, head]]
+    len_path, len_head = map(len, [path_parts, head_parts])
+    if len_head > len_path:
+        raise ValueError
+    candidates = {
+        i + len_head: path_parts[i : i + len_head]
+        for i in range(len_path + 1 - len_head)
+    }
+    matches = {k: v for k, v in candidates.items() if v == head_parts}
+    match len(matches), disambiguate:
+        case 0, _:
+            raise _GetTailEmptyError(path=path, head=head)
+        case 1, _:
+            return _get_tail_core(path, next(iter(matches)))
+        case _, "raise":
+            first, second, *_ = matches
+            raise _GetTailNonUniqueError(
+                path=path,
+                head=head,
+                first=_get_tail_core(path, first),
+                second=_get_tail_core(path, second),
+            )
+        case _, "earlier":
+            return _get_tail_core(path, next(iter(matches)))
+        case _, "later":
+            return _get_tail_core(path, next(iter(reversed(matches))))
+        case _ as never:
+            assert_never(never)
+
+
+def _get_tail_core(path: PathLike, i: int, /) -> Path:
+    parts = Path(path).parts
+    return Path(*parts[i:])
+
+
+@dataclass(kw_only=True, slots=True)
+class GetTailError(Exception):
+    path: PathLike
+    head: PathLike
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetTailEmptyError(GetTailError):
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Unable to get the tail of {str(self.path)!r} with head {str(self.head)!r}"
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetTailNonUniqueError(GetTailError):
+    first: Path
+    second: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Path {str(self.path)!r} must contain exactly one tail with head {str(self.head)!r}; got {str(self.first)!r}, {str(self.second)!r} and perhaps more"
 
 
 ##
@@ -169,9 +232,11 @@ def temp_cwd(path: PathLike, /) -> Iterator[None]:
 
 __all__ = [
     "PWD",
+    "GetTailError",
     "ensure_suffix",
     "expand_path",
     "get_path",
+    "get_tail",
     "is_sub_path",
     "list_dir",
     "temp_cwd",
