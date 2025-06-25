@@ -134,7 +134,6 @@ def node_id_to_path(
     path = path_file.with_suffix("")
     if root is not None:
         path = get_tail(path, root)
-        path = path.relative_to(root)
     path = Path(".".join(path.parts), "__".join(parts))
     if suffix is not None:
         path = ensure_suffix(path, suffix)
