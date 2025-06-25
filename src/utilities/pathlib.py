@@ -139,6 +139,15 @@ def get_tail(path: PathLike, head: PathLike, /) -> Path:
 ##
 
 
+def is_sub_path(x: PathLike, y: PathLike, /, *, strict: bool = False) -> bool:
+    """Check if a path is a sub path of another."""
+    x, y = [Path(i).resolve() for i in [x, y]]
+    return x.is_relative_to(y) and not (strict and y.is_relative_to(x))
+
+
+##
+
+
 def list_dir(path: PathLike, /) -> Sequence[Path]:
     """List the contents of a directory."""
     return sorted(Path(path).iterdir())

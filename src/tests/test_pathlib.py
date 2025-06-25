@@ -19,6 +19,7 @@ from utilities.pathlib import (
     get_path,
     get_root,
     get_tail,
+    is_sub_path,
     list_dir,
     temp_cwd,
 )
@@ -182,6 +183,27 @@ class TestGetTail:
     @mark.only
     def test_main(self, *, path: PathLike, head: PathLike, expected: Path) -> None:
         assert get_tail(path, head) == expected
+
+
+class TestIsSubPath:
+    @mark.parametrize(
+        ("x", "y", "strict", "expected"),
+        [
+            param("foo", "foo", False, True),
+            param("foo", "foo", True, False),
+            param("foo/bar", "foo", False, True),
+            param("foo/bar", "foo", True, True),
+            param("foo/bar", "foo/baz", False, False),
+            param("foo/bar", "foo/baz", True, False),
+            param("foo", "foo/bar", False, False),
+            param("foo", "foo/bar", True, False),
+        ],
+    )
+    def test_main(
+        self, *, x: PathLike, y: PathLike, strict: bool, expected: bool
+    ) -> None:
+        result = is_sub_path(x, y, strict=strict)
+        assert result is expected
 
 
 class TestListDir:
