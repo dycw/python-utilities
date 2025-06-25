@@ -10,8 +10,6 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 from utilities.functions import ensure_str
 from utilities.operator import is_equal
-from utilities.pathlib import get_root
-from utilities.pytest import node_id_path
 
 if TYPE_CHECKING:
     from polars import DataFrame, Series
@@ -126,26 +124,4 @@ class PolarsRegressionFixture:
         self._fixture.check(data, suffix=suffix)
 
 
-@fixture
-def polars_regression(
-    *, request: FixtureRequest, tmp_path: Path
-) -> PolarsRegressionFixture:
-    """Instance of the `PolarsRegressionFixture`."""
-    path = _get_path(request)
-    return PolarsRegressionFixture(path, request, tmp_path)
-
-
-##
-
-
-def _get_path(request: FixtureRequest, /) -> Path:
-    tail = node_id_path(request.node.nodeid, root=_PATH_TESTS)
-    return get_root().joinpath(_PATH_TESTS, "regressions", tail)
-
-
-__all__ = [
-    "OrjsonRegressionFixture",
-    "PolarsRegressionFixture",
-    "orjson_regression",
-    "polars_regression",
-]
+__all__ = ["OrjsonRegressionFixture", "PolarsRegressionFixture"]
