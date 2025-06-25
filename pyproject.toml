@@ -175,7 +175,7 @@ skip_empty = true
 [tool.coverage.run]
 branch = true
 data_file = ".coverage/data"
-omit = ["src/utilities/streamlit.py"]
+omit = ["src/utilities/pytest_regressions_plugin.py", "src/utilities/streamlit.py"]
 parallel = true
 plugins = ["coverage_conditional_plugin"]
 source = ["src/utilities"]
