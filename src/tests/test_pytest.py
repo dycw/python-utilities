@@ -12,7 +12,7 @@ from utilities.iterables import one
 from utilities.pytest import (
     NodeIdToPathError,
     is_pytest,
-    node_id_to_path,
+    node_id_path,
     random_state,
     throttle,
 )
@@ -31,46 +31,53 @@ class TestIsPytest:
         assert is_pytest()
 
 
-class TestNodeIdToPath:
+class TestNodeIdPath:
     @mark.parametrize(
         ("node_id", "expected"),
         [
             param(
                 "src/tests/module/test_funcs.py::TestClass::test_main",
-                Path("src.tests.module.test_funcs", "TestClass__test_main"),
+                Path("src.tests.module.test_funcs/TestClass__test_main"),
             ),
             param(
                 "src/tests/module/test_funcs.py::TestClass::test_main[param1, param2]",
                 Path(
-                    "src.tests.module.test_funcs",
-                    "TestClass__test_main[param1, param2]",
+                    "src.tests.module.test_funcs/TestClass__test_main[param1, param2]"
                 ),
             ),
             param(
                 "src/tests/module/test_funcs.py::TestClass::test_main[EUR.USD]",
-                Path("src.tests.module.test_funcs", "TestClass__test_main[EUR.USD]"),
+                Path("src.tests.module.test_funcs/TestClass__test_main[EUR.USD]"),
             ),
         ],
     )
     def test_main(self, *, node_id: str, expected: Path) -> None:
-        result = node_id_to_path(node_id)
+        result = node_id_path(node_id)
         assert result == expected
 
-    def test_head(self) -> None:
-        node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
-        result = node_id_to_path(node_id, head="src/tests")
-        expected = Path("module.test_funcs", "TestClass__test_main")
+    @mark.parametrize(
+        "node_id",
+        [
+            param("src/tests/module/test_funcs.py::TestClass::test_main"),
+            param(
+                "python/package/src/tests/module/test_funcs.py::TestClass::test_main"
+            ),
+        ],
+    )
+    def test_root(self, *, node_id: str) -> None:
+        result = node_id_path(node_id, root="src/tests")
+        expected = Path("module.test_funcs/TestClass__test_main")
         assert result == expected
 
     def test_suffix(self) -> None:
         node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
-        result = node_id_to_path(node_id, head="src/tests", suffix=".sv")
-        expected = Path("module.test_funcs", "TestClass__test_main.sv")
+        result = node_id_path(node_id, root="src/tests", suffix=".csv")
+        expected = Path("module.test_funcs/TestClass__test_main.csv")
         assert result == expected
 
     def test_error_file_suffix(self) -> None:
         with raises(NodeIdToPathError, match="Node ID must be a Python file; got .*"):
-            _ = node_id_to_path("src/tests/module/test_funcs.csv::TestClass::test_main")
+            _ = node_id_path("src/tests/module/test_funcs.csv::TestClass::test_main")
 
 
 class TestPytestOptions:

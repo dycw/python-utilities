@@ -66,7 +66,7 @@ from utilities.math import (
     is_zero,
 )
 from utilities.os import get_env_var
-from utilities.pathlib import temp_cwd
+from utilities.pathlib import module_path, temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
@@ -567,7 +567,7 @@ def import_froms(
             max_depth=max_depth_,
         )
     )
-    module = ".".join(path.parts)
+    module = module_path(path)
     name = draw(text_ascii(min_size=1))
     asname = draw(text_ascii(min_size=1) | none())
     return generate_import_from(module, name, asname=asname)
@@ -594,7 +594,7 @@ def imports(
             max_depth=max_depth_,
         )
     )
-    module = ".".join(path.parts)
+    module = module_path(path)
     asname = draw(text_ascii(min_size=1) | none())
     return generate_import(module, asname=asname)
 

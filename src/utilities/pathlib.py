@@ -211,6 +211,24 @@ class _GetTailNonUniqueError(GetTailError):
 ##
 
 
+def module_path(
+    path: PathLike,
+    /,
+    *,
+    root: PathLike | None = None,
+    disambiguate: _GetTailDisambiguate = "raise",
+) -> str:
+    """Return a module path."""
+    path = Path(path)
+    if root is not None:
+        path = get_tail(path, root, disambiguate=disambiguate)
+    parts = path.with_suffix("").parts
+    return ".".join(parts)
+
+
+##
+
+
 def is_sub_path(x: PathLike, y: PathLike, /, *, strict: bool = False) -> bool:
     """Check if a path is a sub path of another."""
     x, y = [Path(i).resolve() for i in [x, y]]
@@ -248,5 +266,6 @@ __all__ = [
     "get_tail",
     "is_sub_path",
     "list_dir",
+    "module_path",
     "temp_cwd",
 ]
