@@ -109,10 +109,21 @@ class TestGetRoot:
     @settings(
         max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
     )
-    def test_git(self, *, data: DataObject, tmp_path: Path) -> None:
+    def test_git_dir(self, *, data: DataObject, tmp_path: Path) -> None:
         _ = data.draw(git_repos(root=tmp_path))
         path = tmp_path.joinpath(data.draw(paths()))
         path.mkdir(parents=True, exist_ok=True)
+        result = get_root(path=path)
+        assert result == tmp_path
+
+    @given(data=data())
+    @settings(
+        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
+    def test_git_file(self, *, data: DataObject, tmp_path: Path) -> None:
+        _ = data.draw(git_repos(root=tmp_path))
+        path = tmp_path.joinpath(data.draw(paths(min_depth=1)))
+        path.touch()
         result = get_root(path=path)
         assert result == tmp_path
 
@@ -169,24 +180,22 @@ class TestGetRoot:
 
 class TestIsSubPath:
     @mark.parametrize(
-        ("x", "y", "expected"),
+        ("x", "y", "strict", "expected"),
         [
-            param("foo", "foo", True),
-            param("foo/bar", "foo", True),
-            param("foo/bar", "foo/baz", False),
-            param("foo", "foo/bar", False),
-            param(Path("foo").resolve(), "foo", True),
-            param(Path("foo/bar").resolve(), "foo", True),
-            param(Path("foo/bar").resolve(), "foo/baz", False),
-            param(Path("foo").resolve(), "foo/bar", False),
-            param("foo", Path("foo").resolve(), True),
-            param("foo/bar", Path("foo").resolve(), True),
-            param("foo/bar", Path("foo/baz").resolve(), False),
-            param("foo", Path("foo/bar").resolve(), False),
+            param("foo", "foo", False, True),
+            param("foo", "foo", True, False),
+            param("foo/bar", "foo", False, True),
+            param("foo/bar", "foo", True, True),
+            param("foo/bar", "foo/baz", False, False),
+            param("foo/bar", "foo/baz", True, False),
+            param("foo", "foo/bar", False, False),
+            param("foo", "foo/bar", True, False),
         ],
     )
-    def test_main(self, *, x: PathLike, y: PathLike, expected: bool) -> None:
-        result = is_sub_path(x, y)
+    def test_main(
+        self, *, x: PathLike, y: PathLike, strict: bool, expected: bool
+    ) -> None:
+        result = is_sub_path(x, y, strict=strict)
         assert result is expected
 
 

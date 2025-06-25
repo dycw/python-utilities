@@ -90,7 +90,7 @@ def get_root(*, path: MaybeCallablePathLike | None = None) -> Path:
         root_git = None
     else:
         root_git = Path(output.strip("\n")).resolve()
-    all_paths = list(chain([path], path.parents))
+    all_paths = list(chain([path_dir], path_dir.parents))
     try:
         root_envrc = next(
             p.resolve()
@@ -109,9 +109,9 @@ def get_root(*, path: MaybeCallablePathLike | None = None) -> Path:
         case Path(), Path():
             if root_git == root_envrc:
                 return root_git
-            if is_sub_path(root_git, root_envrc):
+            if is_sub_path(root_git, root_envrc, strict=True):
                 return root_git
-            if is_sub_path(root_envrc, root_git):
+            if is_sub_path(root_envrc, root_git, strict=True):
                 return root_envrc
             raise ImpossibleCaseError(  # pragma: no cover
                 case=[f"{root_git=}", f"{root_envrc=}"]
@@ -132,10 +132,10 @@ class GetRootError(Exception):
 ##
 
 
-def is_sub_path(x: PathLike, y: PathLike, /) -> bool:
+def is_sub_path(x: PathLike, y: PathLike, /, *, strict: bool = False) -> bool:
     """Check if a path is a sub path of another."""
     x, y = [Path(i).resolve() for i in [x, y]]
-    return x.is_relative_to(y)
+    return x.is_relative_to(y) and not (strict and y.is_relative_to(x))
 
 
 ##

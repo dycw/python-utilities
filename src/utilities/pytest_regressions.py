@@ -124,4 +124,28 @@ class PolarsRegressionFixture:
         self._fixture.check(data, suffix=suffix)
 
 
-__all__ = ["OrjsonRegressionFixture", "PolarsRegressionFixture"]
+@fixture
+def polars_regression(
+    *, request: FixtureRequest, tmp_path: Path
+) -> PolarsRegressionFixture:
+    """Instance of the `PolarsRegressionFixture`."""
+    path = _get_path(request)
+    return PolarsRegressionFixture(path, request, tmp_path)
+
+
+##
+
+
+def _get_path(request: FixtureRequest, /) -> Path:
+    tail = node_id_to_path(request.node.nodeid, head=_PATH_TESTS)
+    return get_root(path=Path(request.fspath)).joinpath(
+        _PATH_TESTS, "regressions", tail
+    )
+
+
+__all__ = [
+    "OrjsonRegressionFixture",
+    "PolarsRegressionFixture",
+    "orjson_regression",
+    "polars_regression",
+]
