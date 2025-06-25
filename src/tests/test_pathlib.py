@@ -179,7 +179,6 @@ class TestGetRoot:
             _ = get_root(path=tmp_path)
 
 
-@mark.only
 class TestGetTail:
     @mark.parametrize(
         ("path", "head", "disambiguate", "expected"),
