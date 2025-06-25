@@ -41,11 +41,11 @@ else:
 
 def _get_path(request: FixtureRequest, /) -> Path:
     from utilities.pathlib import get_root
-    from utilities.pytest import node_id_to_path
+    from utilities.pytest import node_id_path
 
-    head = Path("src", "tests")
-    tail = node_id_to_path(request.node.nodeid, head=head)
-    return get_root().joinpath(head, "regressions", tail)
+    root = Path("src", "tests")
+    tail = node_id_path(request.node.nodeid, root=root)
+    return get_root().joinpath(root, "regressions", tail)
 
 
 __all__ = ["orjson_regression", "polars_regression"]
