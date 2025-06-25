@@ -12,7 +12,7 @@ from utilities.iterables import one
 from utilities.pytest import (
     NodeIdToPathError,
     is_pytest,
-    node_id_to_path,
+    node_id_path,
     random_state,
     throttle,
 )
@@ -31,7 +31,7 @@ class TestIsPytest:
         assert is_pytest()
 
 
-class TestNodeIdToPath:
+class TestNodeIdPath:
     @mark.parametrize(
         ("node_id", "expected"),
         [
@@ -56,24 +56,24 @@ class TestNodeIdToPath:
         ],
     )
     def test_main(self, *, node_id: str, expected: Path) -> None:
-        result = node_id_to_path(node_id)
+        result = node_id_path(node_id)
         assert result == expected
 
     def test_root(self) -> None:
         node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
-        result = node_id_to_path(node_id, root="src/tests")
+        result = node_id_path(node_id, root="src/tests")
         expected = Path("module.test_funcs/TestClass__test_main")
         assert result == expected
 
     def test_suffix(self) -> None:
         node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
-        result = node_id_to_path(node_id, root="src/tests", suffix=".csv")
+        result = node_id_path(node_id, root="src/tests", suffix=".csv")
         expected = Path("module.test_funcs/TestClass__test_main.csv")
         assert result == expected
 
     def test_error_file_suffix(self) -> None:
         with raises(NodeIdToPathError, match="Node ID must be a Python file; got .*"):
-            _ = node_id_to_path("src/tests/module/test_funcs.csv::TestClass::test_main")
+            _ = node_id_path("src/tests/module/test_funcs.csv::TestClass::test_main")
 
 
 class TestPytestOptions:

@@ -123,10 +123,10 @@ def is_pytest() -> bool:
 ##
 
 
-def node_id_to_path(
+def node_id_path(
     node_id: str, /, *, root: PathLike | None = None, suffix: str | None = None
 ) -> Path:
-    """Map a node ID to a path."""
+    """Get the path of a node ID."""
     path_file, *parts = node_id.split("::")
     path_file = Path(path_file)
     if path_file.suffix != ".py":
@@ -267,7 +267,7 @@ __all__ = [
     "add_pytest_collection_modifyitems",
     "add_pytest_configure",
     "is_pytest",
-    "node_id_to_path",
+    "node_id_path",
     "random_state",
     "skipif_linux",
     "skipif_mac",

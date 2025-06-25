@@ -10,6 +10,8 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 from utilities.functions import ensure_str
 from utilities.operator import is_equal
+from utilities.pathlib import get_root
+from utilities.pytest import node_id_path
 
 if TYPE_CHECKING:
     from polars import DataFrame, Series
@@ -137,7 +139,7 @@ def polars_regression(
 
 
 def _get_path(request: FixtureRequest, /) -> Path:
-    tail = node_id_to_path(request.node.nodeid, root=_PATH_TESTS)
+    tail = node_id_path(request.node.nodeid, root=_PATH_TESTS)
     return get_root().joinpath(_PATH_TESTS, "regressions", tail)
 
 
