@@ -71,8 +71,9 @@ def get_path(
 ##
 
 
-def get_repo_root(*, path: PathLike = PWD) -> Path:
+def get_repo_root(*, path: MaybeCallablePathLike | None = None) -> Path:
     """Get the repo root."""
+    path = get_path(path=path)
     try:
         output = check_output(
             ["git", "rev-parse", "--show-toplevel"], stderr=PIPE, cwd=path, text=True
@@ -104,20 +105,9 @@ def get_root(*, path: MaybeCallablePathLike | None = None) -> Path:
     path = get_path(path=path)
     path_dir = path.parent if path.is_file() else path
     try:
-        output = check_output(
-            ["git", "rev-parse", "--show-toplevel"],
-            stderr=PIPE,
-            cwd=path_dir,
-            text=True,
-        )
-    except CalledProcessError as error:
-        # newer versions of git report "Not a git repository", whilst older
-        # versions report "not a git repository"
-        if not search("fatal: not a git repository", error.stderr, flags=IGNORECASE):
-            raise  # pragma: no cover
+        root_git = get_repo_root(path=path)
+    except GetRepoRootError:
         root_git = None
-    else:
-        root_git = Path(output.strip("\n")).resolve()
     all_paths = list(chain([path_dir], path_dir.parents))
     try:
         root_envrc = next(
