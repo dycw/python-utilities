@@ -5,16 +5,15 @@ from functools import partial, wraps
 from inspect import iscoroutinefunction
 from os import environ
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ParamSpec, assert_never, cast, override
+from typing import TYPE_CHECKING, Any, assert_never, cast, override
 
 from pytest import fixture
 from whenever import ZonedDateTime
 
 from utilities.atomicwrites import writer
 from utilities.functools import cache
-from utilities.git import get_repo_root
 from utilities.hashlib import md5_hash
-from utilities.pathlib import ensure_suffix, get_tail, module_path
+from utilities.pathlib import ensure_suffix, get_root, get_tail, module_path
 from utilities.platform import (
     IS_LINUX,
     IS_MAC,
@@ -24,6 +23,7 @@ from utilities.platform import (
     IS_WINDOWS,
 )
 from utilities.random import get_state
+from utilities.types import MaybeCoro
 from utilities.whenever import SECOND, get_now_local
 
 if TYPE_CHECKING:
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
     from whenever import TimeDelta
 
-    from utilities.types import Coroutine1, PathLike, TCallableMaybeCoroutine1None
+    from utilities.types import Coro, PathLike
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
@@ -54,12 +54,6 @@ else:
     skipif_not_windows = mark.skipif(IS_NOT_WINDOWS, reason="Skipped for non-Windows")
     skipif_not_mac = mark.skipif(IS_NOT_MAC, reason="Skipped for non-Mac")
     skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
-
-
-_P = ParamSpec("_P")
-
-
-##
 
 
 def add_pytest_addoption(parser: Parser, options: Sequence[str], /) -> None:
@@ -167,27 +161,27 @@ def random_state(*, seed: int) -> Random:
 ##
 
 
-def throttle(
+def throttle[F: Callable[..., MaybeCoro[None]]](
     *, root: PathLike | None = None, delta: TimeDelta = SECOND, on_try: bool = False
-) -> Callable[[TCallableMaybeCoroutine1None], TCallableMaybeCoroutine1None]:
+) -> Callable[[F], F]:
     """Throttle a test. On success by default, on try otherwise."""
     return cast("Any", partial(_throttle_inner, root=root, delta=delta, on_try=on_try))
 
 
-def _throttle_inner(
-    func: TCallableMaybeCoroutine1None,
+def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
+    func: F,
     /,
     *,
     root: PathLike | None = None,
     delta: TimeDelta = SECOND,
     on_try: bool = False,
-) -> TCallableMaybeCoroutine1None:
+) -> F:
     """Throttle a test function/method."""
     match bool(iscoroutinefunction(func)), on_try:
         case False, False:
 
             @wraps(func)
-            def throttle_sync_on_pass(*args: _P.args, **kwargs: _P.kwargs) -> None:
+            def throttle_sync_on_pass(*args: Any, **kwargs: Any) -> None:
                 _skipif_recent(root=root, delta=delta)
                 cast("Callable[..., None]", func)(*args, **kwargs)
                 _write(root=root)
@@ -197,7 +191,7 @@ def _throttle_inner(
         case False, True:
 
             @wraps(func)
-            def throttle_sync_on_try(*args: _P.args, **kwargs: _P.kwargs) -> None:
+            def throttle_sync_on_try(*args: Any, **kwargs: Any) -> None:
                 _skipif_recent(root=root, delta=delta)
                 _write(root=root)
                 cast("Callable[..., None]", func)(*args, **kwargs)
@@ -207,11 +201,9 @@ def _throttle_inner(
         case True, False:
 
             @wraps(func)
-            async def throttle_async_on_pass(
-                *args: _P.args, **kwargs: _P.kwargs
-            ) -> None:
+            async def throttle_async_on_pass(*args: Any, **kwargs: Any) -> None:
                 _skipif_recent(root=root, delta=delta)
-                await cast("Callable[..., Coroutine1[None]]", func)(*args, **kwargs)
+                await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
                 _write(root=root)
 
             return cast("Any", throttle_async_on_pass)
@@ -219,12 +211,10 @@ def _throttle_inner(
         case True, True:
 
             @wraps(func)
-            async def throttle_async_on_try(
-                *args: _P.args, **kwargs: _P.kwargs
-            ) -> None:
+            async def throttle_async_on_try(*args: Any, **kwargs: Any) -> None:
                 _skipif_recent(root=root, delta=delta)
                 _write(root=root)
-                await cast("Callable[..., Coroutine1[None]]", func)(*args, **kwargs)
+                await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
 
             return cast("Any", throttle_async_on_try)
 
@@ -250,9 +240,7 @@ def _skipif_recent(*, root: PathLike | None = None, delta: TimeDelta = SECOND) -
 
 def _get_path(*, root: PathLike | None = None) -> Path:
     if root is None:
-        root_use = get_repo_root().joinpath(  # pragma: no cover
-            ".pytest_cache", "throttle"
-        )
+        root_use = get_root().joinpath(".pytest_cache", "throttle")  # pragma: no cover
     else:
         root_use = root
     return Path(root_use, _md5_hash_cached(_get_name()))
