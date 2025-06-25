@@ -71,18 +71,49 @@ def get_path(
 ##
 
 
+def get_package_root(*, path: MaybeCallablePathLike | None = None) -> Path:
+    """Get the package root."""
+    path = get_path(path=path)
+    path_dir = path.parent if path.is_file() else path
+    all_paths = list(chain([path_dir], path_dir.parents))
+    try:
+        return next(
+            p.resolve()
+            for p in all_paths
+            if any(p_i.name == "pyproject.toml" for p_i in p.iterdir())
+        )
+    except StopIteration:
+        raise GetPackageRootError(path=path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class GetPackageRootError(Exception):
+    path: PathLike
+
+    @override
+    def __str__(self) -> str:
+        return f"Path is not part of a package: {self.path}"
+
+
+##
+
+
 def get_repo_root(*, path: MaybeCallablePathLike | None = None) -> Path:
     """Get the repo root."""
     path = get_path(path=path)
+    path_dir = path.parent if path.is_file() else path
     try:
         output = check_output(
-            ["git", "rev-parse", "--show-toplevel"], stderr=PIPE, cwd=path, text=True
+            ["git", "rev-parse", "--show-toplevel"],
+            stderr=PIPE,
+            cwd=path_dir,
+            text=True,
         )
     except CalledProcessError as error:
         # newer versions of git report "Not a git repository", whilst older
         # versions report "not a git repository"
         if search("fatal: not a git repository", error.stderr, flags=IGNORECASE):
-            raise GetRepoRootError(cwd=path) from error
+            raise GetRepoRootError(path=path) from None
         raise  # pragma: no cover
     else:
         return Path(output.strip("\n"))
@@ -90,11 +121,11 @@ def get_repo_root(*, path: MaybeCallablePathLike | None = None) -> Path:
 
 @dataclass(kw_only=True, slots=True)
 class GetRepoRootError(Exception):
-    cwd: PathLike
+    path: PathLike
 
     @override
     def __str__(self) -> str:
-        return f"Path is not part of a `git` repository: {self.cwd}"
+        return f"Path is not part of a `git` repository: {self.path}"
 
 
 ##
@@ -103,36 +134,30 @@ class GetRepoRootError(Exception):
 def get_root(*, path: MaybeCallablePathLike | None = None) -> Path:
     """Get the root of a path."""
     path = get_path(path=path)
-    path_dir = path.parent if path.is_file() else path
     try:
-        root_git = get_repo_root(path=path)
+        repo = get_repo_root(path=path)
     except GetRepoRootError:
-        root_git = None
-    all_paths = list(chain([path_dir], path_dir.parents))
+        repo = None
     try:
-        root_envrc = next(
-            p.resolve()
-            for p in all_paths
-            if any(p_i.name == ".envrc" for p_i in p.iterdir())
-        )
-    except StopIteration:
-        root_envrc = None
-    match root_git, root_envrc:
+        package = get_package_root(path=path)
+    except GetPackageRootError:
+        package = None
+    match repo, package:
         case None, None:
             raise GetRootError(path=path)
         case Path(), None:
-            return root_git
+            return repo
         case None, Path():
-            return root_envrc
+            return package
         case Path(), Path():
-            if root_git == root_envrc:
-                return root_git
-            if is_sub_path(root_git, root_envrc, strict=True):
-                return root_git
-            if is_sub_path(root_envrc, root_git, strict=True):
-                return root_envrc
+            if repo == package:
+                return repo
+            if is_sub_path(repo, package, strict=True):
+                return repo
+            if is_sub_path(package, repo, strict=True):
+                return package
             raise ImpossibleCaseError(  # pragma: no cover
-                case=[f"{root_git=}", f"{root_envrc=}"]
+                case=[f"{repo=}", f"{package=}"]
             )
         case _ as never:
             assert_never(never)
@@ -277,10 +302,12 @@ def temp_cwd(path: PathLike, /) -> Iterator[None]:
 
 __all__ = [
     "PWD",
+    "GetPackageRootError",
     "GetRepoRootError",
     "GetTailError",
     "ensure_suffix",
     "expand_path",
+    "get_package_root",
     "get_path",
     "get_repo_root",
     "get_tail",

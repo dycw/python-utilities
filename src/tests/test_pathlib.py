@@ -6,13 +6,14 @@ from shutil import copytree
 from typing import TYPE_CHECKING, Self
 
 from hypothesis import HealthCheck, given, settings
-from hypothesis.strategies import DataObject, data, integers, sets
+from hypothesis.strategies import integers, sets
 from pytest import mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import git_repos, paths, temp_paths
 from utilities.pathlib import (
+    GetPackageRootError,
     GetRepoRootError,
     GetRootError,
     _GetTailDisambiguate,
@@ -21,6 +22,7 @@ from utilities.pathlib import (
     _GetTailNonUniqueError,
     ensure_suffix,
     expand_path,
+    get_package_root,
     get_path,
     get_repo_root,
     get_root,
@@ -108,11 +110,49 @@ class TestGetPath:
         assert get_path(path=lambda: path) == path
 
 
+class TestGetPackageRoot:
+    @given(tail=paths())
+    @settings(
+        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
+    def test_dir(self, *, tmp_path: Path, tail: Path) -> None:
+        tmp_path.joinpath("pyproject.toml").touch()
+        path = tmp_path.joinpath(tail)
+        result = get_package_root(path=path)
+        expected = tmp_path.resolve()
+        assert result == expected
+
+    @given(tail=paths(min_depth=1))
+    @settings(
+        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
+    def test_file(self, *, tmp_path: Path, tail: Path) -> None:
+        tmp_path.joinpath("pyproject.toml").touch()
+        path = tmp_path.joinpath(tail)
+        path.touch()
+        root = get_package_root(path=path)
+        expected = tmp_path.resolve()
+        assert root == expected
+
+    def test_error(self, *, tmp_path: Path) -> None:
+        with raises(GetPackageRootError, match="Path is not part of a package: .*"):
+            _ = get_package_root(path=tmp_path)
+
+
 class TestGetRepoRoot:
-    @given(repo=git_repos())
+    @given(repo=git_repos(), tail=paths())
     @settings(max_examples=1)
-    def test_main(self, *, repo: Path) -> None:
-        root = get_repo_root(path=repo)
+    def test_dir(self, *, repo: Path, tail: Path) -> None:
+        root = get_repo_root(path=repo.joinpath(tail))
+        expected = repo.resolve()
+        assert root == expected
+
+    @given(repo=git_repos(), tail=paths(min_depth=1))
+    @settings(max_examples=1)
+    def test_file(self, *, repo: Path, tail: Path) -> None:
+        path = repo.joinpath(tail)
+        path.touch()
+        root = get_repo_root(path=path)
         expected = repo.resolve()
         assert root == expected
 
@@ -124,70 +164,37 @@ class TestGetRepoRoot:
 
 
 class TestGetRoot:
-    @given(data=data(), repo=git_repos())
+    @given(repo=git_repos(), tail=paths())
     @settings(
         max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
     )
-    def test_git_dir(self, *, data: DataObject, repo: Path) -> None:
-        path = repo.joinpath(data.draw(paths()))
-        path.mkdir(parents=True, exist_ok=True)
+    def test_repo_and_package(self, *, repo: Path, tail: Path) -> None:
+        repo.joinpath("pyproject.toml").touch()
+        path = repo.joinpath(tail)
         root = get_root(path=path)
         expected = repo.resolve()
         assert root == expected
 
-    @given(data=data(), repo=git_repos())
+    @given(repo=git_repos(), tail=paths(min_depth=1))
     @settings(
         max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
     )
-    def test_git_file(self, *, data: DataObject, repo: Path) -> None:
-        path = repo.joinpath(data.draw(paths(min_depth=1)))
-        path.touch()
-        root = get_root(path=path)
-        expected = repo.resolve()
-        assert root == expected
-
-    @given(data=data())
-    @settings(
-        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
-    )
-    def test_envrc(self, *, data: DataObject, tmp_path: Path) -> None:
-        tmp_path.joinpath(".envrc").touch()
-        path = tmp_path.joinpath(data.draw(paths()))
-        result = get_root(path=path)
-        expected = tmp_path.resolve()
-        assert result == expected
-
-    @given(data=data(), repo=git_repos())
-    @settings(
-        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
-    )
-    def test_git_and_envrc(self, *, data: DataObject, repo: Path) -> None:
-        repo.joinpath(".envrc").touch()
-        path = repo.joinpath(data.draw(paths()))
-        root = get_root(path=path)
-        expected = repo.resolve()
-        assert root == expected
-
-    @given(data=data(), repo=git_repos())
-    @settings(
-        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
-    )
-    def test_git_with_envrc_inside(self, *, data: DataObject, repo: Path) -> None:
-        path = repo.joinpath(data.draw(paths(min_depth=1)))
+    def test_repo_with_package_inside(self, *, repo: Path, tail: Path) -> None:
+        path = repo.joinpath(tail)
         path.mkdir(parents=True)
-        path.joinpath(".envrc").touch()
+        path.joinpath("pyproject.toml").touch()
         root = get_root(path=path)
         expected = path.resolve()
         assert root == expected
 
-    @given(data=data(), repo=git_repos())
+    @given(repo=git_repos(), tail=paths(min_depth=1))
     @settings(
         max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
     )
-    def test_envrc_with_git_inside(self, *, data: DataObject, repo: Path) -> None:
+    def test_package_with_repo_inside(self, *, repo: Path, tail: Path) -> None:
         with TemporaryDirectory() as temp:
-            temp.joinpath(".envrc").touch()
-            path = temp.joinpath(data.draw(paths(min_depth=1)))
+            temp.joinpath("pyproject.toml").touch()
+            path = temp.joinpath(tail)
             _ = copytree(repo, path)
             root = get_root(path=path)
             expected = path.resolve()
