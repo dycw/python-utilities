@@ -156,9 +156,4 @@ def _get_path(request: FixtureRequest, /) -> Path:
     return get_root().joinpath(_PATH_TESTS, "regressions", tail)
 
 
-__all__ = [
-    "OrjsonRegressionFixture",
-    "PolarsRegressionFixture",
-    "orjson_regression",
-    "polars_regression",
-]
+__all__ = ["OrjsonRegressionFixture", "PolarsRegressionFixture"]
