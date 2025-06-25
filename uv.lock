@@ -541,7 +541,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.138.6"
+version = "0.138.7"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -615,6 +615,7 @@ dev = [
     { name = "pudb" },
     { name = "pyright", extra = ["nodejs"] },
     { name = "pytest-cov" },
+    { name = "pytest-timeout" },
 ]
 eventkit = [
     { name = "eventkit" },
@@ -849,6 +850,7 @@ dev = [
     { name = "pudb", specifier = ">=2025.1,<2025.2" },
     { name = "pyright", extras = ["nodejs"], specifier = ">=1.1.401,<1.2" },
     { name = "pytest-cov", specifier = ">=6.1.1,<6.2" },
+    { name = "pytest-timeout", specifier = ">=2.4.0,<2.5" },
 ]
 eventkit = [{ name = "eventkit", specifier = ">=1.0.3,<1.1" }]
 fastapi = [{ name = "fastapi", specifier = ">=0.115.11,<0.116" }]
