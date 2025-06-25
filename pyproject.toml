@@ -107,6 +107,9 @@ readme = "README.md"
 requires-python = ">= 3.12"
 version = "0.138.6"
 
+[project.entry-points.pytest11]
+pytest-regressions = "utilities.pytest_regressions_plugin"
+
 [project.optional-dependencies]
 logging = [
   "coloredlogs >= 15.0.1, < 15.1",

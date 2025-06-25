@@ -6,22 +6,16 @@ from pathlib import Path
 from shutil import copytree
 from typing import TYPE_CHECKING, Any, assert_never
 
-from pytest import fixture
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from utilities.functions import ensure_str
 from utilities.operator import is_equal
-from utilities.pathlib import get_root
-from utilities.pytest import node_id_to_path
 
 if TYPE_CHECKING:
     from polars import DataFrame, Series
     from pytest import FixtureRequest
 
     from utilities.types import PathLike, StrMapping
-
-
-_PATH_TESTS = Path("src", "tests")
 
 
 ##
@@ -84,15 +78,6 @@ class OrjsonRegressionFixture:
         assert is_equal(left, right), f"{left=}, {right=}"
 
 
-@fixture
-def orjson_regression(
-    *, request: FixtureRequest, tmp_path: Path
-) -> OrjsonRegressionFixture:
-    """Instance of the `OrjsonRegressionFixture`."""
-    path = _get_path(request)
-    return OrjsonRegressionFixture(path, request, tmp_path)
-
-
 ##
 
 
@@ -139,26 +124,4 @@ class PolarsRegressionFixture:
         self._fixture.check(data, suffix=suffix)
 
 
-@fixture
-def polars_regression(
-    *, request: FixtureRequest, tmp_path: Path
-) -> PolarsRegressionFixture:
-    """Instance of the `PolarsRegressionFixture`."""
-    path = _get_path(request)
-    return PolarsRegressionFixture(path, request, tmp_path)
-
-
-##
-
-
-def _get_path(request: FixtureRequest, /) -> Path:
-    tail = node_id_to_path(request.node.nodeid, head=_PATH_TESTS)
-    return get_root().joinpath(_PATH_TESTS, "regressions", tail)
-
-
-__all__ = [
-    "OrjsonRegressionFixture",
-    "PolarsRegressionFixture",
-    "orjson_regression",
-    "polars_regression",
-]
+__all__ = ["OrjsonRegressionFixture", "PolarsRegressionFixture"]
