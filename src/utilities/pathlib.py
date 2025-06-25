@@ -90,7 +90,7 @@ def get_root(*, path: MaybeCallablePathLike | None = None) -> Path:
         root_git = None
     else:
         root_git = Path(output.strip("\n")).resolve()
-    all_paths = list(chain([path_dir], path_dir.parents))
+    all_paths = list(chain([path], path.parents))
     try:
         root_envrc = next(
             p.resolve()
@@ -109,9 +109,9 @@ def get_root(*, path: MaybeCallablePathLike | None = None) -> Path:
         case Path(), Path():
             if root_git == root_envrc:
                 return root_git
-            if is_sub_path(root_git, root_envrc, strict=True):
+            if is_sub_path(root_git, root_envrc):
                 return root_git
-            if is_sub_path(root_envrc, root_git, strict=True):
+            if is_sub_path(root_envrc, root_git):
                 return root_envrc
             raise ImpossibleCaseError(  # pragma: no cover
                 case=[f"{root_git=}", f"{root_envrc=}"]
@@ -132,89 +132,10 @@ class GetRootError(Exception):
 ##
 
 
-type _GetTailDisambiguate = Literal["raise", "earlier", "later"]
-
-
-def get_tail(
-    path: PathLike, root: PathLike, /, *, disambiguate: _GetTailDisambiguate = "raise"
-) -> Path:
-    """Get the tail of a path following a root match."""
-    path_parts, root_parts = [Path(p).parts for p in [path, root]]
-    len_path, len_root = map(len, [path_parts, root_parts])
-    if len_root > len_path:
-        raise _GetTailLengthError(path=path, root=root, len_root=len_root)
-    candidates = {
-        i + len_root: path_parts[i : i + len_root]
-        for i in range(len_path + 1 - len_root)
-    }
-    matches = {k: v for k, v in candidates.items() if v == root_parts}
-    match len(matches), disambiguate:
-        case 0, _:
-            raise _GetTailEmptyError(path=path, root=root)
-        case 1, _:
-            return _get_tail_core(path, next(iter(matches)))
-        case _, "raise":
-            first, second, *_ = matches
-            raise _GetTailNonUniqueError(
-                path=path,
-                root=root,
-                first=_get_tail_core(path, first),
-                second=_get_tail_core(path, second),
-            )
-        case _, "earlier":
-            return _get_tail_core(path, next(iter(matches)))
-        case _, "later":
-            return _get_tail_core(path, next(iter(reversed(matches))))
-        case _ as never:
-            assert_never(never)
-
-
-def _get_tail_core(path: PathLike, i: int, /) -> Path:
-    parts = Path(path).parts
-    return Path(*parts[i:])
-
-
-@dataclass(kw_only=True, slots=True)
-class GetTailError(Exception):
-    path: PathLike
-    root: PathLike
-
-
-@dataclass(kw_only=True, slots=True)
-class _GetTailLengthError(GetTailError):
-    len_root: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to get the tail of {str(self.path)!r} with root of length {self.len_root}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _GetTailEmptyError(GetTailError):
-    @override
-    def __str__(self) -> str:
-        return (
-            f"Unable to get the tail of {str(self.path)!r} with root {str(self.root)!r}"
-        )
-
-
-@dataclass(kw_only=True, slots=True)
-class _GetTailNonUniqueError(GetTailError):
-    first: Path
-    second: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Path {str(self.path)!r} must contain exactly one tail with root {str(self.root)!r}; got {str(self.first)!r}, {str(self.second)!r} and perhaps more"
-
-
-##
-
-
-def is_sub_path(x: PathLike, y: PathLike, /, *, strict: bool = False) -> bool:
+def is_sub_path(x: PathLike, y: PathLike, /) -> bool:
     """Check if a path is a sub path of another."""
     x, y = [Path(i).resolve() for i in [x, y]]
-    return x.is_relative_to(y) and not (strict and y.is_relative_to(x))
+    return x.is_relative_to(y)
 
 
 ##
@@ -241,11 +162,9 @@ def temp_cwd(path: PathLike, /) -> Iterator[None]:
 
 __all__ = [
     "PWD",
-    "GetTailError",
     "ensure_suffix",
     "expand_path",
     "get_path",
-    "get_tail",
     "is_sub_path",
     "list_dir",
     "temp_cwd",

@@ -106,10 +106,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.138.7"
-
-[project.entry-points.pytest11]
-pytest-regressions = "utilities.pytest_regressions_plugin"
+version = "0.138.3"
 
 [project.optional-dependencies]
 logging = [
@@ -137,7 +134,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.138.7"
+current_version = "0.138.3"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"

@@ -22,7 +22,6 @@ from utilities.pathlib import (
     expand_path,
     get_path,
     get_root,
-    get_tail,
     is_sub_path,
     list_dir,
     temp_cwd,
@@ -105,28 +104,18 @@ class TestGetPath:
         assert get_path(path=lambda: path) == path
 
 
+@mark.only
 class TestGetRoot:
-    @given(data=data(), repo=git_repos())
+    @given(data=data())
     @settings(
         max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
     )
-    def test_git_dir(self, *, data: DataObject, repo: Path) -> None:
-        path = repo.joinpath(data.draw(paths()))
+    def test_git(self, *, data: DataObject, tmp_path: Path) -> None:
+        _ = data.draw(git_repos(root=tmp_path))
+        path = tmp_path.joinpath(data.draw(paths()))
         path.mkdir(parents=True, exist_ok=True)
-        root = get_root(path=path)
-        expected = repo.resolve()
-        assert root == expected
-
-    @given(data=data(), repo=git_repos())
-    @settings(
-        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
-    )
-    def test_git_file(self, *, data: DataObject, repo: Path) -> None:
-        path = repo.joinpath(data.draw(paths(min_depth=1)))
-        path.touch()
-        root = get_root(path=path)
-        expected = repo.resolve()
-        assert root == expected
+        result = get_root(path=path)
+        assert result == tmp_path
 
     @given(data=data())
     @settings(
@@ -139,108 +128,66 @@ class TestGetRoot:
         expected = tmp_path.resolve()
         assert result == expected
 
-    @given(data=data(), repo=git_repos())
+    @given(data=data())
     @settings(
         max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
     )
-    def test_git_and_envrc(self, *, data: DataObject, repo: Path) -> None:
-        repo.joinpath(".envrc").touch()
-        path = repo.joinpath(data.draw(paths()))
-        root = get_root(path=path)
-        expected = repo.resolve()
-        assert root == expected
+    def test_git_and_envrc(self, *, data: DataObject, tmp_path: Path) -> None:
+        _ = data.draw(git_repos(root=tmp_path))
+        tmp_path.joinpath(".envrc").touch()
+        path = tmp_path.joinpath(data.draw(paths()))
+        result = get_root(path=path)
+        assert result == tmp_path
 
-    @given(data=data(), repo=git_repos())
+    @given(data=data())
     @settings(
         max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
     )
-    def test_git_with_envrc_inside(self, *, data: DataObject, repo: Path) -> None:
-        path = repo.joinpath(data.draw(paths(min_depth=1)))
+    def test_git_with_envrc_inside(self, *, data: DataObject, tmp_path: Path) -> None:
+        _ = data.draw(git_repos(root=tmp_path))
+        path = tmp_path.joinpath(data.draw(paths(min_depth=1)))
         path.mkdir(parents=True)
         path.joinpath(".envrc").touch()
         root = get_root(path=path)
-        expected = path.resolve()
-        assert root == expected
+        assert root == path
 
-    @given(data=data(), repo=git_repos())
+    @given(data=data())
     @settings(
         max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
     )
-    def test_envrc_with_git_inside(self, *, data: DataObject, repo: Path) -> None:
-        with TemporaryDirectory() as temp:
-            temp.joinpath(".envrc").touch()
-            path = temp.joinpath(data.draw(paths(min_depth=1)))
-            _ = copytree(repo, path)
-            root = get_root(path=path)
-            expected = path.resolve()
-            assert root == expected
+    def test_envrc_with_git_inside(self, *, data: DataObject, tmp_path: Path) -> None:
+        tmp_path.joinpath(".envrc").touch()
+        path = tmp_path.joinpath(data.draw(paths(min_depth=1)))
+        path.mkdir(parents=True)
+        _ = data.draw(git_repos(root=path))
+        root = get_root(path=path)
+        assert root == path
 
     def test_error(self, *, tmp_path: Path) -> None:
         with raises(GetRootError, match="Unable to determine root from '.*'"):
             _ = get_root(path=tmp_path)
 
 
-class TestGetTail:
-    @mark.parametrize(
-        ("path", "root", "disambiguate", "expected"),
-        [
-            param("foo/bar/baz", "foo", "raise", Path("bar/baz")),
-            param("foo/bar/baz", "foo/bar", "raise", Path("baz")),
-            param("a/b/c/d/a/b/c/d/e", "b/c", "earlier", Path("d/a/b/c/d/e")),
-            param("a/b/c/d/a/b/c/d/e", "b/c", "later", Path("d/e")),
-        ],
-    )
-    def test_main(
-        self,
-        *,
-        path: PathLike,
-        root: PathLike,
-        disambiguate: _GetTailDisambiguate,
-        expected: Path,
-    ) -> None:
-        tail = get_tail(path, root, disambiguate=disambiguate)
-        assert tail == expected
-
-    def test_error_length(self) -> None:
-        with raises(
-            _GetTailLengthError,
-            match="Unable to get the tail of 'foo' with root of length 2",
-        ):
-            _ = get_tail("foo", "bar/baz")
-
-    def test_error_empty(self) -> None:
-        with raises(
-            _GetTailEmptyError,
-            match="Unable to get the tail of 'foo/bar' with root 'baz'",
-        ):
-            _ = get_tail("foo/bar", "baz")
-
-    def test_error_non_unique(self) -> None:
-        with raises(
-            _GetTailNonUniqueError,
-            match="Path '.*' must contain exactly one tail with root 'b'; got '.*', '.*' and perhaps more",
-        ):
-            _ = get_tail("a/b/c/a/b/c", "b")
-
-
 class TestIsSubPath:
     @mark.parametrize(
-        ("x", "y", "strict", "expected"),
+        ("x", "y", "expected"),
         [
-            param("foo", "foo", False, True),
-            param("foo", "foo", True, False),
-            param("foo/bar", "foo", False, True),
-            param("foo/bar", "foo", True, True),
-            param("foo/bar", "foo/baz", False, False),
-            param("foo/bar", "foo/baz", True, False),
-            param("foo", "foo/bar", False, False),
-            param("foo", "foo/bar", True, False),
+            param("foo", "foo", True),
+            param("foo/bar", "foo", True),
+            param("foo/bar", "foo/baz", False),
+            param("foo", "foo/bar", False),
+            param(Path("foo").resolve(), "foo", True),
+            param(Path("foo/bar").resolve(), "foo", True),
+            param(Path("foo/bar").resolve(), "foo/baz", False),
+            param(Path("foo").resolve(), "foo/bar", False),
+            param("foo", Path("foo").resolve(), True),
+            param("foo/bar", Path("foo").resolve(), True),
+            param("foo/bar", Path("foo/baz").resolve(), False),
+            param("foo", Path("foo/bar").resolve(), False),
         ],
     )
-    def test_main(
-        self, *, x: PathLike, y: PathLike, strict: bool, expected: bool
-    ) -> None:
-        result = is_sub_path(x, y, strict=strict)
+    def test_main(self, *, x: PathLike, y: PathLike, expected: bool) -> None:
+        result = is_sub_path(x, y)
         assert result is expected
 
 

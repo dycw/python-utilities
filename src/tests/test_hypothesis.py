@@ -113,6 +113,7 @@ from utilities.math import (
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sentinel import Sentinel
+from utilities.tempfile import TemporaryDirectory
 from utilities.version import Version
 from utilities.whenever import (
     DATE_TWO_DIGIT_YEAR_MAX,
@@ -127,7 +128,6 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from zoneinfo import ZoneInfo
 
-    from utilities.tempfile import TemporaryDirectory
     from utilities.types import DateTimeRoundUnit, Number
 
 
@@ -509,9 +509,10 @@ class TestGitRepos:
     @given(data=data())
     @settings_with_reduced_examples()
     def test_main(self, *, data: DataObject) -> None:
-        root = data.draw(git_repos())
-        files = set(root.iterdir())
-        assert Path(root, ".git") in files
+        with TemporaryDirectory() as temp:
+            root = data.draw(git_repos(root=temp))
+            files = set(root.iterdir())
+            assert Path(root, ".git") in files
 
 
 class TestHashables:
