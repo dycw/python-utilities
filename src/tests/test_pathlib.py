@@ -182,9 +182,11 @@ class TestGetRoot:
 
 class TestGetTail:
     @mark.parametrize(
-        ("path", "head", "disambiguate", "expected"),
+        ("path", "root", "disambiguate", "expected"),
         [
             param("foo/bar/baz", "foo", "raise", Path("bar/baz")),
+            param("foo/bar/baz", "bar", "raise", Path("baz")),
+            param("foo/bar/baz", "baz", "raise", Path()),
             param("foo/bar/baz", "foo/bar", "raise", Path("baz")),
             param("a/b/c/d/a/b/c/d/e", "b/c", "earlier", Path("d/a/b/c/d/e")),
             param("a/b/c/d/a/b/c/d/e", "b/c", "later", Path("d/e")),
@@ -194,31 +196,31 @@ class TestGetTail:
         self,
         *,
         path: PathLike,
-        head: PathLike,
+        root: PathLike,
         disambiguate: _GetTailDisambiguate,
         expected: Path,
     ) -> None:
-        tail = get_tail(path, head, disambiguate=disambiguate)
+        tail = get_tail(path, root, disambiguate=disambiguate)
         assert tail == expected
 
     def test_error_length(self) -> None:
         with raises(
             _GetTailLengthError,
-            match="Unable to get the tail of 'foo' with head of length 2",
+            match="Unable to get the tail of 'foo' with root of length 2",
         ):
             _ = get_tail("foo", "bar/baz")
 
     def test_error_empty(self) -> None:
         with raises(
             _GetTailEmptyError,
-            match="Unable to get the tail of 'foo/bar' with head 'baz'",
+            match="Unable to get the tail of 'foo/bar' with root 'baz'",
         ):
             _ = get_tail("foo/bar", "baz")
 
     def test_error_non_unique(self) -> None:
         with raises(
             _GetTailNonUniqueError,
-            match="Path 'a/b/c/a/b/c' must contain exactly one tail with head 'b'; got 'c/a/b/c', 'c' and perhaps more",
+            match="Path 'a/b/c/a/b/c' must contain exactly one tail with root 'b'; got 'c/a/b/c', 'c' and perhaps more",
         ):
             _ = get_tail("a/b/c/a/b/c", "b")
 
