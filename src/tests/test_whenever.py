@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from dataclasses import dataclass, field
 from logging import DEBUG
 from typing import TYPE_CHECKING, ClassVar, Self
@@ -7,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 from hypothesis import given
 from hypothesis.strategies import integers, none, sampled_from, timezones
-from pytest import raises
+from pytest import mark, param, raises
 from whenever import (
     Date,
     DateDelta,
@@ -64,6 +65,7 @@ from utilities.whenever import (
     MinMaxDateError,
     ToDaysError,
     ToNanosError,
+    ToPyTimeDeltaError,
     WheneverLogRecord,
     _FreqDayIncrementError,
     _FreqIncrementError,
@@ -87,6 +89,7 @@ from utilities.whenever import (
     to_days,
     to_local_plain,
     to_nanos,
+    to_py_time_delta,
     to_time_delta,
     to_zoned_date_time,
     two_digit_year_month,
@@ -518,6 +521,32 @@ class TestToLocalPlain:
     def test_main(self, *, date_time: ZonedDateTime) -> None:
         result = to_local_plain(date_time)
         assert isinstance(result, PlainDateTime)
+
+
+class TestToPyTimeDelta:
+    @mark.parametrize(
+        ("delta", "expected"),
+        [
+            param(DateDelta(days=1), dt.timedelta(days=1)),
+            param(TimeDelta(microseconds=1), dt.timedelta(microseconds=1)),
+            param(
+                DateTimeDelta(days=1, microseconds=1),
+                dt.timedelta(days=1, microseconds=1),
+            ),
+        ],
+    )
+    def test_main(
+        self, *, delta: DateDelta | TimeDelta | DateTimeDelta, expected: dt.timedelta
+    ) -> None:
+        result = to_py_time_delta(delta)
+        assert result == expected
+
+    def test_error(self) -> None:
+        delta = TimeDelta(nanoseconds=1)
+        with raises(
+            ToPyTimeDeltaError, match="Time delta must not contain nanoseconds; got 1"
+        ):
+            _ = to_py_time_delta(delta)
 
 
 class TestToZonedDateTime:
