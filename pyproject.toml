@@ -41,7 +41,7 @@ fastapi-test = ["httpx", "uvicorn"]
 fpdf2 = ["fpdf2 >= 2.8.3, < 2.9"]
 hashlib-test = ["orjson"]
 http-test = ["orjson"]
-hypothesis = ["hypothesis >= 6.135.14, < 6.136"]
+hypothesis = ["hypothesis >= 6.135.15, < 6.136"]
 hypothesis-test = ["libcst", "luigi", "pathvalidate", "numpy", "pytest-rerunfailures"]
 inflect = ["inflect >= 7.5.0, < 7.6"]
 jupyter-test = ["pandas", "polars"]
@@ -117,7 +117,7 @@ logging = [
 ]
 test = [
   "dycw-pytest-only >= 2.1.1, < 2.2",
-  "hypothesis >= 6.135.14, < 6.136",
+  "hypothesis >= 6.135.15, < 6.136",
   "pudb >= 2025.1, < 2025.2",
   "pytest >= 8.3.5, < 8.4",
   "pytest-asyncio >= 1.0.0, < 1.1",
