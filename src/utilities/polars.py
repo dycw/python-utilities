@@ -1833,6 +1833,26 @@ def normal(
 ##
 
 
+@overload
+def order_of_magnitude(column: ExprLike, /, *, round_: bool = False) -> Expr: ...
+@overload
+def order_of_magnitude(column: Series, /, *, round_: bool = False) -> Series: ...
+@overload
+def order_of_magnitude(
+    column: IntoExprColumn, /, *, round_: bool = False
+) -> Expr | Series: ...
+def order_of_magnitude(
+    column: IntoExprColumn, /, *, round_: bool = False
+) -> Expr | Series:
+    """Compute the order of magnitude of a column."""
+    column = ensure_expr_or_series(column)
+    result = column.abs().log10()
+    return result.round().cast(Int64) if round_ else result
+
+
+##
+
+
 def reify_exprs(
     *exprs: IntoExprColumn, **named_exprs: IntoExprColumn
 ) -> Expr | Series | DataFrame:
@@ -2184,6 +2204,7 @@ __all__ = [
     "nan_sum_agg",
     "nan_sum_cols",
     "normal",
+    "order_of_magnitude",
     "replace_time_zone",
     "set_first_row_as_columns",
     "struct_dtype",

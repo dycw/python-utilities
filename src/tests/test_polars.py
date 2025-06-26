@@ -153,6 +153,7 @@ from utilities.polars import (
     nan_sum_agg,
     nan_sum_cols,
     normal,
+    order_of_magnitude,
     reify_exprs,
     replace_time_zone,
     set_first_row_as_columns,
@@ -1988,6 +1989,32 @@ class TestNormal:
         assert series.dtype == Float64
         assert series.len() == length
         assert series.is_finite().all()
+
+
+class TestOrderOfMagnitude:
+    @given(
+        sign=sampled_from([1, -1]),
+        case=sampled_from([
+            (0.25, -0.60206, -1),
+            (0.5, -0.30103, 0),
+            (0.75, -0.1249387, 0),
+            (1.0, 0.0, 0),
+            (5.0, 0.69897, 1),
+            (10.0, 1.0, 1),
+            (50.0, 1.69897, 2),
+            (100.0, 2.0, 2),
+        ]),
+    )
+    def test_main(self, *, sign: int, case: tuple[float, float, int]) -> None:
+        x, exp_float, exp_int = case
+        x_use = Series(values=[sign * x])
+        res_float = order_of_magnitude(x_use)
+        assert res_float.dtype == Float64
+        assert_series_equal(res_float, Series([exp_float]))
+        res_int = order_of_magnitude(x_use, round_=True)
+        assert res_int.dtype == Int64
+        assert_series_equal(res_int, Series([exp_int]))
+        assert (res_int == exp_int).all()
 
 
 class TestReifyExprs:
