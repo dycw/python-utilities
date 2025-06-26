@@ -541,7 +541,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.138.10"
+version = "0.138.11"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -801,7 +801,7 @@ requires-dist = [
     { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
     { name = "coloredlogs", marker = "extra == 'logging'", specifier = ">=15.0.1,<15.1" },
     { name = "dycw-pytest-only", marker = "extra == 'test'", specifier = ">=2.1.1,<2.2" },
-    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.135.14,<6.136" },
+    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.135.15,<6.136" },
     { name = "pudb", marker = "extra == 'test'", specifier = ">=2025.1,<2025.2" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.3.5,<8.4" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=1.0.0,<1.1" },
@@ -861,7 +861,7 @@ fastapi-test = [
 fpdf2 = [{ name = "fpdf2", specifier = ">=2.8.3,<2.9" }]
 hashlib-test = [{ name = "orjson" }]
 http-test = [{ name = "orjson" }]
-hypothesis = [{ name = "hypothesis", specifier = ">=6.135.14,<6.136" }]
+hypothesis = [{ name = "hypothesis", specifier = ">=6.135.15,<6.136" }]
 hypothesis-test = [
     { name = "libcst" },
     { name = "luigi" },
@@ -1206,15 +1206,15 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.135.14"
+version = "6.135.15"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/70/a5/d4f74ba61bbe5dd001c998ae8b85f9bfdc6cd29e6c5693d1116847b64251/hypothesis-6.135.14.tar.gz", hash = "sha256:2666df50b3cc40ea08b161a5389d6a1cd5aa3cab0dd8fde0ae339389714a4f67", size = 452884, upload-time = "2025-06-20T19:16:38.199Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0d/08/c4ce5c0bc9d0ca06d29c5a660f718c7a80ce87c120d8193500c0da9a5cd1/hypothesis-6.135.15.tar.gz", hash = "sha256:f4a3c4ee28531834214f06373e06eff67fe82c3f7cc49993f8e56537411ab729", size = 452903, upload-time = "2025-06-25T17:37:40.244Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ce/cf/491a487229b04a2ad56175c74700cfb79635dfce2d942becc6ab10c0ceb9/hypothesis-6.135.14-py3-none-any.whl", hash = "sha256:0dd5b8095e36bd288367c631f864a16c30500b01b17943dcea681233f7421860", size = 519115, upload-time = "2025-06-20T19:16:34.539Z" },
+    { url = "https://files.pythonhosted.org/packages/30/b6/0c5f5f1c08a86c7065e49058c9da15293fdc84cf07253a3911be930338ac/hypothesis-6.135.15-py3-none-any.whl", hash = "sha256:31ec092e79515e1957030a8f3564d813a81c72173b9fc757d6223792237f35f9", size = 519152, upload-time = "2025-06-25T17:37:36.629Z" },
 ]
 
 [[package]]

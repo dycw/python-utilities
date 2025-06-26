@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from functools import cache
@@ -553,9 +554,10 @@ def to_local_plain(date_time: ZonedDateTime, /) -> PlainDateTime:
 
 def to_nanos(delta: DateTimeDelta, /) -> int:
     """Compute the number of nanoseconds in a date-time delta."""
-    months, days, _, _ = delta.in_months_days_secs_nanos()
-    if months != 0:
-        raise ToNanosError(months=months)
+    try:
+        days = to_days(delta.date_part())
+    except ToDaysError as error:
+        raise ToNanosError(months=error.months) from None
     return 24 * 60 * 60 * int(1e9) * days + delta.time_part().in_nanoseconds()
 
 
@@ -566,6 +568,37 @@ class ToNanosError(Exception):
     @override
     def __str__(self) -> str:
         return f"Date-time delta must not contain months; got {self.months}"
+
+
+##
+
+
+def to_py_time_delta(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> dt.timedelta:
+    """Try convert a DateDelta to a standard library timedelta."""
+    match delta:
+        case DateDelta():
+            return dt.timedelta(days=to_days(delta))
+        case TimeDelta():
+            nanos = delta.in_nanoseconds()
+            micros, remainder = divmod(nanos, 1000)
+            if remainder != 0:
+                raise ToPyTimeDeltaError(nanoseconds=remainder)
+            return dt.timedelta(microseconds=micros)
+        case DateTimeDelta():
+            return to_py_time_delta(delta.date_part()) + to_py_time_delta(
+                delta.time_part()
+            )
+        case _ as never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class ToPyTimeDeltaError(Exception):
+    nanoseconds: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Time delta must not contain nanoseconds; got {self.nanoseconds}"
 
 
 ##
@@ -769,6 +802,7 @@ __all__ = [
     "MinMaxDateError",
     "ToDaysError",
     "ToNanosError",
+    "ToPyTimeDeltaError",
     "WheneverLogRecord",
     "datetime_utc",
     "format_compact",
@@ -786,6 +820,7 @@ __all__ = [
     "to_days",
     "to_local_plain",
     "to_nanos",
+    "to_py_time_delta",
     "to_zoned_date_time",
     "two_digit_year_month",
 ]
