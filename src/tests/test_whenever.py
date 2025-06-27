@@ -122,6 +122,7 @@ class TestDatetimeUTC:
 
 
 class TestDiffYearMonth:
+    x: ClassVar[YearMonth] = YearMonth(2005, 7)
     cases: ClassVar[list[ParameterSet]] = [
         param(YearMonth(2004, 7), 1, 0),
         param(YearMonth(2004, 8), 0, 11),
@@ -138,15 +139,13 @@ class TestDiffYearMonth:
 
     @mark.parametrize(("y", "year", "month"), cases)
     def test_main(self, *, y: YearMonth, year: int, month: int) -> None:
-        x = YearMonth(2005, 7)
-        result = diff_year_month(x, y)
+        result = diff_year_month(self.x, y)
         expected = 12 * year + month
         assert result == expected
 
     @mark.parametrize(("y", "year", "month"), cases)
     def test_year_and_month(self, *, y: YearMonth, year: int, month: int) -> None:
-        x = YearMonth(2005, 7)
-        result = diff_year_month(x, y, years=True)
+        result = diff_year_month(self.x, y, years=True)
         expected = (year, month)
         assert result == expected
 
