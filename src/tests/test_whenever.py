@@ -64,6 +64,7 @@ from utilities.whenever import (
     MeanDateTimeError,
     MinMaxDateError,
     ToDaysError,
+    ToMonthsError,
     ToNanosError,
     ToPyTimeDeltaError,
     WheneverLogRecord,
@@ -88,6 +89,7 @@ from utilities.whenever import (
     to_date_time_delta,
     to_days,
     to_local_plain,
+    to_months,
     to_nanos,
     to_py_time_delta,
     to_time_delta,
@@ -521,6 +523,24 @@ class TestToLocalPlain:
     def test_main(self, *, date_time: ZonedDateTime) -> None:
         result = to_local_plain(date_time)
         assert isinstance(result, PlainDateTime)
+
+
+class TestToMonths:
+    @given(months=integers())
+    def test_main(self, *, months: int) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="months out of range"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+        ):
+            delta = DateDelta(months=months)
+        assert to_months(delta) == months
+
+    def test_error(self) -> None:
+        delta = DateDelta(days=1)
+        with raises(ToMonthsError, match="Date delta must not contain days; got 1"):
+            _ = to_months(delta)
 
 
 class TestToPyTimeDelta:

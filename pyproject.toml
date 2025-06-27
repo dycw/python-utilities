@@ -36,7 +36,7 @@ dev = [
   "pytest-timeout >= 2.4.0, < 2.5",
 ]
 eventkit = ["eventkit >= 1.0.3, < 1.1"]
-fastapi = ["fastapi >= 0.115.11, < 0.116"]
+fastapi = ["fastapi >= 0.115.14, < 0.116"]
 fastapi-test = ["httpx", "uvicorn"]
 fpdf2 = ["fpdf2 >= 2.8.3, < 2.9"]
 hashlib-test = ["orjson"]
@@ -106,7 +106,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.138.12"
+version = "0.138.13"
 
 [project.entry-points.pytest11]
 pytest-regressions = "utilities.pytest_regressions_plugin"
@@ -137,7 +137,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.138.12"
+current_version = "0.138.13"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"

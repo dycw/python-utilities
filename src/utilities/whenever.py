@@ -552,6 +552,26 @@ def to_local_plain(date_time: ZonedDateTime, /) -> PlainDateTime:
 ##
 
 
+def to_months(delta: DateDelta, /) -> int:
+    """Compute the number of months in a date delta."""
+    months, days = delta.in_months_days()
+    if days != 0:
+        raise ToMonthsError(days=days)
+    return months
+
+
+@dataclass(kw_only=True, slots=True)
+class ToMonthsError(Exception):
+    days: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Date delta must not contain days; got {self.days}"
+
+
+##
+
+
 def to_nanos(delta: DateTimeDelta, /) -> int:
     """Compute the number of nanoseconds in a date-time delta."""
     try:
@@ -801,6 +821,7 @@ __all__ = [
     "MeanDateTimeError",
     "MinMaxDateError",
     "ToDaysError",
+    "ToMonthsError",
     "ToNanosError",
     "ToPyTimeDeltaError",
     "WheneverLogRecord",
@@ -819,6 +840,7 @@ __all__ = [
     "to_date_time_delta",
     "to_days",
     "to_local_plain",
+    "to_months",
     "to_nanos",
     "to_py_time_delta",
     "to_zoned_date_time",
