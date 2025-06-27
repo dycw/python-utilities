@@ -155,10 +155,26 @@ def datetime_utc(
 ##
 
 
-def diff_year_month(x: YearMonth, y: YearMonth, /) -> tuple[int, int]:
+@overload
+def diff_year_month(
+    x: YearMonth, y: YearMonth, /, *, years: Literal[True]
+) -> tuple[int, int]: ...
+@overload
+def diff_year_month(
+    x: YearMonth, y: YearMonth, /, *, years: Literal[False] = False
+) -> int: ...
+@overload
+def diff_year_month(
+    x: YearMonth, y: YearMonth, /, *, years: bool = False
+) -> int | tuple[int, int]: ...
+def diff_year_month(
+    x: YearMonth, y: YearMonth, /, *, years: bool = False
+) -> int | tuple[int, int]:
     """Compute the difference between two year-months."""
     x_date, y_date = x.on_day(1), y.on_day(1)
-    years, months, _ = (x_date - y_date).in_years_months_days()
+    diff = (x_date - y_date).in_years_months_days()
+    if years:
+    yrs, mth, _ = (x_date - y_date).in_years_months_days()
     return years, months
 
 
