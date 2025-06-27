@@ -172,10 +172,12 @@ def diff_year_month(
 ) -> int | tuple[int, int]:
     """Compute the difference between two year-months."""
     x_date, y_date = x.on_day(1), y.on_day(1)
-    diff = (x_date - y_date).in_years_months_days()
+    diff = x_date - y_date
     if years:
-    yrs, mth, _ = (x_date - y_date).in_years_months_days()
-    return years, months
+        yrs, mth, _ = diff.in_years_months_days()
+        return yrs, mth
+    mth, _ = diff.in_months_days()
+    return mth
 
 
 ##

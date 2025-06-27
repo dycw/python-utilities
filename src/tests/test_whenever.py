@@ -140,13 +140,13 @@ class TestDiffYearMonth:
     def test_main(self, *, y: YearMonth, year: int, month: int) -> None:
         x = YearMonth(2005, 7)
         result = diff_year_month(x, y)
-        expected = (year, month)
+        expected = 12 * year + month
         assert result == expected
 
     @mark.parametrize(("y", "year", "month"), cases)
     def test_year_and_month(self, *, y: YearMonth, year: int, month: int) -> None:
         x = YearMonth(2005, 7)
-        result = diff_year_month(x, y)
+        result = diff_year_month(x, y, years=True)
         expected = (year, month)
         assert result == expected
 
