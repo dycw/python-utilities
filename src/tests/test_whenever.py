@@ -75,6 +75,7 @@ from utilities.whenever import (
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
     datetime_utc,
+    diff_year_month,
     format_compact,
     from_timestamp,
     from_timestamp_millis,
@@ -116,6 +117,30 @@ class TestDatetimeUTC:
             nanosecond=datetime.nanosecond,
         )
         assert result == datetime
+
+
+class TestDiffYearMonth:
+    @mark.parametrize(
+        ("y", "year", "month"),
+        [
+            param(YearMonth(2004, 7), 1, 0),
+            param(YearMonth(2004, 8), 0, 11),
+            param(YearMonth(2005, 1), 0, 6),
+            param(YearMonth(2005, 5), 0, 2),
+            param(YearMonth(2005, 6), 0, 1),
+            param(YearMonth(2005, 7), 0, 0),
+            param(YearMonth(2005, 8), 0, -1),
+            param(YearMonth(2005, 9), 0, -2),
+            param(YearMonth(2006, 1), 0, -6),
+            param(YearMonth(2006, 6), 0, -11),
+            param(YearMonth(2006, 7), -1, 0),
+        ],
+    )
+    def test_example(self, *, y: YearMonth, year: int, month: int) -> None:
+        x = YearMonth(2005, 7)
+        result = diff_year_month(x, y)
+        expected = (year, month)
+        assert result == expected
 
 
 class TestFormatCompact:
