@@ -155,6 +155,34 @@ def datetime_utc(
 ##
 
 
+@overload
+def diff_year_month(
+    x: YearMonth, y: YearMonth, /, *, years: Literal[True]
+) -> tuple[int, int]: ...
+@overload
+def diff_year_month(
+    x: YearMonth, y: YearMonth, /, *, years: Literal[False] = False
+) -> int: ...
+@overload
+def diff_year_month(
+    x: YearMonth, y: YearMonth, /, *, years: bool = False
+) -> int | tuple[int, int]: ...
+def diff_year_month(
+    x: YearMonth, y: YearMonth, /, *, years: bool = False
+) -> int | tuple[int, int]:
+    """Compute the difference between two year-months."""
+    x_date, y_date = x.on_day(1), y.on_day(1)
+    diff = x_date - y_date
+    if years:
+        yrs, mth, _ = diff.in_years_months_days()
+        return yrs, mth
+    mth, _ = diff.in_months_days()
+    return mth
+
+
+##
+
+
 def format_compact(
     obj: Date | Time | PlainDateTime | ZonedDateTime, /, *, fmt: str | None = None
 ) -> str:
@@ -826,6 +854,7 @@ __all__ = [
     "ToPyTimeDeltaError",
     "WheneverLogRecord",
     "datetime_utc",
+    "diff_year_month",
     "format_compact",
     "from_timestamp",
     "from_timestamp_millis",

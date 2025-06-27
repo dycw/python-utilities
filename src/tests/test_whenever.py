@@ -75,6 +75,7 @@ from utilities.whenever import (
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
     datetime_utc,
+    diff_year_month,
     format_compact,
     from_timestamp,
     from_timestamp_millis,
@@ -99,6 +100,8 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
+    from _pytest.mark import ParameterSet
+
     from utilities.sentinel import Sentinel
     from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime
 
@@ -116,6 +119,35 @@ class TestDatetimeUTC:
             nanosecond=datetime.nanosecond,
         )
         assert result == datetime
+
+
+class TestDiffYearMonth:
+    x: ClassVar[YearMonth] = YearMonth(2005, 7)
+    cases: ClassVar[list[ParameterSet]] = [
+        param(YearMonth(2004, 7), 1, 0),
+        param(YearMonth(2004, 8), 0, 11),
+        param(YearMonth(2005, 1), 0, 6),
+        param(YearMonth(2005, 5), 0, 2),
+        param(YearMonth(2005, 6), 0, 1),
+        param(YearMonth(2005, 7), 0, 0),
+        param(YearMonth(2005, 8), 0, -1),
+        param(YearMonth(2005, 9), 0, -2),
+        param(YearMonth(2006, 1), 0, -6),
+        param(YearMonth(2006, 6), 0, -11),
+        param(YearMonth(2006, 7), -1, 0),
+    ]
+
+    @mark.parametrize(("y", "year", "month"), cases)
+    def test_main(self, *, y: YearMonth, year: int, month: int) -> None:
+        result = diff_year_month(self.x, y)
+        expected = 12 * year + month
+        assert result == expected
+
+    @mark.parametrize(("y", "year", "month"), cases)
+    def test_year_and_month(self, *, y: YearMonth, year: int, month: int) -> None:
+        result = diff_year_month(self.x, y, years=True)
+        expected = (year, month)
+        assert result == expected
 
 
 class TestFormatCompact:
