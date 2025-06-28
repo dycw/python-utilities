@@ -24,7 +24,7 @@ from utilities.platform import (
 )
 from utilities.random import get_state
 from utilities.types import MaybeCoro
-from utilities.whenever import SECOND, get_now, get_now_local, to_local_plain
+from utilities.whenever import SECOND, get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
@@ -258,7 +258,7 @@ def _get_name() -> str:
 def _write(*, root: PathLike | None = None) -> None:
     path = _get_path(root=root)
     with writer(path, overwrite=True) as temp:
-        _ = temp.write_text(to_local_plain(get_now()))
+        _ = temp.write_text(get_now_local().format_common_iso())
 
 
 __all__ = [
