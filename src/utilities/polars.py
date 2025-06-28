@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import enum
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import asdict, dataclass
@@ -99,7 +99,7 @@ from utilities.warnings import suppress_warnings
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Sequence
+    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
     from collections.abc import Set as AbstractSet
 
     from polars._typing import (
@@ -1950,33 +1950,47 @@ def _replace_time_zone_one(
 ##
 
 
+type _Deconstructed = (
+    str
+    | tuple[Literal["Datetime"], str, str | None]
+    | tuple[Literal["List"], _Deconstructed]
+    | tuple[Literal["Struct"], StrMapping]
+)
+
+
 def _deconstruct_schema_dict(schema: SchemaDict, /) -> StrMapping:
     return {k: _deconstruct_schema_dict_inner(v) for k, v in schema.items()}
 
 
-def _deconstruct_schema_dict_inner(dtype: PolarsDataType, /) -> str | StrMapping:
-    if dtype.is_nested():
-        zzz
-    return repr(dtype)
-    assert 0, type(dtype)
-    return {k}
+def _deconstruct_schema_dict_inner(dtype: PolarsDataType, /) -> _Deconstructed:
+    match dtype:
+        case List() as list_:
+            return "List", _deconstruct_schema_dict_inner(list_.inner)
+        case Struct() as struct:
+            inner = {f.name: f.dtype for f in struct.fields}
+            return "Struct", _deconstruct_schema_dict(inner)
+        case Datetime() as datetime:
+            return "Datetime", datetime.time_unit, datetime.time_zone
+        case _:
+            return repr(dtype)
 
 
 def _reconstruct_schema_dict(schema: StrMapping, /) -> SchemaDict:
     return {k: _reconstruct_schema_dict_inner(v) for k, v in schema.items()}
 
 
-def _reconstruct_schema_dict_inner(
-    dtype: str | StrMapping, /
-) -> PolarsDataType | StrMapping:
-    match dtype:
+def _reconstruct_schema_dict_inner(obj: _Deconstructed, /) -> PolarsDataType:
+    match obj:
         case str() as name:
             return getattr(pl, name)
-        case Mapping() as mapping:
-            assert 0, mapping
+        case "Datetime", str() as time_unit, str() | None as time_zone:
+            return Datetime(time_unit=cast("TimeUnit", time_unit), time_zone=time_zone)
+        case "List", inner:
+            return List(_reconstruct_schema_dict_inner(inner))
+        case "Struct", inner:
+            return Struct(_reconstruct_schema_dict(inner))
         case _ as never:
             assert_never(never)
-    return None
 
 
 ##

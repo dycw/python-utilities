@@ -14,7 +14,7 @@ from uuid import UUID, uuid4
 import hypothesis.strategies
 import numpy as np
 import polars as pl
-from hypothesis import Phase, given, reproduce_failure, settings
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     booleans,
@@ -58,7 +58,6 @@ from pytest import mark, param, raises
 from whenever import TimeZoneNotFoundError
 
 import utilities.polars
-from utilities.contextvars import set_global_breakpoint
 from utilities.hypothesis import (
     assume_does_not_raise,
     int64s,
@@ -2134,17 +2133,21 @@ class TestSerializeAndDeserializeDataFrame:
             param(Boolean()),
             param(Date),
             param(Date()),
+            param(Datetime),
+            param(Datetime()),
+            param(Datetime(time_zone=UTC.key)),
             param(Int64),
             param(Int64()),
             param(Float64),
             param(Float64()),
-            param(Datetime),
-            param(Datetime()),
-            param(Datetime(time_zone=UTC.key)),
+            param(String),
+            param(String()),
+            param(List(Int64)),
+            param(Struct({"inner": Int64})),
         ],
     )
-    def test_schema_dict(self, *, dtype: PolarsDataType | Schemaudict) -> None:
-        schema = {"column": dtype}
+    def test_schema_dict(self, *, dtype: PolarsDataType) -> None:
+        schema: SchemaDict = {"column": dtype}
         result = _reconstruct_schema_dict(_deconstruct_schema_dict(schema))
         assert result == schema
 
