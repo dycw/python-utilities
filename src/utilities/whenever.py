@@ -636,7 +636,39 @@ class ToNanosError(Exception):
 ##
 
 
-def to_py_time_delta(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> dt.timedelta:
+@overload
+def to_py_date_or_date_time(date_or_date_time: Date, /) -> dt.date: ...
+@overload
+def to_py_date_or_date_time(date_or_date_time: ZonedDateTime, /) -> dt.datetime: ...
+@overload
+def to_py_date_or_date_time(date_or_date_time: None, /) -> None: ...
+def to_py_date_or_date_time(
+    date_or_date_time: Date | ZonedDateTime | None, /
+) -> dt.date | None:
+    """Convert a Date or ZonedDateTime into a standard library equivalent."""
+    match date_or_date_time:
+        case Date() as date:
+            return date.py_date()
+        case ZonedDateTime() as date_time:
+            return date_time.py_datetime()
+        case None:
+            return None
+        case _ as never:
+            assert_never(never)
+
+
+##
+
+
+@overload
+def to_py_time_delta(
+    delta: DateDelta | TimeDelta | DateTimeDelta, /
+) -> dt.timedelta: ...
+@overload
+def to_py_time_delta(delta: None, /) -> None: ...
+def to_py_time_delta(
+    delta: DateDelta | TimeDelta | DateTimeDelta | None, /
+) -> dt.timedelta | None:
     """Try convert a DateDelta to a standard library timedelta."""
     match delta:
         case DateDelta():
@@ -651,6 +683,8 @@ def to_py_time_delta(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> dt.time
             return to_py_time_delta(delta.date_part()) + to_py_time_delta(
                 delta.time_part()
             )
+        case None:
+            return None
         case _ as never:
             assert_never(never)
 
@@ -888,6 +922,7 @@ __all__ = [
     "to_local_plain",
     "to_months",
     "to_nanos",
+    "to_py_date_or_date_time",
     "to_py_time_delta",
     "to_zoned_date_time",
     "two_digit_year_month",
