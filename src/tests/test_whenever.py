@@ -118,7 +118,7 @@ class TestAddAndSubYearMonth:
         (0, 1, YearMonth(2005, 8), YearMonth(2005, 6)),
         (0, 0, YearMonth(2005, 7), YearMonth(2005, 7)),
         (0, -1, YearMonth(2005, 6), YearMonth(2005, 8)),
-        (0, -2, YearMonth(2005, 5), YearMonth(2005, 8)),
+        (0, -2, YearMonth(2005, 5), YearMonth(2005, 9)),
         (0, -6, YearMonth(2005, 1), YearMonth(2006, 1)),
         (0, -11, YearMonth(2004, 8), YearMonth(2006, 6)),
         (-1, 0, YearMonth(2004, 7), YearMonth(2006, 7)),
