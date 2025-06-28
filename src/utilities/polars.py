@@ -39,7 +39,7 @@ from polars import (
     sum_horizontal,
     when,
 )
-from polars._typing import PolarsDataType, SchemaDict
+from polars._typing import PolarsDataType
 from polars.datatypes import DataType, DataTypeClass
 from polars.exceptions import (
     ColumnNotFoundError,
@@ -47,6 +47,7 @@ from polars.exceptions import (
     OutOfBoundsError,
     PolarsInefficientMapWarning,
 )
+from polars.schema import Schema
 from polars.testing import assert_frame_equal
 
 from utilities.dataclasses import _YieldFieldsInstance, yield_fields
@@ -1949,6 +1950,25 @@ def _replace_time_zone_one(
 
 ##
 
+
+def serialize_dataframe(df: DataFrame, /) -> bytes:
+    """Serialize a DataFrame."""
+    from utilities.orjson import serialize
+
+    rows = df.rows
+    decon = _deconstruct_schema(df.schema)
+    return serialize((rows, decon))
+
+
+def deserialize_dataframe(data: bytes, /) -> DataFrame:
+    """Serialize a DataFrame."""
+    from utilities.orjson import deserialize
+
+    rows, decon = deserialize(data)
+    schema = _reconstruct_schema(decon)
+    return DataFrame(data=rows, schema=schema, orient="row")
+
+
 type _Deconstructed = Mapping[str, _Deconstructed]
 type _DeconstructedInner = (
     str
@@ -1958,37 +1978,37 @@ type _DeconstructedInner = (
 )
 
 
-def _deconstruct_schema_dict(schema: SchemaDict, /) -> _Deconstructed:
-    return {k: _deconstruct_schema_dict_inner(v) for k, v in schema.items()}
+def _deconstruct_schema(schema: Schema, /) -> _Deconstructed:
+    return {k: _deconstruct_schema_inner(v) for k, v in schema.items()}
 
 
-def _deconstruct_schema_dict_inner(dtype: PolarsDataType, /) -> _DeconstructedInner:
+def _deconstruct_schema_inner(dtype: PolarsDataType, /) -> _DeconstructedInner:
     match dtype:
         case List() as list_:
-            return "List", _deconstruct_schema_dict_inner(list_.inner)
+            return "List", _deconstruct_schema_inner(list_.inner)
         case Struct() as struct:
-            inner = {f.name: f.dtype for f in struct.fields}
-            return "Struct", _deconstruct_schema_dict(inner)
+            inner = Schema({f.name: f.dtype for f in struct.fields})
+            return "Struct", _deconstruct_schema(inner)
         case Datetime() as datetime:
             return "Datetime", datetime.time_unit, datetime.time_zone
         case _:
             return repr(dtype)
 
 
-def _reconstruct_schema_dict(schema: _Deconstructed, /) -> SchemaDict:
-    return {k: _reconstruct_schema_dict_inner(v) for k, v in schema.items()}
+def _reconstruct_schema(schema: _Deconstructed, /) -> Schema:
+    return Schema({k: _reconstruct_schema_inner(v) for k, v in schema.items()})
 
 
-def _reconstruct_schema_dict_inner(obj: _DeconstructedInner, /) -> PolarsDataType:
+def _reconstruct_schema_inner(obj: _DeconstructedInner, /) -> PolarsDataType:
     match obj:
         case str() as name:
             return getattr(pl, name)
         case "Datetime", str() as time_unit, str() | None as time_zone:
             return Datetime(time_unit=cast("TimeUnit", time_unit), time_zone=time_zone)
         case "List", inner:
-            return List(_reconstruct_schema_dict_inner(inner))
+            return List(_reconstruct_schema_inner(inner))
         case "Struct", inner:
-            return Struct(_reconstruct_schema_dict(inner))
+            return Struct(_reconstruct_schema(inner))
         case _ as never:
             assert_never(never)
 

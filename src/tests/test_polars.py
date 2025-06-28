@@ -17,6 +17,7 @@ import polars as pl
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
+    SearchStrategy,
     booleans,
     builds,
     data,
@@ -53,6 +54,7 @@ from polars import (
 )
 from polars._typing import IntoExprColumn, SchemaDict
 from polars.exceptions import ComputeError
+from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 from whenever import TimeZoneNotFoundError
@@ -102,7 +104,7 @@ from utilities.polars import (
     _CheckPolarsDataFrameWidthError,
     _DataClassToDataFrameEmptyError,
     _DataClassToDataFrameNonUniqueError,
-    _deconstruct_schema_dict,
+    _deconstruct_schema,
     _finite_ewm_weights,
     _FiniteEWMWeightsError,
     _GetDataTypeOrSeriesTimeZoneNotDateTimeError,
@@ -113,7 +115,7 @@ from utilities.polars import (
     _InsertBetweenNonConsecutiveError,
     _IsNearEventAfterError,
     _IsNearEventBeforeError,
-    _reconstruct_schema_dict,
+    _reconstruct_schema,
     _ReifyExprsEmptyError,
     _ReifyExprsSeriesNonUniqueError,
     ac_halflife,
@@ -134,6 +136,7 @@ from utilities.polars import (
     cross_rolling_quantile,
     dataclass_to_dataframe,
     dataclass_to_schema,
+    deserialize_dataframe,
     drop_null_struct_series,
     ensure_data_type,
     ensure_expr_or_series,
@@ -158,6 +161,7 @@ from utilities.polars import (
     order_of_magnitude,
     reify_exprs,
     replace_time_zone,
+    serialize_dataframe,
     set_first_row_as_columns,
     struct_dtype,
     struct_from_dataclass,
@@ -2126,6 +2130,20 @@ class TestReplaceTimeZone:
 
 
 class TestSerializeAndDeserializeDataFrame:
+    @given(data=data())
+    @mark.parametrize(("dtype", "strategy"), [param(Int64, int64s())])
+    def test_main(
+        self, *, data: DataObject, dtype: PolarsDataType, strategy: SearchStrategy[Any]
+    ) -> None:
+        columns = data.draw(lists(text_ascii(min_size=1)))
+        rows = data.draw(
+            lists(fixed_dictionaries({c: strategy | none() for c in columns}))
+        )
+        schema = dict.fromkeys(columns, dtype)
+        df = DataFrame(data=rows, schema=schema, orient="row")
+        result = deserialize_dataframe(serialize_dataframe(df))
+        assert_frame_equal(df, result)
+
     @mark.parametrize(
         "dtype",
         [
@@ -2133,7 +2151,6 @@ class TestSerializeAndDeserializeDataFrame:
             param(Boolean()),
             param(Date),
             param(Date()),
-            param(Datetime),
             param(Datetime()),
             param(Datetime(time_zone=UTC.key)),
             param(Int64),
@@ -2146,9 +2163,9 @@ class TestSerializeAndDeserializeDataFrame:
             param(Struct({"inner": Int64})),
         ],
     )
-    def test_schema_dict(self, *, dtype: PolarsDataType) -> None:
-        schema: SchemaDict = {"column": dtype}
-        result = _reconstruct_schema_dict(_deconstruct_schema_dict(schema))
+    def test_schema(self, *, dtype: PolarsDataType) -> None:
+        schema = Schema({"column": dtype})
+        result = _reconstruct_schema(_deconstruct_schema(schema))
         assert result == schema
 
 
