@@ -284,8 +284,8 @@ def save_charts_as_pdf(
         for chart, temp_path in zip(charts, temp_paths, strict=True):
             save_chart(chart, temp_path)
         data = ensure_bytes(convert(*temp_paths))
-    with writer(path, overwrite=overwrite) as temp, temp.open(mode="wb") as fh:
-        _ = fh.write(data)
+    with writer(path, overwrite=overwrite) as temp:
+        _ = temp.write_bytes(data)
 
 
 ##

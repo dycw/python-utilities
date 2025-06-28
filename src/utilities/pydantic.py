@@ -23,8 +23,7 @@ class HashableBaseModel(BaseModel):
 def load_model[T: BaseModel](model: type[T], path: PathLike, /) -> T:
     path = Path(path)
     try:
-        with path.open() as fh:
-            return model.model_validate_json(fh.read())
+        return model.model_validate_json(path.read_text())
     except FileNotFoundError:
         raise _LoadModelFileNotFoundError(model=model, path=path) from None
     except IsADirectoryError:  # skipif-not-windows
@@ -52,8 +51,8 @@ class _LoadModelIsADirectoryError(LoadModelError):
 
 
 def save_model(model: BaseModel, path: PathLike, /, *, overwrite: bool = False) -> None:
-    with writer(path, overwrite=overwrite) as temp, temp.open(mode="w") as fh:
-        _ = fh.write(model.model_dump_json())
+    with writer(path, overwrite=overwrite) as temp:
+        _ = temp.write_text(model.model_dump_json())
 
 
 __all__ = ["HashableBaseModel", "LoadModelError", "load_model", "save_model"]

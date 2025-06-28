@@ -25,11 +25,8 @@ if TYPE_CHECKING:
 def save_chart(chart: Chart, path: PathLike, /, *, overwrite: bool = False) -> None:
     """Atomically save a chart to disk."""
     chart.show(block=False)  # pragma: no cover
-    with (  # pragma: no cover
-        writer(path, overwrite=overwrite) as temp,
-        temp.open(mode="wb") as fh,
-    ):
-        _ = fh.write(chart.screenshot())
+    with writer(path, overwrite=overwrite) as temp:  # pragma: no cover
+        _ = temp.write_bytes(chart.screenshot())
     chart.exit()  # pragma: no cover
 
 
