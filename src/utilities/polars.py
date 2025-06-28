@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import enum
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import asdict, dataclass
@@ -39,6 +39,7 @@ from polars import (
     sum_horizontal,
     when,
 )
+from polars._typing import PolarsDataType, SchemaDict
 from polars.datatypes import DataType, DataTypeClass
 from polars.exceptions import (
     ColumnNotFoundError,
@@ -98,7 +99,7 @@ from utilities.warnings import suppress_warnings
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+    from collections.abc import Callable, Iterable, Iterator, Sequence
     from collections.abc import Set as AbstractSet
 
     from polars._typing import (
@@ -1944,6 +1945,38 @@ def _replace_time_zone_one(
         time_zone_use = None if time_zone is None else get_time_zone_name(time_zone)
         return sr.dt.replace_time_zone(time_zone_use)
     return sr
+
+
+##
+
+
+def _deconstruct_schema_dict(schema: SchemaDict, /) -> StrMapping:
+    return {k: _deconstruct_schema_dict_inner(v) for k, v in schema.items()}
+
+
+def _deconstruct_schema_dict_inner(dtype: PolarsDataType, /) -> str | StrMapping:
+    if dtype.is_nested():
+        zzz
+    return repr(dtype)
+    assert 0, type(dtype)
+    return {k}
+
+
+def _reconstruct_schema_dict(schema: StrMapping, /) -> SchemaDict:
+    return {k: _reconstruct_schema_dict_inner(v) for k, v in schema.items()}
+
+
+def _reconstruct_schema_dict_inner(
+    dtype: str | StrMapping, /
+) -> PolarsDataType | StrMapping:
+    match dtype:
+        case str() as name:
+            return getattr(pl, name)
+        case Mapping() as mapping:
+            assert 0, mapping
+        case _ as never:
+            assert_never(never)
+    return None
 
 
 ##

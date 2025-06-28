@@ -16,6 +16,7 @@ from hypothesis.strategies import (
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, raises
 
+from utilities.errors import ImpossibleCaseError
 from utilities.hypothesis import int32s, numbers, pairs
 from utilities.math import (
     MAX_INT8,

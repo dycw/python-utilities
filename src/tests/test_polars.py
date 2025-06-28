@@ -14,7 +14,7 @@ from uuid import UUID, uuid4
 import hypothesis.strategies
 import numpy as np
 import polars as pl
-from hypothesis import given
+from hypothesis import Phase, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     booleans,
@@ -54,10 +54,11 @@ from polars import (
 from polars._typing import IntoExprColumn, SchemaDict
 from polars.exceptions import ComputeError
 from polars.testing import assert_frame_equal, assert_series_equal
-from pytest import raises
+from pytest import mark, param, raises
 from whenever import TimeZoneNotFoundError
 
 import utilities.polars
+from utilities.contextvars import set_global_breakpoint
 from utilities.hypothesis import (
     assume_does_not_raise,
     int64s,
@@ -102,6 +103,7 @@ from utilities.polars import (
     _CheckPolarsDataFrameWidthError,
     _DataClassToDataFrameEmptyError,
     _DataClassToDataFrameNonUniqueError,
+    _deconstruct_schema_dict,
     _finite_ewm_weights,
     _FiniteEWMWeightsError,
     _GetDataTypeOrSeriesTimeZoneNotDateTimeError,
@@ -112,6 +114,7 @@ from utilities.polars import (
     _InsertBetweenNonConsecutiveError,
     _IsNearEventAfterError,
     _IsNearEventBeforeError,
+    _reconstruct_schema_dict,
     _ReifyExprsEmptyError,
     _ReifyExprsSeriesNonUniqueError,
     ac_halflife,
@@ -2121,6 +2124,29 @@ class TestReplaceTimeZone:
         series = Series(name="series", values=[True], dtype=Boolean)
         result = replace_time_zone(series, time_zone=None)
         assert_series_equal(result, series)
+
+
+class TestSerializeAndDeserializeDataFrame:
+    @mark.parametrize(
+        "dtype",
+        [
+            param(Boolean),
+            param(Boolean()),
+            param(Date),
+            param(Date()),
+            param(Int64),
+            param(Int64()),
+            param(Float64),
+            param(Float64()),
+            param(Datetime),
+            param(Datetime()),
+            param(Datetime(time_zone=UTC.key)),
+        ],
+    )
+    def test_schema_dict(self, *, dtype: PolarsDataType | Schemaudict) -> None:
+        schema = {"column": dtype}
+        result = _reconstruct_schema_dict(_deconstruct_schema_dict(schema))
+        assert result == schema
 
 
 class TestSetFirstRowAsColumns:
