@@ -4,6 +4,7 @@ from enum import Enum, auto
 from functools import partial
 from typing import Any
 
+import hypothesis.strategies
 from hypothesis.strategies import (
     SearchStrategy,
     booleans,
@@ -81,6 +82,8 @@ def objects(
     base = (
         booleans()
         | dates()
+        | hypothesis.strategies.dates()
+        | hypothesis.strategies.datetimes()
         | floats(allow_nan=floats_allow_nan)
         | (int64s() if parsable else integers())
         | month_days()
@@ -90,6 +93,7 @@ def objects(
         | text_printable().filter(lambda x: not x.startswith("["))
         | time_deltas()
         | times()
+        | hypothesis.strategies.times()
         | uuids()
         | versions()
         | year_months()

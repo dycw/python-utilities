@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import suppress
@@ -77,6 +78,10 @@ class _Prefixes(Enum):
     none = "none"
     path = "p"
     plain_date_time = "pd"
+    py_date = "!d"
+    py_plain_date_time = "!pd"
+    py_time = "!ti"
+    py_zoned_date_time = "!zd"
     set_ = "s"
     time = "ti"
     time_delta = "td"
@@ -198,6 +203,22 @@ def _pre_process(
             return f"[{_Prefixes.year_month.value}]{year_month}"
         case ZonedDateTime() as datetime:
             return f"[{_Prefixes.zoned_date_time.value}]{datetime}"
+        case dt.datetime() as py_datetime:
+            match py_datetime.tzinfo:
+                case None:
+                    datetime = PlainDateTime.from_py_datetime(py_datetime)
+                    return f"[{_Prefixes.py_plain_date_time.value}]{datetime}"
+                case ZoneInfo():
+                    datetime = ZonedDateTime.from_py_datetime(py_datetime)
+                    return f"[{_Prefixes.py_plain_date_time.value}]{datetime}"
+                case _:
+                    raise NotImplementedError  # pragma: no cover
+        case dt.date() as py_date:
+            date = Date.from_py_date(py_date)
+            return f"[{_Prefixes.py_date.value}]{date}"
+        case dt.time() as py_time:
+            time = Time.from_py_time(py_time)
+            return f"[{_Prefixes.py_time.value}]{time}"
         # contains
         case Dataclass() as dataclass:
             asdict = dataclass_to_dict(
@@ -265,6 +286,7 @@ def _pre_process(
                 qualname=type(obj).__qualname__, repr=repr(obj), str=str(obj)
             )
             return pre(unserializable)
+    return None
 
 
 def _pre_process_container(
@@ -351,6 +373,10 @@ def deserialize(
     _NONE_PATTERN,
     _PATH_PATTERN,
     _PLAIN_DATE_TIME_PATTERN,
+    _PY_DATE_PATTERN,
+    _PY_PLAIN_DATE_TIME_PATTERN,
+    _PY_TIME_PATTERN,
+    _PY_ZONED_DATE_TIME_PATTERN,
     _TIME_PATTERN,
     _TIME_DELTA_PATTERN,
     _UUID_PATTERN,
@@ -368,6 +394,10 @@ def deserialize(
         _Prefixes.none,
         _Prefixes.path,
         _Prefixes.plain_date_time,
+        _Prefixes.py_date,
+        _Prefixes.py_plain_date_time,
+        _Prefixes.py_time,
+        _Prefixes.py_zoned_date_time,
         _Prefixes.time,
         _Prefixes.time_delta,
         _Prefixes.uuid,
@@ -431,6 +461,14 @@ def _object_hook(
                 return Path(match.group(1))
             if match := _PLAIN_DATE_TIME_PATTERN.search(text):
                 return PlainDateTime.parse_common_iso(match.group(1))
+            if match := _PY_DATE_PATTERN.search(text):
+                return Date.parse_common_iso(match.group(1)).py_date()
+            if match := _PY_PLAIN_DATE_TIME_PATTERN.search(text):
+                return PlainDateTime.parse_common_iso(match.group(1)).py_datetime()
+            if match := _PY_TIME_PATTERN.search(text):
+                return Time.parse_common_iso(match.group(1)).py_time()
+            if match := _PY_ZONED_DATE_TIME_PATTERN.search(text):
+                return ZonedDateTime.parse_common_iso(match.group(1)).py_datetime()
             if match := _TIME_PATTERN.search(text):
                 return Time.parse_common_iso(match.group(1))
             if match := _TIME_DELTA_PATTERN.search(text):
