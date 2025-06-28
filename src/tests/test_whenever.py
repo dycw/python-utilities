@@ -94,6 +94,7 @@ from utilities.whenever import (
     to_local_plain,
     to_months,
     to_nanos,
+    to_py_date_or_date_time,
     to_py_time_delta,
     to_time_delta,
     to_zoned_date_time,
@@ -608,6 +609,28 @@ class TestToMonths:
             _ = to_months(delta)
 
 
+class TestToPyDateOrDateTime:
+    @mark.parametrize(
+        ("date_or_date_time", "expected"),
+        [
+            param(Date(2000, 1, 1), dt.date(2000, 1, 1)),
+            param(
+                ZonedDateTime(2000, 1, 1, tz=UTC.key),
+                dt.datetime(2000, 1, 1, tzinfo=UTC),
+            ),
+            param(None, None),
+        ],
+    )
+    def test_main(
+        self,
+        *,
+        date_or_date_time: Date | ZonedDateTime | None,
+        expected: dt.date | None,
+    ) -> None:
+        result = to_py_date_or_date_time(date_or_date_time)
+        assert result == expected
+
+
 class TestToPyTimeDelta:
     @mark.parametrize(
         ("delta", "expected"),
@@ -618,10 +641,14 @@ class TestToPyTimeDelta:
                 DateTimeDelta(days=1, microseconds=1),
                 dt.timedelta(days=1, microseconds=1),
             ),
+            param(None, None),
         ],
     )
     def test_main(
-        self, *, delta: DateDelta | TimeDelta | DateTimeDelta, expected: dt.timedelta
+        self,
+        *,
+        delta: DateDelta | TimeDelta | DateTimeDelta | None,
+        expected: dt.timedelta | None,
     ) -> None:
         result = to_py_time_delta(delta)
         assert result == expected
