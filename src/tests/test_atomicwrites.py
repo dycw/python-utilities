@@ -6,8 +6,8 @@ from itertools import pairwise
 from typing import TYPE_CHECKING
 
 from hypothesis import given
-from hypothesis.strategies import booleans, sampled_from
-from pytest import raises
+from hypothesis.strategies import booleans
+from pytest import mark, param, raises
 
 from utilities.atomicwrites import (
     _MoveDirectoryExistsError,
@@ -27,13 +27,13 @@ if TYPE_CHECKING:
 
 
 class TestMove:
-    @given(root=temp_paths(), overwrite=booleans())
+    @mark.parametrize("overwrite", [param(True), param(False)])
     def test_file_destination_does_not_exist(
-        self, *, root: Path, overwrite: bool
+        self, *, tmp_path: Path, overwrite: bool
     ) -> None:
-        source = root.joinpath("source")
+        source = tmp_path.joinpath("source")
         _ = source.write_text("text")
-        destination = root.joinpath("destination")
+        destination = tmp_path.joinpath("destination")
         move(source, destination, overwrite=overwrite)
         assert destination.is_file()
         assert destination.read_text() == "text"
@@ -134,44 +134,40 @@ class TestMoveMany:
     def test_many(self, *, root: Path) -> None:
         n = 5
         files = [root.joinpath(f"file{i}") for i in range(n + 1)]
-        for i, file in enumerate(files):
+        for i, file in enumerate(files[:-1]):
             _ = file.write_text(str(i))
         move_many(*pairwise(files), overwrite=True)
-        for i, file in enumerate(files):
+        for i, file in enumerate(files[1:], start=0):
             assert file.read_text() == str(i - 1)
 
 
 class TestWriter:
-    @given(root=temp_paths())
-    def test_main(self, *, root: Path) -> None:
-        path = root.joinpath("file.txt")
+    def test_main(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("file.txt")
         with writer(path) as temp:
             _ = temp.write_text("contents")
         assert path.is_file()
         assert path.read_text() == "contents"
 
-    @given(root=temp_paths())
-    def test_gzip(self, *, root: Path) -> None:
-        path = root.joinpath("file.txt")
+    def test_gzip(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("file.txt")
         with writer(path, compress=True) as temp:
             _ = temp.write_bytes(b"contents")
         assert path.is_file()
         with gzip.open(path) as gz:
             assert gz.read() == b"contents"
 
-    @given(root=temp_paths())
-    def test_error_temporary_path_empty(self, *, root: Path) -> None:
+    def test_error_temporary_path_empty(self, *, tmp_path: Path) -> None:
         with (
             raises(
                 _WriterTemporaryPathEmptyError, match="Temporary path '.*' is empty"
             ),
-            writer(root),
+            writer(tmp_path),
         ):
             pass
 
-    @given(root=temp_paths())
-    def test_error_file_exists(self, *, root: Path) -> None:
-        path = root.joinpath("file.txt")
+    def test_error_file_exists(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("file.txt")
         path.touch()
         with (
             raises(
@@ -183,9 +179,8 @@ class TestWriter:
         ):
             _ = fh.write("new contents")
 
-    @given(root=temp_paths())
-    def test_error_directory_exists(self, *, root: Path) -> None:
-        path = root.joinpath("dir")
+    def test_error_directory_exists(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("dir")
         path.mkdir()
         with (
             raises(
@@ -196,15 +191,14 @@ class TestWriter:
         ):
             temp.mkdir()
 
-    @given(
-        root=temp_paths(),
-        case=sampled_from([(KeyboardInterrupt, False), (ValueError, True)]),
+    @mark.parametrize(
+        ("error", "expected"),
+        [param(KeyboardInterrupt, False), param(ValueError, True)],
     )
     def test_error_during_write(
-        self, *, root: Path, case: tuple[type[Exception], bool]
+        self, *, tmp_path: Path, error: type[Exception], expected: bool
     ) -> None:
-        error, expected = case
-        path = root.joinpath("file.txt")
+        path = tmp_path.joinpath("file.txt")
 
         def raise_error() -> None:
             raise error
@@ -212,5 +206,5 @@ class TestWriter:
         with writer(path) as temp1, temp1.open(mode="w") as fh, suppress(Exception):
             _ = fh.write("contents")
             raise_error()
-        is_non_empty = len(list(root.iterdir())) >= 1
+        is_non_empty = len(list(tmp_path.iterdir())) >= 1
         assert is_non_empty is expected
