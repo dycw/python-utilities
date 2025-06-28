@@ -2144,6 +2144,7 @@ class TestSerializeAndDeserializeDataFrame:
         result = deserialize_dataframe(serialize_dataframe(df))
         assert_frame_equal(df, result)
 
+    @mark.only
     @mark.parametrize(
         "dtype",
         [

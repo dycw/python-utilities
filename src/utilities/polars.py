@@ -1955,7 +1955,7 @@ def serialize_dataframe(df: DataFrame, /) -> bytes:
     """Serialize a DataFrame."""
     from utilities.orjson import serialize
 
-    rows = df.rows
+    rows = df.rows()
     decon = _deconstruct_schema(df.schema)
     return serialize((rows, decon))
 
@@ -1969,17 +1969,17 @@ def deserialize_dataframe(data: bytes, /) -> DataFrame:
     return DataFrame(data=rows, schema=schema, orient="row")
 
 
-type _Deconstructed = Mapping[str, _Deconstructed]
+type _Deconstructed = Sequence[tuple[str, _DeconstructedInner]]
 type _DeconstructedInner = (
     str
     | tuple[Literal["Datetime"], str, str | None]
     | tuple[Literal["List"], _DeconstructedInner]
-    | tuple[Literal["Struct"], StrMapping]
+    | tuple[Literal["Struct"], _Deconstructed]
 )
 
 
 def _deconstruct_schema(schema: Schema, /) -> _Deconstructed:
-    return {k: _deconstruct_schema_inner(v) for k, v in schema.items()}
+    return [(k, _deconstruct_schema_inner(v)) for k, v in schema.items()]
 
 
 def _deconstruct_schema_inner(dtype: PolarsDataType, /) -> _DeconstructedInner:
@@ -1996,7 +1996,7 @@ def _deconstruct_schema_inner(dtype: PolarsDataType, /) -> _DeconstructedInner:
 
 
 def _reconstruct_schema(schema: _Deconstructed, /) -> Schema:
-    return Schema({k: _reconstruct_schema_inner(v) for k, v in schema.items()})
+    return Schema({k: _reconstruct_schema_inner(v) for k, v in schema})
 
 
 def _reconstruct_schema_inner(obj: _DeconstructedInner, /) -> PolarsDataType:
