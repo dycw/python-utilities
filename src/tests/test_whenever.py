@@ -119,7 +119,7 @@ class TestAddYearMonth:
             param(0, 0, YearMonth(2005, 7)),
             param(0, -1, YearMonth(2005, 6)),
             param(0, -2, YearMonth(2005, 5)),
-            param(0, -6, YearMonth(2004, 12)),
+            param(0, -6, YearMonth(2005, 12)),
             param(0, -11, YearMonth(2004, 8)),
             param(-1, 0, YearMonth(2004, 7)),
         ],
