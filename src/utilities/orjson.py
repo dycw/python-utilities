@@ -888,9 +888,7 @@ class GetLogRecordsOutput:
 
     @cached_property
     def dataframe(self) -> Any:
-        from polars import DataFrame, Object, String, UInt64
-
-        from utilities.polars import zoned_datetime
+        from polars import DataFrame, Datetime, Object, String, UInt64
 
         records = [
             replace(
@@ -918,7 +916,7 @@ class GetLogRecordsOutput:
                 "level": UInt64,
                 "path_name": String,
                 "line_num": UInt64,
-                "datetime": zoned_datetime(time_zone=time_zone),
+                "datetime": Datetime(time_zone=time_zone),
                 "func_name": String,
                 "stack_info": String,
                 "extra": Object,
