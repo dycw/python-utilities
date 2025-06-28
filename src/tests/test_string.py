@@ -22,9 +22,8 @@ class TestSubstituteEnviron:
 
     @given(root=temp_paths(), key=text_ascii(), value=text_ascii())
     def test_file(self, *, root: Path, key: str, value: str) -> None:
-        path = root.joinpath("file.text")
-        with path.open(mode="w") as fh:
-            _ = fh.write(self.template)
+        path = root.joinpath("file.txt")
+        _ = path.write_text(self.template)
         self._run_test(path, key, value)
 
     @given(key=text_ascii(), value=text_ascii())

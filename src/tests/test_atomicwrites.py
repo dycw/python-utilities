@@ -164,9 +164,8 @@ class TestWriter:
                 match="Cannot write to '.*' as file already exists",
             ),
             writer(path) as temp,
-            temp.open(mode="w") as fh,
         ):
-            _ = fh.write("new contents")
+            _ = temp.write_text("new contents")
 
     def test_error_directory_exists(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("dir")
@@ -192,8 +191,8 @@ class TestWriter:
         def raise_error() -> None:
             raise error
 
-        with writer(path) as temp1, temp1.open(mode="w") as fh, suppress(Exception):
-            _ = fh.write("contents")
+        with writer(path) as temp, suppress(Exception):
+            _ = temp.write_text("contents")
             raise_error()
         is_non_empty = len(list(tmp_path.iterdir())) >= 1
         assert is_non_empty is expected

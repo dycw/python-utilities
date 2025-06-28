@@ -41,8 +41,7 @@ class TestLoadSettings:
         value_file: str,
         use_env: bool,
     ) -> None:
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write(f"{key_file} = {value_file}\n")
+        _ = root.joinpath(".env").write_text(f"{key_file} = {value_file}\n")
 
         @dataclass(kw_only=True, slots=True)
         class SettingsLower:
@@ -78,10 +77,7 @@ class TestLoadSettings:
         class Settings:
             key: str
 
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write(f"key = {value}\n")
-            _ = fh.write(f"other = {value}\n")
-
+        _ = root.joinpath(".env").write_text(f"key = {value}\nother = {value}\n")
         settings = load_settings(Settings, path=root)
         expected = Settings(key=value)
         assert settings == expected
@@ -103,10 +99,7 @@ class TestLoadSettings:
         class Settings:
             key: str
 
-        with root.joinpath(".env").open(mode="w") as fh:
-            _ = fh.write(f"key = {value}\n")
-            _ = fh.write(f"KEY = {value}\n")
-
+        _ = root.joinpath(".env").write_text(f"key = {value}\nKEY = {value}\n")
         with raises(
             _LoadSettingsDuplicateKeysError,
             match=re.compile(

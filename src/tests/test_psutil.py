@@ -45,6 +45,5 @@ class TestMemoryMonitorService:
         async with service.with_auto_start:
             ...
         assert path.exists()
-        with path.open() as fh:
-            lines = fh.readlines()
+        lines = path.read_text().splitlines()
         assert len(lines) == approx(10, rel=0.5)
