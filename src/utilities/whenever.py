@@ -126,16 +126,10 @@ YEAR = DateDelta(years=1)
 ##
 
 
-def add_year_month(
-    x: YearMonth, /, *, years: int | None = None, months: int | None
-) -> YearMonth:
+def add_year_month(x: YearMonth, /, *, years: int = 0, months: int = 0) -> YearMonth:
     """Add to a year-month."""
-    x_date = x.on_day(1)
-    if years is not None:
-        x_date += DateDelta(years=years)
-    if months is not None:
-        x_date += DateDelta(months=months)
-    return x_date.year_month()
+    y = x.on_day(1) + DateDelta(years=years, months=months)
+    return y.year_month()
 
 
 ##
