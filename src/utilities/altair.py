@@ -267,7 +267,7 @@ def save_chart(
 ) -> None:
     """Atomically save a chart to disk."""
     with writer(path, overwrite=overwrite) as temp:
-        chart.save(str(temp), format="png")
+        chart.save(temp, format="png")
 
 
 ##
