@@ -211,8 +211,8 @@ def _pre_process(
                 case ZoneInfo():
                     datetime = ZonedDateTime.from_py_datetime(py_datetime)
                     return f"[{_Prefixes.py_zoned_date_time.value}]{datetime}"
-                case _:
-                    raise NotImplementedError  # pragma: no cover
+                case _:  # pragma: no cover
+                    raise NotImplementedError
         case dt.date() as py_date:
             date = Date.from_py_date(py_date)
             return f"[{_Prefixes.py_date.value}]{date}"
