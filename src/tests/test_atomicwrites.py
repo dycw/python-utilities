@@ -5,8 +5,6 @@ from contextlib import suppress
 from itertools import pairwise
 from typing import TYPE_CHECKING
 
-from hypothesis import given
-from hypothesis.strategies import booleans
 from pytest import mark, param, raises
 
 from utilities.atomicwrites import (
@@ -20,7 +18,6 @@ from utilities.atomicwrites import (
     move_many,
     writer,
 )
-from utilities.hypothesis import settings_with_reduced_examples, temp_paths
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -38,55 +35,51 @@ class TestMove:
         assert destination.is_file()
         assert destination.read_text() == "text"
 
-    @given(root=temp_paths())
-    def test_file_destination_file_exists(self, *, root: Path) -> None:
-        source = root.joinpath("source")
+    def test_file_destination_file_exists(self, *, tmp_path: Path) -> None:
+        source = tmp_path.joinpath("source")
         _ = source.write_text("source")
-        destination = root.joinpath("destination")
+        destination = tmp_path.joinpath("destination")
         _ = destination.write_text("destination")
         move(source, destination, overwrite=True)
         assert destination.is_file()
         assert destination.read_text() == "source"
 
-    @given(root=temp_paths())
-    def test_file_destination_directory_exists(self, *, root: Path) -> None:
-        source = root.joinpath("source")
+    def test_file_destination_directory_exists(self, *, tmp_path: Path) -> None:
+        source = tmp_path.joinpath("source")
         _ = source.write_text("source")
-        destination = root.joinpath("destination")
+        destination = tmp_path.joinpath("destination")
         destination.mkdir()
         move(source, destination, overwrite=True)
         assert destination.is_file()
         assert destination.read_text() == "source"
 
-    @given(root=temp_paths(), overwrite=booleans())
+    @mark.parametrize("overwrite", [param(True), param(False)])
     def test_directory_destination_does_not_exist(
-        self, *, root: Path, overwrite: bool
+        self, *, tmp_path: Path, overwrite: bool
     ) -> None:
-        source = root.joinpath("source")
+        source = tmp_path.joinpath("source")
         source.mkdir()
         source.joinpath("file").touch()
-        destination = root.joinpath("destination")
+        destination = tmp_path.joinpath("destination")
         move(source, destination, overwrite=overwrite)
         assert destination.is_dir()
         assert len(list(destination.iterdir())) == 1
 
-    @given(root=temp_paths())
-    def test_directory_destination_file_exists(self, *, root: Path) -> None:
-        source = root.joinpath("source")
+    def test_directory_destination_file_exists(self, *, tmp_path: Path) -> None:
+        source = tmp_path.joinpath("source")
         source.mkdir()
         source.joinpath("file").touch()
-        destination = root.joinpath("destination")
+        destination = tmp_path.joinpath("destination")
         destination.touch()
         move(source, destination, overwrite=True)
         assert destination.is_dir()
         assert len(list(destination.iterdir())) == 1
 
-    @given(root=temp_paths())
-    def test_directory_destination_directory_exists(self, *, root: Path) -> None:
-        source = root.joinpath("source")
+    def test_directory_destination_directory_exists(self, *, tmp_path: Path) -> None:
+        source = tmp_path.joinpath("source")
         source.mkdir()
         source.joinpath("file").touch()
-        destination = root.joinpath("destination")
+        destination = tmp_path.joinpath("destination")
         destination.mkdir()
         for i in range(2):
             destination.joinpath(f"file{i}").touch()
@@ -94,20 +87,19 @@ class TestMove:
         assert destination.is_dir()
         assert len(list(destination.iterdir())) == 1
 
-    @given(root=temp_paths(), overwrite=booleans())
-    def test_error_source_not_found(self, *, root: Path, overwrite: bool) -> None:
+    @mark.parametrize("overwrite", [param(True), param(False)])
+    def test_error_source_not_found(self, *, tmp_path: Path, overwrite: bool) -> None:
         with raises(_MoveSourceNotFoundError, match="Source '.*' does not exist"):
             move(
-                root.joinpath("source"),
-                root.joinpath("destination"),
+                tmp_path.joinpath("source"),
+                tmp_path.joinpath("destination"),
                 overwrite=overwrite,
             )
 
-    @given(root=temp_paths())
-    def test_error_file_exists(self, *, root: Path) -> None:
-        source = root.joinpath("source")
+    def test_error_file_exists(self, *, tmp_path: Path) -> None:
+        source = tmp_path.joinpath("source")
         source.touch()
-        destination = root.joinpath("destination")
+        destination = tmp_path.joinpath("destination")
         destination.touch()
         with raises(
             _MoveFileExistsError,
@@ -115,11 +107,10 @@ class TestMove:
         ):
             move(source, destination)
 
-    @given(root=temp_paths())
-    def test_error_directory_exists(self, *, root: Path) -> None:
-        source = root.joinpath("source")
+    def test_error_directory_exists(self, *, tmp_path: Path) -> None:
+        source = tmp_path.joinpath("source")
         source.mkdir()
-        destination = root.joinpath("destination")
+        destination = tmp_path.joinpath("destination")
         destination.touch()
         with raises(
             _MoveDirectoryExistsError,
@@ -129,15 +120,13 @@ class TestMove:
 
 
 class TestMoveMany:
-    @given(root=temp_paths())
-    @settings_with_reduced_examples()
-    def test_many(self, *, root: Path) -> None:
+    def test_many(self, *, tmp_path: Path) -> None:
         n = 5
-        files = [root.joinpath(f"file{i}") for i in range(n + 1)]
+        files = [tmp_path.joinpath(f"file{i}") for i in range(n + 2)]
         for i, file in enumerate(files[:-1]):
             _ = file.write_text(str(i))
         move_many(*pairwise(files), overwrite=True)
-        for i, file in enumerate(files[1:], start=0):
+        for i, file in enumerate(files[1:], start=1):
             assert file.read_text() == str(i - 1)
 
 
