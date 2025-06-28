@@ -88,6 +88,10 @@ class Dataclass(Protocol):
     __dataclass_fields__: ClassVar[dict[str, Any]]
 
 
+# datetime
+type MonthInt = Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+
 # enum
 type EnumLike[E: Enum] = MaybeStr[E]
 
@@ -270,6 +274,7 @@ __all__ = [
     "MaybeStr",
     "MaybeType",
     "MonthDayLike",
+    "MonthInt",
     "Number",
     "OpenMode",
     "OptExcInfo",
