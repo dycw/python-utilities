@@ -1949,20 +1949,20 @@ def _replace_time_zone_one(
 
 ##
 
-
-type _Deconstructed = (
+type _Deconstructed = Mapping[str, _Deconstructed]
+type _DeconstructedInner = (
     str
     | tuple[Literal["Datetime"], str, str | None]
-    | tuple[Literal["List"], _Deconstructed]
+    | tuple[Literal["List"], _DeconstructedInner]
     | tuple[Literal["Struct"], StrMapping]
 )
 
 
-def _deconstruct_schema_dict(schema: SchemaDict, /) -> StrMapping:
+def _deconstruct_schema_dict(schema: SchemaDict, /) -> _Deconstructed:
     return {k: _deconstruct_schema_dict_inner(v) for k, v in schema.items()}
 
 
-def _deconstruct_schema_dict_inner(dtype: PolarsDataType, /) -> _Deconstructed:
+def _deconstruct_schema_dict_inner(dtype: PolarsDataType, /) -> _DeconstructedInner:
     match dtype:
         case List() as list_:
             return "List", _deconstruct_schema_dict_inner(list_.inner)
@@ -1975,11 +1975,11 @@ def _deconstruct_schema_dict_inner(dtype: PolarsDataType, /) -> _Deconstructed:
             return repr(dtype)
 
 
-def _reconstruct_schema_dict(schema: StrMapping, /) -> SchemaDict:
+def _reconstruct_schema_dict(schema: _Deconstructed, /) -> SchemaDict:
     return {k: _reconstruct_schema_dict_inner(v) for k, v in schema.items()}
 
 
-def _reconstruct_schema_dict_inner(obj: _Deconstructed, /) -> PolarsDataType:
+def _reconstruct_schema_dict_inner(obj: _DeconstructedInner, /) -> PolarsDataType:
     match obj:
         case str() as name:
             return getattr(pl, name)
