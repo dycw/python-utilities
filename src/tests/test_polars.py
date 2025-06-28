@@ -17,11 +17,13 @@ import polars as pl
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
+    SearchStrategy,
     booleans,
     builds,
     data,
     fixed_dictionaries,
     floats,
+    just,
     lists,
     none,
     sampled_from,
@@ -53,6 +55,7 @@ from polars import (
 )
 from polars._typing import IntoExprColumn, SchemaDict
 from polars.exceptions import ComputeError
+from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import raises
 from whenever import TimeZoneNotFoundError
@@ -60,6 +63,7 @@ from whenever import TimeZoneNotFoundError
 import utilities.polars
 from utilities.hypothesis import (
     assume_does_not_raise,
+    float64s,
     int64s,
     pairs,
     text_ascii,
@@ -102,6 +106,7 @@ from utilities.polars import (
     _CheckPolarsDataFrameWidthError,
     _DataClassToDataFrameEmptyError,
     _DataClassToDataFrameNonUniqueError,
+    _deconstruct_schema,
     _finite_ewm_weights,
     _FiniteEWMWeightsError,
     _GetDataTypeOrSeriesTimeZoneNotDateTimeError,
@@ -112,6 +117,7 @@ from utilities.polars import (
     _InsertBetweenNonConsecutiveError,
     _IsNearEventAfterError,
     _IsNearEventBeforeError,
+    _reconstruct_schema,
     _ReifyExprsEmptyError,
     _ReifyExprsSeriesNonUniqueError,
     ac_halflife,
@@ -132,6 +138,7 @@ from utilities.polars import (
     cross_rolling_quantile,
     dataclass_to_dataframe,
     dataclass_to_schema,
+    deserialize_dataframe,
     drop_null_struct_series,
     ensure_data_type,
     ensure_expr_or_series,
@@ -156,6 +163,7 @@ from utilities.polars import (
     order_of_magnitude,
     reify_exprs,
     replace_time_zone,
+    serialize_dataframe,
     set_first_row_as_columns,
     struct_dtype,
     struct_from_dataclass,
@@ -2121,6 +2129,48 @@ class TestReplaceTimeZone:
         series = Series(name="series", values=[True], dtype=Boolean)
         result = replace_time_zone(series, time_zone=None)
         assert_series_equal(result, series)
+
+
+class TestSerializeAndDeserializeDataFrame:
+    cases: ClassVar[list[tuple[PolarsDataType, SearchStrategy[Any]]]] = [
+        (Boolean, booleans()),
+        (Boolean(), booleans()),
+        (Date, hypothesis.strategies.dates()),
+        (Date(), hypothesis.strategies.dates()),
+        (Datetime(), hypothesis.strategies.datetimes()),
+        (
+            Datetime(time_zone=UTC.key),
+            hypothesis.strategies.datetimes(timezones=just(UTC)),
+        ),
+        (Int64, int64s()),
+        (Int64(), int64s()),
+        (Float64, float64s()),
+        (Float64(), float64s()),
+        (String, text_ascii()),
+        (String(), text_ascii()),
+        (List(Int64), lists(int64s())),
+        (Struct({"inner": Int64}), fixed_dictionaries({"inner": int64s()})),
+    ]
+
+    @given(data=data(), case=sampled_from(cases))
+    def test_main(
+        self, *, data: DataObject, case: tuple[PolarsDataType, SearchStrategy[Any]]
+    ) -> None:
+        dtype, strategy = case
+        columns = data.draw(lists(text_ascii(min_size=1)))
+        rows = data.draw(
+            lists(fixed_dictionaries({c: strategy | none() for c in columns}))
+        )
+        schema = dict.fromkeys(columns, dtype)
+        df = DataFrame(data=rows, schema=schema, orient="row")
+        result = deserialize_dataframe(serialize_dataframe(df))
+        assert_frame_equal(df, result)
+
+    @given(dtype=sampled_from([dtype for dtype, _ in cases]))
+    def test_schema(self, *, dtype: PolarsDataType) -> None:
+        schema = Schema({"column": dtype})
+        result = _reconstruct_schema(_deconstruct_schema(schema))
+        assert result == schema
 
 
 class TestSetFirstRowAsColumns:
