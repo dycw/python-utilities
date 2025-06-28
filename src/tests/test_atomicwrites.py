@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import itertools
+import gzip
 from contextlib import suppress
+from itertools import pairwise
 from typing import TYPE_CHECKING
 
 from hypothesis import given
@@ -24,8 +25,6 @@ from utilities.hypothesis import settings_with_reduced_examples, temp_paths
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from utilities.types import OpenMode
-
 
 class TestMove:
     @given(root=temp_paths(), overwrite=booleans())
@@ -33,38 +32,31 @@ class TestMove:
         self, *, root: Path, overwrite: bool
     ) -> None:
         source = root.joinpath("source")
-        with source.open(mode="w") as fh:
-            _ = fh.write("text")
+        _ = source.write_text("text")
         destination = root.joinpath("destination")
         move(source, destination, overwrite=overwrite)
         assert destination.is_file()
-        with destination.open() as fh:
-            assert fh.read() == "text"
+        assert destination.read_text() == "text"
 
     @given(root=temp_paths())
     def test_file_destination_file_exists(self, *, root: Path) -> None:
         source = root.joinpath("source")
-        with source.open(mode="w") as fh:
-            _ = fh.write("source")
+        _ = source.write_text("source")
         destination = root.joinpath("destination")
-        with destination.open(mode="w") as fh:
-            _ = fh.write("destination")
+        _ = destination.write_text("destination")
         move(source, destination, overwrite=True)
         assert destination.is_file()
-        with destination.open() as fh:
-            assert fh.read() == "source"
+        assert destination.read_text() == "source"
 
     @given(root=temp_paths())
     def test_file_destination_directory_exists(self, *, root: Path) -> None:
         source = root.joinpath("source")
-        with source.open(mode="w") as fh:
-            _ = fh.write("source")
+        _ = source.write_text("source")
         destination = root.joinpath("destination")
         destination.mkdir()
         move(source, destination, overwrite=True)
         assert destination.is_file()
-        with destination.open() as fh:
-            assert fh.read() == "source"
+        assert destination.read_text() == "source"
 
     @given(root=temp_paths(), overwrite=booleans())
     def test_directory_destination_does_not_exist(
@@ -142,29 +134,30 @@ class TestMoveMany:
     def test_many(self, *, root: Path) -> None:
         n = 5
         files = [root.joinpath(f"file{i}") for i in range(n + 1)]
-        for i in range(n):
-            with files[i].open(mode="w") as fh:
-                _ = fh.write(str(i))
-        move_many(*itertools.pairwise(files), overwrite=True)
-        for i in range(1, n + 1):
-            with files[i].open() as fh:
-                assert fh.read() == str(i - 1)
+        for i, file in enumerate(files):
+            _ = file.write_text(str(i))
+        move_many(*pairwise(files), overwrite=True)
+        for i, file in enumerate(files):
+            assert file.read_text() == str(i - 1)
 
 
 class TestWriter:
-    @given(
-        root=temp_paths(),
-        case=sampled_from([("w", "r", "contents"), ("wb", "rb", b"contents")]),
-    )
-    def test_file_writing(
-        self, *, root: Path, case: tuple[OpenMode, OpenMode, str | bytes]
-    ) -> None:
-        write_mode, read_mode, contents = case
+    @given(root=temp_paths())
+    def test_main(self, *, root: Path) -> None:
         path = root.joinpath("file.txt")
-        with writer(path) as temp, temp.open(mode=write_mode) as fh1:
-            _ = fh1.write(contents)
-        with path.open(mode=read_mode) as fh2:
-            assert fh2.read() == contents
+        with writer(path) as temp:
+            _ = temp.write_text("contents")
+        assert path.is_file()
+        assert path.read_text() == "contents"
+
+    @given(root=temp_paths())
+    def test_gzip(self, *, root: Path) -> None:
+        path = root.joinpath("file.txt")
+        with writer(path, compress=True) as temp:
+            _ = temp.write_bytes(b"contents")
+        assert path.is_file()
+        with gzip.open(path) as gz:
+            assert gz.read() == b"contents"
 
     @given(root=temp_paths())
     def test_error_temporary_path_empty(self, *, root: Path) -> None:
