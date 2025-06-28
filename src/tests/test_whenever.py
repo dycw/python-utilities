@@ -74,6 +74,7 @@ from utilities.whenever import (
     _MinMaxDateMaxDateError,
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
+    add_year_month,
     datetime_utc,
     diff_year_month,
     format_compact,
@@ -104,6 +105,62 @@ if TYPE_CHECKING:
 
     from utilities.sentinel import Sentinel
     from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime
+
+
+class TestAddYearMonth:
+    @given(datetime=zoned_datetimes())
+    def test_main2(self, *, datetime: ZonedDateTime) -> None:
+        result = datetime_utc(
+            datetime.year,
+            datetime.month,
+            datetime.day,
+            hour=datetime.hour,
+            minute=datetime.minute,
+            second=datetime.second,
+            nanosecond=datetime.nanosecond,
+        )
+        assert result == datetime
+
+    x: ClassVar[YearMonth] = YearMonth(2005, 7)
+    cases: ClassVar[list[ParameterSet]] = [
+        param(YearMonth(2004, 7), 1, 0),
+        param(YearMonth(2004, 8), 0, 11),
+        param(YearMonth(2005, 1), 0, 6),
+        param(YearMonth(2005, 5), 0, 2),
+        param(YearMonth(2005, 6), 0, 1),
+        param(YearMonth(2005, 7), 0, 0),
+        param(YearMonth(2005, 8), 0, -1),
+        param(YearMonth(2005, 9), 0, -2),
+        param(YearMonth(2006, 1), 0, -6),
+        param(YearMonth(2006, 6), 0, -11),
+        param(YearMonth(2006, 7), -1, 0),
+    ]
+
+    @mark.parametrize(
+        ("years", "months", "expected"),
+        [
+            param(1, 0, YearMonth(2004, 7)),
+            param(0, 11, YearMonth(2004, 7)),
+            param(0, 6, YearMonth(2004, 7)),
+            param(0, 2, YearMonth(2004, 7)),
+            param(0, 1, YearMonth(2004, 7)),
+            param(0, 0, YearMonth(2004, 7)),
+            param(0, -1, YearMonth(2004, 7)),
+            param(0, -2, YearMonth(2004, 7)),
+            param(0, -6, YearMonth(2004, 7)),
+            param(0, -11, YearMonth(2004, 7)),
+            param(-1, 0, YearMonth(2004, 7)),
+        ],
+    )
+    def test_main(self, *, years: int, months: int, expected: YearMonth) -> None:
+        result = add_year_month(self.x, years=years, months=months)
+        assert result == expected
+
+    @mark.parametrize(("y", "year", "month"), cases)
+    def test_year_and_month(self, *, y: YearMonth, year: int, month: int) -> None:
+        result = diff_year_month(self.x, y, years=True)
+        expected = (year, month)
+        assert result == expected
 
 
 class TestDatetimeUTC:
