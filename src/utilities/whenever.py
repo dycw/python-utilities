@@ -126,6 +126,21 @@ YEAR = DateDelta(years=1)
 ##
 
 
+def add_year_month(
+    x: YearMonth, /, *, years: int | None = None, months: int | None
+) -> YearMonth:
+    """Add to a year-month."""
+    x_date = x.on_day(1)
+    if years is not None:
+        x_date += DateDelta(years=years)
+    if months is not None:
+        x_date += DateDelta(months=months)
+    return x_date.year_month()
+
+
+##
+
+
 def datetime_utc(
     year: int,
     month: int,
@@ -853,6 +868,7 @@ __all__ = [
     "ToNanosError",
     "ToPyTimeDeltaError",
     "WheneverLogRecord",
+    "add_year_month",
     "datetime_utc",
     "diff_year_month",
     "format_compact",
