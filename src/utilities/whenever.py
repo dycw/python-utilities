@@ -132,6 +132,12 @@ def add_year_month(x: YearMonth, /, *, years: int = 0, months: int = 0) -> YearM
     return y.year_month()
 
 
+def sub_year_month(x: YearMonth, /, *, years: int = 0, months: int = 0) -> YearMonth:
+    """Subtract from a year-month."""
+    y = x.on_day(1) - DateDelta(years=years, months=months)
+    return y.year_month()
+
+
 ##
 
 
@@ -875,6 +881,7 @@ __all__ = [
     "get_today_local",
     "mean_datetime",
     "min_max_date",
+    "sub_year_month",
     "to_date",
     "to_date_time_delta",
     "to_days",
