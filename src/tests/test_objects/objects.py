@@ -17,6 +17,7 @@ from hypothesis.strategies import (
     none,
     recursive,
     sampled_from,
+    timezones,
     tuples,
     uuids,
 )
@@ -83,7 +84,7 @@ def objects(
         booleans()
         | dates()
         | hypothesis.strategies.dates()
-        | hypothesis.strategies.datetimes()
+        | hypothesis.strategies.datetimes(timezones=timezones() | none())
         | floats(allow_nan=floats_allow_nan)
         | (int64s() if parsable else integers())
         | month_days()
