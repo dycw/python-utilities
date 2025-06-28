@@ -1,28 +1,35 @@
 from __future__ import annotations
 
+import tempfile
 from pathlib import Path
 from tempfile import TemporaryDirectory as _TemporaryDirectory
 from tempfile import gettempdir as _gettempdir
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 if TYPE_CHECKING:
-    from types import TracebackType
-
     from utilities.types import PathLike
 
 
-class TemporaryDirectory:
+class TemporaryDirectory(tempfile.TemporaryDirectory):
     """Wrapper around `TemporaryDirectory` with a `Path` attribute."""
 
+    @override
     def __init__(
         self,
-        *,
         suffix: str | None = None,
         prefix: str | None = None,
-        dir: PathLike | None = None,  # noqa: A002
+        dir: PathLike | None = None,
         ignore_cleanup_errors: bool = False,
+        *,
+        delete: bool = True,
     ) -> None:
-        super().__init__()
+        super().__init__(
+            suffix=suffix,
+            prefix=prefix,
+            dir=dir,
+            ignore_cleanup_errors=ignore_cleanup_errors,
+            delete=delete,
+        )
         self._temp_dir = _TemporaryDirectory(
             suffix=suffix,
             prefix=prefix,
@@ -31,16 +38,12 @@ class TemporaryDirectory:
         )
         self.path = Path(self._temp_dir.name)
 
+    @override
     def __enter__(self) -> Path:
-        return Path(self._temp_dir.__enter__())
+        return Path(super().__enter__())
 
-    def __exit__(
-        self,
-        exc: type[BaseException] | None,
-        val: BaseException | None,
-        tb: TracebackType | None,
-    ) -> None:
-        self._temp_dir.__exit__(exc, val, tb)
+
+##
 
 
 def gettempdir() -> Path:
