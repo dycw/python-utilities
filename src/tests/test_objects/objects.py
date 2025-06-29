@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from enum import Enum, auto
 from functools import partial
 from typing import Any
@@ -84,7 +85,11 @@ def objects(
         booleans()
         | dates()
         | hypothesis.strategies.dates()
-        | hypothesis.strategies.datetimes(timezones=just(UTC) | none())
+        | hypothesis.strategies.datetimes(
+            min_value=dt.datetime(2000, 1, 1),  # noqa: DTZ001
+            max_value=dt.datetime(2000, 12, 31),  # noqa: DTZ001
+            timezones=just(UTC) | none(),
+        )
         | floats(allow_nan=floats_allow_nan)
         | (int64s() if parsable else integers())
         | month_days()

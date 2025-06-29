@@ -358,8 +358,7 @@ class TestGetLogRecords:
         logger = getLogger(str(tmp_path))
         logger.addHandler(handler := FileHandler(file := tmp_path.joinpath("log")))
         handler.setFormatter(OrjsonFormatter())
-        with file.open(mode="w") as fh:
-            _ = fh.write("\n")
+        _ = file.write_text("\n")
         logger.warning("", extra={"a": 1, "b": 2, "_ignored": 3})
         result = get_log_records(tmp_path, parallelism="threads")
         assert result.path == tmp_path
@@ -380,8 +379,7 @@ class TestGetLogRecords:
     @SKIPIF_CI_AND_WINDOWS
     def test_error_file(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("log")
-        with file.open(mode="wb") as fh:
-            _ = fh.write(b"\x80")
+        _ = file.write_bytes(b"\x80")
         result = get_log_records(tmp_path, parallelism="threads")
         assert result.path == tmp_path
         assert result.files == [file]
@@ -407,8 +405,7 @@ class TestGetLogRecords:
 
     def test_error_deserialize_due_to_decode(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("log")
-        with file.open(mode="w") as fh:
-            _ = fh.write("message")
+        _ = file.write_text("message")
         result = get_log_records(tmp_path, parallelism="threads")
         assert result.path == tmp_path
         assert result.files == [file]

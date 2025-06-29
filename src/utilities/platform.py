@@ -55,9 +55,9 @@ def get_max_pid() -> int | None:
         case "mac":  # skipif-not-macos
             return 99999
         case "linux":  # skipif-not-linux
+            path = Path("/proc/sys/kernel/pid_max")
             try:
-                with Path("/proc/sys/kernel/pid_max").open() as fh:
-                    return int(fh.read())
+                return int(path.read_text())
             except FileNotFoundError:  # pragma: no cover
                 return None
         case _ as never:

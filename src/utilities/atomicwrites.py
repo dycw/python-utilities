@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import gzip
 import shutil
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from shutil import rmtree
+from shutil import copyfileobj, rmtree
 from typing import TYPE_CHECKING, assert_never, override
 
 from atomicwrites import replace_atomic
@@ -111,21 +112,32 @@ def move_many(*paths: tuple[PathLike, PathLike], overwrite: bool = False) -> Non
 
 
 @contextmanager
-def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
+def writer(
+    path: PathLike, /, *, compress: bool = False, overwrite: bool = False
+) -> Iterator[Path]:
     """Yield a path for atomically writing files to disk."""
     path = Path(path)
     parent = path.parent
     parent.mkdir(parents=True, exist_ok=True)
     name = path.name
     with TemporaryDirectory(suffix=".tmp", prefix=name, dir=parent) as temp_dir:
-        temp_path = Path(temp_dir, name)
+        temp_path1 = Path(temp_dir, name)
         try:
-            yield temp_path
+            yield temp_path1
         except KeyboardInterrupt:
             rmtree(temp_dir)
         else:
+            if compress:
+                temp_path2 = Path(temp_dir, f"{name}.gz")
+                with (
+                    temp_path1.open("rb") as source,
+                    gzip.open(temp_path2, mode="wb") as dest,
+                ):
+                    copyfileobj(source, dest)
+            else:
+                temp_path2 = temp_path1
             try:
-                move(temp_path, path, overwrite=overwrite)
+                move(temp_path2, path, overwrite=overwrite)
             except _MoveSourceNotFoundError as error:
                 raise _WriterTemporaryPathEmptyError(temp_path=error.source) from None
             except _MoveFileExistsError as error:

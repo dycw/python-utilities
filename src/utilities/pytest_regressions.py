@@ -71,10 +71,8 @@ class OrjsonRegressionFixture:
         )
 
     def _check_fn(self, path1: Path, path2: Path, /) -> None:
-        with path1.open(mode="r") as fh:
-            left = loads(fh.read())
-        with path2.open(mode="r") as fh:
-            right = loads(fh.read())
+        left = loads(path1.read_text())
+        right = loads(path2.read_text())
         assert is_equal(left, right), f"{left=}, {right=}"
 
 

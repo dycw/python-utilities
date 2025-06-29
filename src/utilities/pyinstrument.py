@@ -24,8 +24,8 @@ def profile(*, path: MaybeCallablePathLike | None = Path.cwd) -> Iterator[None]:
     filename = get_path(path=path).joinpath(
         f"profile__{format_compact(to_local_plain(get_now()))}.html"
     )
-    with writer(filename) as temp, temp.open(mode="w") as fh:
-        _ = fh.write(profiler.output_html())
+    with writer(filename) as temp:
+        _ = temp.write_text(profiler.output_html())
 
 
 __all__ = ["profile"]
