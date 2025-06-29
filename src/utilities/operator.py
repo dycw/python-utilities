@@ -52,6 +52,14 @@ def is_equal[T](
             return is_equal(x.args, y.args)
 
         # collections
+        if isinstance(x, AbstractSet):
+            y = cast("AbstractSet[Any]", y)
+            try:
+                x_sorted = sort_iterable(x)
+                y_sorted = sort_iterable(y)
+            except SortIterableError:
+                return _is_in(x, y) and _is_in(y, x)
+            return is_equal(x_sorted, y_sorted, rel_tol=rel_tol, abs_tol=abs_tol)
         if isinstance(x, Mapping):
             y = cast("Mapping[Any, Any]", y)
             x_keys = set(x)
@@ -61,32 +69,6 @@ def is_equal[T](
             x_values = [x[i] for i in x]
             y_values = [y[i] for i in x]
             return is_equal(x_values, y_values, rel_tol=rel_tol, abs_tol=abs_tol)
-        if isinstance(x, AbstractSet):
-            y = cast("AbstractSet[Any]", y)
-            try:
-                x_sorted = sort_iterable(x)
-                y_sorted = sort_iterable(y)
-            except SortIterableError:
-                x_in_y = all(
-                    any(
-                        is_equal(
-                            x_i, y_i, rel_tol=rel_tol, abs_tol=abs_tol, extra=extra
-                        )
-                        for y_i in y
-                    )
-                    for x_i in x
-                )
-                y_in_x = all(
-                    any(
-                        is_equal(
-                            x_i, y_i, rel_tol=rel_tol, abs_tol=abs_tol, extra=extra
-                        )
-                        for x_i in x
-                    )
-                    for y_i in y
-                )
-                return x_in_y and y_in_x
-            return is_equal(x_sorted, y_sorted, rel_tol=rel_tol, abs_tol=abs_tol)
         if isinstance(x, Sequence):
             y = cast("Sequence[Any]", y)
             if len(x) != len(y):
@@ -100,6 +82,24 @@ def is_equal[T](
         return utilities.math.is_equal(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
 
     return (type(x) is type(y)) and (x == y)
+
+
+def _is_in[T](
+    x: AbstractSet[Any],
+    y: AbstractSet[Any],
+    /,
+    *,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
+    extra: Mapping[type[T], Callable[[T, T], bool]] | None = None,
+) -> bool:
+    return all(
+        any(
+            is_equal(x_i, y_i, rel_tol=rel_tol, abs_tol=abs_tol, extra=extra)
+            for y_i in y
+        )
+        for x_i in x
+    )
 
 
 @dataclass(kw_only=True, slots=True)
