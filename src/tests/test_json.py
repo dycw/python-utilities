@@ -2,15 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
-from pytest import mark
-
 from utilities.json import run_prettier
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 
-@mark.only
 class TestRunPrettier:
     input_: ClassVar[str] = '{"foo":0,"bar":[1,2,3]}'
     output: ClassVar[str] = '{ "foo": 0, "bar": [1, 2, 3] }\n'
