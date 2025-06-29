@@ -1233,6 +1233,7 @@ def write_json(
     warn_name_errors: bool = False,
     dataclass_hook: _DataclassHook | None = None,
     dataclass_defaults: bool = False,
+    compress: bool = False,
     overwrite: bool = False,
 ) -> None:
     """Write an object to disk."""
@@ -1245,7 +1246,7 @@ def write_json(
         dataclass_hook=dataclass_hook,
         dataclass_defaults=dataclass_defaults,
     )
-    with writer(path, overwrite=overwrite) as temp:
+    with writer(path, compress=compress, overwrite=overwrite) as temp:
         _ = temp.write_bytes(data)
 
 
