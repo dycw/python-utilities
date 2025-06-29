@@ -1062,7 +1062,7 @@ class GetLogRecordsOutput:
                 r
                 for r in records
                 if (r.log_file_line_num is not None)
-                and (r.log_file_line_num >= max_log_file_line_num)
+                and (r.log_file_line_num <= max_log_file_line_num)
             ]
         return replace(self, records=records)
 
