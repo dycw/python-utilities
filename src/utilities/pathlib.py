@@ -27,10 +27,15 @@ def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
     """Ensure a path has a given suffix."""
     path = Path(path)
     parts = path.name.split(".")
-    parts = list(chain([parts[0]], (f".{p}" for p in parts[1:])))
-    if (len(parts) == 0) or (parts[-1] != suffix):
-        parts.append(suffix)
-    name = "".join(parts)
+    suffixes = suffix.strip(".").split(".")
+    max_len = max(len(parts), len(suffixes))
+    try:
+        i = next(i for i in range(max_len, 0, -1) if parts[-i:] == suffixes[:i])
+    except StopIteration:
+        add = suffixes
+    else:
+        add = suffixes[i:]
+    name = ".".join(chain(parts, add))
     return path.with_name(name)
 
 

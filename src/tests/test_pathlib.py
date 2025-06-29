@@ -47,6 +47,9 @@ class TestEnsureSuffix:
             param("foo.txt", ".txt", "foo.txt"),
             param("foo.bar.baz", ".baz", "foo.bar.baz"),
             param("foo.bar.baz", ".quux", "foo.bar.baz.quux"),
+            param("foo", ".txt.gz", "foo.txt.gz"),
+            param("foo.txt", ".txt.gz", "foo.txt.gz"),
+            param("foo.bar.baz", ".bar.baz", "foo.bar.baz"),
         ],
         ids=str,
     )
