@@ -21,7 +21,6 @@ from hypothesis.strategies import (
     tuples,
 )
 from orjson import JSONDecodeError
-from pandas.core.frame import com
 from polars import Object, String, UInt64
 from pytest import approx, mark, param, raises
 
@@ -53,7 +52,6 @@ from tests.test_typing_funcs.with_future import (
 )
 from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
-    assume_does_not_raise,
     dates,
     int64s,
     paths,
@@ -65,7 +63,7 @@ from utilities.hypothesis import (
 from utilities.iterables import always_iterable, one
 from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.operator import IsEqualError, is_equal
+from utilities.operator import is_equal
 from utilities.orjson import (
     _LOG_RECORD_DEFAULT_ATTRS,
     OrjsonFormatter,
@@ -470,7 +468,6 @@ class TestSerializeAndDeserialize:
                 TruthEnum,
             },
         )
-        # with assume_does_not_raise(IsEqualError):
         assert is_equal(result, obj)
 
     @given(obj=objects(parsable=True))
@@ -532,7 +529,6 @@ class TestSerializeAndDeserialize:
     @given(obj=objects(dataclass_literal_nullable=True, parsable=True))
     def test_dataclass_literal_nullable(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={DataClassFutureLiteralNullable})
-        # with assume_does_not_raise(IsEqualError):
         assert is_equal(result, obj)
 
     @given(obj=objects(dataclass_nested=True, parsable=True))
@@ -565,7 +561,6 @@ class TestSerializeAndDeserialize:
         result = deserialize(
             serialize(obj), objects={DataClassFutureTypeLiteralNullable}
         )
-        # with assume_does_not_raise(IsEqualError):
         assert is_equal(result, obj)
 
     @given(obj=builds(DataClassFutureNone))
@@ -605,19 +600,16 @@ class TestSerializeAndDeserialize:
     @given(obj=objects(enum=True, parsable=True))
     def test_enum(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={TruthEnum})
-        # with assume_does_not_raise(IsEqualError):
         assert is_equal(result, obj)
 
     @given(obj=objects(exception_class=True, parsable=True))
     def test_exception_class(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={CustomError})
-        # with assume_does_not_raise(IsEqualError):
         assert is_equal(result, obj)
 
     @given(obj=objects(exception_instance=True, parsable=True))
     def test_exception_instance(self, *, obj: Any) -> None:
         result = deserialize(serialize(obj), objects={CustomError})
-        # with assume_does_not_raise(IsEqualError):
         assert is_equal(result, obj)
 
     @mark.parametrize("value", [param(inf), param(-inf)])
@@ -756,6 +748,6 @@ class TestReadAndWriteJSON:
     def test_main(self, *, root: Path, obj: Any, compress: bool) -> None:
         path = root.joinpath("file.json")
         write_json(obj, path, compress=compress)
+        assert path.is_file()
         result = read_json(path, decompress=compress)
-        # with assume_does_not_raise(IsEqualError):
         assert is_equal(result, obj)
