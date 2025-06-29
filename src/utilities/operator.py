@@ -52,15 +52,6 @@ def is_equal[T](
             return is_equal(x.args, y.args)
 
         # collections
-        if isinstance(x, Mapping):
-            y = cast("Mapping[Any, Any]", y)
-            x_keys = set(x)
-            y_keys = set(y)
-            if not is_equal(x_keys, y_keys, rel_tol=rel_tol, abs_tol=abs_tol):
-                return False
-            x_values = [x[i] for i in x]
-            y_values = [y[i] for i in x]
-            return is_equal(x_values, y_values, rel_tol=rel_tol, abs_tol=abs_tol)
         if isinstance(x, AbstractSet):
             y = cast("AbstractSet[Any]", y)
             try:
@@ -87,6 +78,15 @@ def is_equal[T](
                 )
                 return x_in_y and y_in_x
             return is_equal(x_sorted, y_sorted, rel_tol=rel_tol, abs_tol=abs_tol)
+        if isinstance(x, Mapping):
+            y = cast("Mapping[Any, Any]", y)
+            x_keys = set(x)
+            y_keys = set(y)
+            if not is_equal(x_keys, y_keys, rel_tol=rel_tol, abs_tol=abs_tol):
+                return False
+            x_values = [x[i] for i in x]
+            y_values = [y[i] for i in x]
+            return is_equal(x_values, y_values, rel_tol=rel_tol, abs_tol=abs_tol)
         if isinstance(x, Sequence):
             y = cast("Sequence[Any]", y)
             if len(x) != len(y):
