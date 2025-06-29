@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import gzip
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import suppress
@@ -35,6 +36,7 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.atomicwrites import writer
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
 from utilities.functions import ensure_class, is_string_mapping
@@ -1196,6 +1198,57 @@ class _GetLogRecordsOneOutput:
     other_errors: list[Exception] = field(default_factory=list, repr=False)
 
 
+# read/write
+
+
+def read_json(
+    path: PathLike,
+    /,
+    *,
+    decompress: bool = False,
+    dataclass_hook: _DataclassHook | None = None,
+    objects: AbstractSet[type[Any]] | None = None,
+    redirects: Mapping[str, type[Any]] | None = None,
+) -> Any:
+    """Read an compression from disk."""
+    path = Path(path)
+    if decompress:
+        with gzip.open(path) as gz:
+            data = gz.read()
+    else:
+        data = path.read_bytes()
+    return deserialize(
+        data, dataclass_hook=dataclass_hook, objects=objects, redirects=redirects
+    )
+
+
+def write_json(
+    obj: Any,
+    path: PathLike,
+    /,
+    *,
+    before: Callable[[Any], Any] | None = None,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+    dataclass_hook: _DataclassHook | None = None,
+    dataclass_defaults: bool = False,
+    overwrite: bool = False,
+) -> None:
+    """Write an object to disk."""
+    data = serialize(
+        obj,
+        before=before,
+        globalns=globalns,
+        localns=localns,
+        warn_name_errors=warn_name_errors,
+        dataclass_hook=dataclass_hook,
+        dataclass_defaults=dataclass_defaults,
+    )
+    with writer(path, overwrite=overwrite) as temp:
+        _ = temp.write_bytes(data)
+
+
 __all__ = [
     "DeserializeError",
     "GetLogRecordsOutput",
@@ -1204,5 +1257,7 @@ __all__ = [
     "SerializeError",
     "deserialize",
     "get_log_records",
+    "read_json",
     "serialize",
+    "write_json",
 ]
