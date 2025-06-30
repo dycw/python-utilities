@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from subprocess import CalledProcessError, check_output
+from subprocess import check_output
 from typing import assert_never, overload, override
 
 from utilities.atomicwrites import writer
@@ -36,7 +36,7 @@ def _run_prettier_core(data: bytes | str, /, *, text: bool) -> bytes | str:
     """Run `prettier` on a string/path."""
     try:  # skipif-ci
         return check_output(["prettier", "--parser=json"], input=data, text=text)
-    except CalledProcessError:
+    except FileNotFoundError:
         raise RunPrettierError from None
 
 
