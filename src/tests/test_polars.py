@@ -66,7 +66,6 @@ from utilities.hypothesis import (
     float64s,
     int64s,
     pairs,
-    py_datetimes,
     temp_paths,
     text_ascii,
     zoned_datetimes,
@@ -2298,23 +2297,31 @@ class TestSerializeAndDeserializeDataFrame:
         (Struct({"inner": Int64}), fixed_dictionaries({"inner": int64s()})),
     ]
 
-    @given(data=data(), name=text_ascii(), case=sampled_from(cases))
+    @given(data=data(), root=temp_paths(), name=text_ascii(), case=sampled_from(cases))
     def test_series(
         self,
         *,
         data: DataObject,
+        root: Path,
         name: str,
         case: tuple[PolarsDataType, SearchStrategy[Any]],
     ) -> None:
         dtype, strategy = case
         values = data.draw(lists(strategy | none()))
         sr = Series(name=name, values=values, dtype=dtype)
-        result = deserialize_series(serialize_series(sr))
-        assert_series_equal(sr, result)
+        result1 = deserialize_series(serialize_series(sr))
+        assert_series_equal(sr, result1)
+        write_series(sr, file := root.joinpath("file.json"))
+        result2 = read_series(file)
+        assert_series_equal(sr, result2)
 
-    @given(data=data(), case=sampled_from(cases))
+    @given(data=data(), root=temp_paths(), case=sampled_from(cases))
     def test_dataframe(
-        self, *, data: DataObject, case: tuple[PolarsDataType, SearchStrategy[Any]]
+        self,
+        *,
+        data: DataObject,
+        root: Path,
+        case: tuple[PolarsDataType, SearchStrategy[Any]],
     ) -> None:
         dtype, strategy = case
         columns = data.draw(lists(text_ascii(min_size=1)))
@@ -2328,11 +2335,6 @@ class TestSerializeAndDeserializeDataFrame:
         write_dataframe(df, file := root.joinpath("file.json"))
         result2 = read_dataframe(file)
         assert_frame_equal(df, result2)
-
-    @given(dtype=sampled_from([dtype for dtype, _ in cases]))
-    def test_dtype(self, *, dtype: PolarsDataType) -> None:
-        result = _reconstruct_dtype(_deconstruct_dtype(dtype))
-        assert result == dtype
 
     @given(dtype=sampled_from([dtype for dtype, _ in cases]))
     def test_dtype(self, *, dtype: PolarsDataType) -> None:
