@@ -23,7 +23,6 @@ from whenever import (
     Date,
     DateDelta,
     DateTimeDelta,
-    Delta,
     PlainDateTime,
     Time,
     TimeDelta,
@@ -35,7 +34,7 @@ from utilities.math import sign
 from utilities.platform import get_strftime
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import DateOrDateTimeDelta, DateTimeRoundUnit, MaybeStr
+from utilities.types import DateOrDateTimeDelta, DateTimeRoundUnit, Delta, MaybeStr
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
 

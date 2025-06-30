@@ -219,6 +219,7 @@ type DateDeltaLike = MaybeStr[DateDelta]
 type DateLike = MaybeStr[Date]
 type DateOrDateTimeDelta = DateDelta | DateTimeDelta
 type DateTimeDeltaLike = MaybeStr[DateTimeDelta]
+type Delta = DateDelta | TimeDelta | DateTimeDelta
 type MaybeCallableDate = MaybeCallable[Date]
 type MaybeCallableZonedDateTime = MaybeCallable[ZonedDateTime]
 type MonthDayLike = MaybeStr[MonthDay]
@@ -256,6 +257,7 @@ __all__ = [
     "DateTimeDeltaLike",
     "DateTimeRoundMode",
     "DateTimeRoundUnit",
+    "Delta",
     "EnumLike",
     "ExcInfo",
     "IPv4AddressLike",
