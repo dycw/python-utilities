@@ -44,7 +44,13 @@ class _BaseFixture(ABC):
         raise NotImplementedError(path, obj)  # pragma: no cover
 
     def _get_path(self, suffix: str, /, *, opt_suffix: str | None = None) -> Path:
-        path = _get_path(self.request)
+        from utilities.pathlib import get_root
+        from utilities.pytest import node_id_path
+
+        path_test = Path(cast("Any", self.request).fspath)
+        src_tests = Path("src", "tests")
+        tail = node_id_path(self.request.node.nodeid, root=src_tests)
+        path = get_root(path=path_test).joinpath(src_tests, "regressions", tail)
         if opt_suffix is not None:
             path = Path(f"{path}__{opt_suffix}")
         return ensure_suffix(path, suffix)
@@ -391,16 +397,6 @@ class SeriesRegressionFixture(_BaseFixture):
 
 
 ##
-
-
-def _get_path(request: FixtureRequest, /) -> Path:
-    from utilities.pathlib import get_root
-    from utilities.pytest import node_id_path
-
-    path = Path(cast("Any", request).fspath)
-    root = Path("src", "tests")
-    tail = node_id_path(request.node.nodeid, root=root)
-    return get_root(path=path).joinpath(root, "regressions", tail)
 
 
 def _summarize_series_or_dataframe(obj: Series | DataFrame, /) -> StrMapping:
