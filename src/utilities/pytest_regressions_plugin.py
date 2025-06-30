@@ -33,7 +33,7 @@ else:
     def df_regression(
         *, request: FixtureRequest, tmp_path: Path
     ) -> DataFrameRegressionFixture:
-        """Instance of the `PolarsRegressionFixture`."""
+        """Instance of the `DataFrameRegressionFixture`."""
         from utilities.pytest_regressions import DataFrameRegressionFixture
 
         return DataFrameRegressionFixture(request=request, tmp_path=tmp_path)
@@ -42,7 +42,7 @@ else:
     def series_regression(
         *, request: FixtureRequest, tmp_path: Path
     ) -> SeriesRegressionFixture:
-        """Instance of the `PolarsRegressionFixture`."""
+        """Instance of the `SeriesRegressionFixture`."""
         from utilities.pytest_regressions import SeriesRegressionFixture
 
         return SeriesRegressionFixture(request=request, tmp_path=tmp_path)
