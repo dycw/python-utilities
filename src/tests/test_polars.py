@@ -2285,8 +2285,18 @@ class TestSerializeAndDeserializeDataFrame:
         (Boolean(), booleans()),
         (Date, hypothesis.strategies.dates()),
         (Date(), hypothesis.strategies.dates()),
-        (Datetime(), py_datetimes(zoned=False)),
-        (Datetime(time_zone=UTC.key), py_datetimes(zoned=True)),
+        (
+            Datetime(),
+            hypothesis.strategies.datetimes(
+                min_value=dt.datetime(2000, 1, 1),  # noqa: DTZ001
+                max_value=dt.datetime(2000, 12, 31),  # noqa: DTZ001
+                timezones=just(UTC) | none(),
+            ),
+        ),
+        (
+            Datetime(time_zone=UTC.key),
+            hypothesis.strategies.datetimes(timezones=just(UTC)),
+        ),
         (Int64, int64s()),
         (Int64(), int64s()),
         (Float64, float64s()),
