@@ -98,9 +98,9 @@ class OrjsonRegressionFixture:
                 compress=compress,
             ),
             extension=NotImplemented,
-            fullpath=tmp,
+            fullpath=path,
             force_regen=False,
-            obtained_filename=path,
+            obtained_filename=tmp,
         )
 
     def _check_fn(
