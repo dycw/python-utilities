@@ -47,6 +47,7 @@ from polars import (
     Struct,
     UInt32,
     col,
+    concat,
     date_range,
     datetime_range,
     int_range,
@@ -57,7 +58,7 @@ from polars._typing import IntoExprColumn, SchemaDict
 from polars.exceptions import ComputeError
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
-from pytest import raises
+from pytest import mark, param, raises
 from whenever import TimeZoneNotFoundError
 
 import utilities.polars
@@ -117,6 +118,10 @@ from utilities.polars import (
     _InsertBetweenNonConsecutiveError,
     _IsNearEventAfterError,
     _IsNearEventBeforeError,
+    _JoinIntoPeriodsArgumentsError,
+    _JoinIntoPeriodsOverlappingError,
+    _JoinIntoPeriodsPeriodError,
+    _JoinIntoPeriodsSortedError,
     _reconstruct_schema,
     _ReifyExprsEmptyError,
     _ReifyExprsSeriesNonUniqueError,
@@ -156,6 +161,7 @@ from utilities.polars import (
     is_not_null_struct_series,
     is_null_struct_series,
     join,
+    join_into_periods,
     map_over_columns,
     nan_sum_agg,
     nan_sum_cols,
@@ -1834,6 +1840,140 @@ class TestJoin:
             data=[{"a": 1, "b": 2, "c": 3}], schema={"a": Int64, "b": Int64, "c": Int64}
         )
         assert_frame_equal(result, expected)
+
+
+class TestJoinIntoPeriods:
+    dtype: ClassVar[Struct] = struct_dtype(start=DatetimeUTC, end=DatetimeUTC)
+
+    @mark.parametrize("on", [param("datetime"), param(None)])
+    def test_main(self, *, on: str | None) -> None:
+        df1, df2, expected = self._prepare_main()
+        result = join_into_periods(df1, df2, on=on)
+        assert_frame_equal(result, expected)
+
+    def test_left_on_and_right_on(self) -> None:
+        df1, df2, expected = self._prepare_main(right="period", joined_second="period")
+        result = join_into_periods(df1, df2, left_on="datetime", right_on="period")
+        assert_frame_equal(result, expected)
+
+    def test_overlapping_bar(self) -> None:
+        times = [(dt.time(), dt.time(1, 30))]
+        df1 = self._lift_df(times)
+        periods = [(dt.time(1), dt.time(2)), (dt.time(2), dt.time(3))]
+        df2 = self._lift_df(periods)
+        result = join_into_periods(df1, df2, on="datetime")
+        df3 = self._lift_df([None], column="datetime_right")
+        expected = concat([df1, df3], how="horizontal")
+        assert_frame_equal(result, expected)
+
+    def _prepare_main(
+        self,
+        *,
+        left: str = "datetime",
+        right: str = "datetime",
+        joined_second: str = "datetime_right",
+    ) -> tuple[DataFrame, DataFrame, DataFrame]:
+        times = [
+            (dt.time(), dt.time(0, 30)),
+            (dt.time(0, 30), dt.time(1)),
+            (dt.time(1), dt.time(1, 30)),
+            (dt.time(1, 30), dt.time(2)),
+            (dt.time(2), dt.time(2, 30)),
+            (dt.time(2, 30), dt.time(3)),
+            (dt.time(3), dt.time(3, 30)),
+            (dt.time(3, 30), dt.time(4)),
+            (dt.time(4), dt.time(4, 30)),
+            (dt.time(4, 30), dt.time(5)),
+        ]
+        df1 = self._lift_df(times, column=left)
+        periods = [
+            (dt.time(1), dt.time(2)),
+            (dt.time(2), dt.time(3)),
+            (dt.time(3), dt.time(4)),
+        ]
+        df2 = self._lift_df(periods, column=right)
+        joined = [
+            None,
+            None,
+            (dt.time(1), dt.time(2)),
+            (dt.time(1), dt.time(2)),
+            (dt.time(2), dt.time(3)),
+            (dt.time(2), dt.time(3)),
+            (dt.time(3), dt.time(4)),
+            (dt.time(3), dt.time(4)),
+            None,
+            None,
+        ]
+        df3 = self._lift_df(joined, column=joined_second)
+        expected = concat([df1, df3], how="horizontal")
+        return df1, df2, expected
+
+    def test_error_arguments(self) -> None:
+        with raises(
+            _JoinIntoPeriodsArgumentsError,
+            match="Either 'on' must be given or 'left_on' and 'right_on' must be given; got None, 'datetime' and None",
+        ):
+            _ = join_into_periods(DataFrame(), DataFrame(), left_on="datetime")
+
+    def test_error_periods(self) -> None:
+        times = [(dt.time(1), dt.time())]
+        df = self._lift_df(times)
+        with raises(
+            _JoinIntoPeriodsPeriodError,
+            match="Left DataFrame column 'datetime' must contain valid periods",
+        ):
+            _ = join_into_periods(df, DataFrame())
+
+    def test_error_left_start_sorted(self) -> None:
+        times = [(dt.time(1), dt.time(2)), (dt.time(), dt.time(1))]
+        df = self._lift_df(times)
+        with raises(
+            _JoinIntoPeriodsSortedError,
+            match="Left DataFrame column 'datetime/start' must be sorted",
+        ):
+            _ = join_into_periods(df, df)
+
+    def test_error_end_sorted(self) -> None:
+        times = [(dt.time(), dt.time(3)), (dt.time(1), dt.time(2))]
+        df = self._lift_df(times)
+        with raises(
+            _JoinIntoPeriodsSortedError,
+            match="Left DataFrame column 'datetime/end' must be sorted",
+        ):
+            _ = join_into_periods(df, df)
+
+    def test_error_overlapping(self) -> None:
+        times = [(dt.time(), dt.time(2)), (dt.time(1), dt.time(3))]
+        df = self._lift_df(times)
+        with raises(
+            _JoinIntoPeriodsOverlappingError,
+            match="Left DataFrame column 'datetime' must not contain overlaps",
+        ):
+            _ = join_into_periods(df, DataFrame())
+
+    def _lift_df(
+        self,
+        times: Iterable[tuple[dt.time, dt.time] | None],
+        /,
+        *,
+        column: str = "datetime",
+    ) -> DataFrame:
+        return DataFrame(
+            data=[self._lift_row(t, column=column) for t in times],
+            schema={column: self.dtype},
+            orient="row",
+        )
+
+    def _lift_row(
+        self, times: tuple[dt.time, dt.time] | None, /, *, column: str = "datetime"
+    ) -> StrMapping | None:
+        if times is None:
+            return None
+        start, end = times
+        return {column: {"start": self._lift_time(start), "end": self._lift_time(end)}}
+
+    def _lift_time(self, time: dt.time, /) -> dt.datetime:
+        return dt.datetime.combine(get_today().py_date(), time, tzinfo=UTC)
 
 
 class TestMapOverColumns:
