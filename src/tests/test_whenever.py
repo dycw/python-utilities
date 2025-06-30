@@ -67,6 +67,7 @@ from utilities.whenever import (
     ToMonthsError,
     ToNanosError,
     ToPyTimeDeltaError,
+    ToYearsError,
     WheneverLogRecord,
     _FreqDayIncrementError,
     _FreqIncrementError,
@@ -97,6 +98,7 @@ from utilities.whenever import (
     to_py_date_or_date_time,
     to_py_time_delta,
     to_time_delta,
+    to_years,
     to_zoned_date_time,
     two_digit_year_month,
 )
@@ -659,6 +661,55 @@ class TestToPyTimeDelta:
             ToPyTimeDeltaError, match="Time delta must not contain nanoseconds; got 1"
         ):
             _ = to_py_time_delta(delta)
+
+
+class TestToYears:
+    @given(years=integers())
+    def test_date_delta(self, *, years: int) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="years out of range"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+        ):
+            delta = DateDelta(years=years)
+        assert to_years(delta) == years
+
+    @given(years=integers())
+    def test_date_time_delta(self, *, years: int) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="years out of range"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+        ):
+            delta = DateTimeDelta(years=years)
+        assert to_years(delta) == years
+
+    def test_error_date_delta_months(self) -> None:
+        delta = DateDelta(years=1, months=1)
+        with raises(ToYearsError, match="Date delta must not contain months; got 1"):
+            _ = to_years(delta)
+
+    def test_error_date_delta_days(self) -> None:
+        delta = DateDelta(years=1, days=1)
+        with raises(ToYearsError, match="Date delta must not contain months; got 1"):
+            _ = to_years(delta)
+
+    def test_error_date_time_delta_months(self) -> None:
+        delta = DateTimeDelta(years=1, months=1)
+        with raises(ToYearsError, match="Date delta must not contain months; got 1"):
+            _ = to_years(delta)
+
+    def test_error_date_time_delta_days(self) -> None:
+        delta = DateTimeDelta(years=1, days=1)
+        with raises(ToYearsError, match="Date delta must not contain months; got 1"):
+            _ = to_years(delta)
+
+    def test_error_date_time_delta_time(self) -> None:
+        delta = DateTimeDelta(years=1, hours=1)
+        with raises(ToYearsError, match="Date delta must not contain months; got 1"):
+            _ = to_years(delta)
 
 
 class TestToZonedDateTime:

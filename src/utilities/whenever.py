@@ -779,6 +779,65 @@ def _to_time_delta_components(nanos: int, /) -> _TimeDeltaComponents:
 ##
 
 
+def to_years(delta: DateDelta | DateTimeDelta, /) -> int:
+    """Compute the number of years in a date delta."""
+    match delta:
+        case DateDelta():
+            years, months, days = delta.in_years_months_days()
+            if months != 0:
+                raise _ToYearsMonthsError(delta=delta, months=months)
+            if days != 0:
+                raise _ToYearsDaysError(delta=delta, days=days)
+            return years
+        case DateTimeDelta():
+            if delta.time_part() != TimeDelta():
+                raise _ToYearsTimeError(delta=delta)
+            try:
+                return to_years(delta.date_part())
+            except _ToYearsMonthsError as error:
+                raise _ToYearsMonthsError(delta=delta, months=error.months) from None
+            except _ToYearsDaysError as error:
+                raise _ToYearsDaysError(delta=delta, days=error.days) from None
+        case _ as never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class ToYearsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToYearsMonthsError(ToYearsError):
+    delta: DateDelta | DateTimeDelta
+    months: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain months; got {self.months}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToYearsDaysError(ToYearsError):
+    delta: DateDelta | DateTimeDelta
+    days: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain days; got {self.days}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToYearsTimeError(ToYearsError):
+    delta: DateTimeDelta
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain a time part; got {self.delta.time_part()}"
+
+
+##
+
+
 @overload
 def to_zoned_date_time(*, date_time: MaybeCallableZonedDateTime) -> ZonedDateTime: ...
 @overload
@@ -901,6 +960,7 @@ __all__ = [
     "ToMonthsError",
     "ToNanosError",
     "ToPyTimeDeltaError",
+    "ToYearsError",
     "WheneverLogRecord",
     "add_year_month",
     "datetime_utc",
@@ -924,6 +984,7 @@ __all__ = [
     "to_nanos",
     "to_py_date_or_date_time",
     "to_py_time_delta",
+    "to_years",
     "to_zoned_date_time",
     "two_digit_year_month",
 ]
