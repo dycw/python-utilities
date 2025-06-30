@@ -2119,20 +2119,20 @@ def deserialize_dataframe(data: bytes, /) -> DataFrame:
     return DataFrame(data=rows, schema=schema, orient="row")
 
 
-type _Deconstructed = Sequence[tuple[str, _DeconstructedDType]]
-type _DeconstructedDType = (
+type _DeconSchema = Sequence[tuple[str, _DeconDType]]
+type _DeconDType = (
     str
     | tuple[Literal["Datetime"], str, str | None]
-    | tuple[Literal["List"], _DeconstructedDType]
-    | tuple[Literal["Struct"], _Deconstructed]
+    | tuple[Literal["List"], _DeconDType]
+    | tuple[Literal["Struct"], _DeconSchema]
 )
 
 
-def _deconstruct_schema(schema: Schema, /) -> _Deconstructed:
+def _deconstruct_schema(schema: Schema, /) -> _DeconSchema:
     return [(k, _deconstruct_dtype(v)) for k, v in schema.items()]
 
 
-def _deconstruct_dtype(dtype: PolarsDataType, /) -> _DeconstructedDType:
+def _deconstruct_dtype(dtype: PolarsDataType, /) -> _DeconDType:
     match dtype:
         case List() as list_:
             return "List", _deconstruct_dtype(list_.inner)
@@ -2145,11 +2145,11 @@ def _deconstruct_dtype(dtype: PolarsDataType, /) -> _DeconstructedDType:
             return repr(dtype)
 
 
-def _reconstruct_schema(schema: _Deconstructed, /) -> Schema:
+def _reconstruct_schema(schema: _DeconSchema, /) -> Schema:
     return Schema({k: _reconstruct_dtype(v) for k, v in schema})
 
 
-def _reconstruct_dtype(obj: _DeconstructedDType, /) -> PolarsDataType:
+def _reconstruct_dtype(obj: _DeconDType, /) -> PolarsDataType:
     match obj:
         case str() as name:
             return getattr(pl, name)
