@@ -695,6 +695,7 @@ class TestToWeeks:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
             assume_does_not_raise(ValueError, match="days out of range"),
+            assume_does_not_raise(ValueError, match="weeks out of range"),
             assume_does_not_raise(
                 OverflowError, match="Python int too large to convert to C long"
             ),
