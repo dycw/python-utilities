@@ -7,7 +7,6 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, assert_never, cast, override
 
-from polars import DataFrame, Series
 from polars.testing import assert_frame_equal
 from pytest_regressions.common import perform_regression_check
 
@@ -18,6 +17,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
     from collections.abc import Set as AbstractSet
 
+    from polars import DataFrame, Series
     from pytest import FixtureRequest
 
     from utilities.orjson import _DataclassHook
@@ -253,13 +253,17 @@ class DataFrameRegressionFixture(_BaseFixture):
         categorical_as_str: bool = False,
     ) -> None:
         from utilities.orjson import read_object
-        from utilities.polars import deserialize_dataframe
+        from utilities.polars import read_dataframe
 
-        left, right = [read_object(p, decompress=decompress) for p in [path1, path2]]
         if summary:
+            left, right = [
+                read_object(p, decompress=decompress) for p in [path1, path2]
+            ]
             assert is_equal(left, right), f"{left=}\n{right=}"
         else:
-            left, right = map(deserialize_dataframe, [left, right])
+            left, right = [
+                read_dataframe(p, decompress=decompress) for p in [path1, path2]
+            ]
             assert_frame_equal(
                 left,
                 right,
@@ -282,14 +286,18 @@ class DataFrameRegressionFixture(_BaseFixture):
         summary: bool = False,
         compress: bool = False,
     ) -> None:
-        from utilities.orjson import serialize, write_object
-        from utilities.polars import serialize_dataframe
+        from utilities.orjson import write_object
+        from utilities.polars import write_dataframe
 
         if summary:
-            data = serialize(_summarize_series_or_dataframe(obj))
+            write_object(
+                _summarize_series_or_dataframe(obj),
+                path,
+                compress=compress,
+                overwrite=True,
+            )
         else:
-            data = serialize_dataframe(obj)
-        write_object(data, path, compress=compress, overwrite=True)
+            write_dataframe(obj, path, compress=compress, overwrite=True)
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -335,13 +343,17 @@ class SeriesRegressionFixture(_BaseFixture):
         from polars.testing import assert_series_equal
 
         from utilities.orjson import read_object
-        from utilities.polars import deserialize_series
+        from utilities.polars import read_series
 
-        left, right = [read_object(p, decompress=decompress) for p in [path1, path2]]
         if summary:
+            left, right = [
+                read_object(p, decompress=decompress) for p in [path1, path2]
+            ]
             assert is_equal(left, right), f"{left=}\n{right=}"
         else:
-            left, right = map(deserialize_series, [left, right])
+            left, right = [
+                read_series(p, decompress=decompress) for p in [path1, path2]
+            ]
             assert_series_equal(
                 left,
                 right,
@@ -364,29 +376,18 @@ class SeriesRegressionFixture(_BaseFixture):
         summary: bool = False,
         compress: bool = False,
     ) -> None:
-        from utilities.orjson import serialize, write_object
-        from utilities.polars import serialize_series
+        from utilities.orjson import write_object
+        from utilities.polars import write_series
 
         if summary:
-            data = serialize(_summarize_series_or_dataframe(obj))
+            write_object(
+                _summarize_series_or_dataframe(obj),
+                path,
+                compress=compress,
+                overwrite=True,
+            )
         else:
-            data = serialize_series(obj)
-        write_object(data, path, compress=compress, overwrite=True)
-
-    def _dump_full(
-        self, path: Path, /, *, obj: Series | DataFrame, compress: bool = False
-    ) -> None:
-        from utilities.orjson import write_object
-        from utilities.polars import serialize_dataframe, serialize_series
-
-        match obj:
-            case Series() as series:
-                data = serialize_series(series)
-            case DataFrame() as df:
-                data = serialize_dataframe(df)
-            case _ as never:
-                assert_never(never)
-        write_object(data, path, compress=compress, overwrite=True)
+            write_series(obj, path, compress=compress, overwrite=True)
 
 
 ##
