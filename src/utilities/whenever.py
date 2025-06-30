@@ -530,21 +530,46 @@ def to_date(
 ##
 
 
-def to_days(delta: DateDelta, /) -> int:
-    """Compute the number of days in a date delta."""
-    months, days = delta.in_months_days()
-    if months != 0:
-        raise ToDaysError(months=months)
-    return days
+def to_days(delta: DateDelta | DateTimeDelta, /) -> int:
+    """Compute the number of days in a delta."""
+    match delta:
+        case DateDelta():
+            months, days = delta.in_months_days()
+            if months != 0:
+                raise _ToDaysMonthsError(delta=delta, months=months)
+            return days
+        case DateTimeDelta():
+            if delta.time_part() != TimeDelta():
+                raise _ToDaysTimeError(delta=delta)
+            try:
+                return to_days(delta.date_part())
+            except _ToDaysMonthsError as error:
+                raise _ToDaysMonthsError(delta=delta, months=error.months) from None
+        case _ as never:
+            assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)
-class ToDaysError(Exception):
+class ToDaysError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToDaysMonthsError(ToDaysError):
+    delta: DateDelta | DateTimeDelta
     months: int
 
     @override
     def __str__(self) -> str:
-        return f"Date delta must not contain months; got {self.months}"
+        return f"Delta must not contain months; got {self.months}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToDaysTimeError(ToDaysError):
+    delta: DateTimeDelta
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain a time part; got {self.delta.time_part()}"
 
 
 ##

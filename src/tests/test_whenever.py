@@ -63,7 +63,6 @@ from utilities.whenever import (
     Freq,
     MeanDateTimeError,
     MinMaxDateError,
-    ToDaysError,
     ToNanosError,
     ToPyTimeDeltaError,
     WheneverLogRecord,
@@ -73,6 +72,8 @@ from utilities.whenever import (
     _MinMaxDateMaxDateError,
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
+    _ToDaysMonthsError,
+    _ToDaysTimeError,
     _ToMonthsDaysError,
     _ToMonthsTimeError,
     _ToYearsDaysError,
@@ -572,20 +573,30 @@ class TestToDateTimeDeltaAndNanos:
 
 
 class TestToDays:
-    @given(days=integers())
-    def test_main(self, *, days: int) -> None:
+    @given(cls=sampled_from([DateDelta, DateTimeDelta]), days=integers())
+    def test_main(self, *, cls: type[DateDelta | DateTimeDelta], days: int) -> None:
         with (
+            assume_does_not_raise(ValueError, match="Out of range"),
             assume_does_not_raise(ValueError, match="days out of range"),
             assume_does_not_raise(
                 OverflowError, match="Python int too large to convert to C long"
             ),
         ):
-            delta = DateDelta(days=days)
+            delta = cls(days=days)
         assert to_days(delta) == days
 
-    def test_error(self) -> None:
-        delta = DateDelta(months=1)
-        with raises(ToDaysError, match="Date delta must not contain months; got 1"):
+    @mark.parametrize(
+        "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
+    )
+    def test_error_months(self, *, delta: DateDelta | DateTimeDelta) -> None:
+        with raises(_ToDaysMonthsError, match="Delta must not contain months; got 1"):
+            _ = to_days(delta)
+
+    def test_error_date_time_delta_time(self) -> None:
+        delta = DateTimeDelta(nanoseconds=1)
+        with raises(
+            _ToDaysTimeError, match="Delta must not contain a time part; got .*"
+        ):
             _ = to_days(delta)
 
 
@@ -598,7 +609,7 @@ class TestToLocalPlain:
 
 class TestToMonths:
     @given(cls=sampled_from([DateDelta, DateTimeDelta]), months=integers())
-    def test_month(self, *, cls: type[DateDelta | DateTimeDelta], months: int) -> None:
+    def test_main(self, *, cls: type[DateDelta | DateTimeDelta], months: int) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
             assume_does_not_raise(ValueError, match="months out of range"),
