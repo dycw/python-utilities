@@ -564,6 +564,7 @@ class TestToDateTimeDeltaAndNanos:
     ) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
+            assume_does_not_raise(ValueError, match="TimeDelta out of range"),
             assume_does_not_raise(ValueError, match="total days out of range"),
             assume_does_not_raise(
                 OverflowError, match="Python int too large to convert to C long"
