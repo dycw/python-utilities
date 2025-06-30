@@ -113,6 +113,8 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from _pytest.mark import ParameterSet
 
     from utilities.sentinel import Sentinel
@@ -556,8 +558,10 @@ class TestToDate:
 
 
 class TestToDateTimeDeltaAndNanos:
-    @given(nanos=integers())
-    def test_main(self, *, nanos: int) -> None:
+    @given(func=sampled_from([to_time_delta, to_date_time_delta]), nanos=integers())
+    def test_main(
+        self, *, func: Callable[[int], TimeDelta | DateTimeDelta], nanos: int
+    ) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
             assume_does_not_raise(ValueError, match="total days out of range"),
@@ -565,7 +569,7 @@ class TestToDateTimeDeltaAndNanos:
                 OverflowError, match="Python int too large to convert to C long"
             ),
         ):
-            delta = to_date_time_delta(nanos)
+            delta = func(nanos)
         assert to_nanos(delta) == nanos
 
     def test_error(self) -> None:

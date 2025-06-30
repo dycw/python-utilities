@@ -665,13 +665,21 @@ class _ToMonthsTimeError(ToMonthsError):
 ##
 
 
-def to_nanos(delta: DateTimeDelta, /) -> int:
+def to_nanos(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> int:
     """Compute the number of nanoseconds in a date-time delta."""
-    try:
-        days = to_days(delta.date_part())
-    except ToDaysError as error:
-        raise ToNanosError(months=error.months) from None
-    return 24 * 60 * 60 * int(1e9) * days + delta.time_part().in_nanoseconds()
+    match delta:
+        case DateDelta():
+            try:
+                days = to_days(delta)
+            except _ToDaysMonthsError as error:
+                raise ToNanosError(months=error.months) from None
+            return 24 * 60 * 60 * int(1e9) * days
+        case TimeDelta():
+            return delta.in_nanoseconds()
+        case DateTimeDelta():
+            return to_nanos(delta.date_part()) + to_nanos(delta.time_part())
+        case _ as never:
+            assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1060,6 +1068,7 @@ __all__ = [
     "ToMonthsError",
     "ToNanosError",
     "ToPyTimeDeltaError",
+    "ToSecondsError",
     "ToWeeksError",
     "ToYearsError",
     "WheneverLogRecord",
@@ -1085,6 +1094,7 @@ __all__ = [
     "to_nanos",
     "to_py_date_or_date_time",
     "to_py_time_delta",
+    "to_seconds",
     "to_weeks",
     "to_years",
     "to_zoned_date_time",
