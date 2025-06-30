@@ -54,12 +54,12 @@ class TestSeriesAndDataFrameRegressionFixtures:
     def test_dataframe(
         self,
         *,
-        dataframe_regression: DataFrameRegressionFixture,
+        df_regression: DataFrameRegressionFixture,
         summary: bool,
         compress: bool,
     ) -> None:
         df = int_range(end=10, eager=True).alias("value").to_frame()
-        dataframe_regression.check(df, summary=summary, compress=compress)
+        df_regression.check(df, summary=summary, compress=compress)
 
 
 class TestOrjsonRegressionFixture:
