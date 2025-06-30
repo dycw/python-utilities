@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 from subprocess import check_output
-from typing import assert_never, overload, override
+from typing import TYPE_CHECKING, assert_never, overload, override
 
 from utilities.atomicwrites import writer
+from utilities.gzip import write_binary
+
+if TYPE_CHECKING:
+    from utilities.types import PathLike
+
+
+##
 
 
 @overload
@@ -36,7 +44,7 @@ def _run_prettier_core(data: bytes | str, /, *, text: bool) -> bytes | str:
     """Run `prettier` on a string/path."""
     try:  # skipif-ci
         return check_output(["prettier", "--parser=json"], input=data, text=text)
-    except FileNotFoundError:
+    except FileNotFoundError:  # pragma: no cover
         raise RunPrettierError from None
 
 
@@ -47,4 +55,16 @@ class RunPrettierError(Exception):
         return "Unable to find 'prettier'"  # pragma: no cover
 
 
-__all__ = ["RunPrettierError", "run_prettier"]
+##
+
+
+def write_formatted_json(
+    data: bytes, path: PathLike, /, *, compress: bool = False, overwrite: bool = False
+) -> None:
+    """Write a formatted byte string to disk."""
+    with suppress(RunPrettierError):
+        data = run_prettier(data)
+    write_binary(data, path, compress=compress, overwrite=overwrite)
+
+
+__all__ = ["RunPrettierError", "run_prettier", "write_formatted_json"]

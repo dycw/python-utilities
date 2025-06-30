@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import builtins
+import datetime as dt
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -95,7 +96,6 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC, ensure_time_zone
 
 if TYPE_CHECKING:
-    import datetime as dt
     from collections.abc import Collection, Hashable, Iterable, Iterator
 
     from hypothesis.database import ExampleDatabase
@@ -859,6 +859,25 @@ def plain_datetimes(
 
 
 @composite
+def py_datetimes(
+    draw: DrawFn, /, *, zoned: MaybeSearchStrategy[bool | None] = None
+) -> dt.datetime:
+    """Strategy for generating standard library datetimes."""
+    zoned_ = draw2(draw, zoned, booleans())
+    timezones = just(UTC) if zoned_ else none()
+    return draw(
+        hypothesis.strategies.datetimes(
+            min_value=dt.datetime(2000, 1, 1),  # noqa: DTZ001
+            max_value=dt.datetime(2000, 12, 31),  # noqa: DTZ001
+            timezones=timezones,
+        )
+    )
+
+
+##
+
+
+@composite
 def random_states(
     draw: DrawFn, /, *, seed: MaybeSearchStrategy[int | None] = None
 ) -> RandomState:
@@ -1404,6 +1423,7 @@ __all__ = [
     "pairs",
     "paths",
     "plain_datetimes",
+    "py_datetimes",
     "random_states",
     "sentinels",
     "sets_fixed_length",

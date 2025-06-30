@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import binary, booleans
-from utilities.gzip import read_binary, write_binary
 
+from utilities.gzip import read_binary, write_binary
 from utilities.hypothesis import temp_paths
 
 if TYPE_CHECKING:
