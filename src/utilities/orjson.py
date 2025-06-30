@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-import gzip
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import suppress
@@ -36,10 +35,10 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.atomicwrites import writer
 from utilities.concurrent import concurrent_map
 from utilities.dataclasses import dataclass_to_dict
 from utilities.functions import ensure_class, is_string_mapping
+from utilities.gzip import read_binary
 from utilities.iterables import (
     OneEmptyError,
     always_iterable,
@@ -47,7 +46,7 @@ from utilities.iterables import (
     one,
     one_unique,
 )
-from utilities.json import RunPrettierError, run_prettier
+from utilities.json import write_formatted_json
 from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
@@ -1202,7 +1201,7 @@ class _GetLogRecordsOneOutput:
 # read/write
 
 
-def read_json(
+def read_object(
     path: PathLike,
     /,
     *,
@@ -1211,19 +1210,14 @@ def read_json(
     objects: AbstractSet[type[Any]] | None = None,
     redirects: Mapping[str, type[Any]] | None = None,
 ) -> Any:
-    """Read an compression from disk."""
-    path = Path(path)
-    if decompress:
-        with gzip.open(path) as gz:
-            data = gz.read()
-    else:
-        data = path.read_bytes()
+    """Read an object from disk."""
+    data = read_binary(path, decompress=decompress)
     return deserialize(
         data, dataclass_hook=dataclass_hook, objects=objects, redirects=redirects
     )
 
 
-def write_json(
+def write_object(
     obj: Any,
     path: PathLike,
     /,
@@ -1247,10 +1241,7 @@ def write_json(
         dataclass_hook=dataclass_hook,
         dataclass_defaults=dataclass_defaults,
     )
-    with suppress(RunPrettierError):
-        data = run_prettier(data)
-    with writer(path, compress=compress, overwrite=overwrite) as temp:
-        _ = temp.write_bytes(data)
+    write_formatted_json(data, path, compress=compress, overwrite=overwrite)
 
 
 __all__ = [
@@ -1261,7 +1252,7 @@ __all__ = [
     "SerializeError",
     "deserialize",
     "get_log_records",
-    "read_json",
+    "read_object",
     "serialize",
-    "write_json",
+    "write_object",
 ]

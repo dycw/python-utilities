@@ -23,7 +23,6 @@ from hypothesis.strategies import (
     data,
     fixed_dictionaries,
     floats,
-    just,
     lists,
     none,
     sampled_from,
@@ -67,6 +66,8 @@ from utilities.hypothesis import (
     float64s,
     int64s,
     pairs,
+    py_datetimes,
+    temp_paths,
     text_ascii,
     zoned_datetimes,
 )
@@ -107,6 +108,7 @@ from utilities.polars import (
     _CheckPolarsDataFrameWidthError,
     _DataClassToDataFrameEmptyError,
     _DataClassToDataFrameNonUniqueError,
+    _deconstruct_dtype,
     _deconstruct_schema,
     _finite_ewm_weights,
     _FiniteEWMWeightsError,
@@ -122,6 +124,7 @@ from utilities.polars import (
     _JoinIntoPeriodsOverlappingError,
     _JoinIntoPeriodsPeriodError,
     _JoinIntoPeriodsSortedError,
+    _reconstruct_dtype,
     _reconstruct_schema,
     _ReifyExprsEmptyError,
     _ReifyExprsSeriesNonUniqueError,
@@ -144,6 +147,7 @@ from utilities.polars import (
     dataclass_to_dataframe,
     dataclass_to_schema,
     deserialize_dataframe,
+    deserialize_series,
     drop_null_struct_series,
     ensure_data_type,
     ensure_expr_or_series,
@@ -167,9 +171,12 @@ from utilities.polars import (
     nan_sum_cols,
     normal,
     order_of_magnitude,
+    read_dataframe,
+    read_series,
     reify_exprs,
     replace_time_zone,
     serialize_dataframe,
+    serialize_series,
     set_first_row_as_columns,
     struct_dtype,
     struct_from_dataclass,
@@ -178,6 +185,8 @@ from utilities.polars import (
     uniform,
     unique_element,
     week_num,
+    write_dataframe,
+    write_series,
     zoned_datetime,
 )
 from utilities.random import get_state
@@ -2277,11 +2286,8 @@ class TestSerializeAndDeserializeDataFrame:
         (Boolean(), booleans()),
         (Date, hypothesis.strategies.dates()),
         (Date(), hypothesis.strategies.dates()),
-        (Datetime(), hypothesis.strategies.datetimes()),
-        (
-            Datetime(time_zone=UTC.key),
-            hypothesis.strategies.datetimes(timezones=just(UTC)),
-        ),
+        (Datetime(), py_datetimes(zoned=False)),
+        (Datetime(time_zone=UTC.key), py_datetimes(zoned=True)),
         (Int64, int64s()),
         (Int64(), int64s()),
         (Float64, float64s()),
@@ -2292,9 +2298,31 @@ class TestSerializeAndDeserializeDataFrame:
         (Struct({"inner": Int64}), fixed_dictionaries({"inner": int64s()})),
     ]
 
-    @given(data=data(), case=sampled_from(cases))
-    def test_main(
-        self, *, data: DataObject, case: tuple[PolarsDataType, SearchStrategy[Any]]
+    @given(data=data(), root=temp_paths(), name=text_ascii(), case=sampled_from(cases))
+    def test_series(
+        self,
+        *,
+        data: DataObject,
+        root: Path,
+        name: str,
+        case: tuple[PolarsDataType, SearchStrategy[Any]],
+    ) -> None:
+        dtype, strategy = case
+        values = data.draw(lists(strategy | none()))
+        sr = Series(name=name, values=values, dtype=dtype)
+        result1 = deserialize_series(serialize_series(sr))
+        assert_series_equal(sr, result1)
+        write_series(sr, file := root.joinpath("file.json"))
+        result2 = read_series(file)
+        assert_series_equal(sr, result2)
+
+    @given(data=data(), root=temp_paths(), case=sampled_from(cases))
+    def test_dataframe(
+        self,
+        *,
+        data: DataObject,
+        root: Path,
+        case: tuple[PolarsDataType, SearchStrategy[Any]],
     ) -> None:
         dtype, strategy = case
         columns = data.draw(lists(text_ascii(min_size=1)))
@@ -2303,8 +2331,16 @@ class TestSerializeAndDeserializeDataFrame:
         )
         schema = dict.fromkeys(columns, dtype)
         df = DataFrame(data=rows, schema=schema, orient="row")
-        result = deserialize_dataframe(serialize_dataframe(df))
-        assert_frame_equal(df, result)
+        result1 = deserialize_dataframe(serialize_dataframe(df))
+        assert_frame_equal(df, result1)
+        write_dataframe(df, file := root.joinpath("file.json"))
+        result2 = read_dataframe(file)
+        assert_frame_equal(df, result2)
+
+    @given(dtype=sampled_from([dtype for dtype, _ in cases]))
+    def test_dtype(self, *, dtype: PolarsDataType) -> None:
+        result = _reconstruct_dtype(_deconstruct_dtype(dtype))
+        assert result == dtype
 
     @given(dtype=sampled_from([dtype for dtype, _ in cases]))
     def test_schema(self, *, dtype: PolarsDataType) -> None:

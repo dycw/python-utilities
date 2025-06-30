@@ -75,9 +75,9 @@ from utilities.orjson import (
     _SerializeIntegerError,
     deserialize,
     get_log_records,
-    read_json,
+    read_object,
     serialize,
-    write_json,
+    write_object,
 )
 from utilities.polars import check_polars_dataframe, zoned_datetime
 from utilities.sentinel import Sentinel, sentinel
@@ -743,11 +743,11 @@ class TestObjectHookGetObject:
             _ = _object_hook_get_object("qualname", objects=set())
 
 
-class TestReadAndWriteJSON:
+class TestReadAndWriteObject:
     @given(root=temp_paths(), obj=objects(parsable=True), compress=booleans())
     def test_main(self, *, root: Path, obj: Any, compress: bool) -> None:
         path = root.joinpath("file.json")
-        write_json(obj, path, compress=compress)
+        write_object(obj, path, compress=compress)
         assert path.is_file()
-        result = read_json(path, decompress=compress)
+        result = read_object(path, decompress=compress)
         assert is_equal(result, obj)
