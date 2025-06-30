@@ -3,17 +3,13 @@ from __future__ import annotations
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import partial
-from json import loads
 from pathlib import Path
-from shutil import copytree
 from typing import TYPE_CHECKING, Any, assert_never, cast
 
-from numpy import full
 from pytest_regressions.common import perform_regression_check
-from pytest_regressions.file_regression import FileRegressionFixture
 
-from utilities.functions import ensure_str
 from utilities.operator import is_equal
+from utilities.pathlib import ensure_suffix
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
@@ -51,32 +47,34 @@ class OrjsonRegressionFixture:
         obj: Any,
         /,
         *,
-        compress: bool = False,
-        objects: AbstractSet[type[Any]] | None = None,
-        redirects: Mapping[str, type[Any]] | None = None,
         before: Callable[[Any], Any] | None = None,
-        dataclass_hook: _DataclassHook | None = None,
         globalns: StrMapping | None = None,
         localns: StrMapping | None = None,
         warn_name_errors: bool = False,
+        dataclass_hook: _DataclassHook | None = None,
         dataclass_defaults: bool = False,
+        compress: bool = False,
+        objects: AbstractSet[type[Any]] | None = None,
+        redirects: Mapping[str, type[Any]] | None = None,
         suffix: str | None = None,
     ) -> None:
         """Check the serialization of the object against the baseline."""
-        from utilities.orjson import serialize
-
-        data = serialize(
-            obj,
+        tmp = self.tmp_path.joinpath("file")
+        self._dump_fn(
+            tmp,
+            obj=obj,
             before=before,
             globalns=globalns,
             localns=localns,
             warn_name_errors=warn_name_errors,
             dataclass_hook=dataclass_hook,
             dataclass_defaults=dataclass_defaults,
+            compress=compress,
         )
-        full_path = _get_path(self.request)
+        path = _get_path(self.request)
         if suffix is not None:
-            full_path = f"{full}__{suffix}"
+            path = Path(f"{path}__{suffix}")
+        path = ensure_suffix(path, ".json.gz" if compress else ".json")
         perform_regression_check(
             datadir=NotImplemented,
             original_datadir=NotImplemented,
@@ -99,10 +97,10 @@ class OrjsonRegressionFixture:
                 dataclass_defaults=dataclass_defaults,
                 compress=compress,
             ),
-            extension=".json.gz" if compress else ".json",
-            fullpath=full_path,
-            force_regen=1,
-            obtained_filename=full_path,
+            extension=NotImplemented,
+            fullpath=tmp,
+            force_regen=False,
+            obtained_filename=path,
         )
 
     def _check_fn(
@@ -117,8 +115,6 @@ class OrjsonRegressionFixture:
         redirects: Mapping[str, type[Any]] | None = None,
     ) -> None:
         from utilities.orjson import read_json
-
-        breakpoint()
 
         left, right = [
             read_json(

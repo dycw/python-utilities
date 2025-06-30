@@ -242,7 +242,7 @@ addopts = [
   "--cov-report=html",
   "--durations=10",
   "--durations-min=10",
-  "--pdbcls=pudb.debugger:Debugger",
+  # "--pdbcls=pudb.debugger:Debugger",
   "--strict-markers",
   "--timeout=600",
 ]

@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
-from hypothesis import HealthCheck, Phase, given, reproduce_failure, settings
-from hypothesis.strategies import sampled_from
 from polars import int_range
 from pytest import mark, param
 
@@ -13,7 +11,6 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureNestedOuterFirstInner,
     DataClassFutureNestedOuterFirstOuter,
 )
-from utilities.contextvars import set_global_breakpoint
 
 if TYPE_CHECKING:
     from utilities.pytest_regressions import (
@@ -62,22 +59,32 @@ class TestPolarsRegressionFixture:
 
 
 class TestOrjsonRegressionFixture:
-    @mark.parametrize("compress", [param(True, marks=mark.only), param(False)])
+    @mark.parametrize("compress", [param(True), param(False)])
     def test_dataclass_nested(
         self, *, orjson_regression: OrjsonRegressionFixture, compress: bool
     ) -> None:
         obj = DataClassFutureNestedOuterFirstOuter(
             inner=DataClassFutureNestedOuterFirstInner(int_=0)
         )
-        orjson_regression.check(obj, compress=compress)
+        orjson_regression.check(
+            obj,
+            compress=compress,
+            objects={
+                DataClassFutureNestedOuterFirstOuter,
+                DataClassFutureNestedOuterFirstInner,
+            },
+        )
 
-    def test_dataclass_int(self, *, orjson_regression: OrjsonRegressionFixture) -> None:
+    @mark.parametrize("compress", [param(True), param(False)])
+    @mark.only
+    def test_dataclass_int(
+        self, *, orjson_regression: OrjsonRegressionFixture, compress: bool
+    ) -> None:
         obj = DataClassFutureInt(int_=0)
-        orjson_regression.check(obj)
+        orjson_regression.check(obj, compress=compress, objects={DataClassFutureInt})
 
     @mark.parametrize("truth", [param("true"), param("false")])
     @mark.parametrize("compress", [param(True), param(False)])
-    @mark.only
     def test_dataclass_literal(
         self,
         *,
@@ -86,4 +93,6 @@ class TestOrjsonRegressionFixture:
         compress: bool,
     ) -> None:
         obj = DataClassFutureLiteral(truth=truth)
-        orjson_regression.check(obj, compress=compress, suffix=truth)
+        orjson_regression.check(
+            obj, compress=compress, objects={DataClassFutureLiteral}, suffix=truth
+        )
