@@ -226,6 +226,7 @@ type MonthDayLike = MaybeStr[MonthDay]
 type PlainDateTimeLike = MaybeStr[PlainDateTime]
 type TimeDeltaLike = MaybeStr[TimeDelta]
 type TimeLike = MaybeStr[Time]
+type TimeOrDateTimeDelta = TimeDelta | DateTimeDelta
 type YearMonthLike = MaybeStr[YearMonth]
 type ZonedDateTimeLike = MaybeStr[ZonedDateTime]
 type DateTimeRoundUnit = Literal[
@@ -305,6 +306,7 @@ __all__ = [
     "SupportsRound",
     "TimeDeltaLike",
     "TimeLike",
+    "TimeOrDateTimeDelta",
     "TimeZone",
     "TimeZoneLike",
     "TupleOrStrMapping",

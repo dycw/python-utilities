@@ -34,7 +34,7 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import DateOrDateTimeDelta, DateTimeRoundUnit
+from utilities.types import DateOrDateTimeDelta, DateTimeRoundUnit, TimeOrDateTimeDelta
 from utilities.typing import get_literal_elements
 from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
@@ -570,7 +570,7 @@ class TestToDate:
 class TestToDateTimeDeltaAndNanos:
     @given(func=sampled_from([to_time_delta, to_date_time_delta]), nanos=integers())
     def test_main(
-        self, *, func: Callable[[int], TimeDelta | DateTimeDelta], nanos: int
+        self, *, func: Callable[[int], TimeOrDateTimeDelta], nanos: int
     ) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
@@ -631,7 +631,7 @@ class TestToDays:
     @mark.parametrize(
         "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
     )
-    def test_error_nanoseconds(self, *, delta: TimeDelta | DateTimeDelta) -> None:
+    def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToDaysNanosecondsError,
             match="Delta must not contain extra nanoseconds; got .*",
@@ -654,7 +654,7 @@ class TestToHours:
 
     @given(cls=sampled_from([TimeDelta, DateTimeDelta]), hours=integers())
     def test_time_or_date_time_delta(
-        self, *, cls: type[TimeDelta | DateTimeDelta], hours: int
+        self, *, cls: type[TimeOrDateTimeDelta], hours: int
     ) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
@@ -677,7 +677,7 @@ class TestToHours:
     @mark.parametrize(
         "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
     )
-    def test_error_nanoseconds(self, *, delta: TimeDelta | DateTimeDelta) -> None:
+    def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToHoursNanosecondsError,
             match="Delta must not contain extra nanoseconds; got .*",
@@ -707,7 +707,7 @@ class TestToMinutes:
 
     @given(cls=sampled_from([TimeDelta, DateTimeDelta]), minutes=integers())
     def test_time_or_date_time_delta(
-        self, *, cls: type[TimeDelta | DateTimeDelta], minutes: int
+        self, *, cls: type[TimeOrDateTimeDelta], minutes: int
     ) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
@@ -732,7 +732,7 @@ class TestToMinutes:
     @mark.parametrize(
         "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
     )
-    def test_error_nanoseconds(self, *, delta: TimeDelta | DateTimeDelta) -> None:
+    def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToMinutesNanosecondsError,
             match="Delta must not contain extra nanoseconds; got .*",
@@ -828,7 +828,7 @@ class TestToSeconds:
 
     @given(cls=sampled_from([TimeDelta, DateTimeDelta]), seconds=integers())
     def test_time_or_date_time_delta(
-        self, *, cls: type[TimeDelta | DateTimeDelta], seconds: int
+        self, *, cls: type[TimeOrDateTimeDelta], seconds: int
     ) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
@@ -853,7 +853,7 @@ class TestToSeconds:
     @mark.parametrize(
         "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
     )
-    def test_error_nanoseconds(self, *, delta: TimeDelta | DateTimeDelta) -> None:
+    def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToSecondsNanosecondsError,
             match="Delta must not contain extra nanoseconds; got .*",
@@ -907,7 +907,7 @@ class TestToWeeks:
     @mark.parametrize(
         "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
     )
-    def test_error_nanoseconds(self, *, delta: TimeDelta | DateTimeDelta) -> None:
+    def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToWeeksNanosecondsError,
             match="Delta must not contain extra nanoseconds; got .*",

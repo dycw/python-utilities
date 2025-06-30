@@ -34,7 +34,13 @@ from utilities.math import sign
 from utilities.platform import get_strftime
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import DateOrDateTimeDelta, DateTimeRoundUnit, Delta, MaybeStr
+from utilities.types import (
+    DateOrDateTimeDelta,
+    DateTimeRoundUnit,
+    Delta,
+    MaybeStr,
+    TimeOrDateTimeDelta,
+)
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
 
@@ -610,7 +616,7 @@ class _ToDaysMonthsError(ToDaysError):
 
 @dataclass(kw_only=True, slots=True)
 class _ToDaysNanosecondsError(ToDaysError):
-    delta: TimeDelta | DateTimeDelta
+    delta: TimeOrDateTimeDelta
     nanoseconds: int
 
     @override
@@ -666,7 +672,7 @@ class _ToHoursMonthsError(ToHoursError):
 
 @dataclass(kw_only=True, slots=True)
 class _ToHoursNanosecondsError(ToHoursError):
-    delta: TimeDelta | DateTimeDelta
+    delta: TimeOrDateTimeDelta
     nanoseconds: int
 
     @override
@@ -729,7 +735,7 @@ class _ToMinutesMonthsError(ToMinutesError):
 
 @dataclass(kw_only=True, slots=True)
 class _ToMinutesNanosecondsError(ToMinutesError):
-    delta: TimeDelta | DateTimeDelta
+    delta: TimeOrDateTimeDelta
     nanoseconds: int
 
     @override
@@ -1001,7 +1007,7 @@ class _ToSecondsMonthsError(ToSecondsError):
 
 @dataclass(kw_only=True, slots=True)
 class _ToSecondsNanosecondsError(ToSecondsError):
-    delta: TimeDelta | DateTimeDelta
+    delta: TimeOrDateTimeDelta
     nanoseconds: int
 
     @override
@@ -1044,7 +1050,7 @@ class _ToWeeksMonthsError(ToWeeksError):
 
 @dataclass(kw_only=True, slots=True)
 class _ToWeeksNanosecondsError(ToWeeksError):
-    delta: TimeDelta | DateTimeDelta
+    delta: TimeOrDateTimeDelta
     nanoseconds: int
 
     @override
