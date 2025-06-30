@@ -58,7 +58,7 @@ from polars._typing import IntoExprColumn, SchemaDict
 from polars.exceptions import ComputeError
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
-from pytest import mark, raises
+from pytest import mark, param, raises
 from whenever import TimeZoneNotFoundError
 
 import utilities.polars
@@ -1842,14 +1842,27 @@ class TestJoin:
 
 @mark.only
 class TestJoinIntoPeriods:
-    def test_main(self) -> None:
+    dtype: ClassVar[Struct] = struct_dtype(start=DatetimeUTC, end=DatetimeUTC)
+
+    @mark.parametrize("on", [param("datetime"), param(None)])
+    def test_main(self, *, on: str | None) -> None:
         df1, df2, expected = self._prepare_main()
-        result = join_into_periods(df1, df2, on="datetime")
+        result = join_into_periods(df1, df2, on=on)
         assert_frame_equal(result, expected)
 
     def test_left_on_and_right_on(self) -> None:
         df1, df2, expected = self._prepare_main(right="period", joined_second="period")
         result = join_into_periods(df1, df2, left_on="datetime", right_on="period")
+        assert_frame_equal(result, expected)
+
+    def test_overlapping_bar(self) -> None:
+        times = [(dt.time(), dt.time(1, 30))]
+        df1 = self._lift_df(times)
+        periods = [(dt.time(1), dt.time(2)), (dt.time(2), dt.time(3))]
+        df2 = self._lift_df(periods)
+        result = join_into_periods(df1, df2, on="datetime")
+        df3 = self._lift_df([None], column="datetime_right")
+        expected = concat([df1, df3], how="horizontal")
         assert_frame_equal(result, expected)
 
     def _prepare_main(
@@ -1930,7 +1943,7 @@ class TestJoinIntoPeriods:
     ) -> DataFrame:
         return DataFrame(
             data=[self._lift_row(t, column=column) for t in times],
-            schema={column: struct_dtype(start=DatetimeUTC, end=DatetimeUTC)},
+            schema={column: self.dtype},
             orient="row",
         )
 
