@@ -119,7 +119,9 @@ from utilities.polars import (
     _IsNearEventAfterError,
     _IsNearEventBeforeError,
     _JoinIntoPeriodsArgumentsError,
+    _JoinIntoPeriodsOverlappingError,
     _JoinIntoPeriodsPeriodError,
+    _JoinIntoPeriodsSortedError,
     _reconstruct_schema,
     _ReifyExprsEmptyError,
     _ReifyExprsSeriesNonUniqueError,
@@ -1914,7 +1916,7 @@ class TestJoinIntoPeriods:
         ):
             _ = join_into_periods(DataFrame(), DataFrame(), left_on="datetime")
 
-    def test_error_left_periods(self) -> None:
+    def test_error_periods(self) -> None:
         times = [(dt.time(1), dt.time())]
         df = self._lift_df(times)
         with raises(
@@ -1923,16 +1925,32 @@ class TestJoinIntoPeriods:
         ):
             _ = join_into_periods(df, DataFrame())
 
-    def test_error_right_periods(self) -> None:
-        times1 = [(dt.time(), dt.time(1))]
-        df1 = self._lift_df(times1)
-        times2 = [(dt.time(1), dt.time())]
-        df2 = self._lift_df(times2)
+    def test_error_left_start_sorted(self) -> None:
+        times = [(dt.time(1), dt.time(2)), (dt.time(), dt.time(1))]
+        df = self._lift_df(times)
         with raises(
-            _JoinIntoPeriodsPeriodError,
-            match="Right DataFrame column 'datetime' must contain valid periods",
+            _JoinIntoPeriodsSortedError,
+            match="Left DataFrame column 'datetime/start' must be sorted",
         ):
-            _ = join_into_periods(df1, df2)
+            _ = join_into_periods(df, df)
+
+    def test_error_end_sorted(self) -> None:
+        times = [(dt.time(), dt.time(3)), (dt.time(1), dt.time(2))]
+        df = self._lift_df(times)
+        with raises(
+            _JoinIntoPeriodsSortedError,
+            match="Left DataFrame column 'datetime/end' must be sorted",
+        ):
+            _ = join_into_periods(df, df)
+
+    def test_error_overlapping(self) -> None:
+        times = [(dt.time(), dt.time(2)), (dt.time(1), dt.time(3))]
+        df = self._lift_df(times)
+        with raises(
+            _JoinIntoPeriodsOverlappingError,
+            match="Left DataFrame column 'datetime' must not contain overlaps",
+        ):
+            _ = join_into_periods(df, DataFrame())
 
     def _lift_df(
         self,

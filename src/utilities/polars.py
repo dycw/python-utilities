@@ -48,7 +48,7 @@ from polars.exceptions import (
     PolarsInefficientMapWarning,
 )
 from polars.schema import Schema
-from polars.testing import assert_frame_equal
+from polars.testing import assert_frame_equal, assert_series_equal
 
 from utilities.dataclasses import _YieldFieldsInstance, yield_fields
 from utilities.errors import ImpossibleCaseError
@@ -1767,10 +1767,8 @@ def _join_into_periods_core(
     suffix: str = "_right",
 ) -> DataFrame:
     """Join a pair of DataFrames on their periods; left in right."""
-    if not (left[left_on].struct["start"] <= left[left_on].struct["end"]).all():
-        raise _JoinIntoPeriodsPeriodError(left_or_right="left", column=left_on)
-    if not (right[right_on].struct["start"] <= right[right_on].struct["end"]).all():
-        raise _JoinIntoPeriodsPeriodError(left_or_right="right", column=right_on)
+    _join_into_periods_check(left, left_on, "left")
+    _join_into_periods_check(right, right_on, "right")
     joined = left.join_asof(
         right,
         left_on=col(left_on).struct["start"],
@@ -1787,8 +1785,44 @@ def _join_into_periods_core(
     return joined.with_columns(when(is_correct).then(new_col))
 
 
+def _join_into_periods_check(
+    df: DataFrame, column: str, left_or_right: Literal["left", "right"], /
+) -> None:
+    start = df[column].struct["start"]
+    end = df[column].struct["end"]
+    if not (start <= end).all():
+        raise _JoinIntoPeriodsPeriodError(left_or_right=left_or_right, column=column)
+    try:
+        assert_series_equal(start, start.sort())
+    except AssertionError:
+        raise _JoinIntoPeriodsSortedError(
+            left_or_right=left_or_right, column=column, start_or_end="start"
+        ) from None
+    try:
+        assert_series_equal(end, end.sort())
+    except AssertionError:
+        raise _JoinIntoPeriodsSortedError(
+            left_or_right=left_or_right, column=column, start_or_end="end"
+        ) from None
+    if (df.height >= 2) and (end[1:] > start[:-1]).any():
+        raise _JoinIntoPeriodsOverlappingError(
+            left_or_right=left_or_right, column=column
+        )
+
+
 @dataclass(kw_only=True, slots=True)
 class JoinIntoPeriodsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _JoinIntoPeriodsArgumentsError(JoinIntoPeriodsError):
+    on: str | None
+    left_on: str | None
+    right_on: str | None
+
+    @override
+    def __str__(self) -> str:
+        return f"Either 'on' must be given or 'left_on' and 'right_on' must be given; got {self.on!r}, {self.left_on!r} and {self.right_on!r}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1802,14 +1836,24 @@ class _JoinIntoPeriodsPeriodError(JoinIntoPeriodsError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _JoinIntoPeriodsArgumentsError(JoinIntoPeriodsError):
-    on: str | None
-    left_on: str | None
-    right_on: str | None
+class _JoinIntoPeriodsSortedError(JoinIntoPeriodsError):
+    left_or_right: Literal["left", "right"]
+    column: str
+    start_or_end: Literal["start", "end"]
 
     @override
     def __str__(self) -> str:
-        return f"Either 'on' must be given or 'left_on' and 'right_on' must be given; got {self.on!r}, {self.left_on!r} and {self.right_on!r}"
+        return f"{self.left_or_right.title()} DataFrame column '{self.column}/{self.start_or_end}' must be sorted"
+
+
+@dataclass(kw_only=True, slots=True)
+class _JoinIntoPeriodsOverlappingError(JoinIntoPeriodsError):
+    left_or_right: Literal["left", "right"]
+    column: str
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.left_or_right.title()} DataFrame column {self.column!r} must not contain overlaps"
 
 
 ##
