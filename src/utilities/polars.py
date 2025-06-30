@@ -2083,6 +2083,39 @@ def _replace_time_zone_one(
 ##
 
 
+def read_series(path: PathLike, /, *, decompress: bool = False) -> Series:
+    """Read a Series from disk."""
+    data = read_binary(path, decompress=decompress)
+    return deserialize_series(data)
+
+
+def write_series(
+    series: Series,
+    path: PathLike,
+    /,
+    *,
+    compress: bool = False,
+    overwrite: bool = False,
+) -> None:
+    """Write a Series to disk."""
+    data = serialize_series(series)
+    write_formatted_json(data, path, compress=compress, overwrite=overwrite)
+
+
+def read_dataframe(path: PathLike, /, *, decompress: bool = False) -> DataFrame:
+    """Read a DataFrame from disk."""
+    data = read_binary(path, decompress=decompress)
+    return deserialize_dataframe(data)
+
+
+def write_dataframe(
+    df: DataFrame, path: PathLike, /, *, compress: bool = False, overwrite: bool = False
+) -> None:
+    """Write a DataFrame to disk."""
+    data = serialize_dataframe(df)
+    write_formatted_json(data, path, compress=compress, overwrite=overwrite)
+
+
 def serialize_series(series: Series, /) -> bytes:
     """Serialize a Series."""
     from utilities.orjson import serialize
