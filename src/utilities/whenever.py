@@ -530,6 +530,43 @@ def to_date(
 ##
 
 
+def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
+    """Construct a date-time delta."""
+    components = _to_time_delta_components(nanos)
+    days, hours = divmod(components.hours, 24)
+    weeks, days = divmod(days, 7)
+    match sign(nanos):  # pragma: no cover
+        case 1:
+            if hours < 0:
+                hours += 24
+                days -= 1
+            if days < 0:
+                days += 7
+                weeks -= 1
+        case -1:
+            if hours > 0:
+                hours -= 24
+                days += 1
+            if days > 0:
+                days -= 7
+                weeks += 1
+        case 0:
+            ...
+    return DateTimeDelta(
+        weeks=weeks,
+        days=days,
+        hours=hours,
+        minutes=components.minutes,
+        seconds=components.seconds,
+        microseconds=components.microseconds,
+        milliseconds=components.milliseconds,
+        nanoseconds=components.nanoseconds,
+    )
+
+
+##
+
+
 def to_days(delta: DateDelta | DateTimeDelta, /) -> int:
     """Compute the number of days in a delta."""
     match delta:
@@ -570,43 +607,6 @@ class _ToDaysTimeError(ToDaysError):
     @override
     def __str__(self) -> str:
         return f"Delta must not contain a time part; got {self.delta.time_part()}"
-
-
-##
-
-
-def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
-    """Construct a date-time delta."""
-    components = _to_time_delta_components(nanos)
-    days, hours = divmod(components.hours, 24)
-    weeks, days = divmod(days, 7)
-    match sign(nanos):  # pragma: no cover
-        case 1:
-            if hours < 0:
-                hours += 24
-                days -= 1
-            if days < 0:
-                days += 7
-                weeks -= 1
-        case -1:
-            if hours > 0:
-                hours -= 24
-                days += 1
-            if days > 0:
-                days -= 7
-                weeks += 1
-        case 0:
-            ...
-    return DateTimeDelta(
-        weeks=weeks,
-        days=days,
-        hours=hours,
-        minutes=components.minutes,
-        seconds=components.seconds,
-        microseconds=components.microseconds,
-        milliseconds=components.milliseconds,
-        nanoseconds=components.nanoseconds,
-    )
 
 
 ##
@@ -829,6 +829,56 @@ def _to_time_delta_components(nanos: int, /) -> _TimeDeltaComponents:
 ##
 
 
+def to_weeks(delta: DateDelta | DateTimeDelta, /) -> int:
+    """Compute the number of weeks in a delta."""
+    try:
+        days = to_days(delta)
+    except _ToDaysMonthsError as error:
+        raise _ToWeeksMonthsError(delta=error.delta, months=error.months) from None
+    except _ToDaysTimeError as error:
+        raise _ToWeeksTimeError(delta=error.delta) from None
+    weeks, remainder = divmod(days, 7)
+    if remainder != 0:
+        raise _ToWeeksDaysError(delta=delta, days=days) from None
+    return weeks
+
+
+@dataclass(kw_only=True, slots=True)
+class ToWeeksError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToWeeksMonthsError(ToWeeksError):
+    delta: DateDelta | DateTimeDelta
+    months: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain months; got {self.months}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToWeeksTimeError(ToWeeksError):
+    delta: DateTimeDelta
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain a time part; got {self.delta.time_part()}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToWeeksDaysError(ToWeeksError):
+    delta: DateDelta | DateTimeDelta
+    days: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain extra days; got {self.days}"
+
+
+##
+
+
 def to_years(delta: DateDelta | DateTimeDelta, /) -> int:
     """Compute the number of years in a delta."""
     match delta:
@@ -1010,6 +1060,7 @@ __all__ = [
     "ToMonthsError",
     "ToNanosError",
     "ToPyTimeDeltaError",
+    "ToWeeksError",
     "ToYearsError",
     "WheneverLogRecord",
     "add_year_month",
@@ -1034,6 +1085,7 @@ __all__ = [
     "to_nanos",
     "to_py_date_or_date_time",
     "to_py_time_delta",
+    "to_weeks",
     "to_years",
     "to_zoned_date_time",
     "two_digit_year_month",
