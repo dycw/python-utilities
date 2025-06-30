@@ -67,7 +67,6 @@ from utilities.whenever import (
     ToMonthsError,
     ToNanosError,
     ToPyTimeDeltaError,
-    ToYearsError,
     WheneverLogRecord,
     _FreqDayIncrementError,
     _FreqIncrementError,
@@ -75,6 +74,9 @@ from utilities.whenever import (
     _MinMaxDateMaxDateError,
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
+    _ToYearsDaysError,
+    _ToYearsMonthsError,
+    _ToYearsTimeError,
     add_year_month,
     datetime_utc,
     diff_year_month,
@@ -668,6 +670,7 @@ class TestToYears:
     def test_date_delta(self, *, years: int) -> None:
         with (
             assume_does_not_raise(ValueError, match="years out of range"),
+            assume_does_not_raise(ValueError, match="months out of range"),
             assume_does_not_raise(
                 OverflowError, match="Python int too large to convert to C long"
             ),
@@ -679,6 +682,7 @@ class TestToYears:
     def test_date_time_delta(self, *, years: int) -> None:
         with (
             assume_does_not_raise(ValueError, match="years out of range"),
+            assume_does_not_raise(ValueError, match="months out of range"),
             assume_does_not_raise(
                 OverflowError, match="Python int too large to convert to C long"
             ),
@@ -686,29 +690,23 @@ class TestToYears:
             delta = DateTimeDelta(years=years)
         assert to_years(delta) == years
 
-    def test_error_date_delta_months(self) -> None:
-        delta = DateDelta(years=1, months=1)
-        with raises(ToYearsError, match="Date delta must not contain months; got 1"):
+    @mark.parametrize(
+        "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
+    )
+    def test_error_date_delta_months(self, *, delta: DateDelta | DateTimeDelta) -> None:
+        with raises(_ToYearsMonthsError, match="Delta must not contain months; got 1"):
             _ = to_years(delta)
 
-    def test_error_date_delta_days(self) -> None:
-        delta = DateDelta(years=1, days=1)
-        with raises(ToYearsError, match="Date delta must not contain months; got 1"):
-            _ = to_years(delta)
-
-    def test_error_date_time_delta_months(self) -> None:
-        delta = DateTimeDelta(years=1, months=1)
-        with raises(ToYearsError, match="Date delta must not contain months; got 1"):
-            _ = to_years(delta)
-
-    def test_error_date_time_delta_days(self) -> None:
-        delta = DateTimeDelta(years=1, days=1)
-        with raises(ToYearsError, match="Date delta must not contain months; got 1"):
+    @mark.parametrize("delta", [param(DateDelta(days=1)), param(DateTimeDelta(days=1))])
+    def test_error_date_delta_days(self, *, delta: DateDelta | DateTimeDelta) -> None:
+        with raises(_ToYearsDaysError, match="Delta must not contain days; got 1"):
             _ = to_years(delta)
 
     def test_error_date_time_delta_time(self) -> None:
-        delta = DateTimeDelta(years=1, hours=1)
-        with raises(ToYearsError, match="Date delta must not contain months; got 1"):
+        delta = DateTimeDelta(nanoseconds=1)
+        with raises(
+            _ToYearsTimeError, match="Delta must not contain a time part; got .*"
+        ):
             _ = to_years(delta)
 
 
