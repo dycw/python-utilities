@@ -916,7 +916,7 @@ class TestToWeeks:
             _ToWeeksNanosecondsError,
             match="Delta must not contain extra nanoseconds; got .*",
         ):
-            _ = to_days(delta)
+            _ = to_weeks(delta)
 
 
 class TestToYears:
