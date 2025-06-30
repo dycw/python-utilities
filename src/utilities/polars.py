@@ -1734,24 +1734,13 @@ def join_into_periods(
 ) -> DataFrame:
     """Join a pair of DataFrames on their periods; left in right."""
     joined = left.join_asof(
-        right,
-        on=col(on).struct["start"],
-        # left_on=col(on).struct["end"],
-        # right_on=col(on).struct["start"],
-        strategy="backward",
-        coalesce=False,
+        right, on=col(on).struct["start"], strategy="backward", coalesce=False
     )
     new = col(f"{on}_right")
     is_correct = (new.struct["start"] <= col(on).struct["start"]) & (
         col(on).struct["end"] <= new.struct["end"]
     )
     return joined.with_columns(when(is_correct).then(new))
-    return joined.filter(
-        new.struct["start"] <= col(on).struct["start"],
-        col(on).struct["end"] <= new.struct["end"],
-    )
-
-    # left.join_asof(right, left_on="end", right_on="start", strategy="backward").head(n)
 
 
 def _add_trading_sessions_one(

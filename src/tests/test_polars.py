@@ -1841,6 +1841,7 @@ class TestJoin:
 @mark.only
 class TestJoinIntoPeriods:
     def test_main(self) -> None:
+        df1, df2, df3 = self._prepare_main()
         times = [
             (dt.time(), dt.time(0, 30)),
             (dt.time(0, 30), dt.time(1)),
@@ -1880,14 +1881,71 @@ class TestJoinIntoPeriods:
             data=list(map(self._lift, joined)), schema=schema, orient="row"
         ).rename({"datetime": "datetime_right"})
         expected = concat([df1, df3], how="horizontal")
-        i = 10
-        assert_frame_equal(result[:i], expected[:i])
+        df1, df2, expected = self._prepare_main()
+        assert_frame_equal(result, expected)
 
-    def _lift(self, times: tuple[dt.time, dt.time] | None, /) -> StrMapping | None:
+    def _prepare_main(
+        self,
+        *,
+        left: str = "datetime",
+        right: str = "datetime",
+        joined_first: str = "datetime",
+        joined_second: str = "datetime_right",
+    ) -> tuple[DataFrame, DataFrame, DataFrame]:
+        times = [
+            (dt.time(), dt.time(0, 30)),
+            (dt.time(0, 30), dt.time(1)),
+            (dt.time(1), dt.time(1, 30)),
+            (dt.time(1, 30), dt.time(2)),
+            (dt.time(2), dt.time(2, 30)),
+            (dt.time(2, 30), dt.time(3)),
+            (dt.time(3), dt.time(3, 30)),
+            (dt.time(3, 30), dt.time(4)),
+            (dt.time(4), dt.time(4, 30)),
+            (dt.time(4, 30), dt.time(5)),
+        ]
+        df1 = DataFrame(
+            data=[self._lift(t, column=left) for t in times],
+            schema={left: struct_dtype(start=DatetimeUTC, end=DatetimeUTC)},
+            orient="row",
+        )
+        periods = [
+            (dt.time(1), dt.time(2)),
+            (dt.time(2), dt.time(3)),
+            (dt.time(3), dt.time(4)),
+        ]
+        df2 = DataFrame(
+            data=[self._lift(p, column=right) for p in periods],
+            schema={right: struct_dtype(start=DatetimeUTC, end=DatetimeUTC)},
+            orient="row",
+        )
+        joined = [
+            None,
+            None,
+            (dt.time(1), dt.time(2)),
+            (dt.time(1), dt.time(2)),
+            (dt.time(2), dt.time(3)),
+            (dt.time(2), dt.time(3)),
+            (dt.time(3), dt.time(4)),
+            (dt.time(3), dt.time(4)),
+            None,
+            None,
+        ]
+        df3 = DataFrame(
+            data=[self._lift(j, column=joined_second) for j in joined],
+            schema={joined_second: struct_dtype(start=DatetimeUTC, end=DatetimeUTC)},
+            orient="row",
+        )
+        expected = concat([df1, df3], how="horizontal")
+        return df1, df2, expected
+
+    def _lift(
+        self, times: tuple[dt.time, dt.time] | None, /, *, column: str = "datetime"
+    ) -> StrMapping | None:
         if times is None:
             return None
         start, end = times
-        return {"datetime": {"start": self._lift1(start), "end": self._lift1(end)}}
+        return {column: {"start": self._lift1(start), "end": self._lift1(end)}}
 
     def _lift1(self, time: dt.time, /) -> dt.datetime:
         return dt.datetime.combine(dt.date(2000, 1, 1), time, tzinfo=UTC)
