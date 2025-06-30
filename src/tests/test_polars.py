@@ -88,6 +88,7 @@ from utilities.polars import (
     InsertBeforeError,
     IsNotNullStructSeriesError,
     IsNullStructSeriesError,
+    JoinIntoPeriodsError,
     SetFirstRowAsColumnsError,
     StructFromDataClassError,
     _check_polars_dataframe_predicates,
@@ -1841,47 +1842,13 @@ class TestJoin:
 @mark.only
 class TestJoinIntoPeriods:
     def test_main(self) -> None:
-        df1, df2, df3 = self._prepare_main()
-        times = [
-            (dt.time(), dt.time(0, 30)),
-            (dt.time(0, 30), dt.time(1)),
-            (dt.time(1), dt.time(1, 30)),
-            (dt.time(1, 30), dt.time(2)),
-            (dt.time(2), dt.time(2, 30)),
-            (dt.time(2, 30), dt.time(3)),
-            (dt.time(3), dt.time(3, 30)),
-            (dt.time(3, 30), dt.time(4)),
-            (dt.time(4), dt.time(4, 30)),
-            (dt.time(4, 30), dt.time(5)),
-        ]
-        schema = {"datetime": struct_dtype(start=DatetimeUTC, end=DatetimeUTC)}
-        df1 = DataFrame(data=list(map(self._lift, times)), schema=schema, orient="row")
-        periods = [
-            (dt.time(1), dt.time(2)),
-            (dt.time(2), dt.time(3)),
-            (dt.time(3), dt.time(4)),
-        ]
-        df2 = DataFrame(
-            data=list(map(self._lift, periods)), schema=schema, orient="row"
-        )
-        result = join_into_periods(df1, df2, on="datetime")
-        joined = [
-            None,
-            None,
-            (dt.time(1), dt.time(2)),
-            (dt.time(1), dt.time(2)),
-            (dt.time(2), dt.time(3)),
-            (dt.time(2), dt.time(3)),
-            (dt.time(3), dt.time(4)),
-            (dt.time(3), dt.time(4)),
-            None,
-            None,
-        ]
-        df3 = DataFrame(
-            data=list(map(self._lift, joined)), schema=schema, orient="row"
-        ).rename({"datetime": "datetime_right"})
-        expected = concat([df1, df3], how="horizontal")
         df1, df2, expected = self._prepare_main()
+        result = join_into_periods(df1, df2, on="datetime")
+        assert_frame_equal(result, expected)
+
+    def test_left_on_and_right_on(self) -> None:
+        df1, df2, expected = self._prepare_main(right="period", joined_second="period")
+        result = join_into_periods(df1, df2, left_on="datetime", right_on="period")
         assert_frame_equal(result, expected)
 
     def _prepare_main(
@@ -1889,7 +1856,6 @@ class TestJoinIntoPeriods:
         *,
         left: str = "datetime",
         right: str = "datetime",
-        joined_first: str = "datetime",
         joined_second: str = "datetime_right",
     ) -> tuple[DataFrame, DataFrame, DataFrame]:
         times = [
@@ -1938,6 +1904,13 @@ class TestJoinIntoPeriods:
         )
         expected = concat([df1, df3], how="horizontal")
         return df1, df2, expected
+
+    def test_error(self) -> None:
+        with raises(
+            JoinIntoPeriodsError,
+            match="Either 'on' must be given or 'left_on' and 'right_on' must be given; got None, 'datetime' and None",
+        ):
+            _ = join_into_periods(DataFrame(), DataFrame(), left_on="datetime")
 
     def _lift(
         self, times: tuple[dt.time, dt.time] | None, /, *, column: str = "datetime"

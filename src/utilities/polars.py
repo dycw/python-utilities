@@ -1730,97 +1730,66 @@ def join(
 
 
 def join_into_periods(
-    left: DataFrame, right: DataFrame, /, *, on: str = "datetime"
+    left: DataFrame,
+    right: DataFrame,
+    /,
+    *,
+    on: str | None = None,
+    left_on: str | None = None,
+    right_on: str | None = None,
+    suffix: str = "_right",
+) -> DataFrame:
+    """Join a pair of DataFrames on their periods; left in right."""
+    match on, left_on, right_on:
+        case None, None, None:
+            return _join_into_periods_core(
+                left, right, "datetime", "datetime", suffix=suffix
+            )
+        case str(), None, None:
+            return _join_into_periods_core(left, right, on, on, suffix=suffix)
+        case None, str(), str():
+            return _join_into_periods_core(
+                left, right, left_on, right_on, suffix=suffix
+            )
+        case _:
+            raise JoinIntoPeriodsError(on=on, left_on=left_on, right_on=right_on)
+
+
+def _join_into_periods_core(
+    left: DataFrame,
+    right: DataFrame,
+    left_on: str,
+    right_on: str,
+    /,
+    *,
+    suffix: str = "_right",
 ) -> DataFrame:
     """Join a pair of DataFrames on their periods; left in right."""
     joined = left.join_asof(
-        right, on=col(on).struct["start"], strategy="backward", coalesce=False
-    )
-    new = col(f"{on}_right")
-    is_correct = (new.struct["start"] <= col(on).struct["start"]) & (
-        col(on).struct["end"] <= new.struct["end"]
-    )
-    return joined.with_columns(when(is_correct).then(new))
-
-
-def _add_trading_sessions_one(
-    df: DataFrame, /, *, regular_or_extended: RegularOrExtendedLit = "extended"
-) -> DataFrame:
-    """Add the trading sessions to a DataFrame, for one sec ID."""
-    sessions = get_sessions(
-        sec_id=get_dataframe_sec_id(df), regular_or_extended=regular_or_extended
-    )
-    df_sess = (
-        DataFrame(
-            sessions,
-            schema={
-                SEC_ID: String,
-                DATE: Date,
-                REGULAR_OR_EXTENDED: String,
-                SESSION_NUM: UInt32,
-                START: DatetimeUTC,
-                END: DatetimeUTC,
-            },
-        )
-        .select(DATE, SESSION_NUM, struct(START, END).alias(DATETIME))
-        .sort(DATE, SESSION_NUM)
-    )
-    # add date/week nums
-    tmp1 = (
-        df_sess.select(DATE)
-        .unique(maintain_order=True)
-        .with_columns(
-            int_range(end=pl.len(), dtype=UInt32).alias(DATE_NUM),
-            week_num(DATE).alias(WEEK_NUM),
-        )
-        .with_columns((col(WEEK_NUM) - col(WEEK_NUM).min()).cast(UInt32))
-    )
-    df_sess = df_sess.join(tmp1, on=[DATE], maintain_order="left_right")
-
-    # add week date/datetime
-    tmp2 = df_sess.group_by(WEEK_NUM, maintain_order=True).agg(
-        struct(col(DATE).min().alias(START), col(DATE).max().alias(END)).alias(
-            WEEK_DATE
-        ),
-        struct(
-            col(DATETIME).struct[START].min(), col(DATETIME).struct[END].max()
-        ).alias(WEEK_DATETIME),
-    )
-    df_sess = df_sess.join(tmp2, on=[WEEK_NUM], maintain_order="left_right")
-    sr_sess = df_sess.select(
-        struct(
-            DATE_NUM, DATE, SESSION_NUM, DATETIME, WEEK_NUM, WEEK_DATE, WEEK_DATETIME
-        ).alias(SESSION)
-    )
-
-    # join
-    df = df.join_asof(
-        sr_sess,
-        left_on=col(DATETIME).struct[START],
-        right_on=col(SESSION).struct[DATETIME].struct[START],
+        right,
+        left_on=col(left_on).struct["start"],
+        right_on=col(right_on).struct["start"],
+        strategy="backward",
+        suffix=suffix,
         coalesce=False,
     )
-    if not df.is_empty():
-        new_sr_sess = (
-            df[SESSION]
-            .struct.unnest()
-            .with_columns(
-                col(DATE_NUM) - col(DATE_NUM).min(), col(WEEK_NUM) - col(WEEK_NUM).min()
-            )
-        )
-        df = df.with_columns(struct(new_sr_sess).alias(SESSION))
-    df = df.with_columns(
-        when(
-            col(DATETIME).struct[END] <= col(SESSION).struct[DATETIME].struct[END]
-        ).then(SESSION)
+    new = f"{left_on}{suffix}" if left_on == right_on else right_on
+    new_col = col(new)
+    is_correct = (new_col.struct["start"] <= col(left_on).struct["start"]) & (
+        col(left_on).struct["end"] <= new_col.struct["end"]
     )
-    assert (
-        df[DATETIME].struct[START] >= df[SESSION].struct[DATETIME].struct[START]
-    ).all(), f"{df[DATETIME].struct[START]=}, {df[SESSION].struct[START]=}"
-    assert (
-        df[DATETIME].struct[END] <= df[SESSION].struct[DATETIME].struct[END]
-    ).all(), f"{df[DATETIME].struct[END]=}, {df[SESSION].struct[DATETIME].struct[END]=}"
-    return df
+    return joined.with_columns(when(is_correct).then(new_col))
+
+
+@dataclass(kw_only=True, slots=True)
+class JoinIntoPeriodsError(Exception):
+    on: str | None
+    left_on: str | None
+    right_on: str | None
+
+    @override
+    def __str__(self) -> str:
+        return f"Either 'on' must be given or 'left_on' and 'right_on' must be given; got {self.on!r}, {self.left_on!r} and {self.right_on!r}"
 
 
 ##
