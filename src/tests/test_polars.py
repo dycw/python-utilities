@@ -47,6 +47,7 @@ from polars import (
     Struct,
     UInt32,
     col,
+    concat,
     date_range,
     datetime_range,
     int_range,
@@ -57,7 +58,7 @@ from polars._typing import IntoExprColumn, SchemaDict
 from polars.exceptions import ComputeError
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
-from pytest import raises
+from pytest import mark, raises
 from whenever import TimeZoneNotFoundError
 
 import utilities.polars
@@ -156,6 +157,7 @@ from utilities.polars import (
     is_not_null_struct_series,
     is_null_struct_series,
     join,
+    join_into_periods,
     map_over_columns,
     nan_sum_agg,
     nan_sum_cols,
@@ -1834,6 +1836,61 @@ class TestJoin:
             data=[{"a": 1, "b": 2, "c": 3}], schema={"a": Int64, "b": Int64, "c": Int64}
         )
         assert_frame_equal(result, expected)
+
+
+@mark.only
+class TestJoinIntoPeriods:
+    def test_main(self) -> None:
+        times = [
+            (dt.time(), dt.time(0, 30)),
+            (dt.time(0, 30), dt.time(1)),
+            (dt.time(1), dt.time(1, 30)),
+            (dt.time(1, 30), dt.time(2)),
+            (dt.time(2), dt.time(2, 30)),
+            (dt.time(2, 30), dt.time(3)),
+            (dt.time(3), dt.time(3, 30)),
+            (dt.time(3, 30), dt.time(4)),
+            (dt.time(4), dt.time(4, 30)),
+            (dt.time(4, 30), dt.time(5)),
+        ]
+        schema = {"datetime": struct_dtype(start=DatetimeUTC, end=DatetimeUTC)}
+        df1 = DataFrame(data=list(map(self._lift, times)), schema=schema, orient="row")
+        periods = [
+            (dt.time(1), dt.time(2)),
+            (dt.time(2), dt.time(3)),
+            (dt.time(3), dt.time(4)),
+        ]
+        df2 = DataFrame(
+            data=list(map(self._lift, periods)), schema=schema, orient="row"
+        )
+        result = join_into_periods(df1, df2, on="datetime")
+        joined = [
+            None,
+            None,
+            (dt.time(1), dt.time(2)),
+            (dt.time(1), dt.time(2)),
+            (dt.time(2), dt.time(3)),
+            (dt.time(2), dt.time(3)),
+            (dt.time(3), dt.time(4)),
+            (dt.time(3), dt.time(4)),
+            None,
+            None,
+        ]
+        df3 = DataFrame(
+            data=list(map(self._lift, joined)), schema=schema, orient="row"
+        ).rename({"datetime": "datetime_right"})
+        expected = concat([df1, df3], how="horizontal")
+        i = 10
+        assert_frame_equal(result[:i], expected[:i])
+
+    def _lift(self, times: tuple[dt.time, dt.time] | None, /) -> StrMapping | None:
+        if times is None:
+            return None
+        start, end = times
+        return {"datetime": {"start": self._lift1(start), "end": self._lift1(end)}}
+
+    def _lift1(self, time: dt.time, /) -> dt.datetime:
+        return dt.datetime.combine(dt.date(2000, 1, 1), time, tzinfo=UTC)
 
 
 class TestMapOverColumns:
