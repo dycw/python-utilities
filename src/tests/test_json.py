@@ -49,4 +49,4 @@ class TestWriteFormattedJSON:
         file = tmp_path.joinpath("file.json")
         write_formatted_json(self.input_.encode(), file)
         contents = file.read_text()
-        assert contents == self.output
+        assert contents == self.output.encode()

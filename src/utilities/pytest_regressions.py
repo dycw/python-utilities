@@ -146,10 +146,10 @@ class OrjsonRegressionFixture(_BaseFixture):
         objects: AbstractSet[type[Any]] | None = None,
         redirects: Mapping[str, type[Any]] | None = None,
     ) -> None:
-        from utilities.orjson import read_json
+        from utilities.orjson import read_object
 
         left, right = [
-            read_json(
+            read_object(
                 p,
                 decompress=decompress,
                 dataclass_hook=dataclass_hook,
@@ -175,9 +175,9 @@ class OrjsonRegressionFixture(_BaseFixture):
         dataclass_defaults: bool = False,
         compress: bool = False,
     ) -> None:
-        from utilities.orjson import write_json
+        from utilities.orjson import write_object
 
-        write_json(
+        write_object(
             obj,
             path,
             before=before,
@@ -252,10 +252,10 @@ class DataFrameRegressionFixture(_BaseFixture):
         atol: float = 1e-8,
         categorical_as_str: bool = False,
     ) -> None:
-        from utilities.orjson import read_json
+        from utilities.orjson import read_object
         from utilities.polars import deserialize_dataframe
 
-        left, right = [read_json(p, decompress=decompress) for p in [path1, path2]]
+        left, right = [read_object(p, decompress=decompress) for p in [path1, path2]]
         if summary:
             assert is_equal(left, right), f"{left=}\n{right=}"
         else:
@@ -282,14 +282,14 @@ class DataFrameRegressionFixture(_BaseFixture):
         summary: bool = False,
         compress: bool = False,
     ) -> None:
-        from utilities.orjson import serialize, write_json
+        from utilities.orjson import serialize, write_object
         from utilities.polars import serialize_dataframe
 
         if summary:
             data = serialize(_summarize_series_or_dataframe(obj))
         else:
             data = serialize_dataframe(obj)
-        write_json(data, path, compress=compress, overwrite=True)
+        write_object(data, path, compress=compress, overwrite=True)
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -334,10 +334,10 @@ class SeriesRegressionFixture(_BaseFixture):
     ) -> None:
         from polars.testing import assert_series_equal
 
-        from utilities.orjson import read_json
+        from utilities.orjson import read_object
         from utilities.polars import deserialize_series
 
-        left, right = [read_json(p, decompress=decompress) for p in [path1, path2]]
+        left, right = [read_object(p, decompress=decompress) for p in [path1, path2]]
         if summary:
             assert is_equal(left, right), f"{left=}\n{right=}"
         else:
@@ -364,19 +364,19 @@ class SeriesRegressionFixture(_BaseFixture):
         summary: bool = False,
         compress: bool = False,
     ) -> None:
-        from utilities.orjson import serialize, write_json
+        from utilities.orjson import serialize, write_object
         from utilities.polars import serialize_series
 
         if summary:
             data = serialize(_summarize_series_or_dataframe(obj))
         else:
             data = serialize_series(obj)
-        write_json(data, path, compress=compress, overwrite=True)
+        write_object(data, path, compress=compress, overwrite=True)
 
     def _dump_full(
         self, path: Path, /, *, obj: Series | DataFrame, compress: bool = False
     ) -> None:
-        from utilities.orjson import write_json
+        from utilities.orjson import write_object
         from utilities.polars import serialize_dataframe, serialize_series
 
         match obj:
@@ -386,7 +386,7 @@ class SeriesRegressionFixture(_BaseFixture):
                 data = serialize_dataframe(df)
             case _ as never:
                 assert_never(never)
-        write_json(data, path, compress=compress, overwrite=True)
+        write_object(data, path, compress=compress, overwrite=True)
 
 
 ##

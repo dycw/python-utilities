@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-class TestReadAndWriteBinary:
+class TestWriteFormattedJSON:
     @given(root=temp_paths(), data=binary(), compress=booleans())
     def test_main(self, *, root: Path, data: bytes, compress: bool) -> None:
         file = root.joinpath("file.json")
