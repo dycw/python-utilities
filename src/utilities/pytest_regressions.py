@@ -34,14 +34,14 @@ class _BaseFixture(ABC):
     @abstractmethod
     def check(self, obj: Any, /, *, suffix: str | None = None) -> None:
         """Check the object."""
-        raise NotImplementedError(obj, suffix)
+        raise NotImplementedError(obj, suffix)  # pragma: no cover
 
     def _check_fn(self, path1: Path, path2: Path, /) -> None:
-        raise NotImplementedError(path1, path2)
+        raise NotImplementedError(path1, path2)  # pragma: no cover
 
     @abstractmethod
     def _dump_fn(self, path: Path, /, *, obj: Any) -> None:
-        raise NotImplementedError(path, obj)
+        raise NotImplementedError(path, obj)  # pragma: no cover
 
     def _get_path(self, suffix: str, /, *, opt_suffix: str | None = None) -> Path:
         path = _get_path(self.request)
@@ -257,11 +257,6 @@ class DataFrameRegressionFixture(_BaseFixture):
 
         if summary:
             left, right = [
-                read_object(p, decompress=decompress) for p in [path1, path2]
-            ]
-            assert is_equal(left, right), f"{left=}\n{right=}"
-        else:
-            left, right = [
                 read_dataframe(p, decompress=decompress) for p in [path1, path2]
             ]
             assert_frame_equal(
@@ -275,6 +270,11 @@ class DataFrameRegressionFixture(_BaseFixture):
                 atol=atol,
                 categorical_as_str=categorical_as_str,
             )
+        else:
+            left, right = [
+                read_object(p, decompress=decompress) for p in [path1, path2]
+            ]
+            assert is_equal(left, right), f"{left=}\n{right=}"
 
     @override
     def _dump_fn(
@@ -347,11 +347,6 @@ class SeriesRegressionFixture(_BaseFixture):
 
         if summary:
             left, right = [
-                read_object(p, decompress=decompress) for p in [path1, path2]
-            ]
-            assert is_equal(left, right), f"{left=}\n{right=}"
-        else:
-            left, right = [
                 read_series(p, decompress=decompress) for p in [path1, path2]
             ]
             assert_series_equal(
@@ -365,6 +360,11 @@ class SeriesRegressionFixture(_BaseFixture):
                 atol=atol,
                 categorical_as_str=categorical_as_str,
             )
+        else:
+            left, right = [
+                read_object(p, decompress=decompress) for p in [path1, path2]
+            ]
+            assert is_equal(left, right), f"{left=}\n{right=}"
 
     @override
     def _dump_fn(
