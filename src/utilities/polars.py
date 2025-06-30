@@ -60,6 +60,7 @@ from utilities.functions import (
     is_iterable_of,
     make_isinstance,
 )
+from utilities.gzip import read_binary
 from utilities.iterables import (
     CheckIterablesEqualError,
     CheckMappingsEqualError,
@@ -75,6 +76,7 @@ from utilities.iterables import (
     is_iterable_not_str,
     one,
 )
+from utilities.json import write_formatted_json
 from utilities.math import (
     CheckIntegerError,
     check_integer,
@@ -84,7 +86,7 @@ from utilities.math import (
     number_of_decimals,
 )
 from utilities.reprlib import get_repr
-from utilities.types import MaybeStr, Number, WeekDay
+from utilities.types import MaybeStr, Number, PathLike, WeekDay
 from utilities.typing import (
     get_args,
     get_type_hints,
@@ -2081,6 +2083,57 @@ def _replace_time_zone_one(
 ##
 
 
+def read_series(path: PathLike, /, *, decompress: bool = False) -> Series:
+    """Read a Series from disk."""
+    data = read_binary(path, decompress=decompress)
+    return deserialize_series(data)
+
+
+def write_series(
+    series: Series,
+    path: PathLike,
+    /,
+    *,
+    compress: bool = False,
+    overwrite: bool = False,
+) -> None:
+    """Write a Series to disk."""
+    data = serialize_series(series)
+    write_formatted_json(data, path, compress=compress, overwrite=overwrite)
+
+
+def read_dataframe(path: PathLike, /, *, decompress: bool = False) -> DataFrame:
+    """Read a DataFrame from disk."""
+    data = read_binary(path, decompress=decompress)
+    return deserialize_dataframe(data)
+
+
+def write_dataframe(
+    df: DataFrame, path: PathLike, /, *, compress: bool = False, overwrite: bool = False
+) -> None:
+    """Write a DataFrame to disk."""
+    data = serialize_dataframe(df)
+    write_formatted_json(data, path, compress=compress, overwrite=overwrite)
+
+
+def serialize_series(series: Series, /) -> bytes:
+    """Serialize a Series."""
+    from utilities.orjson import serialize
+
+    values = series.to_list()
+    decon = _deconstruct_dtype(series.dtype)
+    return serialize((series.name, values, decon))
+
+
+def deserialize_series(data: bytes, /) -> Series:
+    """Serialize a Series."""
+    from utilities.orjson import deserialize
+
+    name, values, decon = deserialize(data)
+    dtype = _reconstruct_dtype(decon)
+    return Series(name=name, values=values, dtype=dtype)
+
+
 def serialize_dataframe(df: DataFrame, /) -> bytes:
     """Serialize a DataFrame."""
     from utilities.orjson import serialize
@@ -2099,23 +2152,23 @@ def deserialize_dataframe(data: bytes, /) -> DataFrame:
     return DataFrame(data=rows, schema=schema, orient="row")
 
 
-type _Deconstructed = Sequence[tuple[str, _DeconstructedInner]]
-type _DeconstructedInner = (
+type _DeconSchema = Sequence[tuple[str, _DeconDType]]
+type _DeconDType = (
     str
     | tuple[Literal["Datetime"], str, str | None]
-    | tuple[Literal["List"], _DeconstructedInner]
-    | tuple[Literal["Struct"], _Deconstructed]
+    | tuple[Literal["List"], _DeconDType]
+    | tuple[Literal["Struct"], _DeconSchema]
 )
 
 
-def _deconstruct_schema(schema: Schema, /) -> _Deconstructed:
-    return [(k, _deconstruct_schema_inner(v)) for k, v in schema.items()]
+def _deconstruct_schema(schema: Schema, /) -> _DeconSchema:
+    return [(k, _deconstruct_dtype(v)) for k, v in schema.items()]
 
 
-def _deconstruct_schema_inner(dtype: PolarsDataType, /) -> _DeconstructedInner:
+def _deconstruct_dtype(dtype: PolarsDataType, /) -> _DeconDType:
     match dtype:
         case List() as list_:
-            return "List", _deconstruct_schema_inner(list_.inner)
+            return "List", _deconstruct_dtype(list_.inner)
         case Struct() as struct:
             inner = Schema({f.name: f.dtype for f in struct.fields})
             return "Struct", _deconstruct_schema(inner)
@@ -2125,18 +2178,18 @@ def _deconstruct_schema_inner(dtype: PolarsDataType, /) -> _DeconstructedInner:
             return repr(dtype)
 
 
-def _reconstruct_schema(schema: _Deconstructed, /) -> Schema:
-    return Schema({k: _reconstruct_schema_inner(v) for k, v in schema})
+def _reconstruct_schema(schema: _DeconSchema, /) -> Schema:
+    return Schema({k: _reconstruct_dtype(v) for k, v in schema})
 
 
-def _reconstruct_schema_inner(obj: _DeconstructedInner, /) -> PolarsDataType:
+def _reconstruct_dtype(obj: _DeconDType, /) -> PolarsDataType:
     match obj:
         case str() as name:
             return getattr(pl, name)
         case "Datetime", str() as time_unit, str() | None as time_zone:
             return Datetime(time_unit=cast("TimeUnit", time_unit), time_zone=time_zone)
         case "List", inner:
-            return List(_reconstruct_schema_inner(inner))
+            return List(_reconstruct_dtype(inner))
         case "Struct", inner:
             return Struct(_reconstruct_schema(inner))
         case _ as never:
@@ -2404,6 +2457,8 @@ __all__ = [
     "nan_sum_cols",
     "normal",
     "order_of_magnitude",
+    "read_dataframe",
+    "read_series",
     "replace_time_zone",
     "serialize_dataframe",
     "set_first_row_as_columns",
@@ -2413,5 +2468,7 @@ __all__ = [
     "try_reify_expr",
     "uniform",
     "unique_element",
+    "write_dataframe",
+    "write_series",
     "zoned_datetime",
 ]
