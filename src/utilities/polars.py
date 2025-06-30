@@ -1804,7 +1804,7 @@ def _join_into_periods_check(
         raise _JoinIntoPeriodsSortedError(
             left_or_right=left_or_right, column=column, start_or_end="end"
         ) from None
-    if (df.height >= 2) and (end[1:] > start[:-1]).any():
+    if (df.height >= 2) and (end[:-1] > start[1:]).any():
         raise _JoinIntoPeriodsOverlappingError(
             left_or_right=left_or_right, column=column
         )
