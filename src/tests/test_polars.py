@@ -1842,7 +1842,6 @@ class TestJoin:
         assert_frame_equal(result, expected)
 
 
-@mark.only
 class TestJoinIntoPeriods:
     dtype: ClassVar[Struct] = struct_dtype(start=DatetimeUTC, end=DatetimeUTC)
 
