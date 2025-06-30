@@ -84,7 +84,7 @@ from utilities.whenever import (
     _ToSecondsNanosecondsError,
     _ToWeeksDaysError,
     _ToWeeksMonthsError,
-    _ToWeeksTimeError,
+    _ToWeeksNanosecondsError,
     _ToYearsDaysError,
     _ToYearsMonthsError,
     _ToYearsTimeError,
@@ -896,7 +896,7 @@ class TestToWeeks:
     def test_error_date_time_delta_time(self) -> None:
         delta = DateTimeDelta(nanoseconds=1)
         with raises(
-            _ToWeeksTimeError, match="Delta must not contain a time part; got .*"
+            _ToWeeksNanosecondsError, match="Delta must not contain a time part; got .*"
         ):
             _ = to_weeks(delta)
 

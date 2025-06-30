@@ -1016,14 +1016,16 @@ class _ToSecondsNanosecondsError(ToSecondsError):
 ##
 
 
-def to_weeks(delta: DateDelta | DateTimeDelta, /) -> int:
+def to_weeks(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> int:
     """Compute the number of weeks in a delta."""
     try:
         days = to_days(delta)
     except _ToDaysMonthsError as error:
         raise _ToWeeksMonthsError(delta=error.delta, months=error.months) from None
     except _ToDaysNanosecondsError as error:
-        raise _ToWeeksTimeError(delta=error.delta) from None
+        raise _ToWeeksNanosecondsError(
+            delta=error.delta, nanoseconds=error.nanoseconds
+        ) from None
     weeks, remainder = divmod(days, 7)
     if remainder != 0:
         raise _ToWeeksDaysError(delta=delta, days=remainder) from None
@@ -1045,17 +1047,18 @@ class _ToWeeksMonthsError(ToWeeksError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _ToWeeksTimeError(ToWeeksError):
-    delta: DateTimeDelta
+class _ToWeeksNanosecondsError(ToWeeksError):
+    delta: TimeDelta | DateTimeDelta
+    nanoseconds: int
 
     @override
     def __str__(self) -> str:
-        return f"Delta must not contain a time part; got {self.delta.time_part()}"
+        return f"Delta must not contain extra nanoseconds; got {self.nanoseconds}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _ToWeeksDaysError(ToWeeksError):
-    delta: DateDelta | DateTimeDelta
+    delta: DateDelta | TimeDelta | DateTimeDelta
     days: int
 
     @override
