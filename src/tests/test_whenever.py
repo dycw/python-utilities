@@ -76,6 +76,9 @@ from utilities.whenever import (
     _ToDaysTimeError,
     _ToMonthsDaysError,
     _ToMonthsTimeError,
+    _ToWeeksDaysError,
+    _ToWeeksMonthsError,
+    _ToWeeksTimeError,
     _ToYearsDaysError,
     _ToYearsMonthsError,
     _ToYearsTimeError,
@@ -102,6 +105,7 @@ from utilities.whenever import (
     to_py_date_or_date_time,
     to_py_time_delta,
     to_time_delta,
+    to_weeks,
     to_years,
     to_zoned_date_time,
     two_digit_year_month,
@@ -683,6 +687,41 @@ class TestToPyTimeDelta:
             ToPyTimeDeltaError, match="Time delta must not contain nanoseconds; got 1"
         ):
             _ = to_py_time_delta(delta)
+
+
+class TestToWeeks:
+    @given(cls=sampled_from([DateDelta, DateTimeDelta]), weeks=integers())
+    def test_main(self, *, cls: type[DateDelta | DateTimeDelta], weeks: int) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="Out of range"),
+            assume_does_not_raise(ValueError, match="days out of range"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+        ):
+            delta = cls(weeks=weeks)
+        assert to_weeks(delta) == weeks
+
+    @mark.parametrize(
+        "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
+    )
+    def test_error_months(self, *, delta: DateDelta | DateTimeDelta) -> None:
+        with raises(_ToWeeksMonthsError, match="Delta must not contain months; got 1"):
+            _ = to_weeks(delta)
+
+    @mark.parametrize("delta", [param(DateDelta(days=1)), param(DateTimeDelta(days=1))])
+    def test_error_days(self, *, delta: DateDelta | DateTimeDelta) -> None:
+        with raises(
+            _ToWeeksDaysError, match="Delta must not contain extra days; got 1"
+        ):
+            _ = to_weeks(delta)
+
+    def test_error_date_time_delta_time(self) -> None:
+        delta = DateTimeDelta(nanoseconds=1)
+        with raises(
+            _ToWeeksTimeError, match="Delta must not contain a time part; got .*"
+        ):
+            _ = to_weeks(delta)
 
 
 class TestToYears:
