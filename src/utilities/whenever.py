@@ -567,7 +567,7 @@ def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
 ##
 
 
-def to_days(delta: DateDelta | DateTimeDelta, /) -> int:
+def to_days(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> int:
     """Compute the number of days in a delta."""
     match delta:
         case DateDelta():
@@ -575,13 +575,22 @@ def to_days(delta: DateDelta | DateTimeDelta, /) -> int:
             if months != 0:
                 raise _ToDaysMonthsError(delta=delta, months=months)
             return days
+        case TimeDelta():
+            nanos = to_nanos(delta)
+            divisor = 24 * 60 * 60 * int(1e9)
+            days, remainder = divmod(nanos, divisor)
+            if remainder != 0:
+                raise _ToDaysNanosecondsError(delta=delta, nanoseconds=remainder)
+            return days
         case DateTimeDelta():
-            if delta.time_part() != TimeDelta():
-                raise _ToDaysTimeError(delta=delta)
             try:
-                return to_days(delta.date_part())
+                return to_days(delta.date_part()) + to_days(delta.time_part())
             except _ToDaysMonthsError as error:
                 raise _ToDaysMonthsError(delta=delta, months=error.months) from None
+            except _ToDaysNanosecondsError as error:
+                raise _ToDaysNanosecondsError(
+                    delta=delta, nanoseconds=error.nanoseconds
+                ) from None
         case _ as never:
             assert_never(never)
 
@@ -601,12 +610,69 @@ class _ToDaysMonthsError(ToDaysError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _ToDaysTimeError(ToDaysError):
-    delta: DateTimeDelta
+class _ToDaysNanosecondsError(ToDaysError):
+    delta: TimeDelta | DateTimeDelta
+    nanoseconds: int
 
     @override
     def __str__(self) -> str:
-        return f"Delta must not contain a time part; got {self.delta.time_part()}"
+        return f"Delta must not contain extra nanoseconds; got {self.nanoseconds}"
+
+
+##
+
+
+def to_hours(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> int:
+    """Compute the number of hours in a delta."""
+    match delta:
+        case DateDelta():
+            try:
+                days = to_days(delta)
+            except _ToDaysMonthsError as error:
+                raise _ToHoursMonthsError(delta=delta, months=error.months) from None
+            return 24 * days
+        case TimeDelta():
+            nanos = to_nanos(delta)
+            divisor = 60 * 60 * int(1e9)
+            hours, remainder = divmod(nanos, divisor)
+            if remainder != 0:
+                raise _ToHoursNanosecondsError(delta=delta, nanoseconds=remainder)
+            return hours
+        case DateTimeDelta():
+            try:
+                return to_hours(delta.date_part()) + to_hours(delta.time_part())
+            except _ToHoursMonthsError as error:
+                raise _ToHoursMonthsError(delta=delta, months=error.months) from None
+            except _ToHoursNanosecondsError as error:
+                raise _ToHoursNanosecondsError(
+                    delta=delta, nanoseconds=error.nanoseconds
+                ) from None
+        case _ as never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class ToHoursError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToHoursMonthsError(ToHoursError):
+    delta: DateDelta | DateTimeDelta
+    months: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain months; got {self.months}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToHoursNanosecondsError(ToHoursError):
+    delta: TimeDelta | DateTimeDelta
+    nanoseconds: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain extra nanoseconds; got {self.nanoseconds}"
 
 
 ##
@@ -843,11 +909,11 @@ def to_weeks(delta: DateDelta | DateTimeDelta, /) -> int:
         days = to_days(delta)
     except _ToDaysMonthsError as error:
         raise _ToWeeksMonthsError(delta=error.delta, months=error.months) from None
-    except _ToDaysTimeError as error:
+    except _ToDaysNanosecondsError as error:
         raise _ToWeeksTimeError(delta=error.delta) from None
     weeks, remainder = divmod(days, 7)
     if remainder != 0:
-        raise _ToWeeksDaysError(delta=delta, days=days) from None
+        raise _ToWeeksDaysError(delta=delta, days=remainder) from None
     return weeks
 
 
