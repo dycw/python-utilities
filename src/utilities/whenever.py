@@ -34,7 +34,13 @@ from utilities.math import sign
 from utilities.platform import get_strftime
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import DateTimeRoundUnit, MaybeStr
+from utilities.types import (
+    DateOrDateTimeDelta,
+    DateTimeRoundUnit,
+    Delta,
+    MaybeStr,
+    TimeOrDateTimeDelta,
+)
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
 
@@ -567,7 +573,7 @@ def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
 ##
 
 
-def to_days(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> int:
+def to_days(delta: Delta, /) -> int:
     """Compute the number of days in a delta."""
     match delta:
         case DateDelta():
@@ -600,7 +606,7 @@ class ToDaysError(Exception): ...
 
 @dataclass(kw_only=True, slots=True)
 class _ToDaysMonthsError(ToDaysError):
-    delta: DateDelta | DateTimeDelta
+    delta: DateOrDateTimeDelta
     months: int
 
     @override
@@ -610,7 +616,7 @@ class _ToDaysMonthsError(ToDaysError):
 
 @dataclass(kw_only=True, slots=True)
 class _ToDaysNanosecondsError(ToDaysError):
-    delta: TimeDelta | DateTimeDelta
+    delta: TimeOrDateTimeDelta
     nanoseconds: int
 
     @override
@@ -621,7 +627,7 @@ class _ToDaysNanosecondsError(ToDaysError):
 ##
 
 
-def to_hours(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> int:
+def to_hours(delta: Delta, /) -> int:
     """Compute the number of hours in a delta."""
     match delta:
         case DateDelta():
@@ -656,7 +662,7 @@ class ToHoursError(Exception): ...
 
 @dataclass(kw_only=True, slots=True)
 class _ToHoursMonthsError(ToHoursError):
-    delta: DateDelta | DateTimeDelta
+    delta: DateOrDateTimeDelta
     months: int
 
     @override
@@ -666,7 +672,7 @@ class _ToHoursMonthsError(ToHoursError):
 
 @dataclass(kw_only=True, slots=True)
 class _ToHoursNanosecondsError(ToHoursError):
-    delta: TimeDelta | DateTimeDelta
+    delta: TimeOrDateTimeDelta
     nanoseconds: int
 
     @override
@@ -685,7 +691,7 @@ def to_local_plain(date_time: ZonedDateTime, /) -> PlainDateTime:
 ##
 
 
-def to_minutes(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> int:
+def to_minutes(delta: Delta, /) -> int:
     """Compute the number of minutes in a delta."""
     match delta:
         case DateDelta():
@@ -719,7 +725,7 @@ class ToMinutesError(Exception): ...
 
 @dataclass(kw_only=True, slots=True)
 class _ToMinutesMonthsError(ToMinutesError):
-    delta: DateDelta | DateTimeDelta
+    delta: DateOrDateTimeDelta
     months: int
 
     @override
@@ -729,7 +735,7 @@ class _ToMinutesMonthsError(ToMinutesError):
 
 @dataclass(kw_only=True, slots=True)
 class _ToMinutesNanosecondsError(ToMinutesError):
-    delta: TimeDelta | DateTimeDelta
+    delta: TimeOrDateTimeDelta
     nanoseconds: int
 
     @override
@@ -740,7 +746,7 @@ class _ToMinutesNanosecondsError(ToMinutesError):
 ##
 
 
-def to_months(delta: DateDelta | DateTimeDelta, /) -> int:
+def to_months(delta: DateOrDateTimeDelta, /) -> int:
     """Compute the number of months in a delta."""
     match delta:
         case DateDelta():
@@ -765,7 +771,7 @@ class ToMonthsError(Exception): ...
 
 @dataclass(kw_only=True, slots=True)
 class _ToMonthsDaysError(ToMonthsError):
-    delta: DateDelta | DateTimeDelta
+    delta: DateOrDateTimeDelta
     days: int
 
     @override
@@ -785,7 +791,7 @@ class _ToMonthsTimeError(ToMonthsError):
 ##
 
 
-def to_nanos(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> int:
+def to_nanos(delta: Delta, /) -> int:
     """Compute the number of nanoseconds in a date-time delta."""
     match delta:
         case DateDelta():
@@ -807,7 +813,7 @@ def to_nanos(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> int:
 
 @dataclass(kw_only=True, slots=True)
 class ToNanosError(Exception):
-    delta: DateDelta | DateTimeDelta
+    delta: DateOrDateTimeDelta
     months: int
 
     @override
@@ -843,14 +849,10 @@ def to_py_date_or_date_time(
 
 
 @overload
-def to_py_time_delta(
-    delta: DateDelta | TimeDelta | DateTimeDelta, /
-) -> dt.timedelta: ...
+def to_py_time_delta(delta: Delta, /) -> dt.timedelta: ...
 @overload
 def to_py_time_delta(delta: None, /) -> None: ...
-def to_py_time_delta(
-    delta: DateDelta | TimeDelta | DateTimeDelta | None, /
-) -> dt.timedelta | None:
+def to_py_time_delta(delta: Delta | None, /) -> dt.timedelta | None:
     """Try convert a DateDelta to a standard library timedelta."""
     match delta:
         case DateDelta():
@@ -961,7 +963,7 @@ def _to_time_delta_components(nanos: int, /) -> _TimeDeltaComponents:
 ##
 
 
-def to_seconds(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> int:
+def to_seconds(delta: Delta, /) -> int:
     """Compute the number of seconds in a delta."""
     match delta:
         case DateDelta():
@@ -995,7 +997,7 @@ class ToSecondsError(Exception): ...
 
 @dataclass(kw_only=True, slots=True)
 class _ToSecondsMonthsError(ToSecondsError):
-    delta: DateDelta | DateTimeDelta
+    delta: DateOrDateTimeDelta
     months: int
 
     @override
@@ -1005,7 +1007,7 @@ class _ToSecondsMonthsError(ToSecondsError):
 
 @dataclass(kw_only=True, slots=True)
 class _ToSecondsNanosecondsError(ToSecondsError):
-    delta: TimeDelta | DateTimeDelta
+    delta: TimeOrDateTimeDelta
     nanoseconds: int
 
     @override
@@ -1016,7 +1018,7 @@ class _ToSecondsNanosecondsError(ToSecondsError):
 ##
 
 
-def to_weeks(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> int:
+def to_weeks(delta: Delta, /) -> int:
     """Compute the number of weeks in a delta."""
     try:
         days = to_days(delta)
@@ -1038,7 +1040,7 @@ class ToWeeksError(Exception): ...
 
 @dataclass(kw_only=True, slots=True)
 class _ToWeeksMonthsError(ToWeeksError):
-    delta: DateDelta | DateTimeDelta
+    delta: DateOrDateTimeDelta
     months: int
 
     @override
@@ -1048,7 +1050,7 @@ class _ToWeeksMonthsError(ToWeeksError):
 
 @dataclass(kw_only=True, slots=True)
 class _ToWeeksNanosecondsError(ToWeeksError):
-    delta: TimeDelta | DateTimeDelta
+    delta: TimeOrDateTimeDelta
     nanoseconds: int
 
     @override
@@ -1058,7 +1060,7 @@ class _ToWeeksNanosecondsError(ToWeeksError):
 
 @dataclass(kw_only=True, slots=True)
 class _ToWeeksDaysError(ToWeeksError):
-    delta: DateDelta | TimeDelta | DateTimeDelta
+    delta: Delta
     days: int
 
     @override
@@ -1069,7 +1071,7 @@ class _ToWeeksDaysError(ToWeeksError):
 ##
 
 
-def to_years(delta: DateDelta | DateTimeDelta, /) -> int:
+def to_years(delta: DateOrDateTimeDelta, /) -> int:
     """Compute the number of years in a delta."""
     match delta:
         case DateDelta():
@@ -1098,7 +1100,7 @@ class ToYearsError(Exception): ...
 
 @dataclass(kw_only=True, slots=True)
 class _ToYearsMonthsError(ToYearsError):
-    delta: DateDelta | DateTimeDelta
+    delta: DateOrDateTimeDelta
     months: int
 
     @override
@@ -1108,7 +1110,7 @@ class _ToYearsMonthsError(ToYearsError):
 
 @dataclass(kw_only=True, slots=True)
 class _ToYearsDaysError(ToYearsError):
-    delta: DateDelta | DateTimeDelta
+    delta: DateOrDateTimeDelta
     days: int
 
     @override

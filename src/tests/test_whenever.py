@@ -34,7 +34,7 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import DateTimeRoundUnit
+from utilities.types import DateOrDateTimeDelta, DateTimeRoundUnit, TimeOrDateTimeDelta
 from utilities.typing import get_literal_elements
 from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
@@ -60,6 +60,7 @@ from utilities.whenever import (
     ZERO_DAYS,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
+    Delta,
     Freq,
     MeanDateTimeError,
     MinMaxDateError,
@@ -569,7 +570,7 @@ class TestToDate:
 class TestToDateTimeDeltaAndNanos:
     @given(func=sampled_from([to_time_delta, to_date_time_delta]), nanos=integers())
     def test_main(
-        self, *, func: Callable[[int], TimeDelta | DateTimeDelta], nanos: int
+        self, *, func: Callable[[int], TimeOrDateTimeDelta], nanos: int
     ) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
@@ -587,7 +588,7 @@ class TestToDateTimeDeltaAndNanos:
     @mark.parametrize(
         "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
     )
-    def test_error(self, *, delta: DateDelta | DateTimeDelta) -> None:
+    def test_error(self, *, delta: DateOrDateTimeDelta) -> None:
         with raises(ToNanosError, match="Delta must not contain months; got 1"):
             _ = to_nanos(delta)
 
@@ -595,7 +596,7 @@ class TestToDateTimeDeltaAndNanos:
 class TestToDays:
     @given(cls=sampled_from([DateDelta, DateTimeDelta]), days=integers())
     def test_date_or_date_time_delta(
-        self, *, cls: type[DateDelta | DateTimeDelta], days: int
+        self, *, cls: type[DateOrDateTimeDelta], days: int
     ) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
@@ -623,14 +624,14 @@ class TestToDays:
     @mark.parametrize(
         "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
     )
-    def test_error_months(self, *, delta: DateDelta | DateTimeDelta) -> None:
+    def test_error_months(self, *, delta: DateOrDateTimeDelta) -> None:
         with raises(_ToDaysMonthsError, match="Delta must not contain months; got 1"):
             _ = to_days(delta)
 
     @mark.parametrize(
         "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
     )
-    def test_error_nanoseconds(self, *, delta: TimeDelta | DateTimeDelta) -> None:
+    def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToDaysNanosecondsError,
             match="Delta must not contain extra nanoseconds; got .*",
@@ -653,7 +654,7 @@ class TestToHours:
 
     @given(cls=sampled_from([TimeDelta, DateTimeDelta]), hours=integers())
     def test_time_or_date_time_delta(
-        self, *, cls: type[TimeDelta | DateTimeDelta], hours: int
+        self, *, cls: type[TimeOrDateTimeDelta], hours: int
     ) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
@@ -669,14 +670,14 @@ class TestToHours:
     @mark.parametrize(
         "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
     )
-    def test_error_months(self, *, delta: DateDelta | DateTimeDelta) -> None:
+    def test_error_months(self, *, delta: DateOrDateTimeDelta) -> None:
         with raises(_ToHoursMonthsError, match="Delta must not contain months; got 1"):
             _ = to_hours(delta)
 
     @mark.parametrize(
         "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
     )
-    def test_error_nanoseconds(self, *, delta: TimeDelta | DateTimeDelta) -> None:
+    def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToHoursNanosecondsError,
             match="Delta must not contain extra nanoseconds; got .*",
@@ -706,7 +707,7 @@ class TestToMinutes:
 
     @given(cls=sampled_from([TimeDelta, DateTimeDelta]), minutes=integers())
     def test_time_or_date_time_delta(
-        self, *, cls: type[TimeDelta | DateTimeDelta], minutes: int
+        self, *, cls: type[TimeOrDateTimeDelta], minutes: int
     ) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
@@ -722,7 +723,7 @@ class TestToMinutes:
     @mark.parametrize(
         "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
     )
-    def test_error_months(self, *, delta: DateDelta | DateTimeDelta) -> None:
+    def test_error_months(self, *, delta: DateOrDateTimeDelta) -> None:
         with raises(
             _ToMinutesMonthsError, match="Delta must not contain months; got 1"
         ):
@@ -731,7 +732,7 @@ class TestToMinutes:
     @mark.parametrize(
         "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
     )
-    def test_error_nanoseconds(self, *, delta: TimeDelta | DateTimeDelta) -> None:
+    def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToMinutesNanosecondsError,
             match="Delta must not contain extra nanoseconds; got .*",
@@ -741,7 +742,7 @@ class TestToMinutes:
 
 class TestToMonths:
     @given(cls=sampled_from([DateDelta, DateTimeDelta]), months=integers())
-    def test_main(self, *, cls: type[DateDelta | DateTimeDelta], months: int) -> None:
+    def test_main(self, *, cls: type[DateOrDateTimeDelta], months: int) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
             assume_does_not_raise(ValueError, match="months out of range"),
@@ -753,7 +754,7 @@ class TestToMonths:
         assert to_months(delta) == months
 
     @mark.parametrize("delta", [param(DateDelta(days=1)), param(DateTimeDelta(days=1))])
-    def test_error_days(self, *, delta: DateDelta | DateTimeDelta) -> None:
+    def test_error_days(self, *, delta: DateOrDateTimeDelta) -> None:
         with raises(_ToMonthsDaysError, match="Delta must not contain days; got 1"):
             _ = to_months(delta)
 
@@ -800,12 +801,7 @@ class TestToPyTimeDelta:
             param(None, None),
         ],
     )
-    def test_main(
-        self,
-        *,
-        delta: DateDelta | TimeDelta | DateTimeDelta | None,
-        expected: dt.timedelta | None,
-    ) -> None:
+    def test_main(self, *, delta: Delta | None, expected: dt.timedelta | None) -> None:
         result = to_py_time_delta(delta)
         assert result == expected
 
@@ -832,7 +828,7 @@ class TestToSeconds:
 
     @given(cls=sampled_from([TimeDelta, DateTimeDelta]), seconds=integers())
     def test_time_or_date_time_delta(
-        self, *, cls: type[TimeDelta | DateTimeDelta], seconds: int
+        self, *, cls: type[TimeOrDateTimeDelta], seconds: int
     ) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
@@ -848,7 +844,7 @@ class TestToSeconds:
     @mark.parametrize(
         "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
     )
-    def test_error_months(self, *, delta: DateDelta | DateTimeDelta) -> None:
+    def test_error_months(self, *, delta: DateOrDateTimeDelta) -> None:
         with raises(
             _ToSecondsMonthsError, match="Delta must not contain months; got 1"
         ):
@@ -857,7 +853,7 @@ class TestToSeconds:
     @mark.parametrize(
         "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
     )
-    def test_error_nanoseconds(self, *, delta: TimeDelta | DateTimeDelta) -> None:
+    def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToSecondsNanosecondsError,
             match="Delta must not contain extra nanoseconds; got .*",
@@ -868,7 +864,7 @@ class TestToSeconds:
 class TestToWeeks:
     @given(cls=sampled_from([DateDelta, DateTimeDelta]), weeks=integers())
     def test_date_or_date_time_delta(
-        self, *, cls: type[DateDelta | DateTimeDelta], weeks: int
+        self, *, cls: type[DateOrDateTimeDelta], weeks: int
     ) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
@@ -897,12 +893,12 @@ class TestToWeeks:
     @mark.parametrize(
         "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
     )
-    def test_error_months(self, *, delta: DateDelta | DateTimeDelta) -> None:
+    def test_error_months(self, *, delta: DateOrDateTimeDelta) -> None:
         with raises(_ToWeeksMonthsError, match="Delta must not contain months; got 1"):
             _ = to_weeks(delta)
 
     @mark.parametrize("delta", [param(DateDelta(days=8)), param(DateTimeDelta(days=8))])
-    def test_error_days(self, *, delta: DateDelta | DateTimeDelta) -> None:
+    def test_error_days(self, *, delta: DateOrDateTimeDelta) -> None:
         with raises(
             _ToWeeksDaysError, match="Delta must not contain extra days; got 1"
         ):
@@ -911,7 +907,7 @@ class TestToWeeks:
     @mark.parametrize(
         "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
     )
-    def test_error_nanoseconds(self, *, delta: TimeDelta | DateTimeDelta) -> None:
+    def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToWeeksNanosecondsError,
             match="Delta must not contain extra nanoseconds; got .*",
@@ -921,7 +917,7 @@ class TestToWeeks:
 
 class TestToYears:
     @given(cls=sampled_from([DateDelta, DateTimeDelta]), years=integers())
-    def test_main(self, *, cls: type[DateDelta | DateTimeDelta], years: int) -> None:
+    def test_main(self, *, cls: type[DateOrDateTimeDelta], years: int) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
             assume_does_not_raise(ValueError, match="months out of range"),
@@ -936,12 +932,12 @@ class TestToYears:
     @mark.parametrize(
         "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
     )
-    def test_error_date_delta_months(self, *, delta: DateDelta | DateTimeDelta) -> None:
+    def test_error_date_delta_months(self, *, delta: DateOrDateTimeDelta) -> None:
         with raises(_ToYearsMonthsError, match="Delta must not contain months; got 1"):
             _ = to_years(delta)
 
     @mark.parametrize("delta", [param(DateDelta(days=1)), param(DateTimeDelta(days=1))])
-    def test_error_date_delta_days(self, *, delta: DateDelta | DateTimeDelta) -> None:
+    def test_error_date_delta_days(self, *, delta: DateOrDateTimeDelta) -> None:
         with raises(_ToYearsDaysError, match="Delta must not contain days; got 1"):
             _ = to_years(delta)
 
