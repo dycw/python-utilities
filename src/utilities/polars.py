@@ -1752,7 +1752,9 @@ def join_into_periods(
                 left, right, left_on, right_on, suffix=suffix
             )
         case _:
-            raise JoinIntoPeriodsError(on=on, left_on=left_on, right_on=right_on)
+            raise _JoinIntoPeriodsArgumentsError(
+                on=on, left_on=left_on, right_on=right_on
+            )
 
 
 def _join_into_periods_core(
@@ -1765,6 +1767,10 @@ def _join_into_periods_core(
     suffix: str = "_right",
 ) -> DataFrame:
     """Join a pair of DataFrames on their periods; left in right."""
+    if not (left[left_on].struct["start"] <= left[left_on].struct["end"]).all():
+        raise _JoinIntoPeriodsPeriodError(left_or_right="left", column=left_on)
+    if not (right[right_on].struct["start"] <= right[right_on].struct["end"]).all():
+        raise _JoinIntoPeriodsPeriodError(left_or_right="right", column=right_on)
     joined = left.join_asof(
         right,
         left_on=col(left_on).struct["start"],
@@ -1782,7 +1788,21 @@ def _join_into_periods_core(
 
 
 @dataclass(kw_only=True, slots=True)
-class JoinIntoPeriodsError(Exception):
+class JoinIntoPeriodsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _JoinIntoPeriodsPeriodError(JoinIntoPeriodsError):
+    left_or_right: Literal["left", "right"]
+    column: str
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.left_or_right.title()} DataFrame column {self.column!r} must contain valid periods"
+
+
+@dataclass(kw_only=True, slots=True)
+class _JoinIntoPeriodsArgumentsError(JoinIntoPeriodsError):
     on: str | None
     left_on: str | None
     right_on: str | None

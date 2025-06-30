@@ -88,7 +88,6 @@ from utilities.polars import (
     InsertBeforeError,
     IsNotNullStructSeriesError,
     IsNullStructSeriesError,
-    JoinIntoPeriodsError,
     SetFirstRowAsColumnsError,
     StructFromDataClassError,
     _check_polars_dataframe_predicates,
@@ -119,6 +118,8 @@ from utilities.polars import (
     _InsertBetweenNonConsecutiveError,
     _IsNearEventAfterError,
     _IsNearEventBeforeError,
+    _JoinIntoPeriodsArgumentsError,
+    _JoinIntoPeriodsPeriodError,
     _reconstruct_schema,
     _ReifyExprsEmptyError,
     _ReifyExprsSeriesNonUniqueError,
@@ -1870,21 +1871,13 @@ class TestJoinIntoPeriods:
             (dt.time(4), dt.time(4, 30)),
             (dt.time(4, 30), dt.time(5)),
         ]
-        df1 = DataFrame(
-            data=[self._lift(t, column=left) for t in times],
-            schema={left: struct_dtype(start=DatetimeUTC, end=DatetimeUTC)},
-            orient="row",
-        )
+        df1 = self._lift_df(times, column=left)
         periods = [
             (dt.time(1), dt.time(2)),
             (dt.time(2), dt.time(3)),
             (dt.time(3), dt.time(4)),
         ]
-        df2 = DataFrame(
-            data=[self._lift(p, column=right) for p in periods],
-            schema={right: struct_dtype(start=DatetimeUTC, end=DatetimeUTC)},
-            orient="row",
-        )
+        df2 = self._lift_df(periods, column=right)
         joined = [
             None,
             None,
@@ -1897,31 +1890,58 @@ class TestJoinIntoPeriods:
             None,
             None,
         ]
-        df3 = DataFrame(
-            data=[self._lift(j, column=joined_second) for j in joined],
-            schema={joined_second: struct_dtype(start=DatetimeUTC, end=DatetimeUTC)},
-            orient="row",
-        )
+        df3 = self._lift_df(joined, column=joined_second)
         expected = concat([df1, df3], how="horizontal")
         return df1, df2, expected
 
-    def test_error(self) -> None:
+    def test_error_arguments(self) -> None:
         with raises(
-            JoinIntoPeriodsError,
+            _JoinIntoPeriodsArgumentsError,
             match="Either 'on' must be given or 'left_on' and 'right_on' must be given; got None, 'datetime' and None",
         ):
             _ = join_into_periods(DataFrame(), DataFrame(), left_on="datetime")
 
-    def _lift(
+    def test_error_left_periods(self) -> None:
+        times = [(dt.time(0, 1), dt.time())]
+        df = self._lift_df(times)
+        with raises(
+            _JoinIntoPeriodsPeriodError,
+            match="Left DataFrame column 'datetime' must contain valid periods",
+        ):
+            _ = join_into_periods(df, DataFrame())
+
+    def test_error_right_periods(self) -> None:
+        times = [(dt.time(0, 1), dt.time())]
+        df = self._lift_df(times)
+        with raises(
+            _JoinIntoPeriodsPeriodError,
+            match="Right DataFrame column 'datetime' must contain valid periods",
+        ):
+            _ = join_into_periods(DataFrame(), df)
+
+    def _lift_df(
+        self,
+        times: Iterable[tuple[dt.time, dt.time] | None],
+        /,
+        *,
+        column: str = "datetime",
+    ) -> DataFrame:
+        return DataFrame(
+            data=[self._lift_row(t, column=column) for t in times],
+            schema={column: struct_dtype(start=DatetimeUTC, end=DatetimeUTC)},
+            orient="row",
+        )
+
+    def _lift_row(
         self, times: tuple[dt.time, dt.time] | None, /, *, column: str = "datetime"
     ) -> StrMapping | None:
         if times is None:
             return None
         start, end = times
-        return {column: {"start": self._lift1(start), "end": self._lift1(end)}}
+        return {column: {"start": self._lift_time(start), "end": self._lift_time(end)}}
 
-    def _lift1(self, time: dt.time, /) -> dt.datetime:
-        return dt.datetime.combine(dt.date(2000, 1, 1), time, tzinfo=UTC)
+    def _lift_time(self, time: dt.time, /) -> dt.datetime:
+        return dt.datetime.combine(get_today().py_date(), time, tzinfo=UTC)
 
 
 class TestMapOverColumns:
