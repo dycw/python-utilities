@@ -2083,39 +2083,6 @@ def _replace_time_zone_one(
 ##
 
 
-def read_series(path: PathLike, /, *, decompress: bool = False) -> Series:
-    """Read a Series from disk."""
-    data = read_binary(path, decompress=decompress)
-    return deserialize_series(data)
-
-
-def write_series(
-    series: Series,
-    path: PathLike,
-    /,
-    *,
-    compress: bool = False,
-    overwrite: bool = False,
-) -> None:
-    """Write a Series to disk."""
-    data = serialize_series(series)
-    write_formatted_json(data, path, compress=compress, overwrite=overwrite)
-
-
-def read_dataframe(path: PathLike, /, *, decompress: bool = False) -> DataFrame:
-    """Read a DataFrame from disk."""
-    data = read_binary(path, decompress=decompress)
-    return deserialize_dataframe(data)
-
-
-def write_dataframe(
-    df: DataFrame, path: PathLike, /, *, compress: bool = False, overwrite: bool = False
-) -> None:
-    """Write a DataFrame to disk."""
-    data = serialize_dataframe(df)
-    write_formatted_json(data, path, compress=compress, overwrite=overwrite)
-
-
 def serialize_series(series: Series, /) -> bytes:
     """Serialize a Series."""
     from utilities.orjson import serialize
@@ -2152,20 +2119,20 @@ def deserialize_dataframe(data: bytes, /) -> DataFrame:
     return DataFrame(data=rows, schema=schema, orient="row")
 
 
-type _DeconSchema = Sequence[tuple[str, _DeconDType]]
-type _DeconDType = (
+type _Deconstructed = Sequence[tuple[str, _DeconstructedDType]]
+type _DeconstructedDType = (
     str
     | tuple[Literal["Datetime"], str, str | None]
-    | tuple[Literal["List"], _DeconDType]
-    | tuple[Literal["Struct"], _DeconSchema]
+    | tuple[Literal["List"], _DeconstructedDType]
+    | tuple[Literal["Struct"], _Deconstructed]
 )
 
 
-def _deconstruct_schema(schema: Schema, /) -> _DeconSchema:
+def _deconstruct_schema(schema: Schema, /) -> _Deconstructed:
     return [(k, _deconstruct_dtype(v)) for k, v in schema.items()]
 
 
-def _deconstruct_dtype(dtype: PolarsDataType, /) -> _DeconDType:
+def _deconstruct_dtype(dtype: PolarsDataType, /) -> _DeconstructedDType:
     match dtype:
         case List() as list_:
             return "List", _deconstruct_dtype(list_.inner)
@@ -2178,11 +2145,11 @@ def _deconstruct_dtype(dtype: PolarsDataType, /) -> _DeconDType:
             return repr(dtype)
 
 
-def _reconstruct_schema(schema: _DeconSchema, /) -> Schema:
+def _reconstruct_schema(schema: _Deconstructed, /) -> Schema:
     return Schema({k: _reconstruct_dtype(v) for k, v in schema})
 
 
-def _reconstruct_dtype(obj: _DeconDType, /) -> PolarsDataType:
+def _reconstruct_dtype(obj: _DeconstructedDType, /) -> PolarsDataType:
     match obj:
         case str() as name:
             return getattr(pl, name)
