@@ -47,6 +47,7 @@ from utilities.iterables import (
     one,
     one_unique,
 )
+from utilities.json import RunPrettierError, run_prettier
 from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
@@ -1246,6 +1247,8 @@ def write_json(
         dataclass_hook=dataclass_hook,
         dataclass_defaults=dataclass_defaults,
     )
+    with suppress(RunPrettierError):
+        data = run_prettier(data)
     with writer(path, compress=compress, overwrite=overwrite) as temp:
         _ = temp.write_bytes(data)
 
