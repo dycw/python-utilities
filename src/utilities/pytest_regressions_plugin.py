@@ -25,8 +25,7 @@ else:
         """Instance of the `OrjsonRegressionFixture`."""
         from utilities.pytest_regressions import OrjsonRegressionFixture
 
-        path = _get_path(request)
-        return OrjsonRegressionFixture(path, request, tmp_path)
+        return OrjsonRegressionFixture(request=request, tmp_path=tmp_path)
 
     @fixture
     def polars_regression(

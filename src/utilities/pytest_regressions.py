@@ -1,48 +1,61 @@
 from __future__ import annotations
 
 from contextlib import suppress
+from dataclasses import dataclass
+from functools import partial
 from json import loads
 from pathlib import Path
 from shutil import copytree
-from typing import TYPE_CHECKING, Any, assert_never
+from typing import TYPE_CHECKING, Any, assert_never, cast
 
+from numpy import full
+from pytest_regressions.common import perform_regression_check
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from utilities.functions import ensure_str
 from utilities.operator import is_equal
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+    from collections.abc import Set as AbstractSet
+
     from polars import DataFrame, Series
     from pytest import FixtureRequest
 
+    from utilities.orjson import _DataclassHook
     from utilities.types import PathLike, StrMapping
 
 
 ##
 
 
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class OrjsonRegressionFixture:
     """Implementation of `orjson_regression` fixture."""
 
-    def __init__(
-        self, path: PathLike, request: FixtureRequest, tmp_path: Path, /
-    ) -> None:
-        super().__init__()
-        path = Path(path)
-        original_datadir = path.parent
-        data_dir = tmp_path.joinpath(ensure_str(request.fixturename))
-        with suppress(FileNotFoundError):
-            _ = copytree(original_datadir, data_dir)
-        self._fixture = FileRegressionFixture(
-            datadir=data_dir, original_datadir=original_datadir, request=request
-        )
-        self._basename = path.name
+    request: FixtureRequest
+    tmp_path: Path
+
+    # def __post_init__(self) -> None:
+    #     original_datadir = path.parent
+    #     data_dir = self.path = tmp_path.joinpath(ensure_str(request.fixturename))
+    #     with suppress(FileNotFoundError):
+    #         _ = copytree(original_datadir, data_dir)
+    #     self._fixture = FileRegressionFixture(
+    #         datadir=data_dir, original_datadir=original_datadir, request=request
+    #     )
+    #     self._basename = path.name
 
     def check(
         self,
         obj: Any,
         /,
         *,
+        compress: bool = False,
+        objects: AbstractSet[type[Any]] | None = None,
+        redirects: Mapping[str, type[Any]] | None = None,
+        before: Callable[[Any], Any] | None = None,
+        dataclass_hook: _DataclassHook | None = None,
         globalns: StrMapping | None = None,
         localns: StrMapping | None = None,
         warn_name_errors: bool = False,
@@ -54,26 +67,99 @@ class OrjsonRegressionFixture:
 
         data = serialize(
             obj,
+            before=before,
             globalns=globalns,
             localns=localns,
             warn_name_errors=warn_name_errors,
+            dataclass_hook=dataclass_hook,
             dataclass_defaults=dataclass_defaults,
         )
-        basename = self._basename
+        full_path = _get_path(self.request)
         if suffix is not None:
-            basename = f"{basename}__{suffix}"
-        self._fixture.check(
-            data,
-            extension=".json",
-            basename=basename,
-            binary=True,
-            check_fn=self._check_fn,
+            full_path = f"{full}__{suffix}"
+        perform_regression_check(
+            datadir=NotImplemented,
+            original_datadir=NotImplemented,
+            request=self.request,
+            check_fn=partial(
+                self._check_fn,
+                decompress=compress,
+                dataclass_hook=dataclass_hook,
+                objects=objects,
+                redirects=redirects,
+            ),
+            dump_fn=partial(
+                self._dump_fn,
+                obj=obj,
+                before=before,
+                globalns=globalns,
+                localns=localns,
+                warn_name_errors=warn_name_errors,
+                dataclass_hook=dataclass_hook,
+                dataclass_defaults=dataclass_defaults,
+                compress=compress,
+            ),
+            extension=".json.gz" if compress else ".json",
+            fullpath=full_path,
+            force_regen=1,
+            obtained_filename=full_path,
         )
 
-    def _check_fn(self, path1: Path, path2: Path, /) -> None:
-        left = loads(path1.read_text())
-        right = loads(path2.read_text())
+    def _check_fn(
+        self,
+        path1: Path,
+        path2: Path,
+        /,
+        *,
+        decompress: bool = False,
+        dataclass_hook: _DataclassHook | None = None,
+        objects: AbstractSet[type[Any]] | None = None,
+        redirects: Mapping[str, type[Any]] | None = None,
+    ) -> None:
+        from utilities.orjson import read_json
+
+        breakpoint()
+
+        left, right = [
+            read_json(
+                p,
+                decompress=decompress,
+                dataclass_hook=dataclass_hook,
+                objects=objects,
+                redirects=redirects,
+            )
+            for p in [path1, path2]
+        ]
         assert is_equal(left, right), f"{left=}, {right=}"
+
+    def _dump_fn(
+        self,
+        path: Path,
+        /,
+        *,
+        obj: Any,
+        before: Callable[[Any], Any] | None = None,
+        globalns: StrMapping | None = None,
+        localns: StrMapping | None = None,
+        warn_name_errors: bool = False,
+        dataclass_hook: _DataclassHook | None = None,
+        dataclass_defaults: bool = False,
+        compress: bool = False,
+    ) -> None:
+        from utilities.orjson import write_json
+
+        write_json(
+            obj,
+            path,
+            before=before,
+            globalns=globalns,
+            localns=localns,
+            warn_name_errors=warn_name_errors,
+            dataclass_hook=dataclass_hook,
+            dataclass_defaults=dataclass_defaults,
+            compress=compress,
+            overwrite=True,
+        )
 
 
 ##
@@ -120,6 +206,19 @@ class PolarsRegressionFixture:
             case _ as never:
                 assert_never(never)
         self._fixture.check(data, suffix=suffix)
+
+
+##
+
+
+def _get_path(request: FixtureRequest, /) -> Path:
+    from utilities.pathlib import get_root
+    from utilities.pytest import node_id_path
+
+    path = Path(cast("Any", request).fspath)
+    root = Path("src", "tests")
+    tail = node_id_path(request.node.nodeid, root=root)
+    return get_root(path=path).joinpath(root, "regressions", tail)
 
 
 __all__ = ["OrjsonRegressionFixture", "PolarsRegressionFixture"]
