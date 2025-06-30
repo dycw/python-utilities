@@ -217,6 +217,7 @@ type OptExcInfo = ExcInfo | tuple[None, None, None]
 # whenever
 type DateDeltaLike = MaybeStr[DateDelta]
 type DateLike = MaybeStr[Date]
+type DateOrDateTimeDelta = DateDelta | DateTimeDelta
 type DateTimeDeltaLike = MaybeStr[DateTimeDelta]
 type MaybeCallableDate = MaybeCallable[Date]
 type MaybeCallableZonedDateTime = MaybeCallable[ZonedDateTime]
@@ -251,6 +252,7 @@ __all__ = [
     "Dataclass",
     "DateDeltaLike",
     "DateLike",
+    "DateOrDateTimeDelta",
     "DateTimeDeltaLike",
     "DateTimeRoundMode",
     "DateTimeRoundUnit",
