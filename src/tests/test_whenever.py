@@ -64,6 +64,7 @@ from utilities.whenever import (
     Freq,
     MeanDateTimeError,
     MinMaxDateError,
+    ToMonthsAndDaysError,
     ToNanosError,
     ToPyTimeDeltaError,
     WheneverLogRecord,
@@ -110,6 +111,7 @@ from utilities.whenever import (
     to_local_plain,
     to_minutes,
     to_months,
+    to_months_and_days,
     to_nanos,
     to_py_date_or_date_time,
     to_py_time_delta,
@@ -764,6 +766,33 @@ class TestToMonths:
             _ToMonthsTimeError, match="Delta must not contain a time part; got .*"
         ):
             _ = to_months(delta)
+
+
+class TestToMonthsAndDays:
+    @given(
+        cls=sampled_from([DateDelta, DateTimeDelta]), months=integers(), days=integers()
+    )
+    def test_main(
+        self, *, cls: type[DateOrDateTimeDelta], months: int, days: int
+    ) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="Out of range"),
+            assume_does_not_raise(ValueError, match="Mixed sign in Date(Time)?Delta"),
+            assume_does_not_raise(ValueError, match="months out of range"),
+            assume_does_not_raise(ValueError, match="days out of range"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+        ):
+            delta = cls(months=months, days=days)
+        assert to_months_and_days(delta) == (months, days)
+
+    def test_error_date_time_delta_time(self) -> None:
+        delta = DateTimeDelta(nanoseconds=1)
+        with raises(
+            ToMonthsAndDaysError, match="Delta must not contain a time part; got .*"
+        ):
+            _ = to_months_and_days(delta)
 
 
 class TestToPyDateOrDateTime:

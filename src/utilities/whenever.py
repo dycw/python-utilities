@@ -791,6 +791,31 @@ class _ToMonthsTimeError(ToMonthsError):
 ##
 
 
+def to_months_and_days(delta: DateOrDateTimeDelta, /) -> tuple[int, int]:
+    """Compute the number of months & days in a delta."""
+    match delta:
+        case DateDelta():
+            return delta.in_months_days()
+        case DateTimeDelta():
+            if delta.time_part() != TimeDelta():
+                raise ToMonthsAndDaysError(delta=delta)
+            return to_months_and_days(delta.date_part())
+        case _ as never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class ToMonthsAndDaysError(Exception):
+    delta: DateTimeDelta
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain a time part; got {self.delta.time_part()}"
+
+
+##
+
+
 def to_nanos(delta: Delta, /) -> int:
     """Compute the number of nanoseconds in a date-time delta."""
     match delta:
@@ -1250,6 +1275,7 @@ __all__ = [
     "MinMaxDateError",
     "ToDaysError",
     "ToMinutesError",
+    "ToMonthsAndDaysError",
     "ToMonthsError",
     "ToNanosError",
     "ToPyTimeDeltaError",
@@ -1277,6 +1303,7 @@ __all__ = [
     "to_local_plain",
     "to_minutes",
     "to_months",
+    "to_months_and_days",
     "to_nanos",
     "to_py_date_or_date_time",
     "to_py_time_delta",
