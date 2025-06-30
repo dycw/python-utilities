@@ -1902,7 +1902,7 @@ class TestJoinIntoPeriods:
             _ = join_into_periods(DataFrame(), DataFrame(), left_on="datetime")
 
     def test_error_left_periods(self) -> None:
-        times = [(dt.time(0, 1), dt.time())]
+        times = [(dt.time(1), dt.time())]
         df = self._lift_df(times)
         with raises(
             _JoinIntoPeriodsPeriodError,
@@ -1911,13 +1911,15 @@ class TestJoinIntoPeriods:
             _ = join_into_periods(df, DataFrame())
 
     def test_error_right_periods(self) -> None:
-        times = [(dt.time(0, 1), dt.time())]
-        df = self._lift_df(times)
+        times1 = [(dt.time(), dt.time(1))]
+        df1 = self._lift_df(times1)
+        times2 = [(dt.time(1), dt.time())]
+        df2 = self._lift_df(times2)
         with raises(
             _JoinIntoPeriodsPeriodError,
             match="Right DataFrame column 'datetime' must contain valid periods",
         ):
-            _ = join_into_periods(DataFrame(), df)
+            _ = join_into_periods(df1, df2)
 
     def _lift_df(
         self,
