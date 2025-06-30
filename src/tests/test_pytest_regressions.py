@@ -29,7 +29,7 @@ class TestMultipleRegressionFixtures:
         df_regression: DataFrameRegressionFixture,
     ) -> None:
         obj = DataClassFutureInt(int_=0)
-        orjson_regression.check(obj, suffix="obj")
+        orjson_regression.check(obj, objects={DataClassFutureInt}, suffix="obj")
         series = int_range(end=10, eager=True).alias("value")
         series_regression.check(series, suffix="series")
         df = series.to_frame()
@@ -62,7 +62,6 @@ class TestSeriesAndDataFrameRegressionFixtures:
         dataframe_regression.check(df, summary=summary, compress=compress)
 
 
-@mark.only
 class TestOrjsonRegressionFixture:
     @mark.parametrize("compress", [param(True), param(False)])
     def test_dataclass_nested(
