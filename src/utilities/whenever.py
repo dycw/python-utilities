@@ -595,21 +595,46 @@ def to_local_plain(date_time: ZonedDateTime, /) -> PlainDateTime:
 ##
 
 
-def to_months(delta: DateDelta, /) -> int:
-    """Compute the number of months in a date delta."""
-    months, days = delta.in_months_days()
-    if days != 0:
-        raise ToMonthsError(days=days)
-    return months
+def to_months(delta: DateDelta | DateTimeDelta, /) -> int:
+    """Compute the number of months in a delta."""
+    match delta:
+        case DateDelta():
+            months, days = delta.in_months_days()
+            if days != 0:
+                raise _ToMonthsDaysError(delta=delta, days=days)
+            return months
+        case DateTimeDelta():
+            if delta.time_part() != TimeDelta():
+                raise _ToMonthsTimeError(delta=delta)
+            try:
+                return to_months(delta.date_part())
+            except _ToMonthsDaysError as error:
+                raise _ToMonthsDaysError(delta=delta, days=error.days) from None
+        case _ as never:
+            assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)
-class ToMonthsError(Exception):
+class ToMonthsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToMonthsDaysError(ToMonthsError):
+    delta: DateDelta | DateTimeDelta
     days: int
 
     @override
     def __str__(self) -> str:
-        return f"Date delta must not contain days; got {self.days}"
+        return f"Delta must not contain days; got {self.days}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToMonthsTimeError(ToMonthsError):
+    delta: DateTimeDelta
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain a time part; got {self.delta.time_part()}"
 
 
 ##
@@ -780,7 +805,7 @@ def _to_time_delta_components(nanos: int, /) -> _TimeDeltaComponents:
 
 
 def to_years(delta: DateDelta | DateTimeDelta, /) -> int:
-    """Compute the number of years in a date delta."""
+    """Compute the number of years in a delta."""
     match delta:
         case DateDelta():
             years, months, days = delta.in_years_months_days()

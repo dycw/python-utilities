@@ -64,7 +64,6 @@ from utilities.whenever import (
     MeanDateTimeError,
     MinMaxDateError,
     ToDaysError,
-    ToMonthsError,
     ToNanosError,
     ToPyTimeDeltaError,
     WheneverLogRecord,
@@ -74,6 +73,8 @@ from utilities.whenever import (
     _MinMaxDateMaxDateError,
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
+    _ToMonthsDaysError,
+    _ToMonthsTimeError,
     _ToYearsDaysError,
     _ToYearsMonthsError,
     _ToYearsTimeError,
@@ -596,20 +597,28 @@ class TestToLocalPlain:
 
 
 class TestToMonths:
-    @given(months=integers())
-    def test_main(self, *, months: int) -> None:
+    @given(cls=sampled_from([DateDelta, DateTimeDelta]), months=integers())
+    def test_month(self, *, cls: type[DateDelta | DateTimeDelta], months: int) -> None:
         with (
+            assume_does_not_raise(ValueError, match="Out of range"),
             assume_does_not_raise(ValueError, match="months out of range"),
             assume_does_not_raise(
                 OverflowError, match="Python int too large to convert to C long"
             ),
         ):
-            delta = DateDelta(months=months)
+            delta = cls(months=months)
         assert to_months(delta) == months
 
-    def test_error(self) -> None:
-        delta = DateDelta(days=1)
-        with raises(ToMonthsError, match="Date delta must not contain days; got 1"):
+    @mark.parametrize("delta", [param(DateDelta(days=1)), param(DateTimeDelta(days=1))])
+    def test_error_days(self, *, delta: DateDelta | DateTimeDelta) -> None:
+        with raises(_ToMonthsDaysError, match="Delta must not contain days; got 1"):
+            _ = to_months(delta)
+
+    def test_error_date_time_delta_time(self) -> None:
+        delta = DateTimeDelta(nanoseconds=1)
+        with raises(
+            _ToMonthsTimeError, match="Delta must not contain a time part; got .*"
+        ):
             _ = to_months(delta)
 
 
@@ -666,8 +675,8 @@ class TestToPyTimeDelta:
 
 
 class TestToYears:
-    @given(years=integers())
-    def test_date_delta(self, *, years: int) -> None:
+    @given(cls=sampled_from([DateDelta, DateTimeDelta]), years=integers())
+    def test_main(self, *, cls: type[DateDelta | DateTimeDelta], years: int) -> None:
         with (
             assume_does_not_raise(ValueError, match="years out of range"),
             assume_does_not_raise(ValueError, match="months out of range"),
@@ -675,19 +684,7 @@ class TestToYears:
                 OverflowError, match="Python int too large to convert to C long"
             ),
         ):
-            delta = DateDelta(years=years)
-        assert to_years(delta) == years
-
-    @given(years=integers())
-    def test_date_time_delta(self, *, years: int) -> None:
-        with (
-            assume_does_not_raise(ValueError, match="years out of range"),
-            assume_does_not_raise(ValueError, match="months out of range"),
-            assume_does_not_raise(
-                OverflowError, match="Python int too large to convert to C long"
-            ),
-        ):
-            delta = DateTimeDelta(years=years)
+            delta = cls(years=years)
         assert to_years(delta) == years
 
     @mark.parametrize(
