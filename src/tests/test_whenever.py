@@ -867,7 +867,9 @@ class TestToSeconds:
 
 class TestToWeeks:
     @given(cls=sampled_from([DateDelta, DateTimeDelta]), weeks=integers())
-    def test_main(self, *, cls: type[DateDelta | DateTimeDelta], weeks: int) -> None:
+    def test_date_or_date_time_delta(
+        self, *, cls: type[DateDelta | DateTimeDelta], weeks: int
+    ) -> None:
         with (
             assume_does_not_raise(ValueError, match="Out of range"),
             assume_does_not_raise(ValueError, match="days out of range"),
@@ -877,6 +879,19 @@ class TestToWeeks:
             ),
         ):
             delta = cls(weeks=weeks)
+        assert to_weeks(delta) == weeks
+
+    @given(weeks=integers())
+    def test_time_delta(self, *, weeks: int) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="Out of range"),
+            assume_does_not_raise(ValueError, match="hours out of range"),
+            assume_does_not_raise(OverflowError, match="int too big to convert"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+        ):
+            delta = TimeDelta(hours=7 * 24 * weeks)
         assert to_weeks(delta) == weeks
 
     @mark.parametrize(
@@ -893,12 +908,15 @@ class TestToWeeks:
         ):
             _ = to_weeks(delta)
 
-    def test_error_date_time_delta_time(self) -> None:
-        delta = DateTimeDelta(nanoseconds=1)
+    @mark.parametrize(
+        "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
+    )
+    def test_error_nanoseconds(self, *, delta: TimeDelta | DateTimeDelta) -> None:
         with raises(
-            _ToWeeksNanosecondsError, match="Delta must not contain a time part; got .*"
+            _ToWeeksNanosecondsError,
+            match="Delta must not contain extra nanoseconds; got .*",
         ):
-            _ = to_weeks(delta)
+            _ = to_days(delta)
 
 
 class TestToYears:
