@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from pytest import FixtureRequest
 
     from utilities.pytest_regressions import (
+        DataFrameRegressionFixture,
         OrjsonRegressionFixture,
-        PolarsRegressionFixture,
+        SeriesRegressionFixture,
     )
 
 
@@ -28,24 +30,22 @@ else:
         return OrjsonRegressionFixture(request=request, tmp_path=tmp_path)
 
     @fixture
-    def polars_regression(
+    def df_regression(
         *, request: FixtureRequest, tmp_path: Path
-    ) -> PolarsRegressionFixture:
+    ) -> DataFrameRegressionFixture:
         """Instance of the `PolarsRegressionFixture`."""
-        from utilities.pytest_regressions import PolarsRegressionFixture
+        from utilities.pytest_regressions import DataFrameRegressionFixture
 
-        path = _get_path(request)
-        return PolarsRegressionFixture(path, request, tmp_path)
+        return DataFrameRegressionFixture(request=request, tmp_path=tmp_path)
 
+    @fixture
+    def series_regression(
+        *, request: FixtureRequest, tmp_path: Path
+    ) -> SeriesRegressionFixture:
+        """Instance of the `PolarsRegressionFixture`."""
+        from utilities.pytest_regressions import SeriesRegressionFixture
 
-def _get_path(request: FixtureRequest, /) -> Path:
-    from utilities.pathlib import get_root
-    from utilities.pytest import node_id_path
-
-    path = Path(cast("Any", request).fspath)
-    root = Path("src", "tests")
-    tail = node_id_path(request.node.nodeid, root=root)
-    return get_root(path=path).joinpath(root, "regressions", tail)
+        return SeriesRegressionFixture(request=request, tmp_path=tmp_path)
 
 
-__all__ = ["orjson_regression", "polars_regression"]
+__all__ = ["df_regression", "orjson_regression", "series_regression"]

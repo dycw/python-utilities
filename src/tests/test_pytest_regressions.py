@@ -14,8 +14,9 @@ from tests.test_typing_funcs.with_future import (
 
 if TYPE_CHECKING:
     from utilities.pytest_regressions import (
+        DataFrameRegressionFixture,
         OrjsonRegressionFixture,
-        PolarsRegressionFixture,
+        SeriesRegressionFixture,
     )
 
 
@@ -24,40 +25,44 @@ class TestMultipleRegressionFixtures:
         self,
         *,
         orjson_regression: OrjsonRegressionFixture,
-        polars_regression: PolarsRegressionFixture,
+        series_regression: SeriesRegressionFixture,
+        df_regression: DataFrameRegressionFixture,
     ) -> None:
         obj = DataClassFutureInt(int_=0)
         orjson_regression.check(obj, suffix="obj")
         series = int_range(end=10, eager=True).alias("value")
-        polars_regression.check(series, suffix="series")
+        series_regression.check(series, suffix="series")
+        df = series.to_frame()
+        df_regression.check(df, suffix="df")
 
 
-class TestPolarsRegressionFixture:
-    @mark.parametrize("summary", [param(True), param(False)])
-    @mark.parametrize("compress", [param(True), param(False)])
-    def test_dataframe(
-        self,
-        *,
-        polars_regression: PolarsRegressionFixture,
-        summary: bool,
-        compress: bool,
-    ) -> None:
-        df = int_range(end=10, eager=True).alias("value").to_frame()
-        polars_regression.check(df, summary=summary, compress=compress)
-
+class TestSeriesAndDataFrameRegressionFixtures:
     @mark.parametrize("summary", [param(True), param(False)])
     @mark.parametrize("compress", [param(True), param(False)])
     def test_series(
         self,
         *,
-        polars_regression: PolarsRegressionFixture,
+        series_regression: SeriesRegressionFixture,
         summary: bool,
         compress: bool,
     ) -> None:
         series = int_range(end=10, eager=True).alias("value")
-        polars_regression.check(series, summary=summary, compress=compress)
+        series_regression.check(series, summary=summary, compress=compress)
+
+    @mark.parametrize("summary", [param(True), param(False)])
+    @mark.parametrize("compress", [param(True), param(False)])
+    def test_dataframe(
+        self,
+        *,
+        dataframe_regression: DataFrameRegressionFixture,
+        summary: bool,
+        compress: bool,
+    ) -> None:
+        df = int_range(end=10, eager=True).alias("value").to_frame()
+        dataframe_regression.check(df, summary=summary, compress=compress)
 
 
+@mark.only
 class TestOrjsonRegressionFixture:
     @mark.parametrize("compress", [param(True), param(False)])
     def test_dataclass_nested(
@@ -76,7 +81,6 @@ class TestOrjsonRegressionFixture:
         )
 
     @mark.parametrize("compress", [param(True), param(False)])
-    @mark.only
     def test_dataclass_int(
         self, *, orjson_regression: OrjsonRegressionFixture, compress: bool
     ) -> None:
