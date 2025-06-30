@@ -678,8 +678,9 @@ class TestToYears:
     @given(cls=sampled_from([DateDelta, DateTimeDelta]), years=integers())
     def test_main(self, *, cls: type[DateDelta | DateTimeDelta], years: int) -> None:
         with (
-            assume_does_not_raise(ValueError, match="years out of range"),
+            assume_does_not_raise(ValueError, match="Out of range"),
             assume_does_not_raise(ValueError, match="months out of range"),
+            assume_does_not_raise(ValueError, match="years out of range"),
             assume_does_not_raise(
                 OverflowError, match="Python int too large to convert to C long"
             ),
