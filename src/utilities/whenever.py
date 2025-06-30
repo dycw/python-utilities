@@ -530,26 +530,6 @@ def to_date(
 ##
 
 
-def to_days(delta: DateDelta, /) -> int:
-    """Compute the number of days in a date delta."""
-    months, days = delta.in_months_days()
-    if months != 0:
-        raise ToDaysError(months=months)
-    return days
-
-
-@dataclass(kw_only=True, slots=True)
-class ToDaysError(Exception):
-    months: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Date delta must not contain months; got {self.months}"
-
-
-##
-
-
 def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
     """Construct a date-time delta."""
     components = _to_time_delta_components(nanos)
@@ -587,6 +567,51 @@ def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
 ##
 
 
+def to_days(delta: DateDelta | DateTimeDelta, /) -> int:
+    """Compute the number of days in a delta."""
+    match delta:
+        case DateDelta():
+            months, days = delta.in_months_days()
+            if months != 0:
+                raise _ToDaysMonthsError(delta=delta, months=months)
+            return days
+        case DateTimeDelta():
+            if delta.time_part() != TimeDelta():
+                raise _ToDaysTimeError(delta=delta)
+            try:
+                return to_days(delta.date_part())
+            except _ToDaysMonthsError as error:
+                raise _ToDaysMonthsError(delta=delta, months=error.months) from None
+        case _ as never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class ToDaysError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToDaysMonthsError(ToDaysError):
+    delta: DateDelta | DateTimeDelta
+    months: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain months; got {self.months}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToDaysTimeError(ToDaysError):
+    delta: DateTimeDelta
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain a time part; got {self.delta.time_part()}"
+
+
+##
+
+
 def to_local_plain(date_time: ZonedDateTime, /) -> PlainDateTime:
     """Convert a datetime to its local/plain variant."""
     return date_time.to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
@@ -595,33 +620,66 @@ def to_local_plain(date_time: ZonedDateTime, /) -> PlainDateTime:
 ##
 
 
-def to_months(delta: DateDelta, /) -> int:
-    """Compute the number of months in a date delta."""
-    months, days = delta.in_months_days()
-    if days != 0:
-        raise ToMonthsError(days=days)
-    return months
+def to_months(delta: DateDelta | DateTimeDelta, /) -> int:
+    """Compute the number of months in a delta."""
+    match delta:
+        case DateDelta():
+            months, days = delta.in_months_days()
+            if days != 0:
+                raise _ToMonthsDaysError(delta=delta, days=days)
+            return months
+        case DateTimeDelta():
+            if delta.time_part() != TimeDelta():
+                raise _ToMonthsTimeError(delta=delta)
+            try:
+                return to_months(delta.date_part())
+            except _ToMonthsDaysError as error:
+                raise _ToMonthsDaysError(delta=delta, days=error.days) from None
+        case _ as never:
+            assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)
-class ToMonthsError(Exception):
+class ToMonthsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToMonthsDaysError(ToMonthsError):
+    delta: DateDelta | DateTimeDelta
     days: int
 
     @override
     def __str__(self) -> str:
-        return f"Date delta must not contain days; got {self.days}"
+        return f"Delta must not contain days; got {self.days}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToMonthsTimeError(ToMonthsError):
+    delta: DateTimeDelta
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain a time part; got {self.delta.time_part()}"
 
 
 ##
 
 
-def to_nanos(delta: DateTimeDelta, /) -> int:
+def to_nanos(delta: DateDelta | TimeDelta | DateTimeDelta, /) -> int:
     """Compute the number of nanoseconds in a date-time delta."""
-    try:
-        days = to_days(delta.date_part())
-    except ToDaysError as error:
-        raise ToNanosError(months=error.months) from None
-    return 24 * 60 * 60 * int(1e9) * days + delta.time_part().in_nanoseconds()
+    match delta:
+        case DateDelta():
+            try:
+                days = to_days(delta)
+            except _ToDaysMonthsError as error:
+                raise ToNanosError(months=error.months) from None
+            return 24 * 60 * 60 * int(1e9) * days
+        case TimeDelta():
+            return delta.in_nanoseconds()
+        case DateTimeDelta():
+            return to_nanos(delta.date_part()) + to_nanos(delta.time_part())
+        case _ as never:
+            assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -779,6 +837,115 @@ def _to_time_delta_components(nanos: int, /) -> _TimeDeltaComponents:
 ##
 
 
+def to_weeks(delta: DateDelta | DateTimeDelta, /) -> int:
+    """Compute the number of weeks in a delta."""
+    try:
+        days = to_days(delta)
+    except _ToDaysMonthsError as error:
+        raise _ToWeeksMonthsError(delta=error.delta, months=error.months) from None
+    except _ToDaysTimeError as error:
+        raise _ToWeeksTimeError(delta=error.delta) from None
+    weeks, remainder = divmod(days, 7)
+    if remainder != 0:
+        raise _ToWeeksDaysError(delta=delta, days=days) from None
+    return weeks
+
+
+@dataclass(kw_only=True, slots=True)
+class ToWeeksError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToWeeksMonthsError(ToWeeksError):
+    delta: DateDelta | DateTimeDelta
+    months: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain months; got {self.months}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToWeeksTimeError(ToWeeksError):
+    delta: DateTimeDelta
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain a time part; got {self.delta.time_part()}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToWeeksDaysError(ToWeeksError):
+    delta: DateDelta | DateTimeDelta
+    days: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain extra days; got {self.days}"
+
+
+##
+
+
+def to_years(delta: DateDelta | DateTimeDelta, /) -> int:
+    """Compute the number of years in a delta."""
+    match delta:
+        case DateDelta():
+            years, months, days = delta.in_years_months_days()
+            if months != 0:
+                raise _ToYearsMonthsError(delta=delta, months=months)
+            if days != 0:
+                raise _ToYearsDaysError(delta=delta, days=days)
+            return years
+        case DateTimeDelta():
+            if delta.time_part() != TimeDelta():
+                raise _ToYearsTimeError(delta=delta)
+            try:
+                return to_years(delta.date_part())
+            except _ToYearsMonthsError as error:
+                raise _ToYearsMonthsError(delta=delta, months=error.months) from None
+            except _ToYearsDaysError as error:
+                raise _ToYearsDaysError(delta=delta, days=error.days) from None
+        case _ as never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class ToYearsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToYearsMonthsError(ToYearsError):
+    delta: DateDelta | DateTimeDelta
+    months: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain months; got {self.months}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToYearsDaysError(ToYearsError):
+    delta: DateDelta | DateTimeDelta
+    days: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain days; got {self.days}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToYearsTimeError(ToYearsError):
+    delta: DateTimeDelta
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain a time part; got {self.delta.time_part()}"
+
+
+##
+
+
 @overload
 def to_zoned_date_time(*, date_time: MaybeCallableZonedDateTime) -> ZonedDateTime: ...
 @overload
@@ -901,6 +1068,9 @@ __all__ = [
     "ToMonthsError",
     "ToNanosError",
     "ToPyTimeDeltaError",
+    "ToSecondsError",
+    "ToWeeksError",
+    "ToYearsError",
     "WheneverLogRecord",
     "add_year_month",
     "datetime_utc",
@@ -924,6 +1094,9 @@ __all__ = [
     "to_nanos",
     "to_py_date_or_date_time",
     "to_py_time_delta",
+    "to_seconds",
+    "to_weeks",
+    "to_years",
     "to_zoned_date_time",
     "two_digit_year_month",
 ]
