@@ -865,10 +865,12 @@ def py_datetimes(
     """Strategy for generating standard library datetimes."""
     zoned_ = draw2(draw, zoned, booleans())
     timezones = just(UTC) if zoned_ else none()
-    return hypothesis.strategies.datetimes(
-        min_value=dt.datetime(2000, 1, 1),  # noqa: DTZ001
-        max_value=dt.datetime(2000, 12, 31),  # noqa: DTZ001
-        timezones=timezones,
+    return draw(
+        hypothesis.strategies.datetimes(
+            min_value=dt.datetime(2000, 1, 1),  # noqa: DTZ001
+            max_value=dt.datetime(2000, 12, 31),  # noqa: DTZ001
+            timezones=timezones,
+        )
     )
 
 
