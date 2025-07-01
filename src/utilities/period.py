@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Self, TypedDict, override
+from typing import TYPE_CHECKING, Any, Self, TypedDict, overload, override
 from zoneinfo import ZoneInfo
 
-from whenever import Date, DateDelta, TimeDelta, ZonedDateTime
+from whenever import Date, DateDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 from utilities.dataclasses import replace_non_sentinel
 from utilities.functions import get_class_name
@@ -113,6 +113,37 @@ class ZonedDateTimePeriod:
         """The duration of the period."""
         return self.end - self.start
 
+    @overload
+    def exact_eq(self, period: ZonedDateTimePeriod, /) -> bool: ...
+    @overload
+    def exact_eq(self, start: ZonedDateTime, end: ZonedDateTime, /) -> bool: ...
+    @overload
+    def exact_eq(
+        self, start: PlainDateTime, end: PlainDateTime, time_zone: ZoneInfo, /
+    ) -> bool: ...
+    def exact_eq(self, *args: Any) -> bool:
+        """Check if a period is exactly equal to another."""
+        if (len(args) == 1) and isinstance(args[0], ZonedDateTimePeriod):
+            return self.start.exact_eq(args[0].start) and self.end.exact_eq(args[0].end)
+        if (
+            (len(args) == 2)
+            and isinstance(args[0], ZonedDateTime)
+            and isinstance(args[1], ZonedDateTime)
+        ):
+            return self.exact_eq(ZonedDateTimePeriod(args[0], args[1]))
+        if (
+            (len(args) == 3)
+            and isinstance(args[0], PlainDateTime)
+            and isinstance(args[1], PlainDateTime)
+            and isinstance(args[2], ZoneInfo)
+        ):
+            return self.exact_eq(
+                ZonedDateTimePeriod(
+                    args[0].assume_tz(args[2].key), args[1].assume_tz(args[2].key)
+                )
+            )
+        raise _PeriodExactEqArgumentsError(args=args)
+
     def format_compact(self) -> str:
         """Format the period in a compact fashion."""
         fc, start, end = format_compact, self.start, self.end
@@ -192,6 +223,15 @@ class _PeriodTimeZoneError(PeriodError):
     @override
     def __str__(self) -> str:
         return f"Period must contain exactly one time zone; got {self.start} and {self.end}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PeriodExactEqArgumentsError(PeriodError):
+    args: tuple[Any, ...]
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid arguments; got {self.args}"
 
 
 __all__ = ["DatePeriod", "PeriodError", "ZonedDateTimePeriod"]

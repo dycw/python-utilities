@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from re import search
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import DataObject, data
@@ -21,6 +21,7 @@ from utilities.period import (
     DatePeriod,
     ZonedDateTimePeriod,
     _PeriodAsDict,
+    _PeriodExactEqArgumentsError,
     _PeriodInvalidError,
     _PeriodTimeZoneError,
 )
@@ -162,6 +163,16 @@ class TestZonedDateTimePeriod:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
         assert period.delta == (end - start)
+
+    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
+    def test_exact_eq(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
+        start, end = datetimes
+        period = ZonedDateTimePeriod(start, end)
+        assert period.exact_eq(period)
+        assert period.exact_eq(period.start, period.end)
+        assert period.exact_eq(
+            period.start.to_plain(), period.end.to_plain(), period.time_zone
+        )
 
     @mark.parametrize(
         ("end", "expected"),
@@ -369,3 +380,14 @@ class TestZonedDateTimePeriod:
             match="Period must contain exactly one time zone; got .* and .*",
         ):
             _ = ZonedDateTimePeriod(start, end)
+
+    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
+    def test_error_exact_eq(
+        self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]
+    ) -> None:
+        start, end = datetimes
+        period = ZonedDateTimePeriod(start, end)
+        with raises(
+            _PeriodExactEqArgumentsError, match=r"Invalid arguments; got \(.*\)"
+        ):
+            _ = period.exact_eq(cast("Any", start))
