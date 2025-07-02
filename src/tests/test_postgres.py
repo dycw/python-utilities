@@ -26,6 +26,13 @@ if TYPE_CHECKING:
 
 
 @composite
+def tables(draw: DrawFn, /) -> list[Table]:
+    metadata = MetaData()
+    tables = draw(lists(text_ascii(min_size=1), max_size=5, unique=True))
+    return [Table(t, metadata, Column("id", Integer, primary_key=True)) for t in tables]
+
+
+@composite
 def urls(draw: DrawFn, /) -> URL:
     username = draw(text_ascii(min_size=1) | none())
     password = draw(text_ascii(min_size=1) | none())
@@ -49,7 +56,7 @@ class TestPGDump:
         format_=sampled_from(get_literal_elements(_PGDumpFormat)),
         jobs=integers(min_value=0) | none(),
         schemas=lists(text_ascii(min_size=1)) | none(),
-        tables=lists(text_ascii(min_size=1), max_size=3, unique=True) | none(),
+        tables=tables() | none(),
         logger=text_ascii(min_size=1) | none(),
     )
     def test_main(
@@ -60,25 +67,16 @@ class TestPGDump:
         format_: _PGDumpFormat,
         jobs: int | None,
         schemas: list[str] | None,
-        tables: list[str] | None,
+        tables: list[Table] | None,
         logger: str | None,
     ) -> None:
-        metadata = MetaData()
-        tables_use = (
-            None
-            if tables is None
-            else [
-                Table(t, metadata, Column("id", Integer, primary_key=True))
-                for t in tables
-            ]
-        )
         _ = pg_dump(
             url,
             path,
             format_=format_,
             jobs=jobs,
             schemas=schemas,
-            tables=tables_use,
+            tables=tables,
             logger=logger,
             dry_run=True,
         )
@@ -106,8 +104,10 @@ class TestPGRestore:
         url=urls(),
         path=temp_paths(),
         database=text_ascii(min_size=1) | none(),
-        jobs=integers(min_value=0) | none(),
         data_only=booleans(),
+        jobs=integers(min_value=0) | none(),
+        schemas=lists(text_ascii(min_size=1)) | none(),
+        tables=tables() | none(),
         logger=text_ascii(min_size=1) | none(),
     )
     def test_main(
@@ -116,16 +116,20 @@ class TestPGRestore:
         url: URL,
         path: Path,
         database: str | None,
-        jobs: int | None,
         data_only: bool,
+        jobs: int | None,
+        schemas: list[str] | None,
+        tables: list[Table] | None,
         logger: str | None,
     ) -> None:
         _ = pg_restore(
             url,
             path,
             database=database,
-            jobs=jobs,
             data_only=data_only,
+            jobs=jobs,
+            schemas=schemas,
+            tables=tables,
             logger=logger,
             dry_run=True,
         )
