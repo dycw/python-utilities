@@ -21,12 +21,15 @@ if TYPE_CHECKING:
     from utilities.types import LoggerOrName, PathLike
 
 
+type _PGDumpFormat = Literal["plain", "custom", "directory", "tar"]
+
+
 def pg_dump(
     url: URL,
     path: PathLike,
     /,
     *,
-    format_: Literal["plain", "custom", "directory", "tar"] = "plain",
+    format_: _PGDumpFormat = "plain",
     jobs: int | None = None,
     schemas: Sequence[str] | None = None,
     tables: Sequence[TableOrORMInstOrClass] | None = None,
