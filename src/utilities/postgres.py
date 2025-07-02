@@ -39,27 +39,44 @@ def pg_dump(
     """Run `pg_dump`."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    parts: list[str] = ["pg_dump", f"--file={str(path)!r}", f"--format={format_}"]
-    if (format_ == "directory") and (jobs is not None):
-        parts.append(f"--jobs={jobs}")
-    parts.extend(["--verbose", "--large-objects", "--clean"])
-    if schemas is not None:
-        parts.extend([f"--schema={s}" for s in schemas])
-    parts.append("--no-owner")
-    if tables is not None:
-        parts.extend([f"--table={get_table_name(t)}" for t in tables])
-    parts.extend([
+    if url.database is None:
+        raise _PGDumpDatabaseError(url=url)
+    if url.host is None:
+        raise _PGDumpHostError(url=url)
+    if url.port is None:
+        raise _PGDumpPortError(url=url)
+    parts: list[str] = [
+        "pg_dump",
+        # general options
+        f"--dbname={url.database}",
+        f"--file={str(path)!r}",
+        f"--format={format_}",
+        "--verbose",
+        # output options
+        "--large-objects",
+        "--clean",
+        "--no-owner",
         "--no-privileges",
         "--if-exists",
+        # connection options
+        f"--host={url.host}",
+        f"--port={url.port}",
         "--no-password",
-        repr(url.render_as_string(hide_password=False)),
-    ])
+    ]
+    if (format_ == "directory") and (jobs is not None):
+        parts.append(f"--jobs={jobs}")
+    if schemas is not None:
+        parts.extend([f"--schema={s}" for s in schemas])
+    if tables is not None:
+        parts.extend([f"--table={get_table_name(t)}" for t in tables])
+    if url.username is not None:
+        parts.append(f"--username={url.username}")
     cmd = " ".join(parts)
     if dry_run:
         if logger is not None:
             get_logger(logger=logger).info("Would run %r", str(path))
         return
-    with Timer() as timer:
+    with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
             output = run(stream_command(cmd))
         except KeyboardInterrupt:
@@ -84,6 +101,35 @@ def pg_dump(
                             output.stderr,
                         )
                     rmtree(path, ignore_errors=True)
+
+
+@dataclass(kw_only=True, slots=True)
+class PGDumpError(Exception):
+    url: URL
+
+
+@dataclass(kw_only=True, slots=True)
+class _PGDumpDatabaseError(PGDumpError):
+    @override
+    def __str__(self) -> str:
+        return f"Expected URL to contain a 'database'; got {self.url}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PGDumpHostError(PGDumpError):
+    @override
+    def __str__(self) -> str:
+        return f"Expected URL to contain a 'host'; got {self.url}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PGDumpPortError(PGDumpError):
+    @override
+    def __str__(self) -> str:
+        return f"Expected URL to contain a 'port'; got {self.url}"
+
+
+##
 
 
 def pg_restore(
@@ -125,6 +171,7 @@ def pg_restore(
         # connection options
         f"--host={url.host}",
         f"--port={url.port}",
+        "--no-password",
     ]
     if jobs is not None:
         parts.append(f"--jobs={jobs}")
@@ -138,7 +185,7 @@ def pg_restore(
         if logger is not None:
             get_logger(logger=logger).info("Would run %r", str(path))
         return
-    with temp_environ(PGPASSWORD=url.password), Timer() as timer:
+    with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
             output = run(stream_command(cmd))
         except KeyboardInterrupt:
@@ -189,4 +236,4 @@ class _PGRestorePortError(PGRestoreError):
         return f"Expected URL to contain a 'port'; got {self.url}"
 
 
-__all__ = ["pg_dump", "pg_restore"]
+__all__ = ["PGDumpError", "PGRestoreError", "pg_dump", "pg_restore"]
