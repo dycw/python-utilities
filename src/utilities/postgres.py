@@ -29,6 +29,7 @@ def pg_dump(
     schemas: Sequence[str] | None = None,
     tables: Sequence[TableOrORMInstOrClass] | None = None,
     logger: LoggerOrName | None = None,
+    dry_run: bool = False,
 ) -> None:
     """Run `pg_dump`."""
     path = Path(path)
@@ -49,6 +50,10 @@ def pg_dump(
         repr(url.render_as_string(hide_password=False)),
     ])
     cmd = " ".join(parts)
+    if dry_run:
+        if logger is not None:
+            get_logger(logger=logger).info("Would run %r", str(path))
+        return
     with Timer() as timer:
         try:
             output = run(stream_command(cmd))
@@ -59,17 +64,19 @@ def pg_dump(
                 )
             rmtree(path, ignore_errors=True)
             return
-        if output.return_code == 0:
-            if logger is not None:
-                get_logger(logger=logger).info(
-                    "Backup to %r finished after %s", str(path), timer
-                )
-            return
-        if logger is not None:
-            get_logger(logger=logger).exception(
-                "Backup to %r failed after %s", str(path), timer
-            )
-        rmtree(path, ignore_errors=True)
+        match output.return_code:
+            case 0:
+                if logger is not None:
+                    get_logger(logger=logger).info(
+                        "Backup to %r finished after %s", str(path), timer
+                    )
+                return
+            case _:
+                if logger is not None:
+                    get_logger(logger=logger).exception(
+                        "Backup to %r failed after %s", str(path), timer
+                    )
+                rmtree(path, ignore_errors=True)
 
 
 __all__ = ["pg_dump"]
