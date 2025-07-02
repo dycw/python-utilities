@@ -138,8 +138,10 @@ def pg_restore(
     /,
     *,
     database: str | None = None,
-    jobs: int | None = None,
     data_only: bool = False,
+    jobs: int | None = None,
+    schemas: Sequence[str] | None = None,
+    tables: Sequence[TableOrORMInstOrClass] | None = None,
     logger: LoggerOrName | None = None,
     dry_run: bool = False,
 ) -> None:
@@ -173,10 +175,14 @@ def pg_restore(
         f"--port={url.port}",
         "--no-password",
     ]
-    if jobs is not None:
-        parts.append(f"--jobs={jobs}")
     if data_only:
         parts.append("--data-only")
+    if jobs is not None:
+        parts.append(f"--jobs={jobs}")
+    if schemas is not None:
+        parts.extend([f"--schema={s}" for s in schemas])
+    if tables is not None:
+        parts.extend([f"--table={get_table_name(t)}" for t in tables])
     if url.username is not None:
         parts.append(f"--username={url.username}")
     parts.append(str(path))
