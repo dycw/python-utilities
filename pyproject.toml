@@ -66,7 +66,7 @@ pottery-test = ["orjson", "pytest-rerunfailures"]
 pqdm = ["pqdm >= 0.2.0, < 0.3"]
 psutil = ["psutil >= 7.0.0, < 7.1"]
 pydantic = ["pydantic >= 2.11.4, < 2.12"]
-pyinstrument = ["pyinstrument >= 5.0.2, < 5.1"]
+pyinstrument = ["pyinstrument >= 5.0.3, < 5.1"]
 pytest = [
   "pudb >= 2025.1, < 2025.2",
   "pytest >= 8.3.5, < 8.4",
@@ -106,7 +106,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.139.5"
+version = "0.139.6"
 
 [project.entry-points.pytest11]
 pytest-regressions = "utilities.pytest_regressions_plugin"
@@ -137,7 +137,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.139.5"
+current_version = "0.139.6"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"

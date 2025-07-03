@@ -13,6 +13,7 @@ from whenever import ZonedDateTime
 from utilities.atomicwrites import writer
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
+from utilities.os import get_env_var
 from utilities.pathlib import ensure_suffix, get_root, get_tail, module_path
 from utilities.platform import (
     IS_LINUX,
@@ -177,6 +178,8 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
     on_try: bool = False,
 ) -> F:
     """Throttle a test function/method."""
+    if get_env_var("THROTTLE", nullable=True) is not None:
+        return func
     match bool(iscoroutinefunction(func)), on_try:
         case False, False:
 

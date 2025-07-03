@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, ClassVar
 from pytest import mark, param, raises
 
 from utilities.iterables import one
+from utilities.os import temp_environ
 from utilities.pytest import (
     NodeIdToPathError,
     is_pytest,
@@ -307,6 +308,28 @@ class TestThrottle:
         testdir.runpytest().assert_outcomes(skipped=1)
         sleep(self.delta)
         testdir.runpytest().assert_outcomes(passed=1)
+
+    @mark.flaky
+    @mark.parametrize("on_try", [param(True), param(False)])
+    def test_disabled_via_env_var(
+        self, *, testdir: Testdir, tmp_path: Path, on_try: bool
+    ) -> None:
+        _ = testdir.makepyfile(
+            f"""
+            from whenever import TimeDelta
+
+            from utilities.pytest import throttle
+
+            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}), on_try={on_try})
+            def test_main() -> None:
+                assert True
+            """
+        )
+        with temp_environ(THROTTLE="1"):
+            testdir.runpytest().assert_outcomes(passed=1)
+            testdir.runpytest().assert_outcomes(passed=1)
+            sleep(self.delta)
+            testdir.runpytest().assert_outcomes(passed=1)
 
     @mark.flaky
     def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
