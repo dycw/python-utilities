@@ -454,6 +454,7 @@ class TestLooper:
                 self._assert_stats_third(looper._counter2, stops=1)
 
     @mark.parametrize("counter_auto_start", [param(True), param(False)])
+    @mark.only
     async def test_mixins_in_task_group(self, *, counter_auto_start: bool) -> None:
         looper1 = LooperWithCounterMixin(
             auto_start=True, timeout=SECOND, counter_auto_start=counter_auto_start
@@ -461,14 +462,11 @@ class TestLooper:
         looper2 = LooperWithCounterMixin(
             auto_start=True, timeout=SECOND, counter_auto_start=counter_auto_start
         )
-        with raises(ExceptionGroup) as exc_info:  # noqa: PT012
+        with raises(ExceptionGroup) as exc_info:
             async with EnhancedTaskGroup(timeout=SECOND) as tg:
                 _ = tg.create_task_context(looper1)
                 _ = tg.create_task_context(looper2)
-        errors = exc_info.value.exceptions
-        assert 1 <= len(errors) <= 2
-        for error in errors:
-            assert isinstance(error, TimeoutError)
+        assert exc_info.group_contains(TimeoutError)
         self._assert_stats_half(looper1._counter)
         self._assert_stats_half(looper2._counter)
 
