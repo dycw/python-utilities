@@ -19,7 +19,7 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import LogCaptureFixture, approx, mark, param, raises
+from pytest import LogCaptureFixture, RaisesGroup, approx, mark, param, raises
 
 from tests.conftest import IS_CI
 from tests.test_asyncio_classes.loopers import (
@@ -226,22 +226,16 @@ class TestEnhancedTaskGroup:
             _ = tg.create_task(sleep_td(self.delta))
 
     async def test_timeout_fail(self) -> None:
-        with raises(ExceptionGroup) as exc_info:
+        with RaisesGroup(TimeoutError):
             async with EnhancedTaskGroup(timeout=self.delta) as tg:
                 _ = tg.create_task(sleep_td(2 * self.delta))
-        assert len(exc_info.value.exceptions) == 1
-        error = one(exc_info.value.exceptions)
-        assert isinstance(error, TimeoutError)
 
     async def test_custom_error(self) -> None:
         class CustomError(Exception): ...
 
-        with raises(ExceptionGroup) as exc_info:
+        with RaisesGroup(CustomError):
             async with EnhancedTaskGroup(timeout=self.delta, error=CustomError) as tg:
                 _ = tg.create_task(sleep_td(2 * self.delta))
-        assert len(exc_info.value.exceptions) == 1
-        error = one(exc_info.value.exceptions)
-        assert isinstance(error, CustomError)
 
 
 class TestGetEvent:
@@ -421,11 +415,9 @@ class TestLooper:
         looper = LooperWithCounterMixin(
             auto_start=True, timeout=SECOND, counter_auto_start=counter_auto_start
         )
-        with raises(ExceptionGroup) as exc_info:
+        with RaisesGroup(TimeoutError):
             async with EnhancedTaskGroup(timeout=looper.timeout) as tg:
                 _ = tg.create_task_context(looper)
-        error = one(exc_info.value.exceptions)
-        assert isinstance(error, TimeoutError)
         self._assert_stats_half(looper._counter)
 
     @mark.parametrize("counter1_auto_start", [param(True), param(False)])

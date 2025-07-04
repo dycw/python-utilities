@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
-from re import search
 from typing import TYPE_CHECKING
 
 from pytest import mark, param, raises
@@ -9,7 +8,6 @@ from pytest import mark, param, raises
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_redis import yield_test_redis
 from utilities.asyncio import sleep_td
-from utilities.iterables import one
 from utilities.pottery import (
     _YieldAccessNumLocksError,
     _YieldAccessUnableToAcquireLockError,
@@ -92,8 +90,7 @@ class TestYieldAccess:
             async with yield_test_redis() as redis, TaskGroup() as tg:
                 _ = tg.create_task(coroutine(redis, key))
                 _ = tg.create_task(coroutine(redis, key))
-        error = one(exc_info.value.exceptions)
-        assert isinstance(error, _YieldAccessUnableToAcquireLockError)
-        assert search(
-            r"Unable to acquire any 1 of 1 locks for '\w+' after .*", str(error)
+        assert exc_info.group_contains(
+            _YieldAccessUnableToAcquireLockError,
+            match=r"Unable to acquire any 1 of 1 locks for '\w+' after .*",
         )

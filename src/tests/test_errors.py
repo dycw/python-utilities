@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import TaskGroup
 
-from pytest import raises
+from pytest import RaisesGroup, raises
 
 from utilities.errors import ImpossibleCaseError, repr_error
 
@@ -34,13 +34,11 @@ class TestReprError:
             msg = "message2"
             raise Custom2Error(msg)
 
-        with raises(ExceptionGroup) as exc_info:  # noqa: PT012
+        with RaisesGroup(Custom1Error, Custom2Error) as exc_info:
             async with TaskGroup() as tg:
                 _ = tg.create_task(coroutine1())
                 _ = tg.create_task(coroutine2())
-        error = exc_info.value
-        assert isinstance(error, ExceptionGroup)
-        result = repr_error(error)
+        result = repr_error(exc_info.value)
         expected = "ExceptionGroup(Custom1Error(), Custom2Error(message2))"
         assert result == expected
 
