@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import CancelledError, Event, Queue, Task, create_task
 from collections.abc import AsyncIterator, Callable, Mapping
-from contextlib import asynccontextmanager, suppress
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from functools import partial
 from operator import itemgetter
@@ -27,6 +27,7 @@ from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, identity
 from utilities.iterables import always_iterable, one
 from utilities.orjson import deserialize, serialize
+from utilities.pytest import is_pytest
 from utilities.whenever import MILLISECOND, SECOND
 
 if TYPE_CHECKING:
@@ -770,8 +771,13 @@ async def subscribe[T](
         yield task
     finally:  # skipif-ci-and-not-linux
         _ = task.cancel()
-        with suppress(CancelledError):
+        try:
             await task
+        except CancelledError:
+            pass
+        except RuntimeError as error:  # pragma: no cover
+            if (not is_pytest()) or (error.args[0] != "Event loop is closed"):
+                raise
 
 
 async def _subscribe_core(
