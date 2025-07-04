@@ -5,17 +5,11 @@ from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, ClassVar
 
-from pytest import mark, param, raises
+from pytest import fixture, mark, param, raises
 
 from utilities.iterables import one
 from utilities.os import temp_environ
-from utilities.pytest import (
-    NodeIdToPathError,
-    is_pytest,
-    node_id_path,
-    random_state,
-    throttle,
-)
+from utilities.pytest import NodeIdToPathError, is_pytest, node_id_path, throttle
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -23,7 +17,12 @@ if TYPE_CHECKING:
     from _pytest.legacypath import Testdir
 
 
-_ = random_state
+@fixture(autouse=True)
+def set_asyncio_default_fixture_loop_scope(*, testdir: Testdir) -> None:
+    _ = testdir.makepyprojecttoml("""
+        [tool.pytest.ini_options]
+        asyncio_default_fixture_loop_scope = "function"
+    """)
 
 
 class TestIsPytest:
@@ -81,12 +80,7 @@ class TestNodeIdPath:
 
 
 class TestPytestOptions:
-    @mark.only
     def test_unknown_mark(self, *, testdir: Testdir) -> None:
-        _ = testdir.makepyprojecttoml("""
-            [tool.pytest.ini_options]
-            asyncio_default_fixture_loop_scope = "function"
-        """)
         _ = testdir.makepyfile(
             """
             from pytest import mark
