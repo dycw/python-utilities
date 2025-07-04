@@ -82,7 +82,12 @@ class TestNodeIdPath:
 
 
 class TestPytestOptions:
+    @mark.only
     def test_unknown_mark(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyprojecttoml("""
+            [tool.pytest.ini_options]
+            asyncio_default_fixture_loop_scope = "function"
+        """)
         _ = testdir.makepyfile(
             """
             from pytest import mark

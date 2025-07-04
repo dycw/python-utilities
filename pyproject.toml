@@ -109,7 +109,8 @@ requires-python = ">= 3.12"
 version = "0.139.8"
 
 [project.entry-points.pytest11]
-pytest-regressions = "utilities.pytest_regressions_plugin"
+pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
+pytest-regressions = "utilities.pytest_plugins.pytest_regressions"
 
 [project.optional-dependencies]
 logging = [
@@ -179,7 +180,7 @@ branch = true
 data_file = ".coverage/data"
 omit = [
   "src/utilities/__init__.py",
-  "src/utilities/pytest_regressions_plugin.py",
+  "src/utilities/pytest_plugins/",
   "src/utilities/streamlit.py",
 ]
 parallel = true
@@ -247,7 +248,7 @@ addopts = [
   "--strict-markers",
   "--timeout=600",
 ]
-asyncio_default_fixture_loop_scope = "function"
+# asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 filterwarnings = [
   "error",
