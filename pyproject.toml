@@ -106,7 +106,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.139.9"
+version = "0.139.10"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -139,7 +139,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.139.9"
+current_version = "0.139.10"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -248,7 +248,7 @@ addopts = [
   "--strict-markers",
   "--timeout=600",
 ]
-# asyncio_default_fixture_loop_scope = "function"
+asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 filterwarnings = [
   "error",
@@ -312,6 +312,7 @@ ignore = [
   "PLR0913",  # too-many-arguments
   "PLR0915",  # too-many-statements
   "PLR2004",  # magic-value-comparison
+  "PT012",  # pytest-raises-with-multiple-statements
   "PT013",  # pytest-incorrect-pytest-import
   "S311",  # suspicious-non-cryptographic-random-usage
   "S603",  # subprocess-without-shell-equals-true
