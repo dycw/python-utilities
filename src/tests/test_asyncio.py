@@ -454,7 +454,6 @@ class TestLooper:
                 self._assert_stats_third(looper._counter2, stops=1)
 
     @mark.parametrize("counter_auto_start", [param(True), param(False)])
-    @mark.only
     async def test_mixins_in_task_group(self, *, counter_auto_start: bool) -> None:
         looper1 = LooperWithCounterMixin(
             auto_start=True, timeout=SECOND, counter_auto_start=counter_auto_start
