@@ -86,7 +86,7 @@ class TestYieldAccess:
             ):
                 await sleep_td(delta)
 
-        with raises(ExceptionGroup) as exc_info:  # noqa: PT012
+        with raises(ExceptionGroup) as exc_info:
             async with yield_test_redis() as redis, TaskGroup() as tg:
                 _ = tg.create_task(coroutine(redis, key))
                 _ = tg.create_task(coroutine(redis, key))
