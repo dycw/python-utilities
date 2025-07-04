@@ -2,21 +2,14 @@ from __future__ import annotations
 
 from inspect import signature
 from pathlib import Path
-from random import Random
 from time import sleep
 from typing import TYPE_CHECKING, ClassVar
 
-from pytest import mark, param, raises
+from pytest import fixture, mark, param, raises
 
 from utilities.iterables import one
 from utilities.os import temp_environ
-from utilities.pytest import (
-    NodeIdToPathError,
-    is_pytest,
-    node_id_path,
-    random_state,
-    throttle,
-)
+from utilities.pytest import NodeIdToPathError, is_pytest, node_id_path, throttle
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -24,7 +17,12 @@ if TYPE_CHECKING:
     from _pytest.legacypath import Testdir
 
 
-_ = random_state
+@fixture(autouse=True)
+def set_asyncio_default_fixture_loop_scope(*, testdir: Testdir) -> None:
+    _ = testdir.makepyprojecttoml("""
+        [tool.pytest.ini_options]
+        asyncio_default_fixture_loop_scope = "function"
+    """)
 
 
 class TestIsPytest:
@@ -239,11 +237,6 @@ class TestPytestOptions:
         result = testdir.runpytest("-rs", *case, "--randomly-dont-reorganize")
         result.assert_outcomes(passed=passed, skipped=skipped)
         result.stdout.re_match_lines(list(matches))
-
-
-class TestRandomState:
-    def test_main(self, *, random_state: Random) -> None:
-        assert isinstance(random_state, Random)
 
 
 class TestThrottle:

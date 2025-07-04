@@ -32,7 +32,7 @@ dev = [
   "dycw-pytest-only >= 2.1.1, < 2.2",
   "pudb >= 2025.1, < 2025.2",
   "pyright[nodejs] >= 1.1.401, < 1.2",
-  "pytest-cov >= 6.1.1, < 6.2",
+  "pytest-cov >= 6.2.1, < 6.3",
   "pytest-timeout >= 2.4.0, < 2.5",
 ]
 eventkit = ["eventkit >= 1.0.3, < 1.1"]
@@ -41,7 +41,7 @@ fastapi-test = ["httpx", "uvicorn"]
 fpdf2 = ["fpdf2 >= 2.8.3, < 2.9"]
 hashlib-test = ["orjson"]
 http-test = ["orjson"]
-hypothesis = ["hypothesis >= 6.135.16, < 6.136"]
+hypothesis = ["hypothesis >= 6.135.24, < 6.136"]
 hypothesis-test = ["libcst", "luigi", "pathvalidate", "numpy", "pytest-rerunfailures"]
 inflect = ["inflect >= 7.5.0, < 7.6"]
 jupyter-test = ["pandas", "polars"]
@@ -69,10 +69,10 @@ pydantic = ["pydantic >= 2.11.4, < 2.12"]
 pyinstrument = ["pyinstrument >= 5.0.3, < 5.1"]
 pytest = [
   "pudb >= 2025.1, < 2025.2",
-  "pytest >= 8.3.5, < 8.4",
+  "pytest >= 8.4.1, < 8.5",
   "pytest-asyncio >= 1.0.0, < 1.1",
   "pytest-randomly >= 3.16.0, < 3.17",
-  "pytest-xdist >= 3.7.0, < 3.8",
+  "pytest-xdist >= 3.8.0, < 3.9",
 ]
 pytest-regressions = ["pytest-regressions >= 2.8.0, < 2.9"]
 pytest-regressions-test = ["orjson", "polars-lts-cpu"]
@@ -106,10 +106,11 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.139.7"
+version = "0.139.8"
 
 [project.entry-points.pytest11]
-pytest-regressions = "utilities.pytest_regressions_plugin"
+pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
+pytest-regressions = "utilities.pytest_plugins.pytest_regressions"
 
 [project.optional-dependencies]
 logging = [
@@ -117,11 +118,11 @@ logging = [
 ]
 test = [
   "dycw-pytest-only >= 2.1.1, < 2.2",
-  "hypothesis >= 6.135.16, < 6.136",
+  "hypothesis >= 6.135.24, < 6.136",
   "pudb >= 2025.1, < 2025.2",
-  "pytest >= 8.3.5, < 8.4",
+  "pytest >= 8.4.1, < 8.5",
   "pytest-asyncio >= 1.0.0, < 1.1",
-  "pytest-cov >= 6.1.1, < 6.2",
+  "pytest-cov >= 6.2.1, < 6.3",
   "pytest-instafail >= 0.5.0, < 0.6",
   "pytest-lazy-fixtures >= 1.1.4, < 1.2",
   "pytest-randomly >= 3.16.0, < 3.17",
@@ -130,7 +131,7 @@ test = [
   "pytest-rerunfailures >= 15.1, < 16",
   "pytest-rng >= 1.0.0, < 1.1",
   "pytest-timeout >= 2.4.0, < 2.5",
-  "pytest-xdist >= 3.7.0, < 3.8",
+  "pytest-xdist >= 3.8.0, < 3.9",
 ]
 
 [project.scripts]
@@ -138,7 +139,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.139.7"
+current_version = "0.139.8"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -179,7 +180,7 @@ branch = true
 data_file = ".coverage/data"
 omit = [
   "src/utilities/__init__.py",
-  "src/utilities/pytest_regressions_plugin.py",
+  "src/utilities/pytest_plugins/*.py",
   "src/utilities/streamlit.py",
 ]
 parallel = true
@@ -247,7 +248,7 @@ addopts = [
   "--strict-markers",
   "--timeout=600",
 ]
-asyncio_default_fixture_loop_scope = "function"
+# asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 filterwarnings = [
   "error",
