@@ -27,7 +27,6 @@ from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, identity
 from utilities.iterables import always_iterable, one
 from utilities.orjson import deserialize, serialize
-from utilities.pytest import is_pytest
 from utilities.whenever import MILLISECOND, SECOND
 
 if TYPE_CHECKING:
@@ -776,6 +775,8 @@ async def subscribe[T](
         except CancelledError:
             pass
         except RuntimeError as error:  # pragma: no cover
+            from utilities.pytest import is_pytest
+
             if (not is_pytest()) or (error.args[0] != "Event loop is closed"):
                 raise
 

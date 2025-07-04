@@ -928,7 +928,9 @@ async def get_items[T](queue: Queue[T], /, *, max_size: int | None = None) -> li
     try:
         items = [await queue.get()]
     except RuntimeError as error:  # pragma: no cover
-        if error.args[0] == "Event loop is closed":
+        from utilities.pytest import is_pytest
+
+        if (not is_pytest()) or (error.args[0] != "Event loop is closed"):
             return []
         raise
     max_size_use = None if max_size is None else (max_size - 1)
