@@ -180,7 +180,7 @@ branch = true
 data_file = ".coverage/data"
 omit = [
   "src/utilities/__init__.py",
-  "src/utilities/pytest_plugins/",
+  "src/utilities/pytest_plugins/*.py",
   "src/utilities/streamlit.py",
 ]
 parallel = true
