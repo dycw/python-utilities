@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from inspect import signature
 from pathlib import Path
-from random import Random
 from time import sleep
 from typing import TYPE_CHECKING, ClassVar
 
@@ -244,11 +243,6 @@ class TestPytestOptions:
         result = testdir.runpytest("-rs", *case, "--randomly-dont-reorganize")
         result.assert_outcomes(passed=passed, skipped=skipped)
         result.stdout.re_match_lines(list(matches))
-
-
-class TestRandomState:
-    def test_main(self, *, random_state: Random) -> None:
-        assert isinstance(random_state, Random)
 
 
 class TestThrottle:

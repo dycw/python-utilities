@@ -7,7 +7,6 @@ from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, assert_never, cast, override
 
-from pytest import fixture
 from whenever import ZonedDateTime
 
 from utilities.atomicwrites import writer
@@ -23,13 +22,11 @@ from utilities.platform import (
     IS_NOT_WINDOWS,
     IS_WINDOWS,
 )
-from utilities.random import get_state
 from utilities.types import MaybeCoro
 from utilities.whenever import SECOND, get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
-    from random import Random
 
     from whenever import TimeDelta
 
@@ -153,15 +150,6 @@ class NodeIdToPathError(Exception):
 ##
 
 
-@fixture
-def random_state(*, seed: int) -> Random:
-    """Fixture for a random state."""
-    return get_state(seed=seed)
-
-
-##
-
-
 def throttle[F: Callable[..., MaybeCoro[None]]](
     *, root: PathLike | None = None, delta: TimeDelta = SECOND, on_try: bool = False
 ) -> Callable[[F], F]:
@@ -271,7 +259,6 @@ __all__ = [
     "add_pytest_configure",
     "is_pytest",
     "node_id_path",
-    "random_state",
     "skipif_linux",
     "skipif_mac",
     "skipif_not_linux",
