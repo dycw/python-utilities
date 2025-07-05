@@ -19,7 +19,7 @@ cachetools = ["cachetools >= 6.1.0, < 6.2"]
 click = ["click >= 8.2.1, < 8.3"]
 core = [
   "atomicwrites >= 1.4.1, < 1.5",
-  "typing-extensions >= 4.14.0, < 4.15",
+  "typing-extensions >= 4.14.1, < 4.15",
   "tzlocal >= 5.3.1, < 5.4",
   "whenever >= 0.8.6, < 0.9",
 ]
@@ -74,7 +74,7 @@ pytest = [
   "pytest-randomly >= 3.16.0, < 3.17",
   "pytest-xdist >= 3.8.0, < 3.9",
 ]
-pytest-regressions = ["pytest-regressions >= 2.8.0, < 2.9"]
+pytest-regressions = ["pytest-regressions >= 2.8.1, < 2.9"]
 pytest-regressions-test = ["orjson", "polars-lts-cpu"]
 pytest-test = ["orjson", "pytest-rng", "pytest-rerunfailures"]
 python-dotenv = ["python-dotenv >= 1.1.1, < 1.2"]
@@ -106,7 +106,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.139.10"
+version = "0.139.11"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -126,7 +126,7 @@ test = [
   "pytest-instafail >= 0.5.0, < 0.6",
   "pytest-lazy-fixtures >= 1.1.4, < 1.2",
   "pytest-randomly >= 3.16.0, < 3.17",
-  "pytest-regressions >= 2.8.0, < 2.9",
+  "pytest-regressions >= 2.8.1, < 2.9",
   "pytest-repeat >= 0.9.4, < 0.10",
   "pytest-rerunfailures >= 15.1, < 16",
   "pytest-rng >= 1.0.0, < 1.1",
@@ -139,7 +139,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.139.10"
+current_version = "0.139.11"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
