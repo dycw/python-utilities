@@ -542,7 +542,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.139.10"
+version = "0.139.11"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -729,6 +729,7 @@ pytest = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-randomly" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
 ]
 pytest-regressions = [
@@ -811,7 +812,7 @@ requires-dist = [
     { name = "pytest-instafail", marker = "extra == 'test'", specifier = ">=0.5.0,<0.6" },
     { name = "pytest-lazy-fixtures", marker = "extra == 'test'", specifier = ">=1.1.4,<1.2" },
     { name = "pytest-randomly", marker = "extra == 'test'", specifier = ">=3.16.0,<3.17" },
-    { name = "pytest-regressions", marker = "extra == 'test'", specifier = ">=2.8.0,<2.9" },
+    { name = "pytest-regressions", marker = "extra == 'test'", specifier = ">=2.8.1,<2.9" },
     { name = "pytest-repeat", marker = "extra == 'test'", specifier = ">=0.9.4,<0.10" },
     { name = "pytest-rerunfailures", marker = "extra == 'test'", specifier = ">=15.1,<16" },
     { name = "pytest-rng", marker = "extra == 'test'", specifier = ">=1.0.0,<1.1" },
@@ -836,7 +837,7 @@ cachetools = [{ name = "cachetools", specifier = ">=6.1.0,<6.2" }]
 click = [{ name = "click", specifier = ">=8.2.1,<8.3" }]
 core = [
     { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
-    { name = "typing-extensions", specifier = ">=4.14.0,<4.15" },
+    { name = "typing-extensions", specifier = ">=4.14.1,<4.15" },
     { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
     { name = "whenever", specifier = ">=0.8.6,<0.9" },
 ]
@@ -913,9 +914,10 @@ pytest = [
     { name = "pytest", specifier = ">=8.4.1,<8.5" },
     { name = "pytest-asyncio", specifier = ">=1.0.0,<1.1" },
     { name = "pytest-randomly", specifier = ">=3.16.0,<3.17" },
+    { name = "pytest-timeout", specifier = ">=2.4.0,<2.5" },
     { name = "pytest-xdist", specifier = ">=3.8.0,<3.9" },
 ]
-pytest-regressions = [{ name = "pytest-regressions", specifier = ">=2.8.0,<2.9" }]
+pytest-regressions = [{ name = "pytest-regressions", specifier = ">=2.8.1,<2.9" }]
 pytest-regressions-test = [
     { name = "orjson" },
     { name = "polars-lts-cpu" },
@@ -2491,16 +2493,16 @@ wheels = [
 
 [[package]]
 name = "pytest-regressions"
-version = "2.8.0"
+version = "2.8.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pytest" },
     { name = "pytest-datadir" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c5/ef/48083b093c1291fac24d0556b8ddb88310977c5b7d6c7abe73cc87647901/pytest_regressions-2.8.0.tar.gz", hash = "sha256:775044e17117f5427df2caad3ab1c66889abe770a0ce2bc3f24fdeac99af76fe", size = 116454, upload-time = "2025-05-30T17:46:21.498Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c9/20/f861ea5b5db791ba1f778032b294b0a454eff2f6c2b3f8a88d36d61c0a63/pytest_regressions-2.8.1.tar.gz", hash = "sha256:20080d44cf46b40407956af5e44a7f932cbc3159018de81fb51e62b97e96a5fb", size = 116486, upload-time = "2025-07-04T12:54:36.473Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/6a/cf0a9929a94912e7123dd3ab23658fce5c3bdef12cb270da84348282feda/pytest_regressions-2.8.0-py3-none-any.whl", hash = "sha256:2926f37efa5fd6793806b10352e274c5284a5469a845aeab6243e86f9214766f", size = 24859, upload-time = "2025-05-30T17:46:19.722Z" },
+    { url = "https://files.pythonhosted.org/packages/46/6e/416d44b81b42482c2b7b553606c79d7f3e32e686d42f3f24b04a7f8cf56f/pytest_regressions-2.8.1-py3-none-any.whl", hash = "sha256:bcae249df5214225bbe4bd77c146d8f331f19b0b26805486533b1e49680950a5", size = 24861, upload-time = "2025-07-04T12:54:35.051Z" },
 ]
 
 [[package]]
@@ -3152,11 +3154,11 @@ wheels = [
 
 [[package]]
 name = "typing-extensions"
-version = "4.14.0"
+version = "4.14.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d1/bc/51647cd02527e87d05cb083ccc402f93e441606ff1f01739a62c8ad09ba5/typing_extensions-4.14.0.tar.gz", hash = "sha256:8676b788e32f02ab42d9e7c61324048ae4c6d844a399eebace3d4979d75ceef4", size = 107423, upload-time = "2025-06-02T14:52:11.399Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/5a/da40306b885cc8c09109dc2e1abd358d5684b1425678151cdaed4731c822/typing_extensions-4.14.1.tar.gz", hash = "sha256:38b39f4aeeab64884ce9f74c94263ef78f3c22467c8724005483154c26648d36", size = 107673, upload-time = "2025-07-04T13:28:34.16Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/69/e0/552843e0d356fbb5256d21449fa957fa4eff3bbc135a74a691ee70c7c5da/typing_extensions-4.14.0-py3-none-any.whl", hash = "sha256:a1514509136dd0b477638fc68d6a91497af5076466ad0fa6c338e44e359944af", size = 43839, upload-time = "2025-06-02T14:52:10.026Z" },
+    { url = "https://files.pythonhosted.org/packages/b5/00/d631e67a838026495268c2f6884f3711a15a9a2a96cd244fdaea53b823fb/typing_extensions-4.14.1-py3-none-any.whl", hash = "sha256:d1e1e3b58374dc93031d6eda2420a48ea44a36c2b4766a4fdeb3710755731d76", size = 43906, upload-time = "2025-07-04T13:28:32.743Z" },
 ]
 
 [[package]]
