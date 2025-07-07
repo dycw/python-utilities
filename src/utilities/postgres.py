@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import run
+from asyncio import AbstractEventLoop, run
 from dataclasses import dataclass
 from pathlib import Path
 from shutil import rmtree
@@ -34,6 +34,7 @@ def pg_dump(
     schemas: Sequence[str] | None = None,
     tables: Sequence[TableOrORMInstOrClass] | None = None,
     logger: LoggerOrName | None = None,
+    loop: AbstractEventLoop | None = None,
     dry_run: bool = False,
 ) -> None:
     """Run `pg_dump`."""
@@ -76,9 +77,10 @@ def pg_dump(
         if logger is not None:
             get_logger(logger=logger).info("Would run %r", str(path))
         return
+    coro = stream_command(cmd)
     with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
-            output = run(stream_command(cmd))
+            output = run(coro) if loop is None else loop.run_until_complete(coro)
         except KeyboardInterrupt:
             if logger is not None:
                 get_logger(logger=logger).info(
@@ -143,6 +145,7 @@ def pg_restore(
     schemas: Sequence[str] | None = None,
     tables: Sequence[TableOrORMInstOrClass] | None = None,
     logger: LoggerOrName | None = None,
+    loop: AbstractEventLoop | None = None,
     dry_run: bool = False,
 ) -> None:
     """Run `pg_restore`."""
@@ -191,9 +194,10 @@ def pg_restore(
         if logger is not None:
             get_logger(logger=logger).info("Would run %r", str(path))
         return
+    coro = stream_command(cmd)
     with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
-            output = run(stream_command(cmd))
+            output = run(coro) if loop is None else loop.run_until_complete(coro)
         except KeyboardInterrupt:
             if logger is not None:
                 get_logger(logger=logger).info(
