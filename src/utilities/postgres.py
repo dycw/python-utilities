@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import AbstractEventLoop, run
+from asyncio import AbstractEventLoop, get_event_loop
 from dataclasses import dataclass
 from pathlib import Path
 from shutil import rmtree
@@ -77,10 +77,10 @@ def pg_dump(
         if logger is not None:
             get_logger(logger=logger).info("Would run %r", str(path))
         return
-    coro = stream_command(cmd)
+    loop_use = get_event_loop() if loop is None else loop
     with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
-            output = run(coro) if loop is None else loop.run_until_complete(coro)
+            output = loop_use.run_until_complete(stream_command(cmd))
         except KeyboardInterrupt:
             if logger is not None:
                 get_logger(logger=logger).info(
@@ -194,10 +194,10 @@ def pg_restore(
         if logger is not None:
             get_logger(logger=logger).info("Would run %r", str(path))
         return
-    coro = stream_command(cmd)
+    loop_use = get_event_loop() if loop is None else loop
     with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
-            output = run(coro) if loop is None else loop.run_until_complete(coro)
+            output = loop_use.run_until_complete(stream_command(cmd))
         except KeyboardInterrupt:
             if logger is not None:
                 get_logger(logger=logger).info(
