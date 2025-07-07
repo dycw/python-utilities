@@ -7,6 +7,7 @@ from shutil import rmtree
 from typing import TYPE_CHECKING, Literal, assert_never, override
 
 from utilities.asyncio import stream_command
+from utilities.iterables import always_iterable
 from utilities.logging import get_logger
 from utilities.os import temp_environ
 from utilities.sqlalchemy import TableOrORMInstOrClass, get_table_name
@@ -14,11 +15,9 @@ from utilities.timer import Timer
 from utilities.types import PathLike
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from sqlalchemy import URL
 
-    from utilities.types import LoggerOrName, PathLike
+    from utilities.types import LoggerOrName, MaybeListStr, MaybeSequence, PathLike
 
 
 type _PGDumpFormat = Literal["plain", "custom", "directory", "tar"]
@@ -31,8 +30,8 @@ def pg_dump(
     *,
     format_: _PGDumpFormat = "plain",
     jobs: int | None = None,
-    schemas: Sequence[str] | None = None,
-    tables: Sequence[TableOrORMInstOrClass] | None = None,
+    schemas: MaybeListStr | None = None,
+    tables: MaybeSequence[TableOrORMInstOrClass] | None = None,
     logger: LoggerOrName | None = None,
     loop: AbstractEventLoop | None = None,
     dry_run: bool = False,
@@ -67,9 +66,9 @@ def pg_dump(
     if (format_ == "directory") and (jobs is not None):
         parts.append(f"--jobs={jobs}")
     if schemas is not None:
-        parts.extend([f"--schema={s}" for s in schemas])
+        parts.extend([f"--schema={s}" for s in always_iterable(schemas)])
     if tables is not None:
-        parts.extend([f"--table={get_table_name(t)}" for t in tables])
+        parts.extend([f"--table={get_table_name(t)}" for t in always_iterable(tables)])
     if url.username is not None:
         parts.append(f"--username={url.username}")
     cmd = " ".join(parts)
@@ -142,8 +141,8 @@ def pg_restore(
     database: str | None = None,
     data_only: bool = False,
     jobs: int | None = None,
-    schemas: Sequence[str] | None = None,
-    tables: Sequence[TableOrORMInstOrClass] | None = None,
+    schemas: MaybeListStr | None = None,
+    tables: MaybeSequence[TableOrORMInstOrClass] | None = None,
     logger: LoggerOrName | None = None,
     loop: AbstractEventLoop | None = None,
     dry_run: bool = False,
@@ -168,7 +167,6 @@ def pg_restore(
         f"--dbname={database_use}",
         "--verbose",
         # restore options
-        "--clean",
         "--exit-on-error",
         "--no-owner",
         "--no-privileges",
@@ -180,12 +178,14 @@ def pg_restore(
     ]
     if data_only:
         parts.append("--data-only")
+    else:
+        parts.append("--clean")
     if jobs is not None:
         parts.append(f"--jobs={jobs}")
     if schemas is not None:
-        parts.extend([f"--schema={s}" for s in schemas])
+        parts.extend([f"--schema={s}" for s in always_iterable(schemas)])
     if tables is not None:
-        parts.extend([f"--table={get_table_name(t)}" for t in tables])
+        parts.extend([f"--table={get_table_name(t)}" for t in always_iterable(tables)])
     if url.username is not None:
         parts.append(f"--username={url.username}")
     parts.append(str(path))
