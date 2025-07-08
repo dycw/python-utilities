@@ -33,6 +33,7 @@ from whenever import (
     ZonedDateTime,
 )
 
+_T = TypeVar("_T")
 _T_co = TypeVar("_T_co", covariant=True)
 _T_contra = TypeVar("_T_contra", contravariant=True)
 
@@ -74,6 +75,13 @@ type TupleOrStrMapping = tuple[Any, ...] | StrMapping
 type Coro[T] = Coroutine[Any, Any, T]
 type MaybeCallableEvent = MaybeCallable[Event]
 type MaybeCoro[T] = T | Coro[T]
+
+
+# collections.abc
+@runtime_checkable
+class SupportsKeysAndGetItem(Protocol[_T, _T_co]):
+    def keys(self) -> Iterable[_T]: ...  # pragma: no cover
+    def __getitem__(self, key: _T, /) -> _T_co: ...  # pragma: no cover
 
 
 # concurrent
@@ -303,6 +311,7 @@ __all__ = [
     "SupportsGT",
     "SupportsInt",
     "SupportsInt",
+    "SupportsKeysAndGetItem",
     "SupportsLT",
     "SupportsRichComparison",
     "SupportsRound",

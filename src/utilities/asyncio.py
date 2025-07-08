@@ -16,7 +16,15 @@ from asyncio import (
     create_task,
     sleep,
 )
-from collections.abc import Callable, Hashable, Iterable, Iterator
+from collections.abc import (
+    Callable,
+    Hashable,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    ValuesView,
+)
 from contextlib import (
     AbstractAsyncContextManager,
     AsyncExitStack,
@@ -30,7 +38,16 @@ from itertools import chain
 from logging import DEBUG, Logger, getLogger
 from subprocess import PIPE
 from sys import stderr, stdout
-from typing import TYPE_CHECKING, Any, Self, TextIO, assert_never, overload, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Self,
+    TextIO,
+    assert_never,
+    overload,
+    override,
+)
 
 from typing_extensions import deprecated
 
@@ -39,7 +56,11 @@ from utilities.errors import repr_error
 from utilities.functions import ensure_int, ensure_not_none, to_bool
 from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import MaybeCallableBool, SupportsRichComparison
+from utilities.types import (
+    MaybeCallableBool,
+    SupportsKeysAndGetItem,
+    SupportsRichComparison,
+)
 from utilities.whenever import SECOND, get_now
 
 if TYPE_CHECKING:
@@ -54,6 +75,152 @@ if TYPE_CHECKING:
     from whenever import TimeDelta, ZonedDateTime
 
     from utilities.types import DateTimeRoundUnit, MaybeCallableEvent, MaybeType
+
+
+class AsyncDict[K, V]:
+    @overload
+    def __init__(self) -> None: ...
+    @overload
+    def __init__(self, map: SupportsKeysAndGetItem[K, V], /) -> None: ...
+    @overload
+    def __init__(self, iterable: Iterable[tuple[K, V]], /) -> None: ...
+    @override
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__()
+        self._dict = dict[K, V](*args, **kwargs)
+        self._lock = Lock()
+
+    async def __aenter__(self) -> dict[K, V]:
+        await self._lock.__aenter__()
+        return self._dict
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+        /,
+    ) -> None:
+        await self._lock.__aexit__(exc_type, exc, tb)
+
+    def __contains__(self, key: Any, /) -> bool:
+        return key in self._dict
+
+    @override
+    def __eq__(self, other: Any, /) -> bool:
+        return self._dict == other
+
+    __hash__: ClassVar[None] = None  # pyright: ignore[reportIncompatibleMethodOverride]
+
+    def __getitem__(self, key: K, /) -> V:
+        return self._dict[key]
+
+    def __iter__(self) -> Iterator[K]:
+        yield from self._dict
+
+    def __len__(self) -> int:
+        return len(self._dict)
+
+    @override
+    def __repr__(self) -> str:
+        return repr(self._dict)
+
+    def __reversed__(self) -> Iterator[K]:
+        return reversed(self._dict)
+
+    @override
+    def __str__(self) -> str:
+        return str(self._dict)
+
+    @property
+    def empty(self) -> bool:
+        return len(self) == 0
+
+    @classmethod
+    @overload
+    def fromkeys[T](
+        cls, iterable: Iterable[T], value: None = None, /
+    ) -> AsyncDict[T, Any | None]: ...
+    @classmethod
+    @overload
+    def fromkeys[K2, V2](
+        cls, iterable: Iterable[K2], value: V2, /
+    ) -> AsyncDict[K2, V2]: ...
+    @classmethod
+    def fromkeys(
+        cls, iterable: Iterable[Any], value: Any = None, /
+    ) -> AsyncDict[Any, Any]:
+        return cls(dict.fromkeys(iterable, value))
+
+    async def clear(self) -> None:
+        async with self._lock:
+            self._dict.clear()
+
+    def copy(self) -> Self:
+        return type(self)(self._dict.items())
+
+    async def del_(self, key: K, /) -> None:
+        async with self._lock:
+            del self._dict[key]
+
+    @overload
+    def get(self, key: K, default: None = None, /) -> V | None: ...
+    @overload
+    def get(self, key: K, default: V, /) -> V: ...
+    @overload
+    def get[V2](self, key: K, default: V2, /) -> V | V2: ...
+    def get(self, key: K, default: Any = sentinel, /) -> Any:
+        match default:
+            case Sentinel():
+                return self._dict.get(key)
+            case _:
+                return self._dict.get(key, default)
+
+    def keys(self) -> KeysView[K]:
+        return self._dict.keys()
+
+    def items(self) -> ItemsView[K, V]:
+        return self._dict.items()
+
+    @overload
+    async def pop(self, key: K, /) -> V: ...
+    @overload
+    async def pop(self, key: K, default: V, /) -> V: ...
+    @overload
+    async def pop[V2](self, key: K, default: V2, /) -> V | V2: ...
+    async def pop(self, key: K, default: Any = sentinel, /) -> Any:
+        async with self._lock:
+            match default:
+                case Sentinel():
+                    return self._dict.pop(key)
+                case _:
+                    return self._dict.pop(key, default)
+
+    async def popitem(self) -> tuple[K, V]:
+        async with self._lock:
+            return self._dict.popitem()
+
+    async def set(self, key: K, value: V, /) -> None:
+        async with self._lock:
+            self._dict[key] = value
+
+    async def setdefault(self, key: K, default: V, /) -> V:
+        async with self._lock:
+            return self._dict.setdefault(key, default)
+
+    @overload
+    async def update(self, m: SupportsKeysAndGetItem[K, V], /) -> None: ...
+    @overload
+    async def update(self, m: Iterable[tuple[K, V]], /) -> None: ...
+    async def update(self, *args: Any, **kwargs: V) -> None:
+        async with self._lock:
+            self._dict.update(*args, **kwargs)
+
+    def values(self) -> ValuesView[V]:
+        return self._dict.values()
+
+
+##
 
 
 class EnhancedQueue[T](Queue[T]):
@@ -1081,6 +1248,7 @@ async def timeout_td(
 
 
 __all__ = [
+    "AsyncDict",
     "EnhancedQueue",
     "EnhancedTaskGroup",
     "Looper",
