@@ -710,7 +710,8 @@ class TestRoundDateOrDateTime:
 
     def test_error_invalid(self) -> None:
         with raises(
-            _RoundDateOrDateTimeInvalidDurationError, match="Invalid duration: P1M"
+            _RoundDateOrDateTimeInvalidDurationError,
+            match="Duration must be valid; got P1M",
         ):
             _ = round_date_or_date_time(TODAY_UTC, MONTH)
 
