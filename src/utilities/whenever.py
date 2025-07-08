@@ -551,10 +551,12 @@ def round_date_or_date_time(
     weekday: Weekday | None = None,
 ) -> Date | PlainDateTime | ZonedDateTime:
     """Round a datetime."""
-    quantity, unit = _round_datetime_decompose(delta)
+    increment, unit = _round_datetime_decompose(delta)
     match date_or_date_time, unit, weekday:
-        case Date() as date, "W" | "D", Weekday() | None:
-            return _round_date
+        case Date() as date, "W", Weekday() | None:
+            return _round_date_weekly()
+        case Date() as date, "D", Weekday() | None:
+            return _round_date_daily(date, increment, mode=mode)
         case PlainDateTime() | ZonedDateTime() as datetime, "W" | "D", None:
             z
             raise NotImplementedError
@@ -563,7 +565,7 @@ def round_date_or_date_time(
             "H" | "M" | "S" | "ms" | "us" | "ns",
             None,
         ):
-            return _round_datetime_intraday(date_time, quantity, unit, mode=mode)
+            return _round_date_time_intraday(date_time, increment, unit, mode=mode)
         case _:
             raise NotImplementedError(date_or_date_time, delta, unit, weekday)
 
@@ -642,7 +644,28 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
     )
 
 
-def _round_datetime_intraday(
+def _round_date_daily(
+    date: Date, increment: int, /, *, mode: DateTimeRoundMode = "half_even"
+) -> Date:
+    quotient, remainder = divmod(date.days_since(Date.MIN), increment)
+    if mode == "half_even":  # check the default mode first
+        threshold = increment // 2 + (quotient % 2 == 0) or 1
+    elif mode == "ceil":
+        threshold = 1  # Always round up
+    elif mode == "floor":
+        threshold = increment + 1  # Never round up
+    elif mode == "half_floor":
+        threshold = increment // 2 + 1
+    elif mode == "half_ceil":
+        threshold = increment // 2 or 1
+    else:
+        msg = f"Invalid rounding mode: {mode!r}"
+        raise ValueError(msg)
+    round_up = remainder >= threshold
+    return Date.MIN.add(days=(quotient + round_up) * increment)
+
+
+def _round_date_time_intraday(
     date_time: PlainDateTime | ZonedDateTime,
     increment: int,
     unit: _RoundDateTimeUnit,

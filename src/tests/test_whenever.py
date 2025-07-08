@@ -34,7 +34,12 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import DateOrDateTimeDelta, DateTimeRoundUnit, TimeOrDateTimeDelta
+from utilities.types import (
+    DateOrDateTimeDelta,
+    DateTimeRoundMode,
+    DateTimeRoundUnit,
+    TimeOrDateTimeDelta,
+)
 from utilities.typing import get_literal_elements
 from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
@@ -553,6 +558,50 @@ class TestMinMaxDate:
 @mark.only
 class TestRoundDateOrDateTime:
     @mark.parametrize(
+        ("date", "delta", "mode", "expected"),
+        [
+            param(Date(2000, 1, 1), DateDelta(days=1), "half_even", Date(2000, 1, 1)),
+            param(Date(2000, 1, 1), DateDelta(days=2), "half_even", Date(2000, 1, 2)),
+            param(Date(2000, 1, 1), DateDelta(days=2), "ceil", Date(2000, 1, 2)),
+            param(Date(2000, 1, 1), DateDelta(days=2), "floor", Date(1999, 12, 31)),
+            param(Date(2000, 1, 1), DateDelta(days=2), "half_ceil", Date(2000, 1, 2)),
+            param(
+                Date(2000, 1, 1), DateDelta(days=2), "half_floor", Date(1999, 12, 31)
+            ),
+            param(Date(2000, 1, 2), DateDelta(days=2), "half_even", Date(2000, 1, 2)),
+            param(Date(2000, 1, 2), DateDelta(days=2), "ceil", Date(2000, 1, 2)),
+            param(Date(2000, 1, 2), DateDelta(days=2), "floor", Date(2000, 1, 2)),
+            param(Date(2000, 1, 2), DateDelta(days=2), "half_ceil", Date(2000, 1, 2)),
+            param(Date(2000, 1, 2), DateDelta(days=2), "half_floor", Date(2000, 1, 2)),
+            param(Date(2000, 1, 1), DateDelta(days=3), "half_even", Date(2000, 1, 1)),
+            param(Date(2000, 1, 1), DateDelta(days=3), "ceil", Date(2000, 1, 1)),
+            param(Date(2000, 1, 1), DateDelta(days=3), "floor", Date(2000, 1, 1)),
+            param(Date(2000, 1, 1), DateDelta(days=3), "half_ceil", Date(2000, 1, 1)),
+            param(Date(2000, 1, 1), DateDelta(days=3), "half_floor", Date(2000, 1, 1)),
+            param(Date(2000, 1, 2), DateDelta(days=3), "half_even", Date(2000, 1, 4)),
+            param(Date(2000, 1, 2), DateDelta(days=3), "ceil", Date(2000, 1, 4)),
+            param(Date(2000, 1, 2), DateDelta(days=3), "floor", Date(2000, 1, 1)),
+            param(Date(2000, 1, 2), DateDelta(days=3), "half_ceil", Date(2000, 1, 4)),
+            param(Date(2000, 1, 2), DateDelta(days=3), "half_floor", Date(2000, 1, 1)),
+            param(Date(2000, 1, 3), DateDelta(days=3), "half_even", Date(2000, 1, 4)),
+            param(Date(2000, 1, 3), DateDelta(days=3), "ceil", Date(2000, 1, 4)),
+            param(Date(2000, 1, 3), DateDelta(days=3), "floor", Date(2000, 1, 1)),
+            param(Date(2000, 1, 3), DateDelta(days=3), "half_ceil", Date(2000, 1, 4)),
+            param(Date(2000, 1, 3), DateDelta(days=3), "half_floor", Date(2000, 1, 4)),
+        ],
+    )
+    def test_date(
+        self,
+        *,
+        date: Date,
+        delta: Delta,
+        mode: DateTimeRoundMode,
+        expected: ZonedDateTime,
+    ) -> None:
+        result = round_date_or_date_time(date, delta, mode=mode)
+        assert result == expected
+
+    @mark.parametrize(
         ("delta", "expected"),
         [
             param(TimeDelta(hours=2), ZonedDateTime(2000, 1, 2, 2, tz=UTC.key)),
@@ -572,7 +621,7 @@ class TestRoundDateOrDateTime:
             ),
         ],
     )
-    def test_main(self, *, delta: Delta, expected: ZonedDateTime) -> None:
+    def test_date_time_intraday(self, *, delta: Delta, expected: ZonedDateTime) -> None:
         now = ZonedDateTime(2000, 1, 2, 3, 4, 5, nanosecond=123456789, tz=UTC.key)
         result = round_date_or_date_time(now, delta, mode="floor")
         assert result.exact_eq(expected)
