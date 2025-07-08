@@ -27,7 +27,6 @@ from utilities.hypothesis import (
     assume_does_not_raise,
     date_deltas,
     dates,
-    freqs,
     pairs,
     plain_datetimes,
     sentinels,
@@ -35,13 +34,6 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import (
-    DateOrDateTimeDelta,
-    DateTimeRoundMode,
-    DateTimeRoundUnit,
-    TimeOrDateTimeDelta,
-)
-from utilities.typing import get_literal_elements
 from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.whenever import (
@@ -68,16 +60,12 @@ from utilities.whenever import (
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
     Delta,
-    Freq,
     MeanDateTimeError,
     MinMaxDateError,
     ToMonthsAndDaysError,
     ToNanosecondsError,
     ToPyTimeDeltaError,
     WheneverLogRecord,
-    _FreqDayIncrementError,
-    _FreqIncrementError,
-    _FreqParseError,
     _MinMaxDateMaxDateError,
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
@@ -149,7 +137,13 @@ if TYPE_CHECKING:
     from _pytest.mark import ParameterSet
 
     from utilities.sentinel import Sentinel
-    from utilities.types import MaybeCallableDate, MaybeCallableZonedDateTime
+    from utilities.types import (
+        DateOrDateTimeDelta,
+        DateTimeRoundMode,
+        MaybeCallableDate,
+        MaybeCallableZonedDateTime,
+        TimeOrDateTimeDelta,
+    )
 
 
 class TestAddAndSubYearMonth:
@@ -261,73 +255,6 @@ class TestFormatCompact:
         assert parsed.nanosecond == 0
         expected = datetime.round()
         assert parsed == expected
-
-
-class TestFreq:
-    @given(freq=freqs())
-    def test_main(self, *, freq: Freq) -> None:
-        _ = get_now().round(unit=freq.unit, increment=freq.increment, mode="floor")
-
-    @given(unit=sampled_from(get_literal_elements(DateTimeRoundUnit)))
-    def test_abbreviate_and_expand(self, *, unit: DateTimeRoundUnit) -> None:
-        result = Freq._expand(Freq._abbreviate(unit))
-        assert result == unit
-
-    @given(freqs=pairs(freqs()))
-    def test_eq(self, *, freqs: tuple[Freq, Freq]) -> None:
-        x, y = freqs
-        result = x == y
-        assert isinstance(result, bool)
-
-    @given(freq=freqs())
-    def test_eq_non_freq(self, *, freq: Freq) -> None:
-        result = freq == 0
-        assert not result
-
-    @given(freq=freqs())
-    def test_hashable(self, *, freq: Freq) -> None:
-        _ = hash(freq)
-
-    @given(freq=freqs())
-    def test_repr(self, *, freq: Freq) -> None:
-        _ = repr(freq)
-
-    @given(freq=freqs())
-    def test_serialize_and_parse(self, *, freq: Freq) -> None:
-        result = Freq.parse(freq.serialize())
-        assert result == freq
-
-    def test_error_day(self) -> None:
-        with raises(
-            _FreqDayIncrementError,
-            match="Increment must be 1 for the 'day' unit; got 2",
-        ):
-            _ = Freq(unit="day", increment=2)
-
-    def test_error_hour(self) -> None:
-        with raises(
-            _FreqIncrementError,
-            match="Increment must be a proper divisor of 24 for the 'hour' unit; got 5",
-        ):
-            _ = Freq(unit="hour", increment=5)
-
-    def test_error_minute(self) -> None:
-        with raises(
-            _FreqIncrementError,
-            match="Increment must be a proper divisor of 60 for the 'minute' unit; got 7",
-        ):
-            _ = Freq(unit="minute", increment=7)
-
-    def test_error_milliseond(self) -> None:
-        with raises(
-            _FreqIncrementError,
-            match="Increment must be a proper divisor of 1000 for the 'millisecond' unit; got 3",
-        ):
-            _ = Freq(unit="millisecond", increment=3)
-
-    def test_error_parse(self) -> None:
-        with raises(_FreqParseError, match="Unable to parse frequency; got 's'"):
-            _ = Freq.parse("s")
 
 
 class TestFromTimeStamp:
