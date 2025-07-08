@@ -36,7 +36,7 @@ dev = [
   "pytest-timeout >= 2.4.0, < 2.5",
 ]
 eventkit = ["eventkit >= 1.0.3, < 1.1"]
-fastapi = ["fastapi >= 0.115.14, < 0.116"]
+fastapi = ["fastapi >= 0.116.0, < 0.117"]
 fastapi-test = ["httpx", "uvicorn"]
 fpdf2 = ["fpdf2 >= 2.8.3, < 2.9"]
 hashlib-test = ["orjson"]
