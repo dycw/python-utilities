@@ -13,6 +13,7 @@ from hypothesis.strategies import (
     DataObject,
     booleans,
     data,
+    dictionaries,
     integers,
     lists,
     none,
@@ -38,6 +39,7 @@ from tests.test_asyncio_classes.loopers import (
     assert_looper_stats,
 )
 from utilities.asyncio import (
+    AsyncDict,
     EnhancedQueue,
     EnhancedTaskGroup,
     Looper,
@@ -71,6 +73,13 @@ if TYPE_CHECKING:
     from whenever import TimeDelta
 
     from utilities.types import MaybeCallableEvent
+
+
+class TestAsyncDict:
+    @given(dict_=dictionaries(text_ascii(), integers()).map(AsyncDict))
+    def test_iter(self, *, dict_: AsyncDict[str, int]) -> None:
+        for key in dict_:
+            assert isinstance(key, str)
 
 
 class TestEnhancedQueue:
