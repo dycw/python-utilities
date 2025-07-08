@@ -91,7 +91,7 @@ from utilities.whenever import (
     Freq,
     to_date_time_delta,
     to_days,
-    to_nanos,
+    to_nanoseconds,
 )
 from utilities.zoneinfo import UTC, ensure_time_zone
 
@@ -224,10 +224,10 @@ def date_time_deltas(
             ...
         case _ as never:
             assert_never(never)
-    min_nanos, max_nanos = map(to_nanos, [min_value_, max_value_])
+    min_nanos, max_nanos = map(to_nanoseconds, [min_value_, max_value_])
     if draw2(draw, parsable):
-        min_nanos = max(min_nanos, to_nanos(DATE_TIME_DELTA_PARSABLE_MIN))
-        max_nanos = min(max_nanos, to_nanos(DATE_TIME_DELTA_PARSABLE_MAX))
+        min_nanos = max(min_nanos, to_nanoseconds(DATE_TIME_DELTA_PARSABLE_MIN))
+        max_nanos = min(max_nanos, to_nanoseconds(DATE_TIME_DELTA_PARSABLE_MAX))
     nanos = draw(integers(min_value=min_nanos, max_value=max_nanos))
     return to_date_time_delta(nanos)
 

@@ -65,7 +65,7 @@ from utilities.whenever import (
     MeanDateTimeError,
     MinMaxDateError,
     ToMonthsAndDaysError,
-    ToNanosError,
+    ToNanosecondsError,
     ToPyTimeDeltaError,
     WheneverLogRecord,
     _FreqDayIncrementError,
@@ -78,6 +78,10 @@ from utilities.whenever import (
     _ToDaysNanosecondsError,
     _ToHoursMonthsError,
     _ToHoursNanosecondsError,
+    _ToMicrosecondsMonthsError,
+    _ToMicrosecondsNanosecondsError,
+    _ToMillisecondsMonthsError,
+    _ToMillisecondsNanosecondsError,
     _ToMinutesMonthsError,
     _ToMinutesNanosecondsError,
     _ToMonthsDaysError,
@@ -109,10 +113,12 @@ from utilities.whenever import (
     to_days,
     to_hours,
     to_local_plain,
+    to_microseconds,
+    to_milliseconds,
     to_minutes,
     to_months,
     to_months_and_days,
-    to_nanos,
+    to_nanoseconds,
     to_py_date_or_date_time,
     to_py_time_delta,
     to_seconds,
@@ -426,24 +432,24 @@ class TestMinMax:
             self._format_parse_date_delta(DATE_DELTA_PARSABLE_MAX + DateDelta(days=1))
 
     def test_date_time_delta_min(self) -> None:
-        nanos = to_nanos(DATE_TIME_DELTA_MIN)
+        nanos = to_nanoseconds(DATE_TIME_DELTA_MIN)
         with raises(ValueError, match="Out of range"):
             _ = to_date_time_delta(nanos - 1)
 
     def test_date_time_delta_max(self) -> None:
-        nanos = to_nanos(DATE_TIME_DELTA_MAX)
+        nanos = to_nanoseconds(DATE_TIME_DELTA_MAX)
         with raises(ValueError, match="Out of range"):
             _ = to_date_time_delta(nanos + 1)
 
     def test_date_time_delta_parsable_min(self) -> None:
         self._format_parse_date_time_delta(DATE_TIME_DELTA_PARSABLE_MIN)
-        nanos = to_nanos(DATE_TIME_DELTA_PARSABLE_MIN)
+        nanos = to_nanoseconds(DATE_TIME_DELTA_PARSABLE_MIN)
         with raises(ValueError, match="Invalid format or out of range: '.*'"):
             self._format_parse_date_time_delta(to_date_time_delta(nanos - 1))
 
     def test_date_time_delta_parsable_max(self) -> None:
         self._format_parse_date_time_delta(DATE_TIME_DELTA_PARSABLE_MAX)
-        nanos = to_nanos(DATE_TIME_DELTA_PARSABLE_MAX)
+        nanos = to_nanoseconds(DATE_TIME_DELTA_PARSABLE_MAX)
         with raises(ValueError, match="Invalid format or out of range: '.*'"):
             _ = self._format_parse_date_time_delta(to_date_time_delta(nanos + 1))
 
@@ -569,32 +575,6 @@ class TestToDate:
         assert to_date(date=lambda: date) == date
 
 
-class TestToDateTimeDeltaAndNanos:
-    @given(func=sampled_from([to_time_delta, to_date_time_delta]), nanos=integers())
-    def test_main(
-        self, *, func: Callable[[int], TimeOrDateTimeDelta], nanos: int
-    ) -> None:
-        with (
-            assume_does_not_raise(ValueError, match="Out of range"),
-            assume_does_not_raise(ValueError, match="TimeDelta out of range"),
-            assume_does_not_raise(ValueError, match="hours out of range"),
-            assume_does_not_raise(ValueError, match="total days out of range"),
-            assume_does_not_raise(
-                OverflowError, match="Python int too large to convert to C long"
-            ),
-            assume_does_not_raise(OverflowError, match="int too big to convert"),
-        ):
-            delta = func(nanos)
-        assert to_nanos(delta) == nanos
-
-    @mark.parametrize(
-        "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
-    )
-    def test_error(self, *, delta: DateOrDateTimeDelta) -> None:
-        with raises(ToNanosError, match="Delta must not contain months; got 1"):
-            _ = to_nanos(delta)
-
-
 class TestToDays:
     @given(cls=sampled_from([DateDelta, DateTimeDelta]), days=integers())
     def test_date_or_date_time_delta(
@@ -692,6 +672,102 @@ class TestToLocalPlain:
     def test_main(self, *, date_time: ZonedDateTime) -> None:
         result = to_local_plain(date_time)
         assert isinstance(result, PlainDateTime)
+
+
+class TestToMicroseconds:
+    @given(days=integers())
+    def test_date_delta(self, *, days: int) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="Out of range"),
+            assume_does_not_raise(ValueError, match="days out of range"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+        ):
+            delta = DateDelta(days=days)
+        assert to_microseconds(delta) == (24 * 60 * 60 * int(1e6) * days)
+
+    @given(cls=sampled_from([TimeDelta, DateTimeDelta]), microseconds=integers())
+    def test_time_or_date_time_delta(
+        self, *, cls: type[TimeOrDateTimeDelta], microseconds: int
+    ) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="Out of range"),
+            assume_does_not_raise(ValueError, match="microseconds out of range"),
+            assume_does_not_raise(OverflowError, match="int too big to convert"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+        ):
+            delta = cls(microseconds=microseconds)
+        assert to_microseconds(delta) == microseconds
+
+    @mark.parametrize(
+        "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
+    )
+    def test_error_months(self, *, delta: DateOrDateTimeDelta) -> None:
+        with raises(
+            _ToMicrosecondsMonthsError, match="Delta must not contain months; got 1"
+        ):
+            _ = to_microseconds(delta)
+
+    @mark.parametrize(
+        "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
+    )
+    def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
+        with raises(
+            _ToMicrosecondsNanosecondsError,
+            match="Delta must not contain extra nanoseconds; got .*",
+        ):
+            _ = to_microseconds(delta)
+
+
+class TestToMilliseconds:
+    @given(days=integers())
+    def test_date_delta(self, *, days: int) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="Out of range"),
+            assume_does_not_raise(ValueError, match="days out of range"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+        ):
+            delta = DateDelta(days=days)
+        assert to_milliseconds(delta) == (24 * 60 * 60 * int(1e3) * days)
+
+    @given(cls=sampled_from([TimeDelta, DateTimeDelta]), milliseconds=integers())
+    def test_time_or_date_time_delta(
+        self, *, cls: type[TimeOrDateTimeDelta], milliseconds: int
+    ) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="Out of range"),
+            assume_does_not_raise(ValueError, match="milliseconds out of range"),
+            assume_does_not_raise(OverflowError, match="int too big to convert"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+        ):
+            delta = cls(milliseconds=milliseconds)
+        assert to_milliseconds(delta) == milliseconds
+
+    @mark.parametrize(
+        "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
+    )
+    def test_error_months(self, *, delta: DateOrDateTimeDelta) -> None:
+        with raises(
+            _ToMillisecondsMonthsError, match="Delta must not contain months; got 1"
+        ):
+            _ = to_milliseconds(delta)
+
+    @mark.parametrize(
+        "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
+    )
+    def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
+        with raises(
+            _ToMillisecondsNanosecondsError,
+            match="Delta must not contain extra nanoseconds; got .*",
+        ):
+            _ = to_milliseconds(delta)
 
 
 class TestToMinutes:
@@ -793,6 +869,31 @@ class TestToMonthsAndDays:
             ToMonthsAndDaysError, match="Delta must not contain a time part; got .*"
         ):
             _ = to_months_and_days(delta)
+
+
+class TestToNanoseconds:
+    @given(func=sampled_from([to_time_delta, to_date_time_delta]), nanos=integers())
+    def test_main(
+        self, *, func: Callable[[int], TimeOrDateTimeDelta], nanos: int
+    ) -> None:
+        with (
+            assume_does_not_raise(ValueError, match="Out of range"),
+            assume_does_not_raise(ValueError, match="TimeDelta out of range"),
+            assume_does_not_raise(ValueError, match="total days out of range"),
+            assume_does_not_raise(
+                OverflowError, match="Python int too large to convert to C long"
+            ),
+            assume_does_not_raise(OverflowError, match="int too big to convert"),
+        ):
+            delta = func(nanos)
+        assert to_nanoseconds(delta) == nanos
+
+    @mark.parametrize(
+        "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
+    )
+    def test_error(self, *, delta: DateOrDateTimeDelta) -> None:
+        with raises(ToNanosecondsError, match="Delta must not contain months; got 1"):
+            _ = to_nanoseconds(delta)
 
 
 class TestToPyDateOrDateTime:
