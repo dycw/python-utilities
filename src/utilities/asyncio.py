@@ -458,6 +458,23 @@ class EnhancedTaskGroup(TaskGroup):
         _ = self._stack.push_async_callback(cm.__aexit__, None, None, None)
         return self.create_task(cm.__aenter__())
 
+    async def run_or_create_many_tasks[**P, T](
+        self,
+        make_coro: Callable[P, _CoroutineLike[T]],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> T | Sequence[Task[T]]:
+        match self._is_debug(), self._max_tasks:
+            case (True, _) | (False, None):
+                return await make_coro(*args, **kwargs)
+            case False, int():
+                return [
+                    self.create_task(make_coro(*args, **kwargs))
+                    for _ in range(self._max_tasks)
+                ]
+            case _ as never:
+                assert_never(never)
+
     async def run_or_create_task[T](
         self,
         coro: _CoroutineLike[T],
