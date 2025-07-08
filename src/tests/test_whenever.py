@@ -81,6 +81,7 @@ from utilities.whenever import (
     _MinMaxDateMaxDateError,
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
+    _RoundDateOrDateTimeDateTimeIntraDayWithWeekdayError,
     _RoundDateOrDateTimeDateWithIntradayDeltaError,
     _RoundDateOrDateTimeDateWithWeekdayError,
     _RoundDateOrDateTimeIncrementError,
@@ -729,6 +730,13 @@ class TestRoundDateOrDateTime:
             match="Dates must not be given intraday durations; got .* and PT1S",
         ):
             _ = round_date_or_date_time(TODAY_UTC, SECOND)
+
+    def test_error_date_time_intra_day_with_weekday(self) -> None:
+        with raises(
+            _RoundDateOrDateTimeDateTimeIntraDayWithWeekdayError,
+            match=r"Date-times and intraday rounding must not be given a weekday; got .*, PT1S and Weekday\.MONDAY",
+        ):
+            _ = round_date_or_date_time(NOW_UTC, SECOND, weekday=Weekday.MONDAY)
 
 
 class TestToDate:

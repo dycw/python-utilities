@@ -530,13 +530,9 @@ def round_date_or_date_time[T: Date | PlainDateTime | ZonedDateTime](
             return _round_date_weekly_or_daily(
                 date, increment, unit, mode=mode, weekday=weekday
             )
-        case Date() as date, _, _:
+        case Date() as date, "H" | "M" | "S" | "ms" | "us" | "ns", _:
             raise _RoundDateOrDateTimeDateWithIntradayDeltaError(date=date, delta=delta)
-        case (
-            PlainDateTime() | ZonedDateTime() as date_time,
-            "W" | "D",
-            Weekday() | None,
-        ):
+        case (PlainDateTime() | ZonedDateTime() as date_time, "W" | "D", _):
             return _round_date_time_weekly_or_daily(
                 date_time, increment, unit, mode=mode, weekday=weekday
             )
@@ -546,8 +542,16 @@ def round_date_or_date_time[T: Date | PlainDateTime | ZonedDateTime](
             None,
         ):
             return _round_date_time_intraday(date_time, increment, unit, mode=mode)
-        case _:
-            raise NotImplementedError(date_or_date_time, delta, unit, weekday)
+        case (
+            PlainDateTime() | ZonedDateTime() as date_time,
+            "H" | "M" | "S" | "ms" | "us" | "ns",
+            Weekday(),
+        ):
+            raise _RoundDateOrDateTimeDateTimeIntraDayWithWeekdayError(
+                date_time=date_time, delta=delta, weekday=weekday
+            )
+        case _ as never:
+            assert_never(never)
 
 
 def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTimeUnit]:
@@ -775,6 +779,17 @@ class _RoundDateOrDateTimeDateWithWeekdayError(RoundDateOrDateTimeError):
     @override
     def __str__(self) -> str:
         return f"Daily rounding must not be given a weekday; got {self.weekday}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _RoundDateOrDateTimeDateTimeIntraDayWithWeekdayError(RoundDateOrDateTimeError):
+    date_time: PlainDateTime | ZonedDateTime
+    delta: Delta
+    weekday: Weekday
+
+    @override
+    def __str__(self) -> str:
+        return f"Date-times and intraday rounding must not be given a weekday; got {self.date_time}, {self.delta} and {self.weekday}"
 
 
 ##
