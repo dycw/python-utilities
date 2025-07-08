@@ -59,7 +59,6 @@ from utilities.whenever import (
     ZERO_DAYS,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
-    Delta,
     MeanDateTimeError,
     MinMaxDateError,
     ToMonthsAndDaysError,
@@ -140,6 +139,7 @@ if TYPE_CHECKING:
     from utilities.types import (
         DateOrDateTimeDelta,
         DateTimeRoundMode,
+        Delta,
         MaybeCallableDate,
         MaybeCallableZonedDateTime,
         TimeOrDateTimeDelta,
