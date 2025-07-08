@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from asyncio import Event, Queue, run
 from collections import deque
-from collections.abc import KeysView
-from contextlib import asynccontextmanager, suppress
+from collections.abc import ItemsView, KeysView
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from itertools import chain
 from re import search
@@ -95,8 +95,11 @@ class TestAsyncDict:
 
     @given(dict_=async_dicts, key=text_ascii())
     async def test_del(self, *, dict_: AsyncDict[str, int], key: str) -> None:
-        with suppress(KeyError):
+        if key in dict_:
             await dict_.del_(key)
+        else:
+            with raises(KeyError):
+                await dict_.del_(key)
 
     @given(dict_=async_dicts)
     def test_empty(self, *, dict_: AsyncDict[str, int]) -> None:
@@ -135,19 +138,26 @@ class TestAsyncDict:
                 _ = dict_[key]
 
     @given(dict_=async_dicts)
+    def test_items(self, *, dict_: AsyncDict[str, int]) -> None:
+        assert isinstance(dict_.items(), ItemsView)
+        for key, value in dict_.items():
+            assert isinstance(key, str)
+            assert isinstance(value, int)
+
+    @given(dict_=async_dicts)
     def test_iter(self, *, dict_: AsyncDict[str, int]) -> None:
         for key in dict_:
             assert isinstance(key, str)
-
-    @given(dict_=async_dicts)
-    def test_len(self, *, dict_: AsyncDict[str, int]) -> None:
-        assert isinstance(len(dict_), int)
 
     @given(dict_=async_dicts)
     def test_keys(self, *, dict_: AsyncDict[str, int]) -> None:
         assert isinstance(dict_.keys(), KeysView)
         for key in dict_.keys():  # noqa: SIM118
             assert isinstance(key, str)
+
+    @given(dict_=async_dicts)
+    def test_len(self, *, dict_: AsyncDict[str, int]) -> None:
+        assert isinstance(len(dict_), int)
 
     @given(dict_=async_dicts, key=text_ascii())
     async def test_pop(self, *, dict_: AsyncDict[str, int], key: str) -> None:
