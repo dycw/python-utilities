@@ -554,8 +554,10 @@ def round_date_or_date_time(
     increment, unit = _round_datetime_decompose(delta)
     match date_or_date_time, unit, weekday:
         case Date() as date, "W", Weekday() | None:
-            return _round_date_weekly()
-        case Date() as date, "D", Weekday() | None:
+            return _round_date_weekly(date, increment, mode=mode, weekday=weekday)
+        case Date() as date, "D", Weekday():
+            raise ValueError
+        case Date() as date, "D", None:
             return _round_date_daily(date, increment, mode=mode)
         case PlainDateTime() | ZonedDateTime() as datetime, "W" | "D", None:
             z
@@ -644,10 +646,37 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
     )
 
 
-def _round_date_daily(
-    date: Date, increment: int, /, *, mode: DateTimeRoundMode = "half_even"
+def _round_date_weekly(
+    date: Date,
+    increment: int,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+    weekday: Weekday | None = None,
 ) -> Date:
-    quotient, remainder = divmod(date.days_since(Date.MIN), increment)
+    mapping = {
+        None: 0,
+        Weekday.MONDAY: 0,
+        Weekday.TUESDAY: 1,
+        Weekday.WEDNESDAY: 2,
+        Weekday.THURSDAY: 3,
+        Weekday.FRIDAY: 4,
+        Weekday.SATURDAY: 5,
+        Weekday.SUNDAY: 6,
+    }
+    base = Date.MIN.add(days=mapping[weekday])
+    return _round_date_daily(date, 7 * increment, mode=mode, base=base)
+
+
+def _round_date_daily(
+    date: Date,
+    increment: int,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+    base: Date = Date.MIN,
+) -> Date:
+    quotient, remainder = divmod(date.days_since(base), increment)
     if mode == "half_even":  # check the default mode first
         threshold = increment // 2 + (quotient % 2 == 0) or 1
     elif mode == "ceil":
@@ -662,7 +691,7 @@ def _round_date_daily(
         msg = f"Invalid rounding mode: {mode!r}"
         raise ValueError(msg)
     round_up = remainder >= threshold
-    return Date.MIN.add(days=(quotient + round_up) * increment)
+    return base.add(days=(quotient + round_up) * increment)
 
 
 def _round_date_time_intraday(

@@ -17,6 +17,7 @@ from whenever import (
     Time,
     TimeDelta,
     TimeZoneNotFoundError,
+    Weekday,
     YearMonth,
     ZonedDateTime,
 )
@@ -590,7 +591,7 @@ class TestRoundDateOrDateTime:
             param(Date(2000, 1, 3), DateDelta(days=3), "half_floor", Date(2000, 1, 4)),
         ],
     )
-    def test_date(
+    def test_date_daily(
         self,
         *,
         date: Date,
@@ -600,6 +601,45 @@ class TestRoundDateOrDateTime:
     ) -> None:
         result = round_date_or_date_time(date, delta, mode=mode)
         assert result == expected
+
+    @mark.parametrize(
+        ("date", "weekday", "expected"),
+        [
+            param(Date(2000, 1, 1), None, Date(1999, 12, 27)),
+            param(Date(2000, 1, 2), None, Date(1999, 12, 27)),
+            param(Date(2000, 1, 3), None, Date(2000, 1, 3)),
+            param(Date(2000, 1, 4), None, Date(2000, 1, 3)),
+            param(Date(2000, 1, 5), None, Date(2000, 1, 3)),
+            param(Date(2000, 1, 6), None, Date(2000, 1, 3)),
+            param(Date(2000, 1, 7), None, Date(2000, 1, 3)),
+            param(Date(2000, 1, 8), None, Date(2000, 1, 3)),
+            param(Date(2000, 1, 9), None, Date(2000, 1, 3)),
+            param(Date(2000, 1, 10), None, Date(2000, 1, 10)),
+            param(Date(2000, 1, 11), None, Date(2000, 1, 10)),
+            param(Date(2000, 1, 1), Weekday.WEDNESDAY, Date(1999, 12, 29)),
+            param(Date(2000, 1, 2), Weekday.WEDNESDAY, Date(1999, 12, 29)),
+            param(Date(2000, 1, 3), Weekday.WEDNESDAY, Date(1999, 12, 29)),
+            param(Date(2000, 1, 4), Weekday.WEDNESDAY, Date(1999, 12, 29)),
+            param(Date(2000, 1, 5), Weekday.WEDNESDAY, Date(2000, 1, 5)),
+            param(Date(2000, 1, 6), Weekday.WEDNESDAY, Date(2000, 1, 5)),
+            param(Date(2000, 1, 7), Weekday.WEDNESDAY, Date(2000, 1, 5)),
+            param(Date(2000, 1, 8), Weekday.WEDNESDAY, Date(2000, 1, 5)),
+            param(Date(2000, 1, 9), Weekday.WEDNESDAY, Date(2000, 1, 5)),
+            param(Date(2000, 1, 10), Weekday.WEDNESDAY, Date(2000, 1, 5)),
+            param(Date(2000, 1, 11), Weekday.WEDNESDAY, Date(2000, 1, 5)),
+            param(Date(2000, 1, 12), Weekday.WEDNESDAY, Date(2000, 1, 12)),
+            param(Date(2000, 1, 13), Weekday.WEDNESDAY, Date(2000, 1, 12)),
+        ],
+    )
+    def test_date_weekly(
+        self, *, date: Date, weekday: Weekday | None, expected: ZonedDateTime
+    ) -> None:
+        result = round_date_or_date_time(
+            date, DateDelta(weeks=1), mode="floor", weekday=weekday
+        )
+        assert result == expected
+        if weekday is not None:
+            assert result.day_of_week() is weekday
 
     @mark.parametrize(
         ("delta", "expected"),
