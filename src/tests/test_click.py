@@ -23,8 +23,6 @@ from hypothesis.strategies import (
 )
 from pytest import mark, param
 
-import utilities
-import utilities.whenever
 from utilities.click import (
     CONTEXT_SETTINGS_HELP_OPTION_NAMES,
     Date,
@@ -35,7 +33,6 @@ from utilities.click import (
     ExistingDirPath,
     ExistingFilePath,
     FilePath,
-    Freq,
     FrozenSetChoices,
     FrozenSetEnums,
     FrozenSetInts,
@@ -57,7 +54,6 @@ from utilities.hypothesis import (
     date_deltas,
     date_time_deltas,
     dates,
-    freqs,
     month_days,
     plain_datetimes,
     text_ascii,
@@ -225,13 +221,6 @@ class TestParameters:
             repr="ENUM[_ExampleEnum]",
             strategy=sampled_from(_ExampleEnum),
             serialize=attrgetter("name"),
-            failable=True,
-        ),
-        _Case(
-            param=Freq(),
-            name="freq",
-            strategy=freqs(),
-            serialize=utilities.whenever.Freq.serialize,
             failable=True,
         ),
         _Case(

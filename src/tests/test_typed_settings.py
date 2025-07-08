@@ -32,7 +32,6 @@ from utilities.hypothesis import (
     date_deltas,
     date_time_deltas,
     dates,
-    freqs,
     month_days,
     paths,
     plain_datetimes,
@@ -50,7 +49,6 @@ from utilities.typed_settings import (
     LoadSettingsError,
     load_settings,
 )
-from utilities.whenever import Freq
 
 app_names = text_ascii(min_size=1).map(str.lower)
 
@@ -75,7 +73,6 @@ class TestExtendedTSConverter:
             strategy=date_time_deltas(parsable=True),
             serialize=DateTimeDelta.format_common_iso,
         ),
-        _Case(cls=Freq, strategy=freqs(), serialize=Freq.serialize),
         _Case(cls=IPv4Address, strategy=ip_addresses(v=4), serialize=str),
         _Case(cls=IPv6Address, strategy=ip_addresses(v=6), serialize=str),
         _Case(
