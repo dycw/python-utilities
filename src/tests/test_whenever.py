@@ -559,7 +559,6 @@ class TestMinMaxDate:
             _ = min_max_date(min_date=dates[1], max_date=dates[0])
 
 
-@mark.only
 class TestRoundDateOrDateTime:
     @mark.parametrize(
         ("date", "delta", "mode", "expected"),
