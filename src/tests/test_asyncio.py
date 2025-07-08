@@ -177,6 +177,16 @@ class TestAsyncDict:
         assert isinstance(value, int) or (value is None)
 
     @given(dict_=async_dicts)
+    async def test_popitem(self, *, dict_: AsyncDict[str, int]) -> None:
+        if len(dict_) >= 1:
+            key, value = await dict_.popitem()
+            assert isinstance(key, str)
+            assert isinstance(value, int)
+        else:
+            with raises(KeyError):
+                _ = await dict_.popitem()
+
+    @given(dict_=async_dicts)
     def test_repr(self, *, dict_: AsyncDict[str, int]) -> None:
         assert isinstance(repr(dict_), str)
 
@@ -184,6 +194,12 @@ class TestAsyncDict:
     def test_reversed(self, *, dict_: AsyncDict[str, int]) -> None:
         for key in reversed(dict_):
             assert isinstance(key, str)
+
+    @given(dict_=async_dicts, key=text_ascii(), value=integers())
+    async def test_set(
+        self, *, dict_: AsyncDict[str, int], key: str, value: int
+    ) -> None:
+        await dict_.set(key, value)
 
     @given(dict_=async_dicts)
     def test_str(self, *, dict_: AsyncDict[str, int]) -> None:
