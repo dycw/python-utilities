@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import Event, Queue, run
 from collections import deque
-from collections.abc import ItemsView, KeysView
+from collections.abc import ItemsView, KeysView, ValuesView
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from itertools import chain
@@ -93,6 +93,10 @@ class TestAsyncDict:
     def test_contains(self, *, dict_: AsyncDict[str, int], key: str) -> None:
         assert isinstance(key in dict_, bool)
 
+    @given(dict_=async_dicts)
+    def test_copy(self, *, dict_: AsyncDict[str, int]) -> None:
+        assert isinstance(dict_.copy(), AsyncDict)
+
     @given(dict_=async_dicts, key=text_ascii())
     async def test_del(self, *, dict_: AsyncDict[str, int], key: str) -> None:
         if key in dict_:
@@ -103,7 +107,7 @@ class TestAsyncDict:
 
     @given(dict_=async_dicts)
     def test_empty(self, *, dict_: AsyncDict[str, int]) -> None:
-        assert isinstance(dict_.copy(), AsyncDict)
+        assert isinstance(dict_.empty, bool)
 
     @given(dicts=pairs(async_dicts))
     def test_eq(
@@ -184,6 +188,12 @@ class TestAsyncDict:
     @given(dict_=async_dicts)
     def test_str(self, *, dict_: AsyncDict[str, int]) -> None:
         assert isinstance(str(dict_), str)
+
+    @given(dict_=async_dicts)
+    def test_values(self, *, dict_: AsyncDict[str, int]) -> None:
+        assert isinstance(dict_.values(), ValuesView)
+        for value in dict_.values():
+            assert isinstance(value, int)
 
 
 class TestEnhancedQueue:
