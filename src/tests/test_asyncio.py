@@ -201,6 +201,12 @@ class TestAsyncDict:
     ) -> None:
         await dict_.set(key, value)
 
+    @given(dict_=async_dicts, key=text_ascii(), value=integers())
+    async def test_setdefault(
+        self, *, dict_: AsyncDict[str, int], key: str, value: int
+    ) -> None:
+        assert isinstance(await dict_.setdefault(key, value), int)
+
     @given(dict_=async_dicts)
     def test_str(self, *, dict_: AsyncDict[str, int]) -> None:
         assert isinstance(str(dict_), str)
