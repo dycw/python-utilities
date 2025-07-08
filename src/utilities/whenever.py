@@ -512,56 +512,32 @@ class _MinMaxDatePeriodError(MinMaxDateError):
 
 type _RoundDateDailyUnit = Literal["W", "D"]
 type _RoundDateTimeUnit = Literal["H", "M", "S", "ms", "us", "ns"]
-type _RoundDateOrDateTimeUnit = Literal["W", "D", "H", "M", "S", "ms", "us", "ns"]
+type _RoundDateOrDateTimeUnit = _RoundDateDailyUnit | _RoundDateTimeUnit
 
 
-@overload
-def round_date_or_date_time(
-    date_or_date_time: Date,
+def round_date_or_date_time[T: Date | PlainDateTime | ZonedDateTime](
+    date_or_date_time: T,
     delta: Delta,
     /,
     *,
     mode: DateTimeRoundMode = "half_even",
     weekday: Weekday | None = None,
-) -> Date: ...
-@overload
-def round_date_or_date_time(
-    date_or_date_time: PlainDateTime,
-    delta: Delta,
-    /,
-    *,
-    mode: DateTimeRoundMode = "half_even",
-    weekday: Weekday | None = None,
-) -> PlainDateTime: ...
-@overload
-def round_date_or_date_time(
-    date_or_date_time: ZonedDateTime,
-    delta: Delta,
-    /,
-    *,
-    mode: DateTimeRoundMode = "half_even",
-    weekday: Weekday | None = None,
-) -> ZonedDateTime: ...
-def round_date_or_date_time(
-    date_or_date_time: Date | PlainDateTime | ZonedDateTime,
-    delta: Delta,
-    /,
-    *,
-    mode: DateTimeRoundMode = "half_even",
-    weekday: Weekday | None = None,
-) -> Date | PlainDateTime | ZonedDateTime:
+) -> T:
     """Round a datetime."""
     increment, unit = _round_datetime_decompose(delta)
     match date_or_date_time, unit, weekday:
-        case Date() as date, "W", Weekday() | None:
-            return _round_date_weekly(date, increment, mode=mode, weekday=weekday)
-        case Date() as date, "D", Weekday():
-            raise ValueError
-        case Date() as date, "D", None:
-            return _round_date_daily(date, increment, mode=mode)
-        case PlainDateTime() | ZonedDateTime() as datetime, "W" | "D", None:
-            z
-            raise NotImplementedError
+        case Date() as date, "W" | "D", Weekday() | None:
+            return _round_date_weekly_or_daily(
+                date, increment, unit, mode=mode, weekday=weekday
+            )
+        case (
+            PlainDateTime() | ZonedDateTime() as date_time,
+            "W" | "D",
+            Weekday() | None,
+        ):
+            return _round_date_time_weekly_or_daily(
+                date_time, increment, unit, mode=mode, weekday=weekday
+            )
         case (
             PlainDateTime() | ZonedDateTime() as date_time,
             "H" | "M" | "S" | "ms" | "us" | "ns",
@@ -593,7 +569,7 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < hours < 24) and (24 % hours == 0):
             return hours, "H"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=hours, unit="H", divisor=24
+            duration=delta, increment=hours, divisor=24
         )
     try:
         minutes = to_minutes(delta)
@@ -603,7 +579,7 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < minutes < 60) and (60 % minutes == 0):
             return minutes, "M"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=minutes, unit="M", divisor=60
+            duration=delta, increment=minutes, divisor=60
         )
     try:
         seconds = to_seconds(delta)
@@ -613,7 +589,7 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < seconds < 60) and (60 % seconds == 0):
             return seconds, "S"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=seconds, unit="S", divisor=60
+            duration=delta, increment=seconds, divisor=60
         )
     try:
         milliseconds = to_milliseconds(delta)
@@ -623,7 +599,7 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < milliseconds < 1000) and (1000 % milliseconds == 0):
             return milliseconds, "ms"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=milliseconds, unit="ms", divisor=1000
+            duration=delta, increment=milliseconds, divisor=1000
         )
     try:
         microseconds = to_microseconds(delta)
@@ -633,7 +609,7 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < microseconds < 1000) and (1000 % microseconds == 0):
             return microseconds, "us"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=microseconds, unit="us", divisor=1000
+            duration=delta, increment=microseconds, divisor=1000
         )
     try:
         nanoseconds = to_nanoseconds(delta)
@@ -642,8 +618,28 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
     if (0 < nanoseconds < 1000) and (1000 % nanoseconds == 0):
         return nanoseconds, "ns"
     raise _RoundDateOrDateTimeIncrementError(
-        duration=delta, increment=nanoseconds, unit="ns", divisor=1000
+        duration=delta, increment=nanoseconds, divisor=1000
     )
+
+
+def _round_date_weekly_or_daily(
+    date: Date,
+    increment: int,
+    unit: _RoundDateDailyUnit,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+    weekday: Weekday | None = None,
+) -> Date:
+    match unit, weekday:
+        case "W", _:
+            return _round_date_weekly(date, increment, mode=mode, weekday=weekday)
+        case "D", None:
+            return _round_date_daily(date, increment, mode=mode)
+        case "D", Weekday():
+            raise _RoundDateOrDateTimeDateWithWeekdayError(weekday=weekday)
+        case _ as never:
+            assert_never(never)
 
 
 def _round_date_weekly(
@@ -677,31 +673,31 @@ def _round_date_daily(
     base: Date = Date.MIN,
 ) -> Date:
     quotient, remainder = divmod(date.days_since(base), increment)
-    if mode == "half_even":  # check the default mode first
-        threshold = increment // 2 + (quotient % 2 == 0) or 1
-    elif mode == "ceil":
-        threshold = 1  # Always round up
-    elif mode == "floor":
-        threshold = increment + 1  # Never round up
-    elif mode == "half_floor":
-        threshold = increment // 2 + 1
-    elif mode == "half_ceil":
-        threshold = increment // 2 or 1
-    else:
-        msg = f"Invalid rounding mode: {mode!r}"
-        raise ValueError(msg)
+    match mode:
+        case "half_even":
+            threshold = increment // 2 + (quotient % 2 == 0) or 1
+        case "ceil":
+            threshold = 1
+        case "floor":
+            threshold = increment + 1
+        case "half_floor":
+            threshold = increment // 2 + 1
+        case "half_ceil":
+            threshold = increment // 2 or 1
+        case _ as never:
+            assert_never(never)
     round_up = remainder >= threshold
     return base.add(days=(quotient + round_up) * increment)
 
 
-def _round_date_time_intraday(
-    date_time: PlainDateTime | ZonedDateTime,
+def _round_date_time_intraday[T: PlainDateTime | ZonedDateTime](
+    date_time: T,
     increment: int,
     unit: _RoundDateTimeUnit,
     /,
     *,
     mode: DateTimeRoundMode = "half_even",
-) -> PlainDateTime | ZonedDateTime:
+) -> T:
     match unit:
         case "H":
             unit_use = "hour"
@@ -720,27 +716,53 @@ def _round_date_time_intraday(
     return date_time.round(unit_use, increment=increment, mode=mode)
 
 
+def _round_date_time_weekly_or_daily[T: PlainDateTime | ZonedDateTime](
+    date_time: T,
+    increment: int,
+    unit: _RoundDateDailyUnit,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+    weekday: Weekday | None = None,
+) -> T:
+    rounded = cast("T", date_time.round("day", mode=mode))
+    new_date = _round_date_weekly_or_daily(
+        rounded.date(), increment, unit, mode=mode, weekday=weekday
+    )
+    return date_time.replace_date(new_date).replace_time(Time())
+
+
 @dataclass(kw_only=True, slots=True)
-class RoundDateOrDateTimeError(Exception):
-    duration: Delta
+class RoundDateOrDateTimeError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
 class _RoundDateOrDateTimeIncrementError(RoundDateOrDateTimeError):
+    duration: Delta
     increment: int
-    unit: _RoundDateOrDateTimeUnit
     divisor: int
 
     @override
     def __str__(self) -> str:
-        return f"Invalid duration: {self.duration} increment must be a proper divisor of {self.divisor}"
+        return f"Duration {self.duration} increment must be a proper divisor of {self.divisor}; got {self.increment}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _RoundDateOrDateTimeInvalidDurationError(RoundDateOrDateTimeError):
+    duration: Delta
+
     @override
     def __str__(self) -> str:
-        return f"Invalid duration: {self.duration}"
+        return f"Duration must be valid; got {self.duration}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _RoundDateOrDateTimeDateWithWeekdayError(RoundDateOrDateTimeError):
+    weekday: Weekday
+
+    @override
+    def __str__(self) -> str:
+        return f"Daily rounding must not be given a weekday; got {self.weekday}"
 
 
 ##

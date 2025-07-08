@@ -56,6 +56,7 @@ from utilities.whenever import (
     DAY,
     MICROSECOND,
     MINUTE,
+    MONTH,
     NOW_LOCAL,
     NOW_UTC,
     SECOND,
@@ -80,7 +81,7 @@ from utilities.whenever import (
     _MinMaxDateMaxDateError,
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
-    _round_datetime_decompose,
+    _RoundDateOrDateTimeDateWithWeekdayError,
     _RoundDateOrDateTimeIncrementError,
     _RoundDateOrDateTimeInvalidDurationError,
     _ToDaysMonthsError,
@@ -667,6 +668,29 @@ class TestRoundDateOrDateTime:
         assert result.exact_eq(expected)
 
     @mark.parametrize(
+        ("date_time", "expected"),
+        [
+            param(
+                ZonedDateTime(2000, 1, 1, 2, 3, 4, nanosecond=123456789, tz=UTC.key),
+                ZonedDateTime(1999, 12, 31, tz=UTC.key),
+            ),
+            param(
+                ZonedDateTime(2000, 1, 1, tz=UTC.key),
+                ZonedDateTime(1999, 12, 31, tz=UTC.key),
+            ),
+            param(
+                ZonedDateTime(2000, 1, 2, tz=UTC.key),
+                ZonedDateTime(2000, 1, 2, tz=UTC.key),
+            ),
+        ],
+    )
+    def test_date_time_daily(
+        self, *, date_time: ZonedDateTime, expected: ZonedDateTime
+    ) -> None:
+        result = round_date_or_date_time(date_time, DateDelta(days=2), mode="floor")
+        assert result.exact_eq(expected)
+
+    @mark.parametrize(
         "delta",
         [
             param(TimeDelta(hours=5)),
@@ -680,15 +704,22 @@ class TestRoundDateOrDateTime:
     def test_error_increment(self, *, delta: TimeDelta) -> None:
         with raises(
             _RoundDateOrDateTimeIncrementError,
-            match=r"Invalid duration: PT.* increment must be a proper divisor of \d+",
+            match=r"Duration PT.* increment must be a proper divisor of \d+; got \d+",
         ):
-            _ = _round_datetime_decompose(delta)
+            _ = round_date_or_date_time(TODAY_UTC, delta)
 
     def test_error_invalid(self) -> None:
         with raises(
             _RoundDateOrDateTimeInvalidDurationError, match="Invalid duration: P1M"
         ):
-            _ = _round_datetime_decompose(DateDelta(months=1))
+            _ = round_date_or_date_time(TODAY_UTC, MONTH)
+
+    def test_error_date_with_weekday(self) -> None:
+        with raises(
+            _RoundDateOrDateTimeDateWithWeekdayError,
+            match=r"Daily rounding must not be given a weekday; got Weekday\.MONDAY",
+        ):
+            _ = round_date_or_date_time(TODAY_UTC, DAY, weekday=Weekday.MONDAY)
 
 
 class TestToDate:
