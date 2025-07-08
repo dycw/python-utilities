@@ -211,6 +211,13 @@ class TestAsyncDict:
     def test_str(self, *, dict_: AsyncDict[str, int]) -> None:
         assert isinstance(str(dict_), str)
 
+    @given(dicts=pairs(async_dicts))
+    async def test_update(
+        self, *, dicts: tuple[AsyncDict[str, int], AsyncDict[str, int]]
+    ) -> None:
+        first, second = dicts
+        await first.update(second)
+
     @given(dict_=async_dicts)
     def test_values(self, *, dict_: AsyncDict[str, int]) -> None:
         assert isinstance(dict_.values(), ValuesView)
