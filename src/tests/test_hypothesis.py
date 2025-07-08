@@ -119,7 +119,7 @@ from utilities.whenever import (
     DATE_TWO_DIGIT_YEAR_MIN,
     Freq,
     to_days,
-    to_nanos,
+    to_nanoseconds,
 )
 
 if TYPE_CHECKING:
@@ -205,11 +205,11 @@ class TestDateTimeDeltas:
                 )
             )
         assert isinstance(delta, DateTimeDelta)
-        nanos = to_nanos(delta)
+        nanos = to_nanoseconds(delta)
         if min_value is not None:
-            assert nanos >= to_nanos(min_value)
+            assert nanos >= to_nanoseconds(min_value)
         if max_value is not None:
-            assert nanos <= to_nanos(max_value)
+            assert nanos <= to_nanoseconds(max_value)
         if parsable:
             assert DateTimeDelta.parse_common_iso(delta.format_common_iso()) == delta
 
