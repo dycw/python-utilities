@@ -80,8 +80,8 @@ type MaybeCoro[T] = T | Coro[T]
 # collections.abc
 @runtime_checkable
 class SupportsKeysAndGetItem(Protocol[_T, _T_co]):
-    def keys(self) -> Iterable[_T]: ...
-    def __getitem__(self, key: _T, /) -> _T_co: ...
+    def keys(self) -> Iterable[_T]: ...  # pragma: no cover
+    def __getitem__(self, key: _T, /) -> _T_co: ...  # pragma: no cover
 
 
 # concurrent
