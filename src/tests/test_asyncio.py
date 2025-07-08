@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import Event, Queue, run
 from collections import deque
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from itertools import chain
 from re import search
@@ -60,7 +60,7 @@ from utilities.asyncio import (
 )
 from utilities.dataclasses import replace_non_sentinel
 from utilities.functions import get_class_name
-from utilities.hypothesis import sentinels, text_ascii
+from utilities.hypothesis import pairs, sentinels, text_ascii
 from utilities.iterables import one, unique_everseen
 from utilities.pytest import skipif_windows
 from utilities.sentinel import Sentinel, sentinel
@@ -74,12 +74,52 @@ if TYPE_CHECKING:
 
     from utilities.types import MaybeCallableEvent
 
+async_dicts = dictionaries(text_ascii(), integers()).map(AsyncDict)
+
 
 class TestAsyncDict:
-    @given(dict_=dictionaries(text_ascii(), integers()).map(AsyncDict))
+    @given(dict_=async_dicts)
+    async def test_aenter(self, *, dict_: AsyncDict[str, int]) -> None:
+        async with dict_:
+            ...
+
+    @given(dict_=async_dicts, key=text_ascii())
+    def test_contains(self, *, dict_: AsyncDict[str, int], key: str) -> None:
+        assert isinstance(key in dict_, bool)
+
+    @given(dicts=pairs(async_dicts))
+    def test_eq(
+        self, *, dicts: tuple[AsyncDict[str, int], AsyncDict[str, int]]
+    ) -> None:
+        first, second = dicts
+        assert isinstance(first == second, bool)
+
+    @given(dict_=async_dicts, key=text_ascii())
+    def test_getitem(self, *, dict_: AsyncDict[str, int], key: str) -> None:
+        with suppress(KeyError):
+            _ = dict_[key]
+
+    @given(dict_=async_dicts)
     def test_iter(self, *, dict_: AsyncDict[str, int]) -> None:
         for key in dict_:
             assert isinstance(key, str)
+
+    @given(dict_=async_dicts)
+    def test_len(self, *, dict_: AsyncDict[str, int]) -> None:
+        assert isinstance(len(dict_), int)
+
+    @given(dict_=async_dicts)
+    def test_repr(self, *, dict_: AsyncDict[str, int]) -> None:
+        assert isinstance(repr(dict_), str)
+
+    @given(dict_=async_dicts)
+    def test_reversed(self, *, dict_: AsyncDict[str, int]) -> None:
+        for key in reversed(dict_):
+            assert isinstance(key, str)
+
+    @given(dict_=async_dicts)
+    def test_str(self, *, dict_: AsyncDict[str, int]) -> None:
+        assert isinstance(str(dict_), str)
 
 
 class TestEnhancedQueue:

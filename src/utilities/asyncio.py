@@ -90,9 +90,6 @@ class AsyncDict[K, V]:
         self._dict = dict[K, V](*args, **kwargs)
         self._lock = Lock()
 
-    def __iter__(self) -> Iterator[K]:
-        yield from self._dict
-
     async def __aenter__(self) -> dict[K, V]:
         await self._lock.__aenter__()
         return self._dict
@@ -117,6 +114,9 @@ class AsyncDict[K, V]:
 
     def __getitem__(self, key: K, /) -> V:
         return self._dict[key]
+
+    def __iter__(self) -> Iterator[K]:
+        yield from self._dict
 
     def __len__(self) -> int:
         return len(self._dict)
