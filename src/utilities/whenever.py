@@ -26,6 +26,7 @@ from whenever import (
     PlainDateTime,
     Time,
     TimeDelta,
+    Weekday,
     YearMonth,
     ZonedDateTime,
 )
@@ -36,6 +37,7 @@ from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import (
     DateOrDateTimeDelta,
+    DateTimeRoundMode,
     DateTimeRoundUnit,
     Delta,
     MaybeStr,
@@ -503,6 +505,108 @@ class _MinMaxDatePeriodError(MinMaxDateError):
         return (
             f"Min date must be at most max date; got {self.min_date} > {self.max_date}"
         )
+
+
+##
+
+
+def round_date_or_date_time(
+    date_or_date_time: Date | PlainDateTime | ZonedDateTime,
+    duration: Delta,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+    weekday: Weekday | None = None,
+) -> Date | PlainDateTime | ZonedDateTime:
+    """Round a datetime."""
+    match date_or_date_time, duration, weekday:
+        case Date() as date, _, Weekday() | None:
+            return _round_date
+    a = 1
+    date_or_date_time.round()
+    return None
+
+
+def _round_datetime_to_days(
+    duration: Delta, /
+) -> tuple[int, Literal["W", "D", "H", "M", "S", "ms", "us", "ns"]]:
+    try:
+        weeks = to_weeks(duration)
+    except ToWeeksError:
+        pass
+    else:
+        return weeks, "W"
+    try:
+        days = to_days(duration)
+    except ToDaysError:
+        pass
+    else:
+        return days, "D"
+    try:
+        hours = to_hours(duration)
+    except ToHoursError:
+        pass
+    else:
+        if (0 < hours < 24) and (24 % hours == 0):
+            return hours, "H"
+        raise _RoundDateOrDateTimeIncrementError(unit="H", hours=hours, divisor=24)
+    try:
+        minutes = to_minutes(duration)
+    except ToMinutesError:
+        pass
+    else:
+        if (0 < minutes < 60) and (60 % minutes == 0):
+            return minutes, "M"
+        raise _RoundDateOrDateTimeIncrementError(unit="M", minutes=minutes, divisor=60)
+    try:
+        seconds = to_seconds(duration)
+    except ToSecondsError:
+        pass
+    else:
+        if (0 < seconds < 60) and (60 % seconds == 0):
+            return seconds, "M"
+        raise _RoundDateOrDateTimeIncrementError(unit="M", seconds=seconds, divisor=60)
+    try:
+        seconds = to_seconds(duration)
+    except ToSecondsError:
+        msg = f"Invalid duration; got {duration}"
+        raise ValueError(msg) from None
+    return f"{seconds} {DurationUnit.S.value}"
+
+
+def to_duration(duration: Delta, /) -> str:
+    """Convert a datetime-delta into a duration string."""
+    if isinstance(duration, DateDelta | DateTimeDelta):
+        try:
+            years = to_years(duration)
+        except ToYearsError:
+            pass
+        else:
+            return f"{years} {DurationUnit.Y.value}"
+        try:
+            months = to_months(duration)
+        except ToMonthsError:
+            pass
+        else:
+            return f"{months} {DurationUnit.M.value}"
+    try:
+        weeks = to_weeks(duration)
+    except ToWeeksError:
+        pass
+    else:
+        return f"{weeks} {DurationUnit.W.value}"
+    try:
+        days = to_days(duration)
+    except ToDaysError:
+        pass
+    else:
+        return f"{days} {DurationUnit.D.value}"
+    try:
+        seconds = to_seconds(duration)
+    except ToSecondsError:
+        msg = f"Invalid duration; got {duration}"
+        raise ValueError(msg) from None
+    return f"{seconds} {DurationUnit.S.value}"
 
 
 ##
