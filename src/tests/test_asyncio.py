@@ -115,9 +115,24 @@ class TestAsyncDict:
         assert isinstance(dict_, AsyncDict)
 
     @given(dict_=async_dicts, key=text_ascii())
+    def test_get(self, *, dict_: AsyncDict[str, int], key: str) -> None:
+        if key in dict_:
+            assert isinstance(dict_.get(key), int)
+        else:
+            assert dict_.get(key) is None
+
+    @given(dict_=async_dicts, key=text_ascii())
+    def test_get_default(self, *, dict_: AsyncDict[str, int], key: str) -> None:
+        value = dict_.get(key, None)
+        assert isinstance(value, int) or (value is None)
+
+    @given(dict_=async_dicts, key=text_ascii())
     def test_getitem(self, *, dict_: AsyncDict[str, int], key: str) -> None:
-        with suppress(KeyError):
-            _ = dict_[key]
+        if key in dict_:
+            assert isinstance(dict_[key], int)
+        else:
+            with raises(KeyError):
+                _ = dict_[key]
 
     @given(dict_=async_dicts)
     def test_iter(self, *, dict_: AsyncDict[str, int]) -> None:

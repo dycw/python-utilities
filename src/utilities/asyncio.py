@@ -169,8 +169,12 @@ class AsyncDict[K, V]:
     def get(self, key: K, default: V, /) -> V: ...
     @overload
     def get[V2](self, key: K, default: V2, /) -> V | V2: ...
-    def get(self, key: K, default: Any = None, /) -> Any:
-        return self._dict.get(key, default)
+    def get(self, key: K, default: Any = sentinel, /) -> Any:
+        match default:
+            case Sentinel():
+                return self._dict.get(key)
+            case _:
+                return self._dict.get(key, default)
 
     def keys(self) -> KeysView[K]:
         return self._dict.keys()
