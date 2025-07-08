@@ -71,8 +71,6 @@ from utilities.pathlib import module_path, temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
-from utilities.types import DateTimeRoundUnit
-from utilities.typing import get_literal_elements
 from utilities.version import Version
 from utilities.whenever import (
     DATE_DELTA_MAX,
@@ -88,7 +86,6 @@ from utilities.whenever import (
     DAY,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
-    Freq,
     to_date_time_delta,
     to_days,
     to_nanoseconds,
@@ -484,38 +481,6 @@ def floats_extra(
         element = draw2(draw, sampled_from(candidates))
         return float(element)
     return element
-
-
-##
-
-
-@composite
-def freqs(
-    draw: DrawFn, /, *, unit: MaybeSearchStrategy[DateTimeRoundUnit | None] = None
-) -> Freq:
-    unit_ = draw2(draw, unit, _freq_units())
-    match unit_:
-        case "day":
-            return Freq(unit=unit_)
-        case "hour":
-            return Freq(unit=unit_, increment=draw(_freq_increments(24)))
-        case "minute" | "second":
-            return Freq(unit=unit_, increment=draw(_freq_increments(60)))
-        case "millisecond" | "microsecond" | "nanosecond":
-            return Freq(unit=unit_, increment=draw(_freq_increments(1000)))
-        case _ as never:
-            assert_never(never)
-
-
-@composite
-def _freq_units(draw: DrawFn, /) -> DateTimeRoundUnit:
-    return draw(sampled_from(get_literal_elements(DateTimeRoundUnit)))
-
-
-@composite
-def _freq_increments(draw: DrawFn, n: int, /) -> int:
-    divisors = [i for i in range(1, n) if n % i == 0]
-    return draw(sampled_from(divisors))
 
 
 ##
@@ -1408,7 +1373,6 @@ __all__ = [
     "float64s",
     "float_arrays",
     "floats_extra",
-    "freqs",
     "git_repos",
     "hashables",
     "import_froms",

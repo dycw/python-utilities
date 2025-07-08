@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from functools import cache
 from logging import LogRecord
@@ -9,9 +9,7 @@ from statistics import fmean
 from typing import (
     TYPE_CHECKING,
     Any,
-    ClassVar,
     Literal,
-    Self,
     SupportsFloat,
     assert_never,
     cast,
@@ -26,21 +24,14 @@ from whenever import (
     PlainDateTime,
     Time,
     TimeDelta,
+    Weekday,
     YearMonth,
     ZonedDateTime,
 )
 
 from utilities.math import sign
 from utilities.platform import get_strftime
-from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import (
-    DateOrDateTimeDelta,
-    DateTimeRoundUnit,
-    Delta,
-    MaybeStr,
-    TimeOrDateTimeDelta,
-)
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
 
@@ -48,8 +39,12 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
     from utilities.types import (
+        DateOrDateTimeDelta,
+        DateTimeRoundMode,
+        Delta,
         MaybeCallableDate,
         MaybeCallableZonedDateTime,
+        TimeOrDateTimeDelta,
         TimeZoneLike,
     )
 
@@ -228,127 +223,6 @@ def format_compact(
 ##
 
 
-class Freq:
-    """A rounding frequency."""
-
-    unit: DateTimeRoundUnit
-    increment: int
-    _mapping: ClassVar[Mapping[DateTimeRoundUnit, _DateTimeRoundUnitAbbrev]] = {
-        "day": "D",
-        "hour": "H",
-        "minute": "M",
-        "second": "S",
-        "millisecond": "ms",
-        "microsecond": "us",
-        "nanosecond": "ns",
-    }
-
-    def __init__(
-        self, *, unit: DateTimeRoundUnit = "second", increment: int = 1
-    ) -> None:
-        super().__init__()
-        if (unit == "day") and (increment != 1):
-            raise _FreqDayIncrementError(increment=increment)
-        if (unit == "hour") and not ((0 < increment < 24) and (24 % increment == 0)):
-            raise _FreqIncrementError(unit=unit, increment=increment, divisor=24)
-        if (unit in {"minute", "second"}) and not (
-            (0 < increment < 60) and (60 % increment == 0)
-        ):
-            raise _FreqIncrementError(unit=unit, increment=increment, divisor=60)
-        if (unit in {"millisecond", "microsecond", "nanosecond"}) and not (
-            (0 < increment < 1000) and (1000 % increment == 0)
-        ):
-            raise _FreqIncrementError(unit=unit, increment=increment, divisor=1000)
-        self.unit = unit
-        self.increment = increment
-
-    @override
-    def __eq__(self, other: object, /) -> bool:
-        if not isinstance(other, Freq):
-            return NotImplemented
-        return (self.unit == other.unit) and (self.increment == other.increment)
-
-    @override
-    def __hash__(self) -> int:
-        return hash((self.unit, self.increment))
-
-    @override
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}(unit={self.unit!r}, increment={self.increment})"
-
-    @classmethod
-    def parse(cls, text: str, /) -> Self:
-        try:
-            increment, abbrev = extract_groups(r"^(\d*)(D|H|M|S|ms|us|ns)$", text)
-        except ExtractGroupsError:
-            raise _FreqParseError(text=text) from None
-        return cls(
-            unit=cls._expand(cast("_DateTimeRoundUnitAbbrev", abbrev)),
-            increment=int(increment) if len(increment) >= 1 else 1,
-        )
-
-    def serialize(self) -> str:
-        if self.increment == 1:
-            return self._abbreviation
-        return f"{self.increment}{self._abbreviation}"
-
-    @classmethod
-    def _abbreviate(cls, unit: DateTimeRoundUnit, /) -> _DateTimeRoundUnitAbbrev:
-        return cls._mapping[unit]
-
-    @property
-    def _abbreviation(self) -> _DateTimeRoundUnitAbbrev:
-        return self._mapping[self.unit]
-
-    @classmethod
-    def _expand(cls, unit: _DateTimeRoundUnitAbbrev, /) -> DateTimeRoundUnit:
-        values: set[DateTimeRoundUnit] = {
-            k for k, v in cls._mapping.items() if v == unit
-        }
-        (value,) = values
-        return value
-
-
-type FreqLike = MaybeStr[Freq]
-type _DateTimeRoundUnitAbbrev = Literal["D", "H", "M", "S", "ms", "us", "ns"]
-
-
-@dataclass(kw_only=True, slots=True)
-class FreqError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _FreqDayIncrementError(FreqError):
-    increment: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Increment must be 1 for the 'day' unit; got {self.increment}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _FreqIncrementError(FreqError):
-    unit: DateTimeRoundUnit
-    increment: int
-    divisor: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Increment must be a proper divisor of {self.divisor} for the {self.unit!r} unit; got {self.increment}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _FreqParseError(FreqError):
-    text: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse frequency; got {self.text!r}"
-
-
-##
-
-
 def from_timestamp(i: float, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
     """Get a zoned datetime from a timestamp."""
     return ZonedDateTime.from_timestamp(i, tz=get_time_zone_name(time_zone))
@@ -503,6 +377,291 @@ class _MinMaxDatePeriodError(MinMaxDateError):
         return (
             f"Min date must be at most max date; got {self.min_date} > {self.max_date}"
         )
+
+
+##
+
+
+type _RoundDateDailyUnit = Literal["W", "D"]
+type _RoundDateTimeUnit = Literal["H", "M", "S", "ms", "us", "ns"]
+type _RoundDateOrDateTimeUnit = _RoundDateDailyUnit | _RoundDateTimeUnit
+
+
+def round_date_or_date_time[T: Date | PlainDateTime | ZonedDateTime](
+    date_or_date_time: T,
+    delta: Delta,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+    weekday: Weekday | None = None,
+) -> T:
+    """Round a datetime."""
+    increment, unit = _round_datetime_decompose(delta)
+    match date_or_date_time, unit, weekday:
+        case Date() as date, "W" | "D", _:
+            return _round_date_weekly_or_daily(
+                date, increment, unit, mode=mode, weekday=weekday
+            )
+        case Date() as date, "H" | "M" | "S" | "ms" | "us" | "ns", _:
+            raise _RoundDateOrDateTimeDateWithIntradayDeltaError(date=date, delta=delta)
+        case (PlainDateTime() | ZonedDateTime() as date_time, "W" | "D", _):
+            return _round_date_time_weekly_or_daily(
+                date_time, increment, unit, mode=mode, weekday=weekday
+            )
+        case (
+            PlainDateTime() | ZonedDateTime() as date_time,
+            "H" | "M" | "S" | "ms" | "us" | "ns",
+            None,
+        ):
+            return _round_date_time_intraday(date_time, increment, unit, mode=mode)
+        case (
+            PlainDateTime() | ZonedDateTime() as date_time,
+            "H" | "M" | "S" | "ms" | "us" | "ns",
+            Weekday(),
+        ):
+            raise _RoundDateOrDateTimeDateTimeIntraDayWithWeekdayError(
+                date_time=date_time, delta=delta, weekday=weekday
+            )
+        case _ as never:
+            assert_never(never)
+
+
+def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTimeUnit]:
+    try:
+        weeks = to_weeks(delta)
+    except ToWeeksError:
+        pass
+    else:
+        return weeks, "W"
+    try:
+        days = to_days(delta)
+    except ToDaysError:
+        pass
+    else:
+        return days, "D"
+    try:
+        hours = to_hours(delta)
+    except ToHoursError:
+        pass
+    else:
+        if (0 < hours < 24) and (24 % hours == 0):
+            return hours, "H"
+        raise _RoundDateOrDateTimeIncrementError(
+            duration=delta, increment=hours, divisor=24
+        )
+    try:
+        minutes = to_minutes(delta)
+    except ToMinutesError:
+        pass
+    else:
+        if (0 < minutes < 60) and (60 % minutes == 0):
+            return minutes, "M"
+        raise _RoundDateOrDateTimeIncrementError(
+            duration=delta, increment=minutes, divisor=60
+        )
+    try:
+        seconds = to_seconds(delta)
+    except ToSecondsError:
+        pass
+    else:
+        if (0 < seconds < 60) and (60 % seconds == 0):
+            return seconds, "S"
+        raise _RoundDateOrDateTimeIncrementError(
+            duration=delta, increment=seconds, divisor=60
+        )
+    try:
+        milliseconds = to_milliseconds(delta)
+    except ToMillisecondsError:
+        pass
+    else:
+        if (0 < milliseconds < 1000) and (1000 % milliseconds == 0):
+            return milliseconds, "ms"
+        raise _RoundDateOrDateTimeIncrementError(
+            duration=delta, increment=milliseconds, divisor=1000
+        )
+    try:
+        microseconds = to_microseconds(delta)
+    except ToMicrosecondsError:
+        pass
+    else:
+        if (0 < microseconds < 1000) and (1000 % microseconds == 0):
+            return microseconds, "us"
+        raise _RoundDateOrDateTimeIncrementError(
+            duration=delta, increment=microseconds, divisor=1000
+        )
+    try:
+        nanoseconds = to_nanoseconds(delta)
+    except ToNanosecondsError:
+        raise _RoundDateOrDateTimeInvalidDurationError(duration=delta) from None
+    if (0 < nanoseconds < 1000) and (1000 % nanoseconds == 0):
+        return nanoseconds, "ns"
+    raise _RoundDateOrDateTimeIncrementError(
+        duration=delta, increment=nanoseconds, divisor=1000
+    )
+
+
+def _round_date_weekly_or_daily(
+    date: Date,
+    increment: int,
+    unit: _RoundDateDailyUnit,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+    weekday: Weekday | None = None,
+) -> Date:
+    match unit, weekday:
+        case "W", _:
+            return _round_date_weekly(date, increment, mode=mode, weekday=weekday)
+        case "D", None:
+            return _round_date_daily(date, increment, mode=mode)
+        case "D", Weekday():
+            raise _RoundDateOrDateTimeDateWithWeekdayError(weekday=weekday)
+        case _ as never:
+            assert_never(never)
+
+
+def _round_date_weekly(
+    date: Date,
+    increment: int,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+    weekday: Weekday | None = None,
+) -> Date:
+    mapping = {
+        None: 0,
+        Weekday.MONDAY: 0,
+        Weekday.TUESDAY: 1,
+        Weekday.WEDNESDAY: 2,
+        Weekday.THURSDAY: 3,
+        Weekday.FRIDAY: 4,
+        Weekday.SATURDAY: 5,
+        Weekday.SUNDAY: 6,
+    }
+    base = Date.MIN.add(days=mapping[weekday])
+    return _round_date_daily(date, 7 * increment, mode=mode, base=base)
+
+
+def _round_date_daily(
+    date: Date,
+    increment: int,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+    base: Date = Date.MIN,
+) -> Date:
+    quotient, remainder = divmod(date.days_since(base), increment)
+    match mode:
+        case "half_even":
+            threshold = increment // 2 + (quotient % 2 == 0) or 1
+        case "ceil":
+            threshold = 1
+        case "floor":
+            threshold = increment + 1
+        case "half_floor":
+            threshold = increment // 2 + 1
+        case "half_ceil":
+            threshold = increment // 2 or 1
+        case _ as never:
+            assert_never(never)
+    round_up = remainder >= threshold
+    return base.add(days=(quotient + round_up) * increment)
+
+
+def _round_date_time_intraday[T: PlainDateTime | ZonedDateTime](
+    date_time: T,
+    increment: int,
+    unit: _RoundDateTimeUnit,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+) -> T:
+    match unit:
+        case "H":
+            unit_use = "hour"
+        case "M":
+            unit_use = "minute"
+        case "S":
+            unit_use = "second"
+        case "ms":
+            unit_use = "millisecond"
+        case "us":
+            unit_use = "microsecond"
+        case "ns":
+            unit_use = "nanosecond"
+        case _ as never:
+            assert_never(never)
+    return date_time.round(unit_use, increment=increment, mode=mode)
+
+
+def _round_date_time_weekly_or_daily[T: PlainDateTime | ZonedDateTime](
+    date_time: T,
+    increment: int,
+    unit: _RoundDateDailyUnit,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+    weekday: Weekday | None = None,
+) -> T:
+    rounded = cast("T", date_time.round("day", mode=mode))
+    new_date = _round_date_weekly_or_daily(
+        rounded.date(), increment, unit, mode=mode, weekday=weekday
+    )
+    return date_time.replace_date(new_date).replace_time(Time())
+
+
+@dataclass(kw_only=True, slots=True)
+class RoundDateOrDateTimeError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _RoundDateOrDateTimeIncrementError(RoundDateOrDateTimeError):
+    duration: Delta
+    increment: int
+    divisor: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Duration {self.duration} increment must be a proper divisor of {self.divisor}; got {self.increment}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _RoundDateOrDateTimeInvalidDurationError(RoundDateOrDateTimeError):
+    duration: Delta
+
+    @override
+    def __str__(self) -> str:
+        return f"Duration must be valid; got {self.duration}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _RoundDateOrDateTimeDateWithIntradayDeltaError(RoundDateOrDateTimeError):
+    date: Date
+    delta: Delta
+
+    @override
+    def __str__(self) -> str:
+        return f"Dates must not be given intraday durations; got {self.date} and {self.delta}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _RoundDateOrDateTimeDateWithWeekdayError(RoundDateOrDateTimeError):
+    weekday: Weekday
+
+    @override
+    def __str__(self) -> str:
+        return f"Daily rounding must not be given a weekday; got {self.weekday}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _RoundDateOrDateTimeDateTimeIntraDayWithWeekdayError(RoundDateOrDateTimeError):
+    date_time: PlainDateTime | ZonedDateTime
+    delta: Delta
+    weekday: Weekday
+
+    @override
+    def __str__(self) -> str:
+        return f"Date-times and intraday rounding must not be given a weekday; got {self.date_time}, {self.delta} and {self.weekday}"
 
 
 ##
@@ -1396,11 +1555,9 @@ __all__ = [
     "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
-    "Freq",
-    "FreqError",
-    "FreqLike",
     "MeanDateTimeError",
     "MinMaxDateError",
+    "RoundDateOrDateTimeError",
     "ToDaysError",
     "ToMinutesError",
     "ToMonthsAndDaysError",
@@ -1424,6 +1581,7 @@ __all__ = [
     "get_today_local",
     "mean_datetime",
     "min_max_date",
+    "round_date_or_date_time",
     "sub_year_month",
     "to_date",
     "to_date_time_delta",

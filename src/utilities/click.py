@@ -10,13 +10,11 @@ import whenever
 from click import Choice, Context, Parameter, ParamType
 from click.types import IntParamType, StringParamType
 
-import utilities.whenever
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import EnsureStrError, ensure_str, get_class_name
 from utilities.iterables import is_iterable_not_str
 from utilities.parse import ParseObjectError, parse_object
 from utilities.text import split_str
-from utilities.whenever import FreqLike, _FreqParseError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -173,32 +171,6 @@ class Enum[E: enum.Enum](ParamType):
         _ = ctx
         desc = ",".join(e.name for e in self._enum)
         return _make_metavar(param, desc)
-
-
-class Freq(ParamType):
-    """An frequency-valued parameter."""
-
-    name = "freq"
-
-    @override
-    def __repr__(self) -> str:
-        return self.name.upper()
-
-    @override
-    def convert(
-        self, value: FreqLike, param: Parameter | None, ctx: Context | None
-    ) -> utilities.whenever.Freq:
-        """Convert a value into the `Freq` type."""
-        match value:
-            case utilities.whenever.Freq():
-                return value
-            case str():
-                try:
-                    return utilities.whenever.Freq.parse(value)
-                except _FreqParseError as error:
-                    self.fail(str(error), param, ctx)
-            case _ as never:
-                assert_never(never)
 
 
 class IPv4Address(ParamType):
@@ -597,7 +569,6 @@ __all__ = [
     "ExistingDirPath",
     "ExistingFilePath",
     "FilePath",
-    "Freq",
     "FrozenSetChoices",
     "FrozenSetEnums",
     "FrozenSetParameter",
