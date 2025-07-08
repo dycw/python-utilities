@@ -526,10 +526,12 @@ def round_date_or_date_time[T: Date | PlainDateTime | ZonedDateTime](
     """Round a datetime."""
     increment, unit = _round_datetime_decompose(delta)
     match date_or_date_time, unit, weekday:
-        case Date() as date, "W" | "D", Weekday() | None:
+        case Date() as date, "W" | "D", _:
             return _round_date_weekly_or_daily(
                 date, increment, unit, mode=mode, weekday=weekday
             )
+        case Date() as date, _, _:
+            raise _RoundDateOrDateTimeDateWithIntradayDeltaError(date=date, delta=delta)
         case (
             PlainDateTime() | ZonedDateTime() as date_time,
             "W" | "D",
@@ -754,6 +756,16 @@ class _RoundDateOrDateTimeInvalidDurationError(RoundDateOrDateTimeError):
     @override
     def __str__(self) -> str:
         return f"Duration must be valid; got {self.duration}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _RoundDateOrDateTimeDateWithIntradayDeltaError(RoundDateOrDateTimeError):
+    date: Date
+    delta: Delta
+
+    @override
+    def __str__(self) -> str:
+        return f"Dates must not be given intraday durations; got {self.date} and {self.delta}"
 
 
 @dataclass(kw_only=True, slots=True)
