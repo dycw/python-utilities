@@ -685,7 +685,7 @@ class TestToMicroseconds:
             ),
         ):
             delta = DateDelta(days=days)
-        assert to_microseconds(delta) == (24 * 60 * 60 * int(1e3) * days)
+        assert to_microseconds(delta) == (24 * 60 * 60 * int(1e6) * days)
 
     @given(cls=sampled_from([TimeDelta, DateTimeDelta]), microseconds=integers())
     def test_time_or_date_time_delta(
