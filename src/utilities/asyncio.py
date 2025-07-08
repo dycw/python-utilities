@@ -132,6 +132,10 @@ class AsyncDict[K, V]:
     def __str__(self) -> str:
         return str(self._dict)
 
+    @property
+    def empty(self) -> bool:
+        return len(self) == 0
+
     @classmethod
     @overload
     def fromkeys[T](
@@ -180,9 +184,13 @@ class AsyncDict[K, V]:
     async def pop(self, key: K, default: V, /) -> V: ...
     @overload
     async def pop[V2](self, key: K, default: V2, /) -> V | V2: ...
-    async def pop(self, key: K, default: Any = None, /) -> Any:
+    async def pop(self, key: K, default: Any = sentinel, /) -> Any:
         async with self._lock:
-            return self._dict.pop(key, default)
+            match default:
+                case Sentinel():
+                    return self._dict.pop(key)
+                case _:
+                    return self._dict.pop(key, default)
 
     async def popitem(self) -> tuple[K, V]:
         async with self._lock:
