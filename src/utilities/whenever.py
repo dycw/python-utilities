@@ -510,103 +510,185 @@ class _MinMaxDatePeriodError(MinMaxDateError):
 ##
 
 
+type _RoundDateDailyUnit = Literal["W", "D"]
+type _RoundDateTimeUnit = Literal["H", "M", "S", "ms", "us", "ns"]
+type _RoundDateOrDateTimeUnit = Literal["W", "D", "H", "M", "S", "ms", "us", "ns"]
+
+
+@overload
+def round_date_or_date_time(
+    date_or_date_time: Date,
+    delta: Delta,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+    weekday: Weekday | None = None,
+) -> Date: ...
+@overload
+def round_date_or_date_time(
+    date_or_date_time: PlainDateTime,
+    delta: Delta,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+    weekday: Weekday | None = None,
+) -> PlainDateTime: ...
+@overload
+def round_date_or_date_time(
+    date_or_date_time: ZonedDateTime,
+    delta: Delta,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+    weekday: Weekday | None = None,
+) -> ZonedDateTime: ...
 def round_date_or_date_time(
     date_or_date_time: Date | PlainDateTime | ZonedDateTime,
-    duration: Delta,
+    delta: Delta,
     /,
     *,
     mode: DateTimeRoundMode = "half_even",
     weekday: Weekday | None = None,
 ) -> Date | PlainDateTime | ZonedDateTime:
     """Round a datetime."""
-    match date_or_date_time, duration, weekday:
-        case Date() as date, _, Weekday() | None:
+    quantity, unit = _round_datetime_decompose(delta)
+    match date_or_date_time, unit, weekday:
+        case Date() as date, "W" | "D", Weekday() | None:
             return _round_date
-    a = 1
-    date_or_date_time.round()
-    return None
+        case PlainDateTime() | ZonedDateTime() as datetime, "W" | "D", None:
+            z
+            raise NotImplementedError
+        case (
+            PlainDateTime() | ZonedDateTime() as date_time,
+            "H" | "M" | "S" | "ms" | "us" | "ns",
+            None,
+        ):
+            return _round_datetime_intraday(date_time, quantity, unit, mode=mode)
+        case _:
+            raise NotImplementedError(date_or_date_time, delta, unit, weekday)
 
 
-def _round_datetime_to_days(
-    duration: Delta, /
-) -> tuple[int, Literal["W", "D", "H", "M", "S", "ms", "us", "ns"]]:
+def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTimeUnit]:
     try:
-        weeks = to_weeks(duration)
+        weeks = to_weeks(delta)
     except ToWeeksError:
         pass
     else:
         return weeks, "W"
     try:
-        days = to_days(duration)
+        days = to_days(delta)
     except ToDaysError:
         pass
     else:
         return days, "D"
     try:
-        hours = to_hours(duration)
+        hours = to_hours(delta)
     except ToHoursError:
         pass
     else:
         if (0 < hours < 24) and (24 % hours == 0):
             return hours, "H"
-        raise _RoundDateOrDateTimeIncrementError(unit="H", hours=hours, divisor=24)
+        raise _RoundDateOrDateTimeIncrementError(
+            duration=delta, increment=hours, unit="H", divisor=24
+        )
     try:
-        minutes = to_minutes(duration)
+        minutes = to_minutes(delta)
     except ToMinutesError:
         pass
     else:
         if (0 < minutes < 60) and (60 % minutes == 0):
             return minutes, "M"
-        raise _RoundDateOrDateTimeIncrementError(unit="M", minutes=minutes, divisor=60)
+        raise _RoundDateOrDateTimeIncrementError(
+            duration=delta, increment=minutes, unit="M", divisor=60
+        )
     try:
-        seconds = to_seconds(duration)
+        seconds = to_seconds(delta)
     except ToSecondsError:
         pass
     else:
         if (0 < seconds < 60) and (60 % seconds == 0):
-            return seconds, "M"
-        raise _RoundDateOrDateTimeIncrementError(unit="M", seconds=seconds, divisor=60)
+            return seconds, "S"
+        raise _RoundDateOrDateTimeIncrementError(
+            duration=delta, increment=seconds, unit="S", divisor=60
+        )
     try:
-        seconds = to_seconds(duration)
-    except ToSecondsError:
-        msg = f"Invalid duration; got {duration}"
-        raise ValueError(msg) from None
-    return f"{seconds} {DurationUnit.S.value}"
-
-
-def to_duration(duration: Delta, /) -> str:
-    """Convert a datetime-delta into a duration string."""
-    if isinstance(duration, DateDelta | DateTimeDelta):
-        try:
-            years = to_years(duration)
-        except ToYearsError:
-            pass
-        else:
-            return f"{years} {DurationUnit.Y.value}"
-        try:
-            months = to_months(duration)
-        except ToMonthsError:
-            pass
-        else:
-            return f"{months} {DurationUnit.M.value}"
-    try:
-        weeks = to_weeks(duration)
-    except ToWeeksError:
+        milliseconds = to_milliseconds(delta)
+    except ToMillisecondsError:
         pass
     else:
-        return f"{weeks} {DurationUnit.W.value}"
+        if (0 < milliseconds < 1000) and (1000 % milliseconds == 0):
+            return milliseconds, "ms"
+        raise _RoundDateOrDateTimeIncrementError(
+            duration=delta, increment=milliseconds, unit="ms", divisor=1000
+        )
     try:
-        days = to_days(duration)
-    except ToDaysError:
+        microseconds = to_microseconds(delta)
+    except ToMicrosecondsError:
         pass
     else:
-        return f"{days} {DurationUnit.D.value}"
+        if (0 < microseconds < 1000) and (1000 % microseconds == 0):
+            return microseconds, "us"
+        raise _RoundDateOrDateTimeIncrementError(
+            duration=delta, increment=microseconds, unit="us", divisor=1000
+        )
     try:
-        seconds = to_seconds(duration)
-    except ToSecondsError:
-        msg = f"Invalid duration; got {duration}"
-        raise ValueError(msg) from None
-    return f"{seconds} {DurationUnit.S.value}"
+        nanoseconds = to_nanoseconds(delta)
+    except ToNanosecondsError:
+        raise _RoundDateOrDateTimeInvalidDurationError(duration=delta) from None
+    if (0 < nanoseconds < 1000) and (1000 % nanoseconds == 0):
+        return nanoseconds, "ns"
+    raise _RoundDateOrDateTimeIncrementError(
+        duration=delta, increment=nanoseconds, unit="ns", divisor=1000
+    )
+
+
+def _round_datetime_intraday(
+    date_time: PlainDateTime | ZonedDateTime,
+    increment: int,
+    unit: _RoundDateTimeUnit,
+    /,
+    *,
+    mode: DateTimeRoundMode = "half_even",
+) -> PlainDateTime | ZonedDateTime:
+    match unit:
+        case "H":
+            unit_use = "hour"
+        case "M":
+            unit_use = "minute"
+        case "S":
+            unit_use = "second"
+        case "ms":
+            unit_use = "millisecond"
+        case "us":
+            unit_use = "microsecond"
+        case "ns":
+            unit_use = "nanosecond"
+        case _ as never:
+            assert_never(never)
+    return date_time.round(unit_use, increment=increment, mode=mode)
+
+
+@dataclass(kw_only=True, slots=True)
+class RoundDateOrDateTimeError(Exception):
+    duration: Delta
+
+
+@dataclass(kw_only=True, slots=True)
+class _RoundDateOrDateTimeIncrementError(RoundDateOrDateTimeError):
+    increment: int
+    unit: _RoundDateOrDateTimeUnit
+    divisor: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid duration: {self.duration} increment must be a proper divisor of {self.divisor}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _RoundDateOrDateTimeInvalidDurationError(RoundDateOrDateTimeError):
+    @override
+    def __str__(self) -> str:
+        return f"Invalid duration: {self.duration}"
 
 
 ##

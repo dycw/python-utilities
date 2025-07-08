@@ -74,6 +74,9 @@ from utilities.whenever import (
     _MinMaxDateMaxDateError,
     _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
+    _round_datetime_decompose,
+    _RoundDateOrDateTimeIncrementError,
+    _RoundDateOrDateTimeInvalidDurationError,
     _ToDaysMonthsError,
     _ToDaysNanosecondsError,
     _ToHoursMonthsError,
@@ -107,6 +110,7 @@ from utilities.whenever import (
     get_today_local,
     mean_datetime,
     min_max_date,
+    round_date_or_date_time,
     sub_year_month,
     to_date,
     to_date_time_delta,
@@ -544,6 +548,58 @@ class TestMinMaxDate:
             match="Min date must be at most max date; got .* > .*",
         ):
             _ = min_max_date(min_date=dates[1], max_date=dates[0])
+
+
+@mark.only
+class TestRoundDateOrDateTime:
+    @mark.parametrize(
+        ("delta", "expected"),
+        [
+            param(TimeDelta(hours=2), ZonedDateTime(2000, 1, 2, 2, tz=UTC.key)),
+            param(TimeDelta(minutes=2), ZonedDateTime(2000, 1, 2, 3, 4, tz=UTC.key)),
+            param(TimeDelta(seconds=2), ZonedDateTime(2000, 1, 2, 3, 4, 4, tz=UTC.key)),
+            param(
+                TimeDelta(milliseconds=2),
+                ZonedDateTime(2000, 1, 2, 3, 4, 5, nanosecond=122000000, tz=UTC.key),
+            ),
+            param(
+                TimeDelta(microseconds=2),
+                ZonedDateTime(2000, 1, 2, 3, 4, 5, nanosecond=123456000, tz=UTC.key),
+            ),
+            param(
+                TimeDelta(nanoseconds=2),
+                ZonedDateTime(2000, 1, 2, 3, 4, 5, nanosecond=123456788, tz=UTC.key),
+            ),
+        ],
+    )
+    def test_main(self, *, delta: Delta, expected: ZonedDateTime) -> None:
+        now = ZonedDateTime(2000, 1, 2, 3, 4, 5, nanosecond=123456789, tz=UTC.key)
+        result = round_date_or_date_time(now, delta, mode="floor")
+        assert result.exact_eq(expected)
+
+    @mark.parametrize(
+        "delta",
+        [
+            param(TimeDelta(hours=5)),
+            param(TimeDelta(minutes=7)),
+            param(TimeDelta(seconds=7)),
+            param(TimeDelta(milliseconds=3)),
+            param(TimeDelta(microseconds=3)),
+            param(TimeDelta(nanoseconds=3)),
+        ],
+    )
+    def test_error_increment(self, *, delta: TimeDelta) -> None:
+        with raises(
+            _RoundDateOrDateTimeIncrementError,
+            match=r"Invalid duration: PT.* increment must be a proper divisor of \d+",
+        ):
+            _ = _round_datetime_decompose(delta)
+
+    def test_error_invalid(self) -> None:
+        with raises(
+            _RoundDateOrDateTimeInvalidDurationError, match="Invalid duration: P1M"
+        ):
+            _ = _round_datetime_decompose(DateDelta(months=1))
 
 
 class TestToDate:
