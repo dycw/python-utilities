@@ -226,6 +226,9 @@ type DateDeltaLike = MaybeStr[DateDelta]
 type DateLike = MaybeStr[Date]
 type DateOrDateTimeDelta = DateDelta | DateTimeDelta
 type DateTimeDeltaLike = MaybeStr[DateTimeDelta]
+type DateTimeRoundMode = Literal[
+    "ceil", "floor", "half_ceil", "half_floor", "half_even"
+]
 type Delta = DateDelta | TimeDelta | DateTimeDelta
 type MaybeCallableDate = MaybeCallable[Date]
 type MaybeCallableZonedDateTime = MaybeCallable[ZonedDateTime]
@@ -234,15 +237,9 @@ type PlainDateTimeLike = MaybeStr[PlainDateTime]
 type TimeDeltaLike = MaybeStr[TimeDelta]
 type TimeLike = MaybeStr[Time]
 type TimeOrDateTimeDelta = TimeDelta | DateTimeDelta
+type WeekDay = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 type YearMonthLike = MaybeStr[YearMonth]
 type ZonedDateTimeLike = MaybeStr[ZonedDateTime]
-type DateTimeRoundUnit = Literal[
-    "day", "hour", "minute", "second", "millisecond", "microsecond", "nanosecond"
-]
-type DateTimeRoundMode = Literal[
-    "ceil", "floor", "half_ceil", "half_floor", "half_even"
-]
-type WeekDay = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 
 # zoneinfo
@@ -264,7 +261,6 @@ __all__ = [
     "DateOrDateTimeDelta",
     "DateTimeDeltaLike",
     "DateTimeRoundMode",
-    "DateTimeRoundUnit",
     "Delta",
     "EnumLike",
     "ExcInfo",

@@ -10,12 +10,14 @@ from luigi import build as _build
 from luigi.parameter import ParameterVisibility, _no_value
 from whenever import ZonedDateTime
 
+from utilities.whenever import SECOND, round_date_or_date_time
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
     from luigi.execution_summary import LuigiRunResult
 
-    from utilities.types import DateTimeRoundUnit, LogLevel, PathLike, ZonedDateTimeLike
+    from utilities.types import Delta, LogLevel, PathLike, ZonedDateTimeLike
 
 
 # parameters
@@ -24,8 +26,7 @@ if TYPE_CHECKING:
 class ZonedDateTimeParameter(Parameter):
     """A parameter which takes the value of a zoned datetime."""
 
-    _unit: DateTimeRoundUnit
-    _increment: int
+    _delta: Delta
 
     @override
     def __init__[T](
@@ -40,8 +41,7 @@ class ZonedDateTimeParameter(Parameter):
         batch_method: Callable[[Iterable[T]], T] | None = None,
         visibility: ParameterVisibility = ParameterVisibility.PUBLIC,
         *,
-        unit: DateTimeRoundUnit = "second",
-        increment: int = 1,
+        delta: Delta = SECOND,
     ) -> None:
         super().__init__(
             default,
@@ -54,8 +54,7 @@ class ZonedDateTimeParameter(Parameter):
             batch_method,
             visibility,
         )
-        self._unit = unit
-        self._increment = increment
+        self._delta = delta
 
     @override
     def normalize(self, x: ZonedDateTimeLike) -> ZonedDateTime:
@@ -66,7 +65,7 @@ class ZonedDateTimeParameter(Parameter):
                 date_time = ZonedDateTime.parse_common_iso(text)
             case _ as never:
                 assert_never(never)
-        return date_time.round(self._unit, increment=self._increment, mode="floor")
+        return round_date_or_date_time(date_time, self._delta, mode="floor")
 
     @override
     def parse(self, x: str) -> ZonedDateTime:

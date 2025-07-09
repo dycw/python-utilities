@@ -62,7 +62,7 @@ from utilities.types import (
     SupportsKeysAndGetItem,
     SupportsRichComparison,
 )
-from utilities.whenever import SECOND, get_now, to_nanoseconds
+from utilities.whenever import SECOND, get_now, round_date_or_date_time, to_nanoseconds
 
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
@@ -75,7 +75,7 @@ if TYPE_CHECKING:
 
     from whenever import TimeDelta, ZonedDateTime
 
-    from utilities.types import DateTimeRoundUnit, MaybeCallableEvent, MaybeType
+    from utilities.types import MaybeCallableEvent, MaybeType
 
 
 class AsyncDict[K, V]:
@@ -1171,11 +1171,9 @@ async def sleep_max(
 ##
 
 
-async def sleep_rounded(
-    *, unit: DateTimeRoundUnit = "second", increment: int = 1
-) -> None:
+async def sleep_rounded(delta: Delta, /) -> None:
     """Sleep until a rounded time."""
-    await sleep_until(get_now().round(unit, increment=increment, mode="ceil"))
+    await sleep_until(round_date_or_date_time(get_now(), delta, mode="ceil"))
 
 
 ##
