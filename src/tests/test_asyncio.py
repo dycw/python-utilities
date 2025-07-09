@@ -66,7 +66,7 @@ from utilities.iterables import one, unique_everseen
 from utilities.pytest import skipif_windows
 from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
-from utilities.whenever import SECOND, get_now
+from utilities.whenever import MILLISECOND, SECOND, get_now
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -1128,7 +1128,7 @@ class TestSleepUntil:
 
 class TestSleepUntilRounded:
     async def test_main(self) -> None:
-        await sleep_rounded(unit="millisecond", increment=10)
+        await sleep_rounded(10 * MILLISECOND)
 
 
 class TestStreamCommand:
