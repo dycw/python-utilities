@@ -10,12 +10,12 @@ from redis.asyncio import Redis
 
 from utilities.asyncio import sleep_td, timeout_td
 from utilities.iterables import always_iterable
-from utilities.whenever import MILLISECOND, SECOND
+from utilities.whenever import MILLISECOND, SECOND, to_seconds
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterable
 
-    from whenever import TimeDelta
+    from whenever import Delta
 
     from utilities.types import MaybeIterable
 
@@ -27,10 +27,10 @@ async def yield_access(
     /,
     *,
     num: int = 1,
-    timeout_acquire: TimeDelta | None = None,
-    timeout_release: TimeDelta = 10 * SECOND,
-    sleep: TimeDelta = MILLISECOND,
-    throttle: TimeDelta | None = None,
+    timeout_acquire: Delta | None = None,
+    timeout_release: Delta = 10 * SECOND,
+    sleep: Delta = MILLISECOND,
+    throttle: Delta | None = None,
 ) -> AsyncIterator[None]:
     """Acquire access to a locked resource, amongst 1 of multiple connections."""
     if num <= 0:
@@ -42,7 +42,7 @@ async def yield_access(
         AIORedlock(
             key=f"{key}_{i}_of_{num}",
             masters=masters,
-            auto_release_time=timeout_release.in_seconds(),
+            auto_release_time=to_seconds(timeout_release),
         )
         for i in range(1, num + 1)
     ]
@@ -65,8 +65,8 @@ async def _get_first_available_lock(
     /,
     *,
     num: int = 1,
-    timeout: TimeDelta | None = None,
-    sleep: TimeDelta | None = None,
+    timeout: Delta | None = None,
+    sleep: Delta | None = None,
 ) -> AIORedlock:
     locks = list(locks)  # skipif-ci-and-not-linux
     error = _YieldAccessUnableToAcquireLockError(  # skipif-ci-and-not-linux
@@ -103,7 +103,7 @@ class _YieldAccessNumLocksError(YieldAccessError):
 
 @dataclass(kw_only=True, slots=True)
 class _YieldAccessUnableToAcquireLockError(YieldAccessError):
-    timeout: TimeDelta | None
+    timeout: Delta | None
 
     @override
     def __str__(self) -> str:

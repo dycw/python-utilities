@@ -57,11 +57,12 @@ from utilities.functions import ensure_int, ensure_not_none, to_bool
 from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import (
+    Delta,
     MaybeCallableBool,
     SupportsKeysAndGetItem,
     SupportsRichComparison,
 )
-from utilities.whenever import SECOND, get_now
+from utilities.whenever import SECOND, get_now, to_nanoseconds
 
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
@@ -389,7 +390,7 @@ class EnhancedTaskGroup(TaskGroup):
 
     _max_tasks: int | None
     _semaphore: Semaphore | None
-    _timeout: TimeDelta | None
+    _timeout: Delta | None
     _error: MaybeType[BaseException]
     _debug: MaybeCallableBool
     _stack: AsyncExitStack
@@ -400,7 +401,7 @@ class EnhancedTaskGroup(TaskGroup):
         self,
         *,
         max_tasks: int | None = None,
-        timeout: TimeDelta | None = None,
+        timeout: Delta | None = None,
         error: MaybeType[BaseException] = TimeoutError,
         debug: MaybeCallableBool = False,
     ) -> None:
@@ -1159,12 +1160,12 @@ def put_items_nowait[T](items: Iterable[T], queue: Queue[T], /) -> None:
 
 
 async def sleep_max(
-    sleep: TimeDelta | None = None, /, *, random: Random = SYSTEM_RANDOM
+    sleep: Delta | None = None, /, *, random: Random = SYSTEM_RANDOM
 ) -> None:
     """Sleep which accepts deltas."""
     if sleep is None:
         return
-    await asyncio.sleep(random.uniform(0.0, sleep.in_seconds()))
+    await asyncio.sleep(random.uniform(0.0, to_nanoseconds(sleep) / 1e9))
 
 
 ##
@@ -1180,11 +1181,11 @@ async def sleep_rounded(
 ##
 
 
-async def sleep_td(delta: TimeDelta | None = None, /) -> None:
+async def sleep_td(delta: Delta | None = None, /) -> None:
     """Sleep which accepts deltas."""
     if delta is None:
         return
-    await sleep(delta.in_seconds())
+    await sleep(to_nanoseconds(delta) / 1e9)
 
 
 ##
@@ -1250,13 +1251,10 @@ async def _stream_one(
 
 @asynccontextmanager
 async def timeout_td(
-    timeout: TimeDelta | None = None,
-    /,
-    *,
-    error: MaybeType[BaseException] = TimeoutError,
+    timeout: Delta | None = None, /, *, error: MaybeType[BaseException] = TimeoutError
 ) -> AsyncIterator[None]:
     """Timeout context manager which accepts deltas."""
-    timeout_use = None if timeout is None else timeout.in_seconds()
+    timeout_use = None if timeout is None else (to_nanoseconds(timeout) / 1e9)
     try:
         async with asyncio.timeout(timeout_use):
             yield

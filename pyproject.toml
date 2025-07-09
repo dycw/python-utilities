@@ -107,7 +107,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.140.2"
+version = "0.140.3"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -140,7 +140,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.140.2"
+current_version = "0.140.3"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -248,6 +248,7 @@ addopts = [
 ]
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
+collect_imported_tests = false
 filterwarnings = [
   "error",
   "ignore:.*utcfromtimestamp.* is deprecated and scheduled for removal in a future version:DeprecationWarning",  # luigi
@@ -301,6 +302,7 @@ ignore = [
   "D107",  # undocumented-public-init
   "D203",  # one-blank-line-before-class
   "D213",  # multi-line-summary-second-line
+  "DOC",  # pydoclint
   "E501",  # line-too-long
   "PD",  # pandas-vet
   "PERF203",  # try-except-in-loop
