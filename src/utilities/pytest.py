@@ -28,9 +28,7 @@ from utilities.whenever import SECOND, get_now_local
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
 
-    from whenever import TimeDelta
-
-    from utilities.types import Coro, PathLike
+    from utilities.types import Coro, Delta, PathLike
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
@@ -151,7 +149,7 @@ class NodeIdToPathError(Exception):
 
 
 def throttle[F: Callable[..., MaybeCoro[None]]](
-    *, root: PathLike | None = None, delta: TimeDelta = SECOND, on_try: bool = False
+    *, root: PathLike | None = None, delta: Delta = SECOND, on_try: bool = False
 ) -> Callable[[F], F]:
     """Throttle a test. On success by default, on try otherwise."""
     return cast("Any", partial(_throttle_inner, root=root, delta=delta, on_try=on_try))
@@ -162,7 +160,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
     /,
     *,
     root: PathLike | None = None,
-    delta: TimeDelta = SECOND,
+    delta: Delta = SECOND,
     on_try: bool = False,
 ) -> F:
     """Throttle a test function/method."""
@@ -213,7 +211,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
             assert_never(never)
 
 
-def _skipif_recent(*, root: PathLike | None = None, delta: TimeDelta = SECOND) -> None:
+def _skipif_recent(*, root: PathLike | None = None, delta: Delta = SECOND) -> None:
     if skip is None:
         return  # pragma: no cover
     path = _get_path(root=root)
@@ -225,7 +223,9 @@ def _skipif_recent(*, root: PathLike | None = None, delta: TimeDelta = SECOND) -
         last = ZonedDateTime.parse_common_iso(contents)
     except ValueError:
         return
-    if (age := (get_now_local() - last)) < delta:
+    now = get_now_local()
+    if (now - delta) < last:
+        age = now - last
         _ = skip(reason=f"{_get_name()} throttled (age {age})")
 
 
