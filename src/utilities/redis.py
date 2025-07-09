@@ -27,7 +27,7 @@ from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, identity
 from utilities.iterables import always_iterable, one
 from utilities.orjson import deserialize, serialize
-from utilities.whenever import MILLISECOND, SECOND
+from utilities.whenever import MILLISECOND, SECOND, to_milliseconds, to_seconds
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -172,7 +172,7 @@ class RedisHashMapKey[K, V]:
                 "Awaitable[int]", redis.hset(self.name, mapping=cast("Any", ser))
             )
             if self.ttl is not None:
-                await redis.pexpire(self.name, self.ttl.py_timedelta())
+                await redis.pexpire(self.name, to_milliseconds(self.ttl))
         return result  # skipif-ci-and-not-linux
 
     async def values(self, redis: Redis, /) -> Sequence[V]:
@@ -415,7 +415,7 @@ class RedisKey[T]:
         """Set a value in `redis`."""
         ser = _serialize(value, serializer=self.serializer)  # skipif-ci-and-not-linux
         ttl = (  # skipif-ci-and-not-linux
-            None if self.ttl is None else round(self.ttl.in_milliseconds())
+            None if self.ttl is None else to_milliseconds(self.ttl)
         )
         async with timeout_td(  # skipif-ci-and-not-linux
             self.timeout, error=self.error
@@ -793,7 +793,7 @@ async def _subscribe_core(
     filter_: Callable[[Any], bool] | None = None,
 ) -> None:
     timeout_use = (  # skipif-ci-and-not-linux
-        None if timeout is None else timeout.in_seconds()
+        None if timeout is None else to_seconds(timeout)
     )
     is_subscribe_message = partial(  # skipif-ci-and-not-linux
         _is_message, channels={c.encode() for c in channels}
