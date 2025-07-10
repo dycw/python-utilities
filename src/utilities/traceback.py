@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 import sys
-from asyncio import run
 from dataclasses import dataclass
 from functools import partial
 from getpass import getuser
@@ -276,10 +275,9 @@ def _make_except_hook_inner(
         with writer(path, overwrite=True) as temp:
             _ = temp.write_text(full)
     if slack_url is not None:  # pragma: no cover
-        from utilities.slack_sdk import send_to_slack_async
+        from utilities.slack_sdk import send_to_slack
 
-        send = f"```{slim}```"
-        run(send_to_slack_async(slack_url, send))
+        send_to_slack(slack_url, f"```{slim}```")
     if to_bool(bool_=pudb):  # pragma: no cover
         from pudb import post_mortem
 
