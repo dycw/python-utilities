@@ -66,7 +66,7 @@ async def run_as_service(
                     else:
                         await func
                         func = None
-                except Exception:  # noqa: BLE001
+                except Exception as e:  # noqa: BLE001
                     if logger is not None:
                         get_logger(logger=logger).exception(
                             "Error running %r as a service", name
