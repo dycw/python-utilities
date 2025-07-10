@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-from asyncio import CancelledError, Event, Queue, Task, create_task
+from asyncio import CancelledError, Queue, Task, create_task
 from collections.abc import AsyncIterator, Callable, Mapping
 from contextlib import asynccontextmanager, suppress
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import partial
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    Self,
     TypedDict,
     TypeGuard,
     assert_never,
@@ -21,24 +20,14 @@ from typing import (
 
 from redis.asyncio import Redis
 
-from utilities.asyncio import EnhancedQueue, Looper, sleep_td, timeout_td
-from utilities.contextlib import suppress_super_object_attribute_error
+from utilities.asyncio import EnhancedQueue, sleep_td, timeout_td
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, identity
 from utilities.iterables import always_iterable, one
-from utilities.orjson import deserialize, serialize
 from utilities.whenever import MILLISECOND, SECOND, to_milliseconds, to_seconds
 
 if TYPE_CHECKING:
-    from collections.abc import (
-        AsyncIterator,
-        Awaitable,
-        Collection,
-        Iterable,
-        Iterator,
-        Sequence,
-    )
-    from types import TracebackType
+    from collections.abc import AsyncIterator, Awaitable, Collection, Iterable, Sequence
 
     from redis.asyncio import ConnectionPool
     from redis.asyncio.client import PubSub
@@ -592,81 +581,6 @@ class PublishError(Exception):
 ##
 
 
-@dataclass(kw_only=True)
-class PublishService[T](Looper[tuple[str, T]]):
-    """Service to publish items to Redis."""
-
-    # base
-    freq: TimeDelta = field(default=MILLISECOND, repr=False)
-    backoff: TimeDelta = field(default=SECOND, repr=False)
-    empty_upon_exit: bool = field(default=True, repr=False)
-    # self
-    redis: Redis
-    serializer: Callable[[T], EncodableT] = serialize
-    publish_timeout: TimeDelta = _PUBLISH_TIMEOUT
-
-    @override
-    async def core(self) -> None:
-        await super().core()  # skipif-ci-and-not-linux
-        while not self.empty():  # skipif-ci-and-not-linux
-            channel, data = self.get_left_nowait()
-            _ = await publish(
-                self.redis,
-                channel,
-                data,
-                serializer=self.serializer,
-                timeout=self.publish_timeout,
-            )
-
-
-##
-
-
-@dataclass(kw_only=True)
-class PublishServiceMixin[T]:
-    """Mix-in for the publish service."""
-
-    # base - looper
-    publish_service_freq: TimeDelta = field(default=MILLISECOND, repr=False)
-    publish_service_backoff: TimeDelta = field(default=SECOND, repr=False)
-    publish_service_empty_upon_exit: bool = field(default=False, repr=False)
-    publish_service_logger: str | None = field(default=None, repr=False)
-    publish_service_timeout: TimeDelta | None = field(default=None, repr=False)
-    publish_service_debug: bool = field(default=False, repr=False)
-    _is_pending_restart: Event = field(default_factory=Event, init=False, repr=False)
-    # base - publish service
-    publish_service_redis: Redis
-    publish_service_serializer: Callable[[T], EncodableT] = serialize
-    publish_service_publish_timeout: TimeDelta = _PUBLISH_TIMEOUT
-    # self
-    _publish_service: PublishService[T] = field(init=False, repr=False)
-
-    def __post_init__(self) -> None:
-        with suppress_super_object_attribute_error():  # skipif-ci-and-not-linux
-            super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
-        self._publish_service = PublishService(  # skipif-ci-and-not-linux
-            # looper
-            freq=self.publish_service_freq,
-            backoff=self.publish_service_backoff,
-            empty_upon_exit=self.publish_service_empty_upon_exit,
-            logger=self.publish_service_logger,
-            timeout=self.publish_service_timeout,
-            _debug=self.publish_service_debug,
-            # publish service
-            redis=self.publish_service_redis,
-            serializer=self.publish_service_serializer,
-            publish_timeout=self.publish_service_publish_timeout,
-        )
-
-    def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
-        with suppress_super_object_attribute_error():  # skipif-ci-and-not-linux
-            yield from super()._yield_sub_loopers()  # pyright: ignore[reportAttributeAccessIssue]
-        yield self._publish_service  # skipif-ci-and-not-linux
-
-
-##
-
-
 _SUBSCRIBE_TIMEOUT: Delta = SECOND
 _SUBSCRIBE_SLEEP: Delta = MILLISECOND
 
@@ -837,124 +751,6 @@ class _RedisMessage(TypedDict):
 ##
 
 
-@dataclass(kw_only=True)
-class SubscribeService[T](Looper[T]):
-    """Service to subscribe to Redis."""
-
-    # base
-    freq: TimeDelta = field(default=MILLISECOND, repr=False)
-    backoff: TimeDelta = field(default=SECOND, repr=False)
-    logger: str | None = field(default=__name__, repr=False)
-    # self
-    redis: Redis
-    channel: str
-    deserializer: Callable[[bytes], T] = deserialize
-    subscribe_timeout: TimeDelta | None = _SUBSCRIBE_TIMEOUT
-    subscribe_sleep: TimeDelta = _SUBSCRIBE_SLEEP
-    filter_: Callable[[T], bool] | None = None
-    _is_subscribed: Event = field(default_factory=Event, init=False, repr=False)
-
-    @override
-    async def __aenter__(self) -> Self:
-        _ = await super().__aenter__()  # skipif-ci-and-not-linux
-        match self._is_subscribed.is_set():  # skipif-ci-and-not-linux
-            case True:
-                _ = self._debug and self._logger.debug("%s: already subscribing", self)
-            case False:
-                _ = self._debug and self._logger.debug(
-                    "%s: starting subscription...", self
-                )
-                self._is_subscribed.set()
-                _ = await self._stack.enter_async_context(
-                    subscribe(
-                        self.redis,
-                        self.channel,
-                        self._queue,
-                        timeout=self.subscribe_timeout,
-                        sleep=self.subscribe_sleep,
-                        output=self.deserializer,
-                        filter_=self.filter_,
-                    )
-                )
-            case _ as never:
-                assert_never(never)
-        return self  # skipif-ci-and-not-linux
-
-    @override
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None = None,
-        exc_value: BaseException | None = None,
-        traceback: TracebackType | None = None,
-    ) -> None:
-        await super().__aexit__(  # skipif-ci-and-not-linux
-            exc_type=exc_type, exc_value=exc_value, traceback=traceback
-        )
-        match self._is_subscribed.is_set():  # skipif-ci-and-not-linux
-            case True:
-                _ = self._debug and self._logger.debug(
-                    "%s: stopping subscription...", self
-                )
-                self._is_subscribed.clear()
-            case False:
-                _ = self._debug and self._logger.debug(
-                    "%s: already stopped subscription", self
-                )
-            case _ as never:
-                assert_never(never)
-
-
-##
-
-
-@dataclass(kw_only=True)
-class SubscribeServiceMixin[T]:
-    """Mix-in for the subscribe service."""
-
-    # base - looper
-    subscribe_service_freq: TimeDelta = field(default=MILLISECOND, repr=False)
-    subscribe_service_backoff: TimeDelta = field(default=SECOND, repr=False)
-    subscribe_service_empty_upon_exit: bool = field(default=False, repr=False)
-    subscribe_service_logger: str | None = field(default=None, repr=False)
-    subscribe_service_timeout: TimeDelta | None = field(default=None, repr=False)
-    subscribe_service_debug: bool = field(default=False, repr=False)
-    # base - looper
-    subscribe_service_redis: Redis
-    subscribe_service_channel: str
-    subscribe_service_deserializer: Callable[[bytes], T] = deserialize
-    subscribe_service_subscribe_sleep: TimeDelta = _SUBSCRIBE_SLEEP
-    subscribe_service_subscribe_timeout: TimeDelta | None = _SUBSCRIBE_TIMEOUT
-    # self
-    _subscribe_service: SubscribeService[T] = field(init=False, repr=False)
-
-    def __post_init__(self) -> None:
-        with suppress_super_object_attribute_error():  # skipif-ci-and-not-linux
-            super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
-        self._subscribe_service = SubscribeService(  # skipif-ci-and-not-linux
-            # looper
-            freq=self.subscribe_service_freq,
-            backoff=self.subscribe_service_backoff,
-            empty_upon_exit=self.subscribe_service_empty_upon_exit,
-            logger=self.subscribe_service_logger,
-            timeout=self.subscribe_service_timeout,
-            _debug=self.subscribe_service_debug,
-            # subscribe service
-            redis=self.subscribe_service_redis,
-            channel=self.subscribe_service_channel,
-            deserializer=self.subscribe_service_deserializer,
-            subscribe_sleep=self.subscribe_service_subscribe_sleep,
-            subscribe_timeout=self.subscribe_service_subscribe_timeout,
-        )
-
-    def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
-        with suppress_super_object_attribute_error():  # skipif-ci-and-not-linux
-            yield from super()._yield_sub_loopers()  # pyright: ignore[reportAttributeAccessIssue]
-        yield self._subscribe_service  # skipif-ci-and-not-linux
-
-
-##
-
-
 @asynccontextmanager
 async def yield_pubsub(
     redis: Redis, channels: MaybeIterable[str], /
@@ -1036,8 +832,6 @@ def _deserialize[T](
 
 
 __all__ = [
-    "PublishService",
-    "PublishServiceMixin",
     "RedisHashMapKey",
     "RedisKey",
     "SubscribeService",
