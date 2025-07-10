@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, assert_never, override
+from typing import TYPE_CHECKING, override
 
 from pottery import AIORedlock
 from pottery.exceptions import ReleaseUnlockedLock
@@ -15,7 +14,7 @@ from utilities.logging import get_logger
 from utilities.whenever import MILLISECOND, SECOND, to_seconds
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterable
+    from collections.abc import AsyncIterator, Callable, Iterable
 
     from whenever import Delta
 
@@ -33,7 +32,7 @@ _THROTTLE: Delta | None = None
 
 async def run_as_service(
     redis: MaybeIterable[Redis],
-    input_: tuple[Callable[..., None], Callable[[], None]] | Callable[[], Coro[None]],
+    func: Callable[[], Coro[None]],
     /,
     *,
     key: str | None = None,
@@ -46,18 +45,12 @@ async def run_as_service(
     sleep_error: Delta | None = None,
 ) -> None:
     """Run a function as a service."""
-    match input_:  # skipif-ci-and-not-linux
-        case Callable() as func, _:
-            name = func.__name__
-        case Callable() as make_coro:
-            name = make_coro().__name__
-        case _ as never:
-            assert_never(never)
+    func_name = func().__name__
     try:  # skipif-ci-and-not-linux
         async with (
             yield_access(
                 redis,
-                name if key is None else key,
+                func_name if key is None else key,
                 num=num,
                 timeout_acquire=timeout_acquire,
                 timeout_release=timeout_release,
@@ -68,17 +61,11 @@ async def run_as_service(
         ):
             while True:
                 try:
-                    match input_:
-                        case _, Callable() as func:
-                            return func()
-                        case Callable() as make_coro:
-                            return await make_coro()
-                        case _ as never:
-                            assert_never(never)
+                    return await func()
                 except Exception:  # noqa: BLE001
                     if logger is not None:
                         get_logger(logger=logger).exception(
-                            "Error running %r as a service", name
+                            "Error running %r as a service", func_name
                         )
                     await sleep_td(sleep_error)
     except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux

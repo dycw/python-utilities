@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import TaskGroup
 from itertools import repeat
-from typing import TYPE_CHECKING, ClassVar, Literal, assert_never
+from typing import TYPE_CHECKING, ClassVar
 
 from pytest import LogCaptureFixture, mark, param, raises
 
@@ -29,72 +29,35 @@ if TYPE_CHECKING:
 class TestRunAsService:
     delta: ClassVar[TimeDelta] = 0.1 * SECOND
 
-    @mark.parametrize("sync_or_async", [param("sync"), param("async")])
     @mark.parametrize("use_logger", [param(True), param(False)])
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(
-        self,
-        *,
-        sync_or_async: Literal["sync", "async"],
-        use_logger: bool,
-        caplog: LogCaptureFixture,
-    ) -> None:
+    async def test_main(self, *, use_logger: bool, caplog: LogCaptureFixture) -> None:
         caplog.set_level("DEBUG", logger=(name := unique_str()))
         lst: list[None] = []
         logger = name if use_logger else None
-        key = f"{sync_or_async}/{use_logger}"
 
         async with yield_test_redis() as redis, TaskGroup() as tg:
-            _ = tg.create_task(
-                self.service(
-                    lst, redis, key, sync_or_async=sync_or_async, logger=logger
-                )
-            )
-            _ = tg.create_task(
-                self.delayed(
-                    lst, redis, key, sync_or_async=sync_or_async, logger=logger
-                )
-            )
+            _ = tg.create_task(self.service(lst, redis, logger=logger))
+            _ = tg.create_task(self.delayed(lst, redis, logger=logger))
 
-        match sync_or_async, use_logger:
-            case "sync", _:
-                assert len(lst) == 2
-            case "async", True:
-                assert len(lst) == 1
-                messages = [r.message for r in caplog.records if r.name == name]
-                expected = (
-                    f"Unable to acquire any 1 of 1 locks for {key!r} after PT0.1S"
-                )
-                assert expected in messages
-            case "async", False:
-                assert len(lst) == 1
-            case _ as never:
-                assert_never(never)
+        assert len(lst) == 1
+        if use_logger:
+            messages = [r.message for r in caplog.records if r.name == name]
+            expected = "Unable to acquire any 1 of 1 locks for 'func_main' after PT0.1S"
+            assert expected in messages
 
-    def func_main_sync(self, lst: list[None], /) -> None:
-        lst.append(None)
-
-    async def func_main_async(self, lst: list[None], /) -> None:
+    async def func_main(self, lst: list[None], /) -> None:
         lst.append(None)
         await sleep_td(5 * self.delta)
 
     async def service(
-        self,
-        lst: list[None],
-        redis: Redis,
-        key: str,
-        /,
-        *,
-        sync_or_async: Literal["sync", "async"],
-        logger: LoggerOrName | None = None,
+        self, lst: list[None], redis: Redis, /, *, logger: LoggerOrName | None = None
     ) -> None:
-        match sync_or_async:
-            case "sync":
-                input_ = (self.func_main_sync, lambda: self.func_main_sync(lst))
-            case "async":
-                input_ = lambda: self.func_main_async(lst)  # noqa: E731
         await run_as_service(
-            redis, input_, key=key, timeout_acquire=self.delta, logger=logger
+            redis,
+            lambda: self.func_main(lst),
+            timeout_acquire=self.delta,
+            logger=logger,
         )
 
     async def delayed(
@@ -104,11 +67,10 @@ class TestRunAsService:
         key: str,
         /,
         *,
-        sync_or_async: Literal["sync", "async"],
         logger: LoggerOrName | None = None,
     ) -> None:
         await sleep_td(self.delta)
-        await self.service(lst, redis, key, sync_or_async=sync_or_async, logger=logger)
+        await self.service(lst, redis, key, logger=logger)
 
     @mark.parametrize("use_logger", [param(True), param(False)])
     @SKIPIF_CI_AND_NOT_LINUX
