@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from pytest import mark, param, raises
 
@@ -22,19 +22,9 @@ if TYPE_CHECKING:
     from whenever import TimeDelta
 
 
-_DELTA: TimeDelta = 0.1 * SECOND
-
-
-async def _func_access(num_tasks: int, key: str, /, *, num_locks: int = 1) -> None:
-    async def coroutine() -> None:
-        async with yield_test_redis() as redis, yield_access(redis, key, num=num_locks):
-            await sleep_td(_DELTA)
-
-    async with TaskGroup() as tg:
-        _ = [tg.create_task(coroutine()) for _ in range(num_tasks)]
-
-
 class TestYieldAccess:
+    delta: ClassVar[TimeDelta] = 0.1 * SECOND
+
     @SKIPIF_CI_AND_NOT_LINUX
     @mark.parametrize(
         ("num_tasks", "num_locks", "min_multiple"),
@@ -63,8 +53,8 @@ class TestYieldAccess:
         self, *, num_tasks: int, num_locks: int, min_multiple: int
     ) -> None:
         with Timer() as timer:
-            await _func_access(num_tasks, unique_str(), num_locks=num_locks)
-        assert (min_multiple * _DELTA) <= timer <= (5 * min_multiple * _DELTA)
+            await self.func(num_tasks, unique_str(), num_locks=num_locks)
+        assert (min_multiple * self.delta) <= timer <= (5 * min_multiple * self.delta)
 
     async def test_error_num_locks(self) -> None:
         key = unique_str()
@@ -94,3 +84,14 @@ class TestYieldAccess:
             _YieldAccessUnableToAcquireLockError,
             match=r"Unable to acquire any 1 of 1 locks for '\w+' after .*",
         )
+
+    async def func(self, num_tasks: int, key: str, /, *, num_locks: int = 1) -> None:
+        async def coroutine() -> None:
+            async with (
+                yield_test_redis() as redis,
+                yield_access(redis, key, num=num_locks),
+            ):
+                await sleep_td(self.delta)
+
+        async with TaskGroup() as tg:
+            _ = [tg.create_task(coroutine()) for _ in range(num_tasks)]
