@@ -61,16 +61,10 @@ class TestRunAsService:
         )
 
     async def delayed(
-        self,
-        lst: list[None],
-        redis: Redis,
-        key: str,
-        /,
-        *,
-        logger: LoggerOrName | None = None,
+        self, lst: list[None], redis: Redis, /, *, logger: LoggerOrName | None = None
     ) -> None:
         await sleep_td(self.delta)
-        await self.service(lst, redis, key, logger=logger)
+        await self.service(lst, redis, logger=logger)
 
     @mark.parametrize("use_logger", [param(True), param(False)])
     @SKIPIF_CI_AND_NOT_LINUX
