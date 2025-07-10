@@ -276,10 +276,10 @@ def _make_except_hook_inner(
         with writer(path, overwrite=True) as temp:
             _ = temp.write_text(full)
     if slack_url is not None:  # pragma: no cover
-        from utilities.slack_sdk import send_to_slack
+        from utilities.slack_sdk import send_to_slack_async
 
         send = f"```{slim}```"
-        run(send_to_slack(slack_url, send))
+        run(send_to_slack_async(slack_url, send))
     if to_bool(bool_=pudb):  # pragma: no cover
         from pudb import post_mortem
 
