@@ -771,8 +771,6 @@ async def subscribe[T](
     finally:  # skipif-ci-and-not-linux
         try:
             _ = task.cancel()
-        except CancelledError:
-            pass
         except RuntimeError as error:  # pragma: no cover
             from utilities.pytest import is_pytest
 
