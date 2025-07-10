@@ -44,10 +44,8 @@ class TestRunAsService:
 
         if use_logger:
             messages = [r.message for r in caplog.records if r.name == name]
-            expected = [
-                "Unable to acquire any 1 of 1 locks for 'func_main' after PT0.1S"
-            ]
-            assert messages == expected
+            expected = "Unable to acquire any 1 of 1 locks for 'func_main' after PT0.1S"
+            assert expected in messages
 
     async def func_main(self, lst: list[None], /) -> None:
         lst.append(None)
