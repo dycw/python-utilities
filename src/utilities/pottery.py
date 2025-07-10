@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, cast, override
 
 from pottery import AIORedlock
 from pottery.exceptions import ReleaseUnlockedLock
@@ -32,7 +32,7 @@ _THROTTLE: Delta | None = None
 
 async def run_as_service(
     redis: MaybeIterable[Redis],
-    func: Callable[[], Coro[None]],
+    make_func: Callable[[], Coro[None]],
     /,
     *,
     key: str | None = None,
@@ -45,12 +45,12 @@ async def run_as_service(
     sleep_error: Delta | None = None,
 ) -> None:
     """Run a function as a service."""
-    func_name = func().__name__
+    name = (func := make_func()).__name__  # skipif-ci-and-not-linux
     try:  # skipif-ci-and-not-linux
         async with (
             yield_access(
                 redis,
-                func_name if key is None else key,
+                name if key is None else key,
                 num=num,
                 timeout_acquire=timeout_acquire,
                 timeout_release=timeout_release,
@@ -60,12 +60,17 @@ async def run_as_service(
             timeout_td(timeout_release),
         ):
             while True:
+                func2 = cast("Coro[None] | None", func)
                 try:
-                    return await func()
+                    if func2 is None:
+                        make_func()
+                    else:
+                        _func_use, func = func, None
+                    return await make_func()
                 except Exception:  # noqa: BLE001
                     if logger is not None:
                         get_logger(logger=logger).exception(
-                            "Error running %r as a service", func_name
+                            "Error running %r as a service", name
                         )
                     await sleep_td(sleep_error)
     except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
