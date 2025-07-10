@@ -834,8 +834,6 @@ def _deserialize[T](
 __all__ = [
     "RedisHashMapKey",
     "RedisKey",
-    "SubscribeService",
-    "SubscribeServiceMixin",
     "publish",
     "redis_hash_map_key",
     "redis_key",
