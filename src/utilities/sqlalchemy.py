@@ -57,8 +57,7 @@ from sqlalchemy.orm import (
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
-from utilities.asyncio import Looper, timeout_td
-from utilities.contextlib import suppress_super_object_attribute_error
+from utilities.asyncio import timeout_td
 from utilities.functions import (
     ensure_str,
     get_class_name,
@@ -83,7 +82,6 @@ from utilities.iterables import (
 from utilities.reprlib import get_repr
 from utilities.text import snake_case
 from utilities.types import MaybeIterable, MaybeType, StrMapping, TupleOrStrMapping
-from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from enum import Enum, StrEnum
@@ -627,98 +625,6 @@ class TablenameMixin:
 ##
 
 
-@dataclass(kw_only=True)
-class UpsertService(Looper[_InsertItem]):
-    """Service to upsert items to a database."""
-
-    # base
-    freq: TimeDelta = field(default=SECOND, repr=False)
-    backoff: TimeDelta = field(default=SECOND, repr=False)
-    empty_upon_exit: bool = field(default=True, repr=False)
-    # self
-    engine: AsyncEngine
-    snake: bool = False
-    selected_or_all: _SelectedOrAll = "selected"
-    chunk_size_frac: float = CHUNK_SIZE_FRAC
-    assume_tables_exist: bool = False
-    timeout_create: TimeDelta | None = None
-    error_create: type[Exception] = TimeoutError
-    timeout_insert: TimeDelta | None = None
-    error_insert: type[Exception] = TimeoutError
-
-    @override
-    async def core(self) -> None:
-        await super().core()
-        await upsert_items(
-            self.engine,
-            *self.get_all_nowait(),
-            snake=self.snake,
-            selected_or_all=self.selected_or_all,
-            chunk_size_frac=self.chunk_size_frac,
-            assume_tables_exist=self.assume_tables_exist,
-            timeout_create=self.timeout_create,
-            error_create=self.error_create,
-            timeout_insert=self.timeout_insert,
-            error_insert=self.error_insert,
-        )
-
-
-@dataclass(kw_only=True)
-class UpsertServiceMixin:
-    """Mix-in for the upsert service."""
-
-    # base - looper
-    upsert_service_freq: TimeDelta = field(default=SECOND, repr=False)
-    upsert_service_backoff: TimeDelta = field(default=SECOND, repr=False)
-    upsert_service_empty_upon_exit: bool = field(default=False, repr=False)
-    upsert_service_logger: str | None = field(default=None, repr=False)
-    upsert_service_timeout: TimeDelta | None = field(default=None, repr=False)
-    upsert_service_debug: bool = field(default=False, repr=False)
-    # base - upsert service
-    upsert_service_database: AsyncEngine
-    upsert_service_snake: bool = False
-    upsert_service_selected_or_all: _SelectedOrAll = "selected"
-    upsert_service_chunk_size_frac: float = CHUNK_SIZE_FRAC
-    upsert_service_assume_tables_exist: bool = False
-    upsert_service_timeout_create: TimeDelta | None = None
-    upsert_service_error_create: type[Exception] = TimeoutError
-    upsert_service_timeout_insert: TimeDelta | None = None
-    upsert_service_error_insert: type[Exception] = TimeoutError
-    # self
-    _upsert_service: UpsertService = field(init=False, repr=False)
-
-    def __post_init__(self) -> None:
-        with suppress_super_object_attribute_error():
-            super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
-        self._upsert_service = UpsertService(
-            # looper
-            freq=self.upsert_service_freq,
-            backoff=self.upsert_service_backoff,
-            empty_upon_exit=self.upsert_service_empty_upon_exit,
-            logger=self.upsert_service_logger,
-            timeout=self.upsert_service_timeout,
-            _debug=self.upsert_service_debug,
-            # upsert service
-            engine=self.upsert_service_database,
-            snake=self.upsert_service_snake,
-            selected_or_all=self.upsert_service_selected_or_all,
-            chunk_size_frac=self.upsert_service_chunk_size_frac,
-            assume_tables_exist=self.upsert_service_assume_tables_exist,
-            timeout_create=self.upsert_service_timeout_create,
-            error_create=self.upsert_service_error_create,
-            timeout_insert=self.upsert_service_timeout_insert,
-            error_insert=self.upsert_service_error_insert,
-        )
-
-    def _yield_sub_loopers(self) -> Iterator[Looper[Any]]:
-        with suppress_super_object_attribute_error():
-            yield from super()._yield_sub_loopers()  # pyright: ignore[reportAttributeAccessIssue]
-        yield self._upsert_service
-
-
-##
-
-
 type _SelectedOrAll = Literal["selected", "all"]
 
 
@@ -1188,8 +1094,6 @@ __all__ = [
     "InsertItemsError",
     "TablenameMixin",
     "UpsertItemsError",
-    "UpsertService",
-    "UpsertServiceMixin",
     "check_engine",
     "columnwise_max",
     "columnwise_min",

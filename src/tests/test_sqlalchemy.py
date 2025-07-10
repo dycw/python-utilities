@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from enum import Enum, StrEnum, auto
 from itertools import chain
 from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
@@ -28,8 +27,6 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from tests.test_asyncio_classes.loopers import _BACKOFF, _FREQ, assert_looper_stats
-from utilities.asyncio import Looper
 from utilities.hypothesis import int32s, pairs
 from utilities.iterables import one
 from utilities.modules import is_installed
@@ -41,8 +38,6 @@ from utilities.sqlalchemy import (
     TablenameMixin,
     TableOrORMInstOrClass,
     UpsertItemsError,
-    UpsertService,
-    UpsertServiceMixin,
     _get_dialect,
     _get_dialect_max_params,
     _InsertItem,
@@ -89,13 +84,11 @@ from utilities.sqlalchemy import (
 )
 from utilities.text import strip_and_dedent
 from utilities.typing import get_args, get_literal_elements
-from utilities.whenever import SECOND, format_compact, get_now, to_local_plain
+from utilities.whenever import format_compact, get_now, to_local_plain
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from pathlib import Path
-
-    from whenever import TimeDelta
 
     from utilities.types import StrMapping
 
@@ -1222,33 +1215,6 @@ class TestTupleToMapping:
         assert result == expected
 
 
-class TestUpserter:
-    @given(triples=_upsert_lists(nullable=True, min_size=1))
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    async def test_main(
-        self, *, triples: list[tuple[int, bool, bool]], test_engine: AsyncEngine
-    ) -> None:
-        table = Table(
-            _table_names(),
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-            Column("value", Boolean, nullable=True),
-        )
-        service = UpsertService(freq=0.1 * SECOND, timeout=SECOND, engine=test_engine)
-        pairs = [(id_, init) for id_, init, _ in triples]
-        async with service:
-            service.put_right_nowait((pairs, table))
-
-        sel = select(table)
-        async with test_engine.begin() as conn:
-            res = (await conn.execute(sel)).all()
-        assert set(res) == set(pairs)
-
-
 class TestUpsertItems:
     @given(triple=_upsert_triples(nullable=True))
     @settings(
@@ -1562,29 +1528,6 @@ class TestUpsertItems:
             results = (await conn.execute(sel)).all()
         if expected is not None:
             assert set(results) == expected
-
-
-class TestUpsertServiceMixin:
-    async def test_main(self, *, test_engine: AsyncEngine) -> None:
-        @dataclass(kw_only=True)
-        class Example(UpsertServiceMixin, Looper[Any]):
-            freq: TimeDelta = field(default=_FREQ, repr=False)
-            backoff: TimeDelta = field(default=_BACKOFF, repr=False)
-            _debug: bool = field(default=True, repr=False)
-            upsert_service_database: AsyncEngine = test_engine
-            upsert_service_freq: TimeDelta = field(default=_FREQ, repr=False)
-            upsert_service_backoff: TimeDelta = field(default=_BACKOFF, repr=False)
-
-        service = Example(auto_start=True, timeout=SECOND)
-        async with service:
-            ...
-        assert_looper_stats(
-            service,
-            entries=1,
-            core_successes=(">=", 40),
-            initialization_successes=1,
-            stops=1,
-        )
 
 
 class TestYieldPrimaryKeyColumns:
