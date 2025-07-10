@@ -1116,8 +1116,8 @@ async def get_items[T](queue: Queue[T], /, *, max_size: int | None = None) -> li
         from utilities.pytest import is_pytest
 
         if (not is_pytest()) or (error.args[0] != "Event loop is closed"):
-            return []
-        raise
+            raise
+        return []
     max_size_use = None if max_size is None else (max_size - 1)
     items.extend(get_items_nowait(queue, max_size=max_size_use))
     return items

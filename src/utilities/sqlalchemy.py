@@ -856,8 +856,15 @@ async def yield_connection(
     error: MaybeType[BaseException] = TimeoutError,
 ) -> AsyncIterator[AsyncConnection]:
     """Yield an async connection."""
-    async with timeout_td(timeout, error=error), engine.begin() as conn:
-        yield conn
+    try:
+        async with timeout_td(timeout, error=error), engine.begin() as conn:
+            yield conn
+    except GeneratorExit:  # pragma: no cover
+        from utilities.pytest import is_pytest
+
+        if not is_pytest():
+            raise
+        return
 
 
 ##
