@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
-from functools import partial
 from typing import TYPE_CHECKING, assert_never, override
 
 from pottery import AIORedlock
@@ -34,7 +33,7 @@ _THROTTLE: Delta | None = None
 
 async def run_as_service(
     redis: MaybeIterable[Redis],
-    func: partial[None] | Callable[[], Coro[None]],
+    input_: tuple[Callable[..., None], Callable[[], None]] | Callable[[], Coro[None]],
     /,
     *,
     key: str | None = None,
@@ -47,9 +46,9 @@ async def run_as_service(
     sleep_error: Delta | None = None,
 ) -> None:
     """Run a function as a service."""
-    match func:  # skipif-ci-and-not-linux
-        case partial() as part:
-            name = part.func.__name__
+    match input_:  # skipif-ci-and-not-linux
+        case Callable() as func, _:
+            name = func.__name__
         case Callable() as make_coro:
             name = make_coro().__name__
         case _ as never:
@@ -69,9 +68,9 @@ async def run_as_service(
         ):
             while True:
                 try:
-                    match func:
-                        case partial() as part:
-                            return part()
+                    match input_:
+                        case _, Callable() as func:
+                            return func()
                         case Callable() as make_coro:
                             return await make_coro()
                         case _ as never:

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
-from functools import partial
 from itertools import repeat
 from typing import TYPE_CHECKING, ClassVar, Literal, assert_never
 
@@ -91,11 +90,11 @@ class TestRunAsService:
     ) -> None:
         match sync_or_async:
             case "sync":
-                make_func = partial(self.func_main_sync, lst)
+                input_ = (self.func_main_sync, lambda: self.func_main_sync(lst))
             case "async":
-                make_func = lambda: self.func_main_async(lst)  # noqa: E731
+                input_ = lambda: self.func_main_async(lst)  # noqa: E731
         await run_as_service(
-            redis, make_func, key=key, timeout_acquire=self.delta, logger=logger
+            redis, input_, key=key, timeout_acquire=self.delta, logger=logger
         )
 
     async def delayed(
