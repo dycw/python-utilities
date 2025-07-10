@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import CancelledError, Event, Queue, Task, create_task
 from collections.abc import AsyncIterator, Callable, Mapping
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from functools import partial
 from operator import itemgetter
@@ -769,16 +769,15 @@ async def subscribe[T](
     try:  # skipif-ci-and-not-linux
         yield task
     finally:  # skipif-ci-and-not-linux
-        _ = task.cancel()
         try:
-            await task
-        except CancelledError:
-            pass
+            _ = task.cancel()
         except RuntimeError as error:  # pragma: no cover
             from utilities.pytest import is_pytest
 
             if (not is_pytest()) or (error.args[0] != "Event loop is closed"):
                 raise
+        with suppress(CancelledError):
+            await task
 
 
 async def _subscribe_core(
