@@ -30,6 +30,7 @@ class TestRunAsService:
     delta: ClassVar[TimeDelta] = 0.1 * SECOND
 
     @mark.parametrize("use_logger", [param(True), param(False)])
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, use_logger: bool, caplog: LogCaptureFixture) -> None:
         caplog.set_level("DEBUG", logger=(name := unique_str()))
         lst: list[None] = []
@@ -68,6 +69,7 @@ class TestRunAsService:
         await self.service(redis, lst, logger=logger)
 
     @mark.parametrize("use_logger", [param(True), param(False)])
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_error(self, *, use_logger: bool, caplog: LogCaptureFixture) -> None:
         caplog.set_level("DEBUG", logger=(name := unique_str()))
         lst: list[None] = []
@@ -92,7 +94,6 @@ class TestRunAsService:
 class TestYieldAccess:
     delta: ClassVar[TimeDelta] = 0.1 * SECOND
 
-    @SKIPIF_CI_AND_NOT_LINUX
     @mark.parametrize(
         ("num_tasks", "num_locks", "min_multiple"),
         [
@@ -116,6 +117,7 @@ class TestYieldAccess:
             param(4, 5, 1),
         ],
     )
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(
         self, *, num_tasks: int, num_locks: int, min_multiple: int
     ) -> None:

@@ -44,8 +44,8 @@ async def run_as_service(
     sleep_error: Delta | None = None,
 ) -> None:
     """Run a function as a service."""
-    name = make_func().__name__
-    try:
+    name = make_func().__name__  # skipif-ci-and-not-linux
+    try:  # skipif-ci-and-not-linux
         async with (
             yield_access(
                 redis,
@@ -67,7 +67,7 @@ async def run_as_service(
                             "Error running %r as a service", name
                         )
                     await sleep_td(sleep_error)
-    except _YieldAccessUnableToAcquireLockError as error:
+    except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
         if logger is not None:
             get_logger(logger=logger).info("%s", error)
 
