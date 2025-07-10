@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
@@ -9,6 +10,7 @@ from pottery.exceptions import ReleaseUnlockedLock
 from redis.asyncio import Redis
 
 from utilities.asyncio import sleep_td, timeout_td
+from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
 from utilities.logging import get_logger
 from utilities.whenever import MILLISECOND, SECOND, to_seconds
@@ -69,6 +71,12 @@ async def run_as_service(
                         get_logger(logger=logger).exception(
                             "Error running %r as a service", name
                         )
+                    exc_type, exc_value, traceback = sys.exc_info()
+                    if (exc_type is None) or (exc_value is None):  # pragma: no cover
+                        raise ImpossibleCaseError(
+                            case=[f"{exc_type=}", f"{exc_value=}"]
+                        ) from None
+                    sys.excepthook(exc_type, exc_value, traceback)
                     await sleep_td(sleep_error)
     except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
         if logger is not None:
