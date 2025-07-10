@@ -2,114 +2,23 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from http import HTTPStatus
-from logging import NOTSET, Handler, LogRecord
-from typing import TYPE_CHECKING, Any, Self, override
+from typing import TYPE_CHECKING, override
 
 from slack_sdk.webhook import WebhookClient
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
-from utilities.asyncio import Looper, timeout_td
+from utilities.asyncio import timeout_td
 from utilities.functools import cache
-from utilities.sentinel import Sentinel, sentinel
-from utilities.whenever import MINUTE, SECOND, to_seconds
+from utilities.whenever import MINUTE, to_seconds
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from slack_sdk.webhook import WebhookResponse
     from whenever import TimeDelta
 
-    from utilities.types import Coro, Delta
+    from utilities.types import Delta
 
 
 _TIMEOUT: Delta = MINUTE
-
-
-##
-
-
-async def _send_adapter(url: str, text: str, /) -> None:
-    await send_to_slack_async(url, text)  # pragma: no cover
-
-
-@dataclass(init=False, unsafe_hash=True)
-class SlackHandlerService(Handler, Looper[str]):
-    """Service to send messages to Slack."""
-
-    @override
-    def __init__(
-        self,
-        *,
-        url: str,
-        auto_start: bool = False,
-        empty_upon_exit: bool = True,
-        freq: TimeDelta = SECOND,
-        backoff: TimeDelta = SECOND,
-        logger: str | None = None,
-        timeout: TimeDelta | None = None,
-        _debug: bool = False,
-        level: int = NOTSET,
-        sender: Callable[[str, str], Coro[None]] = _send_adapter,
-        send_timeout: TimeDelta = SECOND,
-    ) -> None:
-        Looper.__init__(  # Looper first
-            self,
-            auto_start=auto_start,
-            freq=freq,
-            empty_upon_exit=empty_upon_exit,
-            backoff=backoff,
-            logger=logger,
-            timeout=timeout,
-            _debug=_debug,
-        )
-        Looper.__post_init__(self)
-        Handler.__init__(self, level=level)  # Handler next
-        self.url = url
-        self.sender = sender
-        self.send_timeout = send_timeout
-
-    @override
-    def emit(self, record: LogRecord) -> None:
-        fmtted = self.format(record)
-        try:
-            self.put_right_nowait(fmtted)
-        except Exception:  # noqa: BLE001  # pragma: no cover
-            self.handleError(record)
-
-    @override
-    async def core(self) -> None:
-        await super().core()
-        if self.empty():
-            return
-        text = "\n".join(self.get_all_nowait())
-        async with timeout_td(self.send_timeout):
-            await self.sender(self.url, text)
-
-    @override
-    def replace(
-        self,
-        *,
-        auto_start: bool | Sentinel = sentinel,
-        empty_upon_exit: bool | Sentinel = sentinel,
-        freq: TimeDelta | Sentinel = sentinel,
-        backoff: TimeDelta | Sentinel = sentinel,
-        logger: str | None | Sentinel = sentinel,
-        timeout: TimeDelta | None | Sentinel = sentinel,
-        _debug: bool | Sentinel = sentinel,
-        **kwargs: Any,
-    ) -> Self:
-        """Replace elements of the looper."""
-        return super().replace(
-            url=self.url,
-            auto_start=auto_start,
-            empty_upon_exit=empty_upon_exit,
-            freq=freq,
-            backoff=backoff,
-            logger=logger,
-            timeout=timeout,
-            _debug=_debug,
-            **kwargs,
-        )
 
 
 ##
@@ -160,4 +69,4 @@ class SendToSlackError(Exception):
         return f"Error sending to Slack:\n\n{self.text}\n\n{code}: {phrase}"  # pragma: no cover
 
 
-__all__ = ["SendToSlackError", "SlackHandlerService", "send_to_slack_async"]
+__all__ = ["SendToSlackError", "send_to_slack", "send_to_slack_async"]

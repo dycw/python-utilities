@@ -1,15 +1,8 @@
 from __future__ import annotations
 
 from math import isfinite, isnan
-from typing import TYPE_CHECKING
 
-from pytest import approx, mark, param
-
-from utilities.psutil import MemoryMonitorService, MemoryUsage
-from utilities.whenever import SECOND
-
-if TYPE_CHECKING:
-    from pathlib import Path
+from utilities.psutil import MemoryUsage
 
 
 class TestMemoryUsage:
@@ -29,21 +22,3 @@ class TestMemoryUsage:
         assert (isfinite(memory.swap_pct) and (0.0 <= memory.swap_pct <= 1.0)) or isnan(
             memory.swap_pct
         )
-
-
-class TestMemoryMonitorService:
-    @mark.parametrize("console", [param(True), param(False)])
-    async def test_main(self, *, console: bool, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("memory.txt")
-        service = MemoryMonitorService(
-            freq=0.1 * SECOND,
-            backoff=0.1 * SECOND,
-            timeout=SECOND,
-            path=path,
-            console=str(tmp_path) if console else None,
-        )
-        async with service.with_auto_start:
-            ...
-        assert path.exists()
-        lines = path.read_text().splitlines()
-        assert len(lines) == approx(10, rel=0.5)
