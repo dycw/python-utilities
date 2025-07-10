@@ -10,7 +10,12 @@ from slack_sdk.webhook.async_client import AsyncWebhookClient
 
 from utilities.os import get_env_var
 from utilities.pytest import throttle
-from utilities.slack_sdk import SlackHandlerService, _get_client, send_to_slack
+from utilities.slack_sdk import (
+    SlackHandlerService,
+    _get_async_client,
+    send_to_slack,
+    send_to_slack_async,
+)
 from utilities.whenever import MINUTE, SECOND
 
 if TYPE_CHECKING:
@@ -22,20 +27,24 @@ if TYPE_CHECKING:
 
 class TestGetClient:
     def test_main(self) -> None:
-        client = _get_client("url")
+        client = _get_async_client("url")
         assert isinstance(client, AsyncWebhookClient)
 
 
 class TestSendToSlack:
-    async def test_main(self) -> None:
+    def test_sync(self) -> None:
+        with raises(ValueError, match="unknown url type"):
+            send_to_slack("url", "message")
+
+    async def test_async(self) -> None:
         with raises(InvalidUrlClientError, match="url"):
-            await send_to_slack("url", "message")
+            await send_to_slack_async("url", "message")
 
     @mark.skipif(get_env_var("SLACK", nullable=True) is None, reason="'SLACK' not set")
     @throttle(delta=5 * MINUTE)
     async def test_real(self) -> None:
         url = get_env_var("SLACK")
-        await send_to_slack(
+        await send_to_slack_async(
             url, f"message from {TestSendToSlack.test_real.__qualname__}"
         )
 
