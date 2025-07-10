@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, cast, override
+from typing import TYPE_CHECKING, override
 
 from pottery import AIORedlock
 from pottery.exceptions import ReleaseUnlockedLock
@@ -45,7 +45,8 @@ async def run_as_service(
     sleep_error: Delta | None = None,
 ) -> None:
     """Run a function as a service."""
-    name = (func := make_func()).__name__  # skipif-ci-and-not-linux
+    func = make_func()  # skipif-ci-and-not-linux
+    name = func.__name__  # skipif-ci-and-not-linux
     try:  # skipif-ci-and-not-linux
         async with (
             yield_access(
@@ -61,19 +62,14 @@ async def run_as_service(
         ):
             while True:
                 try:
-                    if cast("Coro[None] | None", func) is None:
-                        await make_func()
-                    else:
-                        await func
-                        func = None
-                except Exception as e:  # noqa: BLE001
+                    return await (make_func() if func is None else func)
+                except Exception:  # noqa: BLE001
+                    func = None
                     if logger is not None:
                         get_logger(logger=logger).exception(
                             "Error running %r as a service", name
                         )
                     await sleep_td(sleep_error)
-                else:
-                    return
     except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
         if logger is not None:
             get_logger(logger=logger).info("%s", error)

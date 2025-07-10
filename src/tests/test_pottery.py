@@ -79,7 +79,7 @@ class TestRunAsService:
         await sleep_td(self.delta)
         await self.service(lst, redis, key=key, logger=logger)
 
-    @mark.parametrize("use_logger", [param(True), param(False)])
+    @mark.parametrize("use_logger", [param(True, marks=mark.only), param(False)])
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_error(self, *, use_logger: bool, caplog: LogCaptureFixture) -> None:
         caplog.set_level("DEBUG", logger=(name := unique_str()))
