@@ -42,13 +42,12 @@ fpdf2 = ["fpdf2 >= 2.8.3, < 2.9"]
 hashlib-test = ["orjson"]
 http-test = ["orjson"]
 hypothesis = ["hypothesis >= 6.135.24, < 6.136"]
-hypothesis-test = ["libcst", "luigi", "pathvalidate", "numpy", "pytest-rerunfailures"]
+hypothesis-test = ["libcst", "pathvalidate", "numpy", "pytest-rerunfailures"]
 inflect = ["inflect >= 7.5.0, < 7.6"]
 jupyter-test = ["pandas", "polars"]
 libcst = ["libcst >= 1.8.0, < 1.9"]
 lightweight-charts = ["lightweight-charts >= 2.1, < 2.2"]
-lightweight-charts-test = ["polars", "pyarrow"]
-luigi = ["luigi >= 3.6.0, < 3.7"]
+lightweight-charts-test = ["polars-lts-cpu", "pyarrow"]
 math-test = ["numpy"]
 memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
 more-itertools = ["more-itertools >= 10.7.0, < 10.8"]
@@ -251,12 +250,10 @@ asyncio_mode = "auto"
 collect_imported_tests = false
 filterwarnings = [
   "error",
-  "ignore:.*utcfromtimestamp.* is deprecated and scheduled for removal in a future version:DeprecationWarning",  # luigi
   "ignore:Exception ignored in.* <coroutine object .* at .*>:pytest.PytestUnraisableExceptionWarning",
   "ignore:Exception in thread Thread-.*:pytest.PytestUnhandledThreadExceptionWarning",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
   "ignore:ResourceTracker called reentrantly for resource cleanup, which is unsupported:UserWarning",
-  "ignore:Task .* without outputs has no custom complete.* method:UserWarning",  # luigi
   "ignore:The garbage collector is trying to clean up non-checked-in connection <AdaptedConnection <Connection(.*)>:RuntimeWarning",  # sqlalchemy
   "ignore:There is no current event loop:DeprecationWarning",  # eventkit
   "ignore:Using fork.* can cause Polars to deadlock in the child process:RuntimeWarning",  # polars/pqdm

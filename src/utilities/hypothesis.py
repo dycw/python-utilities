@@ -685,20 +685,6 @@ def month_days(
 
 
 @composite
-def namespace_mixins(draw: DrawFn, /) -> type:
-    """Strategy for generating task namespace mixins."""
-    path = draw(temp_paths())
-
-    class NamespaceMixin:
-        task_namespace = path.name
-
-    return NamespaceMixin
-
-
-##
-
-
-@composite
 def numbers(
     draw: DrawFn,
     /,
@@ -1382,7 +1368,6 @@ __all__ = [
     "int_arrays",
     "lists_fixed_length",
     "month_days",
-    "namespace_mixins",
     "numbers",
     "pairs",
     "paths",
