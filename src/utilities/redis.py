@@ -769,9 +769,8 @@ async def subscribe[T](
     try:  # skipif-ci-and-not-linux
         yield task
     finally:  # skipif-ci-and-not-linux
-        _ = task.cancel()
         try:
-            await task
+            _ = task.cancel()
         except CancelledError:
             pass
         except RuntimeError as error:  # pragma: no cover
@@ -779,6 +778,7 @@ async def subscribe[T](
 
             if (not is_pytest()) or (error.args[0] != "Event loop is closed"):
                 raise
+        await task
 
 
 async def _subscribe_core(
