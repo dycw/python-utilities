@@ -32,7 +32,7 @@ _THROTTLE: Delta | None = None
 
 async def run_as_service(
     redis: MaybeIterable[Redis],
-    func: Callable[[], Coro[None]],
+    make_func: Callable[[], Coro[None]],
     /,
     *,
     key: str | None = None,
@@ -45,12 +45,13 @@ async def run_as_service(
     sleep_error: Delta | None = None,
 ) -> None:
     """Run a function as a service."""
-    func_name = func().__name__
+    func = make_func()  # skipif-ci-and-not-linux
+    name = func.__name__  # skipif-ci-and-not-linux
     try:  # skipif-ci-and-not-linux
         async with (
             yield_access(
                 redis,
-                func_name if key is None else key,
+                name if key is None else key,
                 num=num,
                 timeout_acquire=timeout_acquire,
                 timeout_release=timeout_release,
@@ -61,11 +62,12 @@ async def run_as_service(
         ):
             while True:
                 try:
-                    return await func()
+                    return await (make_func() if func is None else func)
                 except Exception:  # noqa: BLE001
+                    func = None
                     if logger is not None:
                         get_logger(logger=logger).exception(
-                            "Error running %r as a service", func_name
+                            "Error running %r as a service", name
                         )
                     await sleep_td(sleep_error)
     except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
