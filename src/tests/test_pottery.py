@@ -37,13 +37,13 @@ class TestRunAsService:
         logger = name if use_logger else None
 
         async with yield_test_redis() as redis, TaskGroup() as tg:
-            _ = tg.create_task(self.service(lst, redis, logger=logger))
-            _ = tg.create_task(self.delayed(lst, redis, logger=logger))
+            _ = tg.create_task(self.service(lst, redis, key=name, logger=logger))
+            _ = tg.create_task(self.delayed(lst, redis, key=name, logger=logger))
 
         assert len(lst) == 1
         if use_logger:
             messages = [r.message for r in caplog.records if r.name == name]
-            expected = "Unable to acquire any 1 of 1 locks for 'func_main' after PT0.1S"
+            expected = f"Unable to acquire any 1 of 1 locks for {name!r} after PT0.1S"
             assert expected in messages
 
     async def func_main(self, lst: list[None], /) -> None:
@@ -51,20 +51,33 @@ class TestRunAsService:
         await sleep_td(5 * self.delta)
 
     async def service(
-        self, lst: list[None], redis: Redis, /, *, logger: LoggerOrName | None = None
+        self,
+        lst: list[None],
+        redis: Redis,
+        /,
+        *,
+        key: str | None = None,
+        logger: LoggerOrName | None = None,
     ) -> None:
         await run_as_service(
             redis,
             lambda: self.func_main(lst),
+            key=key,
             timeout_acquire=self.delta,
             logger=logger,
         )
 
     async def delayed(
-        self, lst: list[None], redis: Redis, /, *, logger: LoggerOrName | None = None
+        self,
+        lst: list[None],
+        redis: Redis,
+        /,
+        *,
+        key: str | None = None,
+        logger: LoggerOrName | None = None,
     ) -> None:
         await sleep_td(self.delta)
-        await self.service(lst, redis, logger=logger)
+        await self.service(lst, redis, key=key, logger=logger)
 
     @mark.parametrize("use_logger", [param(True), param(False)])
     @SKIPIF_CI_AND_NOT_LINUX
