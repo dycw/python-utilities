@@ -1,71 +1,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from json import dumps
-from logging import getLogger
 from math import isclose, nan
-from pathlib import Path
-from typing import TYPE_CHECKING, Self, override
+from typing import TYPE_CHECKING, Self
 
 from psutil import swap_memory, virtual_memory
 
-from utilities.asyncio import Looper
 from utilities.contextlib import suppress_super_object_attribute_error
-from utilities.whenever import SECOND, get_now
+from utilities.whenever import get_now
 
 if TYPE_CHECKING:
-    from logging import Logger
-
-    from whenever import TimeDelta, ZonedDateTime
-
-    from utilities.types import PathLike
+    from whenever import ZonedDateTime
 
 
-@dataclass(kw_only=True)
-class MemoryMonitorService(Looper[None]):
-    """Service to monitor memory usage."""
-
-    # base
-    freq: TimeDelta = field(default=10 * SECOND, repr=False)
-    backoff: TimeDelta = field(default=10 * SECOND, repr=False)
-    # self
-    console: str | None = field(default=None, repr=False)
-    path: PathLike = "memory.txt"
-    _console: Logger | None = field(init=False, repr=False)
-    _path: Path = field(init=False, repr=False)
-
-    @override
-    def __post_init__(self) -> None:
-        super().__post_init__()
-        if self.console is not None:
-            self._console = getLogger(self.console)
-        self._path = Path(self.path)
-        self._path.parent.mkdir(parents=True, exist_ok=True)
-
-    @override
-    async def core(self) -> None:
-        await super().core()
-        memory = MemoryUsage.new()
-        mapping = {
-            "datetime": memory.datetime.format_common_iso(),
-            "virtual used (mb)": memory.virtual_used_mb,
-            "virtual total (mb)": memory.virtual_total_mb,
-            "virtual (%)": memory.virtual_pct,
-            "swap used (mb)": memory.swap_used_mb,
-            "swap total (mb)": memory.swap_total_mb,
-            "swap (%)": memory.swap_pct,
-        }
-        ser = dumps(mapping)
-        with self._path.open(mode="a") as fh:
-            _ = fh.write(f"{ser}\n")
-        if self._console is not None:
-            self._console.info("%s", mapping)
-
-
-##
-
-
-@dataclass(kw_only=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class MemoryUsage:
     """A memory usage."""
 
@@ -113,4 +61,4 @@ class MemoryUsage:
         return round(bytes_ / (1024**2))
 
 
-__all__ = ["MemoryMonitorService", "MemoryUsage"]
+__all__ = ["MemoryUsage"]
