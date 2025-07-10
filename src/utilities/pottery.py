@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, override
+from functools import partial
+from typing import TYPE_CHECKING, assert_never, override
 
 from pottery import AIORedlock
 from pottery.exceptions import ReleaseUnlockedLock
@@ -10,6 +12,7 @@ from redis.asyncio import Redis
 
 from utilities.asyncio import sleep_td, timeout_td
 from utilities.iterables import always_iterable
+from utilities.logging import get_logger
 from utilities.whenever import MILLISECOND, SECOND, to_seconds
 
 if TYPE_CHECKING:
@@ -17,7 +20,74 @@ if TYPE_CHECKING:
 
     from whenever import Delta
 
-    from utilities.types import MaybeIterable
+    from utilities.types import Coro, LoggerOrName, MaybeIterable
+
+_NUM: int = 1
+_TIMEOUT_ACQUIRE: Delta | None = None
+_TIMEOUT_RELEASE: Delta = 10 * SECOND
+_SLEEP: Delta = MILLISECOND
+_THROTTLE: Delta | None = None
+
+
+##
+
+
+async def run_as_service(
+    redis: MaybeIterable[Redis],
+    func: partial[None] | Callable[[], Coro[None]],
+    /,
+    *,
+    key: str | None = None,
+    num: int = _NUM,
+    timeout_acquire: Delta | None = _TIMEOUT_ACQUIRE,
+    timeout_release: Delta = _TIMEOUT_RELEASE,
+    sleep_access: Delta = _SLEEP,
+    throttle: Delta | None = _THROTTLE,
+    logger: LoggerOrName | None = None,
+    sleep_error: Delta | None = None,
+) -> None:
+    """Run a function as a service."""
+    match func:  # skipif-ci-and-not-linux
+        case partial() as part:
+            name = part.func.__name__
+        case Callable() as make_coro:
+            name = make_coro().__name__
+        case _ as never:
+            assert_never(never)
+    try:  # skipif-ci-and-not-linux
+        async with (
+            yield_access(
+                redis,
+                name if key is None else key,
+                num=num,
+                timeout_acquire=timeout_acquire,
+                timeout_release=timeout_release,
+                sleep=sleep_access,
+                throttle=throttle,
+            ),
+            timeout_td(timeout_release),
+        ):
+            while True:
+                try:
+                    match func:
+                        case partial() as part:
+                            return part()
+                        case Callable() as make_coro:
+                            return await make_coro()
+                        case _ as never:
+                            assert_never(never)
+                except Exception:  # noqa: BLE001
+                    if logger is not None:
+                        get_logger(logger=logger).exception(
+                            "Error running %r as a service", name
+                        )
+                    await sleep_td(sleep_error)
+    except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
+        if logger is not None:
+            get_logger(logger=logger).info("%s", error)
+
+
+##
 
 
 @asynccontextmanager
@@ -26,11 +96,11 @@ async def yield_access(
     key: str,
     /,
     *,
-    num: int = 1,
-    timeout_acquire: Delta | None = None,
-    timeout_release: Delta = 10 * SECOND,
-    sleep: Delta = MILLISECOND,
-    throttle: Delta | None = None,
+    num: int = _NUM,
+    timeout_acquire: Delta | None = _TIMEOUT_ACQUIRE,
+    timeout_release: Delta = _TIMEOUT_RELEASE,
+    sleep: Delta = _SLEEP,
+    throttle: Delta | None = _THROTTLE,
 ) -> AsyncIterator[None]:
     """Acquire access to a locked resource, amongst 1 of multiple connections."""
     if num <= 0:
@@ -64,9 +134,9 @@ async def _get_first_available_lock(
     locks: Iterable[AIORedlock],
     /,
     *,
-    num: int = 1,
-    timeout: Delta | None = None,
-    sleep: Delta | None = None,
+    num: int = _NUM,
+    timeout: Delta | None = _TIMEOUT_ACQUIRE,
+    sleep: Delta | None = _SLEEP,
 ) -> AIORedlock:
     locks = list(locks)  # skipif-ci-and-not-linux
     error = _YieldAccessUnableToAcquireLockError(  # skipif-ci-and-not-linux
