@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from asyncio import AbstractEventLoop, get_event_loop
 from dataclasses import dataclass
 from pathlib import Path
 from shutil import rmtree
@@ -23,7 +22,7 @@ if TYPE_CHECKING:
 type _PGDumpFormat = Literal["plain", "custom", "directory", "tar"]
 
 
-def pg_dump(
+async def pg_dump(
     url: URL,
     path: PathLike,
     /,
@@ -33,7 +32,6 @@ def pg_dump(
     schemas: MaybeListStr | None = None,
     tables: MaybeSequence[TableOrORMInstOrClass] | None = None,
     logger: LoggerOrName | None = None,
-    loop: AbstractEventLoop | None = None,
     dry_run: bool = False,
 ) -> None:
     """Run `pg_dump`."""
@@ -76,10 +74,9 @@ def pg_dump(
         if logger is not None:
             get_logger(logger=logger).info("Would run %r", str(path))
         return
-    loop_use = get_event_loop() if loop is None else loop
     with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
-            output = loop_use.run_until_complete(stream_command(cmd))
+            output = await stream_command(cmd)
         except KeyboardInterrupt:
             if logger is not None:
                 get_logger(logger=logger).info(
@@ -133,7 +130,7 @@ class _PGDumpPortError(PGDumpError):
 ##
 
 
-def pg_restore(
+async def pg_restore(
     url: URL,
     path: PathLike,
     /,
@@ -144,7 +141,6 @@ def pg_restore(
     schemas: MaybeListStr | None = None,
     tables: MaybeSequence[TableOrORMInstOrClass] | None = None,
     logger: LoggerOrName | None = None,
-    loop: AbstractEventLoop | None = None,
     dry_run: bool = False,
 ) -> None:
     """Run `pg_restore`."""
@@ -194,10 +190,9 @@ def pg_restore(
         if logger is not None:
             get_logger(logger=logger).info("Would run %r", str(path))
         return
-    loop_use = get_event_loop() if loop is None else loop
     with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
-            output = loop_use.run_until_complete(stream_command(cmd))
+            output = await stream_command(cmd)
         except KeyboardInterrupt:
             if logger is not None:
                 get_logger(logger=logger).info(
