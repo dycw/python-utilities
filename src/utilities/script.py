@@ -81,7 +81,7 @@ async def main() -> None:
     setup_logging(logger=_LOGGER, files_dir=".logs")
     _LOGGER.info("starting...")
     _LOGGER.info("sleeping for 5...")
-    with context():
+    with context() as asdf, context() as asdf:
         await sleep(5)
     _LOGGER.info("finished")
 
