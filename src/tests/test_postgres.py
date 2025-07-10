@@ -81,22 +81,22 @@ class TestPGDump:
             dry_run=True,
         )
 
-    def test_error_database(self, *, tmp_path: Path) -> None:
+    async def test_error_database(self, *, tmp_path: Path) -> None:
         url = URL.create("postgres")
         with raises(
             _PGDumpDatabaseError, match="Expected URL to contain a 'database'; got .*"
         ):
-            _ = pg_dump(url, tmp_path, dry_run=True)
+            _ = await pg_dump(url, tmp_path, dry_run=True)
 
-    def test_error_host(self, *, tmp_path: Path) -> None:
+    async def test_error_host(self, *, tmp_path: Path) -> None:
         url = URL.create("postgres", database="database")
         with raises(_PGDumpHostError, match="Expected URL to contain a 'host'; got .*"):
-            _ = pg_dump(url, tmp_path, dry_run=True)
+            _ = await pg_dump(url, tmp_path, dry_run=True)
 
-    def test_error_port(self, *, tmp_path: Path) -> None:
+    async def test_error_port(self, *, tmp_path: Path) -> None:
         url = URL.create("postgres", database="database", host="host")
         with raises(_PGDumpPortError, match="Expected URL to contain a 'port'; got .*"):
-            _ = pg_dump(url, tmp_path, dry_run=True)
+            _ = await pg_dump(url, tmp_path, dry_run=True)
 
 
 class TestPGRestore:
@@ -134,24 +134,24 @@ class TestPGRestore:
             dry_run=True,
         )
 
-    def test_error_database(self, *, tmp_path: Path) -> None:
+    async def test_error_database(self, *, tmp_path: Path) -> None:
         url = URL.create("postgres")
         with raises(
             _PGRestoreDatabaseError,
             match="Expected URL to contain a 'database'; got .*",
         ):
-            _ = pg_restore(url, tmp_path, dry_run=True)
+            _ = await pg_restore(url, tmp_path, dry_run=True)
 
-    def test_error_host(self, *, tmp_path: Path) -> None:
+    async def test_error_host(self, *, tmp_path: Path) -> None:
         url = URL.create("postgres", database="database")
         with raises(
             _PGRestoreHostError, match="Expected URL to contain a 'host'; got .*"
         ):
-            _ = pg_restore(url, tmp_path, dry_run=True)
+            _ = await pg_restore(url, tmp_path, dry_run=True)
 
-    def test_error_port(self, *, tmp_path: Path) -> None:
+    async def test_error_port(self, *, tmp_path: Path) -> None:
         url = URL.create("postgres", database="database", host="host")
         with raises(
             _PGRestorePortError, match="Expected URL to contain a 'port'; got .*"
         ):
-            _ = pg_restore(url, tmp_path, dry_run=True)
+            _ = await pg_restore(url, tmp_path, dry_run=True)
