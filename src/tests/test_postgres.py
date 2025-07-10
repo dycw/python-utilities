@@ -59,7 +59,7 @@ class TestPGDump:
         tables=tables() | none(),
         logger=text_ascii(min_size=1) | none(),
     )
-    def test_main(
+    async def test_main(
         self,
         *,
         url: URL,
@@ -70,7 +70,7 @@ class TestPGDump:
         tables: list[Table] | None,
         logger: str | None,
     ) -> None:
-        _ = pg_dump(
+        _ = await pg_dump(
             url,
             path,
             format_=format_,
@@ -110,7 +110,7 @@ class TestPGRestore:
         tables=tables() | none(),
         logger=text_ascii(min_size=1) | none(),
     )
-    def test_main(
+    async def test_main(
         self,
         *,
         url: URL,
@@ -122,7 +122,7 @@ class TestPGRestore:
         tables: list[Table] | None,
         logger: str | None,
     ) -> None:
-        _ = pg_restore(
+        _ = await pg_restore(
             url,
             path,
             database=database,
