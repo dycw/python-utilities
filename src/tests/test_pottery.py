@@ -77,7 +77,7 @@ class TestRunAsService:
 
     async def func_main_async(self, lst: list[None], /) -> None:
         lst.append(None)
-        await sleep_td(3 * self.delta)
+        await sleep_td(5 * self.delta)
 
     async def service(
         self,
