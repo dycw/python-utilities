@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from asyncio import iscoroutinefunction
 from dataclasses import dataclass
 from functools import wraps
+from inspect import iscoroutinefunction
 from typing import TYPE_CHECKING, Any, Self, assert_never, cast, override
 
 from eventkit import (

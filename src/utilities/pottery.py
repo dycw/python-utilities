@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, override
+from functools import partial
+from typing import TYPE_CHECKING, assert_never, override
 
 from pottery import AIORedlock
 from pottery.exceptions import ReleaseUnlockedLock
@@ -14,7 +16,7 @@ from utilities.logging import get_logger
 from utilities.whenever import MILLISECOND, SECOND, to_seconds
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Callable, Iterable
+    from collections.abc import AsyncIterator, Iterable
 
     from whenever import Delta
 
@@ -32,9 +34,10 @@ _THROTTLE: Delta | None = None
 
 async def run_as_service(
     redis: MaybeIterable[Redis],
-    make_func: Callable[[], Coro[None]],
+    func: partial[None] | Callable[[], Coro[None]],
     /,
     *,
+    key: str | None = None,
     num: int = _NUM,
     timeout_acquire: Delta | None = _TIMEOUT_ACQUIRE,
     timeout_release: Delta = _TIMEOUT_RELEASE,
@@ -44,12 +47,18 @@ async def run_as_service(
     sleep_error: Delta | None = None,
 ) -> None:
     """Run a function as a service."""
-    name = make_func().__name__  # skipif-ci-and-not-linux
+    match func:  # skipif-ci-and-not-linux
+        case partial() as part:
+            name = part.func.__name__
+        case Callable() as make_coro:
+            name = make_coro().__name__
+        case _ as never:
+            assert_never(never)
     try:  # skipif-ci-and-not-linux
         async with (
             yield_access(
                 redis,
-                name,
+                name if key is None else key,
                 num=num,
                 timeout_acquire=timeout_acquire,
                 timeout_release=timeout_release,
@@ -60,7 +69,13 @@ async def run_as_service(
         ):
             while True:
                 try:
-                    return await make_func()
+                    match func:
+                        case partial() as part:
+                            return part()
+                        case Callable() as make_coro:
+                            return await make_coro()
+                        case _ as never:
+                            assert_never(never)
                 except Exception:  # noqa: BLE001
                     if logger is not None:
                         get_logger(logger=logger).exception(
