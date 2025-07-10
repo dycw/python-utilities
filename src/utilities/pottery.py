@@ -64,7 +64,7 @@ async def run_as_service(
                 except Exception:  # noqa: BLE001
                     if logger is not None:
                         get_logger(logger=logger).exception(
-                            "Encountered running %r as a service", name
+                            "Error running %r as a service", name
                         )
                     await sleep_td(sleep_error)
     except _YieldAccessUnableToAcquireLockError as error:
