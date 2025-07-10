@@ -40,8 +40,7 @@ async def yield_ping_receiver(
     """Yield the ping receiver."""
     app = _PingerReceiverApp()  # skipif-ci
     server = Server(Config(app, host=host, port=port))  # skipif-ci
-    task = create_task(server.serve())  # skipif-ci
-    _TASKS.append(task)
+    _TASKS.append(create_task(server.serve()))  # skipif-ci
     try:  # skipif-ci
         async with timeout_td(timeout):
             yield
