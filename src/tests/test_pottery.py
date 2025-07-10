@@ -3,14 +3,16 @@ from __future__ import annotations
 from asyncio import TaskGroup
 from typing import TYPE_CHECKING, ClassVar
 
-from pytest import mark, param, raises
+from pytest import LogCaptureFixture, mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_redis import yield_test_redis
 from utilities.asyncio import sleep_td
+from utilities.logging import get_logger
 from utilities.pottery import (
     _YieldAccessNumLocksError,
     _YieldAccessUnableToAcquireLockError,
+    run_as_service,
     yield_access,
 )
 from utilities.text import unique_str
@@ -20,6 +22,57 @@ from utilities.whenever import SECOND
 if TYPE_CHECKING:
     from redis.asyncio import Redis
     from whenever import TimeDelta
+
+    from utilities.types import LoggerOrName
+
+
+class TestRunAsService:
+    delta: ClassVar[TimeDelta] = 0.1 * SECOND
+
+    @mark.parametrize("use_logger", [param(True), param(False)])
+    async def test_main(self, *, use_logger: bool, caplog: LogCaptureFixture) -> None:
+        caplog.set_level("DEBUG", logger=(name := unique_str()))
+        lst: list[None] = []
+
+        async with yield_test_redis() as redis, TaskGroup() as tg:
+            _ = tg.create_task(
+                self.service(redis, lst, logger=name if use_logger else None)
+            )
+            _ = tg.create_task(
+                self.delayed(redis, lst, logger=name if use_logger else None)
+            )
+
+        if use_logger:
+            messages = [r.message for r in caplog.records if r.name == name]
+            expected = [
+                "Appending...",
+                "Unable to acquire any 1 of 1 locks for 'func' after PT0.1S",
+            ]
+            assert messages == expected
+
+    async def func(
+        self, lst: list[None], /, *, logger: LoggerOrName | None = None
+    ) -> None:
+        if logger is not None:
+            get_logger(logger=logger).info("Appending...")
+        lst.append(None)
+        await sleep_td(0.5 * SECOND)
+
+    async def service(
+        self, redis: Redis, lst: list[None], /, *, logger: LoggerOrName | None = None
+    ) -> None:
+        await run_as_service(
+            redis,
+            lambda: self.func(lst, logger=logger),
+            timeout_acquire=0.1 * SECOND,
+            logger=logger,
+        )
+
+    async def delayed(
+        self, redis: Redis, lst: list[None], /, *, logger: LoggerOrName | None = None
+    ) -> None:
+        await sleep_td(2 * self.delta)
+        await self.service(redis, lst, logger=logger)
 
 
 class TestYieldAccess:
