@@ -63,10 +63,10 @@ async def run_as_service(
                 func2 = cast("Coro[None] | None", func)
                 try:
                     if func2 is None:
-                        make_func()
+                        func_use = make_func()
                     else:
-                        _func_use, func = func, None
-                    return await make_func()
+                        func_use, func = func, None
+                    return await func_use
                 except Exception:  # noqa: BLE001
                     if logger is not None:
                         get_logger(logger=logger).exception(
