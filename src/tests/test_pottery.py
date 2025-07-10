@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
+from itertools import repeat
 from typing import TYPE_CHECKING, ClassVar
 
 from pytest import LogCaptureFixture, mark, param, raises
@@ -8,7 +9,6 @@ from pytest import LogCaptureFixture, mark, param, raises
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_redis import yield_test_redis
 from utilities.asyncio import sleep_td
-from utilities.logging import get_logger
 from utilities.pottery import (
     _YieldAccessNumLocksError,
     _YieldAccessUnableToAcquireLockError,
@@ -45,16 +45,11 @@ class TestRunAsService:
         if use_logger:
             messages = [r.message for r in caplog.records if r.name == name]
             expected = [
-                "Appending...",
-                "Unable to acquire any 1 of 1 locks for 'func_main' after PT0.1S",
+                "Unable to acquire any 1 of 1 locks for 'func_main' after PT0.1S"
             ]
             assert messages == expected
 
-    async def func_main(
-        self, lst: list[None], /, *, logger: LoggerOrName | None = None
-    ) -> None:
-        if logger is not None:
-            get_logger(logger=logger).info("Appending...")
+    async def func_main(self, lst: list[None], /) -> None:
         lst.append(None)
         await sleep_td(0.5 * SECOND)
 
@@ -63,7 +58,7 @@ class TestRunAsService:
     ) -> None:
         await run_as_service(
             redis,
-            lambda: self.func_main(lst, logger=logger),
+            lambda: self.func_main(lst),
             timeout_acquire=0.1 * SECOND,
             logger=logger,
         )
@@ -81,37 +76,19 @@ class TestRunAsService:
 
         async with yield_test_redis() as redis:
             await run_as_service(
-                redis,
-                lambda: self.func_error(lst, logger=name if use_logger else None),
-                logger=name if use_logger else None,
+                redis, lambda: self.func_error(lst), logger=name if use_logger else None
             )
 
         if use_logger:
             messages = [r.message for r in caplog.records if r.name == name]
-            expected = [
-                "Appending...",
-                "Error running 'func_error' as a service",
-                "Appending...",
-                "Error running 'func_error' as a service",
-                "Appending...",
-                "Error running 'func_error' as a service",
-                "Appending...",
-                "Success",
-            ]
-
+            expected = list(repeat("Error running 'func_error' as a service", times=3))
             assert messages == expected
 
-    async def func_error(
-        self, lst: list[None], /, *, logger: LoggerOrName | None = None
-    ) -> None:
-        if logger is not None:
-            get_logger(logger=logger).info("Appending...")
+    async def func_error(self, lst: list[None], /) -> None:
         lst.append(None)
         if len(lst) <= 3:
             msg = "Failure"
             raise ValueError(msg)
-        if logger is not None:
-            get_logger(logger=logger).info("Success")
 
 
 class TestYieldAccess:
