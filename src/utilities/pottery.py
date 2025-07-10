@@ -60,19 +60,20 @@ async def run_as_service(
             timeout_td(timeout_release),
         ):
             while True:
-                func2 = cast("Coro[None] | None", func)
                 try:
-                    if func2 is None:
-                        func_use = make_func()
+                    if cast("Coro[None] | None", func) is None:
+                        await make_func()
                     else:
-                        func_use, func = func, None
-                    return await func_use
+                        await func
+                        func = None
                 except Exception:  # noqa: BLE001
                     if logger is not None:
                         get_logger(logger=logger).exception(
                             "Error running %r as a service", name
                         )
                     await sleep_td(sleep_error)
+                else:
+                    return
     except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
         if logger is not None:
             get_logger(logger=logger).info("%s", error)
