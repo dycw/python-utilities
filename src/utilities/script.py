@@ -4,13 +4,15 @@ from asyncio import run, sleep
 from contextlib import _GeneratorContextManager, contextmanager
 from logging import getLogger
 from signal import SIGABRT, SIGFPE, SIGILL, SIGINT, SIGSEGV, SIGTERM, getsignal, signal
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from utilities.logging import setup_logging
 from utilities.pathlib import get_repo_root
+from utilities.random import bernoulli
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
+    from signal import _HANDLER, _SIGNUM
     from types import FrameType
 
 
@@ -28,31 +30,26 @@ def enhanced_context_manager[**P, T_co](
     sigsegv: bool = True,
     sigterm: bool = True,
 ) -> Callable[P, _GeneratorContextManager[T_co]]:
-    make_cm = contextmanager(func)
+    make_gcm = contextmanager(func)
 
     @contextmanager
     def wrapped(*args: P.args, **kwargs: P.kwargs) -> Iterator[T_co]:
         sigabrt0 = sigfpe0 = sigill0 = sigint0 = sigsegv0 = sigterm0 = None
-        cm = make_cm(*args, **kwargs)
-
-        def handler(signum: int, frame: FrameType | None) -> None:
-            _ = (signum, frame)
-            _ = cm.__exit__(None, None, None)
-
+        gcm = make_gcm(*args, **kwargs)
         if sigabrt:
-            sigabrt0, _ = getsignal(SIGABRT), signal(SIGABRT, handler)
+            sigabrt0 = _swap_handler(SIGABRT, gcm)
         if sigfpe:
-            sigfpe0, _ = getsignal(SIGFPE), signal(SIGFPE, handler)
+            sigfpe0 = _swap_handler(SIGFPE, gcm)
         if sigill:
-            sigill0, _ = getsignal(SIGILL), signal(SIGILL, handler)
+            sigill0 = _swap_handler(SIGILL, gcm)
         if sigint:
-            sigint0, _ = getsignal(SIGINT), signal(SIGINT, handler)
+            sigint0 = _swap_handler(SIGINT, gcm)
         if sigsegv:
-            sigsegv0, _ = getsignal(SIGSEGV), signal(SIGSEGV, handler)
+            sigsegv0 = _swap_handler(SIGSEGV, gcm)
         if sigterm:
-            sigterm0, _ = getsignal(SIGTERM), signal(SIGTERM, handler)
+            sigterm0 = _swap_handler(SIGTERM, gcm)
         try:
-            with cm as value:
+            with gcm as value:
                 yield value
         finally:
             if sigabrt:
@@ -71,20 +68,52 @@ def enhanced_context_manager[**P, T_co](
     return wrapped
 
 
+def _swap_handler(
+    signum: _SIGNUM, gcm: _GeneratorContextManager[Any, None, None], /
+) -> _HANDLER:
+    orig_handler = getsignal(signum)
+    new_handler = _make_handler(signum, gcm)
+    _ = signal(signum, new_handler)
+    return orig_handler
+
+
+def _make_handler(
+    signum: _SIGNUM, gcm: _GeneratorContextManager[Any, None, None], /
+) -> Callable[[int, FrameType | None], None]:
+    orig_handler = getsignal(signum)
+
+    def new_handler(signum: int, frame: FrameType | None) -> None:
+        _ = gcm.__exit__(None, None, None)
+        if callable(orig_handler):
+            orig_handler(signum, frame)
+        else:
+            pass
+
+    return new_handler
+
+
 @enhanced_context_manager
 def context() -> Iterator[None]:
     path = get_repo_root().joinpath("dummy")
     path.touch()
-    yield
-    path.unlink(missing_ok=True)
+    try:
+        yield
+    finally:
+        path.unlink(missing_ok=True)
 
 
 async def main() -> None:
     setup_logging(logger=_LOGGER, files_dir=".logs")
     _LOGGER.info("starting...")
-    _LOGGER.info("sleeping for 5...")
+    n = 9
+    _LOGGER.info("sleeping for %d...", n)
     with context():
-        await sleep(8)
+        await sleep(n / 2)
+        if bernoulli():
+            msg = "!!!"
+            raise ValueError(msg)
+        _LOGGER.info("safe...")
+        await sleep(n / 2)
     _LOGGER.info("finished")
 
 
