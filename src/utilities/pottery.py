@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from contextlib import suppress
+from contextlib import nullcontext, suppress
 from dataclasses import dataclass
 from sys import maxsize
 from typing import TYPE_CHECKING, override
@@ -10,9 +10,10 @@ from pottery import AIORedlock
 from pottery.exceptions import ReleaseUnlockedLock
 from redis.asyncio import Redis
 
-from utilities.asyncio import sleep_td, timeout_td
+from utilities.asyncio import loop_until_succeed, sleep_td, timeout_td
 from utilities.contextlib import enhanced_async_context_manager
 from utilities.errors import ImpossibleCaseError
+from utilities.functools import partial
 from utilities.iterables import always_iterable
 from utilities.logging import get_logger
 from utilities.warnings import suppress_warnings
@@ -93,6 +94,7 @@ async def run_as_service(
 ##
 
 
+@enhanced_async_context_manager
 async def try_yield_access(
     redis: MaybeIterable[Redis],
     key: str,
@@ -102,10 +104,11 @@ async def try_yield_access(
     timeout_release: Delta = _TIMEOUT_RELEASE,
     num_extensions: int | None = None,
     timeout_acquire: Delta = _TIMEOUT_TRY_ACQUIRE,
-    sleep: Delta = _SLEEP,
+    sleep_acquire: Delta = _SLEEP,
     throttle: Delta | None = None,
     logger: LoggerOrName | None = None,
-) -> AIORedlock | None:
+    sleep_error: Delta | None = None,
+) -> AsyncIterator[LockedAccessRunner | None]:
     """Try acquire access to a locked resource."""
     try:  # skipif-ci-and-not-linux
         async with yield_access(
@@ -115,13 +118,45 @@ async def try_yield_access(
             timeout_release=timeout_release,
             num_extensions=num_extensions,
             timeout_acquire=timeout_acquire,
-            sleep=sleep,
+            sleep=sleep_acquire,
             throttle=throttle,
         ) as lock:
-            return lock
+            yield LockedAccessRunner(lock=lock, logger=logger, sleep=sleep_error)
     except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
         if logger is not None:
             get_logger(logger=logger).info("%s", error)
+        async with nullcontext():
+            yield
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class LockedAccessRunner:
+    """Runner for when access to a locker resource is obtained."""
+
+    lock: AIORedlock
+    logger: LoggerOrName | None = None
+    sleep: Delta | None = None
+
+    async def __call__[**P](
+        self, func: Callable[P, Coro[None]], *args: P.args, **kwargs: P.kwargs
+    ) -> None:
+        def make_coro() -> Coro[None]:
+            return func(*args, **kwargs)
+
+        await loop_until_succeed(
+            make_coro, error=partial(self._error, func=make_coro), sleep=self.sleep
+        )
+
+    def _error(self, error: Exception, /, *, func: Callable[[], Coro[None]]) -> None:
+        _ = error
+        if self.logger is not None:
+            coro = func()
+            name = coro.__name__  # skipif-ci-and-not-linux
+            with suppress_warnings(
+                message="coroutine '.*' was never awaited", category=RuntimeWarning
+            ):
+                del coro
+            get_logger(logger=self.logger).error("Error running %r", name)
 
 
 ##
@@ -219,4 +254,4 @@ class _YieldAccessUnableToAcquireLockError(YieldAccessError):
         return f"Unable to acquire any 1 of {self.num} locks for {self.key!r} after {self.timeout}"  # skipif-ci-and-not-linux
 
 
-__all__ = ["YieldAccessError", "try_yield_access", "yield_access"]
+__all__ = ["LockedAccessRunner", "YieldAccessError", "try_yield_access", "yield_access"]
