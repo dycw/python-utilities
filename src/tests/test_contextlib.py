@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, override
 
 from hypothesis import given
 from hypothesis.strategies import booleans
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.contextlib import (
     enhanced_async_context_manager,
@@ -19,7 +19,7 @@ from utilities.contextlib import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator
+    from collections.abc import AsyncIterator, Callable, Iterator
 
     from utilities.types import PathLike
 
@@ -141,34 +141,19 @@ class TestEnhancedContextManager:
             assert not cleared
         assert cleared
 
-    def test_sigterm_sync(self, *, tmp_path: Path) -> None:
-        sleep = 0.25
+    @mark.parametrize(
+        "target",
+        [
+            param(_test_enhanced_context_manager),
+            param(_test_enhanced_async_context_manager_entry),
+        ],
+    )
+    def test_multiprocessing_sigterm(
+        self, *, tmp_path: Path, target: Callable[..., None]
+    ) -> None:
+        sleep = 0.5
         marker = tmp_path.joinpath("marker")
-        proc = Process(
-            target=_test_enhanced_context_manager,
-            args=(marker,),
-            kwargs={"sleep": 4 * sleep},
-        )
-        proc.start()
-        assert proc.pid is not None
-        assert proc.is_alive()
-        assert not marker.is_file()
-        time.sleep(sleep)
-        assert proc.is_alive()
-        assert marker.is_file()
-        proc.terminate()
-        time.sleep(sleep)
-        assert proc.is_alive()
-        assert not marker.is_file()
-
-    def test_sigterm_async(self, *, tmp_path: Path) -> None:
-        sleep = 0.25
-        marker = tmp_path.joinpath("marker")
-        proc = Process(
-            target=_test_enhanced_async_context_manager_entry,
-            args=(marker,),
-            kwargs={"sleep": 4 * sleep},
-        )
+        proc = Process(target=target, args=(marker,), kwargs={"sleep": 4 * sleep})
         proc.start()
         assert proc.pid is not None
         assert proc.is_alive()
