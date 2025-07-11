@@ -374,7 +374,8 @@ class RedisKey[T]:
         async with timeout_td(  # skipif-ci-and-not-linux
             self.timeout, error=self.error
         ):
-            return ensure_int(await redis.delete(self.name))
+            response = await redis.delete(self.name)
+        return ensure_int(response)
 
     async def exists(self, redis: Redis, /) -> bool:
         """Check if the key exists in `redis`."""
@@ -409,10 +410,10 @@ class RedisKey[T]:
         async with timeout_td(  # skipif-ci-and-not-linux
             self.timeout, error=self.error
         ):
-            result = await redis.set(  # skipif-ci-and-not-linux
+            response = await redis.set(  # skipif-ci-and-not-linux
                 self.name, ser, px=ttl
             )
-        return ensure_int(result)  # skipif-ci-and-not-linux
+        return ensure_int(response)  # skipif-ci-and-not-linux
 
 
 @overload
