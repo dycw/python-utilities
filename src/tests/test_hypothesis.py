@@ -22,7 +22,6 @@ from hypothesis.strategies import (
     timezones,
 )
 from libcst import Import, ImportFrom
-from luigi import Task
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
 from pytest import mark, raises
@@ -63,7 +62,6 @@ from utilities.hypothesis import (
     int_arrays,
     lists_fixed_length,
     month_days,
-    namespace_mixins,
     numbers,
     pairs,
     paths,
@@ -614,24 +612,6 @@ class TestMonthDays:
             assert month_day >= min_value
         if max_value is not None:
             assert month_day <= max_value
-
-
-class TestNamespaceMixins:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        _ = data.draw(namespace_mixins())
-
-    @given(namespace_mixin=namespace_mixins())
-    def test_first(self, *, namespace_mixin: Any) -> None:
-        class Example(namespace_mixin, Task): ...
-
-        _ = Example()
-
-    @given(namespace_mixin=namespace_mixins())
-    def test_second(self, *, namespace_mixin: Any) -> None:
-        class Example(namespace_mixin, Task): ...
-
-        _ = Example()
 
 
 class TestNumbers:

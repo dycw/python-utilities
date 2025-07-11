@@ -542,7 +542,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.143.1"
+version = "0.144.0"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -643,7 +643,6 @@ hypothesis = [
 ]
 hypothesis-test = [
     { name = "libcst" },
-    { name = "luigi" },
     { name = "numpy" },
     { name = "pathvalidate" },
     { name = "pytest-rerunfailures" },
@@ -662,11 +661,8 @@ lightweight-charts = [
     { name = "lightweight-charts" },
 ]
 lightweight-charts-test = [
-    { name = "polars" },
+    { name = "polars-lts-cpu" },
     { name = "pyarrow" },
-]
-luigi = [
-    { name = "luigi" },
 ]
 math-test = [
     { name = "numpy" },
@@ -868,7 +864,6 @@ http-test = [{ name = "orjson" }]
 hypothesis = [{ name = "hypothesis", specifier = ">=6.135.24,<6.136" }]
 hypothesis-test = [
     { name = "libcst" },
-    { name = "luigi" },
     { name = "numpy" },
     { name = "pathvalidate" },
     { name = "pytest-rerunfailures" },
@@ -881,10 +876,9 @@ jupyter-test = [
 libcst = [{ name = "libcst", specifier = ">=1.8.0,<1.9" }]
 lightweight-charts = [{ name = "lightweight-charts", specifier = ">=2.1,<2.2" }]
 lightweight-charts-test = [
-    { name = "polars" },
+    { name = "polars-lts-cpu" },
     { name = "pyarrow" },
 ]
-luigi = [{ name = "luigi", specifier = ">=3.6.0,<3.7" }]
 math-test = [{ name = "numpy" }]
 memory-profiler = [{ name = "memory-profiler", specifier = ">=0.61.0,<0.62" }]
 more-itertools = [{ name = "more-itertools", specifier = ">=10.7.0,<10.8" }]
@@ -1377,27 +1371,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/e0/9e/70868fb8614f02c13
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f2/12/f225e2140d49bdb4f43c5bd7b766ad6b52dc1c1c93f9c8f81700330cc69a/lightweight_charts-2.1-py3-none-any.whl", hash = "sha256:4c5598fd57ac7569c3fed733727e2033190ca2f6e2460223d27e0926be7bff4f", size = 96281, upload-time = "2024-09-28T14:22:02.61Z" },
 ]
-
-[[package]]
-name = "lockfile"
-version = "0.12.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/17/47/72cb04a58a35ec495f96984dddb48232b551aafb95bde614605b754fe6f7/lockfile-0.12.2.tar.gz", hash = "sha256:6aed02de03cba24efabcd600b30540140634fc06cfa603822d508d5361e9f799", size = 20874, upload-time = "2015-11-25T18:29:58.279Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c8/22/9460e311f340cb62d26a38c419b1381b8593b0bb6b5d1f056938b086d362/lockfile-0.12.2-py2.py3-none-any.whl", hash = "sha256:6c3cb24f344923d30b2785d5ad75182c8ea7ac1b6171b08657258ec7429d50fa", size = 13564, upload-time = "2015-11-25T18:29:51.462Z" },
-]
-
-[[package]]
-name = "luigi"
-version = "3.6.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "python-daemon" },
-    { name = "python-dateutil" },
-    { name = "tenacity" },
-    { name = "tornado" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/74/90/2930a8570da112ea8717d18269ebc93332ef34eaf1c33cfd0c1f6ae589c9/luigi-3.6.0.tar.gz", hash = "sha256:41b14850223c619d9006b30acda733e756b883fc7e60814205576647190c96e3", size = 1236109, upload-time = "2024-12-06T00:58:03.138Z" }
 
 [[package]]
 name = "lxml"
@@ -1979,6 +1952,20 @@ wheels = [
 ]
 
 [[package]]
+name = "polars-lts-cpu"
+version = "1.31.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fb/d5/198c77abe78c06af8768f71eecbd8714b2930a0da97eaf4d5aebe8f757a8/polars_lts_cpu-1.31.0.tar.gz", hash = "sha256:574a7b077aa5f71add4a099d491a28b31e9ec72e020b27b1c9731fc9a638280a", size = 4680376, upload-time = "2025-06-18T12:00:48.195Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9c/ac/1e7cde190510d49725539bfd9a261c99413980717f5d8aca5b2f397f9966/polars_lts_cpu-1.31.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:f699d5ab25781a116adb7288a7d34b333626014b37d61c75f700db201da5aa30", size = 34202968, upload-time = "2025-06-18T12:00:02.211Z" },
+    { url = "https://files.pythonhosted.org/packages/a9/bf/81b2d7ad1c96ada39ff3a46b433e012838b2fbc9b680faed60a7816ce34a/polars_lts_cpu-1.31.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:7c63d36eca8f534662eaf92fc80217e6821183d609ceff24029473b9c4d0cd18", size = 31377827, upload-time = "2025-06-18T12:00:06.179Z" },
+    { url = "https://files.pythonhosted.org/packages/1f/16/7d2aae57715b879aa3b415f487764aa5ec20ca942aa1fb6dea13d00e37ff/polars_lts_cpu-1.31.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:81870f8bf27258d34bd474bc5b9213534834a647e39f4e18b4aa49600356f982", size = 34733404, upload-time = "2025-06-18T12:00:09.133Z" },
+    { url = "https://files.pythonhosted.org/packages/d3/4d/fbd9e8bfa8af55472b14f1700ac40bc5f06b0bd24caa2cefc2c808b2fe07/polars_lts_cpu-1.31.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:9cea1c270b080aa5215d64d14ec251e643525f386fb669d064dea6176f45e533", size = 32260917, upload-time = "2025-06-18T12:00:12.745Z" },
+    { url = "https://files.pythonhosted.org/packages/1f/a3/8f1886f8eb435f8d56db5ca4989543a5d11f050238aee440670b51f1a108/polars_lts_cpu-1.31.0-cp39-abi3-win_amd64.whl", hash = "sha256:a639c014fca4a497b24c5e16d6aabe3f9d29ddd8169d6d9aea87483138b5ece0", size = 35071460, upload-time = "2025-06-18T12:00:17.202Z" },
+    { url = "https://files.pythonhosted.org/packages/57/d0/d6a9ec099bfc7520e8bba2efcf6a2876a3d79c453dce8c4dbbde3564e31c/polars_lts_cpu-1.31.0-cp39-abi3-win_arm64.whl", hash = "sha256:5e9583f21ebfa7a6e36e2527d64416a3f2892f957c68fd3adbc5516fd96eacdb", size = 31469156, upload-time = "2025-06-18T12:00:20.543Z" },
+]
+
+[[package]]
 name = "polars-ols"
 version = "0.3.5"
 source = { registry = "https://pypi.org/simple" }
@@ -2555,18 +2542,6 @@ wheels = [
 ]
 
 [[package]]
-name = "python-daemon"
-version = "3.1.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "lockfile" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/3d/37/4f10e37bdabc058a32989da2daf29e57dc59dbc5395497f3d36d5f5e2694/python_daemon-3.1.2.tar.gz", hash = "sha256:f7b04335adc473de877f5117e26d5f1142f4c9f7cd765408f0877757be5afbf4", size = 71576, upload-time = "2024-12-03T08:41:07.843Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/45/3c/b88167e2d6785c0e781ee5d498b07472aeb9b6765da3b19e7cc9e0813841/python_daemon-3.1.2-py3-none-any.whl", hash = "sha256:b906833cef63502994ad48e2eab213259ed9bb18d54fa8774dcba2ff7864cec6", size = 30872, upload-time = "2024-12-03T08:41:03.322Z" },
-]
-
-[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 source = { registry = "https://pypi.org/simple" }
@@ -3061,11 +3036,11 @@ wheels = [
 
 [[package]]
 name = "tenacity"
-version = "8.5.0"
+version = "9.1.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a3/4d/6a19536c50b849338fcbe9290d562b52cbdcf30d8963d3588a68a4107df1/tenacity-8.5.0.tar.gz", hash = "sha256:8bc6c0c8a09b31e6cad13c47afbed1a567518250a9a171418582ed8d9c20ca78", size = 47309, upload-time = "2024-07-05T07:25:31.836Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/d4/2b0cd0fe285e14b36db076e78c93766ff1d529d70408bd1d2a5a84f1d929/tenacity-9.1.2.tar.gz", hash = "sha256:1169d376c297e7de388d18b4481760d478b0e99a777cad3a9c86e556f4b697cb", size = 48036, upload-time = "2025-04-02T08:25:09.966Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d2/3f/8ba87d9e287b9d385a02a7114ddcef61b26f86411e121c9003eb509a1773/tenacity-8.5.0-py3-none-any.whl", hash = "sha256:b594c2a5945830c267ce6b79a166228323ed52718f30302c1359836112346687", size = 28165, upload-time = "2024-07-05T07:25:29.591Z" },
+    { url = "https://files.pythonhosted.org/packages/e5/30/643397144bfbfec6f6ef821f36f33e57d35946c44a2352d3c9f0ae847619/tenacity-9.1.2-py3-none-any.whl", hash = "sha256:f77bf36710d8b73a50b2dd155c97b870017ad21afe6ab300326b0371b3b05138", size = 28248, upload-time = "2025-04-02T08:25:07.678Z" },
 ]
 
 [[package]]
