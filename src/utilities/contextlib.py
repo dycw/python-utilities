@@ -10,7 +10,7 @@ from contextlib import (
 )
 from functools import partial
 from signal import SIGABRT, SIGFPE, SIGILL, SIGINT, SIGSEGV, SIGTERM, getsignal, signal
-from typing import TYPE_CHECKING, Any, cast, overload
+from typing import TYPE_CHECKING, Any, assert_never, cast, overload
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Iterator
@@ -78,56 +78,58 @@ def enhanced_context_manager[**P, T_co](
 
     @contextmanager
     def wrapped(*args: P.args, **kwargs: P.kwargs) -> Iterator[T_co]:
-        sigabrt0 = sigfpe0 = sigill0 = sigint0 = sigsegv0 = sigterm0 = None
         gcm = make_gcm(*args, **kwargs)
-        if sigabrt:
-            sigabrt0 = _swap_handler(SIGABRT, gcm)
-        if sigfpe:
-            sigfpe0 = _swap_handler(SIGFPE, gcm)
-        if sigill:
-            sigill0 = _swap_handler(SIGILL, gcm)
-        if sigint:
-            sigint0 = _swap_handler(SIGINT, gcm)
-        if sigsegv:
-            sigsegv0 = _swap_handler(SIGSEGV, gcm)
-        if sigterm:
-            sigterm0 = _swap_handler(SIGTERM, gcm)
+        sigabrt0 = _swap_handler(SIGABRT, gcm) if sigabrt else None
+        sigfpe0 = _swap_handler(SIGFPE, gcm) if sigfpe else None
+        sigill0 = _swap_handler(SIGILL, gcm) if sigill else None
+        sigint0 = _swap_handler(SIGINT, gcm) if sigint else None
+        sigsegv0 = _swap_handler(SIGSEGV, gcm) if sigsegv else None
+        sigterm0 = _swap_handler(SIGTERM, gcm) if sigterm else None
         try:
             with gcm as value:
                 yield value
         finally:
-            if sigabrt:
-                _ = signal(SIGABRT, sigabrt0)
-            if sigfpe:
-                _ = signal(SIGFPE, sigfpe0)
-            if sigill:
-                _ = signal(SIGILL, sigill0)
-            if sigint:
-                _ = signal(SIGINT, sigint0)
-            if sigsegv:
-                _ = signal(SIGSEGV, sigsegv0)
-            if sigterm:
-                _ = signal(SIGTERM, sigterm0)
+            _ = signal(SIGABRT, sigabrt0) if sigabrt else None
+            _ = signal(SIGFPE, sigfpe0) if sigfpe else None
+            _ = signal(SIGILL, sigill0) if sigill else None
+            _ = signal(SIGINT, sigint0) if sigint else None
+            _ = signal(SIGSEGV, sigsegv0) if sigsegv else None
+            _ = signal(SIGTERM, sigterm0) if sigterm else None
 
     return wrapped
 
 
 def _swap_handler(
-    signum: _SIGNUM, gcm: _GeneratorContextManager[Any, None, None], /
+    signum: _SIGNUM,
+    obj: _GeneratorContextManager[Any, None, None]
+    | _AsyncGeneratorContextManager[Any, None],
+    /,
 ) -> _HANDLER:
     orig_handler = getsignal(signum)
-    new_handler = _make_handler(signum, gcm)
+    new_handler = _make_handler(signum, obj)
     _ = signal(signum, new_handler)
     return orig_handler
 
 
 def _make_handler(
-    signum: _SIGNUM, gcm: _GeneratorContextManager[Any, None, None], /
+    signum: _SIGNUM,
+    obj: _GeneratorContextManager[Any, None, None]
+    | _AsyncGeneratorContextManager[Any, None],
+    /,
 ) -> Callable[[int, FrameType | None], None]:
     orig_handler = getsignal(signum)
 
     def new_handler(signum: int, frame: FrameType | None) -> None:
-        _ = gcm.__exit__(None, None, None)  # pragma: no cover
+        match obj:
+            case _GeneratorContextManager() as gcm:
+                _ = gcm.__exit__(None, None, None)  # pragma: no cover
+            case _AsyncGeneratorContextManager() as agcm:
+                loop = get_event_loop()  # pragma: no cover
+                _ = loop.call_soon_threadsafe(  # pragma: no cover
+                    create_task, agcm.__aexit__(None, None, None)
+                )
+            case _ as never:
+                assert_never(never)
         if callable(orig_handler):  # pragma: no cover
             orig_handler(signum, frame)
 
@@ -197,61 +199,24 @@ def enhanced_async_context_manager[**P, T_co](
     async def wrapped(*args: P.args, **kwargs: P.kwargs) -> AsyncIterator[T_co]:
         sigabrt0 = sigfpe0 = sigill0 = sigint0 = sigsegv0 = sigterm0 = None
         agcm = make_agcm(*args, **kwargs)
-        if sigabrt:
-            sigabrt0 = _swap_async_handler(SIGABRT, agcm)
-        if sigfpe:
-            sigfpe0 = _swap_async_handler(SIGFPE, agcm)
-        if sigill:
-            sigill0 = _swap_async_handler(SIGILL, agcm)
-        if sigint:
-            sigint0 = _swap_async_handler(SIGINT, agcm)
-        if sigsegv:
-            sigsegv0 = _swap_async_handler(SIGSEGV, agcm)
-        if sigterm:
-            sigterm0 = _swap_async_handler(SIGTERM, agcm)
+        sigabrt0 = _swap_handler(SIGABRT, agcm) if sigabrt else None
+        sigfpe0 = _swap_handler(SIGFPE, agcm) if sigfpe else None
+        sigill0 = _swap_handler(SIGILL, agcm) if sigill else None
+        sigint0 = _swap_handler(SIGINT, agcm) if sigint else None
+        sigsegv0 = _swap_handler(SIGSEGV, agcm) if sigsegv else None
+        sigterm0 = _swap_handler(SIGTERM, agcm) if sigterm else None
         try:
             async with agcm as value:
                 yield value
         finally:
-            if sigabrt:
-                _ = signal(SIGABRT, sigabrt0)
-            if sigfpe:
-                _ = signal(SIGFPE, sigfpe0)
-            if sigill:
-                _ = signal(SIGILL, sigill0)
-            if sigint:
-                _ = signal(SIGINT, sigint0)
-            if sigsegv:
-                _ = signal(SIGSEGV, sigsegv0)
-            if sigterm:
-                _ = signal(SIGTERM, sigterm0)
+            _ = signal(SIGABRT, sigabrt0) if sigabrt else None
+            _ = signal(SIGFPE, sigfpe0) if sigfpe else None
+            _ = signal(SIGILL, sigill0) if sigill else None
+            _ = signal(SIGINT, sigint0) if sigint else None
+            _ = signal(SIGSEGV, sigsegv0) if sigsegv else None
+            _ = signal(SIGTERM, sigterm0) if sigterm else None
 
     return wrapped
-
-
-def _swap_async_handler(
-    signum: _SIGNUM, agcm: _AsyncGeneratorContextManager[Any, None], /
-) -> _HANDLER:
-    orig_handler = getsignal(signum)
-    new_handler = _make_async_handler(signum, agcm)
-    _ = signal(signum, new_handler)
-    return orig_handler
-
-
-def _make_async_handler(
-    signum: _SIGNUM, agcm: _AsyncGeneratorContextManager[Any, None], /
-) -> Callable[[int, FrameType | None], None]:
-    orig_handler = getsignal(signum)
-
-    def new_handler(signum: int, frame: FrameType | None) -> None:
-        loop = get_event_loop()  # pragma: no cover
-        _ = loop.call_soon_threadsafe(  # pragma: no cover
-            create_task, agcm.__aexit__(None, None, None)
-        )
-        if callable(orig_handler):  # pragma: no cover
-            orig_handler(signum, frame)
-
-    return new_handler
 
 
 ##
