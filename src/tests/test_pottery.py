@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, ClassVar
 from pottery import AIORedlock
 from pytest import LogCaptureFixture, mark, param, raises
 
-from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from utilities.asyncio import sleep_td
 from utilities.pottery import (
     _YieldAccessNumLocksError,
@@ -90,7 +89,6 @@ class TestTryYieldCoroutineLooper:
         await self.now(redis, key, lst, logger=logger)
 
     @mark.parametrize("use_logger", [param(True), param(False)])
-    @SKIPIF_CI_AND_NOT_LINUX
     async def test_error(
         self, *, caplog: LogCaptureFixture, test_redis: Redis, use_logger: bool
     ) -> None:
@@ -144,7 +142,6 @@ class TestYieldAccess:
             param(4, 5, 1),
         ],
     )
-    @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(
         self, *, test_redis: Redis, num_tasks: int, num_locks: int, min_multiple: int
     ) -> None:
@@ -160,7 +157,6 @@ class TestYieldAccess:
             async with yield_access(test_redis, unique_str(), num=0):
                 ...
 
-    @SKIPIF_CI_AND_NOT_LINUX
     async def test_error_unable_to_acquire_lock(self, *, test_redis: Redis) -> None:
         key = unique_str()
         delta = 0.1 * SECOND
