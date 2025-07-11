@@ -99,43 +99,6 @@ def enhanced_context_manager[**P, T_co](
     return wrapped
 
 
-def _swap_handler(
-    signum: _SIGNUM,
-    obj: _GeneratorContextManager[Any, None, None]
-    | _AsyncGeneratorContextManager[Any, None],
-    /,
-) -> _HANDLER:
-    orig_handler = getsignal(signum)
-    new_handler = _make_handler(signum, obj)
-    _ = signal(signum, new_handler)
-    return orig_handler
-
-
-def _make_handler(
-    signum: _SIGNUM,
-    obj: _GeneratorContextManager[Any, None, None]
-    | _AsyncGeneratorContextManager[Any, None],
-    /,
-) -> Callable[[int, FrameType | None], None]:
-    orig_handler = getsignal(signum)
-
-    def new_handler(signum: int, frame: FrameType | None) -> None:
-        match obj:
-            case _GeneratorContextManager() as gcm:
-                _ = gcm.__exit__(None, None, None)  # pragma: no cover
-            case _AsyncGeneratorContextManager() as agcm:
-                loop = get_event_loop()  # pragma: no cover
-                _ = loop.call_soon_threadsafe(  # pragma: no cover
-                    create_task, agcm.__aexit__(None, None, None)
-                )
-            case _ as never:
-                assert_never(never)
-        if callable(orig_handler):  # pragma: no cover
-            orig_handler(signum, frame)
-
-    return new_handler
-
-
 @overload
 def enhanced_async_context_manager[**P, T_co](
     func: Callable[P, AsyncIterator[T_co]],
@@ -217,6 +180,43 @@ def enhanced_async_context_manager[**P, T_co](
             _ = signal(SIGTERM, sigterm0) if sigterm else None
 
     return wrapped
+
+
+def _swap_handler(
+    signum: _SIGNUM,
+    obj: _GeneratorContextManager[Any, None, None]
+    | _AsyncGeneratorContextManager[Any, None],
+    /,
+) -> _HANDLER:
+    orig_handler = getsignal(signum)
+    new_handler = _make_handler(signum, obj)
+    _ = signal(signum, new_handler)
+    return orig_handler
+
+
+def _make_handler(
+    signum: _SIGNUM,
+    obj: _GeneratorContextManager[Any, None, None]
+    | _AsyncGeneratorContextManager[Any, None],
+    /,
+) -> Callable[[int, FrameType | None], None]:
+    orig_handler = getsignal(signum)
+
+    def new_handler(signum: int, frame: FrameType | None) -> None:
+        match obj:
+            case _GeneratorContextManager() as gcm:
+                _ = gcm.__exit__(None, None, None)  # pragma: no cover
+            case _AsyncGeneratorContextManager() as agcm:
+                loop = get_event_loop()  # pragma: no cover
+                _ = loop.call_soon_threadsafe(  # pragma: no cover
+                    create_task, agcm.__aexit__(None, None, None)
+                )
+            case _ as never:
+                assert_never(never)
+        if callable(orig_handler):  # pragma: no cover
+            orig_handler(signum, frame)
+
+    return new_handler
 
 
 ##
