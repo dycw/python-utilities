@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from contextlib import contextmanager, suppress
+from contextlib import suppress
 from dataclasses import dataclass
 from os import cpu_count, environ, getenv
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
+from utilities.contextlib import enhanced_context_manager
 from utilities.iterables import OneStrEmptyError, one_str
 
 if TYPE_CHECKING:
@@ -131,7 +132,7 @@ def is_debug() -> bool:
 ##
 
 
-@contextmanager
+@enhanced_context_manager
 def temp_environ(
     env: Mapping[str, str | None] | None = None, **env_kwargs: str | None
 ) -> Iterator[None]:

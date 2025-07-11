@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
 
 from utilities.atomicwrites import writer  # pragma: no cover
+from utilities.contextlib import enhanced_async_context_manager
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 from utilities.reprlib import get_repr
 
@@ -78,7 +78,7 @@ class _SetDataFrameNonUniqueError(SetDataFrameError):
 ##
 
 
-@asynccontextmanager
+@enhanced_async_context_manager
 async def yield_chart(chart: Chart, /) -> AsyncIterator[None]:
     """Yield a chart for visualization in a notebook."""
     try:  # pragma: no cover
