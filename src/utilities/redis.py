@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
     from redis.asyncio import ConnectionPool
     from redis.asyncio.client import PubSub
-    from redis.typing import EncodableT, ResponseT
+    from redis.typing import EncodableT
     from whenever import TimeDelta
 
     from utilities.iterables import MaybeIterable
@@ -523,7 +523,7 @@ async def publish[T](
     *,
     serializer: Callable[[T], EncodableT],
     timeout: Delta = _PUBLISH_TIMEOUT,
-) -> ResponseT: ...
+) -> int: ...
 @overload
 async def publish(
     redis: Redis,
@@ -533,7 +533,7 @@ async def publish(
     *,
     serializer: None = None,
     timeout: Delta = _PUBLISH_TIMEOUT,
-) -> ResponseT: ...
+) -> int: ...
 @overload
 async def publish[T](
     redis: Redis,
@@ -543,7 +543,7 @@ async def publish[T](
     *,
     serializer: Callable[[T], EncodableT] | None = None,
     timeout: Delta = _PUBLISH_TIMEOUT,
-) -> ResponseT: ...
+) -> int: ...
 async def publish[T](
     redis: Redis,
     channel: str,
@@ -552,7 +552,7 @@ async def publish[T](
     *,
     serializer: Callable[[T], EncodableT] | None = None,
     timeout: Delta = _PUBLISH_TIMEOUT,
-) -> ResponseT:
+) -> int:
     """Publish an object to a channel."""
     match data, serializer:  # skipif-ci-and-not-linux
         case bytes() | str() as data_use, _:
@@ -564,7 +564,8 @@ async def publish[T](
         case _ as never:
             assert_never(never)
     async with timeout_td(timeout):  # skipif-ci-and-not-linux
-        return await redis.publish(channel, data_use)  # skipif-ci-and-not-linux
+        response = await redis.publish(channel, data_use)  # skipif-ci-and-not-linux
+    return ensure_int(response)  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True, slots=True)
