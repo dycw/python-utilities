@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 from asyncio import (
     Lock,
     Queue,
@@ -34,6 +35,7 @@ from typing import (
     override,
 )
 
+from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, ensure_not_none, to_bool
 from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
@@ -59,6 +61,7 @@ if TYPE_CHECKING:
     from whenever import ZonedDateTime
 
     from utilities.types import (
+        Coro,
         Delta,
         MaybeCallableBool,
         MaybeType,
@@ -373,6 +376,32 @@ def get_items_nowait[T](queue: Queue[T], /, *, max_size: int | None = None) -> l
 ##
 
 
+async def loop_until_succeed(
+    func: Callable[[], Coro[None]],
+    /,
+    *,
+    error: Callable[[Exception], None] | None = None,
+    sleep: Delta | None = None,
+) -> None:
+    """Repeatedly call a coroutine until it succeeds."""
+    while True:
+        try:
+            return await func()
+        except Exception as err:  # noqa: BLE001
+            if error is not None:
+                error(err)
+            exc_type, exc_value, traceback = sys.exc_info()
+            if (exc_type is None) or (exc_value is None):  # pragma: no cover
+                raise ImpossibleCaseError(
+                    case=[f"{exc_type=}", f"{exc_value=}"]
+                ) from None
+            sys.excepthook(exc_type, exc_value, traceback)
+            await sleep_td(sleep)
+
+
+##
+
+
 async def put_items[T](items: Iterable[T], queue: Queue[T], /) -> None:
     """Put items into a queue; if full then wait."""
     for item in items:
@@ -495,6 +524,7 @@ __all__ = [
     "StreamCommandOutput",
     "get_items",
     "get_items_nowait",
+    "loop_until_succeed",
     "put_items",
     "put_items_nowait",
     "sleep_max",
