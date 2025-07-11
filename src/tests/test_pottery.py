@@ -33,6 +33,9 @@ class TestExtend:
         async with lock:
             await extend(lock=lock)
 
+    async def test_none(self) -> None:
+        await extend()
+
 
 class TestTryYieldCoroutineLooper:
     delta: ClassVar[TimeDelta] = 0.1 * SECOND
