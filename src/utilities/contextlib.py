@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from asyncio import get_event_loop
+from asyncio import create_task, get_event_loop
 from contextlib import (
     _AsyncGeneratorContextManager,
     _GeneratorContextManager,
@@ -245,8 +245,8 @@ def _make_async_handler(
 
     def new_handler(signum: int, frame: FrameType | None) -> None:
         loop = get_event_loop()  # pragma: no cover
-        _ = loop.run_until_complete(  # pragma: no cover
-            agcm.__aexit__(None, None, None)
+        _ = loop.call_soon_threadsafe(  # pragma: no cover
+            create_task, agcm.__aexit__(None, None, None)
         )
         if callable(orig_handler):  # pragma: no cover
             orig_handler(signum, frame)

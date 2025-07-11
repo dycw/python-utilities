@@ -6,12 +6,13 @@ from logging import getLogger
 from signal import SIGABRT, SIGFPE, SIGILL, SIGINT, SIGSEGV, SIGTERM, getsignal, signal
 from typing import TYPE_CHECKING, Any
 
+from utilities.contextlib import enhanced_async_context_manager
 from utilities.logging import setup_logging
 from utilities.pathlib import get_repo_root
 from utilities.random import bernoulli
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import AsyncIterator, Callable, Iterator
     from signal import _HANDLER, _SIGNUM
     from types import FrameType
 
@@ -102,18 +103,27 @@ def context() -> Iterator[None]:
         path.unlink(missing_ok=True)
 
 
+@enhanced_async_context_manager
+async def async_context() -> AsyncIterator[None]:
+    path = get_repo_root().joinpath("dummy")
+    path.touch()
+    try:
+        yield
+    finally:
+        path.unlink(missing_ok=True)
+
+
 async def main() -> None:
     setup_logging(logger=_LOGGER, files_dir=".logs")
     _LOGGER.info("starting...")
-    n = 9
+    n = 15
     _LOGGER.info("sleeping for %d...", n)
-    with context():
-        await sleep(n / 2)
+    async with async_context():
+        await sleep(n)
         if bernoulli():
             msg = "!!!"
             raise ValueError(msg)
         _LOGGER.info("safe...")
-        await sleep(n / 2)
     _LOGGER.info("finished")
 
 
