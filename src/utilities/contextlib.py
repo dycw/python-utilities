@@ -202,12 +202,12 @@ def _make_handler(
     orig_handler = getsignal(signum)
 
     def new_handler(signum: int, frame: FrameType | None) -> None:
-        match obj:
+        match obj:  # pragma: no cover
             case _GeneratorContextManager() as gcm:
-                _ = gcm.__exit__(None, None, None)  # pragma: no cover
+                _ = gcm.__exit__(None, None, None)
             case _AsyncGeneratorContextManager() as agcm:
-                loop = get_event_loop()  # pragma: no cover
-                _ = loop.call_soon_threadsafe(  # pragma: no cover
+                loop = get_event_loop()
+                _ = loop.call_soon_threadsafe(
                     create_task, agcm.__aexit__(None, None, None)
                 )
             case _ as never:
