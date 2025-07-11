@@ -160,7 +160,6 @@ def enhanced_async_context_manager[**P, T_co](
 
     @asynccontextmanager
     async def wrapped(*args: P.args, **kwargs: P.kwargs) -> AsyncIterator[T_co]:
-        sigabrt0 = sigfpe0 = sigill0 = sigint0 = sigsegv0 = sigterm0 = None
         agcm = make_agcm(*args, **kwargs)
         sigabrt0 = _swap_handler(SIGABRT, agcm) if sigabrt else None
         sigfpe0 = _swap_handler(SIGFPE, agcm) if sigfpe else None
