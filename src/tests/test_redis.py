@@ -175,7 +175,7 @@ class TestPublish:
     async def test_error(self) -> None:
         async with yield_redis() as redis:
             with raises(
-                PublishError, match="Unable to publish data None with serializer None"
+                PublishError, match="Unable to publish data None with no serializer"
             ):
                 _ = await publish(redis, "channel", None)
 
