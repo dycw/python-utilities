@@ -2,27 +2,15 @@ from __future__ import annotations
 
 import asyncio
 from asyncio import (
-    Event,
     Lock,
-    PriorityQueue,
     Queue,
     QueueEmpty,
-    QueueFull,
     Semaphore,
     StreamReader,
     Task,
     TaskGroup,
     create_subprocess_shell,
     sleep,
-)
-from collections.abc import (
-    Callable,
-    Hashable,
-    ItemsView,
-    Iterable,
-    Iterator,
-    KeysView,
-    ValuesView,
 )
 from contextlib import (
     AbstractAsyncContextManager,
@@ -33,7 +21,6 @@ from contextlib import (
 )
 from dataclasses import dataclass
 from io import StringIO
-from itertools import chain
 from subprocess import PIPE
 from sys import stderr, stdout
 from typing import (
@@ -47,31 +34,36 @@ from typing import (
     override,
 )
 
-from typing_extensions import deprecated
-
 from utilities.functions import ensure_int, ensure_not_none, to_bool
 from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import (
-    Delta,
-    MaybeCallableBool,
-    SupportsKeysAndGetItem,
-    SupportsRichComparison,
-)
 from utilities.whenever import get_now, round_date_or_date_time, to_nanoseconds
 
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
     from asyncio.subprocess import Process
-    from collections import deque
-    from collections.abc import AsyncIterator, Sequence
+    from collections.abc import (
+        AsyncIterator,
+        Callable,
+        ItemsView,
+        Iterable,
+        Iterator,
+        KeysView,
+        Sequence,
+        ValuesView,
+    )
     from contextvars import Context
     from random import Random
     from types import TracebackType
 
     from whenever import ZonedDateTime
 
-    from utilities.types import MaybeCallableEvent, MaybeType
+    from utilities.types import (
+        Delta,
+        MaybeCallableBool,
+        MaybeType,
+        SupportsKeysAndGetItem,
+    )
 
 
 class AsyncDict[K, V]:
@@ -220,167 +212,6 @@ class AsyncDict[K, V]:
 ##
 
 
-class EnhancedQueue[T](Queue[T]):
-    """An asynchronous deque."""
-
-    @override
-    def __init__(self, maxsize: int = 0) -> None:
-        super().__init__(maxsize=maxsize)
-        self._finished: Event
-        self._getters: deque[Any]
-        self._putters: deque[Any]
-        self._queue: deque[T]
-        self._unfinished_tasks: int
-
-    @override
-    @deprecated("Use `get_left`/`get_right` instead")
-    async def get(self) -> T:
-        raise RuntimeError  # pragma: no cover
-
-    @override
-    @deprecated("Use `get_left_nowait`/`get_right_nowait` instead")
-    def get_nowait(self) -> T:
-        raise RuntimeError  # pragma: no cover
-
-    @override
-    @deprecated("Use `put_left`/`put_right` instead")
-    async def put(self, item: T) -> None:
-        raise RuntimeError(item)  # pragma: no cover
-
-    @override
-    @deprecated("Use `put_left_nowait`/`put_right_nowait` instead")
-    def put_nowait(self, item: T) -> None:
-        raise RuntimeError(item)  # pragma: no cover
-
-    # get all
-
-    async def get_all(self, *, reverse: bool = False) -> Sequence[T]:
-        """Remove and return all items from the queue."""
-        first = await (self.get_right() if reverse else self.get_left())
-        return list(chain([first], self.get_all_nowait(reverse=reverse)))
-
-    def get_all_nowait(self, *, reverse: bool = False) -> Sequence[T]:
-        """Remove and return all items from the queue without blocking."""
-        items: Sequence[T] = []
-        while True:
-            try:
-                items.append(
-                    self.get_right_nowait() if reverse else self.get_left_nowait()
-                )
-            except QueueEmpty:
-                return items
-
-    # get left/right
-
-    async def get_left(self) -> T:
-        """Remove and return an item from the start of the queue."""
-        return await self._get_left_or_right(self._get)
-
-    async def get_right(self) -> T:
-        """Remove and return an item from the end of the queue."""
-        return await self._get_left_or_right(self._get_right)
-
-    def get_left_nowait(self) -> T:
-        """Remove and return an item from the start of the queue without blocking."""
-        return self._get_left_or_right_nowait(self._get)
-
-    def get_right_nowait(self) -> T:
-        """Remove and return an item from the end of the queue without blocking."""
-        return self._get_left_or_right_nowait(self._get_right)
-
-    # put left/right
-
-    async def put_left(self, *items: T) -> None:
-        """Put items into the queue at the start."""
-        return await self._put_left_or_right(self._put_left, *items)
-
-    async def put_right(self, *items: T) -> None:
-        """Put items into the queue at the end."""
-        return await self._put_left_or_right(self._put, *items)
-
-    def put_left_nowait(self, *items: T) -> None:
-        """Put items into the queue at the start without blocking."""
-        self._put_left_or_right_nowait(self._put_left, *items)
-
-    def put_right_nowait(self, *items: T) -> None:
-        """Put items into the queue at the end without blocking."""
-        self._put_left_or_right_nowait(self._put, *items)
-
-    # private
-
-    def _put_left(self, item: T) -> None:
-        self._queue.appendleft(item)
-
-    def _get_right(self) -> T:
-        return self._queue.pop()
-
-    async def _get_left_or_right(self, getter_use: Callable[[], T], /) -> T:
-        while self.empty():  # pragma: no cover
-            getter = self._get_loop().create_future()  # pyright: ignore[reportAttributeAccessIssue]
-            self._getters.append(getter)
-            try:
-                await getter
-            except:
-                getter.cancel()
-                with suppress(ValueError):
-                    self._getters.remove(getter)
-                if not self.empty() and not getter.cancelled():
-                    self._wakeup_next(self._getters)  # pyright: ignore[reportAttributeAccessIssue]
-                raise
-        return getter_use()
-
-    def _get_left_or_right_nowait(self, getter: Callable[[], T], /) -> T:
-        if self.empty():
-            raise QueueEmpty
-        item = getter()
-        self._wakeup_next(self._putters)  # pyright: ignore[reportAttributeAccessIssue]
-        return item
-
-    async def _put_left_or_right(
-        self, putter_use: Callable[[T], None], /, *items: T
-    ) -> None:
-        """Put an item into the queue."""
-        for item in items:
-            await self._put_left_or_right_one(putter_use, item)
-
-    async def _put_left_or_right_one(
-        self, putter_use: Callable[[T], None], item: T, /
-    ) -> None:
-        """Put an item into the queue."""
-        while self.full():  # pragma: no cover
-            putter = self._get_loop().create_future()  # pyright: ignore[reportAttributeAccessIssue]
-            self._putters.append(putter)
-            try:
-                await putter
-            except:
-                putter.cancel()
-                with suppress(ValueError):
-                    self._putters.remove(putter)
-                if not self.full() and not putter.cancelled():
-                    self._wakeup_next(self._putters)  # pyright: ignore[reportAttributeAccessIssue]
-                raise
-        return putter_use(item)
-
-    def _put_left_or_right_nowait(
-        self, putter: Callable[[T], None], /, *items: T
-    ) -> None:
-        for item in items:
-            self._put_left_or_right_nowait_one(putter, item)
-
-    def _put_left_or_right_nowait_one(
-        self, putter: Callable[[T], None], item: T, /
-    ) -> None:
-        if self.full():  # pragma: no cover
-            raise QueueFull
-        putter(item)
-        self._unfinished_tasks += 1
-        self._finished.clear()
-        self._wakeup_next(self._getters)  # pyright: ignore[reportAttributeAccessIssue]
-
-
-##
-
-
 class EnhancedTaskGroup(TaskGroup):
     """Task group with enhanced features."""
 
@@ -501,83 +332,6 @@ class EnhancedTaskGroup(TaskGroup):
     async def _wrap_with_timeout[T](self, coroutine: _CoroutineLike[T], /) -> T:
         async with timeout_td(self._timeout, error=self._error):
             return await coroutine
-
-
-##
-
-
-class UniquePriorityQueue[T: SupportsRichComparison, U: Hashable](
-    PriorityQueue[tuple[T, U]]
-):
-    """Priority queue with unique tasks."""
-
-    @override
-    def __init__(self, maxsize: int = 0) -> None:
-        super().__init__(maxsize)
-        self._set: set[U] = set()
-
-    @override
-    def _get(self) -> tuple[T, U]:
-        item = super()._get()
-        _, value = item
-        self._set.remove(value)
-        return item
-
-    @override
-    def _put(self, item: tuple[T, U]) -> None:
-        _, value = item
-        if value not in self._set:
-            super()._put(item)
-            self._set.add(value)
-
-
-class UniqueQueue[T: Hashable](Queue[T]):
-    """Queue with unique tasks."""
-
-    @override
-    def __init__(self, maxsize: int = 0) -> None:
-        super().__init__(maxsize)
-        self._set: set[T] = set()
-
-    @override
-    def _get(self) -> T:
-        item = super()._get()
-        self._set.remove(item)
-        return item
-
-    @override
-    def _put(self, item: T) -> None:
-        if item not in self._set:
-            super()._put(item)
-            self._set.add(item)
-
-
-##
-
-
-@overload
-def get_event(*, event: MaybeCallableEvent) -> Event: ...
-@overload
-def get_event(*, event: None) -> None: ...
-@overload
-def get_event(*, event: Sentinel) -> Sentinel: ...
-@overload
-def get_event(*, event: MaybeCallableEvent | Sentinel) -> Event | Sentinel: ...
-@overload
-def get_event(
-    *, event: MaybeCallableEvent | None | Sentinel = sentinel
-) -> Event | None | Sentinel: ...
-def get_event(
-    *, event: MaybeCallableEvent | None | Sentinel = sentinel
-) -> Event | None | Sentinel:
-    """Get the event."""
-    match event:
-        case Event() | None | Sentinel():
-            return event
-        case Callable() as func:
-            return get_event(event=func())
-        case _ as never:
-            assert_never(never)
 
 
 ##
@@ -737,12 +491,8 @@ async def timeout_td(
 
 __all__ = [
     "AsyncDict",
-    "EnhancedQueue",
     "EnhancedTaskGroup",
     "StreamCommandOutput",
-    "UniquePriorityQueue",
-    "UniqueQueue",
-    "get_event",
     "get_items",
     "get_items_nowait",
     "put_items",

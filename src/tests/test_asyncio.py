@@ -1,35 +1,18 @@
 from __future__ import annotations
 
-from asyncio import Event, Queue, run
-from collections import deque
+from asyncio import Queue, run
 from collections.abc import ItemsView, KeysView, ValuesView
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, field
-from itertools import chain
 from re import search
-from typing import TYPE_CHECKING, ClassVar, Self
+from typing import TYPE_CHECKING, ClassVar
 
-from hypothesis import assume, given
-from hypothesis.strategies import (
-    DataObject,
-    booleans,
-    data,
-    dictionaries,
-    integers,
-    lists,
-    none,
-    permutations,
-    sampled_from,
-)
+from hypothesis import given
+from hypothesis.strategies import booleans, dictionaries, integers, lists, none
 from pytest import RaisesGroup, raises
 
 from utilities.asyncio import (
     AsyncDict,
-    EnhancedQueue,
     EnhancedTaskGroup,
-    UniquePriorityQueue,
-    UniqueQueue,
-    get_event,
     get_items,
     get_items_nowait,
     put_items,
@@ -41,11 +24,8 @@ from utilities.asyncio import (
     stream_command,
     timeout_td,
 )
-from utilities.dataclasses import replace_non_sentinel
-from utilities.hypothesis import pairs, sentinels, text_ascii
-from utilities.iterables import unique_everseen
+from utilities.hypothesis import pairs, text_ascii
 from utilities.pytest import skipif_windows
-from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
 from utilities.whenever import MILLISECOND, SECOND, get_now
 
@@ -54,7 +34,6 @@ if TYPE_CHECKING:
 
     from whenever import TimeDelta
 
-    from utilities.types import MaybeCallableEvent
 
 async_dicts = dictionaries(text_ascii(), integers()).map(AsyncDict)
 
@@ -206,77 +185,6 @@ class TestAsyncDict:
             assert isinstance(value, int)
 
 
-class TestEnhancedQueue:
-    @given(
-        xs=lists(integers()),
-        wait=booleans(),
-        put_all=booleans(),
-        get_reverse=booleans(),
-    )
-    async def test_left(
-        self, *, xs: list[int], wait: int, put_all: bool, get_reverse: bool
-    ) -> None:
-        _ = assume(not ((len(xs) == 0) and wait))
-        deq: deque[int] = deque()
-        for x in xs:
-            deq.appendleft(x)
-        queue: EnhancedQueue[int] = EnhancedQueue()
-        if put_all:
-            if wait:
-                await queue.put_left(*xs)
-            else:
-                queue.put_left_nowait(*xs)
-        else:
-            for i, x in enumerate(xs, start=1):
-                if wait:
-                    await queue.put_left(x)
-                else:
-                    queue.put_left_nowait(x)
-                assert queue.qsize() == i
-        assert list(deq) == xs[::-1]
-        if wait:
-            res = await queue.get_all(reverse=get_reverse)
-        else:
-            res = queue.get_all_nowait(reverse=get_reverse)
-        expected = xs if get_reverse else xs[::-1]
-        assert res == expected
-
-    @given(
-        xs=lists(integers()),
-        wait=booleans(),
-        put_all=booleans(),
-        get_reverse=booleans(),
-    )
-    async def test_right(
-        self, *, xs: list[int], wait: int, put_all: bool, get_reverse: bool
-    ) -> None:
-        _ = assume(not ((len(xs) == 0) and wait))
-        deq: deque[int] = deque()
-        for x in xs:
-            deq.append(x)
-        queue: EnhancedQueue[int] = EnhancedQueue()
-        if put_all:
-            if wait:
-                await queue.put_right(*xs)
-            else:
-                queue.put_right_nowait(*xs)
-            assert queue.qsize() == len(xs)
-        else:
-            for i, x in enumerate(xs, start=1):
-                if wait:
-                    await queue.put_right(x)
-                else:
-                    queue.put_right_nowait(x)
-                assert queue.qsize() == i
-        assert list(deq) == xs
-        if wait:
-            res = await queue.get_all(reverse=get_reverse)
-        else:
-            res = queue.get_all_nowait(reverse=get_reverse)
-        expected = xs[::-1] if get_reverse else xs
-        assert res == expected
-
-
 class TestEnhancedTaskGroup:
     delta: ClassVar[TimeDelta] = 0.05 * SECOND
 
@@ -378,37 +286,6 @@ class TestEnhancedTaskGroup:
                 _ = tg.create_task(sleep_td(2 * self.delta))
 
 
-class TestGetEvent:
-    def test_event(self) -> None:
-        event = Event()
-        assert get_event(event=event) is event
-
-    @given(event=none() | sentinels())
-    def test_none_or_sentinel(self, *, event: None | Sentinel) -> None:
-        assert get_event(event=event) is event
-
-    def test_replace_non_sentinel(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            event: Event = field(default_factory=Event)
-
-            def replace(
-                self, *, event: MaybeCallableEvent | Sentinel = sentinel
-            ) -> Self:
-                return replace_non_sentinel(self, event=get_event(event=event))
-
-        event1, event2, event3 = Event(), Event(), Event()
-        obj = Example(event=event1)
-        assert obj.event is event1
-        assert obj.replace().event is event1
-        assert obj.replace(event=event2).event is event2
-        assert obj.replace(event=lambda: event3).event is event3
-
-    def test_callable(self) -> None:
-        event = Event()
-        assert get_event(event=lambda: event) is event
-
-
 class TestGetItems:
     @given(
         xs=lists(integers(), min_size=1),
@@ -439,36 +316,6 @@ class TestPutItems:
         while not queue.empty():
             result.append(await queue.get())
         assert result == xs
-
-
-class TestUniquePriorityQueue:
-    @given(data=data(), texts=lists(text_ascii(min_size=1), min_size=1, unique=True))
-    async def test_main(self, *, data: DataObject, texts: list[str]) -> None:
-        items = list(enumerate(texts))
-        extra = data.draw(lists(sampled_from(items)))
-        items_use = data.draw(permutations(list(chain(items, extra))))
-        queue: UniquePriorityQueue[int, str] = UniquePriorityQueue()
-        assert queue._set == set()
-        for item in items_use:
-            await queue.put(item)
-        assert queue._set == set(texts)
-        result = await get_items(queue)
-        assert result == items
-        assert queue._set == set()
-
-
-class TestUniqueQueue:
-    @given(x=lists(integers(), min_size=1))
-    async def test_main(self, *, x: list[int]) -> None:
-        queue: UniqueQueue[int] = UniqueQueue()
-        assert queue._set == set()
-        for x_i in x:
-            await queue.put(x_i)
-        assert queue._set == set(x)
-        result = await get_items(queue)
-        expected = list(unique_everseen(x))
-        assert result == expected
-        assert queue._set == set()
 
 
 class TestSleepMaxDur:
