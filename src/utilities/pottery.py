@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
 _NUM: int = 1
 _TIMEOUT_ACQUIRE: Delta | None = None
+_TIMEOUT_TRY_ACQUIRE: Delta = SECOND
 _TIMEOUT_RELEASE: Delta = 10 * SECOND
 _SLEEP: Delta = MILLISECOND
 _THROTTLE: Delta | None = None
@@ -97,7 +98,7 @@ async def try_yield_access(
     /,
     *,
     num: int = _NUM,
-    timeout_acquire: Delta | None = _TIMEOUT_ACQUIRE,
+    timeout_acquire: Delta = _TIMEOUT_TRY_ACQUIRE,
     timeout_release: Delta = _TIMEOUT_RELEASE,
     sleep: Delta = _SLEEP,
     throttle: Delta | None = _THROTTLE,
