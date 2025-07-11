@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from asyncio import Queue
-from contextlib import asynccontextmanager
 from itertools import chain, repeat
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import Phase, given, settings
+from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import (
     DataObject,
     binary,
@@ -16,7 +15,7 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import fixture, mark, param, raises
+from pytest import mark, param, raises
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 
@@ -43,25 +42,12 @@ from utilities.text import unique_str
 from utilities.whenever import MICROSECOND, SECOND
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Mapping, Sequence
-    from pathlib import Path
+    from collections.abc import Mapping, Sequence
 
     from whenever import TimeDelta
 
 
 _PUB_SUB_SLEEP: TimeDelta = 0.1 * SECOND
-
-
-@fixture
-async def test_redis() -> AsyncIterator[Redis]:
-    async with yield_redis(db=15) as redis:
-        yield redis
-
-
-@asynccontextmanager
-async def yield_test_redis() -> AsyncIterator[Redis]:
-    async with yield_redis(db=15) as redis:
-        yield redis
 
 
 class TestIsMessage:
@@ -115,18 +101,19 @@ class TestIsMessage:
 class TestPublish:
     @given(data=lists(binary(min_size=1), min_size=1))
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_bytes(self, *, data: Sequence[bytes]) -> None:
+    async def test_bytes(self, *, test_redis: Redis, data: Sequence[bytes]) -> None:
         channel = unique_str()
         queue: Queue[bytes] = Queue()
-        async with (
-            yield_test_redis() as redis,
-            subscribe(redis, channel, queue, output="bytes"),
-        ):
+        async with subscribe(test_redis, channel, queue, output="bytes"):
             await sleep_td(_PUB_SUB_SLEEP)
             for datum in data:
-                _ = await publish(redis, channel, datum)
+                _ = await publish(test_redis, channel, datum)
             await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(data)
         results = get_items_nowait(queue)
@@ -136,18 +123,21 @@ class TestPublish:
 
     @given(objects=lists(objects(), min_size=1))
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_serializer(self, *, objects: Sequence[Any]) -> None:
+    async def test_serializer(
+        self, *, test_redis: Redis, objects: Sequence[Any]
+    ) -> None:
         channel = unique_str()
         queue: Queue[Any] = Queue()
-        async with (
-            yield_redis() as redis,
-            subscribe(redis, channel, queue, output=deserialize),
-        ):
+        async with subscribe(test_redis, channel, queue, output=deserialize):
             await sleep_td(_PUB_SUB_SLEEP)
             for obj in objects:
-                _ = await publish(redis, channel, obj, serializer=serialize)
+                _ = await publish(test_redis, channel, obj, serializer=serialize)
             await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(objects)
         results = get_items_nowait(queue)
@@ -156,15 +146,19 @@ class TestPublish:
 
     @given(messages=lists(text_ascii(min_size=1), min_size=1))
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_text(self, *, messages: Sequence[str]) -> None:
+    async def test_text(self, *, test_redis: Redis, messages: Sequence[str]) -> None:
         channel = f"test_{unique_str()}"
         queue: Queue[str] = Queue()
-        async with yield_redis() as redis, subscribe(redis, channel, queue):
+        async with subscribe(test_redis, channel, queue):
             await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
-                _ = await publish(redis, channel, message)
+                _ = await publish(test_redis, channel, message)
             await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
@@ -172,12 +166,11 @@ class TestPublish:
             assert isinstance(result, str)
             assert result == message
 
-    async def test_error(self) -> None:
-        async with yield_redis() as redis:
-            with raises(
-                PublishError, match="Unable to publish data None with no serializer"
-            ):
-                _ = await publish(redis, "channel", None)
+    async def test_error(self, *, test_redis: Redis) -> None:
+        with raises(
+            PublishError, match="Unable to publish data None with no serializer"
+        ):
+            _ = await publish(test_redis, "channel", None)
 
 
 class TestPublishMany:
@@ -185,23 +178,31 @@ class TestPublishMany:
         data=lists(binary(min_size=1) | text_ascii(min_size=1) | objects(), min_size=1)
     )
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, data: Sequence[Any]) -> None:
-        async with yield_test_redis() as redis:
-            result = await publish_many(redis, unique_str(), data, serializer=serialize)
+    async def test_main(self, *, test_redis: Redis, data: Sequence[Any]) -> None:
+        result = await publish_many(
+            test_redis, unique_str(), data, serializer=serialize
+        )
         expected = list(repeat(object=True, times=len(data)))
         assert result == expected
 
     @given(messages=lists(text_ascii(min_size=1), min_size=1))
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_timeout(self, *, messages: Sequence[str]) -> None:
-        async with yield_test_redis() as redis:
-            result = await publish_many(
-                redis, unique_str(), messages, timeout=MICROSECOND
-            )
+    async def test_timeout(self, *, test_redis: Redis, messages: Sequence[str]) -> None:
+        result = await publish_many(
+            test_redis, unique_str(), messages, timeout=MICROSECOND
+        )
         expected = list(repeat(object=False, times=len(messages)))
         assert result == expected
 
@@ -209,56 +210,80 @@ class TestPublishMany:
 class TestRedisHashMapKey:
     @given(key=int64s(), value=booleans())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_bool(self, *, key: int, value: bool) -> None:
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(unique_str(), int, bool)
-            _ = await hm_key.set(redis, key, value)
-            assert await hm_key.get(redis, key) is value
+    async def test_get_and_set_bool(
+        self, *, test_redis: Redis, key: int, value: bool
+    ) -> None:
+        hm_key = redis_hash_map_key(unique_str(), int, bool)
+        _ = await hm_key.set(test_redis, key, value)
+        assert await hm_key.get(test_redis, key) is value
 
     @given(key=booleans() | int64s(), value=booleans())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_union_key(self, *, key: bool | int, value: bool) -> None:
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(unique_str(), (bool, int), bool)
-            _ = await hm_key.set(redis, key, value)
-            assert await hm_key.get(redis, key) is value
+    async def test_get_and_set_union_key(
+        self, *, test_redis: Redis, key: bool | int, value: bool
+    ) -> None:
+        hm_key = redis_hash_map_key(unique_str(), (bool, int), bool)
+        _ = await hm_key.set(test_redis, key, value)
+        assert await hm_key.get(test_redis, key) is value
 
     @given(value=booleans())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_sentinel_key(self, *, value: bool) -> None:
+    async def test_get_and_set_sentinel_key(
+        self, *, test_redis: Redis, value: bool
+    ) -> None:
         def serializer(sentinel: Sentinel, /) -> bytes:
             return repr(sentinel).encode()
 
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(
-                unique_str(), Sentinel, bool, key_serializer=serializer
-            )
-            _ = await hm_key.set(redis, sentinel, value)
-            assert await hm_key.get(redis, sentinel) is value
+        hm_key = redis_hash_map_key(
+            unique_str(), Sentinel, bool, key_serializer=serializer
+        )
+        _ = await hm_key.set(test_redis, sentinel, value)
+        assert await hm_key.get(test_redis, sentinel) is value
 
     @given(key=int64s(), value=int64s() | booleans())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_union_value(
-        self, *, key: int, value: bool | int
+        self, *, test_redis: Redis, key: int, value: bool | int
     ) -> None:
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(unique_str(), int, (bool, int))
-            _ = await hm_key.set(redis, key, value)
-            assert await hm_key.get(redis, key) == value
+        hm_key = redis_hash_map_key(unique_str(), int, (bool, int))
+        _ = await hm_key.set(test_redis, key, value)
+        assert await hm_key.get(test_redis, key) == value
 
     @given(key=int64s())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_sentinel_value(self, *, key: int) -> None:
+    async def test_get_and_set_sentinel_value(
+        self, *, test_redis: Redis, key: int
+    ) -> None:
         def serializer(sentinel: Sentinel, /) -> bytes:
             return repr(sentinel).encode()
 
@@ -266,161 +291,212 @@ class TestRedisHashMapKey:
             assert data == SENTINEL_REPR.encode()
             return sentinel
 
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(
-                unique_str(),
-                int,
-                Sentinel,
-                value_serializer=serializer,
-                value_deserializer=deserializer,
-            )
-            _ = await hm_key.set(redis, key, sentinel)
-            assert await hm_key.get(redis, key) is sentinel
+        hm_key = redis_hash_map_key(
+            unique_str(),
+            int,
+            Sentinel,
+            value_serializer=serializer,
+            value_deserializer=deserializer,
+        )
+        _ = await hm_key.set(test_redis, key, sentinel)
+        assert await hm_key.get(test_redis, key) is sentinel
 
     @given(data=data(), mapping=dictionaries(int64s(), booleans()))
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_get_and_set_many(
-        self, *, data: DataObject, mapping: Mapping[int, bool]
+        self, *, test_redis: Redis, data: DataObject, mapping: Mapping[int, bool]
     ) -> None:
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(unique_str(), int, bool)
-            _ = await hm_key.set_many(redis, mapping)
-            if len(mapping) == 0:
-                keys = []
-            else:
-                keys = data.draw(lists(sampled_from(list(mapping))))
-            expected = [mapping[k] for k in keys]
-            assert await hm_key.get_many(redis, keys) == expected
+        hm_key = redis_hash_map_key(unique_str(), int, bool)
+        _ = await hm_key.set_many(test_redis, mapping)
+        if len(mapping) == 0:
+            keys = []
+        else:
+            keys = data.draw(lists(sampled_from(list(mapping))))
+        expected = [mapping[k] for k in keys]
+        assert await hm_key.get_many(test_redis, keys) == expected
 
     @given(key=int64s(), value=booleans())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_delete(self, *, key: int, value: bool) -> None:
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(unique_str(), int, bool)
-            _ = await hm_key.set(redis, key, value)
-            assert await hm_key.get(redis, key) is value
-            _ = await hm_key.delete(redis, key)
-            with raises(KeyError):
-                _ = await hm_key.get(redis, key)
+    async def test_delete(self, *, test_redis: Redis, key: int, value: bool) -> None:
+        hm_key = redis_hash_map_key(unique_str(), int, bool)
+        _ = await hm_key.set(test_redis, key, value)
+        assert await hm_key.get(test_redis, key) is value
+        _ = await hm_key.delete(test_redis, key)
+        with raises(KeyError):
+            _ = await hm_key.get(test_redis, key)
 
     @given(key=pairs(int64s()), value=booleans())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_delete_compound(self, *, key: tuple[int, int], value: bool) -> None:
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(unique_str(), tuple[int, int], bool)
-            _ = await hm_key.set(redis, key, value)
-            assert await hm_key.get(redis, key) is value
-            _ = await hm_key.delete(redis, key)
-            with raises(KeyError):
-                _ = await hm_key.get(redis, key)
+    async def test_delete_compound(
+        self, *, test_redis: Redis, key: tuple[int, int], value: bool
+    ) -> None:
+        hm_key = redis_hash_map_key(unique_str(), tuple[int, int], bool)
+        _ = await hm_key.set(test_redis, key, value)
+        assert await hm_key.get(test_redis, key) is value
+        _ = await hm_key.delete(test_redis, key)
+        with raises(KeyError):
+            _ = await hm_key.get(test_redis, key)
 
     @given(key=int64s(), value=booleans())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_exists(self, *, key: int, value: bool) -> None:
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(unique_str(), int, bool)
-            assert not (await hm_key.exists(redis, key))
-            _ = await hm_key.set(redis, key, value)
-            assert await hm_key.exists(redis, key)
+    async def test_exists(self, *, test_redis: Redis, key: int, value: bool) -> None:
+        hm_key = redis_hash_map_key(unique_str(), int, bool)
+        assert not (await hm_key.exists(test_redis, key))
+        _ = await hm_key.set(test_redis, key, value)
+        assert await hm_key.exists(test_redis, key)
 
     @given(key=pairs(int64s()), value=booleans())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_exists_compound(self, *, key: tuple[int, int], value: bool) -> None:
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(unique_str(), tuple[int, int], bool)
-            assert not (await hm_key.exists(redis, key))
-            _ = await hm_key.set(redis, key, value)
-            assert await hm_key.exists(redis, key)
+    async def test_exists_compound(
+        self, *, test_redis: Redis, key: tuple[int, int], value: bool
+    ) -> None:
+        hm_key = redis_hash_map_key(unique_str(), tuple[int, int], bool)
+        assert not (await hm_key.exists(test_redis, key))
+        _ = await hm_key.set(test_redis, key, value)
+        assert await hm_key.exists(test_redis, key)
 
     @given(mapping=dictionaries(int64s(), booleans()))
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_all(self, *, mapping: Mapping[int, bool]) -> None:
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(unique_str(), int, bool)
-            _ = await hm_key.set_many(redis, mapping)
-            assert await hm_key.get_all(redis) == mapping
+    async def test_get_all(
+        self, *, test_redis: Redis, mapping: Mapping[int, bool]
+    ) -> None:
+        hm_key = redis_hash_map_key(unique_str(), int, bool)
+        _ = await hm_key.set_many(test_redis, mapping)
+        assert await hm_key.get_all(test_redis) == mapping
 
     @given(mapping=dictionaries(int64s(), booleans()))
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_keys(self, *, mapping: Mapping[int, bool]) -> None:
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(unique_str(), int, bool)
-            _ = await hm_key.set_many(redis, mapping)
-            assert await hm_key.keys(redis) == list(mapping)
+    async def test_keys(
+        self, *, test_redis: Redis, mapping: Mapping[int, bool]
+    ) -> None:
+        hm_key = redis_hash_map_key(unique_str(), int, bool)
+        _ = await hm_key.set_many(test_redis, mapping)
+        assert await hm_key.keys(test_redis) == list(mapping)
 
     @given(mapping=dictionaries(int64s(), booleans()))
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_length(self, *, mapping: Mapping[int, bool]) -> None:
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(unique_str(), int, bool)
-            _ = await hm_key.set_many(redis, mapping)
-            assert await hm_key.length(redis) == len(mapping)
+    async def test_length(
+        self, *, test_redis: Redis, mapping: Mapping[int, bool]
+    ) -> None:
+        hm_key = redis_hash_map_key(unique_str(), int, bool)
+        _ = await hm_key.set_many(test_redis, mapping)
+        assert await hm_key.length(test_redis) == len(mapping)
 
     @given(key=int64s(), value=booleans())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_ttl(self, *, key: int, value: bool) -> None:
+    async def test_ttl(self, *, test_redis: Redis, key: int, value: bool) -> None:
         delta = 0.1 * SECOND
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(unique_str(), int, bool, ttl=2 * delta)
-            _ = await hm_key.set(redis, key, value)
-            await sleep_td(delta)  # else next line may not work
-            assert await hm_key.exists(redis, key)
-            await sleep_td(2 * delta)
-            assert not await redis.exists(hm_key.name)
+        hm_key = redis_hash_map_key(unique_str(), int, bool, ttl=2 * delta)
+        _ = await hm_key.set(test_redis, key, value)
+        await sleep_td(delta)  # else next line may not work
+        assert await hm_key.exists(test_redis, key)
+        await sleep_td(2 * delta)
+        assert not await test_redis.exists(hm_key.name)
 
     @given(mapping=dictionaries(int64s(), booleans()))
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_values(self, *, mapping: Mapping[int, bool]) -> None:
-        async with yield_test_redis() as redis:
-            hm_key = redis_hash_map_key(unique_str(), int, bool)
-            _ = await hm_key.set_many(redis, mapping)
-            assert await hm_key.values(redis) == list(mapping.values())
+    async def test_values(
+        self, *, test_redis: Redis, mapping: Mapping[int, bool]
+    ) -> None:
+        hm_key = redis_hash_map_key(unique_str(), int, bool)
+        _ = await hm_key.set_many(test_redis, mapping)
+        assert await hm_key.values(test_redis) == list(mapping.values())
 
 
 class TestRedisKey:
     @given(value=booleans())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_bool(self, *, value: bool) -> None:
-        async with yield_test_redis() as redis:
-            key = redis_key(unique_str(), bool)
-            _ = await key.set(redis, value)
-            assert await key.get(redis) is value
+    async def test_get_and_set_bool(self, *, test_redis: Redis, value: bool) -> None:
+        key = redis_key(unique_str(), bool)
+        _ = await key.set(test_redis, value)
+        assert await key.get(test_redis) is value
 
     @given(value=booleans() | int64s())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_union(self, *, value: bool | int) -> None:
-        async with yield_test_redis() as redis:
-            key = redis_key(unique_str(), (bool, int))
-            _ = await key.set(redis, value)
-            assert await key.get(redis) == value
+    async def test_get_and_set_union(
+        self, *, test_redis: Redis, value: bool | int
+    ) -> None:
+        key = redis_key(unique_str(), (bool, int))
+        _ = await key.set(test_redis, value)
+        assert await key.get(test_redis) == value
 
     @mark.flaky
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_get_and_set_sentinel_with_serialize(self) -> None:
+    async def test_get_and_set_sentinel_with_serialize(
+        self, *, test_redis: Redis
+    ) -> None:
         def serializer(sentinel: Sentinel, /) -> bytes:
             return repr(sentinel).encode()
 
@@ -428,67 +504,76 @@ class TestRedisKey:
             assert data == SENTINEL_REPR.encode()
             return sentinel
 
-        async with yield_test_redis() as redis:
-            red_key = redis_key(
-                unique_str(), Sentinel, serializer=serializer, deserializer=deserializer
-            )
-            _ = await red_key.set(redis, sentinel)
-            assert await red_key.get(redis) is sentinel
+        red_key = redis_key(
+            unique_str(), Sentinel, serializer=serializer, deserializer=deserializer
+        )
+        _ = await red_key.set(test_redis, sentinel)
+        assert await red_key.get(test_redis) is sentinel
 
     @given(value=booleans())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_delete(self, *, value: bool) -> None:
-        async with yield_test_redis() as redis:
-            key = redis_key(unique_str(), bool)
-            _ = await key.set(redis, value)
-            assert await key.get(redis) is value
-            _ = await key.delete(redis)
-            with raises(KeyError):
-                _ = await key.get(redis)
+    async def test_delete(self, *, test_redis: Redis, value: bool) -> None:
+        key = redis_key(unique_str(), bool)
+        _ = await key.set(test_redis, value)
+        assert await key.get(test_redis) is value
+        _ = await key.delete(test_redis)
+        with raises(KeyError):
+            _ = await key.get(test_redis)
 
     @given(value=booleans())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_exists(self, *, value: bool) -> None:
-        async with yield_test_redis() as redis:
-            key = redis_key(unique_str(), bool)
-            assert not (await key.exists(redis))
-            _ = await key.set(redis, value)
-            assert await key.exists(redis)
+    async def test_exists(self, *, test_redis: Redis, value: bool) -> None:
+        key = redis_key(unique_str(), bool)
+        assert not (await key.exists(test_redis))
+        _ = await key.set(test_redis, value)
+        assert await key.exists(test_redis)
 
     @given(value=booleans())
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_ttl(self, *, value: bool) -> None:
+    async def test_ttl(self, *, test_redis: Redis, value: bool) -> None:
         delta = 0.1 * SECOND
-        async with yield_test_redis() as redis:
-            key = redis_key(unique_str(), bool, ttl=2 * delta)
-            _ = await key.set(redis, value)
-            await sleep_td(delta)  # else next line may not work
-            assert await key.exists(redis)
-            await sleep_td(2 * delta)
-            assert not await key.exists(redis)
+        key = redis_key(unique_str(), bool, ttl=2 * delta)
+        _ = await key.set(test_redis, value)
+        await sleep_td(delta)  # else next line may not work
+        assert await key.exists(test_redis)
+        await sleep_td(2 * delta)
+        assert not await key.exists(test_redis)
 
 
 class TestSubscribe:
     @given(messages=lists(binary(min_size=1), min_size=1))
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_bytes(self, *, messages: Sequence[bytes]) -> None:
+    async def test_bytes(self, *, test_redis: Redis, messages: Sequence[bytes]) -> None:
         channel = unique_str()
         queue: Queue[bytes] = Queue()
-        async with (
-            yield_redis() as redis,
-            subscribe(redis, channel, queue, output="bytes"),
-        ):
+        async with subscribe(test_redis, channel, queue, output="bytes"):
             await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
-                await redis.publish(channel, message)
+                await test_redis.publish(channel, message)
             await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
@@ -498,18 +583,19 @@ class TestSubscribe:
 
     @given(objs=lists(objects(), min_size=1))
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_deserialize(self, *, objs: Sequence[Any]) -> None:
+    async def test_deserialize(self, *, test_redis: Redis, objs: Sequence[Any]) -> None:
         channel = unique_str()
         queue: Queue[Any] = Queue()
-        async with (
-            yield_redis() as redis,
-            subscribe(redis, channel, queue, output=deserialize),
-        ):
+        async with subscribe(test_redis, channel, queue, output=deserialize):
             await sleep_td(_PUB_SUB_SLEEP)
             for obj in objs:
-                await redis.publish(channel, serialize(obj))
+                await test_redis.publish(channel, serialize(obj))
             await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(objs)
         results = get_items_nowait(queue)
@@ -522,11 +608,16 @@ class TestSubscribe:
         long_messages=lists(text_ascii(min_size=6), min_size=1),
     )
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_filter(
         self,
         *,
+        test_redis: Redis,
         data: DataObject,
         short_messages: Sequence[str],
         long_messages: Sequence[str],
@@ -534,13 +625,12 @@ class TestSubscribe:
         channel = unique_str()
         messages = data.draw(permutations(list(chain(short_messages, long_messages))))
         queue: Queue[str] = Queue()
-        async with (
-            yield_redis() as redis,
-            subscribe(redis, channel, queue, filter_=lambda text: len(text) >= 6),
+        async with subscribe(
+            test_redis, channel, queue, filter_=lambda text: len(text) >= 6
         ):
             await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
-                await redis.publish(channel, message)
+                await test_redis.publish(channel, message)
             await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(long_messages)
         results = get_items_nowait(queue)
@@ -550,18 +640,19 @@ class TestSubscribe:
 
     @given(messages=lists(text_ascii(min_size=1), min_size=1))
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_raw(self, *, messages: Sequence[str]) -> None:
+    async def test_raw(self, *, test_redis: Redis, messages: Sequence[str]) -> None:
         channel = f"test_{unique_str()}"
         queue: Queue[_RedisMessage] = Queue()
-        async with (
-            yield_redis() as redis,
-            subscribe(redis, channel, queue, output="raw"),
-        ):
+        async with subscribe(test_redis, channel, queue, output="raw"):
             await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
-                await redis.publish(channel, message)
+                await test_redis.publish(channel, message)
             await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
@@ -574,18 +665,19 @@ class TestSubscribe:
 
     @given(messages=lists(text_ascii(min_size=1), min_size=1))
     @mark.flaky
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_text(self, *, messages: Sequence[str]) -> None:
+    async def test_text(self, *, test_redis: Redis, messages: Sequence[str]) -> None:
         channel = f"test_{unique_str()}"
         queue: Queue[_RedisMessage] = Queue()
-        async with (
-            yield_redis() as redis,
-            subscribe(redis, channel, queue, output="raw"),
-        ):
+        async with subscribe(test_redis, channel, queue, output="raw"):
             await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
-                await redis.publish(channel, message)
+                await test_redis.publish(channel, message)
             await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
@@ -597,7 +689,7 @@ class TestSubscribe:
             assert result["data"] == message.encode()
 
 
-class TestYieldClient:
+class TestYieldRedis:
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self) -> None:
         async with yield_redis() as client:
@@ -606,7 +698,6 @@ class TestYieldClient:
 
 class TestYieldPubSub:
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, tmp_path: Path) -> None:
-        channel = str(tmp_path)
-        async with yield_redis() as redis, yield_pubsub(redis, channel) as pubsub:
+    async def test_main(self, *, test_redis: Redis) -> None:
+        async with yield_pubsub(test_redis, unique_str()) as pubsub:
             assert isinstance(pubsub, PubSub)

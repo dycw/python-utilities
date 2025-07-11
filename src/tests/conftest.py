@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from _pytest.fixtures import SubRequest
+    from redis.asyncio import Redis
 
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
@@ -57,6 +58,17 @@ def set_log_factory() -> AbstractContextManager[None]:
             setLogRecordFactory(LogRecord)
 
     return cm()
+
+
+# fixtures - redis
+
+
+@fixture
+async def test_redis() -> Iterator[Redis]:
+    from utilities.redis import yield_redis
+
+    async with yield_redis(db=15) as redis:
+        yield redis
 
 
 # fixtures - sqlalchemy

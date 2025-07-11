@@ -4,14 +4,15 @@ from asyncio import TaskGroup
 from itertools import repeat
 from typing import TYPE_CHECKING, ClassVar
 
+from pottery import AIORedlock
 from pytest import LogCaptureFixture, mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
-from tests.test_redis import yield_test_redis
 from utilities.asyncio import sleep_td
 from utilities.pottery import (
     _YieldAccessNumLocksError,
     _YieldAccessUnableToAcquireLockError,
+    extend,
     try_yield_coroutine_looper,
     yield_access,
 )
@@ -26,19 +27,28 @@ if TYPE_CHECKING:
     from utilities.types import LoggerOrName
 
 
+class TestExtend:
+    async def test_main(self, *, test_redis: Redis) -> None:
+        lock = AIORedlock(key=unique_str(), masters={test_redis})
+        async with lock:
+            await extend(lock=lock)
+
+
 class TestTryYieldCoroutineLooper:
     delta: ClassVar[TimeDelta] = 0.1 * SECOND
 
     @mark.parametrize("use_logger", [param(True), param(False)])
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, use_logger: bool, caplog: LogCaptureFixture) -> None:
+    async def test_main(
+        self, *, caplog: LogCaptureFixture, use_logger: bool, test_redis: Redis
+    ) -> None:
         caplog.set_level("DEBUG", logger=(name := unique_str()))
         lst: list[None] = []
         logger = name if use_logger else None
 
-        async with yield_test_redis() as redis, TaskGroup() as tg:
-            _ = tg.create_task(self.now(redis, name, lst, logger=logger))
-            _ = tg.create_task(self.delayed(redis, name, lst, logger=logger))
+        async with TaskGroup() as tg:
+            _ = tg.create_task(self.now(test_redis, name, lst, logger=logger))
+            _ = tg.create_task(self.delayed(test_redis, name, lst, logger=logger))
 
         assert len(lst) == 1
         if use_logger:
@@ -79,19 +89,18 @@ class TestTryYieldCoroutineLooper:
 
     @mark.parametrize("use_logger", [param(True), param(False)])
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_error(self, *, use_logger: bool, caplog: LogCaptureFixture) -> None:
+    async def test_error(
+        self, *, caplog: LogCaptureFixture, test_redis: Redis, use_logger: bool
+    ) -> None:
         caplog.set_level("DEBUG", logger=(name := unique_str()))
         lst: list[None] = []
 
-        async with (
-            yield_test_redis() as redis,
-            try_yield_coroutine_looper(
-                redis,
-                name,
-                timeout_acquire=self.delta,
-                logger=name if use_logger else None,
-            ) as looper,
-        ):
+        async with try_yield_coroutine_looper(
+            test_redis,
+            name,
+            timeout_acquire=self.delta,
+            logger=name if use_logger else None,
+        ) as looper:
             assert looper is not None
             await looper(self.func_error, lst)
 
@@ -135,47 +144,45 @@ class TestYieldAccess:
     )
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(
-        self, *, num_tasks: int, num_locks: int, min_multiple: int
+        self, *, test_redis: Redis, num_tasks: int, num_locks: int, min_multiple: int
     ) -> None:
         with Timer() as timer:
-            await self.func(num_tasks, unique_str(), num_locks=num_locks)
+            await self.func(test_redis, num_tasks, unique_str(), num_locks=num_locks)
         assert (min_multiple * self.delta) <= timer <= (5 * min_multiple * self.delta)
 
-    async def test_error_num_locks(self) -> None:
-        key = unique_str()
+    async def test_error_num_locks(self, *, test_redis: Redis) -> None:
         with raises(
             _YieldAccessNumLocksError,
             match=r"Number of locks for '\w+' must be positive; got 0",
         ):
-            async with yield_test_redis() as redis, yield_access(redis, key, num=0):
+            async with yield_access(test_redis, unique_str(), num=0):
                 ...
 
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_error_unable_to_acquire_lock(self) -> None:
+    async def test_error_unable_to_acquire_lock(self, *, test_redis: Redis) -> None:
         key = unique_str()
         delta = 0.1 * SECOND
 
-        async def coroutine(redis: Redis, key: str, /) -> None:
+        async def coroutine(key: str, /) -> None:
             async with yield_access(
-                redis, key, num=1, timeout_acquire=delta, throttle=5 * delta
+                test_redis, key, num=1, timeout_acquire=delta, throttle=5 * delta
             ):
                 await sleep_td(delta)
 
         with raises(ExceptionGroup) as exc_info:
-            async with yield_test_redis() as redis, TaskGroup() as tg:
-                _ = tg.create_task(coroutine(redis, key))
-                _ = tg.create_task(coroutine(redis, key))
+            async with TaskGroup() as tg:
+                _ = tg.create_task(coroutine(key))
+                _ = tg.create_task(coroutine(key))
         assert exc_info.group_contains(
             _YieldAccessUnableToAcquireLockError,
             match=r"Unable to acquire any 1 of 1 locks for '\w+' after .*",
         )
 
-    async def func(self, num_tasks: int, key: str, /, *, num_locks: int = 1) -> None:
+    async def func(
+        self, redis: Redis, num_tasks: int, key: str, /, *, num_locks: int = 1
+    ) -> None:
         async def coroutine() -> None:
-            async with (
-                yield_test_redis() as redis,
-                yield_access(redis, key, num=num_locks),
-            ):
+            async with yield_access(redis, key, num=num_locks):
                 await sleep_td(self.delta)
 
         async with TaskGroup() as tg:
