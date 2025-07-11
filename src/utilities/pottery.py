@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from contextlib import suppress
 from dataclasses import dataclass
+from sys import maxsize
 from typing import TYPE_CHECKING, override
 
 from pottery import AIORedlock
@@ -25,11 +26,9 @@ if TYPE_CHECKING:
     from utilities.types import Coro, LoggerOrName, MaybeIterable
 
 _NUM: int = 1
-_TIMEOUT_ACQUIRE: Delta | None = None
 _TIMEOUT_TRY_ACQUIRE: Delta = SECOND
 _TIMEOUT_RELEASE: Delta = 10 * SECOND
 _SLEEP: Delta = MILLISECOND
-_THROTTLE: Delta | None = None
 
 
 ##
@@ -42,10 +41,11 @@ async def run_as_service(
     *,
     key: str | None = None,
     num: int = _NUM,
-    timeout_acquire: Delta | None = _TIMEOUT_ACQUIRE,
     timeout_release: Delta = _TIMEOUT_RELEASE,
-    sleep_access: Delta = _SLEEP,
-    throttle: Delta | None = _THROTTLE,
+    num_extensions: int | None = None,
+    timeout_acquire: Delta = _TIMEOUT_TRY_ACQUIRE,
+    sleep: Delta = _SLEEP,
+    throttle: Delta | None = None,
     logger: LoggerOrName | None = None,
     sleep_error: Delta | None = None,
 ) -> None:
@@ -62,9 +62,10 @@ async def run_as_service(
                 redis,
                 name if key is None else key,
                 num=num,
-                timeout_acquire=timeout_acquire,
                 timeout_release=timeout_release,
-                sleep=sleep_access,
+                num_extensions=num_extensions,
+                timeout_acquire=timeout_acquire,
+                sleep=sleep,
                 throttle=throttle,
             ),
             timeout_td(timeout_release),
@@ -98,10 +99,11 @@ async def try_yield_access(
     /,
     *,
     num: int = _NUM,
-    timeout_acquire: Delta = _TIMEOUT_TRY_ACQUIRE,
     timeout_release: Delta = _TIMEOUT_RELEASE,
+    num_extensions: int | None = None,
+    timeout_acquire: Delta = _TIMEOUT_TRY_ACQUIRE,
     sleep: Delta = _SLEEP,
-    throttle: Delta | None = _THROTTLE,
+    throttle: Delta | None = None,
     logger: LoggerOrName | None = None,
 ) -> AIORedlock | None:
     """Try acquire access to a locked resource."""
@@ -110,8 +112,9 @@ async def try_yield_access(
             redis,
             key,
             num=num,
-            timeout_acquire=timeout_acquire,
             timeout_release=timeout_release,
+            num_extensions=num_extensions,
+            timeout_acquire=timeout_acquire,
             sleep=sleep,
             throttle=throttle,
         ) as lock:
@@ -131,10 +134,11 @@ async def yield_access(
     /,
     *,
     num: int = _NUM,
-    timeout_acquire: Delta | None = _TIMEOUT_ACQUIRE,
     timeout_release: Delta = _TIMEOUT_RELEASE,
+    num_extensions: int | None = None,
+    timeout_acquire: Delta | None = None,
     sleep: Delta = _SLEEP,
-    throttle: Delta | None = _THROTTLE,
+    throttle: Delta | None = None,
 ) -> AsyncIterator[AIORedlock]:
     """Acquire access to a locked resource."""
     if num <= 0:
@@ -147,6 +151,7 @@ async def yield_access(
             key=f"{key}_{i}_of_{num}",
             masters=masters,
             auto_release_time=to_seconds(timeout_release),
+            num_extensions=maxsize if num_extensions is None else num_extensions,
         )
         for i in range(1, num + 1)
     ]
@@ -169,7 +174,7 @@ async def _get_first_available_lock(
     /,
     *,
     num: int = _NUM,
-    timeout: Delta | None = _TIMEOUT_ACQUIRE,
+    timeout: Delta | None = None,
     sleep: Delta | None = _SLEEP,
 ) -> AIORedlock:
     locks = list(locks)  # skipif-ci-and-not-linux
