@@ -52,13 +52,13 @@ async def _test_enhanced_async_context_manager_core(
     path.touch()
 
     @enhanced_async_context_manager
-    async def _yield_marker() -> AsyncIterator[None]:
+    async def yield_marker() -> AsyncIterator[None]:
         try:
             yield
         finally:
             path.unlink(missing_ok=True)
 
-    async with _yield_marker():
+    async with yield_marker():
         await asyncio.sleep(sleep)
 
 
