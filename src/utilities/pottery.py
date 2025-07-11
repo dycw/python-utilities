@@ -91,6 +91,38 @@ async def run_as_service(
 ##
 
 
+async def try_yield_access(
+    redis: MaybeIterable[Redis],
+    key: str,
+    /,
+    *,
+    num: int = _NUM,
+    timeout_acquire: Delta | None = _TIMEOUT_ACQUIRE,
+    timeout_release: Delta = _TIMEOUT_RELEASE,
+    sleep: Delta = _SLEEP,
+    throttle: Delta | None = _THROTTLE,
+    logger: LoggerOrName | None = None,
+) -> AIORedlock | None:
+    """Try acquire access to a locked resource."""
+    try:  # skipif-ci-and-not-linux
+        async with yield_access(
+            redis,
+            key,
+            num=num,
+            timeout_acquire=timeout_acquire,
+            timeout_release=timeout_release,
+            sleep=sleep,
+            throttle=throttle,
+        ) as lock:
+            return lock
+    except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
+        if logger is not None:
+            get_logger(logger=logger).info("%s", error)
+
+
+##
+
+
 @enhanced_async_context_manager
 async def yield_access(
     redis: MaybeIterable[Redis],
@@ -181,4 +213,4 @@ class _YieldAccessUnableToAcquireLockError(YieldAccessError):
         return f"Unable to acquire any 1 of {self.num} locks for {self.key!r} after {self.timeout}"  # skipif-ci-and-not-linux
 
 
-__all__ = ["YieldAccessError", "yield_access"]
+__all__ = ["YieldAccessError", "try_yield_access", "yield_access"]
