@@ -17,7 +17,7 @@ from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.whenever import MINUTE, get_now
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import AsyncIterator, Iterator, Sequence
     from pathlib import Path
 
     from _pytest.fixtures import SubRequest
@@ -64,7 +64,7 @@ def set_log_factory() -> AbstractContextManager[None]:
 
 
 @fixture
-async def test_redis() -> Iterator[Redis]:
+async def test_redis() -> AsyncIterator[Redis]:
     from utilities.redis import yield_redis
 
     async with yield_redis(db=15) as redis:
