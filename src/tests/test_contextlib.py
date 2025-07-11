@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import time
+from asyncio import run
 from dataclasses import dataclass
 from multiprocessing import Process
 from pathlib import Path
@@ -11,13 +13,13 @@ from hypothesis.strategies import booleans
 from pytest import raises
 
 from utilities.contextlib import (
+    enhanced_async_context_manager,
     enhanced_context_manager,
     suppress_super_object_attribute_error,
 )
-from utilities.hypothesis import temp_paths
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import AsyncIterator, Iterator
 
     from utilities.types import PathLike
 
@@ -37,9 +39,31 @@ def _test_enhanced_context_manager(path: PathLike, /, *, sleep: float = 0.1) -> 
         time.sleep(sleep)
 
 
+def _test_enhanced_async_context_manager_entry(
+    path: PathLike, /, *, sleep: float = 0.1
+) -> None:
+    run(_test_enhanced_async_context_manager_core(path, sleep=sleep))
+
+
+async def _test_enhanced_async_context_manager_core(
+    path: PathLike, /, *, sleep: float = 0.1
+) -> None:
+    path = Path(path)
+    path.touch()
+
+    @enhanced_context_manager
+    def _yield_marker() -> Iterator[None]:
+        try:
+            yield
+        finally:
+            path.unlink(missing_ok=True)
+
+    with _yield_marker():
+        await asyncio.sleep(sleep)
+
+
 class TestEnhancedContextManager:
     @given(
-        root=temp_paths(),
         sigabrt=booleans(),
         sigfpe=booleans(),
         sigill=booleans(),
@@ -47,10 +71,9 @@ class TestEnhancedContextManager:
         sigsegv=booleans(),
         sigterm=booleans(),
     )
-    def test_main(
+    def test_sync(
         self,
         *,
-        root: Path,
         sigabrt: bool,
         sigfpe: bool,
         sigill: bool,
@@ -58,8 +81,7 @@ class TestEnhancedContextManager:
         sigsegv: bool,
         sigterm: bool,
     ) -> None:
-        path = root.joinpath("marker")
-        path.touch()
+        cleared = False
 
         @enhanced_context_manager(
             sigabrt=sigabrt,
@@ -73,16 +95,74 @@ class TestEnhancedContextManager:
             try:
                 yield
             finally:
-                path.unlink(missing_ok=True)
+                nonlocal cleared
+                cleared |= True
 
         with yield_marker():
-            time.sleep(0.01)
-            assert path.is_file()
-        time.sleep(0.01)
-        assert not path.is_file()
+            assert not cleared
+        assert cleared
 
-    def test_sigterm(self, *, tmp_path: Path) -> None:
-        sleep = 0.5
+    @given(
+        sigabrt=booleans(),
+        sigfpe=booleans(),
+        sigill=booleans(),
+        sigint=booleans(),
+        sigsegv=booleans(),
+        sigterm=booleans(),
+    )
+    async def test_async(
+        self,
+        *,
+        sigabrt: bool,
+        sigfpe: bool,
+        sigill: bool,
+        sigint: bool,
+        sigsegv: bool,
+        sigterm: bool,
+    ) -> None:
+        cleared = False
+
+        @enhanced_async_context_manager(
+            sigabrt=sigabrt,
+            sigfpe=sigfpe,
+            sigill=sigill,
+            sigint=sigint,
+            sigsegv=sigsegv,
+            sigterm=sigterm,
+        )
+        async def yield_marker() -> AsyncIterator[None]:
+            try:
+                yield
+            finally:
+                nonlocal cleared
+                cleared |= True
+
+        with yield_marker():
+            assert not cleared
+        assert cleared
+
+    def test_sigterm_sync(self, *, tmp_path: Path) -> None:
+        sleep = 0.3
+        marker = tmp_path.joinpath("marker")
+        proc = Process(
+            target=_test_enhanced_context_manager,
+            args=(marker,),
+            kwargs={"sleep": 3 * sleep},
+        )
+        proc.start()
+        assert proc.pid is not None
+        assert proc.is_alive()
+        assert not marker.is_file()
+        time.sleep(sleep)
+        assert proc.is_alive()
+        assert marker.is_file()
+        proc.terminate()
+        time.sleep(sleep)
+        assert proc.is_alive()
+        assert not marker.is_file()
+
+    def test_sigterm_async(self, *, tmp_path: Path) -> None:
+        sleep = 0.3
         marker = tmp_path.joinpath("marker")
         proc = Process(
             target=_test_enhanced_context_manager,
