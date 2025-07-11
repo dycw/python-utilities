@@ -35,7 +35,9 @@ def enhanced_context_manager[**P, T_co](
     sigint: bool = True,
     sigsegv: bool = True,
     sigterm: bool = True,
-) -> Callable[[Callable[P, Iterator[T_co]]], Callable[P, Iterator[T_co]]]: ...
+) -> Callable[
+    [Callable[P, Iterator[T_co]]], Callable[P, _GeneratorContextManager[T_co]]
+]: ...
 def enhanced_context_manager[**P, T_co](
     func: Callable[P, Iterator[T_co]] | None = None,
     /,
@@ -48,7 +50,9 @@ def enhanced_context_manager[**P, T_co](
     sigterm: bool = True,
 ) -> (
     Callable[P, _GeneratorContextManager[T_co]]
-    | Callable[[Callable[P, Iterator[T_co]]], Callable[P, Iterator[T_co]]]
+    | Callable[
+        [Callable[P, Iterator[T_co]]], Callable[P, _GeneratorContextManager[T_co]]
+    ]
 ):
     if func is None:
         result = partial(
@@ -61,7 +65,7 @@ def enhanced_context_manager[**P, T_co](
             sigterm=sigterm,
         )
         return cast(
-            "Callable[[Callable[P, Iterator[T_co]]], Callable[P, Iterator[T_co]]]",
+            "Callable[[Callable[P, Iterator[T_co]]], Callable[P, _GeneratorContextManager[T_co]]]",
             result,
         )
     make_gcm = contextmanager(func)
