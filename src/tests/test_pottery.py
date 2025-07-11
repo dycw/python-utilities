@@ -97,7 +97,7 @@ class TestTryYieldCoroutineLooper:
 
         if use_logger:
             messages = [r.message for r in caplog.records if r.name == name]
-            expected = list(repeat("Error running 'func_error' as a service", times=3))
+            expected = list(repeat("Error running 'func_error'", times=3))
             assert messages == expected
 
     async def func_error(self, lst: list[None], /) -> None:
