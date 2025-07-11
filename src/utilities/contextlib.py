@@ -29,6 +29,7 @@ def enhanced_context_manager[**P, T_co](
     sigint: bool = True,
     sigsegv: bool = True,
     sigterm: bool = True,
+    allow_no_yield: bool = False,
 ) -> Callable[P, _GeneratorContextManager[T_co]]: ...
 @overload
 def enhanced_context_manager[**P, T_co](
@@ -41,6 +42,7 @@ def enhanced_context_manager[**P, T_co](
     sigint: bool = True,
     sigsegv: bool = True,
     sigterm: bool = True,
+    allow_no_yield: bool = False,
 ) -> Callable[
     [Callable[P, Iterator[T_co]]], Callable[P, _GeneratorContextManager[T_co]]
 ]: ...
@@ -54,6 +56,7 @@ def enhanced_context_manager[**P, T_co](
     sigint: bool = True,
     sigsegv: bool = True,
     sigterm: bool = True,
+    allow_no_yield: bool = False,
 ) -> (
     Callable[P, _GeneratorContextManager[T_co]]
     | Callable[
@@ -69,6 +72,7 @@ def enhanced_context_manager[**P, T_co](
             sigint=sigint,
             sigsegv=sigsegv,
             sigterm=sigterm,
+            allow_no_yield=allow_no_yield,
         )
         return cast(
             "Callable[[Callable[P, Iterator[T_co]]], Callable[P, _GeneratorContextManager[T_co]]]",
@@ -88,6 +92,9 @@ def enhanced_context_manager[**P, T_co](
         try:
             with gcm as value:
                 yield value
+        except RuntimeError as error:
+            if not (allow_no_yield and (error.args[0] == "generator didn't yield")):
+                raise
         finally:
             _ = signal(SIGABRT, sigabrt0) if sigabrt else None
             _ = signal(SIGFPE, sigfpe0) if sigfpe else None
@@ -110,6 +117,7 @@ def enhanced_async_context_manager[**P, T_co](
     sigint: bool = True,
     sigsegv: bool = True,
     sigterm: bool = True,
+    allow_no_yield: bool = False,
 ) -> Callable[P, _AsyncGeneratorContextManager[T_co]]: ...
 @overload
 def enhanced_async_context_manager[**P, T_co](
@@ -122,6 +130,7 @@ def enhanced_async_context_manager[**P, T_co](
     sigint: bool = True,
     sigsegv: bool = True,
     sigterm: bool = True,
+    allow_no_yield: bool = False,
 ) -> Callable[
     [Callable[P, AsyncIterator[T_co]]], Callable[P, _AsyncGeneratorContextManager[T_co]]
 ]: ...
@@ -135,6 +144,7 @@ def enhanced_async_context_manager[**P, T_co](
     sigint: bool = True,
     sigsegv: bool = True,
     sigterm: bool = True,
+    allow_no_yield: bool = False,
 ) -> (
     Callable[P, _AsyncGeneratorContextManager[T_co]]
     | Callable[
@@ -151,6 +161,7 @@ def enhanced_async_context_manager[**P, T_co](
             sigint=sigint,
             sigsegv=sigsegv,
             sigterm=sigterm,
+            allow_no_yield=allow_no_yield,
         )
         return cast(
             "Callable[[Callable[P, AsyncIterator[T_co]]], Callable[P, _AsyncGeneratorContextManager[T_co]]]",
@@ -170,6 +181,9 @@ def enhanced_async_context_manager[**P, T_co](
         try:
             async with agcm as value:
                 yield value
+        except RuntimeError as error:
+            if not (allow_no_yield and (error.args[0] == "generator didn't yield")):
+                raise
         finally:
             _ = signal(SIGABRT, sigabrt0) if sigabrt else None
             _ = signal(SIGFPE, sigfpe0) if sigfpe else None
