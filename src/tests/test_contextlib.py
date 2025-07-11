@@ -137,17 +137,17 @@ class TestEnhancedContextManager:
                 nonlocal cleared
                 cleared |= True
 
-        with yield_marker():
+        async with yield_marker():
             assert not cleared
         assert cleared
 
     def test_sigterm_sync(self, *, tmp_path: Path) -> None:
-        sleep = 0.3
+        sleep = 0.25
         marker = tmp_path.joinpath("marker")
         proc = Process(
             target=_test_enhanced_context_manager,
             args=(marker,),
-            kwargs={"sleep": 3 * sleep},
+            kwargs={"sleep": 4 * sleep},
         )
         proc.start()
         assert proc.pid is not None
@@ -162,12 +162,12 @@ class TestEnhancedContextManager:
         assert not marker.is_file()
 
     def test_sigterm_async(self, *, tmp_path: Path) -> None:
-        sleep = 0.3
+        sleep = 0.25
         marker = tmp_path.joinpath("marker")
         proc = Process(
-            target=_test_enhanced_context_manager,
+            target=_test_enhanced_async_context_manager_entry,
             args=(marker,),
-            kwargs={"sleep": 3 * sleep},
+            kwargs={"sleep": 4 * sleep},
         )
         proc.start()
         assert proc.pid is not None

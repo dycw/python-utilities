@@ -198,17 +198,17 @@ def enhanced_async_context_manager[**P, T_co](
         sigabrt0 = sigfpe0 = sigill0 = sigint0 = sigsegv0 = sigterm0 = None
         agcm = make_agcm(*args, **kwargs)
         if sigabrt:
-            sigabrt0 = _swap_handler(SIGABRT, agcm)
+            sigabrt0 = _swap_async_handler(SIGABRT, agcm)
         if sigfpe:
-            sigfpe0 = _swap_handler(SIGFPE, agcm)
+            sigfpe0 = _swap_async_handler(SIGFPE, agcm)
         if sigill:
-            sigill0 = _swap_handler(SIGILL, agcm)
+            sigill0 = _swap_async_handler(SIGILL, agcm)
         if sigint:
-            sigint0 = _swap_handler(SIGINT, agcm)
+            sigint0 = _swap_async_handler(SIGINT, agcm)
         if sigsegv:
-            sigsegv0 = _swap_handler(SIGSEGV, agcm)
+            sigsegv0 = _swap_async_handler(SIGSEGV, agcm)
         if sigterm:
-            sigterm0 = _swap_handler(SIGTERM, agcm)
+            sigterm0 = _swap_async_handler(SIGTERM, agcm)
         try:
             async with agcm as value:
                 yield value
@@ -229,7 +229,7 @@ def enhanced_async_context_manager[**P, T_co](
     return wrapped
 
 
-def _swap_handler(
+def _swap_async_handler(
     signum: _SIGNUM, agcm: _AsyncGeneratorContextManager[Any, None], /
 ) -> _HANDLER:
     orig_handler = getsignal(signum)
