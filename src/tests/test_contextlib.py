@@ -5,20 +5,7 @@ from typing import override
 
 from pytest import raises
 
-from utilities.contextlib import (
-    NoOpContextManager,
-    suppress_super_object_attribute_error,
-)
-
-
-class TestNoOpContextManager:
-    def test_main(self) -> None:
-        with NoOpContextManager():
-            pass
-
-    def test_error(self) -> None:
-        with raises(RuntimeError), NoOpContextManager():
-            raise RuntimeError
+from utilities.contextlib import suppress_super_object_attribute_error
 
 
 class TestSuppressSuperObjectAttributeError:
