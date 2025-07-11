@@ -20,7 +20,7 @@ from typing import (
 
 from redis.asyncio import Redis
 
-from utilities.asyncio import EnhancedQueue, sleep_td, timeout_td
+from utilities.asyncio import sleep_td, timeout_td
 from utilities.contextlib import enhanced_async_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, identity
@@ -718,10 +718,7 @@ async def _subscribe_core(
             if is_subscribe_message(message):
                 transformed = transform(message)
                 if (filter_ is None) or filter_(transformed):
-                    if isinstance(queue, EnhancedQueue):
-                        queue.put_right_nowait(transformed)
-                    else:
-                        queue.put_nowait(transformed)
+                    queue.put_nowait(transformed)
             else:
                 await sleep_td(sleep)
 

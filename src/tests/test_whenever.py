@@ -6,7 +6,7 @@ from logging import DEBUG
 from typing import TYPE_CHECKING, ClassVar, Self
 from zoneinfo import ZoneInfo
 
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import integers, none, sampled_from, timezones
 from pytest import mark, param, raises
 from whenever import (
@@ -433,6 +433,7 @@ class TestMinMaxDate:
         min_age=date_deltas(min_value=ZERO_DAYS) | none(),
         max_age=date_deltas(min_value=ZERO_DAYS) | none(),
     )
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
         *,
