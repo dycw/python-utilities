@@ -13,6 +13,7 @@ from utilities.asyncio import sleep_td, timeout_td
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
 from utilities.logging import get_logger
+from utilities.warnings import suppress_warnings
 from utilities.whenever import MILLISECOND, SECOND, to_seconds
 
 if TYPE_CHECKING:
@@ -49,6 +50,10 @@ async def run_as_service(
     """Run a function as a service."""
     func = make_func()  # skipif-ci-and-not-linux
     name = func.__name__  # skipif-ci-and-not-linux
+    with suppress_warnings(
+        message="coroutine '.*' was never awaited", category=RuntimeWarning
+    ):
+        del func
     try:  # skipif-ci-and-not-linux
         async with (
             yield_access(
@@ -64,9 +69,8 @@ async def run_as_service(
         ):
             while True:
                 try:
-                    return await (make_func() if func is None else func)
+                    return await make_func()
                 except Exception:  # noqa: BLE001
-                    func = None
                     if logger is not None:
                         get_logger(logger=logger).exception(
                             "Error running %r as a service", name
