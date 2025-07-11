@@ -92,7 +92,7 @@ type _EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConne
 type Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
 type ORMInstOrClass = DeclarativeBase | type[DeclarativeBase]
 type TableOrORMInstOrClass = Table | ORMInstOrClass
-CHUNK_SIZE_FRAC = 0.9
+CHUNK_SIZE_FRAC = 0.8
 
 
 ##
