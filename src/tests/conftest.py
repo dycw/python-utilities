@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from asyncio import sleep
-from contextlib import AbstractContextManager, contextmanager, suppress
+from contextlib import AbstractContextManager, suppress
 from logging import LogRecord, setLogRecordFactory
 from os import environ
 from typing import TYPE_CHECKING, Any
@@ -10,6 +10,7 @@ from hypothesis import HealthCheck
 from pytest import fixture, mark, param
 from whenever import PlainDateTime
 
+from utilities.contextlib import enhanced_context_manager
 from utilities.platform import IS_NOT_LINUX, IS_WINDOWS
 from utilities.re import ExtractGroupError, extract_group
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
@@ -48,7 +49,7 @@ else:
 
 @fixture
 def set_log_factory() -> AbstractContextManager[None]:
-    @contextmanager
+    @enhanced_context_manager
     def cm() -> Iterator[None]:
         try:
             yield

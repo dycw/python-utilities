@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import CancelledError, Queue, Task, create_task
 from collections.abc import AsyncIterator, Callable, Mapping
-from contextlib import asynccontextmanager, suppress
+from contextlib import suppress
 from dataclasses import dataclass
 from functools import partial
 from operator import itemgetter
@@ -21,6 +21,7 @@ from typing import (
 from redis.asyncio import Redis
 
 from utilities.asyncio import EnhancedQueue, sleep_td, timeout_td
+from utilities.contextlib import enhanced_async_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, identity
 from utilities.iterables import always_iterable, one
@@ -586,7 +587,7 @@ _SUBSCRIBE_SLEEP: Delta = MILLISECOND
 
 
 @overload
-@asynccontextmanager
+@enhanced_async_context_manager
 def subscribe(
     redis: Redis,
     channels: MaybeIterable[str],
@@ -599,7 +600,7 @@ def subscribe(
     filter_: Callable[[_RedisMessage], bool] | None = None,
 ) -> AsyncIterator[Task[None]]: ...
 @overload
-@asynccontextmanager
+@enhanced_async_context_manager
 def subscribe(
     redis: Redis,
     channels: MaybeIterable[str],
@@ -612,7 +613,7 @@ def subscribe(
     filter_: Callable[[bytes], bool] | None = None,
 ) -> AsyncIterator[Task[None]]: ...
 @overload
-@asynccontextmanager
+@enhanced_async_context_manager
 def subscribe(
     redis: Redis,
     channels: MaybeIterable[str],
@@ -625,7 +626,7 @@ def subscribe(
     filter_: Callable[[str], bool] | None = None,
 ) -> AsyncIterator[Task[None]]: ...
 @overload
-@asynccontextmanager
+@enhanced_async_context_manager
 def subscribe[T](
     redis: Redis,
     channels: MaybeIterable[str],
@@ -637,7 +638,7 @@ def subscribe[T](
     output: Callable[[bytes], T],
     filter_: Callable[[T], bool] | None = None,
 ) -> AsyncIterator[Task[None]]: ...
-@asynccontextmanager
+@enhanced_async_context_manager
 async def subscribe[T](
     redis: Redis,
     channels: MaybeIterable[str],
@@ -751,7 +752,7 @@ class _RedisMessage(TypedDict):
 ##
 
 
-@asynccontextmanager
+@enhanced_async_context_manager
 async def yield_pubsub(
     redis: Redis, channels: MaybeIterable[str], /
 ) -> AsyncIterator[PubSub]:
@@ -773,7 +774,7 @@ _HOST = "localhost"
 _PORT = 6379
 
 
-@asynccontextmanager
+@enhanced_async_context_manager
 async def yield_redis(
     *,
     host: str = _HOST,

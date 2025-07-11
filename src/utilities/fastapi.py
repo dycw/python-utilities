@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from asyncio import Task, create_task
-from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, override
 
 from fastapi import FastAPI
 from uvicorn import Config, Server
 
 from utilities.asyncio import timeout_td
+from utilities.contextlib import enhanced_async_context_manager
 from utilities.whenever import get_now_local
 
 if TYPE_CHECKING:
@@ -33,7 +33,7 @@ class _PingerReceiverApp(FastAPI):
         _ = ping  # skipif-ci
 
 
-@asynccontextmanager
+@enhanced_async_context_manager
 async def yield_ping_receiver(
     port: int, /, *, host: str = "localhost", timeout: Delta | None = None
 ) -> AsyncIterator[None]:

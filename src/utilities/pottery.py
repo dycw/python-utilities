@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from contextlib import asynccontextmanager, suppress
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
 
@@ -10,6 +10,7 @@ from pottery.exceptions import ReleaseUnlockedLock
 from redis.asyncio import Redis
 
 from utilities.asyncio import sleep_td, timeout_td
+from utilities.contextlib import enhanced_async_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
 from utilities.logging import get_logger
@@ -90,7 +91,7 @@ async def run_as_service(
 ##
 
 
-@asynccontextmanager
+@enhanced_async_context_manager
 async def yield_access(
     redis: MaybeIterable[Redis],
     key: str,

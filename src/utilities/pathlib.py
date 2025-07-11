@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from contextlib import contextmanager
 from dataclasses import dataclass
 from itertools import chain
 from os import chdir
@@ -11,6 +10,7 @@ from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_output
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
+from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.sentinel import Sentinel, sentinel
 
@@ -294,7 +294,7 @@ def list_dir(path: PathLike, /) -> Sequence[Path]:
 ##
 
 
-@contextmanager
+@enhanced_context_manager
 def temp_cwd(path: PathLike, /) -> Iterator[None]:
     """Context manager with temporary current working directory set."""
     prev = Path.cwd()
