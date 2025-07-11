@@ -29,13 +29,13 @@ def _test_enhanced_context_manager(path: PathLike, /, *, sleep: float = 0.1) -> 
     path.touch()
 
     @enhanced_context_manager
-    def _yield_marker() -> Iterator[None]:
+    def yield_marker() -> Iterator[None]:
         try:
             yield
         finally:
             path.unlink(missing_ok=True)
 
-    with _yield_marker():
+    with yield_marker():
         time.sleep(sleep)
 
 
@@ -51,14 +51,14 @@ async def _test_enhanced_async_context_manager_core(
     path = Path(path)
     path.touch()
 
-    @enhanced_context_manager
-    def _yield_marker() -> Iterator[None]:
+    @enhanced_async_context_manager
+    async def _yield_marker() -> AsyncIterator[None]:
         try:
             yield
         finally:
             path.unlink(missing_ok=True)
 
-    with _yield_marker():
+    async with _yield_marker():
         await asyncio.sleep(sleep)
 
 
