@@ -7,7 +7,7 @@ from os import environ
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck
-from pytest import fixture, mark, param
+from pytest import fixture, mark, param, skip
 from whenever import PlainDateTime
 
 from utilities.contextlib import enhanced_context_manager
@@ -64,8 +64,10 @@ def set_log_factory() -> AbstractContextManager[None]:
 
 
 @fixture
-@SKIPIF_CI_AND_NOT_LINUX
 async def test_redis() -> AsyncIterator[Redis]:
+    if IS_CI and IS_NOT_LINUX:
+        skip(reason="Skipped for CI/non-Linux")
+
     from utilities.redis import yield_redis
 
     async with yield_redis(db=15) as redis:
