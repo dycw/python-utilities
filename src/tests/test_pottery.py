@@ -41,7 +41,6 @@ class TestTryYieldCoroutineLooper:
     delta: ClassVar[TimeDelta] = 0.1 * SECOND
 
     @mark.parametrize("use_logger", [param(True), param(False)])
-    @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(
         self, *, caplog: LogCaptureFixture, use_logger: bool, test_redis: Redis
     ) -> None:

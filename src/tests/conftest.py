@@ -64,6 +64,7 @@ def set_log_factory() -> AbstractContextManager[None]:
 
 
 @fixture
+@SKIPIF_CI_AND_NOT_LINUX
 async def test_redis() -> AsyncIterator[Redis]:
     from utilities.redis import yield_redis
 
