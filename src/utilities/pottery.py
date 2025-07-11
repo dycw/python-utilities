@@ -33,6 +33,17 @@ _SLEEP: Delta = MILLISECOND
 ##
 
 
+async def extend_lock(
+    *, lock: AIORedlock | None = None, raise_on_redis_errors: bool | None = None
+) -> None:
+    """Extend a lock."""
+    if lock is not None:
+        await lock.extend(raise_on_redis_errors=raise_on_redis_errors)
+
+
+##
+
+
 @enhanced_async_context_manager
 async def try_yield_coroutine_looper(
     redis: MaybeIterable[Redis],
@@ -196,6 +207,7 @@ class _YieldAccessUnableToAcquireLockError(YieldAccessError):
 __all__ = [
     "CoroutineLooper",
     "YieldAccessError",
+    "extend_lock",
     "try_yield_coroutine_looper",
     "yield_access",
 ]

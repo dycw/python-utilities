@@ -7,7 +7,7 @@ from os import environ
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck
-from pytest import fixture, mark, param
+from pytest import fixture, mark, param, skip
 from whenever import PlainDateTime
 
 from utilities.contextlib import enhanced_context_manager
@@ -17,20 +17,22 @@ from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.whenever import MINUTE, get_now
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import AsyncIterator, Iterator, Sequence
     from pathlib import Path
 
     from _pytest.fixtures import SubRequest
+    from redis.asyncio import Redis
 
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
 IS_CI = "CI" in environ
 SKIPIF_CI = mark.skipif(IS_CI, reason="Skipped for CI")
+IS_CI_AND_NOT_LINUX = IS_CI and IS_NOT_LINUX
 IS_CI_AND_WINDOWS = IS_CI and IS_WINDOWS
-SKIPIF_CI_AND_WINDOWS = mark.skipif(IS_CI_AND_WINDOWS, reason="Skipped for CI/Windows")
 SKIPIF_CI_AND_NOT_LINUX = mark.skipif(
-    IS_CI and IS_NOT_LINUX, reason="Skipped for CI/non-Linux"
+    IS_CI_AND_NOT_LINUX, reason="Skipped for CI/non-Linux"
 )
+SKIPIF_CI_AND_WINDOWS = mark.skipif(IS_CI_AND_WINDOWS, reason="Skipped for CI/Windows")
 
 
 # hypothesis
@@ -57,6 +59,20 @@ def set_log_factory() -> AbstractContextManager[None]:
             setLogRecordFactory(LogRecord)
 
     return cm()
+
+
+# fixtures - redis
+
+
+@fixture
+async def test_redis() -> AsyncIterator[Redis]:
+    if IS_CI_AND_NOT_LINUX:
+        skip(reason="Skipped for CI/non-Linux")
+
+    from utilities.redis import yield_redis
+
+    async with yield_redis(db=15) as redis:
+        yield redis
 
 
 # fixtures - sqlalchemy
