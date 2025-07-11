@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from asyncio import CancelledError, Queue, Task, create_task
-from collections.abc import AsyncIterator, Callable, Mapping
+from asyncio import CancelledError, Queue, Task, TaskGroup, create_task
+from collections.abc import AsyncIterator, Callable, Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import partial
@@ -28,18 +28,17 @@ from utilities.iterables import always_iterable, one
 from utilities.whenever import MILLISECOND, SECOND, to_milliseconds, to_seconds
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Awaitable, Collection, Iterable, Sequence
+    from collections.abc import AsyncIterator, Awaitable, Collection, Iterable
 
     from redis.asyncio import ConnectionPool
     from redis.asyncio.client import PubSub
     from redis.typing import EncodableT
-    from whenever import TimeDelta
 
     from utilities.iterables import MaybeIterable
-    from utilities.types import Delta, MaybeType, TypeLike
+    from utilities.types import Delta, MaybeListStr, MaybeSequence, MaybeType, TypeLike
 
 
-_PUBLISH_TIMEOUT: TimeDelta = SECOND
+_PUBLISH_TIMEOUT: Delta = SECOND
 
 
 ##
@@ -558,7 +557,7 @@ async def publish[T](
         case bytes() | str() as data_use, _:
             ...
         case _, None:
-            raise PublishError(data=data, serializer=serializer)
+            raise PublishError(data=data)
         case _, Callable():
             data_use = serializer(data)
         case _ as never:
@@ -571,13 +570,55 @@ async def publish[T](
 @dataclass(kw_only=True, slots=True)
 class PublishError(Exception):
     data: Any
-    serializer: Callable[[Any], EncodableT] | None = None
 
     @override
     def __str__(self) -> str:
-        return (
-            f"Unable to publish data {self.data!r} with serializer {self.serializer!r}"
-        )
+        return f"Unable to publish data {self.data!r} with no serializer"
+
+
+##
+
+
+async def publish_many[T](
+    redis: Redis,
+    channel: str,
+    data: MaybeSequence[bytes | T] | MaybeListStr,
+    /,
+    *,
+    serializer: Callable[[T], EncodableT] | None = None,
+    timeout: Delta = _PUBLISH_TIMEOUT,
+) -> Sequence[bool]:
+    """Publish an object/multiple objects to a channel."""
+    async with TaskGroup() as tg:
+        tasks = [
+            tg.create_task(
+                _try_publish(
+                    redis,
+                    channel,
+                    d,
+                    serializer=cast("Callable[[Any], EncodableT]", serializer),
+                    timeout=timeout,
+                )
+            )
+            for d in always_iterable(data)
+        ]
+    return [t.result() for t in tasks]
+
+
+async def _try_publish[T](
+    redis: Redis,
+    channel: str,
+    data: bytes | str | T,
+    /,
+    *,
+    serializer: Callable[[T], EncodableT] | None = None,
+    timeout: Delta = _PUBLISH_TIMEOUT,
+) -> bool:
+    try:
+        _ = await publish(redis, channel, data, serializer=serializer, timeout=timeout)
+    except TimeoutError:
+        return False
+    return True
 
 
 ##
@@ -834,6 +875,7 @@ __all__ = [
     "RedisHashMapKey",
     "RedisKey",
     "publish",
+    "publish_many",
     "redis_hash_map_key",
     "redis_key",
     "subscribe",

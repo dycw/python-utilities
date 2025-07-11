@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import Queue
 from contextlib import asynccontextmanager
-from itertools import chain
+from itertools import chain, repeat
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import Phase, given, settings
@@ -31,6 +31,7 @@ from utilities.redis import (
     _is_message,
     _RedisMessage,
     publish,
+    publish_many,
     redis_hash_map_key,
     redis_key,
     subscribe,
@@ -39,7 +40,7 @@ from utilities.redis import (
 )
 from utilities.sentinel import SENTINEL_REPR, Sentinel, sentinel
 from utilities.text import unique_str
-from utilities.whenever import SECOND
+from utilities.whenever import MICROSECOND, SECOND
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Mapping, Sequence
@@ -126,7 +127,7 @@ class TestPublish:
             await sleep_td(_PUB_SUB_SLEEP)
             for datum in data:
                 _ = await publish(redis, channel, datum)
-            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(data)
         results = get_items_nowait(queue)
         for result, datum in zip(results, data, strict=True):
@@ -147,7 +148,7 @@ class TestPublish:
             await sleep_td(_PUB_SUB_SLEEP)
             for obj in objects:
                 _ = await publish(redis, channel, obj, serializer=serialize)
-            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(objects)
         results = get_items_nowait(queue)
         for result, obj in zip(results, objects, strict=True):
@@ -164,7 +165,7 @@ class TestPublish:
             await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
                 _ = await publish(redis, channel, message)
-            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
         for result, message in zip(results, messages, strict=True):
@@ -177,6 +178,32 @@ class TestPublish:
                 PublishError, match="Unable to publish data None with serializer None"
             ):
                 _ = await publish(redis, "channel", None)
+
+
+class TestPublishMany:
+    @given(
+        data=lists(binary(min_size=1) | text_ascii(min_size=1) | objects(), min_size=1)
+    )
+    @mark.flaky
+    @settings(max_examples=1, phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_main(self, *, data: Sequence[Any]) -> None:
+        async with yield_test_redis() as redis:
+            result = await publish_many(redis, unique_str(), data, serializer=serialize)
+        expected = list(repeat(object=True, times=len(data)))
+        assert result == expected
+
+    @given(messages=lists(text_ascii(min_size=1), min_size=1))
+    @mark.flaky
+    @settings(max_examples=1, phases={Phase.generate})
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_timeout(self, *, messages: Sequence[str]) -> None:
+        async with yield_test_redis() as redis:
+            result = await publish_many(
+                redis, unique_str(), messages, timeout=MICROSECOND
+            )
+        expected = list(repeat(object=False, times=len(messages)))
+        assert result == expected
 
 
 class TestRedisHashMapKey:
@@ -462,7 +489,7 @@ class TestSubscribe:
             await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
                 await redis.publish(channel, message)
-            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
         for result, message in zip(results, messages, strict=True):
@@ -483,7 +510,7 @@ class TestSubscribe:
             await sleep_td(_PUB_SUB_SLEEP)
             for obj in objs:
                 await redis.publish(channel, serialize(obj))
-            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(objs)
         results = get_items_nowait(queue)
         for result, obj in zip(results, objs, strict=True):
@@ -514,7 +541,7 @@ class TestSubscribe:
             await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
                 await redis.publish(channel, message)
-            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(long_messages)
         results = get_items_nowait(queue)
         for result in results:
@@ -535,7 +562,7 @@ class TestSubscribe:
             await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
                 await redis.publish(channel, message)
-            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
         for result, message in zip(results, messages, strict=True):
@@ -559,7 +586,7 @@ class TestSubscribe:
             await sleep_td(_PUB_SUB_SLEEP)
             for message in messages:
                 await redis.publish(channel, message)
-            await sleep_td(_PUB_SUB_SLEEP)  # keep in context
+            await sleep_td(_PUB_SUB_SLEEP)  # remain in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
         for result, message in zip(results, messages, strict=True):
