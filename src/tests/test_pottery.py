@@ -12,7 +12,7 @@ from utilities.asyncio import sleep_td
 from utilities.pottery import (
     _YieldAccessNumLocksError,
     _YieldAccessUnableToAcquireLockError,
-    run_as_service,
+    try_yield_coroutine_looper,
     yield_access,
 )
 from utilities.text import unique_str
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from utilities.types import LoggerOrName
 
 
-class TestRunAsService:
+class TestTryYieldCoroutineLooper:
     delta: ClassVar[TimeDelta] = 0.1 * SECOND
 
     @mark.parametrize("use_logger", [param(True), param(False)])
@@ -37,8 +37,8 @@ class TestRunAsService:
         logger = name if use_logger else None
 
         async with yield_test_redis() as redis, TaskGroup() as tg:
-            _ = tg.create_task(self.service(lst, redis, key=name, logger=logger))
-            _ = tg.create_task(self.delayed(lst, redis, key=name, logger=logger))
+            _ = tg.create_task(self.now(redis, name, lst, logger=logger))
+            _ = tg.create_task(self.delayed(redis, name, lst, logger=logger))
 
         assert len(lst) == 1
         if use_logger:
@@ -50,34 +50,32 @@ class TestRunAsService:
         lst.append(None)
         await sleep_td(5 * self.delta)
 
-    async def service(
+    async def now(
         self,
-        lst: list[None],
         redis: Redis,
+        key: str,
+        lst: list[None],
         /,
         *,
-        key: str | None = None,
         logger: LoggerOrName | None = None,
     ) -> None:
-        await run_as_service(
-            redis,
-            lambda: self.func_main(lst),
-            key=key,
-            timeout_acquire=self.delta,
-            logger=logger,
-        )
+        async with try_yield_coroutine_looper(
+            redis, key, timeout_acquire=self.delta, logger=logger
+        ) as looper:
+            if looper is not None:
+                await looper(self.func_main, lst)
 
     async def delayed(
         self,
-        lst: list[None],
         redis: Redis,
+        key: str,
+        lst: list[None],
         /,
         *,
-        key: str | None = None,
         logger: LoggerOrName | None = None,
     ) -> None:
         await sleep_td(self.delta)
-        await self.service(lst, redis, key=key, logger=logger)
+        await self.now(redis, key, lst, logger=logger)
 
     @mark.parametrize("use_logger", [param(True), param(False)])
     @SKIPIF_CI_AND_NOT_LINUX
@@ -85,14 +83,21 @@ class TestRunAsService:
         caplog.set_level("DEBUG", logger=(name := unique_str()))
         lst: list[None] = []
 
-        async with yield_test_redis() as redis:
-            await run_as_service(
-                redis, lambda: self.func_error(lst), logger=name if use_logger else None
-            )
+        async with (
+            yield_test_redis() as redis,
+            try_yield_coroutine_looper(
+                redis,
+                name,
+                timeout_acquire=self.delta,
+                logger=name if use_logger else None,
+            ) as looper,
+        ):
+            assert looper is not None
+            await looper(self.func_error, lst)
 
         if use_logger:
             messages = [r.message for r in caplog.records if r.name == name]
-            expected = list(repeat("Error running 'func_error' as a service", times=3))
+            expected = list(repeat("Error running 'func_error'", times=3))
             assert messages == expected
 
     async def func_error(self, lst: list[None], /) -> None:

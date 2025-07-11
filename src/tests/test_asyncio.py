@@ -15,6 +15,7 @@ from utilities.asyncio import (
     EnhancedTaskGroup,
     get_items,
     get_items_nowait,
+    loop_until_succeed,
     put_items,
     put_items_nowait,
     sleep_max,
@@ -302,6 +303,37 @@ class TestGetItems:
         else:
             result = get_items_nowait(queue, max_size=max_size)
         assert result == xs[:max_size]
+
+
+class TestLoopUntilSucceed:
+    async def test_main(self) -> None:
+        counter = 0
+
+        async def func() -> None:
+            nonlocal counter
+            counter += 1
+            if counter <= 3:
+                raise ValueError
+
+        _ = await loop_until_succeed(lambda: func())
+        assert counter == 4
+
+    async def test_error(self) -> None:
+        counter = 0
+        errors: list[Exception] = []
+
+        async def func() -> None:
+            nonlocal counter
+            counter += 1
+            if counter <= 3:
+                raise ValueError
+
+        def error(error: Exception, /) -> None:
+            errors.append(error)
+
+        _ = await loop_until_succeed(lambda: func(), error=error)
+        assert counter == 4
+        assert len(errors) == 3
 
 
 class TestPutItems:
