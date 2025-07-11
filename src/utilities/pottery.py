@@ -33,7 +33,7 @@ _SLEEP: Delta = MILLISECOND
 ##
 
 
-async def extend(
+async def extend_lock(
     *, lock: AIORedlock | None = None, raise_on_redis_errors: bool | None = None
 ) -> None:
     """Extend a lock."""
@@ -207,7 +207,7 @@ class _YieldAccessUnableToAcquireLockError(YieldAccessError):
 __all__ = [
     "CoroutineLooper",
     "YieldAccessError",
-    "extend",
+    "extend_lock",
     "try_yield_coroutine_looper",
     "yield_access",
 ]

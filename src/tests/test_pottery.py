@@ -12,7 +12,7 @@ from utilities.asyncio import sleep_td
 from utilities.pottery import (
     _YieldAccessNumLocksError,
     _YieldAccessUnableToAcquireLockError,
-    extend,
+    extend_lock,
     try_yield_coroutine_looper,
     yield_access,
 )
@@ -27,14 +27,14 @@ if TYPE_CHECKING:
     from utilities.types import LoggerOrName
 
 
-class TestExtend:
+class TestExtendLock:
     async def test_main(self, *, test_redis: Redis) -> None:
         lock = AIORedlock(key=unique_str(), masters={test_redis})
         async with lock:
-            await extend(lock=lock)
+            await extend_lock(lock=lock)
 
     async def test_none(self) -> None:
-        await extend()
+        await extend_lock()
 
 
 class TestTryYieldCoroutineLooper:
