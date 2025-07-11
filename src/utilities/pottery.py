@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from contextlib import nullcontext, suppress
 from dataclasses import dataclass
 from sys import maxsize
@@ -12,7 +11,6 @@ from redis.asyncio import Redis
 
 from utilities.asyncio import loop_until_succeed, sleep_td, timeout_td
 from utilities.contextlib import enhanced_async_context_manager
-from utilities.errors import ImpossibleCaseError
 from utilities.functools import partial
 from utilities.iterables import always_iterable
 from utilities.logging import get_logger
@@ -35,67 +33,8 @@ _SLEEP: Delta = MILLISECOND
 ##
 
 
-async def run_as_service(
-    redis: MaybeIterable[Redis],
-    make_func: Callable[[], Coro[None]],
-    /,
-    *,
-    key: str | None = None,
-    num: int = _NUM,
-    timeout_release: Delta = _TIMEOUT_RELEASE,
-    num_extensions: int | None = None,
-    timeout_acquire: Delta = _TIMEOUT_TRY_ACQUIRE,
-    sleep: Delta = _SLEEP,
-    throttle: Delta | None = None,
-    logger: LoggerOrName | None = None,
-    sleep_error: Delta | None = None,
-) -> None:
-    """Run a function as a service."""
-    func = make_func()  # skipif-ci-and-not-linux
-    name = func.__name__  # skipif-ci-and-not-linux
-    with suppress_warnings(
-        message="coroutine '.*' was never awaited", category=RuntimeWarning
-    ):
-        del func
-    try:  # skipif-ci-and-not-linux
-        async with (
-            yield_access(
-                redis,
-                name if key is None else key,
-                num=num,
-                timeout_release=timeout_release,
-                num_extensions=num_extensions,
-                timeout_acquire=timeout_acquire,
-                sleep=sleep,
-                throttle=throttle,
-            ),
-            timeout_td(timeout_release),
-        ):
-            while True:
-                try:
-                    return await make_func()
-                except Exception:  # noqa: BLE001
-                    if logger is not None:
-                        get_logger(logger=logger).exception(
-                            "Error running %r as a service", name
-                        )
-                    exc_type, exc_value, traceback = sys.exc_info()
-                    if (exc_type is None) or (exc_value is None):  # pragma: no cover
-                        raise ImpossibleCaseError(
-                            case=[f"{exc_type=}", f"{exc_value=}"]
-                        ) from None
-                    sys.excepthook(exc_type, exc_value, traceback)
-                    await sleep_td(sleep_error)
-    except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
-        if logger is not None:
-            get_logger(logger=logger).info("%s", error)
-
-
-##
-
-
 @enhanced_async_context_manager
-async def try_yield_access(
+async def try_yield_coroutine_looper(
     redis: MaybeIterable[Redis],
     key: str,
     /,
@@ -108,8 +47,8 @@ async def try_yield_access(
     throttle: Delta | None = None,
     logger: LoggerOrName | None = None,
     sleep_error: Delta | None = None,
-) -> AsyncIterator[LockedAccessRunner | None]:
-    """Try acquire access to a locked resource."""
+) -> AsyncIterator[CoroutineLooper | None]:
+    """Try acquire access to a coroutine looper."""
     try:  # skipif-ci-and-not-linux
         async with yield_access(
             redis,
@@ -121,7 +60,7 @@ async def try_yield_access(
             sleep=sleep_acquire,
             throttle=throttle,
         ) as lock:
-            yield LockedAccessRunner(lock=lock, logger=logger, sleep=sleep_error)
+            yield CoroutineLooper(lock=lock, logger=logger, sleep=sleep_error)
     except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
         if logger is not None:
             get_logger(logger=logger).info("%s", error)
@@ -130,8 +69,8 @@ async def try_yield_access(
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
-class LockedAccessRunner:
-    """Runner for when access to a locker resource is obtained."""
+class CoroutineLooper:
+    """Looper, guarded by a lock, to repeatedly call a coroutine until it succeeds."""
 
     lock: AIORedlock
     logger: LoggerOrName | None = None
@@ -254,4 +193,9 @@ class _YieldAccessUnableToAcquireLockError(YieldAccessError):
         return f"Unable to acquire any 1 of {self.num} locks for {self.key!r} after {self.timeout}"  # skipif-ci-and-not-linux
 
 
-__all__ = ["LockedAccessRunner", "YieldAccessError", "try_yield_access", "yield_access"]
+__all__ = [
+    "CoroutineLooper",
+    "YieldAccessError",
+    "try_yield_coroutine_looper",
+    "yield_access",
+]
