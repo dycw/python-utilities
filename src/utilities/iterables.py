@@ -755,6 +755,26 @@ class EnsureIterableNotStrError(Exception):
 ##
 
 
+_EDGE: int = 5
+
+
+def enumerate_with_edge[T](
+    iterable: Iterable[T], /, *, start: int = 0, edge: int = _EDGE
+) -> Iterator[tuple[int, int, bool, T]]:
+    """Enumerate an iterable, with the edge items marked."""
+    as_list = list(iterable)
+    total = len(as_list)
+    indices = set(range(edge)) | set(range(total)[-edge:])
+    is_edge = (i in indices for i in range(total))
+    for (i, value), is_edge_i in zip(
+        enumerate(as_list, start=start), is_edge, strict=True
+    ):
+        yield i, total, is_edge_i, value
+
+
+##
+
+
 def expanding_window[T](iterable: Iterable[T], /) -> islice[list[T]]:
     """Yield an expanding window over an iterable."""
 
@@ -1492,6 +1512,7 @@ __all__ = [
     "ensure_hashables",
     "ensure_iterable",
     "ensure_iterable_not_str",
+    "enumerate_with_edge",
     "expanding_window",
     "filter_include_and_exclude",
     "group_consecutive_integers",

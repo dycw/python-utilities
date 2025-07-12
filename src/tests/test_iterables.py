@@ -92,6 +92,7 @@ from utilities.iterables import (
     ensure_hashables,
     ensure_iterable,
     ensure_iterable_not_str,
+    enumerate_with_edge,
     expanding_window,
     filter_include_and_exclude,
     group_consecutive_integers,
@@ -659,6 +660,23 @@ class TestEnsureIterableNotStr:
             match="Object .* must be iterable, but not a string",
         ):
             _ = ensure_iterable_not_str(obj)
+
+
+class TestEnumerateWithEdge:
+    def test_main(self) -> None:
+        result = list(enumerate_with_edge(range(100)))
+        assert len(result) == 100
+        for i, total, is_edge, _ in result:
+            assert total == 100
+            expected = (0 <= i <= 4) or (95 <= i <= 99)
+            assert is_edge is expected
+
+    def test_short(self) -> None:
+        result = list(enumerate_with_edge(range(9)))
+        assert len(result) == 9
+        for _, total, is_edge, _ in result:
+            assert total == 9
+            assert is_edge
 
 
 class TestExpandingWindow:
