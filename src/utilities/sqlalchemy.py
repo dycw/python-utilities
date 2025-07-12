@@ -88,8 +88,9 @@ if TYPE_CHECKING:
 
     from whenever import TimeDelta
 
-type _EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConnection
+type EngineOrConnectionOrAsync = Engine | Connection | AsyncEngine | AsyncConnection
 type Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
+type DialectOrEngineOrConnectionOrAsync = Dialect | EngineOrConnectionOrAsync
 type ORMInstOrClass = DeclarativeBase | type[DeclarativeBase]
 type TableOrORMInstOrClass = Table | ORMInstOrClass
 CHUNK_SIZE_FRAC = 0.8
@@ -301,16 +302,22 @@ def enum_values(enum: type[StrEnum], /) -> list[str]:
 
 
 def get_chunk_size(
-    engine_or_conn: _EngineOrConnectionOrAsync,
+    dialect_or_engine_or_conn: DialectOrEngineOrConnectionOrAsync,
+    table_or_orm_or_num_cols: TableOrORMInstOrClass | int,
     /,
     *,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    max_length: int = 1,
 ) -> int:
     """Get the maximum chunk size for an engine."""
-    max_params = _get_dialect_max_params(engine_or_conn)
-    scaling = max(max_length, 1)
-    size = floor(chunk_size_frac * max_params / scaling)
+    max_params = _get_dialect_max_params(dialect_or_engine_or_conn)
+    match table_or_orm_or_num_cols:
+        case Table() | DeclarativeBase() | type() as table_or_orm:
+            num_cols = len(get_columns(table_or_orm))
+        case int() as num_cols:
+            ...
+        case _ as never:
+            assert_never(never)
+    size = floor(chunk_size_frac * max_params / num_cols)
     return max(size, 1)
 
 
@@ -602,7 +609,7 @@ def _normalize_upsert_item(
 
 
 def selectable_to_string(
-    selectable: Selectable[Any], engine_or_conn: _EngineOrConnectionOrAsync, /
+    selectable: Selectable[Any], engine_or_conn: EngineOrConnectionOrAsync, /
 ) -> str:
     """Convert a selectable into a string."""
     com = selectable.compile(
@@ -801,7 +808,7 @@ def _ensure_tables_maybe_reraise(error: DatabaseError, match: str, /) -> None:
 ##
 
 
-def _get_dialect(engine_or_conn: _EngineOrConnectionOrAsync, /) -> Dialect:
+def _get_dialect(engine_or_conn: EngineOrConnectionOrAsync, /) -> Dialect:
     """Get the dialect of a database."""
     dialect = engine_or_conn.dialect
     if isinstance(dialect, mssql_dialect):  # pragma: no cover
@@ -824,7 +831,7 @@ def _get_dialect(engine_or_conn: _EngineOrConnectionOrAsync, /) -> Dialect:
 
 
 def _get_dialect_max_params(
-    dialect_or_engine_or_conn: Dialect | _EngineOrConnectionOrAsync, /
+    dialect_or_engine_or_conn: DialectOrEngineOrConnectionOrAsync, /
 ) -> int:
     """Get the max number of parameters of a dialect."""
     match dialect_or_engine_or_conn:
@@ -1026,17 +1033,14 @@ def _prepare_insert_or_upsert_items(
                 lengths.add(len(normed.mapping))
     except _NormalizeInsertItemError as error:
         raise _PrepareInsertOrUpsertItemsError(item=error.item) from None
-    merged = {
+    merged: dict[Table, list[StrMapping]] = {
         table: _prepare_insert_or_upsert_items_merge_items(table, values)
         for table, values in mapping.items()
     }
-    max_length = max(lengths, default=1)
-    chunk_size = get_chunk_size(
-        engine, chunk_size_frac=chunk_size_frac, max_length=max_length
-    )
 
     def yield_pairs() -> Iterator[tuple[Insert, None]]:
         for table, values in merged.items():
+            chunk_size = get_chunk_size(engine, table, chunk_size_frac=chunk_size_frac)
             for chunk in chunked(values, chunk_size):
                 yield build_insert(table, chunk)
 
@@ -1090,6 +1094,8 @@ def _tuple_to_mapping(
 __all__ = [
     "CHUNK_SIZE_FRAC",
     "CheckEngineError",
+    "DialectOrEngineOrConnectionOrAsync",
+    "EngineOrConnectionOrAsync",
     "GetTableError",
     "InsertItemsError",
     "TablenameMixin",
