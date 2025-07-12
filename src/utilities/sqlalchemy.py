@@ -303,7 +303,7 @@ def enum_values(enum: type[StrEnum], /) -> list[str]:
 
 def get_chunk_size(
     dialect_or_engine_or_conn: DialectOrEngineOrConnectionOrAsync,
-    table_or_orm_or_num_cols: TableOrORMInstOrClass | int,
+    table_or_orm_or_num_cols: TableOrORMInstOrClass | Sized | int,
     /,
     *,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
@@ -312,13 +312,20 @@ def get_chunk_size(
     max_params = _get_dialect_max_params(dialect_or_engine_or_conn)
     match table_or_orm_or_num_cols:
         case Table() | DeclarativeBase() | type() as table_or_orm:
-            num_cols = len(get_columns(table_or_orm))
+            return get_chunk_size(
+                dialect_or_engine_or_conn,
+                get_columns(table_or_orm),
+                chunk_size_frac=chunk_size_frac,
+            )
+        case Sized() as sized:
+            return get_chunk_size(
+                dialect_or_engine_or_conn, len(sized), chunk_size_frac=chunk_size_frac
+            )
         case int() as num_cols:
-            ...
+            size = floor(chunk_size_frac * max_params / num_cols)
+            return max(size, 1)
         case _ as never:
             assert_never(never)
-    size = floor(chunk_size_frac * max_params / num_cols)
-    return max(size, 1)
 
 
 ##

@@ -432,7 +432,7 @@ def _select_to_dataframe_yield_selects_with_in_clauses(
     in_col, in_values = in_clauses
     if in_clauses_chunk_size is None:
         chunk_size = get_chunk_size(
-            engine, len(sel.selected_columns), chunk_size_frac=chunk_size_frac
+            engine, sel.selected_columns, chunk_size_frac=chunk_size_frac
         )
     else:
         chunk_size = in_clauses_chunk_size
