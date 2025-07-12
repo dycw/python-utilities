@@ -759,18 +759,17 @@ _EDGE: int = 5
 
 
 def enumerate_with_edge[T](
-    iterable: Iterable[T], /, *, edge: int = _EDGE
+    iterable: Iterable[T], /, *, start: int = 0, edge: int = _EDGE
 ) -> Iterator[tuple[int, int, bool, T]]:
     """Enumerate an iterable, with the edge items marked."""
     as_list = list(iterable)
     total = len(as_list)
-    for i, value in enumerate(as_list, start=1):
-        yield i, total, _is_edge(i, total, edge=edge), value
-
-
-def _is_edge(num: int, total: int, /, *, edge: int = _EDGE) -> bool:
-    rng = range(1, total + 1)
-    return (num in rng[:edge]) or (num in rng[-edge:])
+    indices = set(range(edge)) | set(range(total)[-edge:])
+    is_edge = (i in indices for i in range(total))
+    for (i, value), is_edge_i in zip(
+        enumerate(as_list, start=start), is_edge, strict=True
+    ):
+        yield i, total, is_edge_i, value
 
 
 ##
