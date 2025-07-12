@@ -6,15 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
 from uuid import uuid4
 
 from hypothesis import HealthCheck, Phase, assume, given, settings
-from hypothesis.strategies import (
-    SearchStrategy,
-    booleans,
-    floats,
-    lists,
-    none,
-    sets,
-    tuples,
-)
+from hypothesis.strategies import SearchStrategy, booleans, lists, none, sets, tuples
 from pytest import mark, param, raises
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, MetaData, Table, select
 from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
@@ -293,19 +285,27 @@ class TestEnumValues:
 
 
 class TestGetChunkSize:
-    @given(chunk_size_frac=floats(0.0, 1.0), scaling=int32s(min_value=0))
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
+    @mark.parametrize(
+        ("num_cols", "chunk_size_frac", "expected"),
+        [
+            param(2, 1.0, 50),
+            param(2, 0.5, 25),
+            param(10, 1.0, 10),
+            param(10, 0.5, 5),
+            param(100, 1.0, 1),
+            param(100, 0.5, 1),
+        ],
     )
-    async def test_main(
-        self, *, chunk_size_frac: float, scaling: int, test_engine: AsyncEngine
+    def test_table(
+        self, *, num_cols: int, chunk_size_frac: float, expected: int
     ) -> None:
-        result = get_chunk_size(
-            test_engine, chunk_size_frac=chunk_size_frac, max_length=scaling
+        table = Table(
+            _table_names(),
+            MetaData(),
+            *[Column(f"id{i}", Integer) for i in range(num_cols)],
         )
-        assert result >= 1
+        result = get_chunk_size("sqlite", table, chunk_size_frac=chunk_size_frac)
+        assert result == expected
 
 
 class TestGetColumnNames:
