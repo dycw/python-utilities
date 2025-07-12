@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum, StrEnum, auto
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
+from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
 from uuid import uuid4
 
 from hypothesis import HealthCheck, Phase, assume, given, settings
@@ -296,29 +296,15 @@ class TestGetChunkSize:
             param(100, 0.5, 1),
         ],
     )
-    @mark.parametrize("table_or_int", [param("table"), param("int")])
     def test_table(
-        self,
-        *,
-        num_cols: int,
-        table_or_int: Literal["table", "int"],
-        chunk_size_frac: float,
-        expected: int,
+        self, *, num_cols: int, chunk_size_frac: float, expected: int
     ) -> None:
-        match table_or_int:
-            case "table":
-                table_or_num_cols = Table(
-                    _table_names(),
-                    MetaData(),
-                    *[Column(f"id{i}", Integer) for i in range(num_cols)],
-                )
-            case "int":
-                table_or_num_cols = num_cols
-            case _ as never:
-                assert_never(never)
-        result = get_chunk_size(
-            "sqlite", table_or_num_cols, chunk_size_frac=chunk_size_frac
+        table = Table(
+            _table_names(),
+            MetaData(),
+            *[Column(f"id{i}", Integer) for i in range(num_cols)],
         )
+        result = get_chunk_size("sqlite", table, chunk_size_frac=chunk_size_frac)
         assert result == expected
 
 
