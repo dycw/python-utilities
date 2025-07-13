@@ -1,7 +1,0 @@
-
-    coro = random()
-    with suppress_warnings(
-        message="coroutine '.*' was never awaited", category=RuntimeWarning
-    ):
-        del coro
-    return
