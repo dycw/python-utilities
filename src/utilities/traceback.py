@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from functools import partial
 from getpass import getuser
 from itertools import repeat
+from logging import exception
 from os import getpid
 from pathlib import Path
 from socket import gethostname
@@ -277,9 +278,14 @@ def _make_except_hook_inner(
         with writer(path, overwrite=True) as temp:
             _ = temp.write_text(full)
     if slack_url is not None:  # pragma: no cover
-        from utilities.slack_sdk import send_to_slack
+        from utilities.slack_sdk import SendToSlackError, send_to_slack
 
-        send_to_slack(slack_url, f"```{slim}```")
+        try:
+            send_to_slack(slack_url, f"```{slim}```")
+        except SendToSlackError as error:
+            msg = str(error)
+            exception(msg)  # noqa: LOG015
+
     if to_bool(bool_=pudb):  # pragma: no cover
         from pudb import post_mortem
 
