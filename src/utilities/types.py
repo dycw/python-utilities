@@ -63,6 +63,7 @@ type OpenMode = Literal[
 ]
 type MaybeCallable[T] = T | Callable[[], T]
 type MaybeCallableBool = MaybeCallable[bool]
+type MaybeCallableStr = MaybeCallable[str]
 type MaybeStr[T] = T | str
 type MaybeType[T] = T | type[T]
 type StrMapping = Mapping[str, Any]
@@ -275,6 +276,7 @@ __all__ = [
     "MaybeCallableDate",
     "MaybeCallableEvent",
     "MaybeCallablePathLike",
+    "MaybeCallableStr",
     "MaybeCallableZonedDateTime",
     "MaybeCoro",
     "MaybeIterable",
