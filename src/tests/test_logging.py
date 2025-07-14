@@ -30,6 +30,7 @@ from utilities.logging import (
     add_filters,
     basic_config,
     filter_for_key,
+    get_format_str,
     get_formatter,
     get_logger,
     get_logging_level_number,
@@ -78,10 +79,10 @@ class TestBasicConfig:
     def test_main(
         self,
         *,
-        caplog: LogCaptureFixture,
+        set_log_factory: AbstractContextManager[None],
         filters: _FilterType | None,
         plain: bool,
-        set_log_factory: AbstractContextManager[None],
+        caplog: LogCaptureFixture,
     ) -> None:
         name = unique_str()
         with set_log_factory:
@@ -90,9 +91,12 @@ class TestBasicConfig:
         record = one(r for r in caplog.records if r.name == name)
         assert record.message == "message"
 
-    def test_none(self, *, set_log_factory: AbstractContextManager[None]) -> None:
+    @mark.parametrize("format_", [param("{message}"), param(None)])
+    def test_none(
+        self, *, set_log_factory: AbstractContextManager[None], format_: str | None
+    ) -> None:
         with set_log_factory:
-            basic_config()
+            basic_config(format_=format_)
 
 
 class TestComputeRolloverActions:
@@ -230,6 +234,14 @@ class TestFilterForKey:
     def test_error(self, *, key: str) -> None:
         with raises(FilterForKeyError, match="Invalid key: '.*'"):
             _ = filter_for_key(key)
+
+
+class TestGetFormatStr:
+    @mark.parametrize("prefix", [param(">"), param(None)])
+    @mark.parametrize("hostname", [param(True), param(False)])
+    def test_main(self, *, prefix: str | None, hostname: bool) -> None:
+        result = get_format_str(prefix=prefix, hostname=hostname)
+        assert isinstance(result, str)
 
 
 class TestGetFormatter:

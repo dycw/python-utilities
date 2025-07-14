@@ -18,6 +18,7 @@ from logging import (
 from logging.handlers import BaseRotatingHandler, TimedRotatingFileHandler
 from pathlib import Path
 from re import Pattern
+from socket import gethostname
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -66,9 +67,6 @@ if TYPE_CHECKING:
     )
 
 
-_DEFAULT_FORMAT = (
-    "{zoned_datetime} | {name}:{funcName}:{lineno} | {levelname:8} | {message}"
-)
 _DEFAULT_DATEFMT = "%Y-%m-%d %H:%M:%S"
 _DEFAULT_BACKUP_COUNT: int = 100
 _DEFAULT_MAX_BYTES: int = 10 * 1024**2
@@ -90,7 +88,9 @@ def add_filters(handler: Handler, /, *filters: _FilterType) -> None:
 def basic_config(
     *,
     obj: LoggerOrName | Handler | None = None,
-    format_: str = _DEFAULT_FORMAT,
+    format_: str | None = None,
+    prefix: str | None = None,
+    hostname: bool = False,
     datefmt: str = _DEFAULT_DATEFMT,
     level: LogLevel = "INFO",
     filters: MaybeIterable[_FilterType] | None = None,
@@ -100,13 +100,19 @@ def basic_config(
     """Do the basic config."""
     match obj:
         case None:
-            basicConfig(format=format_, datefmt=datefmt, style="{", level=level)
+            if format_ is None:
+                format_use = get_format_str(prefix=prefix, hostname=hostname)
+            else:
+                format_use = format_
+            basicConfig(format=format_use, datefmt=datefmt, style="{", level=level)
         case Logger() as logger:
             logger.setLevel(level)
             logger.addHandler(handler := StreamHandler())
             basic_config(
                 obj=handler,
                 format_=format_,
+                prefix=prefix,
+                hostname=hostname,
                 datefmt=datefmt,
                 level=level,
                 filters=filters,
@@ -117,6 +123,8 @@ def basic_config(
             basic_config(
                 obj=get_logger(logger=name),
                 format_=format_,
+                prefix=prefix,
+                hostname=hostname,
                 datefmt=datefmt,
                 level=level,
                 filters=filters,
@@ -128,7 +136,9 @@ def basic_config(
             if filters is not None:
                 add_filters(handler, *always_iterable(filters))
             formatter = get_formatter(
+                prefix=prefix,
                 format_=format_,
+                hostname=hostname,
                 datefmt=datefmt,
                 plain=plain,
                 color_field_styles=color_field_styles,
@@ -177,6 +187,22 @@ class FilterForKeyError(Exception):
 ##
 
 
+def get_format_str(*, prefix: str | None = None, hostname: bool = False) -> str:
+    """Generate a format string."""
+    parts: list[str] = [
+        "{zoned_datetime}",
+        f"{gethostname()}:{{process}}" if hostname else "{process}",
+        "{name}:{funcName}:{lineno}",
+        "{levelname}",
+        "{message}",
+    ]
+    joined = " | ".join(parts)
+    return joined if prefix is None else f"{prefix} {joined}"
+
+
+##
+
+
 type _FieldStyleKeys = Literal[
     "asctime", "hostname", "levelname", "name", "programname", "username"
 ]
@@ -189,7 +215,9 @@ class _FieldStyleDict(TypedDict):
 
 def get_formatter(
     *,
-    format_: str = _DEFAULT_FORMAT,
+    format_: str | None = None,
+    prefix: str | None = None,
+    hostname: bool = False,
     datefmt: str = _DEFAULT_DATEFMT,
     plain: bool = False,
     color_field_styles: Mapping[str, _FieldStyleKeys] | None = None,
@@ -197,26 +225,44 @@ def get_formatter(
     """Get the formatter; colored if available."""
     setLogRecordFactory(WheneverLogRecord)
     if plain:
-        return _get_plain_formatter(format_=format_, datefmt=datefmt)
+        return _get_plain_formatter(
+            format_=format_, prefix=prefix, hostname=hostname, datefmt=datefmt
+        )
     try:
         from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
     except ModuleNotFoundError:  # pragma: no cover
-        return _get_plain_formatter(format_=format_, datefmt=datefmt)
+        return _get_plain_formatter(
+            format_=format_, prefix=prefix, hostname=hostname, datefmt=datefmt
+        )
+    format_use = (
+        get_format_str(prefix=prefix, hostname=hostname) if format_ is None else format_
+    )
     default = cast("dict[_FieldStyleKeys, _FieldStyleDict]", DEFAULT_FIELD_STYLES)
     field_styles = {cast("str", k): v for k, v in default.items()}
     field_styles["zoned_datetime"] = default["asctime"]
+    field_styles["hostname"] = default["hostname"]
+    field_styles["process"] = default["hostname"]
+    field_styles["lineno"] = default["name"]
+    field_styles["funcName"] = default["name"]
     if color_field_styles is not None:
         field_styles.update({k: default[v] for k, v in color_field_styles.items()})
     return ColoredFormatter(
-        fmt=format_, datefmt=datefmt, style="{", field_styles=field_styles
+        fmt=format_use, datefmt=datefmt, style="{", field_styles=field_styles
     )
 
 
 def _get_plain_formatter(
-    *, format_: str = _DEFAULT_FORMAT, datefmt: str = _DEFAULT_DATEFMT
+    *,
+    format_: str | None = None,
+    prefix: str | None = None,
+    hostname: bool = False,
+    datefmt: str = _DEFAULT_DATEFMT,
 ) -> Formatter:
     """Get the plain formatter."""
-    return Formatter(fmt=format_, datefmt=datefmt, style="{")
+    format_use = (
+        get_format_str(prefix=prefix, hostname=hostname) if format_ is None else format_
+    )
+    return Formatter(fmt=format_use, datefmt=datefmt, style="{")
 
 
 ##
@@ -260,7 +306,7 @@ class GetLoggingLevelNumberError(Exception):
 def setup_logging(
     *,
     logger: LoggerOrName | None = None,
-    format_: str = _DEFAULT_FORMAT,
+    format_: str | None = None,
     datefmt: str = _DEFAULT_DATEFMT,
     console_level: LogLevel = "INFO",
     console_prefix: str = "❯",  # noqa: RUF001
@@ -275,7 +321,8 @@ def setup_logging(
     """Set up logger."""
     basic_config(
         obj=logger,
-        format_=f"{console_prefix} {format_}",
+        prefix=console_prefix,
+        format_=format_,
         datefmt=datefmt,
         level=console_level,
         filters=console_filters,
@@ -298,6 +345,7 @@ def setup_logging(
             basic_config(
                 obj=handler,
                 format_=format_,
+                hostname=True,
                 datefmt=datefmt,
                 level=level,
                 filters=files_filters,
@@ -585,6 +633,7 @@ __all__ = [
     "add_filters",
     "basic_config",
     "filter_for_key",
+    "get_format_str",
     "get_logger",
     "get_logging_level_number",
     "setup_logging",

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Literal, assert_never, override
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
+
 System = Literal["windows", "mac", "linux"]
 
 
