@@ -30,6 +30,7 @@ from utilities.logging import (
     add_filters,
     basic_config,
     filter_for_key,
+    get_format_str,
     get_formatter,
     get_logger,
     get_logging_level_number,
@@ -230,6 +231,14 @@ class TestFilterForKey:
     def test_error(self, *, key: str) -> None:
         with raises(FilterForKeyError, match="Invalid key: '.*'"):
             _ = filter_for_key(key)
+
+
+class TestGetFormatStr:
+    @mark.parametrize("prefix", [param(">"), param(None)])
+    @mark.parametrize("hostname", [param(True), param(False)])
+    def test_main(self, *, prefix: str | None, hostname: bool) -> None:
+        result = get_format_str(prefix=prefix, hostname=hostname)
+        assert isinstance(result, str)
 
 
 class TestGetFormatter:
