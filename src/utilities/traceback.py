@@ -27,6 +27,7 @@ from utilities.reprlib import (
     RICH_MAX_WIDTH,
     yield_mapping_repr,
 )
+from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.version import get_version
 from utilities.whenever import (
     format_compact,
@@ -99,7 +100,10 @@ def _yield_header_lines(
     now = get_now_local()
     start_use = to_zoned_date_time(date_time=start)
     yield f"Date/time  | {format_compact(now)}"
-    start_str = "" if start_use is None else format_compact(start_use)
+    if start_use is None:
+        start_str = ""
+    else:
+        start_str = format_compact(start_use.to_tz(LOCAL_TIME_ZONE_NAME))
     yield f"Started    | {start_str}"
     delta = None if start_use is None else (now - start_use)
     delta_str = "" if delta is None else delta.format_common_iso()
