@@ -109,7 +109,9 @@ class CoroutineLooper:
                 message="coroutine '.*' was never awaited", category=RuntimeWarning
             ):
                 del coro
-            get_logger(logger=self.logger).error("Error running %r", name)
+            get_logger(logger=self.logger).error(
+                "Error running %r", name, exc_info=True
+            )
 
 
 ##
