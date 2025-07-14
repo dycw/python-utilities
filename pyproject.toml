@@ -75,7 +75,6 @@ pytest = [
 pytest-regressions = ["pytest-regressions >= 2.8.1, < 2.9"]
 pytest-regressions-test = ["orjson", "polars"]
 pytest-test = ["orjson", "pytest-rng", "pytest-rerunfailures"]
-python-dotenv = ["python-dotenv >= 1.1.1, < 1.2"]
 redis = ["redis >= 6.2.0, < 6.3", "orjson"]
 redis-test = ["pytest-rerunfailures"]
 reprlib-test = ["rich"]
