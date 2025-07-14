@@ -88,7 +88,6 @@ sqlalchemy-polars = ["sqlalchemy", "polars"]
 sqlalchemy-polars-test = ["aiosqlite", "asyncpg", "greenlet"]
 sqlalchemy-test = ["aiosqlite", "asyncpg", "greenlet"]
 statsmodels = ["statsmodels >= 0.14.4, < 0.15"]
-streamlit = ["streamlit >= 1.46.0, < 1.47"]
 typed-settings = ["typed-settings >= 24.6.0, < 24.7"]
 tzdata = ["tzdata >= 2025.2, < 2025.3"]
 
