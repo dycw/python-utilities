@@ -68,6 +68,7 @@ class TestAddFilters:
 
 
 class TestBasicConfig:
+    @mark.parametrize("format_", [param("{message}"), param(None)])
     @mark.parametrize(
         "filters",
         [
@@ -79,14 +80,15 @@ class TestBasicConfig:
     def test_main(
         self,
         *,
-        caplog: LogCaptureFixture,
+        set_log_factory: AbstractContextManager[None],
+        format_: str | None,
         filters: _FilterType | None,
         plain: bool,
-        set_log_factory: AbstractContextManager[None],
+        caplog: LogCaptureFixture,
     ) -> None:
         name = unique_str()
         with set_log_factory:
-            basic_config(obj=name, filters=filters, plain=plain)
+            basic_config(obj=name, format_=format_, filters=filters, plain=plain)
         getLogger(name).warning("message")
         record = one(r for r in caplog.records if r.name == name)
         assert record.message == "message"
