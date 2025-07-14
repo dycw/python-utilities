@@ -47,17 +47,18 @@ class TestFormatExceptionStack:
         except AssertionError as error:
             result = format_exception_stack(error, header=True).splitlines()
             patterns = [
-                r"^Date/time \| .+$",
-                r"^Started   \| .+$",
-                r"^Duration  \| .+$",
-                r"^User      \| .+$",
-                r"^Host      \| .+$",
-                r"^Version   \|\s$",
+                r"^Date/time  \| .+$",
+                r"^Started    \| .+$",
+                r"^Duration   \| .+$",
+                r"^User       \| .+$",
+                r"^Host       \| .+$",
+                r"^Process ID \| \d+$",
+                r"^Version    \|\s$",
                 r"^$",
             ]
-            for line, pattern in zip(result[:7], patterns[:7], strict=False):
+            for line, pattern in zip(result[:8], patterns, strict=False):
                 assert search(pattern, line), line
-            self._assert_lines(result[7:])
+            self._assert_lines(result[len(patterns) :])
 
     def test_capture_locals(self) -> None:
         try:

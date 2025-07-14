@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from functools import partial
 from getpass import getuser
 from itertools import repeat
+from os import getpid
 from pathlib import Path
 from socket import gethostname
 from traceback import TracebackException
@@ -96,16 +97,17 @@ def _yield_header_lines(
     """Yield the header lines."""
     now = get_now_local()
     start_use = to_zoned_date_time(date_time=start)
-    yield f"Date/time | {format_compact(now)}"
+    yield f"Date/time  | {format_compact(now)}"
     start_str = "" if start_use is None else format_compact(start_use)
-    yield f"Started   | {start_str}"
+    yield f"Started    | {start_str}"
     delta = None if start_use is None else (now - start_use)
     delta_str = "" if delta is None else delta.format_common_iso()
-    yield f"Duration  | {delta_str}"
-    yield f"User      | {getuser()}"
-    yield f"Host      | {gethostname()}"
+    yield f"Duration   | {delta_str}"
+    yield f"User       | {getuser()}"
+    yield f"Host       | {gethostname()}"
+    yield f"Process ID | {getpid()}"
     version_use = "" if version is None else get_version(version=version)
-    yield f"Version   | {version_use}"
+    yield f"Version    | {version_use}"
     yield ""
 
 
