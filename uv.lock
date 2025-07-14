@@ -714,9 +714,6 @@ pqdm = [
 psutil = [
     { name = "psutil" },
 ]
-pydantic = [
-    { name = "pydantic" },
-]
 pyinstrument = [
     { name = "pyinstrument" },
 ]
@@ -901,7 +898,6 @@ pottery-test = [
 ]
 pqdm = [{ name = "pqdm", specifier = ">=0.2.0,<0.3" }]
 psutil = [{ name = "psutil", specifier = ">=7.0.0,<7.1" }]
-pydantic = [{ name = "pydantic", specifier = ">=2.11.4,<2.12" }]
 pyinstrument = [{ name = "pyinstrument", specifier = ">=5.0.3,<5.1" }]
 pytest = [
     { name = "pudb", specifier = ">=2025.1,<2025.2" },
