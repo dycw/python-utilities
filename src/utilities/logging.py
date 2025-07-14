@@ -66,9 +66,7 @@ if TYPE_CHECKING:
     )
 
 
-_DEFAULT_FORMAT = (
-    "{zoned_datetime} | {name}:{funcName}:{lineno} | {levelname:8} | {message}"
-)
+_DEFAULT_FORMAT = "{zoned_datetime} | {process} | {name}:{funcName}:{lineno} | {levelname:8} | {message}"
 _DEFAULT_DATEFMT = "%Y-%m-%d %H:%M:%S"
 _DEFAULT_BACKUP_COUNT: int = 100
 _DEFAULT_MAX_BYTES: int = 10 * 1024**2
@@ -205,6 +203,9 @@ def get_formatter(
     default = cast("dict[_FieldStyleKeys, _FieldStyleDict]", DEFAULT_FIELD_STYLES)
     field_styles = {cast("str", k): v for k, v in default.items()}
     field_styles["zoned_datetime"] = default["asctime"]
+    field_styles["process"] = default["hostname"]
+    field_styles["lineno"] = default["name"]
+    field_styles["funcName"] = default["name"]
     if color_field_styles is not None:
         field_styles.update({k: default[v] for k, v in color_field_styles.items()})
     return ColoredFormatter(

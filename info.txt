@@ -1,0 +1,4 @@
+2025-07-14T09:53:41.082649[Asia/Tokyo] | foo:<module>:1 | INFO     | test
+2025-07-14T09:53:54.497367[Asia/Tokyo] | foo:<module>:1 | INFO     | test
+2025-07-14T09:54:51.085351[Asia/Tokyo] | 10643 | foo:<module>:1 | INFO     | test
+2025-07-14T09:55:16.998946[Asia/Tokyo] | 10643 | foo:<module>:1 | INFO     | test
