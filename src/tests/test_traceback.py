@@ -56,7 +56,7 @@ class TestFormatExceptionStack:
             patterns = [
                 rf"^Date/time  \| \d{{8}}T\d{{6}}\[{LOCAL_TIME_ZONE_NAME}\]$",
                 rf"^Started    \| (\d{{8}}T\d{{6}}\[{LOCAL_TIME_ZONE_NAME}\]|)$",
-                r"^Duration   \| (-?PT\d\.\d+S|)$",
+                r"^Duration   \| (-?PT\d+\.\d+S|)$",
                 r"^User       \| .+$",
                 r"^Host       \| .+$",
                 r"^Process ID \| \d+$",
