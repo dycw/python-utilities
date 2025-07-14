@@ -148,7 +148,7 @@ async def yield_access(
         lock = await _get_first_available_lock(
             key, locks, num=num, timeout=timeout_acquire, sleep=sleep
         )
-        if (await lock.locked()) == 0.0:
+        if (await lock.locked()) == 0.0:  # pragma: no cover
             raise _YieldAccessAcquiredUnlockedLockError(key=lock.key)
         yield lock
     finally:  # skipif-ci-and-not-linux
@@ -215,7 +215,7 @@ class _YieldAccessUnableToAcquireLockError(YieldAccessError):
 class _YieldAccessAcquiredUnlockedLockError(YieldAccessError):
     @override
     def __str__(self) -> str:
-        return f"Acquired an unlocked lock {self.key!r}"  # skipif-ci-and-not-linux
+        return f"Acquired an unlocked lock {self.key!r}"  # pragma: no cover
 
 
 __all__ = [
