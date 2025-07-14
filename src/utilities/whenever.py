@@ -320,16 +320,12 @@ def min_max_date(
     today = get_today(time_zone=time_zone)
     min_parts: list[Date] = []
     if min_date is not None:
-        if min_date > today:
-            raise _MinMaxDateMinDateError(min_date=min_date, today=today)
         min_parts.append(min_date)
     if max_age is not None:
         min_parts.append(today - max_age)
     min_date_use = max(min_parts, default=None)
     max_parts: list[Date] = []
     if max_date is not None:
-        if max_date > today:
-            raise _MinMaxDateMaxDateError(max_date=max_date, today=today)
         max_parts.append(max_date)
     if min_age is not None:
         max_parts.append(today - min_age)
@@ -345,26 +341,6 @@ def min_max_date(
 
 @dataclass(kw_only=True, slots=True)
 class MinMaxDateError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _MinMaxDateMinDateError(MinMaxDateError):
-    min_date: Date
-    today: Date
-
-    @override
-    def __str__(self) -> str:
-        return f"Min date must be at most today; got {self.min_date} > {self.today}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _MinMaxDateMaxDateError(MinMaxDateError):
-    max_date: Date
-    today: Date
-
-    @override
-    def __str__(self) -> str:
-        return f"Max date must be at most today; got {self.max_date} > {self.today}"
 
 
 @dataclass(kw_only=True, slots=True)
