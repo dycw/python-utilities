@@ -72,7 +72,10 @@ async def try_yield_coroutine_looper(
             throttle=throttle,
         ) as lock:
             yield CoroutineLooper(lock=lock, logger=logger, sleep=sleep_error)
-    except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
+    except (  # skipif-ci-and-not-linux
+        _YieldAccessUnableToAcquireLockError,
+        _YieldAccessAcquiredUnlockedLockError,
+    ) as error:
         if logger is not None:
             get_logger(logger=logger).info("%s", error)
         async with nullcontext():
@@ -145,6 +148,8 @@ async def yield_access(
         lock = await _get_first_available_lock(
             key, locks, num=num, timeout=timeout_acquire, sleep=sleep
         )
+        if (await lock.locked()) == 0.0:
+            raise _YieldAccessAcquiredUnlockedLockError(key=lock.key)
         yield lock
     finally:  # skipif-ci-and-not-linux
         await sleep_td(throttle)
@@ -185,11 +190,12 @@ async def _get_first_available_lock_if_any(
 @dataclass(kw_only=True, slots=True)
 class YieldAccessError(Exception):
     key: str
-    num: int
 
 
 @dataclass(kw_only=True, slots=True)
 class _YieldAccessNumLocksError(YieldAccessError):
+    num: int
+
     @override
     def __str__(self) -> str:
         return f"Number of locks for {self.key!r} must be positive; got {self.num}"
@@ -197,11 +203,19 @@ class _YieldAccessNumLocksError(YieldAccessError):
 
 @dataclass(kw_only=True, slots=True)
 class _YieldAccessUnableToAcquireLockError(YieldAccessError):
+    num: int
     timeout: Delta | None
 
     @override
     def __str__(self) -> str:
         return f"Unable to acquire any 1 of {self.num} locks for {self.key!r} after {self.timeout}"  # skipif-ci-and-not-linux
+
+
+@dataclass(kw_only=True, slots=True)
+class _YieldAccessAcquiredUnlockedLockError(YieldAccessError):
+    @override
+    def __str__(self) -> str:
+        return f"Acquired an unlocked lock {self.key!r}"  # skipif-ci-and-not-linux
 
 
 __all__ = [
