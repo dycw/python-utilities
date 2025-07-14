@@ -316,7 +316,7 @@ def min_max_date(
     max_age: DateDelta | None = None,
     time_zone: TimeZoneLike = UTC,
 ) -> tuple[Date | None, Date | None]:
-    """Ucompute the min/max date given a combination of dates/ages."""
+    """Compute the min/max date given a combination of dates/ages."""
     today = get_today(time_zone=time_zone)
     min_parts: list[Date] = []
     if min_date is not None:
@@ -340,14 +340,13 @@ def min_max_date(
 
 
 @dataclass(kw_only=True, slots=True)
-class MinMaxDateError(Exception): ...
+class MinMaxDateError(Exception):
+    min_date: Date
+    max_date: Date
 
 
 @dataclass(kw_only=True, slots=True)
 class _MinMaxDatePeriodError(MinMaxDateError):
-    min_date: Date
-    max_date: Date
-
     @override
     def __str__(self) -> str:
         return (

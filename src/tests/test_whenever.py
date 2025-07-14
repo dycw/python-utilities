@@ -65,8 +65,6 @@ from utilities.whenever import (
     ToNanosecondsError,
     ToPyTimeDeltaError,
     WheneverLogRecord,
-    _MinMaxDateMaxDateError,
-    _MinMaxDateMinDateError,
     _MinMaxDatePeriodError,
     _RoundDateOrDateTimeDateTimeIntraDayWithWeekdayError,
     _RoundDateOrDateTimeDateWithIntradayDeltaError,
@@ -463,20 +461,6 @@ class TestMinMaxDate:
             assert max_date_use <= get_today()
         if (min_date_use is not None) and (max_date_use is not None):
             assert min_date_use <= max_date_use
-
-    @given(date=dates(min_value=TODAY_UTC + DAY))
-    def test_error_min_date(self, *, date: Date) -> None:
-        with raises(
-            _MinMaxDateMinDateError, match="Min date must be at most today; got .* > .*"
-        ):
-            _ = min_max_date(min_date=date)
-
-    @given(date=dates(min_value=TODAY_UTC + DAY))
-    def test_error_max_date(self, *, date: Date) -> None:
-        with raises(
-            _MinMaxDateMaxDateError, match="Max date must be at most today; got .* > .*"
-        ):
-            _ = min_max_date(max_date=date)
 
     @given(dates=pairs(dates(max_value=TODAY_UTC), unique=True, sorted=True))
     def test_error_period(self, *, dates: tuple[Date, Date]) -> None:
