@@ -3,6 +3,7 @@ from __future__ import annotations
 from asyncio import run
 from logging import getLogger
 from os import getpid
+from random import randint
 from typing import TYPE_CHECKING
 
 from redis.asyncio import Redis
@@ -11,7 +12,6 @@ from utilities.asyncio import sleep_td
 from utilities.logging import setup_logging
 from utilities.pathlib import get_repo_root
 from utilities.pottery import extend_lock, try_yield_coroutine_looper
-from utilities.random import SYSTEM_RANDOM
 from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
@@ -25,14 +25,14 @@ async def script(*, lock: AIORedlock | None = None) -> None:
     total = 100
     threshold = 5
     while True:
-        n = SYSTEM_RANDOM.randint(0, total)
-        _LOGGER.info("pid = %d, n = %d", pid, n)
+        n = randint(0, total)
         if n <= threshold:
             _LOGGER.info(
                 "pid = %d, n = %d < %d = threshold; erroring...", pid, n, threshold
             )
             msg = f"pid = {pid}, n = {n} < {threshold} = threshold"
             raise ValueError(msg)
+        _LOGGER.info("pid = %d, n = %d", pid, n)
         await extend_lock(lock=lock)
         await sleep_td(SECOND)
 
@@ -40,7 +40,7 @@ async def script(*, lock: AIORedlock | None = None) -> None:
 async def service() -> None:
     redis = Redis()
     async with try_yield_coroutine_looper(
-        redis, "utilities-test", num=2, timeout_release=10 * SECOND, logger=_LOGGER
+        redis, "utilities-test", num=1, timeout_release=10 * SECOND, logger=_LOGGER
     ) as looper:
         if looper is not None:
             await looper(script, lock=looper.lock)
