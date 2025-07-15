@@ -29,7 +29,7 @@ async def script(*, lock: AIORedlock | None = None) -> None:
 async def service() -> None:
     redis = Redis()
     async with try_yield_coroutine_looper(
-        redis, "utilities-test", timeout_release=10 * SECOND, logger=_LOGGER
+        redis, "utilities-test", num=2, timeout_release=10 * SECOND, logger=_LOGGER
     ) as looper:
         if looper is not None:
             await looper(script, lock=looper.lock)
