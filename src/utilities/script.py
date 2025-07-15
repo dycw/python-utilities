@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from asyncio import run
 from logging import getLogger
+from os import getpid
 from typing import TYPE_CHECKING
 
 from redis.asyncio import Redis
@@ -20,8 +21,18 @@ _LOGGER = getLogger(__name__)
 
 
 async def script(*, lock: AIORedlock | None = None) -> None:
+    pid = getpid()
+    total = 100
+    threshold = 5
     while True:
-        _LOGGER.info("%d", SYSTEM_RANDOM.randint(0, 100))
+        n = SYSTEM_RANDOM.randint(0, total)
+        _LOGGER.info("pid = %d, n = %d", pid, n)
+        if n <= threshold:
+            _LOGGER.info(
+                "pid = %d, n = %d < %d = threshold; erroring...", pid, n, threshold
+            )
+            msg = f"pid = {pid}, n = {n} < {threshold} = threshold"
+            raise ValueError(msg)
         await extend_lock(lock=lock)
         await sleep_td(SECOND)
 
