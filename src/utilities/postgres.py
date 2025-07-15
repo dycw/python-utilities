@@ -27,6 +27,7 @@ async def pg_dump(
     path: PathLike,
     /,
     *,
+    docker: str | None = None,
     format_: _PGDumpFormat = "plain",
     jobs: int | None = None,
     schemas: MaybeListStr | None = None,
@@ -43,7 +44,10 @@ async def pg_dump(
         raise _PGDumpHostError(url=url)
     if url.port is None:
         raise _PGDumpPortError(url=url)
-    parts: list[str] = [
+    parts: list[str] = []
+    if docker is not None:
+        parts.extend(["docker", "exec", "-it", docker])
+    parts.extend([
         "pg_dump",
         # general options
         f"--dbname={url.database}",
@@ -60,7 +64,7 @@ async def pg_dump(
         f"--host={url.host}",
         f"--port={url.port}",
         "--no-password",
-    ]
+    ])
     if (format_ == "directory") and (jobs is not None):
         parts.append(f"--jobs={jobs}")
     if schemas is not None:
@@ -136,6 +140,7 @@ async def pg_restore(
     /,
     *,
     database: str | None = None,
+    docker: str | None = None,
     data_only: bool = False,
     jobs: int | None = None,
     schemas: MaybeListStr | None = None,
@@ -157,7 +162,10 @@ async def pg_restore(
         raise _PGRestoreHostError(url=url)
     if url.port is None:
         raise _PGRestorePortError(url=url)
-    parts: list[str] = [
+    parts: list[str] = []
+    if docker is not None:
+        parts.extend(["docker", "exec", "-it", docker])
+    parts.extend([
         "pg_restore",
         # general options
         f"--dbname={database_use}",
@@ -171,7 +179,7 @@ async def pg_restore(
         f"--host={url.host}",
         f"--port={url.port}",
         "--no-password",
-    ]
+    ])
     if data_only:
         parts.append("--data-only")
     else:
