@@ -1,5 +1,8 @@
 #!/usr/bin/env sh
 
+# Add to your `crontab` as:
+#     */1 * * * * /Users/derekwan/work/python-utilities/src/utilities/script.sh
+
 # helpers
 echo_pid_date() { echo "[$$ | $(date +'%Y-%m-%d %H:%M:%S')] $*"; }
 
