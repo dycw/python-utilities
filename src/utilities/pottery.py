@@ -175,9 +175,7 @@ async def _get_first_available_lock(
     )
     async with timeout_td(timeout, error=error):  # skipif-ci-and-not-linux
         while True:
-            if (
-                (result := await _get_first_available_lock_if_any(locks)) is not None
-            ) and (await result.locked() > 0.0):
+            if (result := await _get_first_available_lock_if_any(locks)) is not None:
                 return result
             await sleep_td(sleep)
 
