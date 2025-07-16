@@ -398,14 +398,15 @@ async def loop_until_succeed(
     /,
     *,
     logger: LoggerOrName | None = None,
+    errors: type[Exception] | tuple[type[Exception], ...] | None = None,
     sleep: Delta | None = None,
-) -> None:
+) -> bool:
     """Repeatedly call a coroutine until it succeeds."""
     name = get_coroutine_name(func)
     while True:
         try:
-            return await func()
-        except Exception:  # noqa: BLE001
+            await func()
+        except Exception as error:  # noqa: BLE001
             if logger is not None:
                 get_logger(logger=logger).error("Error running %r", name, exc_info=True)
             exc_type, exc_value, traceback = sys.exc_info()
@@ -414,12 +415,16 @@ async def loop_until_succeed(
                     case=[f"{exc_type=}", f"{exc_value=}"]
                 ) from None
             sys.excepthook(exc_type, exc_value, traceback)
+            if (errors is not None) and isinstance(error, errors):
+                return False
             if sleep is None:
                 if logger is not None:
                     get_logger(logger=logger).info("Sleeping for %s...", sleep)
                 await sleep_td(sleep)
             if logger is not None:
                 get_logger(logger=logger).info("Retrying %r...", name)
+        else:
+            return True
 
 
 ##

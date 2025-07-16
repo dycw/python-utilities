@@ -23,15 +23,17 @@ _LOGGER = getLogger(__name__)
 async def script(*, lock: AIORedlock | None = None) -> None:
     pid = getpid()
     total = 100
-    threshold = 5
+    fail = 10
+    success = 1
     while True:
         n = randint(0, total)
-        if n <= threshold:
-            _LOGGER.info(
-                "pid = %d, n = %d < %d = threshold; erroring...", pid, n, threshold
-            )
-            msg = f"pid = {pid}, n = {n} < {threshold} = threshold"
+        if n < fail:
+            _LOGGER.info("pid = %d, n = %d; failing...", pid, n)
+            msg = f"pid = {pid}, n = {n}; failure"
             raise ValueError(msg)
+        if fail <= n < success:
+            _LOGGER.info("pid = %d, n = %d; succeeding...", pid, n)
+            return
         _LOGGER.info("pid = %d, n = %d", pid, n)
         await extend_lock(lock=lock)
         await sleep_td(SECOND)
@@ -48,7 +50,8 @@ async def service() -> None:
         sleep_error=5 * SECOND,
     ) as looper:
         if looper is not None:
-            await looper(script, lock=looper.lock)
+            result = await looper(script, lock=looper.lock)
+            _LOGGER.info("script %d", "succeeded" if result else "failed")
 
 
 def main() -> None:

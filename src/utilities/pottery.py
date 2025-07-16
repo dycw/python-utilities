@@ -5,16 +5,14 @@ from dataclasses import dataclass
 from sys import maxsize
 from typing import TYPE_CHECKING, override
 
-from pottery import AIORedlock
+from pottery import AIORedlock, ExtendUnlockedLock
 from pottery.exceptions import ReleaseUnlockedLock
 from redis.asyncio import Redis
 
 from utilities.asyncio import loop_until_succeed, sleep_td, timeout_td
 from utilities.contextlib import enhanced_async_context_manager
-from utilities.functools import partial
 from utilities.iterables import always_iterable
 from utilities.logging import get_logger
-from utilities.warnings import suppress_warnings
 from utilities.whenever import MILLISECOND, SECOND, to_seconds
 
 if TYPE_CHECKING:
@@ -92,26 +90,13 @@ class CoroutineLooper:
 
     async def __call__[**P](
         self, func: Callable[P, Coro[None]], *args: P.args, **kwargs: P.kwargs
-    ) -> None:
+    ) -> bool:
         def make_coro() -> Coro[None]:
             return func(*args, **kwargs)
 
-        await loop_until_succeed(
-            make_coro, error=partial(self._error, func=make_coro), sleep=self.sleep
+        return await loop_until_succeed(
+            make_coro, logger=self.logger, errors=ExtendUnlockedLock, sleep=self.sleep
         )
-
-    def _error(self, error: Exception, /, *, func: Callable[[], Coro[None]]) -> None:
-        _ = error
-        if self.logger is not None:
-            coro = func()
-            name = coro.__name__  # skipif-ci-and-not-linux
-            with suppress_warnings(
-                message="coroutine '.*' was never awaited", category=RuntimeWarning
-            ):
-                del coro
-            get_logger(logger=self.logger).error(
-                "Error running %r", name, exc_info=True
-            )
 
 
 ##
