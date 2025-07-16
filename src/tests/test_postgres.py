@@ -9,15 +9,13 @@ from sqlalchemy import URL, Column, Integer, MetaData, Table
 
 from utilities.hypothesis import integers, temp_paths, text_ascii
 from utilities.postgres import (
-    _PGDumpDatabaseError,
+    _build_pg_dump,
+    _build_pg_restore_or_psql,
+    _extract_url,
+    _ExtractURLDatabaseError,
+    _ExtractURLHostError,
+    _ExtractURLPortError,
     _PGDumpFormat,
-    _PGDumpHostError,
-    _PGDumpPortError,
-    _PGRestoreDatabaseError,
-    _PGRestoreHostError,
-    _PGRestorePortError,
-    pg_dump,
-    pg_restore,
 )
 from utilities.typing import get_literal_elements
 
@@ -56,7 +54,6 @@ class TestPGDump:
     @given(
         url=urls(),
         path=temp_paths(),
-        docker=text_ascii(min_size=1) | none(),
         format_=sampled_from(get_literal_elements(_PGDumpFormat)),
         jobs=integers(min_value=0) | none(),
         schemas=lists(text_ascii(min_size=1)) | none(),
@@ -65,14 +62,13 @@ class TestPGDump:
         tables_exc=tables() | none(),
         inserts=booleans(),
         on_conflict_do_nothing=booleans(),
-        logger=text_ascii(min_size=1) | none(),
+        docker=text_ascii(min_size=1) | none(),
     )
-    async def test_main(
+    def test_build(
         self,
         *,
         url: URL,
         path: Path,
-        docker: str | None,
         format_: _PGDumpFormat,
         jobs: int | None,
         schemas: list[str] | None,
@@ -81,12 +77,11 @@ class TestPGDump:
         tables_exc: list[Table | str] | None,
         inserts: bool,
         on_conflict_do_nothing: bool,
-        logger: str | None,
+        docker: str | None,
     ) -> None:
-        _ = await pg_dump(
+        _ = _build_pg_dump(
             url,
             path,
-            docker=docker,
             format_=format_,
             jobs=jobs,
             schemas=schemas,
@@ -95,87 +90,70 @@ class TestPGDump:
             tables_exc=tables_exc,
             inserts=inserts,
             on_conflict_do_nothing=on_conflict_do_nothing,
-            logger=logger,
-            dry_run=True,
+            docker=docker,
         )
-
-    async def test_error_database(self, *, tmp_path: Path) -> None:
-        url = URL.create("postgres")
-        with raises(
-            _PGDumpDatabaseError, match="Expected URL to contain a 'database'; got .*"
-        ):
-            _ = await pg_dump(url, tmp_path, dry_run=True)
-
-    async def test_error_host(self, *, tmp_path: Path) -> None:
-        url = URL.create("postgres", database="database")
-        with raises(_PGDumpHostError, match="Expected URL to contain a 'host'; got .*"):
-            _ = await pg_dump(url, tmp_path, dry_run=True)
-
-    async def test_error_port(self, *, tmp_path: Path) -> None:
-        url = URL.create("postgres", database="database", host="host")
-        with raises(_PGDumpPortError, match="Expected URL to contain a 'port'; got .*"):
-            _ = await pg_dump(url, tmp_path, dry_run=True)
 
 
 class TestPGRestore:
     @given(
         url=urls(),
         path=temp_paths(),
+        psql=booleans(),
         database=text_ascii(min_size=1) | none(),
-        docker=text_ascii(min_size=1) | none(),
         data_only=booleans(),
         jobs=integers(min_value=0) | none(),
         schemas=lists(text_ascii(min_size=1)) | none(),
         schemas_exc=lists(text_ascii(min_size=1)) | none(),
         tables=tables() | none(),
-        logger=text_ascii(min_size=1) | none(),
+        docker=text_ascii(min_size=1) | none(),
     )
-    async def test_main(
+    def test_build(
         self,
         *,
         url: URL,
         path: Path,
+        psql: bool,
         database: str | None,
-        docker: str | None,
         data_only: bool,
         jobs: int | None,
         schemas: list[str] | None,
         schemas_exc: list[str] | None,
         tables: list[Table | str] | None,
-        logger: str | None,
+        docker: str | None,
     ) -> None:
-        _ = await pg_restore(
+        _ = _build_pg_restore_or_psql(
             url,
             path,
+            psql=psql,
             database=database,
-            docker=docker,
             data_only=data_only,
             jobs=jobs,
             schemas=schemas,
             schemas_exc=schemas_exc,
             tables=tables,
-            logger=logger,
-            dry_run=True,
+            docker=docker,
         )
 
-    async def test_error_database(self, *, tmp_path: Path) -> None:
+
+class TestExtractURL:
+    def test_database(self) -> None:
         url = URL.create("postgres")
         with raises(
-            _PGRestoreDatabaseError,
+            _ExtractURLDatabaseError,
             match="Expected URL to contain a 'database'; got .*",
         ):
-            _ = await pg_restore(url, tmp_path, dry_run=True)
+            _ = _extract_url(url)
 
-    async def test_error_host(self, *, tmp_path: Path) -> None:
+    def test_host(self) -> None:
         url = URL.create("postgres", database="database")
         with raises(
-            _PGRestoreHostError, match="Expected URL to contain a 'host'; got .*"
+            _ExtractURLHostError, match="Expected URL to contain a 'host'; got .*"
         ):
-            _ = await pg_restore(url, tmp_path, dry_run=True)
+            _ = _extract_url(url)
 
-    async def test_error_port(self, *, tmp_path: Path) -> None:
+    def test_port(self) -> None:
         url = URL.create("postgres", database="database", host="host")
         with raises(
-            _PGRestorePortError, match="Expected URL to contain a 'port'; got .*"
+            _ExtractURLPortError, match="Expected URL to contain a 'port'; got .*"
         ):
-            _ = await pg_restore(url, tmp_path, dry_run=True)
+            _ = _extract_url(url)

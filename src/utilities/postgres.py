@@ -167,7 +167,7 @@ async def pg_restore(
     logger: LoggerOrName | None = None,
 ) -> None:
     """Run `pg_restore`."""
-    cmd = _build_restore(
+    cmd = _build_pg_restore_or_psql(
         url,
         path,
         psql=psql,
@@ -211,7 +211,7 @@ async def pg_restore(
 ##
 
 
-def _build_restore(
+def _build_pg_restore_or_psql(
     url: URL,
     path: PathLike,
     /,
@@ -226,8 +226,8 @@ def _build_restore(
     docker: str | None = None,
 ) -> str:
     if psql:
-        return _build_restore_via_psql(url, path, database=database, docker=docker)
-    return _build_restore_via_pg_restore(
+        return _build_psql(url, path, database=database, docker=docker)
+    return _build_pg_restore(
         url,
         path,
         database=database,
@@ -240,7 +240,7 @@ def _build_restore(
     )
 
 
-def _build_restore_via_pg_restore(
+def _build_pg_restore(
     url: URL,
     path: PathLike,
     /,
@@ -290,7 +290,7 @@ def _build_restore_via_pg_restore(
     return " ".join(parts)
 
 
-def _build_restore_via_psql(
+def _build_psql(
     url: URL,
     path: PathLike,
     /,
