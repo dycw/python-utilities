@@ -63,6 +63,7 @@ class TestPGDump:
         schemas_exc=lists(text_ascii(min_size=1)) | none(),
         tables=tables() | none(),
         tables_exc=tables() | none(),
+        inserts=booleans(),
         logger=text_ascii(min_size=1) | none(),
     )
     async def test_main(
@@ -77,6 +78,7 @@ class TestPGDump:
         schemas_exc: list[str] | None,
         tables: list[Table | str] | None,
         tables_exc: list[Table | str] | None,
+        inserts: bool,
         logger: str | None,
     ) -> None:
         _ = await pg_dump(
@@ -89,6 +91,7 @@ class TestPGDump:
             schemas_exc=schemas_exc,
             tables=tables,
             tables_exc=tables_exc,
+            inserts=inserts,
             logger=logger,
             dry_run=True,
         )
