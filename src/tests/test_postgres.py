@@ -26,10 +26,13 @@ if TYPE_CHECKING:
 
 
 @composite
-def tables(draw: DrawFn, /) -> list[Table]:
+def tables(draw: DrawFn, /) -> list[Table | str]:
     metadata = MetaData()
-    tables = draw(lists(text_ascii(min_size=1), max_size=5, unique=True))
-    return [Table(t, metadata, Column("id", Integer, primary_key=True)) for t in tables]
+    names = draw(lists(text_ascii(min_size=1), max_size=5, unique=True))
+    tables = [
+        Table(n, metadata, Column("id", Integer, primary_key=True)) for n in names
+    ]
+    return [draw(sampled_from([n, t])) for n, t in zip(names, tables, strict=True)]
 
 
 @composite
@@ -57,7 +60,10 @@ class TestPGDump:
         format_=sampled_from(get_literal_elements(_PGDumpFormat)),
         jobs=integers(min_value=0) | none(),
         schemas=lists(text_ascii(min_size=1)) | none(),
+        schemas_exc=lists(text_ascii(min_size=1)) | none(),
         tables=tables() | none(),
+        tables_exc=tables() | none(),
+        inserts=booleans(),
         logger=text_ascii(min_size=1) | none(),
     )
     async def test_main(
@@ -69,7 +75,10 @@ class TestPGDump:
         format_: _PGDumpFormat,
         jobs: int | None,
         schemas: list[str] | None,
-        tables: list[Table] | None,
+        schemas_exc: list[str] | None,
+        tables: list[Table | str] | None,
+        tables_exc: list[Table | str] | None,
+        inserts: bool,
         logger: str | None,
     ) -> None:
         _ = await pg_dump(
@@ -79,7 +88,10 @@ class TestPGDump:
             format_=format_,
             jobs=jobs,
             schemas=schemas,
+            schemas_exc=schemas_exc,
             tables=tables,
+            tables_exc=tables_exc,
+            inserts=inserts,
             logger=logger,
             dry_run=True,
         )
@@ -111,6 +123,7 @@ class TestPGRestore:
         data_only=booleans(),
         jobs=integers(min_value=0) | none(),
         schemas=lists(text_ascii(min_size=1)) | none(),
+        schemas_exc=lists(text_ascii(min_size=1)) | none(),
         tables=tables() | none(),
         logger=text_ascii(min_size=1) | none(),
     )
@@ -124,7 +137,8 @@ class TestPGRestore:
         data_only: bool,
         jobs: int | None,
         schemas: list[str] | None,
-        tables: list[Table] | None,
+        schemas_exc: list[str] | None,
+        tables: list[Table | str] | None,
         logger: str | None,
     ) -> None:
         _ = await pg_restore(
@@ -135,6 +149,7 @@ class TestPGRestore:
             data_only=data_only,
             jobs=jobs,
             schemas=schemas,
+            schemas_exc=schemas_exc,
             tables=tables,
             logger=logger,
             dry_run=True,
