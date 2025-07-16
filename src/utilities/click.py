@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 import ipaddress
 import pathlib
+import uuid
 from typing import TYPE_CHECKING, TypedDict, assert_never, override
 
 import click
@@ -329,6 +330,32 @@ class TimeDelta(ParamType):
                 assert_never(never)
 
 
+class UUID(ParamType):
+    """A UUID-valued parameter."""
+
+    name = "uuid"
+
+    @override
+    def __repr__(self) -> str:
+        return self.name.upper()
+
+    @override
+    def convert(
+        self, value: uuid.UUID | str, param: Parameter | None, ctx: Context | None
+    ) -> uuid.UUID:
+        """Convert a value into the `UUID` type."""
+        match value:
+            case uuid.UUID():
+                return value
+            case str():
+                try:
+                    return uuid.UUID(value)
+                except ValueError as error:
+                    self.fail(str(error), param, ctx)
+            case _ as never:
+                assert_never(never)
+
+
 class YearMonth(ParamType):
     """A year-month parameter."""
 
@@ -561,6 +588,7 @@ def _make_metavar(param: Parameter, desc: str, /) -> str:
 
 __all__ = [
     "CONTEXT_SETTINGS_HELP_OPTION_NAMES",
+    "UUID",
     "Date",
     "DateDelta",
     "DateTimeDelta",

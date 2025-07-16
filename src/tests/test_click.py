@@ -20,11 +20,13 @@ from hypothesis.strategies import (
     ip_addresses,
     lists,
     sampled_from,
+    uuids,
 )
 from pytest import mark, param
 
 from utilities.click import (
     CONTEXT_SETTINGS_HELP_OPTION_NAMES,
+    UUID,
     Date,
     DateDelta,
     DateTimeDelta,
@@ -319,6 +321,9 @@ class TestParameters:
             strategy=time_deltas(),
             serialize=whenever.TimeDelta.format_common_iso,
             failable=True,
+        ),
+        _Case(
+            param=UUID(), name="uuid", strategy=uuids(), serialize=str, failable=True
         ),
         _Case(
             param=YearMonth(),
