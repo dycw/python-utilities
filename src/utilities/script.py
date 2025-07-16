@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from asyncio import run
 from logging import getLogger
-from os import getpid
 from random import randint
 from typing import TYPE_CHECKING
 
@@ -21,20 +20,19 @@ _LOGGER = getLogger(__name__)
 
 
 async def script(*, lock: AIORedlock | None = None) -> None:
-    pid = getpid()
     total = 1000
     fail = 30
     success = 3
     while True:
         n = randint(0, total)
         if n < fail:
-            _LOGGER.info("pid = %d, n = %d; failing...", pid, n)
-            msg = f"pid = {pid}, n = {n}; failure"
+            _LOGGER.info("n = %d; failing...", n)
+            msg = f"n = {n}; failure"
             raise ValueError(msg)
         if fail <= n < (fail + success):
-            _LOGGER.info("pid = %d, n = %d; succeeding...", pid, n)
+            _LOGGER.info("n = %d; succeeding...", n)
             return
-        _LOGGER.info("pid = %d, n = %d", pid, n)
+        _LOGGER.info("n = %d", n)
         await extend_lock(lock=lock)
         await sleep_td(SECOND / 3)
 
@@ -45,9 +43,9 @@ async def service() -> None:
         redis,
         "utilities-test",
         num=1,
-        timeout_release=10 * SECOND,
+        timeout_release=5 * SECOND,
         logger=_LOGGER,
-        sleep_error=2 * SECOND,
+        sleep_error=4 * SECOND,
     ) as looper:
         if looper is not None:
             result = await looper(script, lock=looper.lock)
