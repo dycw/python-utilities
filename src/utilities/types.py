@@ -105,6 +105,10 @@ type MonthInt = Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 type EnumLike[E: Enum] = MaybeStr[E]
 
 
+# errors
+type ExceptionTypeLike[T: Exception] = type[T] | tuple[type[T], ...]
+
+
 # ipaddress
 IPv4AddressLike = MaybeStr[IPv4Address]
 IPv6AddressLike = MaybeStr[IPv6Address]
@@ -265,6 +269,7 @@ __all__ = [
     "Delta",
     "EnumLike",
     "ExcInfo",
+    "ExceptionTypeLike",
     "IPv4AddressLike",
     "IPv6AddressLike",
     "IterableHashable",

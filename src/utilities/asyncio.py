@@ -35,7 +35,7 @@ from typing import (
     override,
 )
 
-from utilities.errors import ImpossibleCaseError
+from utilities.errors import ImpossibleCaseError, is_instance_error
 from utilities.functions import ensure_int, ensure_not_none, to_bool
 from utilities.logging import get_logger
 from utilities.random import SYSTEM_RANDOM
@@ -65,6 +65,7 @@ if TYPE_CHECKING:
     from utilities.types import (
         Coro,
         Delta,
+        ExceptionTypeLike,
         LoggerOrName,
         MaybeCallableBool,
         MaybeType,
@@ -398,7 +399,7 @@ async def loop_until_succeed(
     /,
     *,
     logger: LoggerOrName | None = None,
-    errors: type[Exception] | tuple[type[Exception], ...] | None = None,
+    errors: ExceptionTypeLike[Exception] | None = None,
     sleep: Delta | None = None,
 ) -> bool:
     """Repeatedly call a coroutine until it succeeds."""
@@ -415,7 +416,7 @@ async def loop_until_succeed(
                     case=[f"{exc_type=}", f"{exc_value=}"]
                 ) from None
             sys.excepthook(exc_type, exc_value, traceback)
-            if (errors is not None) and isinstance(error, errors):
+            if (errors is not None) and is_instance_error(error, errors):
                 return False
             if sleep is not None:
                 if logger is not None:
