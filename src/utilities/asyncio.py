@@ -37,8 +37,10 @@ from typing import (
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, ensure_not_none, to_bool
+from utilities.logging import get_logger
 from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
+from utilities.warnings import suppress_warnings
 from utilities.whenever import get_now, round_date_or_date_time, to_nanoseconds
 
 if TYPE_CHECKING:
@@ -63,6 +65,7 @@ if TYPE_CHECKING:
     from utilities.types import (
         Coro,
         Delta,
+        LoggerOrName,
         MaybeCallableBool,
         MaybeType,
         SupportsKeysAndGetItem,
@@ -340,6 +343,20 @@ class EnhancedTaskGroup(TaskGroup):
 ##
 
 
+def get_coroutine_name(func: Callable[[], Coro[Any]], /) -> str:
+    """Get the name of a coroutine, and then dispose of it gracefully."""
+    coro = func()
+    name = coro.__name__
+    with suppress_warnings(
+        message="coroutine '.*' was never awaited", category=RuntimeWarning
+    ):
+        del coro
+    return name
+
+
+##
+
+
 async def get_items[T](queue: Queue[T], /, *, max_size: int | None = None) -> list[T]:
     """Get items from a queue; if empty then wait."""
     try:
@@ -380,23 +397,29 @@ async def loop_until_succeed(
     func: Callable[[], Coro[None]],
     /,
     *,
-    error: Callable[[Exception], None] | None = None,
+    logger: LoggerOrName | None = None,
     sleep: Delta | None = None,
 ) -> None:
     """Repeatedly call a coroutine until it succeeds."""
+    name = get_coroutine_name(func)
     while True:
         try:
             return await func()
-        except Exception as err:  # noqa: BLE001
-            if error is not None:
-                error(err)
+        except Exception:  # noqa: BLE001
+            if logger is not None:
+                get_logger(logger=logger).error("Error running %r", name, exc_info=True)
             exc_type, exc_value, traceback = sys.exc_info()
             if (exc_type is None) or (exc_value is None):  # pragma: no cover
                 raise ImpossibleCaseError(
                     case=[f"{exc_type=}", f"{exc_value=}"]
                 ) from None
             sys.excepthook(exc_type, exc_value, traceback)
-            await sleep_td(sleep)
+            if sleep is None:
+                if logger is not None:
+                    get_logger(logger=logger).info("Sleeping for %s...", sleep)
+                await sleep_td(sleep)
+            if logger is not None:
+                get_logger(logger=logger).info("Retrying %r...", name)
 
 
 ##
@@ -522,6 +545,7 @@ __all__ = [
     "AsyncDict",
     "EnhancedTaskGroup",
     "StreamCommandOutput",
+    "get_coroutine_name",
     "get_items",
     "get_items_nowait",
     "loop_until_succeed",

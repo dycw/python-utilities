@@ -13,6 +13,7 @@ from pytest import RaisesGroup, raises
 from utilities.asyncio import (
     AsyncDict,
     EnhancedTaskGroup,
+    get_coroutine_name,
     get_items,
     get_items_nowait,
     loop_until_succeed,
@@ -285,6 +286,16 @@ class TestEnhancedTaskGroup:
         with RaisesGroup(CustomError):
             async with EnhancedTaskGroup(timeout=self.delta, error=CustomError) as tg:
                 _ = tg.create_task(sleep_td(2 * self.delta))
+
+
+class TestGetCoroutineName:
+    def test_main(self) -> None:
+        async def func() -> None:
+            return None
+
+        result = get_coroutine_name(func)
+        expected = "func"
+        assert result == expected
 
 
 class TestGetItems:
