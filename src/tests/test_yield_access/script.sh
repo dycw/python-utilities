@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 # Add to your `crontab` as:
-#     */1 * * * * /Users/derekwan/work/python-utilities/src/utilities/script.sh
+#     */1 * * * * /Users/derekwan/work/python-utilities/tests/test_yield_access/script.sh
 
 # helpers
 echo_pid_date() { echo "[$$ | $(date +'%Y-%m-%d %H:%M:%S')] $*"; }
@@ -48,7 +48,7 @@ if [ -f "${__log_file}" ]; then
 fi
 
 # run the script
-echo_pid_date "Running 'python -m utilities.script'..." 2>&1 | tee -a "${__log_file}"
+echo_pid_date "Running 'python -m tests.test_yield_access.script'..." 2>&1 | tee -a "${__log_file}"
 __start="$(date +%s)"
-direnv exec . python -m utilities.script "$*" 2>&1 | tee -a "${__log_file}"
+direnv exec . python -m tests.test_yield_access.script "$*" 2>&1 | tee -a "${__log_file}"
 __exit_code="$?"
