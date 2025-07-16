@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from functools import partial
 from getpass import getuser
 from itertools import repeat
-from logging import exception
 from os import getpid
 from pathlib import Path
 from socket import gethostname
+from sys import stderr
 from traceback import TracebackException
 from typing import TYPE_CHECKING, override
 
@@ -287,8 +287,7 @@ def _make_except_hook_inner(
         try:
             send_to_slack(slack_url, f"```{slim}```")
         except SendToSlackError as error:
-            msg = str(error)
-            exception(msg)  # noqa: LOG015
+            _ = stderr.write(f"{error}\n")
 
     if to_bool(bool_=pudb):  # pragma: no cover
         from pudb import post_mortem
