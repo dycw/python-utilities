@@ -21,6 +21,22 @@ class ImpossibleCaseError(Exception):
 ##
 
 
+def is_instance_error(
+    error: BaseException,
+    class_or_tuple: type[BaseException] | tuple[type[BaseException], ...],
+    /,
+) -> bool:
+    """Check if an instance relationship holds, allowing for groups."""
+    if isinstance(error, class_or_tuple):
+        return True
+    if not isinstance(error, BaseExceptionGroup):
+        return False
+    return any(is_instance_error(e, class_or_tuple) for e in error.exceptions)
+
+
+##
+
+
 def repr_error(error: MaybeType[BaseException], /) -> str:
     """Get a string representation of an error."""
     match error:
@@ -36,4 +52,4 @@ def repr_error(error: MaybeType[BaseException], /) -> str:
             assert_never(never)
 
 
-__all__ = ["ImpossibleCaseError", "repr_error"]
+__all__ = ["ImpossibleCaseError", "is_instance_error", "repr_error"]
