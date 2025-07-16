@@ -39,6 +39,7 @@ async def pg_dump(
     tables: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
     tables_exc: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
     inserts: bool = False,
+    on_conflict_do_nothing: bool = False,
     logger: LoggerOrName | None = None,
     dry_run: bool = False,
 ) -> None:
@@ -86,6 +87,8 @@ async def pg_dump(
         ])
     if inserts:
         parts.append("--inserts")
+    if on_conflict_do_nothing:
+        parts.append("--on-conflict-do-nothing")
     if url.username is not None:
         parts.append(f"--username={url.username}")
     cmd = " ".join(parts)
