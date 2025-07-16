@@ -16,6 +16,8 @@ from utilities.postgres import (
     _ExtractURLHostError,
     _ExtractURLPortError,
     _PGDumpFormat,
+    pg_dump,
+    restore,
 )
 from utilities.typing import get_literal_elements
 
@@ -51,6 +53,10 @@ def urls(draw: DrawFn, /) -> URL:
 
 
 class TestPGDump:
+    @given(url=urls(), path=temp_paths(), logger=text_ascii(min_size=1) | none())
+    async def test_main(self, *, url: URL, path: Path, logger: str | None) -> None:
+        _ = await pg_dump(url, path, dry_run=True, logger=logger)
+
     @given(
         url=urls(),
         path=temp_paths(),
@@ -94,7 +100,11 @@ class TestPGDump:
         )
 
 
-class TestPGRestore:
+class TestRestore:
+    @given(url=urls(), path=temp_paths(), logger=text_ascii(min_size=1) | none())
+    async def test_main(self, *, url: URL, path: Path, logger: str | None) -> None:
+        _ = await restore(url, path, dry_run=True, logger=logger)
+
     @given(
         url=urls(),
         path=temp_paths(),

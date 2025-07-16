@@ -150,7 +150,7 @@ def _build_pg_dump(
 ##
 
 
-async def pg_restore(
+async def restore(
     url: URL,
     path: PathLike,
     /,
@@ -166,7 +166,7 @@ async def pg_restore(
     dry_run: bool = False,
     logger: LoggerOrName | None = None,
 ) -> None:
-    """Run `pg_restore`."""
+    """Run `pg_restore`/`psql`."""
     cmd = _build_pg_restore_or_psql(
         url,
         path,
@@ -371,4 +371,4 @@ def _wrap_docker(parts: list[str], container: str, /) -> list[str]:
     return ["docker", "exec", "-it", container, *parts]
 
 
-__all__ = ["ExtractURLError", "pg_dump", "pg_restore"]
+__all__ = ["ExtractURLError", "pg_dump", "restore"]
