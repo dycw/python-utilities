@@ -417,7 +417,7 @@ async def loop_until_succeed(
             sys.excepthook(exc_type, exc_value, traceback)
             if (errors is not None) and isinstance(error, errors):
                 return False
-            if sleep is None:
+            if sleep is not None:
                 if logger is not None:
                     get_logger(logger=logger).info("Sleeping for %s...", sleep)
                 await sleep_td(sleep)
