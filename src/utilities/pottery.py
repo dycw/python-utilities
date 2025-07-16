@@ -5,16 +5,14 @@ from dataclasses import dataclass
 from sys import maxsize
 from typing import TYPE_CHECKING, override
 
-from pottery import AIORedlock
+from pottery import AIORedlock, ExtendUnlockedLock
 from pottery.exceptions import ReleaseUnlockedLock
 from redis.asyncio import Redis
 
 from utilities.asyncio import loop_until_succeed, sleep_td, timeout_td
 from utilities.contextlib import enhanced_async_context_manager
-from utilities.functools import partial
 from utilities.iterables import always_iterable
 from utilities.logging import get_logger
-from utilities.warnings import suppress_warnings
 from utilities.whenever import MILLISECOND, SECOND, to_seconds
 
 if TYPE_CHECKING:
@@ -72,10 +70,7 @@ async def try_yield_coroutine_looper(
             throttle=throttle,
         ) as lock:
             yield CoroutineLooper(lock=lock, logger=logger, sleep=sleep_error)
-    except (  # skipif-ci-and-not-linux
-        _YieldAccessUnableToAcquireLockError,
-        _YieldAccessAcquiredUnlockedLockError,
-    ) as error:
+    except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
         if logger is not None:
             get_logger(logger=logger).info("%s", error)
         async with nullcontext():
@@ -92,26 +87,13 @@ class CoroutineLooper:
 
     async def __call__[**P](
         self, func: Callable[P, Coro[None]], *args: P.args, **kwargs: P.kwargs
-    ) -> None:
+    ) -> bool:
         def make_coro() -> Coro[None]:
             return func(*args, **kwargs)
 
-        await loop_until_succeed(
-            make_coro, error=partial(self._error, func=make_coro), sleep=self.sleep
+        return await loop_until_succeed(
+            make_coro, logger=self.logger, errors=ExtendUnlockedLock, sleep=self.sleep
         )
-
-    def _error(self, error: Exception, /, *, func: Callable[[], Coro[None]]) -> None:
-        _ = error
-        if self.logger is not None:
-            coro = func()
-            name = coro.__name__  # skipif-ci-and-not-linux
-            with suppress_warnings(
-                message="coroutine '.*' was never awaited", category=RuntimeWarning
-            ):
-                del coro
-            get_logger(logger=self.logger).error(
-                "Error running %r", name, exc_info=True
-            )
 
 
 ##
@@ -150,8 +132,6 @@ async def yield_access(
         lock = await _get_first_available_lock(
             key, locks, num=num, timeout=timeout_acquire, sleep=sleep
         )
-        if (await lock.locked()) == 0.0:  # pragma: no cover
-            raise _YieldAccessAcquiredUnlockedLockError(key=lock.key)
         yield lock
     finally:  # skipif-ci-and-not-linux
         await sleep_td(throttle)
@@ -175,9 +155,7 @@ async def _get_first_available_lock(
     )
     async with timeout_td(timeout, error=error):  # skipif-ci-and-not-linux
         while True:
-            if (
-                (result := await _get_first_available_lock_if_any(locks)) is not None
-            ) and (await result.locked() > 0.0):
+            if (result := await _get_first_available_lock_if_any(locks)) is not None:
                 return result
             await sleep_td(sleep)
 
@@ -213,13 +191,6 @@ class _YieldAccessUnableToAcquireLockError(YieldAccessError):
     @override
     def __str__(self) -> str:
         return f"Unable to acquire any 1 of {self.num} locks for {self.key!r} after {self.timeout}"  # skipif-ci-and-not-linux
-
-
-@dataclass(kw_only=True, slots=True)
-class _YieldAccessAcquiredUnlockedLockError(YieldAccessError):
-    @override
-    def __str__(self) -> str:
-        return f"Acquired an unlocked lock {self.key!r}"  # pragma: no cover
 
 
 __all__ = [

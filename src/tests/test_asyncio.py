@@ -8,11 +8,12 @@ from typing import TYPE_CHECKING, ClassVar
 
 from hypothesis import given
 from hypothesis.strategies import booleans, dictionaries, integers, lists, none
-from pytest import RaisesGroup, raises
+from pytest import LogCaptureFixture, RaisesGroup, mark, param, raises
 
 from utilities.asyncio import (
     AsyncDict,
     EnhancedTaskGroup,
+    get_coroutine_name,
     get_items,
     get_items_nowait,
     loop_until_succeed,
@@ -27,6 +28,7 @@ from utilities.asyncio import (
 )
 from utilities.hypothesis import pairs, text_ascii
 from utilities.pytest import skipif_windows
+from utilities.text import unique_str
 from utilities.timer import Timer
 from utilities.whenever import MILLISECOND, SECOND, get_now
 
@@ -287,6 +289,16 @@ class TestEnhancedTaskGroup:
                 _ = tg.create_task(sleep_td(2 * self.delta))
 
 
+class TestGetCoroutineName:
+    def test_main(self) -> None:
+        async def func() -> None:
+            return None
+
+        result = get_coroutine_name(func)
+        expected = "func"
+        assert result == expected
+
+
 class TestGetItems:
     @given(
         xs=lists(integers(), min_size=1),
@@ -306,7 +318,12 @@ class TestGetItems:
 
 
 class TestLoopUntilSucceed:
-    async def test_main(self) -> None:
+    @mark.parametrize("sleep", [param(MILLISECOND), param(None)])
+    @mark.parametrize("use_logger", [param(True), param(False)])
+    async def test_main(
+        self, *, caplog: LogCaptureFixture, sleep: TimeDelta | None, use_logger: bool
+    ) -> None:
+        caplog.set_level("DEBUG", logger=(name := unique_str()))
         counter = 0
 
         async def func() -> None:
@@ -315,12 +332,22 @@ class TestLoopUntilSucceed:
             if counter <= 3:
                 raise ValueError
 
-        _ = await loop_until_succeed(lambda: func())
+        assert await loop_until_succeed(
+            lambda: func(), logger=name if use_logger else None, sleep=sleep
+        )
         assert counter == 4
+
+        if use_logger:
+            messages = [r.message for r in caplog.records if r.name == name]
+            expected = 3 * (
+                ["Error running 'func'"]
+                + ([] if sleep is None else ["Sleeping for PT0.001S..."])
+                + ["Retrying 'func'..."]
+            )
+            assert messages == expected
 
     async def test_error(self) -> None:
         counter = 0
-        errors: list[Exception] = []
 
         async def func() -> None:
             nonlocal counter
@@ -328,12 +355,8 @@ class TestLoopUntilSucceed:
             if counter <= 3:
                 raise ValueError
 
-        def error(error: Exception, /) -> None:
-            errors.append(error)
-
-        _ = await loop_until_succeed(lambda: func(), error=error)
-        assert counter == 4
-        assert len(errors) == 3
+        assert not await loop_until_succeed(lambda: func(), errors=ValueError)
+        assert counter == 1
 
 
 class TestPutItems:
