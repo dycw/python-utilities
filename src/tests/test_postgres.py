@@ -15,6 +15,7 @@ from utilities.postgres import (
     _ExtractURLDatabaseError,
     _ExtractURLHostError,
     _ExtractURLPortError,
+    _path_pg_dump,
     _PGDumpFormat,
     pg_dump,
     restore,
@@ -60,7 +61,6 @@ class TestPGDump:
     @given(
         url=urls(),
         path=temp_paths(),
-        format_=sampled_from(get_literal_elements(_PGDumpFormat)),
         jobs=integers(min_value=0) | none(),
         schemas=lists(text_ascii(min_size=1)) | none(),
         schemas_exc=lists(text_ascii(min_size=1)) | none(),
@@ -75,7 +75,6 @@ class TestPGDump:
         *,
         url: URL,
         path: Path,
-        format_: _PGDumpFormat,
         jobs: int | None,
         schemas: list[str] | None,
         schemas_exc: list[str] | None,
@@ -88,7 +87,6 @@ class TestPGDump:
         _ = _build_pg_dump(
             url,
             path,
-            format_=format_,
             jobs=jobs,
             schemas=schemas,
             schemas_exc=schemas_exc,
@@ -98,6 +96,11 @@ class TestPGDump:
             on_conflict_do_nothing=on_conflict_do_nothing,
             docker=docker,
         )
+
+    @given(path=temp_paths(), format_=sampled_from(get_literal_elements(_PGDumpFormat)))
+    def test_path(self, *, path: Path, format_: _PGDumpFormat) -> None:
+        path = _path_pg_dump(path, format_=format_)
+        assert path.suffix in [".sql", ".pgdump", "", ".tar"]
 
 
 class TestRestore:

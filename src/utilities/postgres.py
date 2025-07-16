@@ -45,7 +45,7 @@ async def pg_dump(
     logger: LoggerOrName | None = None,
 ) -> None:
     """Run `pg_dump`."""
-    path = Path(path)
+    path = _path_pg_dump(path, format_=format_)
     path.parent.mkdir(parents=True, exist_ok=True)
     cmd = _build_pg_dump(
         url,
@@ -107,25 +107,12 @@ def _build_pg_dump(
     docker: str | None = None,
 ) -> str:
     database, host, port = _extract_url(url)
-    match format_:
-        case "plain":
-            suffix = ".sql"
-        case "custom":
-            suffix = ".pgdump"
-        case "directory":
-            suffix = None
-        case "tar":
-            suffix = ".tar"
-        case _ as never:
-            assert_never(never)
-    file = Path(path)
-    if suffix is not None:
-        file = ensure_suffix(file, suffix)
+    path = _path_pg_dump(path, format_=format_)
     parts: list[str] = [
         "pg_dump",
         # general options
         f"--dbname={database}",
-        f"--file={str(file)!r}",
+        f"--file={str(path)!r}",
         f"--format={format_}",
         "--verbose",
         # output options
@@ -160,6 +147,24 @@ def _build_pg_dump(
     if docker is not None:
         parts = _wrap_docker(parts, docker)
     return " ".join(parts)
+
+
+def _path_pg_dump(path: PathLike, /, *, format_: _PGDumpFormat = "plain") -> Path:
+    match format_:
+        case "plain":
+            suffix = ".sql"
+        case "custom":
+            suffix = ".pgdump"
+        case "directory":
+            suffix = None
+        case "tar":
+            suffix = ".tar"
+        case _ as never:
+            assert_never(never)
+    path = Path(path)
+    if suffix is not None:
+        path = ensure_suffix(path, suffix)
+    return path
 
 
 ##
