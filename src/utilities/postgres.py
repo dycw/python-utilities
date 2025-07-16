@@ -156,7 +156,8 @@ async def pg_restore(
     data_only: bool = False,
     jobs: int | None = None,
     schemas: MaybeListStr | None = None,
-    tables: MaybeSequence[TableOrORMInstOrClass] | None = None,
+    schemas_exc: MaybeListStr | None = None,
+    tables: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
     logger: LoggerOrName | None = None,
     dry_run: bool = False,
 ) -> None:
@@ -199,6 +200,8 @@ async def pg_restore(
         parts.append(f"--jobs={jobs}")
     if schemas is not None:
         parts.extend([f"--schema={s}" for s in always_iterable(schemas)])
+    if schemas_exc is not None:
+        parts.extend([f"--exclude-schema={s}" for s in always_iterable(schemas_exc)])
     if tables is not None:
         parts.extend([f"--table={_get_table_name(t)}" for t in always_iterable(tables)])
     if url.username is not None:
