@@ -157,12 +157,12 @@ async def restore(
     *,
     psql: bool = False,
     database: str | None = None,
-    docker: str | None = None,
     data_only: bool = False,
     jobs: int | None = None,
     schemas: MaybeListStr | None = None,
     schemas_exc: MaybeListStr | None = None,
     tables: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
+    docker: str | None = None,
     dry_run: bool = False,
     logger: LoggerOrName | None = None,
 ) -> None:
