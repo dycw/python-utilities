@@ -7,6 +7,7 @@ from os import environ
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, assert_never, override
+from uuid import UUID
 
 import typed_settings
 from typed_settings import EnvLoader, FileLoader, find
@@ -62,6 +63,7 @@ class ExtendedTSConverter(TSConverter):
             (PlainDateTime, PlainDateTime.parse_common_iso),
             (Time, Time.parse_common_iso),
             (TimeDelta, TimeDelta.parse_common_iso),
+            (UUID, UUID),
             (YearMonth, YearMonth.parse_common_iso),
             (ZonedDateTime, ZonedDateTime.parse_common_iso),
         ]

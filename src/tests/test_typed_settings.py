@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
 from typing import Any, ClassVar, assert_never
+from uuid import UUID
 
 import typed_settings
 from hypothesis import given
@@ -13,6 +14,7 @@ from hypothesis.strategies import (
     data,
     ip_addresses,
     tuples,
+    uuids,
 )
 from pytest import mark, param, raises
 from typed_settings import EnvLoader, FileLoader, TomlFormat
@@ -87,6 +89,7 @@ class TestExtendedTSConverter:
         _Case(
             cls=TimeDelta, strategy=time_deltas(), serialize=TimeDelta.format_common_iso
         ),
+        _Case(cls=UUID, strategy=uuids(), serialize=str),
         _Case(
             cls=YearMonth, strategy=year_months(), serialize=YearMonth.format_common_iso
         ),
