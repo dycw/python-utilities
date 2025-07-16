@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import Queue, run
+from asyncio import Queue, TaskGroup, run
 from collections.abc import ItemsView, KeysView, ValuesView
 from contextlib import asynccontextmanager
 from re import search
@@ -323,6 +323,8 @@ class TestLoopUntilSucceed:
     async def test_main(
         self, *, caplog: LogCaptureFixture, sleep: TimeDelta | None, use_logger: bool
     ) -> None:
+        class CustomError(Exception): ...
+
         caplog.set_level("DEBUG", logger=(name := unique_str()))
         counter = 0
 
@@ -330,7 +332,7 @@ class TestLoopUntilSucceed:
             nonlocal counter
             counter += 1
             if counter <= 3:
-                raise ValueError
+                raise CustomError
 
         assert await loop_until_succeed(
             lambda: func(), logger=name if use_logger else None, sleep=sleep
@@ -346,16 +348,36 @@ class TestLoopUntilSucceed:
             )
             assert messages == expected
 
-    async def test_error(self) -> None:
+    async def test_error_flat(self) -> None:
+        class CustomError(Exception): ...
+
         counter = 0
 
         async def func() -> None:
             nonlocal counter
             counter += 1
             if counter <= 3:
+                raise CustomError
+
+        assert not await loop_until_succeed(lambda: func(), errors=CustomError)
+        assert counter == 1
+
+    async def test_error_nested(self) -> None:
+        class CustomError(Exception): ...
+
+        counter = 0
+
+        async def func() -> None:
+            async with TaskGroup() as tg:
+                _ = tg.create_task(inner())
+
+        async def inner() -> None:
+            nonlocal counter
+            counter += 1
+            if counter <= 3:
                 raise ValueError
 
-        assert not await loop_until_succeed(lambda: func(), errors=ValueError)
+        assert not await loop_until_succeed(lambda: func(), errors=CustomError)
         assert counter == 1
 
 

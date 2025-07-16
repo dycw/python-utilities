@@ -65,6 +65,7 @@ if TYPE_CHECKING:
     from utilities.types import (
         Coro,
         Delta,
+        ExceptionTypeLike,
         LoggerOrName,
         MaybeCallableBool,
         MaybeType,
@@ -398,7 +399,7 @@ async def loop_until_succeed(
     /,
     *,
     logger: LoggerOrName | None = None,
-    errors: type[Exception] | tuple[type[Exception], ...] | None = None,
+    errors: ExceptionTypeLike[Exception] | None = None,
     sleep: Delta | None = None,
 ) -> bool:
     """Repeatedly call a coroutine until it succeeds."""
