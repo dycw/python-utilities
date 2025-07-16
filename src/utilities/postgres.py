@@ -240,7 +240,8 @@ def _build_pg_restore_or_psql(
     tables: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
     docker: str | None = None,
 ) -> str:
-    if psql:
+    path = Path(path)
+    if (path.suffix == ".sql") or psql:
         return _build_psql(url, path, database=database, docker=docker)
     return _build_pg_restore(
         url,
