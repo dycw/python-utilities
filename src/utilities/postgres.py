@@ -38,6 +38,7 @@ async def pg_dump(
     schemas_exc: MaybeListStr | None = None,
     tables: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
     tables_exc: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
+    inserts: bool = False,
     logger: LoggerOrName | None = None,
     dry_run: bool = False,
 ) -> None:
@@ -83,6 +84,8 @@ async def pg_dump(
         parts.extend([
             f"--exclude-table={_get_table_name(t)}" for t in always_iterable(tables_exc)
         ])
+    if inserts:
+        parts.append("--inserts")
     if url.username is not None:
         parts.append(f"--username={url.username}")
     cmd = " ".join(parts)
