@@ -375,7 +375,7 @@ class TestLoopUntilSucceed:
             nonlocal counter
             counter += 1
             if counter <= 3:
-                raise ValueError
+                raise CustomError
 
         assert not await loop_until_succeed(lambda: func(), errors=CustomError)
         assert counter == 1
