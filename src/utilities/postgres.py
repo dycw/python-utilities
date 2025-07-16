@@ -12,6 +12,7 @@ from utilities.asyncio import stream_command
 from utilities.iterables import always_iterable
 from utilities.logging import get_logger
 from utilities.os import temp_environ
+from utilities.pathlib import ensure_suffix
 from utilities.sqlalchemy import get_table_name
 from utilities.timer import Timer
 from utilities.types import PathLike
@@ -106,11 +107,25 @@ def _build_pg_dump(
     docker: str | None = None,
 ) -> str:
     database, host, port = _extract_url(url)
+    match format_:
+        case "plain":
+            suffix = ".sql"
+        case "custom":
+            suffix = ".pgdump"
+        case "directory":
+            suffix = None
+        case "tar":
+            suffix = ".tar"
+        case _ as never:
+            assert_never(never)
+    file = Path(path)
+    if suffix is not None:
+        file = ensure_suffix(file, suffix)
     parts: list[str] = [
         "pg_dump",
         # general options
         f"--dbname={database}",
-        f"--file={str(path)!r}",
+        f"--file={str(file)!r}",
         f"--format={format_}",
         "--verbose",
         # output options
