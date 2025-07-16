@@ -5,17 +5,21 @@ from pathlib import Path
 from shutil import rmtree
 from typing import TYPE_CHECKING, Literal, assert_never, override
 
+from sqlalchemy import Table
+from sqlalchemy.orm import DeclarativeBase
+
 from utilities.asyncio import stream_command
 from utilities.iterables import always_iterable
 from utilities.logging import get_logger
 from utilities.os import temp_environ
-from utilities.sqlalchemy import TableOrORMInstOrClass, get_table_name
+from utilities.sqlalchemy import get_table_name
 from utilities.timer import Timer
 from utilities.types import PathLike
 
 if TYPE_CHECKING:
     from sqlalchemy import URL
 
+    from utilities.sqlalchemy import TableOrORMInstOrClass
     from utilities.types import LoggerOrName, MaybeListStr, MaybeSequence, PathLike
 
 
@@ -31,7 +35,9 @@ async def pg_dump(
     format_: _PGDumpFormat = "plain",
     jobs: int | None = None,
     schemas: MaybeListStr | None = None,
-    tables: MaybeSequence[TableOrORMInstOrClass] | None = None,
+    schemas_exc: MaybeListStr | None = None,
+    tables: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
+    tables_exc: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
     logger: LoggerOrName | None = None,
     dry_run: bool = False,
 ) -> None:
@@ -69,8 +75,14 @@ async def pg_dump(
         parts.append(f"--jobs={jobs}")
     if schemas is not None:
         parts.extend([f"--schema={s}" for s in always_iterable(schemas)])
+    if schemas_exc is not None:
+        parts.extend([f"--exclude-schema={s}" for s in always_iterable(schemas_exc)])
     if tables is not None:
-        parts.extend([f"--table={get_table_name(t)}" for t in always_iterable(tables)])
+        parts.extend([f"--table={_get_table_name(t)}" for t in always_iterable(tables)])
+    if tables_exc is not None:
+        parts.extend([
+            f"--exclude-table={_get_table_name(t)}" for t in always_iterable(tables_exc)
+        ])
     if url.username is not None:
         parts.append(f"--username={url.username}")
     cmd = " ".join(parts)
@@ -174,7 +186,6 @@ async def pg_restore(
         "--exit-on-error",
         "--no-owner",
         "--no-privileges",
-        "--if-exists",
         # connection options
         f"--host={url.host}",
         f"--port={url.port}",
@@ -183,13 +194,13 @@ async def pg_restore(
     if data_only:
         parts.append("--data-only")
     else:
-        parts.append("--clean")
+        parts.extend(["--clean", "--if-exists"])
     if jobs is not None:
         parts.append(f"--jobs={jobs}")
     if schemas is not None:
         parts.extend([f"--schema={s}" for s in always_iterable(schemas)])
     if tables is not None:
-        parts.extend([f"--table={get_table_name(t)}" for t in always_iterable(tables)])
+        parts.extend([f"--table={_get_table_name(t)}" for t in always_iterable(tables)])
     if url.username is not None:
         parts.append(f"--username={url.username}")
     parts.append(str(path))
@@ -247,6 +258,20 @@ class _PGRestorePortError(PGRestoreError):
     @override
     def __str__(self) -> str:
         return f"Expected URL to contain a 'port'; got {self.url}"
+
+
+##
+
+
+def _get_table_name(obj: TableOrORMInstOrClass | str, /) -> str:
+    """Get the table name from a Table or mapped class."""
+    match obj:
+        case Table() | DeclarativeBase() | type() as table_or_orm:
+            return get_table_name(table_or_orm)
+        case str() as name:
+            return name
+        case _ as never:
+            assert_never(never)
 
 
 __all__ = ["PGDumpError", "PGRestoreError", "pg_dump", "pg_restore"]
