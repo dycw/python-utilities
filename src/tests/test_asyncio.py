@@ -332,19 +332,31 @@ class TestLoopUntilSucceed:
             if counter <= 3:
                 raise ValueError
 
-        _ = await loop_until_succeed(
+        assert await loop_until_succeed(
             lambda: func(), logger=name if use_logger else None, sleep=sleep
         )
         assert counter == 4
 
         if use_logger:
             messages = [r.message for r in caplog.records if r.name == name]
-            expected = 3 * [
-                "Error running 'func'",
-                "Sleeping for PT0.001S...",
-                "Retrying 'func'...",
-            ]
+            expected = 3 * (
+                ["Error running 'func'"]
+                + ([] if sleep is None else ["Sleeping for PT0.001S..."])
+                + ["Retrying 'func'..."]
+            )
             assert messages == expected
+
+    async def test_error(self) -> None:
+        counter = 0
+
+        async def func() -> None:
+            nonlocal counter
+            counter += 1
+            if counter <= 3:
+                raise ValueError
+
+        assert not await loop_until_succeed(lambda: func(), errors=ValueError)
+        assert counter == 1
 
 
 class TestPutItems:
