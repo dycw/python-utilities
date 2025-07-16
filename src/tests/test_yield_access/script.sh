@@ -48,7 +48,7 @@ if [ -f "${__log_file}" ]; then
 fi
 
 # run the script
-echo_pid_date "Running 'python -m tests.test_yield_access.script'..." 2>&1 | tee -a "${__log_file}"
+echo_pid_date "Running 'PYTHONPATH=src/tests/test_yield_access python -m script'..." 2>&1 | tee -a "${__log_file}"
 __start="$(date +%s)"
-direnv exec . python -m tests.test_yield_access.script "$*" 2>&1 | tee -a "${__log_file}"
+PYTHONPATH=src/tests/test_yield_access direnv exec . python -m script "$*" 2>&1 | tee -a "${__log_file}"
 __exit_code="$?"

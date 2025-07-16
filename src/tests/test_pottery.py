@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
-from itertools import repeat
 from typing import TYPE_CHECKING, ClassVar
 
 from pottery import AIORedlock
@@ -74,7 +73,7 @@ class TestTryYieldCoroutineLooper:
             redis, key, timeout_acquire=self.delta, logger=logger
         ) as looper:
             if looper is not None:
-                await looper(self.func_main, lst)
+                assert await looper(self.func_main, lst)
 
     async def delayed(
         self,
@@ -102,11 +101,11 @@ class TestTryYieldCoroutineLooper:
             logger=name if use_logger else None,
         ) as looper:
             assert looper is not None
-            await looper(self.func_error, lst)
+            assert await looper(self.func_error, lst)
 
         if use_logger:
             messages = [r.message for r in caplog.records if r.name == name]
-            expected = list(repeat("Error running 'func_error'", times=3))
+            expected = 3 * ["Error running 'func_error'", "Retrying 'func_error'..."]
             assert messages == expected
 
     async def func_error(self, lst: list[None], /) -> None:

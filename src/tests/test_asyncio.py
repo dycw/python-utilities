@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from hypothesis import given
 from hypothesis.strategies import booleans, dictionaries, integers, lists, none
-from pytest import RaisesGroup, raises
+from pytest import LogCaptureFixture, RaisesGroup, mark, param, raises
 
 from utilities.asyncio import (
     AsyncDict,
@@ -28,6 +28,7 @@ from utilities.asyncio import (
 )
 from utilities.hypothesis import pairs, text_ascii
 from utilities.pytest import skipif_windows
+from utilities.text import unique_str
 from utilities.timer import Timer
 from utilities.whenever import MILLISECOND, SECOND, get_now
 
@@ -317,7 +318,12 @@ class TestGetItems:
 
 
 class TestLoopUntilSucceed:
-    async def test_main(self) -> None:
+    @mark.parametrize("sleep", [param(MILLISECOND), param(None)])
+    @mark.parametrize("use_logger", [param(True), param(False)])
+    async def test_main(
+        self, *, caplog: LogCaptureFixture, sleep: TimeDelta | None, use_logger: bool
+    ) -> None:
+        caplog.set_level("DEBUG", logger=(name := unique_str()))
         counter = 0
 
         async def func() -> None:
@@ -326,25 +332,19 @@ class TestLoopUntilSucceed:
             if counter <= 3:
                 raise ValueError
 
-        _ = await loop_until_succeed(lambda: func())
+        _ = await loop_until_succeed(
+            lambda: func(), logger=name if use_logger else None, sleep=sleep
+        )
         assert counter == 4
 
-    async def test_error(self) -> None:
-        counter = 0
-        errors: list[Exception] = []
-
-        async def func() -> None:
-            nonlocal counter
-            counter += 1
-            if counter <= 3:
-                raise ValueError
-
-        def error(error: Exception, /) -> None:
-            errors.append(error)
-
-        _ = await loop_until_succeed(lambda: func(), error=error)
-        assert counter == 4
-        assert len(errors) == 3
+        if use_logger:
+            messages = [r.message for r in caplog.records if r.name == name]
+            expected = 3 * [
+                "Error running 'func'",
+                "Sleeping for PT0.001S...",
+                "Retrying 'func'...",
+            ]
+            assert messages == expected
 
 
 class TestPutItems:
