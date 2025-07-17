@@ -153,9 +153,9 @@ class TestRestore:
             data_only=data_only,
             clean=clean,
             jobs=jobs,
-            schemas=schemas,
-            schemas_exc=schemas_exc,
-            tables=tables,
+            schema=schemas,
+            schema_exc=schemas_exc,
+            table=tables,
             docker=docker,
         )
 
