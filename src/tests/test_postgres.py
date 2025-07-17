@@ -61,6 +61,7 @@ class TestPGDump:
     @given(
         url=urls(),
         path=temp_paths(),
+        format_=sampled_from(get_literal_elements(_PGDumpFormat)),
         jobs=integers(min_value=0) | none(),
         data_only=booleans(),
         clean=booleans(),
@@ -77,6 +78,7 @@ class TestPGDump:
         *,
         url: URL,
         path: Path,
+        format_: _PGDumpFormat,
         jobs: int | None,
         data_only: bool,
         clean: bool,
@@ -91,6 +93,7 @@ class TestPGDump:
         _ = _build_pg_dump(
             url,
             path,
+            format_=format_,
             jobs=jobs,
             data_only=data_only,
             clean=clean,
