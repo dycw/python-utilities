@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import nullcontext, suppress
 from dataclasses import dataclass
+from functools import wraps
 from sys import maxsize
 from typing import TYPE_CHECKING, override
 
@@ -88,12 +89,22 @@ class CoroutineLooper:
     async def __call__[**P](
         self, func: Callable[P, Coro[None]], *args: P.args, **kwargs: P.kwargs
     ) -> bool:
-        def make_coro() -> Coro[None]:
-            return func(*args, **kwargs)
-
         return await loop_until_succeed(
-            make_coro, logger=self.logger, errors=ExtendUnlockedLock, sleep=self.sleep
+            lambda: self._make_coro(func, *args, **kwargs),
+            logger=self.logger,
+            errors=ExtendUnlockedLock,
+            sleep=self.sleep,
         )
+
+    def _make_coro[**P](
+        self, func: Callable[P, Coro[None]], *args: P.args, **kwargs: P.kwargs
+    ) -> Coro[None]:
+        @wraps(func)
+        async def wrapped() -> None:
+            await extend_lock(lock=self.lock)
+            return await func(*args, **kwargs)
+
+        return wrapped()
 
 
 ##
