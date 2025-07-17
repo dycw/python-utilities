@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from re import search
 from typing import TYPE_CHECKING, ClassVar
 
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import booleans, dictionaries, integers, lists, none
 from pytest import LogCaptureFixture, RaisesGroup, mark, param, raises
 
@@ -25,6 +25,7 @@ from utilities.asyncio import (
     sleep_until,
     stream_command,
     timeout_td,
+    yield_locked_shelf,
 )
 from utilities.hypothesis import pairs, text_ascii
 from utilities.pytest import skipif_windows
@@ -34,6 +35,7 @@ from utilities.whenever import MILLISECOND, SECOND, get_now
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
+    from pathlib import Path
 
     from whenever import TimeDelta
 
@@ -475,6 +477,20 @@ class TestTimeoutTD:
         with raises(CustomError):
             async with timeout_td(self.delta, error=CustomError):
                 await sleep_td(2 * self.delta)
+
+
+class TestYieldLockedShelf:
+    @given(key=text_ascii(), value=integers())
+    @settings(
+        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
+    )
+    async def test_main(self, *, key: str, value: int, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("shelf")
+        async with yield_locked_shelf(path) as shelf:
+            shelf[key] = value
+        async with yield_locked_shelf(path) as shelf:
+            result = shelf[key]
+        assert result == value
 
 
 if __name__ == "__main__":

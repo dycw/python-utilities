@@ -22,6 +22,7 @@ from contextlib import (
 )
 from dataclasses import dataclass
 from io import StringIO
+from pathlib import Path
 from subprocess import PIPE
 from sys import stderr, stdout
 from typing import (
@@ -40,6 +41,7 @@ from utilities.functions import ensure_int, ensure_not_none, to_bool
 from utilities.logging import get_logger
 from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
+from utilities.shelve import yield_shelf
 from utilities.warnings import suppress_warnings
 from utilities.whenever import get_now, round_date_or_date_time, to_nanoseconds
 
@@ -58,10 +60,12 @@ if TYPE_CHECKING:
     )
     from contextvars import Context
     from random import Random
+    from shelve import Shelf
     from types import TracebackType
 
     from whenever import ZonedDateTime
 
+    from utilities.shelve import _Flag
     from utilities.types import (
         Coro,
         Delta,
@@ -69,6 +73,7 @@ if TYPE_CHECKING:
         LoggerOrName,
         MaybeCallableBool,
         MaybeType,
+        PathLike,
         SupportsKeysAndGetItem,
     )
 
@@ -547,6 +552,35 @@ async def timeout_td(
         raise error from None
 
 
+##
+
+
+_LOCKS: AsyncDict[Path, Lock] = AsyncDict()
+
+
+@asynccontextmanager
+async def yield_locked_shelf(
+    path: PathLike,
+    /,
+    *,
+    flag: _Flag = "c",
+    protocol: int | None = None,
+    writeback: bool = False,
+) -> AsyncIterator[Shelf[Any]]:
+    """Yield a shelf, behind a lock."""
+    path = Path(path)
+    try:
+        lock = _LOCKS[path]
+    except KeyError:
+        lock = Lock()
+        await _LOCKS.set(path, lock)
+    async with lock:
+        with yield_shelf(
+            path, flag=flag, protocol=protocol, writeback=writeback
+        ) as shelf:
+            yield shelf
+
+
 __all__ = [
     "AsyncDict",
     "EnhancedTaskGroup",
@@ -563,4 +597,5 @@ __all__ = [
     "sleep_until",
     "stream_command",
     "timeout_td",
+    "yield_locked_shelf",
 ]
