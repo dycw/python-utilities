@@ -97,7 +97,7 @@ class CoroutineLooper:
         )
 
     def _make_coro[**P](
-        self, func: Callable[P, Coro[None]], *args: P.args, **kwargs: P.kwargs
+        self, func: Callable[P, Coro[None]], /, *args: P.args, **kwargs: P.kwargs
     ) -> Coro[None]:
         @wraps(func)
         async def wrapped() -> None:
