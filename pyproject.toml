@@ -34,6 +34,7 @@ dev = [
   "pytest-cov >= 6.2.1, < 6.3",
   "pytest-timeout >= 2.4.0, < 2.5",
 ]
+dnspython = ["dnspython >= 2.7.0, < 2.8"]
 eventkit = ["eventkit >= 1.0.3, < 1.1"]
 fastapi = ["fastapi >= 0.116.0, < 0.117"]
 fastapi-test = ["httpx", "uvicorn"]
@@ -102,7 +103,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.149.5"
+version = "0.149.6"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -135,7 +136,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.149.5"
+current_version = "0.149.6"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
