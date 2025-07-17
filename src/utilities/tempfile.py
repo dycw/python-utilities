@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import tempfile
 from pathlib import Path
-from tempfile import TemporaryDirectory as _TemporaryDirectory
 from tempfile import gettempdir as _gettempdir
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
+
+from utilities.warnings import suppress_warnings
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -21,13 +23,15 @@ class TemporaryDirectory:
         prefix: str | None = None,
         dir: PathLike | None = None,  # noqa: A002
         ignore_cleanup_errors: bool = False,
+        delete: bool = True,
     ) -> None:
         super().__init__()
-        self._temp_dir = _TemporaryDirectory(
+        self._temp_dir = _TemporaryDirectoryNoResourceWarning(
             suffix=suffix,
             prefix=prefix,
             dir=dir,
             ignore_cleanup_errors=ignore_cleanup_errors,
+            delete=delete,
         )
         self.path = Path(self._temp_dir.name)
 
@@ -41,6 +45,25 @@ class TemporaryDirectory:
         tb: TracebackType | None,
     ) -> None:
         self._temp_dir.__exit__(exc, val, tb)
+
+
+class _TemporaryDirectoryNoResourceWarning(tempfile.TemporaryDirectory):
+    @classmethod
+    @override
+    def _cleanup(  # pyright: ignore[reportGeneralTypeIssues]
+        cls,
+        name: str,
+        warn_message: str,
+        ignore_errors: bool = False,
+        delete: bool = True,
+    ) -> None:
+        with suppress_warnings(category=ResourceWarning):
+            return super()._cleanup(  # pyright: ignore[reportAttributeAccessIssue]
+                name, warn_message, ignore_errors=ignore_errors, delete=delete
+            )
+
+
+##
 
 
 def gettempdir() -> Path:
