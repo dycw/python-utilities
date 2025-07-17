@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
+from contextvars import ContextVar
 from typing import TYPE_CHECKING, ClassVar
 
 from pottery import AIORedlock
@@ -39,16 +40,27 @@ class TestTryYieldCoroutineLooper:
     delta: ClassVar[TimeDelta] = 0.1 * SECOND
 
     @mark.parametrize("use_logger", [param(True), param(False)])
+    @mark.parametrize("use_context", [param(True), param(False)])
     async def test_main(
-        self, *, caplog: LogCaptureFixture, use_logger: bool, test_redis: Redis
+        self,
+        *,
+        caplog: LogCaptureFixture,
+        use_logger: bool,
+        use_context: bool,
+        test_redis: Redis,
     ) -> None:
         caplog.set_level("DEBUG", logger=(name := unique_str()))
         lst: list[None] = []
         logger = name if use_logger else None
+        context = ContextVar(unique_str(), default=False) if use_context else None
 
         async with TaskGroup() as tg:
-            _ = tg.create_task(self.now(test_redis, name, lst, logger=logger))
-            _ = tg.create_task(self.delayed(test_redis, name, lst, logger=logger))
+            _ = tg.create_task(
+                self.now(test_redis, name, lst, logger=logger, context=context)
+            )
+            _ = tg.create_task(
+                self.delayed(test_redis, name, lst, logger=logger, context=context)
+            )
 
         assert len(lst) == 1
         if use_logger:
@@ -68,9 +80,10 @@ class TestTryYieldCoroutineLooper:
         /,
         *,
         logger: LoggerOrName | None = None,
+        context: ContextVar[bool] | None = None,
     ) -> None:
         async with try_yield_coroutine_looper(
-            redis, key, timeout_acquire=self.delta, logger=logger
+            redis, key, timeout_acquire=self.delta, logger=logger, context=context
         ) as looper:
             if looper is not None:
                 assert await looper(self.func_main, lst)
@@ -83,9 +96,10 @@ class TestTryYieldCoroutineLooper:
         /,
         *,
         logger: LoggerOrName | None = None,
+        context: ContextVar[bool] | None = None,
     ) -> None:
         await sleep_td(self.delta)
-        await self.now(redis, key, lst, logger=logger)
+        await self.now(redis, key, lst, logger=logger, context=context)
 
     @mark.parametrize("use_logger", [param(True), param(False)])
     async def test_error(

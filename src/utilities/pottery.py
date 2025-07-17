@@ -57,9 +57,9 @@ async def try_yield_coroutine_looper(
     timeout_acquire: Delta = _TIMEOUT_TRY_ACQUIRE,
     sleep_acquire: Delta = _SLEEP,
     throttle: Delta | None = None,
-    context: ContextVar[bool] | None = None,
     logger: LoggerOrName | None = None,
     sleep_error: Delta | None = None,
+    context: ContextVar[bool] | None = None,
 ) -> AsyncIterator[CoroutineLooper | None]:
     """Try acquire access to a coroutine looper."""
     try:  # skipif-ci-and-not-linux
