@@ -34,10 +34,12 @@ async def pg_dump(
     *,
     format_: _PGDumpFormat = "plain",
     jobs: int | None = None,
-    schemas: MaybeListStr | None = None,
-    schemas_exc: MaybeListStr | None = None,
-    tables: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
-    tables_exc: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
+    data_only: bool = False,
+    clean: bool = False,
+    schema: MaybeListStr | None = None,
+    schema_exc: MaybeListStr | None = None,
+    table: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
+    table_exc: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
     inserts: bool = False,
     on_conflict_do_nothing: bool = False,
     docker: str | None = None,
@@ -52,10 +54,12 @@ async def pg_dump(
         path,
         format_=format_,
         jobs=jobs,
-        schemas=schemas,
-        schemas_exc=schemas_exc,
-        tables=tables,
-        tables_exc=tables_exc,
+        data_only=data_only,
+        clean=clean,
+        schema=schema,
+        schema_exc=schema_exc,
+        table=table,
+        table_exc=table_exc,
         inserts=inserts,
         on_conflict_do_nothing=on_conflict_do_nothing,
         docker=docker,
@@ -98,10 +102,12 @@ def _build_pg_dump(
     *,
     format_: _PGDumpFormat = "plain",
     jobs: int | None = None,
-    schemas: MaybeListStr | None = None,
-    schemas_exc: MaybeListStr | None = None,
-    tables: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
-    tables_exc: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
+    data_only: bool = False,
+    clean: bool = False,
+    schema: MaybeListStr | None = None,
+    schema_exc: MaybeListStr | None = None,
+    table: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
+    table_exc: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
     inserts: bool = False,
     on_conflict_do_nothing: bool = False,
     docker: str | None = None,
@@ -117,10 +123,9 @@ def _build_pg_dump(
         "--verbose",
         # output options
         "--large-objects",
-        "--clean",
+        "--create",
         "--no-owner",
         "--no-privileges",
-        "--if-exists",
         # connection options
         f"--host={host}",
         f"--port={port}",
@@ -128,15 +133,19 @@ def _build_pg_dump(
     ]
     if (format_ == "directory") and (jobs is not None):
         parts.append(f"--jobs={jobs}")
-    if schemas is not None:
-        parts.extend([f"--schema={s}" for s in always_iterable(schemas)])
-    if schemas_exc is not None:
-        parts.extend([f"--exclude-schema={s}" for s in always_iterable(schemas_exc)])
-    if tables is not None:
-        parts.extend([f"--table={_get_table_name(t)}" for t in always_iterable(tables)])
-    if tables_exc is not None:
+    if data_only:
+        parts.append("--data-only")
+    if clean:
+        parts.extend(["--clean", "--if-exists"])
+    if schema is not None:
+        parts.extend([f"--schema={s}" for s in always_iterable(schema)])
+    if schema_exc is not None:
+        parts.extend([f"--exclude-schema={s}" for s in always_iterable(schema_exc)])
+    if table is not None:
+        parts.extend([f"--table={_get_table_name(t)}" for t in always_iterable(table)])
+    if table_exc is not None:
         parts.extend([
-            f"--exclude-table={_get_table_name(t)}" for t in always_iterable(tables_exc)
+            f"--exclude-table={_get_table_name(t)}" for t in always_iterable(table_exc)
         ])
     if inserts:
         parts.append("--inserts")
@@ -239,6 +248,7 @@ def _build_pg_restore_or_psql(
     psql: bool = False,
     database: str | None = None,
     data_only: bool = False,
+    clean: bool = False,
     jobs: int | None = None,
     schemas: MaybeListStr | None = None,
     schemas_exc: MaybeListStr | None = None,
@@ -253,6 +263,7 @@ def _build_pg_restore_or_psql(
         path,
         database=database,
         data_only=data_only,
+        clean=clean,
         jobs=jobs,
         schemas=schemas,
         schemas_exc=schemas_exc,
@@ -268,6 +279,7 @@ def _build_pg_restore(
     *,
     database: str | None = None,
     data_only: bool = False,
+    clean: bool = False,
     jobs: int | None = None,
     schemas: MaybeListStr | None = None,
     schemas_exc: MaybeListStr | None = None,
@@ -293,7 +305,7 @@ def _build_pg_restore(
     ]
     if data_only:
         parts.append("--data-only")
-    else:
+    if clean:
         parts.extend(["--clean", "--if-exists"])
     if jobs is not None:
         parts.append(f"--jobs={jobs}")
