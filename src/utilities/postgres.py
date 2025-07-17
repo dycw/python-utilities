@@ -188,9 +188,9 @@ async def restore(
     database: str | None = None,
     data_only: bool = False,
     jobs: int | None = None,
-    schemas: MaybeListStr | None = None,
-    schemas_exc: MaybeListStr | None = None,
-    tables: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
+    schema: MaybeListStr | None = None,
+    schema_exc: MaybeListStr | None = None,
+    table: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
     docker: str | None = None,
     dry_run: bool = False,
     logger: LoggerOrName | None = None,
@@ -203,9 +203,9 @@ async def restore(
         database=database,
         data_only=data_only,
         jobs=jobs,
-        schemas=schemas,
-        schemas_exc=schemas_exc,
-        tables=tables,
+        schema=schema,
+        schema_exc=schema_exc,
+        table=table,
         docker=docker,
     )
     if dry_run:
@@ -250,9 +250,9 @@ def _build_pg_restore_or_psql(
     data_only: bool = False,
     clean: bool = False,
     jobs: int | None = None,
-    schemas: MaybeListStr | None = None,
-    schemas_exc: MaybeListStr | None = None,
-    tables: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
+    schema: MaybeListStr | None = None,
+    schema_exc: MaybeListStr | None = None,
+    table: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
     docker: str | None = None,
 ) -> str:
     path = Path(path)
@@ -265,9 +265,9 @@ def _build_pg_restore_or_psql(
         data_only=data_only,
         clean=clean,
         jobs=jobs,
-        schemas=schemas,
-        schemas_exc=schemas_exc,
-        tables=tables,
+        schemas=schema,
+        schemas_exc=schema_exc,
+        tables=table,
         docker=docker,
     )
 
