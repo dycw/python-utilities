@@ -12,12 +12,14 @@ from redis.asyncio import Redis
 
 from utilities.asyncio import loop_until_succeed, sleep_td, timeout_td
 from utilities.contextlib import enhanced_async_context_manager
+from utilities.contextvars import yield_set_context
 from utilities.iterables import always_iterable
 from utilities.logging import get_logger
 from utilities.whenever import MILLISECOND, SECOND, to_seconds
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Iterable
+    from contextvars import ContextVar
 
     from whenever import Delta
 
@@ -55,6 +57,7 @@ async def try_yield_coroutine_looper(
     timeout_acquire: Delta = _TIMEOUT_TRY_ACQUIRE,
     sleep_acquire: Delta = _SLEEP,
     throttle: Delta | None = None,
+    context: ContextVar[bool] | None = None,
     logger: LoggerOrName | None = None,
     sleep_error: Delta | None = None,
 ) -> AsyncIterator[CoroutineLooper | None]:
@@ -70,7 +73,12 @@ async def try_yield_coroutine_looper(
             sleep=sleep_acquire,
             throttle=throttle,
         ) as lock:
-            yield CoroutineLooper(lock=lock, logger=logger, sleep=sleep_error)
+            looper = CoroutineLooper(lock=lock, logger=logger, sleep=sleep_error)
+            if context is None:
+                yield looper
+            else:
+                with yield_set_context(context):
+                    yield looper
     except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
         if logger is not None:
             get_logger(logger=logger).info("%s", error)
