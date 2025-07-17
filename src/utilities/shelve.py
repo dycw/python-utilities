@@ -12,12 +12,15 @@ if TYPE_CHECKING:
     from utilities.types import PathLike
 
 
+type _Flag = Literal["r", "w", "c", "n"]
+
+
 @contextmanager
 def yield_shelf(
     path: PathLike,
     /,
     *,
-    flag: Literal["r", "w", "c", "n"] = "c",
+    flag: _Flag = "c",
     protocol: int | None = None,
     writeback: bool = False,
 ) -> Iterator[Shelf[Any]]:
