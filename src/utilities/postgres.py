@@ -420,13 +420,13 @@ def _resolve_data_only_and_clean(
         case False, True:
             return ["--clean", "--if-exists"]
         case True, True:
-            raise ResolveDataOnlyAndCleanError
+            raise _ResolveDataOnlyAndCleanError
         case _ as never:
             assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)
-class ResolveDataOnlyAndCleanError(Exception):
+class _ResolveDataOnlyAndCleanError(Exception):
     @override
     def __str__(self) -> str:
         return "Cannot use '--data-only' and '--clean' together"
