@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from asyncio import sleep
 from contextlib import AbstractContextManager, suppress
 from logging import LogRecord, setLogRecordFactory
 from os import environ
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from hypothesis import HealthCheck
 from pytest import fixture, mark, param, skip
@@ -22,6 +21,8 @@ if TYPE_CHECKING:
 
     from _pytest.fixtures import SubRequest
     from redis.asyncio import Redis
+    from sqlalchemy import Engine, TextClause
+    from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
@@ -81,31 +82,68 @@ async def test_redis() -> AsyncIterator[Redis]:
 
 
 @fixture(params=[param("sqlite"), param("postgresql", marks=SKIPIF_CI)])
-async def test_engine(*, request: SubRequest, tmp_path: Path) -> Any:
-    from sqlalchemy import text
+def test_engine(*, request: SubRequest, tmp_path: Path) -> Engine:
+    from sqlalchemy.exc import OperationalError
 
-    from utilities.sqlalchemy import create_async_engine
+    from utilities.sqlalchemy import create_engine
 
     dialect = request.param
     match dialect:
         case "sqlite":
             db_path = tmp_path / "db.sqlite"
-            return create_async_engine("sqlite+aiosqlite", database=str(db_path))
+            return create_engine("sqlite", database=str(db_path))
         case "postgresql":
-            engine = create_async_engine(
-                "postgresql+asyncpg", host="localhost", port=5432, database="testing"
+            engine = create_engine(
+                "postgresql+psycopg", host="localhost", port=5432, database="testing"
             )
-            query = text("SELECT tablename FROM pg_tables")
-            async with engine.begin() as conn:
-                tables: Sequence[str] = (await conn.execute(query)).scalars().all()
-            for table in tables:
-                if _is_to_drop(table):
+            try:
+                with engine.begin() as conn:
+                    tables: Sequence[str] = (
+                        conn.execute(_select_tables()).scalars().all()
+                    )
+            except OperationalError:
+                ...
+            else:
+                for table in filter(_is_to_drop, tables):
+                    with engine.begin() as conn, suppress(Exception):
+                        _ = conn.execute(_drop_table(table))
+            return engine
+        case _:
+            msg = f"Unsupported dialect: {dialect}"
+            raise NotImplementedError(msg)
+
+
+@fixture(params=[param("sqlite"), param("postgresql", marks=SKIPIF_CI)])
+async def test_async_engine(*, request: SubRequest, tmp_path: Path) -> AsyncEngine:
+    from utilities.sqlalchemy import create_engine
+
+    dialect = request.param
+    match dialect:
+        case "sqlite":
+            db_path = tmp_path / "db.sqlite"
+            return create_engine("sqlite+aiosqlite", database=str(db_path), async_=True)
+        case "postgresql":
+            from asyncpg.exceptions import InvalidCatalogNameError
+
+            engine = create_engine(
+                "postgresql+asyncpg",
+                host="localhost",
+                port=5432,
+                database="testing",
+                async_=True,
+            )
+            try:
+                async with engine.begin() as conn:
+                    tables: Sequence[str] = (
+                        (await conn.execute(_select_tables())).scalars().all()
+                    )
+            except InvalidCatalogNameError:
+                ...
+            else:
+                for table in filter(_is_to_drop, tables):
                     async with engine.begin() as conn:
                         with suppress(Exception):
-                            _ = await conn.execute(
-                                text(f'DROP TABLE IF EXISTS "{table}" CASCADE')
-                            )
-                        await sleep(0.01)
+                            _ = await conn.execute(_drop_table(table))
             return engine
         case _:
             msg = f"Unsupported dialect: {dialect}"
@@ -122,3 +160,15 @@ def _is_to_drop(table: str, /) -> bool:
     )
     now = get_now()
     return (now - datetime) >= MINUTE
+
+
+def _select_tables() -> TextClause:
+    from sqlalchemy import text
+
+    return text("SELECT tablename FROM pg_tables")
+
+
+def _drop_table(table: str, /) -> TextClause:
+    from sqlalchemy import text
+
+    return text(f'DROP TABLE IF EXISTS "{table}" CASCADE')

@@ -18,8 +18,19 @@ from itertools import chain
 from math import floor
 from operator import ge, le
 from re import search
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, assert_never, cast, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypeGuard,
+    assert_never,
+    cast,
+    overload,
+    override,
+)
 
+import sqlalchemy
+import sqlalchemy.ext.asyncio
 from sqlalchemy import (
     URL,
     Column,
@@ -42,12 +53,12 @@ from sqlalchemy.dialects.postgresql import Insert as postgresql_Insert
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.postgresql.asyncpg import PGDialect_asyncpg
+from sqlalchemy.dialects.postgresql.psycopg import PGDialect_psycopg
 from sqlalchemy.dialects.sqlite import Insert as sqlite_Insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
-from sqlalchemy.exc import ArgumentError, DatabaseError
+from sqlalchemy.exc import ArgumentError, DatabaseError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
-from sqlalchemy.ext.asyncio import create_async_engine as _create_async_engine
 from sqlalchemy.orm import (
     DeclarativeBase,
     InstrumentedAttribute,
@@ -94,6 +105,18 @@ type DialectOrEngineOrConnectionOrAsync = Dialect | EngineOrConnectionOrAsync
 type ORMInstOrClass = DeclarativeBase | type[DeclarativeBase]
 type TableOrORMInstOrClass = Table | ORMInstOrClass
 CHUNK_SIZE_FRAC = 0.8
+
+
+##
+
+
+def check_connect(engine: Engine, /) -> bool:
+    """Check if an engine can connect."""
+    try:
+        with engine.connect() as conn:
+            return bool(conn.execute(text("SELECT 1")).scalar_one())
+    except OperationalError:
+        return False
 
 
 ##
@@ -187,7 +210,8 @@ def _columnwise_minmax(*columns: Any, op: Callable[[Any, Any], Any]) -> Any:
 ##
 
 
-def create_async_engine(
+@overload
+def create_engine(
     drivername: str,
     /,
     *,
@@ -198,7 +222,49 @@ def create_async_engine(
     database: str | None = None,
     query: StrMapping | None = None,
     poolclass: type[Pool] | None = NullPool,
-) -> AsyncEngine:
+    async_: Literal[True],
+) -> AsyncEngine: ...
+@overload
+def create_engine(
+    drivername: str,
+    /,
+    *,
+    username: str | None = None,
+    password: str | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    database: str | None = None,
+    query: StrMapping | None = None,
+    poolclass: type[Pool] | None = NullPool,
+    async_: Literal[False] = False,
+) -> Engine: ...
+@overload
+def create_engine(
+    drivername: str,
+    /,
+    *,
+    username: str | None = None,
+    password: str | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    database: str | None = None,
+    query: StrMapping | None = None,
+    poolclass: type[Pool] | None = NullPool,
+    async_: bool = False,
+) -> Engine | AsyncEngine: ...
+def create_engine(
+    drivername: str,
+    /,
+    *,
+    username: str | None = None,
+    password: str | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    database: str | None = None,
+    query: StrMapping | None = None,
+    poolclass: type[Pool] | None = NullPool,
+    async_: bool = False,
+) -> Engine | AsyncEngine:
     """Create a SQLAlchemy engine."""
     if query is None:
         kwargs = {}
@@ -217,7 +283,13 @@ def create_async_engine(
         database=database,
         **kwargs,
     )
-    return _create_async_engine(url, poolclass=poolclass)
+    match async_:
+        case False:
+            return sqlalchemy.create_engine(url, poolclass=poolclass)
+        case True:
+            return sqlalchemy.ext.asyncio.create_async_engine(url, poolclass=poolclass)
+        case _ as never:
+            assert_never(never)
 
 
 ##
@@ -825,7 +897,7 @@ def _get_dialect(engine_or_conn: EngineOrConnectionOrAsync, /) -> Dialect:
     if isinstance(dialect, oracle_dialect):  # pragma: no cover
         return "oracle"
     if isinstance(  # skipif-ci-and-not-linux
-        dialect, postgresql_dialect | PGDialect_asyncpg
+        dialect, (postgresql_dialect, PGDialect_asyncpg, PGDialect_psycopg)
     ):
         return "postgresql"
     if isinstance(dialect, sqlite_dialect):
@@ -1107,10 +1179,11 @@ __all__ = [
     "InsertItemsError",
     "TablenameMixin",
     "UpsertItemsError",
+    "check_connect",
     "check_engine",
     "columnwise_max",
     "columnwise_min",
-    "create_async_engine",
+    "create_engine",
     "ensure_tables_created",
     "ensure_tables_dropped",
     "enum_name",

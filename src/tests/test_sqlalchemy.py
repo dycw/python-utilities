@@ -8,7 +8,16 @@ from uuid import uuid4
 from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.strategies import SearchStrategy, booleans, lists, none, sets, tuples
 from pytest import mark, param, raises
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, MetaData, Table, select
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Engine,
+    ForeignKey,
+    Integer,
+    MetaData,
+    Table,
+    select,
+)
 from sqlalchemy.exc import DatabaseError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import (
@@ -51,10 +60,11 @@ from utilities.sqlalchemy import (
     _PrepareInsertOrUpsertItemsError,
     _SelectedOrAll,
     _tuple_to_mapping,
+    check_connect,
     check_engine,
     columnwise_max,
     columnwise_min,
-    create_async_engine,
+    create_engine,
     ensure_tables_created,
     ensure_tables_dropped,
     enum_name,
@@ -119,27 +129,32 @@ def _upsert_lists(
     )
 
 
-class TestCheckEngine:
-    async def test_main(self, *, test_engine: AsyncEngine) -> None:
-        await check_engine(test_engine)
+class TestCheckConnect:
+    def test_main(self, *, test_engine: Engine) -> None:
+        assert check_connect(test_engine)
 
-    async def test_num_tables_pass(self, *, test_engine: AsyncEngine) -> None:
+
+class TestCheckEngine:
+    async def test_main(self, *, test_async_engine: AsyncEngine) -> None:
+        await check_engine(test_async_engine)
+
+    async def test_num_tables_pass(self, *, test_async_engine: AsyncEngine) -> None:
         table = Table(
             _table_names(), MetaData(), Column("id", Integer, primary_key=True)
         )
-        await ensure_tables_created(test_engine, table)
-        match _get_dialect(test_engine):
+        await ensure_tables_created(test_async_engine, table)
+        match _get_dialect(test_async_engine):
             case "sqlite":
                 expected = 1
             case "postgresql":
                 expected = (int(1e6), 1.0)
             case _ as dialect:
                 raise NotImplementedError(dialect)
-        await check_engine(test_engine, num_tables=expected)
+        await check_engine(test_async_engine, num_tables=expected)
 
-    async def test_num_tables_error(self, *, test_engine: AsyncEngine) -> None:
+    async def test_num_tables_error(self, *, test_async_engine: AsyncEngine) -> None:
         with raises(CheckEngineError, match=r".* must have 100000 table\(s\); got .*"):
-            await check_engine(test_engine, num_tables=100000)
+            await check_engine(test_async_engine, num_tables=100000)
 
 
 class TestColumnwiseMinMax:
@@ -150,7 +165,10 @@ class TestColumnwiseMinMax:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_main(
-        self, *, test_engine: AsyncEngine, values: set[tuple[int | None, int | None]]
+        self,
+        *,
+        test_async_engine: AsyncEngine,
+        values: set[tuple[int | None, int | None]],
     ) -> None:
         table = Table(
             _table_names(),
@@ -159,14 +177,16 @@ class TestColumnwiseMinMax:
             Column("x", Integer),
             Column("y", Integer),
         )
-        await insert_items(test_engine, ([{"x": x, "y": y} for x, y in values], table))
+        await insert_items(
+            test_async_engine, ([{"x": x, "y": y} for x, y in values], table)
+        )
         sel = select(
             table.c["x"],
             table.c["y"],
             columnwise_min(table.c["x"], table.c["y"]).label("min_xy"),
             columnwise_max(table.c["x"], table.c["y"]).label("max_xy"),
         )
-        async with test_engine.begin() as conn:
+        async with test_async_engine.begin() as conn:
             res = (await conn.execute(sel)).all()
         assert len(res) == len(values)
         for x, y, min_xy, max_xy in res:
@@ -183,41 +203,50 @@ class TestColumnwiseMinMax:
                 assert min_xy == min(x, y)
                 assert max_xy == max(x, y)
 
-    async def test_label(self, *, test_engine: AsyncEngine) -> None:
+    async def test_label(self, *, test_async_engine: AsyncEngine) -> None:
         table = Table(
             _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True, autoincrement=True),
             Column("x", Integer),
         )
-        await ensure_tables_created(test_engine, table)
+        await ensure_tables_created(test_async_engine, table)
         sel = select(columnwise_min(table.c.x, table.c.x))
-        async with test_engine.begin() as conn:
+        async with test_async_engine.begin() as conn:
             _ = (await conn.execute(sel)).all()
 
 
-class TestCreateAsyncEngine:
-    def test_async(self, *, tmp_path: Path) -> None:
-        engine = create_async_engine("sqlite+aiosqlite", database=tmp_path.name)
-        assert isinstance(engine, AsyncEngine)
-
-    def test_query(self, *, tmp_path: Path) -> None:
-        engine = create_async_engine(
-            "sqlite+aiosqlite",
-            database=tmp_path.name,
-            query={"arg1": "value1", "arg2": ["value2"]},
+class TestCreateEngine:
+    @mark.parametrize(
+        ("drivername", "async_", "cls"),
+        [param("sqlite", False, Engine), param("sqlite+aiosqlite", True, AsyncEngine)],
+    )
+    @mark.parametrize(
+        "query", [param({"arg1": "value1", "arg2": ["value2"]}), param(None)]
+    )
+    def test_main(
+        self,
+        *,
+        drivername: str,
+        tmp_path: Path,
+        async_: bool,
+        query: StrMapping | None,
+        cls: type[Any],
+    ) -> None:
+        engine = create_engine(
+            drivername, database=tmp_path.name, query=query, async_=async_
         )
-        assert isinstance(engine, AsyncEngine)
+        assert isinstance(engine, cls)
 
 
 class TestEnsureTablesCreated:
-    async def test_table(self, *, test_engine: AsyncEngine) -> None:
+    async def test_table(self, *, test_async_engine: AsyncEngine) -> None:
         table = Table(
             _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
         )
-        await self._run_test(test_engine, table)
+        await self._run_test(test_async_engine, table)
 
-    async def test_mapped_class(self, *, test_engine: AsyncEngine) -> None:
+    async def test_mapped_class(self, *, test_async_engine: AsyncEngine) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
@@ -225,7 +254,7 @@ class TestEnsureTablesCreated:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        await self._run_test(test_engine, Example)
+        await self._run_test(test_async_engine, Example)
 
     async def _run_test(
         self, engine: AsyncEngine, table_or_orm: TableOrORMInstOrClass, /
@@ -238,13 +267,13 @@ class TestEnsureTablesCreated:
 
 
 class TestEnsureTablesDropped:
-    async def test_table(self, *, test_engine: AsyncEngine) -> None:
+    async def test_table(self, *, test_async_engine: AsyncEngine) -> None:
         table = Table(
             _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
         )
-        await self._run_test(test_engine, table)
+        await self._run_test(test_async_engine, table)
 
-    async def test_mapped_class(self, *, test_engine: AsyncEngine) -> None:
+    async def test_mapped_class(self, *, test_async_engine: AsyncEngine) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
@@ -252,7 +281,7 @@ class TestEnsureTablesDropped:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        await self._run_test(test_engine, Example)
+        await self._run_test(test_async_engine, Example)
 
     async def _run_test(
         self, engine: AsyncEngine, table_or_orm: TableOrORMInstOrClass, /
@@ -356,35 +385,35 @@ class TestGetColumns:
 class TestGetDialect:
     @mark.skipif(condition=not is_installed("pyodbc"), reason="'pyodbc' not installed")
     def test_mssql(self) -> None:
-        engine = create_async_engine("mssql")
+        engine = create_engine("mssql")
         assert _get_dialect(engine) == "mssql"
 
     @mark.skipif(
         condition=not is_installed("mysqldb"), reason="'mysqldb' not installed"
     )
     def test_mysql(self) -> None:
-        engine = create_async_engine("mysql")
+        engine = create_engine("mysql")
         assert _get_dialect(engine) == "mysql"
 
     @mark.skipif(
         condition=not is_installed("oracledb"), reason="'oracledb' not installed"
     )
     def test_oracle(self) -> None:
-        engine = create_async_engine("oracle+oracledb")
+        engine = create_engine("oracle+oracledb")
         assert _get_dialect(engine) == "oracle"
 
     @mark.skipif(
         condition=not is_installed("asyncpg"), reason="'asyncpg' not installed"
     )
     def test_postgres(self) -> None:
-        engine = create_async_engine("postgresql+asyncpg")
+        engine = create_engine("postgresql+asyncpg")
         assert _get_dialect(engine) == "postgresql"
 
     @mark.skipif(
         condition=not is_installed("aiosqlite"), reason="'asyncpg' not installed"
     )
     def test_sqlite(self) -> None:
-        engine = create_async_engine("sqlite+aiosqlite")
+        engine = create_engine("sqlite+aiosqlite")
         assert _get_dialect(engine) == "sqlite"
 
 
@@ -505,7 +534,11 @@ class TestInsertItems:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_pair_of_obj_and_table(
-        self, *, case: Literal["tuple", "dict"], id_: int, test_engine: AsyncEngine
+        self,
+        *,
+        case: Literal["tuple", "dict"],
+        id_: int,
+        test_async_engine: AsyncEngine,
     ) -> None:
         table = self._make_table()
         match case:
@@ -513,7 +546,7 @@ class TestInsertItems:
                 item = (id_,), table
             case "dict":
                 item = {"id_": id_}, table
-        await self._run_test(test_engine, table, {id_}, item)
+        await self._run_test(test_async_engine, table, {id_}, item)
 
     @given(ids=sets(int32s(), min_size=1))
     @mark.parametrize(
@@ -540,7 +573,7 @@ class TestInsertItems:
             "list-of-pair-of-dicts",
         ],
         ids: set[int],
-        test_engine: AsyncEngine,
+        test_async_engine: AsyncEngine,
     ) -> None:
         table = self._make_table()
         match case:
@@ -552,7 +585,7 @@ class TestInsertItems:
                 item = [((id_,), table) for id_ in ids]
             case "list-of-pair-of-dicts":
                 item = [({"id_": id_}, table) for id_ in ids]
-        await self._run_test(test_engine, table, ids, item)
+        await self._run_test(test_async_engine, table, ids, item)
 
     @given(ids=sets(int32s(), min_size=10, max_size=100))
     @settings(
@@ -560,10 +593,12 @@ class TestInsertItems:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_many_items(self, *, ids: set[int], test_engine: AsyncEngine) -> None:
+    async def test_many_items(
+        self, *, ids: set[int], test_async_engine: AsyncEngine
+    ) -> None:
         table = self._make_table()
         await self._run_test(
-            test_engine, table, ids, [({"id_": id_}, table) for id_ in ids]
+            test_async_engine, table, ids, [({"id_": id_}, table) for id_ in ids]
         )
 
     @given(id_=int32s())
@@ -572,9 +607,11 @@ class TestInsertItems:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_mapped_class(self, *, id_: int, test_engine: AsyncEngine) -> None:
+    async def test_mapped_class(
+        self, *, id_: int, test_async_engine: AsyncEngine
+    ) -> None:
         cls = self._make_mapped_class()
-        await self._run_test(test_engine, cls, {id_}, cls(id_=id_))
+        await self._run_test(test_async_engine, cls, {id_}, cls(id_=id_))
 
     @given(ids=sets(int32s(), min_size=1))
     @settings(
@@ -583,10 +620,10 @@ class TestInsertItems:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_mapped_classes(
-        self, *, ids: set[int], test_engine: AsyncEngine
+        self, *, ids: set[int], test_async_engine: AsyncEngine
     ) -> None:
         cls = self._make_mapped_class()
-        await self._run_test(test_engine, cls, ids, [cls(id_=id_) for id_ in ids])
+        await self._run_test(test_async_engine, cls, ids, [cls(id_=id_) for id_ in ids])
 
     @given(id_=int32s())
     @mark.parametrize("key", [param("Id_"), param("id_")])
@@ -595,10 +632,12 @@ class TestInsertItems:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_snake(self, *, id_: int, key: str, test_engine: AsyncEngine) -> None:
+    async def test_snake(
+        self, *, id_: int, key: str, test_async_engine: AsyncEngine
+    ) -> None:
         table = self._make_table(title=True)
         item = {key: id_}, table
-        await self._run_test(test_engine, table, {id_}, item, snake=True)
+        await self._run_test(test_async_engine, table, {id_}, item, snake=True)
 
     @given(id_=int32s())
     @settings(
@@ -607,20 +646,20 @@ class TestInsertItems:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_assume_table_exists(
-        self, *, id_: int, test_engine: AsyncEngine
+        self, *, id_: int, test_async_engine: AsyncEngine
     ) -> None:
         table = self._make_table()
         with raises(
             (OperationalError, ProgrammingError), match="(no such table|does not exist)"
         ):
             await insert_items(
-                test_engine, ({"id_": id_}, table), assume_tables_exist=True
+                test_async_engine, ({"id_": id_}, table), assume_tables_exist=True
             )
 
-    async def test_error(self, *, test_engine: AsyncEngine) -> None:
+    async def test_error(self, *, test_async_engine: AsyncEngine) -> None:
         cls = self._make_mapped_class()
         with raises(InsertItemsError, match="Item must be valid; got None"):
-            await self._run_test(test_engine, cls, set(), cast("Any", None))
+            await self._run_test(test_async_engine, cls, set(), cast("Any", None))
 
     def _make_table(self, *, title: bool = False) -> Table:
         return Table(
@@ -871,19 +910,21 @@ class TestMigrateData:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_main(
-        self, *, values: list[tuple[int, bool]], test_engine: AsyncEngine
+        self, *, values: list[tuple[int, bool]], test_async_engine: AsyncEngine
     ) -> None:
         table1 = self._make_table()
         await insert_items(
-            test_engine, [({"id_": id_, "value": v}, table1) for id_, v in values]
+            test_async_engine, [({"id_": id_, "value": v}, table1) for id_, v in values]
         )
-        async with test_engine.begin() as conn:
+        async with test_async_engine.begin() as conn:
             result1 = (await conn.execute(select(table1))).all()
         assert len(result1) == len(values)
 
         table2 = self._make_table()
-        await migrate_data(table1, test_engine, test_engine, table_or_orm_to=table2)
-        async with test_engine.begin() as conn:
+        await migrate_data(
+            table1, test_async_engine, test_async_engine, table_or_orm_to=table2
+        )
+        async with test_async_engine.begin() as conn:
             result2 = (await conn.execute(select(table2))).all()
         assert len(result2) == len(values)
 
@@ -1103,25 +1144,25 @@ class TestPrepareInsertOrUpsertItems:
         self,
         *,
         normalize_item: Callable[[Any], Iterator[Any]],
-        test_engine: AsyncEngine,
+        test_async_engine: AsyncEngine,
     ) -> None:
         with raises(
             _PrepareInsertOrUpsertItemsError, match="Item must be valid; got None"
         ):
             _ = _prepare_insert_or_upsert_items(
-                normalize_item, test_engine, cast("Any", None), cast("Any", None)
+                normalize_item, test_async_engine, cast("Any", None), cast("Any", None)
             )
 
 
 class TestPrepareInsertOrUpsertItemsMergeItems:
-    async def test_main(self, *, test_engine: AsyncEngine) -> None:
+    async def test_main(self, *, test_async_engine: AsyncEngine) -> None:
         table = Table(
             _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
         )
-        await ensure_tables_created(test_engine, table)
+        await ensure_tables_created(test_async_engine, table)
         items = [
             {"id_": 1, "value": True},
             {"id_": 1, "value": False},
@@ -1131,40 +1172,40 @@ class TestPrepareInsertOrUpsertItemsMergeItems:
         result = _prepare_insert_or_upsert_items_merge_items(table, items)
         expected = [{"id_": 1, "value": False}, {"id_": 2, "value": True}]
         assert result == expected
-        async with test_engine.begin() as conn:
+        async with test_async_engine.begin() as conn:
             _ = await conn.execute(table.insert().values(expected))
 
-    async def test_just_value(self, *, test_engine: AsyncEngine) -> None:
+    async def test_just_value(self, *, test_async_engine: AsyncEngine) -> None:
         table = Table(
             _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Integer),
         )
-        await ensure_tables_created(test_engine, table)
+        await ensure_tables_created(test_async_engine, table)
         items = [{"value": 1}, {"value": 2}]
         result = _prepare_insert_or_upsert_items_merge_items(table, items)
         assert result == items
-        async with test_engine.begin() as conn:
+        async with test_async_engine.begin() as conn:
             _ = await conn.execute(table.insert().values(items))
 
-    async def test_autoincrement(self, *, test_engine: AsyncEngine) -> None:
+    async def test_autoincrement(self, *, test_async_engine: AsyncEngine) -> None:
         table = Table(
             _table_names(),
             MetaData(),
             Column("id_", Integer, primary_key=True, autoincrement=True),
             Column("value", Integer),
         )
-        await ensure_tables_created(test_engine, table)
+        await ensure_tables_created(test_async_engine, table)
         items = [{"value": 1}, {"value": 2}]
         result = _prepare_insert_or_upsert_items_merge_items(table, items)
         assert result == items
-        async with test_engine.begin() as conn:
+        async with test_async_engine.begin() as conn:
             _ = await conn.execute(table.insert().values(items))
 
 
 class TestSelectableToString:
-    async def test_main(self, *, test_engine: AsyncEngine) -> None:
+    async def test_main(self, *, test_async_engine: AsyncEngine) -> None:
         table = Table(
             "example",
             MetaData(),
@@ -1172,7 +1213,7 @@ class TestSelectableToString:
             Column("value", Boolean, nullable=True),
         )
         sel = select(table).where(table.c.value >= 1)
-        result = selectable_to_string(sel, test_engine)
+        result = selectable_to_string(sel, test_async_engine)
         expected = strip_and_dedent(
             """
                 SELECT example.id_, example.value *
@@ -1223,15 +1264,17 @@ class TestUpsertItems:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_pair_of_dict_and_table(
-        self, *, triple: tuple[int, bool, bool | None], test_engine: AsyncEngine
+        self, *, triple: tuple[int, bool, bool | None], test_async_engine: AsyncEngine
     ) -> None:
         table = self._make_table()
         id_, init, post = triple
         init_item = {"id_": id_, "value": init}, table
-        await self._run_test(test_engine, table, init_item, expected={(id_, init)})
+        await self._run_test(
+            test_async_engine, table, init_item, expected={(id_, init)}
+        )
         post_item = {"id_": id_, "value": post}, table
         _ = await self._run_test(
-            test_engine,
+            test_async_engine,
             table,
             post_item,
             expected={(id_, init if post is None else post)},
@@ -1251,7 +1294,7 @@ class TestUpsertItems:
         *,
         triples: list[tuple[int, bool, bool | None]],
         case: Literal["pair-list-of-dicts", "list-of-pair-of-dicts"],
-        test_engine: AsyncEngine,
+        test_async_engine: AsyncEngine,
     ) -> None:
         table = self._make_table()
         match case:
@@ -1278,11 +1321,11 @@ class TestUpsertItems:
                     if post is not None
                 ]
         init_expected = {(id_, init) for id_, init, _ in triples}
-        _ = await self._run_test(test_engine, table, init, expected=init_expected)
+        _ = await self._run_test(test_async_engine, table, init, expected=init_expected)
         post_expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        _ = await self._run_test(test_engine, table, post, expected=post_expected)
+        _ = await self._run_test(test_async_engine, table, post, expected=post_expected)
 
     @given(triple=_upsert_triples())
     @settings(
@@ -1291,15 +1334,15 @@ class TestUpsertItems:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_mapped_class(
-        self, *, triple: tuple[int, bool, bool], test_engine: AsyncEngine
+        self, *, triple: tuple[int, bool, bool], test_async_engine: AsyncEngine
     ) -> None:
         cls = self._make_mapped_class()
         id_, init, post = triple
         _ = await self._run_test(
-            test_engine, cls, cls(id_=id_, value=init), expected={(id_, init)}
+            test_async_engine, cls, cls(id_=id_, value=init), expected={(id_, init)}
         )
         _ = await self._run_test(
-            test_engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
+            test_async_engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
         )
 
     @given(parent=_upsert_triples(), child=_upsert_triples())
@@ -1313,7 +1356,7 @@ class TestUpsertItems:
         *,
         parent: tuple[int, bool, bool],
         child: tuple[int, bool, bool],
-        test_engine: AsyncEngine,
+        test_async_engine: AsyncEngine,
     ) -> None:
         class Base(DeclarativeBase, MappedAsDataclass):
             pass
@@ -1344,19 +1387,19 @@ class TestUpsertItems:
         parent_id, parent_init, _ = parent
         child_id, child_init, child_post = child
         await self._run_test(
-            test_engine,
+            test_async_engine,
             Parent,
             Parent(id_=parent_id, value=parent_init),
             expected={(parent_id, parent_init)},
         )
         await self._run_test(
-            test_engine,
+            test_async_engine,
             Child,
             Child(id_=child_id, parent_id=parent_id, value=child_init),
             expected={(child_id, parent_id, child_init)},
         )
         await self._run_test(
-            test_engine,
+            test_async_engine,
             Child,
             Child(id_=child_id, parent_id=parent_id, value=child_post),
             expected={(child_id, parent_id, child_post)},
@@ -1369,19 +1412,22 @@ class TestUpsertItems:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_mapped_classes(
-        self, *, triples: list[tuple[int, bool, bool | None]], test_engine: AsyncEngine
+        self,
+        *,
+        triples: list[tuple[int, bool, bool | None]],
+        test_async_engine: AsyncEngine,
     ) -> None:
         cls = self._make_mapped_class()
         init = [cls(id_=id_, value=init) for id_, init, _ in triples]
         init_expected = {(id_, init) for id_, init, _ in triples}
-        _ = await self._run_test(test_engine, cls, init, expected=init_expected)
+        _ = await self._run_test(test_async_engine, cls, init, expected=init_expected)
         post = [
             cls(id_=id_, value=post) for id_, _, post in triples if post is not None
         ]
         post_expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        _ = await self._run_test(test_engine, cls, post, expected=post_expected)
+        _ = await self._run_test(test_async_engine, cls, post, expected=post_expected)
 
     @given(id_=int32s(), x_init=booleans(), x_post=booleans(), y=booleans())
     @mark.parametrize("selected_or_all", get_literal_elements(_SelectedOrAll))
@@ -1398,7 +1444,7 @@ class TestUpsertItems:
         x_init: bool,
         x_post: bool,
         y: bool,
-        test_engine: AsyncEngine,
+        test_async_engine: AsyncEngine,
     ) -> None:
         table = Table(
             _table_names(),
@@ -1408,7 +1454,7 @@ class TestUpsertItems:
             Column("y", Boolean, nullable=True),
         )
         _ = await self._run_test(
-            test_engine,
+            test_async_engine,
             table,
             ({"id_": id_, "x": x_init, "y": y}, table),
             selected_or_all=selected_or_all,
@@ -1420,7 +1466,7 @@ class TestUpsertItems:
             case "all":
                 expected = (id_, x_post, None)
         _ = await self._run_test(
-            test_engine,
+            test_async_engine,
             table,
             ({"id_": id_, "x": x_post}, table),
             selected_or_all=selected_or_all,
@@ -1434,12 +1480,12 @@ class TestUpsertItems:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_assume_table_exists(
-        self, *, id_: int, test_engine: AsyncEngine
+        self, *, id_: int, test_async_engine: AsyncEngine
     ) -> None:
         table = self._make_table()
         with raises((OperationalError, ProgrammingError)):
             await upsert_items(
-                test_engine,
+                test_async_engine,
                 ({"id_": id_, "value": True}, table),
                 assume_tables_exist=True,
             )
@@ -1462,12 +1508,12 @@ class TestUpsertItems:
         id2: int,
         value1: bool | None,
         value2: bool | None,
-        test_engine: AsyncEngine,
+        test_async_engine: AsyncEngine,
     ) -> None:
         table = self._make_table()
         _ = assume(id1 != id2)
         item = [{"id_": id1, "value": value1}, {"id_": id2, "value": value2}], table
-        await upsert_items(test_engine, item)
+        await upsert_items(test_async_engine, item)
 
     @given(triples=_upsert_lists(nullable=True, min_size=1))
     @settings(
@@ -1476,7 +1522,10 @@ class TestUpsertItems:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_multiple_elements_with_the_same_primary_key(
-        self, *, triples: list[tuple[int, bool, bool | None]], test_engine: AsyncEngine
+        self,
+        *,
+        triples: list[tuple[int, bool, bool | None]],
+        test_async_engine: AsyncEngine,
     ) -> None:
         table = self._make_table()
         pairs = [
@@ -1487,12 +1536,12 @@ class TestUpsertItems:
         expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        await self._run_test(test_engine, table, item, expected=expected)
+        await self._run_test(test_async_engine, table, item, expected=expected)
 
-    async def test_error(self, *, test_engine: AsyncEngine) -> None:
+    async def test_error(self, *, test_async_engine: AsyncEngine) -> None:
         table = self._make_table()
         with raises(UpsertItemsError, match="Item must be valid; got None"):
-            _ = await self._run_test(test_engine, table, cast("Any", None))
+            _ = await self._run_test(test_async_engine, table, cast("Any", None))
 
     def _make_table(self) -> Table:
         return Table(
