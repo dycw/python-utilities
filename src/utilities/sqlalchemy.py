@@ -57,7 +57,12 @@ from sqlalchemy.dialects.postgresql.psycopg import PGDialect_psycopg
 from sqlalchemy.dialects.sqlite import Insert as sqlite_Insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
-from sqlalchemy.exc import ArgumentError, DatabaseError, OperationalError
+from sqlalchemy.exc import (
+    ArgumentError,
+    DatabaseError,
+    OperationalError,
+    ProgrammingError,
+)
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -115,7 +120,7 @@ def check_connect(engine: Engine, /) -> bool:
     try:
         with engine.connect() as conn:
             return bool(conn.execute(text("SELECT 1")).scalar_one())
-    except OperationalError:
+    except (OperationalError, ProgrammingError):
         return False
 
 
