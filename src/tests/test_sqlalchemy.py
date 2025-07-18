@@ -218,16 +218,23 @@ class TestColumnwiseMinMax:
 
 class TestCreateEngine:
     @mark.parametrize(
-        ("async_", "cls"), [param(False, Engine), param(True, AsyncEngine)]
+        ("drivername", "async_", "cls"),
+        [param("sqlite", False, Engine), param("sqlite+aiosqlite", True, AsyncEngine)],
     )
     @mark.parametrize(
         "query", [param({"arg1": "value1", "arg2": ["value2"]}), param(None)]
     )
     def test_main(
-        self, *, tmp_path: Path, async_: bool, query: StrMapping | None, cls: type[Any]
+        self,
+        *,
+        drivername: str,
+        tmp_path: Path,
+        async_: bool,
+        query: StrMapping | None,
+        cls: type[Any],
     ) -> None:
         engine = create_engine(
-            "sqlite", database=tmp_path.name, query=query, async_=async_
+            drivername, database=tmp_path.name, query=query, async_=async_
         )
         assert isinstance(engine, cls)
 
