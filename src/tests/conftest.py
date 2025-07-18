@@ -91,7 +91,7 @@ def test_engine(*, request: SubRequest, tmp_path: Path) -> Engine:
     match dialect:
         case "sqlite":
             db_path = tmp_path / "db.sqlite"
-            return create_engine("sqlite+aiosqlite", database=str(db_path))
+            return create_engine("sqlite", database=str(db_path))
         case "postgresql":
             engine = create_engine(
                 "postgresql+psycopg", host="localhost", port=5432, database="testing"
