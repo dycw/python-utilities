@@ -42,6 +42,7 @@ async def pg_dump(
     table_exc: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
     inserts: bool = False,
     on_conflict_do_nothing: bool = False,
+    role: str | None = None,
     docker: str | None = None,
     dry_run: bool = False,
     logger: LoggerOrName | None = None,
@@ -62,6 +63,7 @@ async def pg_dump(
         table_exc=table_exc,
         inserts=inserts,
         on_conflict_do_nothing=on_conflict_do_nothing,
+        role=role,
         docker=docker,
     )
     if dry_run:
@@ -110,6 +112,7 @@ def _build_pg_dump(
     table_exc: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
     inserts: bool = False,
     on_conflict_do_nothing: bool = False,
+    role: str | None = None,
     docker: str | None = None,
 ) -> str:
     database, host, port = _extract_url(url)
@@ -122,6 +125,7 @@ def _build_pg_dump(
         f"--format={format_}",
         "--verbose",
         # output options
+        *_resolve_data_only_and_clean(data_only=data_only, clean=clean),
         "--large-objects",
         "--create",
         "--no-owner",
@@ -133,10 +137,6 @@ def _build_pg_dump(
     ]
     if (format_ == "directory") and (jobs is not None):
         parts.append(f"--jobs={jobs}")
-    if data_only:
-        parts.append("--data-only")
-    if clean:
-        parts.extend(["--clean", "--if-exists"])
     if schema is not None:
         parts.extend([f"--schema={s}" for s in always_iterable(schema)])
     if schema_exc is not None:
@@ -153,6 +153,8 @@ def _build_pg_dump(
         parts.append("--on-conflict-do-nothing")
     if url.username is not None:
         parts.append(f"--username={url.username}")
+    if role is not None:
+        parts.append(f"--role={role}")
     if docker is not None:
         parts = _wrap_docker(parts, docker)
     return " ".join(parts)
@@ -192,6 +194,7 @@ async def restore(
     schema: MaybeListStr | None = None,
     schema_exc: MaybeListStr | None = None,
     table: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
+    role: str | None = None,
     docker: str | None = None,
     dry_run: bool = False,
     logger: LoggerOrName | None = None,
@@ -208,6 +211,7 @@ async def restore(
         schema=schema,
         schema_exc=schema_exc,
         table=table,
+        role=role,
         docker=docker,
     )
     if dry_run:
@@ -255,6 +259,7 @@ def _build_pg_restore_or_psql(
     schema: MaybeListStr | None = None,
     schema_exc: MaybeListStr | None = None,
     table: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
+    role: str | None = None,
     docker: str | None = None,
 ) -> str:
     path = Path(path)
@@ -270,6 +275,7 @@ def _build_pg_restore_or_psql(
         schemas=schema,
         schemas_exc=schema_exc,
         tables=table,
+        role=role,
         docker=docker,
     )
 
@@ -286,6 +292,7 @@ def _build_pg_restore(
     schemas: MaybeListStr | None = None,
     schemas_exc: MaybeListStr | None = None,
     tables: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
+    role: str | None = None,
     docker: str | None = None,
 ) -> str:
     """Run `pg_restore`."""
@@ -297,6 +304,8 @@ def _build_pg_restore(
         f"--dbname={database_use}",
         "--verbose",
         # restore options
+        *_resolve_data_only_and_clean(data_only=data_only, clean=clean),
+        "--create",
         "--exit-on-error",
         "--no-owner",
         "--no-privileges",
@@ -305,10 +314,6 @@ def _build_pg_restore(
         f"--port={port}",
         "--no-password",
     ]
-    if data_only:
-        parts.append("--data-only")
-    if clean:
-        parts.extend(["--clean", "--if-exists"])
     if jobs is not None:
         parts.append(f"--jobs={jobs}")
     if schemas is not None:
@@ -319,6 +324,8 @@ def _build_pg_restore(
         parts.extend([f"--table={_get_table_name(t)}" for t in always_iterable(tables)])
     if url.username is not None:
         parts.append(f"--username={url.username}")
+    if role is not None:
+        parts.append(f"--role={role}")
     if docker is not None:
         parts = _wrap_docker(parts, docker)
     parts.append(str(path))
@@ -400,6 +407,29 @@ def _get_table_name(obj: TableOrORMInstOrClass | str, /) -> str:
             return name
         case _ as never:
             assert_never(never)
+
+
+def _resolve_data_only_and_clean(
+    *, data_only: bool = False, clean: bool = False
+) -> list[str]:
+    match data_only, clean:
+        case False, False:
+            return []
+        case True, False:
+            return ["--data-only"]
+        case False, True:
+            return ["--clean", "--if-exists"]
+        case True, True:
+            raise _ResolveDataOnlyAndCleanError
+        case _ as never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class _ResolveDataOnlyAndCleanError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "Cannot use '--data-only' and '--clean' together"
 
 
 def _wrap_docker(parts: list[str], container: str, /) -> list[str]:
