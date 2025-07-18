@@ -104,10 +104,9 @@ def test_engine(*, request: SubRequest, tmp_path: Path) -> Engine:
             except OperationalError:
                 ...
             else:
-                for table in tables:
-                    if _is_to_drop(table):
-                        with engine.begin() as conn, suppress(Exception):
-                            _ = conn.execute(_drop_table(table))
+                for table in filter(_is_to_drop, tables):
+                    with engine.begin() as conn, suppress(Exception):
+                        _ = conn.execute(_drop_table(table))
             return engine
         case _:
             msg = f"Unsupported dialect: {dialect}"
@@ -141,11 +140,10 @@ async def test_async_engine(*, request: SubRequest, tmp_path: Path) -> AsyncEngi
             except InvalidCatalogNameError:
                 ...
             else:
-                for table in tables:
-                    if _is_to_drop(table):
-                        async with engine.begin() as conn:
-                            with suppress(Exception):
-                                _ = await conn.execute(_drop_table(table))
+                for table in filter(_is_to_drop, tables):
+                    async with engine.begin() as conn:
+                        with suppress(Exception):
+                            _ = await conn.execute(_drop_table(table))
             return engine
         case _:
             msg = f"Unsupported dialect: {dialect}"
