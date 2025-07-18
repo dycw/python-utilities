@@ -152,27 +152,29 @@ class TestInsertDataFrame:
         pl_dtype: PolarsDataType,
         col_type: Any,
         check: Callable[[Any, Any], bool],
-        test_engine: AsyncEngine,
+        test_async_engine: AsyncEngine,
     ) -> None:
         values = data.draw(lists(strategy, min_size=1))
         df = DataFrame({"value": values}, schema={"value": pl_dtype})
         table = self._make_table(col_type)
-        await insert_dataframe(df, table, test_engine)
+        await insert_dataframe(df, table, test_async_engine)
         sel = select(table.c["value"])
-        async with test_engine.begin() as conn:
+        async with test_async_engine.begin() as conn:
             results = (await conn.execute(sel)).scalars().all()
         for r, v in zip(results, values, strict=True):
             assert ((r is None) == (v is None)) or check(r, v)
 
-    async def test_assume_exists_with_empty(self, *, test_engine: AsyncEngine) -> None:
+    async def test_assume_exists_with_empty(
+        self, *, test_async_engine: AsyncEngine
+    ) -> None:
         df = DataFrame(schema={"value": pl.Boolean})
         table = self._make_table(sqlalchemy.Boolean)
-        await ensure_tables_created(test_engine, table)
-        await insert_dataframe(df, table, test_engine, assume_tables_exist=True)
+        await ensure_tables_created(test_async_engine, table)
+        await insert_dataframe(df, table, test_async_engine, assume_tables_exist=True)
 
     @mark.parametrize("value", [param(True), param(False)])
     async def test_assume_exists_with_non_empty(
-        self, *, value: bool, test_engine: AsyncEngine
+        self, *, value: bool, test_async_engine: AsyncEngine
     ) -> None:
         df = DataFrame([(value,)], schema={"value": pl.Boolean})
         table = self._make_table(sqlalchemy.Boolean)
@@ -180,14 +182,16 @@ class TestInsertDataFrame:
         with raises(
             (OperationalError, ProgrammingError), match="(no such table|does not exist)"
         ):
-            await insert_dataframe(df, table, test_engine, assume_tables_exist=True)
+            await insert_dataframe(
+                df, table, test_async_engine, assume_tables_exist=True
+            )
 
-    async def test_empty(self, *, test_engine: AsyncEngine) -> None:
+    async def test_empty(self, *, test_async_engine: AsyncEngine) -> None:
         df = DataFrame(schema={"value": pl.Boolean})
         table = self._make_table(sqlalchemy.Boolean)
-        await insert_dataframe(df, table, test_engine, assume_tables_exist=False)
+        await insert_dataframe(df, table, test_async_engine, assume_tables_exist=False)
         sel = select(table.c["value"])
-        async with test_engine.begin() as conn:
+        async with test_async_engine.begin() as conn:
             results = (await conn.execute(sel)).scalars().all()
         assert results == []
 
@@ -198,7 +202,10 @@ class TestInsertDataFrame:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_upsert(
-        self, *, values: list[tuple[int, bool, bool | None]], test_engine: AsyncEngine
+        self,
+        *,
+        values: list[tuple[int, bool, bool | None]],
+        test_async_engine: AsyncEngine,
     ) -> None:
         df = DataFrame(
             values,
@@ -209,20 +216,20 @@ class TestInsertDataFrame:
         await insert_dataframe(
             df.select("id_", col("init").alias("value")),
             table,
-            test_engine,
+            test_async_engine,
             upsert="selected",
         )
         sel = select(table)
-        async with test_engine.begin() as conn:
+        async with test_async_engine.begin() as conn:
             results = (await conn.execute(sel)).all()
         assert set(results) == set(df.select("id_", "init").rows())
         await insert_dataframe(
             df.select("id_", col("post").alias("value")).drop_nulls(),
             table,
-            test_engine,
+            test_async_engine,
             upsert="selected",
         )
-        async with test_engine.begin() as conn:
+        async with test_async_engine.begin() as conn:
             results = (await conn.execute(sel)).all()
         expected = df.select(
             "id_", when(col("post").is_null()).then("init").otherwise("post")
@@ -230,14 +237,14 @@ class TestInsertDataFrame:
         assert set(results) == set(expected.rows())
 
     @mark.parametrize("value", [param(True), param(False)])
-    async def test_error(self, *, value: bool, test_engine: AsyncEngine) -> None:
+    async def test_error(self, *, value: bool, test_async_engine: AsyncEngine) -> None:
         df = DataFrame([(value,)], schema={"other": pl.Boolean})
         table = self._make_table(sqlalchemy.Boolean)
         with raises(
             InsertDataFrameError,
             match="Non-empty DataFrame must resolve to at least 1 item",
         ):
-            _ = await insert_dataframe(df, table, test_engine)
+            _ = await insert_dataframe(df, table, test_async_engine)
 
     def _make_table(self, type_: Any, /) -> Table:
         return Table(
@@ -410,14 +417,14 @@ class TestSelectToDataFrame:
         strategy: SearchStrategy[Any],
         pl_dtype: PolarsDataType,
         col_type: Any,
-        test_engine: AsyncEngine,
+        test_async_engine: AsyncEngine,
     ) -> None:
         values = data.draw(lists(strategy, min_size=1))
         df = DataFrame({"value": values}, schema={"value": pl_dtype})
         table = self._make_table(col_type)
-        await insert_dataframe(df, table, test_engine)
+        await insert_dataframe(df, table, test_async_engine)
         sel = select(table.c["value"])
-        result = await select_to_dataframe(sel, test_engine)
+        result = await select_to_dataframe(sel, test_async_engine)
         assert_frame_equal(result, df)
 
     @given(values=lists(booleans() | none(), min_size=1))
@@ -428,13 +435,13 @@ class TestSelectToDataFrame:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_snake(
-        self, *, values: list[bool], sr_name: str, test_engine: AsyncEngine
+        self, *, values: list[bool], sr_name: str, test_async_engine: AsyncEngine
     ) -> None:
         df = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
         table = self._make_table(sqlalchemy.Boolean, title=True)
-        await insert_dataframe(df, table, test_engine, snake=True)
+        await insert_dataframe(df, table, test_async_engine, snake=True)
         sel = select(table.c["Value"])
-        result = await select_to_dataframe(sel, test_engine, snake=True)
+        result = await select_to_dataframe(sel, test_async_engine, snake=True)
         expected = DataFrame({"value": values}, schema={"value": pl.Boolean})
         assert_frame_equal(result, expected)
 
@@ -445,11 +452,11 @@ class TestSelectToDataFrame:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_batch(
-        self, *, values: list[int], batch_size: int, test_engine: AsyncEngine
+        self, *, values: list[int], batch_size: int, test_async_engine: AsyncEngine
     ) -> None:
         df, table, sel = await self._prepare_feature_test(values)
-        await insert_dataframe(df, table, test_engine)
-        dfs = await select_to_dataframe(sel, test_engine, batch_size=batch_size)
+        await insert_dataframe(df, table, test_async_engine)
+        dfs = await select_to_dataframe(sel, test_async_engine, batch_size=batch_size)
         self._assert_batch_results(dfs, batch_size, values)
 
     @given(
@@ -468,26 +475,26 @@ class TestSelectToDataFrame:
         data: DataObject,
         values: list[int],
         in_clauses_chunk_size: int,
-        test_engine: AsyncEngine,
+        test_async_engine: AsyncEngine,
     ) -> None:
         df, table, sel = await self._prepare_feature_test(values)
-        await insert_dataframe(df, table, test_engine)
+        await insert_dataframe(df, table, test_async_engine)
         in_values = data.draw(sets(sampled_from(values), min_size=1))
         df = await select_to_dataframe(
             sel,
-            test_engine,
+            test_async_engine,
             in_clauses=(table.c["value"], in_values),
             in_clauses_chunk_size=in_clauses_chunk_size,
         )
         check_polars_dataframe(df, height=len(in_values), schema_list={"value": Int64})
         assert set(df["value"].to_list()) == in_values
 
-    async def test_in_clauses_empty(self, *, test_engine: AsyncEngine) -> None:
+    async def test_in_clauses_empty(self, *, test_async_engine: AsyncEngine) -> None:
         table = self._make_table(Integer)
-        await ensure_tables_created(test_engine, table)
+        await ensure_tables_created(test_async_engine, table)
         sel = select(table.c["value"])
         df = await select_to_dataframe(
-            sel, test_engine, in_clauses=(table.c["value"], [])
+            sel, test_async_engine, in_clauses=(table.c["value"], [])
         )
         check_polars_dataframe(df, height=0, schema_list={"value": Int64})
 
@@ -509,14 +516,14 @@ class TestSelectToDataFrame:
         values: list[int],
         batch_size: int,
         in_clauses_chunk_size: int,
-        test_engine: AsyncEngine,
+        test_async_engine: AsyncEngine,
     ) -> None:
         df, table, sel = await self._prepare_feature_test(values)
-        await insert_dataframe(df, table, test_engine)
+        await insert_dataframe(df, table, test_async_engine)
         in_values = data.draw(sets(sampled_from(values), min_size=1))
         async_dfs = await select_to_dataframe(
             sel,
-            test_engine,
+            test_async_engine,
             batch_size=batch_size,
             in_clauses=(table.c["value"], in_values),
             in_clauses_chunk_size=in_clauses_chunk_size,
@@ -668,7 +675,7 @@ class TestSelectToDataFrameYieldSelectsWithInClauses:
         values: set[int],
         in_clauses_chunk_size: int | None,
         chunk_size_frac: float,
-        test_engine: AsyncEngine,
+        test_async_engine: AsyncEngine,
     ) -> None:
         table = Table(
             _table_names(), MetaData(), Column("id", Integer, primary_key=True)
@@ -676,7 +683,7 @@ class TestSelectToDataFrameYieldSelectsWithInClauses:
         sel = select(table.c["id"])
         sels = _select_to_dataframe_yield_selects_with_in_clauses(
             sel,
-            test_engine,
+            test_async_engine,
             (table.c["id"], values),
             in_clauses_chunk_size=in_clauses_chunk_size,
             chunk_size_frac=chunk_size_frac,
