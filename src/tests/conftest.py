@@ -92,7 +92,7 @@ def test_engine(*, request: SubRequest, tmp_path: Path) -> Engine:
             return create_engine("sqlite+aiosqlite", database=str(db_path))
         case "postgresql":
             engine = create_engine(
-                "postgresql", host="localhost", port=5432, database="testing"
+                "postgresql+psycopg", host="localhost", port=5432, database="testing"
             )
             with engine.begin() as conn:
                 tables: Sequence[str] = conn.execute(_select_tables()).scalars().all()

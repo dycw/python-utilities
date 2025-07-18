@@ -1179,6 +1179,7 @@ __all__ = [
     "InsertItemsError",
     "TablenameMixin",
     "UpsertItemsError",
+    "check_connect",
     "check_engine",
     "columnwise_max",
     "columnwise_min",

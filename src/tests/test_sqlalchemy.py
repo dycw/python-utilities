@@ -60,7 +60,7 @@ from utilities.sqlalchemy import (
     _PrepareInsertOrUpsertItemsError,
     _SelectedOrAll,
     _tuple_to_mapping,
-    can_connect,
+    check_connect,
     check_engine,
     columnwise_max,
     columnwise_min,
@@ -129,27 +129,9 @@ def _upsert_lists(
     )
 
 
-class TestCanConnect:
+class TestCheckConnect:
     def test_main(self, *, test_engine: Engine) -> None:
-        assert can_connect(test_engine)
-
-    async def test_num_tables_pass(self, *, test_async_engine: AsyncEngine) -> None:
-        table = Table(
-            _table_names(), MetaData(), Column("id", Integer, primary_key=True)
-        )
-        await ensure_tables_created(test_async_engine, table)
-        match _get_dialect(test_async_engine):
-            case "sqlite":
-                expected = 1
-            case "postgresql":
-                expected = (int(1e6), 1.0)
-            case _ as dialect:
-                raise NotImplementedError(dialect)
-        await check_engine(test_async_engine, num_tables=expected)
-
-    async def test_num_tables_error(self, *, test_async_engine: AsyncEngine) -> None:
-        with raises(CheckEngineError, match=r".* must have 100000 table\(s\); got .*"):
-            await check_engine(test_async_engine, num_tables=100000)
+        assert check_connect(test_engine)
 
 
 class TestCheckEngine:
