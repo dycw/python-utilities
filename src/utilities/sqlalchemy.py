@@ -42,10 +42,11 @@ from sqlalchemy.dialects.postgresql import Insert as postgresql_Insert
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.postgresql.asyncpg import PGDialect_asyncpg
+from sqlalchemy.dialects.postgresql.psycopg import PGDialect_psycopg
 from sqlalchemy.dialects.sqlite import Insert as sqlite_Insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
-from sqlalchemy.exc import ArgumentError, DatabaseError
+from sqlalchemy.exc import ArgumentError, DatabaseError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.ext.asyncio import create_async_engine as _create_async_engine
 from sqlalchemy.orm import (
@@ -94,6 +95,18 @@ type DialectOrEngineOrConnectionOrAsync = Dialect | EngineOrConnectionOrAsync
 type ORMInstOrClass = DeclarativeBase | type[DeclarativeBase]
 type TableOrORMInstOrClass = Table | ORMInstOrClass
 CHUNK_SIZE_FRAC = 0.8
+
+
+##
+
+
+def check_connect(engine: Engine, /) -> bool:
+    """Check if an engine can connect."""
+    try:
+        with engine.connect() as conn:
+            return bool(conn.execute(text("SELECT 1")).scalar_one())
+    except OperationalError:
+        return False
 
 
 ##
@@ -825,7 +838,7 @@ def _get_dialect(engine_or_conn: EngineOrConnectionOrAsync, /) -> Dialect:
     if isinstance(dialect, oracle_dialect):  # pragma: no cover
         return "oracle"
     if isinstance(  # skipif-ci-and-not-linux
-        dialect, postgresql_dialect | PGDialect_asyncpg
+        dialect, (postgresql_dialect, PGDialect_asyncpg, PGDialect_psycopg)
     ):
         return "postgresql"
     if isinstance(dialect, sqlite_dialect):
