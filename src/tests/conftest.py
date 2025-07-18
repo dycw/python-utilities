@@ -83,6 +83,8 @@ async def test_redis() -> AsyncIterator[Redis]:
 
 @fixture(params=[param("sqlite"), param("postgresql", marks=SKIPIF_CI)])
 def test_engine(*, request: SubRequest, tmp_path: Path) -> Engine:
+    from sqlalchemy.exc import OperationalError
+
     from utilities.sqlalchemy import create_engine
 
     dialect = request.param
@@ -94,12 +96,18 @@ def test_engine(*, request: SubRequest, tmp_path: Path) -> Engine:
             engine = create_engine(
                 "postgresql+psycopg", host="localhost", port=5432, database="testing"
             )
-            with engine.begin() as conn:
-                tables: Sequence[str] = conn.execute(_select_tables()).scalars().all()
-            for table in tables:
-                if _is_to_drop(table):
-                    with engine.begin() as conn, suppress(Exception):
-                        _ = conn.execute(_drop_table(table))
+            try:
+                with engine.begin() as conn:
+                    tables: Sequence[str] = (
+                        conn.execute(_select_tables()).scalars().all()
+                    )
+            except OperationalError:
+                ...
+            else:
+                for table in tables:
+                    if _is_to_drop(table):
+                        with engine.begin() as conn, suppress(Exception):
+                            _ = conn.execute(_drop_table(table))
             return engine
         case _:
             msg = f"Unsupported dialect: {dialect}"
@@ -116,6 +124,8 @@ async def test_async_engine(*, request: SubRequest, tmp_path: Path) -> AsyncEngi
             db_path = tmp_path / "db.sqlite"
             return create_engine("sqlite+aiosqlite", database=str(db_path), async_=True)
         case "postgresql":
+            from asyncpg.exceptions import InvalidCatalogNameError
+
             engine = create_engine(
                 "postgresql+asyncpg",
                 host="localhost",
@@ -123,15 +133,19 @@ async def test_async_engine(*, request: SubRequest, tmp_path: Path) -> AsyncEngi
                 database="testing",
                 async_=True,
             )
-            async with engine.begin() as conn:
-                tables: Sequence[str] = (
-                    (await conn.execute(_select_tables())).scalars().all()
-                )
-            for table in tables:
-                if _is_to_drop(table):
-                    async with engine.begin() as conn:
-                        with suppress(Exception):
-                            _ = await conn.execute(_drop_table(table))
+            try:
+                async with engine.begin() as conn:
+                    tables: Sequence[str] = (
+                        (await conn.execute(_select_tables())).scalars().all()
+                    )
+            except InvalidCatalogNameError:
+                ...
+            else:
+                for table in tables:
+                    if _is_to_drop(table):
+                        async with engine.begin() as conn:
+                            with suppress(Exception):
+                                _ = await conn.execute(_drop_table(table))
             return engine
         case _:
             msg = f"Unsupported dialect: {dialect}"
