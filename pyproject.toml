@@ -20,10 +20,10 @@ core = [
   "atomicwrites >= 1.4.1, < 1.5",
   "typing-extensions >= 4.14.1, < 4.15",
   "tzlocal >= 5.3.1, < 5.4",
-  "whenever >= 0.8.6, < 0.9",
+  "whenever >= 0.8.7, < 0.9",
 ]
 cryptography = ["cryptography >= 45.0.4, < 45.1"]
-cvxpy = ["cvxpy >= 1.7.0, < 1.8"]
+cvxpy = ["cvxpy >= 1.7.1, < 1.8"]
 dataclasses-test = ["orjson", "polars"]
 dev = [
   "coloredlogs >= 15.0.1, < 15.1",
@@ -41,7 +41,7 @@ fastapi-test = ["httpx", "uvicorn"]
 fpdf2 = ["fpdf2 >= 2.8.3, < 2.9"]
 hashlib-test = ["orjson"]
 http-test = ["orjson"]
-hypothesis = ["hypothesis >= 6.135.24, < 6.136"]
+hypothesis = ["hypothesis >= 6.135.33, < 6.136"]
 hypothesis-test = ["libcst", "pathvalidate", "numpy", "pytest-rerunfailures"]
 inflect = ["inflect >= 7.5.0, < 7.6"]
 jupyter-test = ["pandas", "polars"]
@@ -98,12 +98,12 @@ dependencies = [
   "atomicwrites >= 1.4.1, < 1.5",
   "typing-extensions >= 4.14.0, < 4.15",
   "tzlocal >= 5.3.1, < 5.4",
-  "whenever >= 0.8.6, < 0.9",
+  "whenever >= 0.8.7, < 0.9",
 ]
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.150.2"
+version = "0.150.3"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -115,7 +115,7 @@ logging = [
 ]
 test = [
   "dycw-pytest-only >= 2.1.1, < 2.2",
-  "hypothesis >= 6.135.24, < 6.136",
+  "hypothesis >= 6.135.33, < 6.136",
   "pudb >= 2025.1, < 2025.2",
   "pytest >= 8.4.1, < 8.5",
   "pytest-asyncio >= 1.1.0, < 1.2",
@@ -136,7 +136,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.150.2"
+current_version = "0.150.3"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
