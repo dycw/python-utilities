@@ -112,6 +112,10 @@ class TestSecretStr:
         assert repr(s) == secret_str._REPR
         assert str(s) == secret_str._REPR
 
+    def test_open(self) -> None:
+        s = secret_str("text")
+        assert str(s.reveal()) == "text"
+
 
 class TestSnakeCase:
     @given(
