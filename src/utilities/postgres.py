@@ -13,7 +13,7 @@ from utilities.iterables import always_iterable
 from utilities.logging import get_logger
 from utilities.os import temp_environ
 from utilities.pathlib import ensure_suffix
-from utilities.sqlalchemy import get_table_name
+from utilities.sqlalchemy import extract_url, get_table_name
 from utilities.timer import Timer
 from utilities.types import PathLike
 
@@ -124,12 +124,11 @@ def _build_pg_dump(
     role: str | None = None,
     docker: str | None = None,
 ) -> str:
-    database, host, port = _extract_url(url)
+    extracted = extract_url(url)
     path = _path_pg_dump(path, format_=format_)
     parts: list[str] = [
         "pg_dump",
         # general options
-        f"--dbname={database}",
         f"--file={str(path)!r}",
         f"--format={format_}",
         "--verbose",
@@ -139,8 +138,10 @@ def _build_pg_dump(
         "--no-owner",
         "--no-privileges",
         # connection options
-        f"--host={host}",
-        f"--port={port}",
+        f"--dbname={extracted.database}",
+        f"--host={extracted.host}",
+        f"--port={extracted.port}",
+        f"--username={extracted.username}",
         "--no-password",
     ]
     if (format_ == "directory") and (jobs is not None):
@@ -167,8 +168,6 @@ def _build_pg_dump(
         parts.append("--inserts")
     if on_conflict_do_nothing:
         parts.append("--on-conflict-do-nothing")
-    if url.username is not None:
-        parts.append(f"--username={url.username}")
     if role is not None:
         parts.append(f"--role={role}")
     if docker is not None:
@@ -305,7 +304,6 @@ def _build_pg_restore(
     path: PathLike,
     /,
     *,
-    database: str | None = None,
     data_only: bool = False,
     clean: bool = False,
     create: bool = False,
@@ -317,12 +315,10 @@ def _build_pg_restore(
     docker: str | None = None,
 ) -> str:
     """Run `pg_restore`."""
-    url_database, host, port = _extract_url(url)
-    database_use = url_database if database is None else database
+    extracted = extract_url(url)
     parts: list[str] = [
         "pg_restore",
         # general options
-        f"--dbname={database_use}",
         "--verbose",
         # restore options
         *_resolve_data_only_and_clean(data_only=data_only, clean=clean),
@@ -330,8 +326,10 @@ def _build_pg_restore(
         "--no-owner",
         "--no-privileges",
         # connection options
-        f"--host={host}",
-        f"--port={port}",
+        f"--host={extracted.host}",
+        f"--port={extracted.port}",
+        f"--username={extracted.username}",
+        f"--dbname={extracted.database}",
         "--no-password",
     ]
     if create:
@@ -344,8 +342,6 @@ def _build_pg_restore(
         parts.extend([f"--exclude-schema={s}" for s in always_iterable(schemas_exc)])
     if tables is not None:
         parts.extend([f"--table={_get_table_name(t)}" for t in always_iterable(tables)])
-    if url.username is not None:
-        parts.append(f"--username={url.username}")
     if role is not None:
         parts.append(f"--role={role}")
     if docker is not None:
@@ -354,29 +350,20 @@ def _build_pg_restore(
     return " ".join(parts)
 
 
-def _build_psql(
-    url: URL,
-    path: PathLike,
-    /,
-    *,
-    database: str | None = None,
-    docker: str | None = None,
-) -> str:
+def _build_psql(url: URL, path: PathLike, /, *, docker: str | None = None) -> str:
     """Run `psql`."""
-    url_database, host, port = _extract_url(url)
-    database_use = url_database if database is None else database
+    extracted = extract_url(url)
     parts: list[str] = [
         "psql",
         # general options
-        f"--dbname={database_use}",
+        f"--dbname={extracted.database}",
         f"--file={str(path)!r}",
         # connection options
-        f"--host={host}",
-        f"--port={port}",
+        f"--host={extracted.host}",
+        f"--port={extracted.port}",
+        f"--username={extracted.username}",
         "--no-password",
     ]
-    if url.username is not None:
-        parts.append(f"--username={url.username}")
     if docker is not None:
         parts = _wrap_docker(parts, docker)
     return " ".join(parts)
@@ -422,4 +409,4 @@ def _wrap_docker(parts: list[str], container: str, /) -> list[str]:
     return ["docker", "exec", "-it", container, *parts]
 
 
-__all__ = ["ExtractURLError", "pg_dump", "restore"]
+__all__ = ["pg_dump", "restore"]
