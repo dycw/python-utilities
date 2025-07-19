@@ -9,6 +9,7 @@ from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.strategies import SearchStrategy, booleans, lists, none, sets, tuples
 from pytest import mark, param, raises
 from sqlalchemy import (
+    URL,
     Boolean,
     Column,
     Engine,
@@ -28,7 +29,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from utilities.hypothesis import int32s, pairs
+from utilities.hypothesis import int32s, pairs, urls
 from utilities.iterables import one
 from utilities.modules import is_installed
 from utilities.sqlalchemy import (
@@ -39,6 +40,11 @@ from utilities.sqlalchemy import (
     TablenameMixin,
     TableOrORMInstOrClass,
     UpsertItemsError,
+    _ExtractURLDatabaseError,
+    _ExtractURLHostError,
+    _ExtractURLPasswordError,
+    _ExtractURLPortError,
+    _ExtractURLUsernameError,
     _get_dialect,
     _get_dialect_max_params,
     _InsertItem,
@@ -69,6 +75,7 @@ from utilities.sqlalchemy import (
     ensure_tables_dropped,
     enum_name,
     enum_values,
+    extract_url,
     get_chunk_size,
     get_column_names,
     get_columns,
@@ -311,6 +318,53 @@ class TestEnumValues:
         result = enum_values(Example)
         expected = ["true", "false"]
         assert result == expected
+
+
+class TestExtractURL:
+    @given(url=urls(all_=True))
+    def test_main(self, *, url: URL) -> None:
+        extracted = extract_url(url)
+        assert extracted.username == url.username
+        assert extracted.password == url.password
+        assert extracted.host == url.host
+        assert extracted.port == url.port
+        assert extracted.database == url.database
+
+    @given(url=urls(username=False))
+    def test_username(self, *, url: URL) -> None:
+        with raises(
+            _ExtractURLUsernameError,
+            match="Expected URL to contain a user name; got .*",
+        ):
+            _ = extract_url(url)
+
+    @given(url=urls(username=True, password=False))
+    def test_password(self, *, url: URL) -> None:
+        with raises(
+            _ExtractURLPasswordError, match="Expected URL to contain a password; got .*"
+        ):
+            _ = extract_url(url)
+
+    @given(url=urls(username=True, password=True, host=False))
+    def test_host(self, *, url: URL) -> None:
+        with raises(
+            _ExtractURLHostError, match="Expected URL to contain a host; got .*"
+        ):
+            _ = extract_url(url)
+
+    @given(url=urls(username=True, password=True, host=True, port=False))
+    def test_port(self, *, url: URL) -> None:
+        with raises(
+            _ExtractURLPortError, match="Expected URL to contain a port; got .*"
+        ):
+            _ = extract_url(url)
+
+    @given(url=urls(username=True, password=True, host=True, port=True, database=False))
+    def test_database(self, *, url: URL) -> None:
+        with raises(
+            _ExtractURLDatabaseError, match="Expected URL to contain a database; got .*"
+        ):
+            _ = extract_url(url)
 
 
 class TestGetChunkSize:

@@ -86,6 +86,7 @@ from utilities.hypothesis import (
     triples,
     uint32s,
     uint64s,
+    urls,
     versions,
     year_months,
     zoned_datetimes,
@@ -962,6 +963,49 @@ class TestUInt64s:
         min_value, max_value = data.draw(pairs(uint64s(), sorted=True))
         x = data.draw(uint64s(min_value=min_value, max_value=max_value))
         assert max(min_value, MIN_UINT64) <= x <= min(max_value, MAX_UINT64)
+
+
+class TestURLs:
+    @given(
+        data=data(),
+        all_=booleans(),
+        username=booleans(),
+        password=booleans(),
+        host=booleans(),
+        port=booleans(),
+        database=booleans(),
+    )
+    def test_main(
+        self,
+        *,
+        data: DataObject,
+        all_: bool,
+        username: bool,
+        password: bool,
+        host: bool,
+        port: bool,
+        database: bool,
+    ) -> None:
+        url = data.draw(
+            urls(
+                all_=all_,
+                username=username,
+                password=password,
+                host=host,
+                port=port,
+                database=database,
+            )
+        )
+        if all_ or username:
+            assert url.username is not None
+        if all_ or password:
+            assert url.password is not None
+        if all_ or host:
+            assert url.host is not None
+        if all_ or port:
+            assert url.port is not None
+        if all_ or database:
+            assert url.database is not None
 
 
 class TestVersions:

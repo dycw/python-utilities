@@ -98,6 +98,7 @@ if TYPE_CHECKING:
     from hypothesis.database import ExampleDatabase
     from libcst import Import, ImportFrom
     from numpy.random import RandomState
+    from sqlalchemy import URL
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.types import Number, TimeZoneLike
@@ -1259,6 +1260,41 @@ def uint64s(
 
 
 @composite
+def urls(
+    draw: DrawFn,
+    /,
+    *,
+    all_: MaybeSearchStrategy[bool] = False,
+    username: MaybeSearchStrategy[bool] = False,
+    password: MaybeSearchStrategy[bool] = False,
+    host: MaybeSearchStrategy[bool] = False,
+    port: MaybeSearchStrategy[bool] = False,
+    database: MaybeSearchStrategy[bool] = False,
+) -> URL:
+    from sqlalchemy import URL
+
+    have_all, have_username, have_password, have_host, have_port, have_database = [
+        draw2(draw, b) for b in [all_, username, password, host, port, database]
+    ]
+    username_use = draw(text_ascii(min_size=1)) if have_all or have_username else None
+    password_use = draw(text_ascii(min_size=1)) if have_all or have_password else None
+    host_use = draw(text_ascii(min_size=1)) if have_all or have_host else None
+    port_use = draw(integers(min_value=1)) if have_all or have_port else None
+    database_use = draw(text_ascii(min_size=1)) if have_all or have_database else None
+    return URL.create(
+        drivername="sqlite",
+        username=username_use,
+        password=password_use,
+        host=host_use,
+        port=port_use,
+        database=database_use,
+    )
+
+
+##
+
+
+@composite
 def versions(draw: DrawFn, /, *, suffix: MaybeSearchStrategy[bool] = False) -> Version:
     """Strategy for generating versions."""
     major, minor, patch = draw(triples(integers(min_value=0)))
@@ -1392,6 +1428,7 @@ __all__ = [
     "triples",
     "uint32s",
     "uint64s",
+    "urls",
     "versions",
     "year_months",
     "zoned_datetimes",

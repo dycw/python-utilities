@@ -96,7 +96,7 @@ from utilities.iterables import (
     one,
 )
 from utilities.reprlib import get_repr
-from utilities.text import snake_case
+from utilities.text import secret_str, snake_case
 from utilities.types import MaybeIterable, MaybeType, StrMapping, TupleOrStrMapping
 
 if TYPE_CHECKING:
@@ -373,6 +373,79 @@ def enum_name(enum: type[Enum], /) -> str:
 def enum_values(enum: type[StrEnum], /) -> list[str]:
     """Get the values of a StrEnum."""
     return [e.value for e in enum]
+
+
+##
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractURLOutput:
+    username: str
+    password: secret_str
+    host: str
+    port: int
+    database: str
+
+
+def extract_url(url: URL, /) -> ExtractURLOutput:
+    """Extract the database, host & port from a URL."""
+    if url.username is None:
+        raise _ExtractURLUsernameError(url=url)
+    if url.password is None:
+        raise _ExtractURLPasswordError(url=url)
+    if url.host is None:
+        raise _ExtractURLHostError(url=url)
+    if url.port is None:
+        raise _ExtractURLPortError(url=url)
+    if url.database is None:
+        raise _ExtractURLDatabaseError(url=url)
+    return ExtractURLOutput(
+        username=url.username,
+        password=secret_str(url.password),
+        host=url.host,
+        port=url.port,
+        database=url.database,
+    )
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractURLError(Exception):
+    url: URL
+
+
+@dataclass(kw_only=True, slots=True)
+class _ExtractURLUsernameError(ExtractURLError):
+    @override
+    def __str__(self) -> str:
+        return f"Expected URL to contain a user name; got {self.url}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ExtractURLPasswordError(ExtractURLError):
+    @override
+    def __str__(self) -> str:
+        return f"Expected URL to contain a password; got {self.url}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ExtractURLHostError(ExtractURLError):
+    @override
+    def __str__(self) -> str:
+        return f"Expected URL to contain a host; got {self.url}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ExtractURLPortError(ExtractURLError):
+    @override
+    def __str__(self) -> str:
+        return f"Expected URL to contain a port; got {self.url}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ExtractURLDatabaseError(ExtractURLError):
+    @override
+    def __str__(self) -> str:
+        return f"Expected URL to contain a database; got {self.url}"
 
 
 ##
@@ -1180,6 +1253,8 @@ __all__ = [
     "CheckEngineError",
     "DialectOrEngineOrConnectionOrAsync",
     "EngineOrConnectionOrAsync",
+    "ExtractURLError",
+    "ExtractURLOutput",
     "GetTableError",
     "InsertItemsError",
     "TablenameMixin",
@@ -1193,6 +1268,7 @@ __all__ = [
     "ensure_tables_dropped",
     "enum_name",
     "enum_values",
+    "extract_url",
     "get_chunk_size",
     "get_column_names",
     "get_columns",
