@@ -114,7 +114,10 @@ class TestSecretStr:
 
     def test_open(self) -> None:
         s = secret_str("text")
-        assert str(s.reveal()) == "text"
+        assert isinstance(s.str, str)
+        assert not isinstance(s.str, secret_str)
+        assert repr(s.str) == repr("text")
+        assert str(s.str) == "text"
 
 
 class TestSnakeCase:

@@ -403,7 +403,8 @@ class secret_str(str):  # noqa: N801
     def __str__(self) -> str:
         return self._REPR
 
-    def reveal(self) -> str:
+    @property
+    def str(self) -> str:
         return self._text
 
 
