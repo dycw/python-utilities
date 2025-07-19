@@ -29,7 +29,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from utilities.hypothesis import int32s, pairs
+from utilities.hypothesis import int32s, pairs, urls
 from utilities.iterables import one
 from utilities.modules import is_installed
 from utilities.sqlalchemy import (
@@ -321,15 +321,8 @@ class TestEnumValues:
 
 
 class TestExtractURL:
-    def test_main(self) -> None:
-        url = URL.create(
-            "sqlite",
-            username="username",
-            password="password",  # noqa: S106
-            host="host",
-            port=0,
-            database="database",
-        )
+    @given(url=urls(all_=True))
+    def test_main(self, *, url: URL) -> None:
         extracted = extract_url(url)
         assert extracted.username == url.username
         assert extracted.password == url.password
@@ -337,48 +330,37 @@ class TestExtractURL:
         assert extracted.port == url.port
         assert extracted.database == url.database
 
-    def test_username(self) -> None:
-        url = URL.create("sqlite")
+    @given(url=urls(username=False))
+    def test_username(self, *, url: URL) -> None:
         with raises(
             _ExtractURLUsernameError,
             match="Expected URL to contain a user name; got .*",
         ):
             _ = extract_url(url)
 
-    def test_password(self) -> None:
-        url = URL.create("sqlite", username="username")
+    @given(url=urls(username=True, password=False))
+    def test_password(self, *, url: URL) -> None:
         with raises(
             _ExtractURLPasswordError, match="Expected URL to contain a password; got .*"
         ):
             _ = extract_url(url)
 
-    def test_host(self) -> None:
-        url = URL.create("sqlite", username="username", password="password")  # noqa: S106
+    @given(url=urls(username=True, password=True, host=False))
+    def test_host(self, *, url: URL) -> None:
         with raises(
             _ExtractURLHostError, match="Expected URL to contain a host; got .*"
         ):
             _ = extract_url(url)
 
-    def test_port(self) -> None:
-        url = URL.create(
-            "sqlite",
-            username="username",
-            password="password",  # noqa: S106
-            host="host",
-        )
+    @given(url=urls(username=True, password=True, host=True, port=False))
+    def test_port(self, *, url: URL) -> None:
         with raises(
             _ExtractURLPortError, match="Expected URL to contain a port; got .*"
         ):
             _ = extract_url(url)
 
-    def test_database(self) -> None:
-        url = URL.create(
-            "sqlite",
-            username="username",
-            password="password",  # noqa: S106
-            host="host",
-            port=0,
-        )
+    @given(url=urls(username=True, password=True, host=True, port=True, database=False))
+    def test_database(self, *, url: URL) -> None:
         with raises(
             _ExtractURLDatabaseError, match="Expected URL to contain a database; got .*"
         ):

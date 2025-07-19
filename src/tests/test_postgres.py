@@ -7,7 +7,7 @@ from hypothesis.strategies import DrawFn, booleans, composite, lists, none, samp
 from pytest import raises
 from sqlalchemy import URL, Column, Integer, MetaData, Table
 
-from utilities.hypothesis import integers, temp_paths, text_ascii
+from utilities.hypothesis import integers, temp_paths, text_ascii, urls
 from utilities.postgres import (
     _build_pg_dump,
     _build_pg_restore_or_psql,
@@ -36,30 +36,15 @@ def tables(draw: DrawFn, /) -> list[Table | str]:
     return [draw(sampled_from([n, t])) for n, t in zip(names, tables, strict=True)]
 
 
-@composite
-def urls(draw: DrawFn, /) -> URL:
-    username = draw(text_ascii(min_size=1) | none())
-    password = draw(text_ascii(min_size=1) | none())
-    host = draw(text_ascii(min_size=1))
-    port = draw(integers(min_value=1))
-    database = draw(text_ascii(min_size=1))
-    return URL.create(
-        drivername="postgres",
-        username=username,
-        password=password,
-        host=host,
-        port=port,
-        database=database,
-    )
-
-
 class TestPGDump:
-    @given(url=urls(), path=temp_paths(), logger=text_ascii(min_size=1) | none())
+    @given(
+        url=urls(all_=True), path=temp_paths(), logger=text_ascii(min_size=1) | none()
+    )
     async def test_main(self, *, url: URL, path: Path, logger: str | None) -> None:
         _ = await pg_dump(url, path, dry_run=True, logger=logger)
 
     @given(
-        url=urls(),
+        url=urls(all_=True),
         path=temp_paths(),
         format_=sampled_from(get_literal_elements(_PGDumpFormat)),
         jobs=integers(min_value=0) | none(),
@@ -133,12 +118,14 @@ class TestResolveDataOnlyAndClean:
 
 
 class TestRestore:
-    @given(url=urls(), path=temp_paths(), logger=text_ascii(min_size=1) | none())
+    @given(
+        url=urls(all_=True), path=temp_paths(), logger=text_ascii(min_size=1) | none()
+    )
     async def test_main(self, *, url: URL, path: Path, logger: str | None) -> None:
         _ = await restore(url, path, dry_run=True, logger=logger)
 
     @given(
-        url=urls(),
+        url=urls(all_=True),
         path=temp_paths(),
         psql=booleans(),
         database=text_ascii(min_size=1) | none(),
