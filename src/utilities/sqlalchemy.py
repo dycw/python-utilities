@@ -378,6 +378,56 @@ def enum_values(enum: type[StrEnum], /) -> list[str]:
 ##
 
 
+@dataclass(kw_only=True, slots=True)
+class ExtractURLOutput:
+    username: str
+    password: str
+    host: str
+    port: int
+    database: str
+
+
+def extract_url(url: URL, /) -> tuple[str, str, int]:
+    """Extract the database, host & port from a URL."""
+    URL.cr
+    if url.database is None:
+        raise _ExtractURLDatabaseError(url=url)
+    if url.host is None:
+        raise _ExtractURLHostError(url=url)
+    if url.port is None:
+        raise _ExtractURLPortError(url=url)
+    return url.database, url.host, url.port
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractURLError(Exception):
+    url: URL
+
+
+@dataclass(kw_only=True, slots=True)
+class _ExtractURLDatabaseError(ExtractURLError):
+    @override
+    def __str__(self) -> str:
+        return f"Expected URL to contain a 'database'; got {self.url}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ExtractURLHostError(ExtractURLError):
+    @override
+    def __str__(self) -> str:
+        return f"Expected URL to contain a 'host'; got {self.url}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ExtractURLPortError(ExtractURLError):
+    @override
+    def __str__(self) -> str:
+        return f"Expected URL to contain a 'port'; got {self.url}"
+
+
+##
+
+
 def get_chunk_size(
     dialect_or_engine_or_conn: DialectOrEngineOrConnectionOrAsync,
     table_or_orm_or_num_cols: TableOrORMInstOrClass | Sized | int,
@@ -1193,6 +1243,7 @@ __all__ = [
     "ensure_tables_dropped",
     "enum_name",
     "enum_values",
+    "extract_url",
     "get_chunk_size",
     "get_column_names",
     "get_columns",

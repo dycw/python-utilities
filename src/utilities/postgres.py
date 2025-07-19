@@ -385,42 +385,6 @@ def _build_psql(
 ##
 
 
-def _extract_url(url: URL, /) -> tuple[str, str, int]:
-    if url.database is None:
-        raise _ExtractURLDatabaseError(url=url)
-    if url.host is None:
-        raise _ExtractURLHostError(url=url)
-    if url.port is None:
-        raise _ExtractURLPortError(url=url)
-    return url.database, url.host, url.port
-
-
-@dataclass(kw_only=True, slots=True)
-class ExtractURLError(Exception):
-    url: URL
-
-
-@dataclass(kw_only=True, slots=True)
-class _ExtractURLDatabaseError(ExtractURLError):
-    @override
-    def __str__(self) -> str:
-        return f"Expected URL to contain a 'database'; got {self.url}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ExtractURLHostError(ExtractURLError):
-    @override
-    def __str__(self) -> str:
-        return f"Expected URL to contain a 'host'; got {self.url}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ExtractURLPortError(ExtractURLError):
-    @override
-    def __str__(self) -> str:
-        return f"Expected URL to contain a 'port'; got {self.url}"
-
-
 def _get_table_name(obj: TableOrORMInstOrClass | str, /) -> str:
     match obj:
         case Table() | DeclarativeBase() | type() as table_or_orm:
