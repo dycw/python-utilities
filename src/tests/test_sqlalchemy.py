@@ -9,6 +9,7 @@ from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.strategies import SearchStrategy, booleans, lists, none, sets, tuples
 from pytest import mark, param, raises
 from sqlalchemy import (
+    URL,
     Boolean,
     Column,
     Engine,
@@ -39,6 +40,11 @@ from utilities.sqlalchemy import (
     TablenameMixin,
     TableOrORMInstOrClass,
     UpsertItemsError,
+    _ExtractURLDatabaseError,
+    _ExtractURLHostError,
+    _ExtractURLPasswordError,
+    _ExtractURLPortError,
+    _ExtractURLUsernameError,
     _get_dialect,
     _get_dialect_max_params,
     _InsertItem,
@@ -69,6 +75,7 @@ from utilities.sqlalchemy import (
     ensure_tables_dropped,
     enum_name,
     enum_values,
+    extract_url,
     get_chunk_size,
     get_column_names,
     get_columns,
@@ -311,6 +318,71 @@ class TestEnumValues:
         result = enum_values(Example)
         expected = ["true", "false"]
         assert result == expected
+
+
+class TestExtractURL:
+    def test_main(self) -> None:
+        url = URL.create(
+            "sqlite",
+            username="username",
+            password="password",  # noqa: S106
+            host="host",
+            port=0,
+            database="database",
+        )
+        extracted = extract_url(url)
+        assert extracted.username == url.username
+        assert extracted.password == url.password
+        assert extracted.host == url.host
+        assert extracted.port == url.port
+        assert extracted.database == url.database
+
+    def test_username(self) -> None:
+        url = URL.create("sqlite")
+        with raises(
+            _ExtractURLUsernameError,
+            match="Expected URL to contain a user name; got .*",
+        ):
+            _ = extract_url(url)
+
+    def test_password(self) -> None:
+        url = URL.create("sqlite", username="username")
+        with raises(
+            _ExtractURLPasswordError, match="Expected URL to contain a password; got .*"
+        ):
+            _ = extract_url(url)
+
+    def test_host(self) -> None:
+        url = URL.create("sqlite", username="username", password="password")  # noqa: S106
+        with raises(
+            _ExtractURLHostError, match="Expected URL to contain a host; got .*"
+        ):
+            _ = extract_url(url)
+
+    def test_port(self) -> None:
+        url = URL.create(
+            "sqlite",
+            username="username",
+            password="password",  # noqa: S106
+            host="host",
+        )
+        with raises(
+            _ExtractURLPortError, match="Expected URL to contain a port; got .*"
+        ):
+            _ = extract_url(url)
+
+    def test_database(self) -> None:
+        url = URL.create(
+            "sqlite",
+            username="username",
+            password="password",  # noqa: S106
+            host="host",
+            port=0,
+        )
+        with raises(
+            _ExtractURLDatabaseError, match="Expected URL to contain a database; got .*"
+        ):
+            _ = extract_url(url)
 
 
 class TestGetChunkSize:

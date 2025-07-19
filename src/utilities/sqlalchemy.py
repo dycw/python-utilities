@@ -393,15 +393,15 @@ def extract_url(url: URL, /) -> ExtractURLOutput:
         raise _ExtractURLUsernameError(url=url)
     if url.password is None:
         raise _ExtractURLPasswordError(url=url)
-    if url.database is None:
-        raise _ExtractURLDatabaseError(url=url)
     if url.host is None:
         raise _ExtractURLHostError(url=url)
     if url.port is None:
         raise _ExtractURLPortError(url=url)
+    if url.database is None:
+        raise _ExtractURLDatabaseError(url=url)
     return ExtractURLOutput(
         username=url.username,
-        password=url.password,
+        password=secret_str(url.password),
         host=url.host,
         port=url.port,
         database=url.database,
@@ -417,35 +417,35 @@ class ExtractURLError(Exception):
 class _ExtractURLUsernameError(ExtractURLError):
     @override
     def __str__(self) -> str:
-        return f"Expected URL to contain a 'username'; got {self.url}"
+        return f"Expected URL to contain a user name; got {self.url}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _ExtractURLPasswordError(ExtractURLError):
     @override
     def __str__(self) -> str:
-        return f"Expected URL to contain a 'password'; got {self.url}"
+        return f"Expected URL to contain a password; got {self.url}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _ExtractURLHostError(ExtractURLError):
     @override
     def __str__(self) -> str:
-        return f"Expected URL to contain a 'host'; got {self.url}"
+        return f"Expected URL to contain a host; got {self.url}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _ExtractURLPortError(ExtractURLError):
     @override
     def __str__(self) -> str:
-        return f"Expected URL to contain a 'port'; got {self.url}"
+        return f"Expected URL to contain a port; got {self.url}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _ExtractURLDatabaseError(ExtractURLError):
     @override
     def __str__(self) -> str:
-        return f"Expected URL to contain a 'database'; got {self.url}"
+        return f"Expected URL to contain a database; got {self.url}"
 
 
 ##
@@ -1253,6 +1253,8 @@ __all__ = [
     "CheckEngineError",
     "DialectOrEngineOrConnectionOrAsync",
     "EngineOrConnectionOrAsync",
+    "ExtractURLError",
+    "ExtractURLOutput",
     "GetTableError",
     "InsertItemsError",
     "TablenameMixin",

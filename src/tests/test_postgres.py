@@ -11,10 +11,6 @@ from utilities.hypothesis import integers, temp_paths, text_ascii
 from utilities.postgres import (
     _build_pg_dump,
     _build_pg_restore_or_psql,
-    _extract_url,
-    _ExtractURLDatabaseError,
-    _ExtractURLHostError,
-    _ExtractURLPortError,
     _path_pg_dump,
     _PGDumpFormat,
     _resolve_data_only_and_clean,
@@ -182,27 +178,3 @@ class TestRestore:
             role=role,
             docker=docker,
         )
-
-
-class TestExtractURL:
-    def test_database(self) -> None:
-        url = URL.create("postgres")
-        with raises(
-            _ExtractURLDatabaseError,
-            match="Expected URL to contain a 'database'; got .*",
-        ):
-            _ = _extract_url(url)
-
-    def test_host(self) -> None:
-        url = URL.create("postgres", database="database")
-        with raises(
-            _ExtractURLHostError, match="Expected URL to contain a 'host'; got .*"
-        ):
-            _ = _extract_url(url)
-
-    def test_port(self) -> None:
-        url = URL.create("postgres", database="database", host="host")
-        with raises(
-            _ExtractURLPortError, match="Expected URL to contain a 'port'; got .*"
-        ):
-            _ = _extract_url(url)
