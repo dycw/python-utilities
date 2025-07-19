@@ -27,6 +27,8 @@ from utilities.typing import get_literal_elements
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from utilities.types import MaybeListStr
+
 
 @composite
 def tables(draw: DrawFn, /) -> list[Table | str]:
@@ -66,6 +68,8 @@ class TestPGDump:
         format_=sampled_from(get_literal_elements(_PGDumpFormat)),
         jobs=integers(min_value=0) | none(),
         create=booleans(),
+        extension=lists(text_ascii(min_size=1)) | none(),
+        extension_exc=lists(text_ascii(min_size=1)) | none(),
         schema=lists(text_ascii(min_size=1)) | none(),
         schema_exc=lists(text_ascii(min_size=1)) | none(),
         table=tables() | none(),
@@ -83,6 +87,8 @@ class TestPGDump:
         format_: _PGDumpFormat,
         jobs: int | None,
         create: bool,
+        extension: MaybeListStr | None,
+        extension_exc: MaybeListStr | None,
         schema: list[str] | None,
         schema_exc: list[str] | None,
         table: list[Table | str] | None,
@@ -98,6 +104,8 @@ class TestPGDump:
             format_=format_,
             jobs=jobs,
             create=create,
+            extension=extension,
+            extension_exc=extension_exc,
             schema=schema,
             schema_exc=schema_exc,
             table=table,

@@ -37,6 +37,8 @@ async def pg_dump(
     data_only: bool = False,
     clean: bool = False,
     create: bool = False,
+    extension: MaybeListStr | None = None,
+    extension_exc: MaybeListStr | None = None,
     schema: MaybeListStr | None = None,
     schema_exc: MaybeListStr | None = None,
     table: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
@@ -59,6 +61,8 @@ async def pg_dump(
         data_only=data_only,
         clean=clean,
         create=create,
+        extension=extension,
+        extension_exc=extension_exc,
         schema=schema,
         schema_exc=schema_exc,
         table=table,
@@ -109,6 +113,8 @@ def _build_pg_dump(
     data_only: bool = False,
     clean: bool = False,
     create: bool = False,
+    extension: MaybeListStr | None = None,
+    extension_exc: MaybeListStr | None = None,
     schema: MaybeListStr | None = None,
     schema_exc: MaybeListStr | None = None,
     table: MaybeSequence[TableOrORMInstOrClass | str] | None = None,
@@ -141,6 +147,12 @@ def _build_pg_dump(
         parts.append(f"--jobs={jobs}")
     if create:
         parts.append("--create")
+    if extension is not None:
+        parts.extend([f"--extension={e}" for e in always_iterable(extension)])
+    if extension_exc is not None:
+        parts.extend([
+            f"--exclude-extension={e}" for e in always_iterable(extension_exc)
+        ])
     if schema is not None:
         parts.extend([f"--schema={s}" for s in always_iterable(schema)])
     if schema_exc is not None:
