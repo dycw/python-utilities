@@ -138,7 +138,7 @@ class TestRestore:
         path=temp_paths(),
         psql=booleans(),
         database=text_ascii(min_size=1) | none(),
-        clean=booleans(),
+        create=booleans(),
         jobs=integers(min_value=0) | none(),
         schema=lists(text_ascii(min_size=1)) | none(),
         schema_exc=lists(text_ascii(min_size=1)) | none(),
