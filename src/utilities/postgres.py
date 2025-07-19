@@ -202,7 +202,6 @@ async def restore(
     /,
     *,
     psql: bool = False,
-    database: str | None = None,
     data_only: bool = False,
     clean: bool = False,
     create: bool = False,
@@ -220,7 +219,6 @@ async def restore(
         url,
         path,
         psql=psql,
-        database=database,
         data_only=data_only,
         clean=clean,
         create=create,
@@ -269,7 +267,6 @@ def _build_pg_restore_or_psql(
     /,
     *,
     psql: bool = False,
-    database: str | None = None,
     data_only: bool = False,
     clean: bool = False,
     create: bool = False,
@@ -282,11 +279,10 @@ def _build_pg_restore_or_psql(
 ) -> str:
     path = Path(path)
     if (path.suffix == ".sql") or psql:
-        return _build_psql(url, path, database=database, docker=docker)
+        return _build_psql(url, path, docker=docker)
     return _build_pg_restore(
         url,
         path,
-        database=database,
         data_only=data_only,
         clean=clean,
         create=create,
