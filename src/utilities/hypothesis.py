@@ -1181,7 +1181,7 @@ def times(
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     match min_value_:
         case None:
-            min_value_ = Time()
+            min_value_ = Time.MIN
         case Time():
             ...
         case _ as never:
