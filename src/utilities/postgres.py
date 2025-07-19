@@ -70,7 +70,7 @@ async def pg_dump(
     )
     if dry_run:
         if logger is not None:
-            get_logger(logger=logger).info("Would run %r", str(cmd))
+            get_logger(logger=logger).info("Would run:\n\t%r", str(cmd))
         return
     with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
@@ -222,7 +222,7 @@ async def restore(
     )
     if dry_run:
         if logger is not None:
-            get_logger(logger=logger).info("Would run %r", str(cmd))
+            get_logger(logger=logger).info("Would run:\n\t%r", str(cmd))
         return
     with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
