@@ -388,8 +388,12 @@ def _escape_separator(*, separator: str = DEFAULT_SEPARATOR) -> str:
 class secret_str(str):  # noqa: N801
     """A string with an obfuscated representation."""
 
-    __slots__ = ()
+    __slots__ = ("_text",)
     _REPR: ClassVar[str] = "***"
+
+    def __init__(self, text: str, /) -> None:
+        super().__init__()
+        self._text = text
 
     @override
     def __repr__(self) -> str:
@@ -398,6 +402,10 @@ class secret_str(str):  # noqa: N801
     @override
     def __str__(self) -> str:
         return self._REPR
+
+    @property
+    def str(self) -> str:
+        return self._text
 
 
 ##
