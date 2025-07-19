@@ -9,7 +9,7 @@ from re import IGNORECASE, Match, escape, search
 from textwrap import dedent
 from threading import get_ident
 from time import time_ns
-from typing import TYPE_CHECKING, Any, Literal, overload, override
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, overload, override
 from uuid import uuid4
 
 from utilities.iterables import CheckDuplicatesError, check_duplicates, transpose
@@ -385,6 +385,24 @@ def _escape_separator(*, separator: str = DEFAULT_SEPARATOR) -> str:
 ##
 
 
+class secret_str(str):  # noqa: N801
+    """A string with an obfuscated representation."""
+
+    __slots__ = ()
+    _REPR: ClassVar[str] = "***"
+
+    @override
+    def __repr__(self) -> str:
+        return self._REPR
+
+    @override
+    def __str__(self) -> str:
+        return self._REPR
+
+
+##
+
+
 def str_encode(obj: Any, /) -> bytes:
     """Return the string representation of the object encoded as bytes."""
     return str(obj).encode()
@@ -424,6 +442,7 @@ __all__ = [
     "parse_bool",
     "parse_none",
     "repr_encode",
+    "secret_str",
     "snake_case",
     "split_key_value_pairs",
     "split_str",
