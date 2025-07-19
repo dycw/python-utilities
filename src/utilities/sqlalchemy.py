@@ -96,7 +96,7 @@ from utilities.iterables import (
     one,
 )
 from utilities.reprlib import get_repr
-from utilities.text import snake_case
+from utilities.text import secret_str, snake_case
 from utilities.types import MaybeIterable, MaybeType, StrMapping, TupleOrStrMapping
 
 if TYPE_CHECKING:
@@ -381,22 +381,31 @@ def enum_values(enum: type[StrEnum], /) -> list[str]:
 @dataclass(kw_only=True, slots=True)
 class ExtractURLOutput:
     username: str
-    password: str
+    password: secret_str
     host: str
     port: int
     database: str
 
 
-def extract_url(url: URL, /) -> tuple[str, str, int]:
+def extract_url(url: URL, /) -> ExtractURLOutput:
     """Extract the database, host & port from a URL."""
-    URL.cr
+    if url.username is None:
+        raise _ExtractURLUsernameError(url=url)
+    if url.password is None:
+        raise _ExtractURLPasswordError(url=url)
     if url.database is None:
         raise _ExtractURLDatabaseError(url=url)
     if url.host is None:
         raise _ExtractURLHostError(url=url)
     if url.port is None:
         raise _ExtractURLPortError(url=url)
-    return url.database, url.host, url.port
+    return ExtractURLOutput(
+        username=url.username,
+        password=url.password,
+        host=url.host,
+        port=url.port,
+        database=url.database,
+    )
 
 
 @dataclass(kw_only=True, slots=True)
@@ -405,10 +414,17 @@ class ExtractURLError(Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class _ExtractURLDatabaseError(ExtractURLError):
+class _ExtractURLUsernameError(ExtractURLError):
     @override
     def __str__(self) -> str:
-        return f"Expected URL to contain a 'database'; got {self.url}"
+        return f"Expected URL to contain a 'username'; got {self.url}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ExtractURLPasswordError(ExtractURLError):
+    @override
+    def __str__(self) -> str:
+        return f"Expected URL to contain a 'password'; got {self.url}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -423,6 +439,13 @@ class _ExtractURLPortError(ExtractURLError):
     @override
     def __str__(self) -> str:
         return f"Expected URL to contain a 'port'; got {self.url}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ExtractURLDatabaseError(ExtractURLError):
+    @override
+    def __str__(self) -> str:
+        return f"Expected URL to contain a 'database'; got {self.url}"
 
 
 ##
