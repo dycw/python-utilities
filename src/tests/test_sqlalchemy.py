@@ -94,7 +94,7 @@ from utilities.sqlalchemy import (
 )
 from utilities.text import strip_and_dedent
 from utilities.typing import get_args, get_literal_elements
-from utilities.whenever import format_compact, get_now, to_local_plain
+from utilities.whenever import MILLISECOND, format_compact, get_now, to_local_plain
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -143,6 +143,9 @@ class TestCheckConnect:
 
     async def test_async(self, *, test_async_engine: AsyncEngine) -> None:
         assert await check_connect_async(test_async_engine)
+
+    async def test_async_timeout(self, *, test_async_engine: AsyncEngine) -> None:
+        assert not await check_connect_async(test_async_engine, timeout=MILLISECOND)
 
 
 class TestCheckEngine:
