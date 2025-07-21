@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, cast
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import DataObject, data
 from pytest import mark, param, raises
-from whenever import Date, ZonedDateTime
+from whenever import Date, Time, ZonedDateTime
 
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -15,10 +15,12 @@ from utilities.hypothesis import (
     pairs,
     plain_datetimes,
     time_deltas,
+    times,
     zoned_datetimes,
 )
 from utilities.period import (
     DatePeriod,
+    TimePeriod,
     ZonedDateTimePeriod,
     _PeriodAsDict,
     _PeriodExactEqArgumentsError,
@@ -45,6 +47,31 @@ class TestDatePeriod:
             result = period + delta
         expected = DatePeriod(start + delta, end + delta)
         assert result == expected
+
+    @given(dates=pairs(dates(), sorted=True), time=times())
+    def test_at_time(self, *, dates: tuple[Date, Date], time: Time) -> None:
+        start, end = dates
+        period = DatePeriod(start, end)
+        result = period.at(time)
+        expected = ZonedDateTimePeriod(
+            start.at(time).assume_tz(UTC.key), end.at(time).assume_tz(UTC.key)
+        )
+        assert result.exact_eq(expected)
+
+    @given(dates=pairs(dates(), sorted=True), times=pairs(times()))
+    def test_at_times(
+        self, *, dates: tuple[Date, Date], times: tuple[Time, Time]
+    ) -> None:
+        start_date, end_date = dates
+        period = DatePeriod(start_date, end_date)
+        start_time, end_time = times
+        with assume_does_not_raise(_PeriodInvalidError):
+            result = period.at((start_time, end_time))
+        expected = ZonedDateTimePeriod(
+            start_date.at(start_time).assume_tz(UTC.key),
+            end_date.at(end_time).assume_tz(UTC.key),
+        )
+        assert result.exact_eq(expected)
 
     @given(date=dates(), dates=pairs(dates(), sorted=True))
     def test_contains(self, *, date: Date, dates: tuple[Date, Date]) -> None:
@@ -123,6 +150,19 @@ class TestDatePeriod:
         start, end = dates
         with raises(_PeriodInvalidError, match="Invalid period; got .* > .*"):
             _ = DatePeriod(end, start)
+
+
+class TestTimePeriod:
+    @given(times=pairs(times()))
+    @mark.parametrize("func", [param(repr), param(str)])
+    def test_repr(self, *, times: tuple[Time, Time], func: Callable[..., str]) -> None:
+        start, end = times
+        period = TimePeriod(start, end)
+        result = func(period)
+        assert search(
+            r"^TimePeriod\(\d{2}:\d{2}:\d{2}(\.\d{1,6})?, \d{2}:\d{2}:\d{2}(\.\d{1,6})?\)$",
+            result,
+        )
 
 
 class TestZonedDateTimePeriod:
