@@ -1,22 +1,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Self, TypedDict, overload, override
+from typing import TYPE_CHECKING, Any, Self, TypedDict, assert_never, overload, override
 from zoneinfo import ZoneInfo
 
-from whenever import Date, DateDelta, PlainDateTime, TimeDelta, ZonedDateTime
+from whenever import Date, DateDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
 from utilities.dataclasses import replace_non_sentinel
 from utilities.functions import get_class_name
 from utilities.sentinel import Sentinel, sentinel
 from utilities.whenever import format_compact
-from utilities.zoneinfo import get_time_zone_name
+from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
     from utilities.types import TimeZoneLike
 
 
-class _PeriodAsDict[T: (Date, ZonedDateTime)](TypedDict):
+class _PeriodAsDict[T: (Date, Time, ZonedDateTime)](TypedDict):
     start: T
     end: T
 
@@ -49,6 +49,22 @@ class DatePeriod:
         """Offset the period."""
         return self.replace(start=self.start - other, end=self.end - other)
 
+    def at(
+        self, obj: Time | tuple[Time, Time], /, *, time_zone: TimeZoneLike = UTC
+    ) -> ZonedDateTimePeriod:
+        """Combine a date with a time to create a datetime."""
+        match obj:
+            case Time() as time:
+                start = end = time
+            case Time() as start, Time() as end:
+                ...
+            case _ as never:
+                assert_never(never)
+        tz = ensure_time_zone(time_zone).key
+        return ZonedDateTimePeriod(
+            self.start.at(start).assume_tz(tz), self.end.at(end).assume_tz(tz)
+        )
+
     @property
     def delta(self) -> DateDelta:
         """The delta of the period."""
@@ -72,6 +88,42 @@ class DatePeriod:
         return replace_non_sentinel(self, start=start, end=end)
 
     def to_dict(self) -> _PeriodAsDict[Date]:
+        """Convert the period to a dictionary."""
+        return _PeriodAsDict(start=self.start, end=self.end)
+
+
+@dataclass(repr=False, order=True, unsafe_hash=True, kw_only=False)
+class TimePeriod:
+    """A period of times."""
+
+    start: Time
+    end: Time
+
+    @override
+    def __repr__(self) -> str:
+        cls = get_class_name(self)
+        return f"{cls}({self.start}, {self.end})"
+
+    def replace(
+        self, *, start: Time | Sentinel = sentinel, end: Time | Sentinel = sentinel
+    ) -> Self:
+        """Replace elements of the period."""
+        return replace_non_sentinel(self, start=start, end=end)
+
+    def at(
+        self, obj: Date | tuple[Date, Date], /, *, time_zone: TimeZoneLike = UTC
+    ) -> ZonedDateTimePeriod:
+        """Combine a date with a time to create a datetime."""
+        match obj:
+            case Date() as date:
+                start = end = date
+            case Date() as start, Date() as end:
+                ...
+            case _ as never:
+                assert_never(never)
+        return DatePeriod(start, end).at((self.start, self.end), time_zone=time_zone)
+
+    def to_dict(self) -> _PeriodAsDict[Time]:
         """Convert the period to a dictionary."""
         return _PeriodAsDict(start=self.start, end=self.end)
 
@@ -234,4 +286,4 @@ class _PeriodExactEqArgumentsError(PeriodError):
         return f"Invalid arguments; got {self.args}"
 
 
-__all__ = ["DatePeriod", "PeriodError", "ZonedDateTimePeriod"]
+__all__ = ["DatePeriod", "PeriodError", "TimePeriod", "ZonedDateTimePeriod"]
