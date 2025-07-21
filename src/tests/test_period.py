@@ -224,6 +224,14 @@ class TestTimePeriod:
             result,
         )
 
+    @given(times=pairs(times()))
+    def test_to_dict(self, *, times: tuple[Time, Time]) -> None:
+        start, end = times
+        period = TimePeriod(start, end)
+        result = period.to_dict()
+        expected = _PeriodAsDict(start=start, end=end)
+        assert result == expected
+
 
 class TestZonedDateTimePeriod:
     @given(datetimes=pairs(zoned_datetimes(), sorted=True), delta=time_deltas())
