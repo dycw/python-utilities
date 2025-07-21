@@ -115,11 +115,23 @@ CHUNK_SIZE_FRAC = 0.8
 ##
 
 
+_SELECT = text("SELECT 1")
+
+
 def check_connect(engine: Engine, /) -> bool:
     """Check if an engine can connect."""
     try:
         with engine.connect() as conn:
-            return bool(conn.execute(text("SELECT 1")).scalar_one())
+            return bool(conn.execute(_SELECT).scalar_one())
+    except (OperationalError, ProgrammingError):
+        return False
+
+
+async def check_connect_async(engine: AsyncEngine, /) -> bool:
+    """Check if an engine can connect."""
+    try:
+        async with engine.connect() as conn:
+            return bool((await conn.execute(_SELECT)).scalar_one())
     except (OperationalError, ProgrammingError):
         return False
 
@@ -1260,6 +1272,7 @@ __all__ = [
     "TablenameMixin",
     "UpsertItemsError",
     "check_connect",
+    "check_connect_async",
     "check_engine",
     "columnwise_max",
     "columnwise_min",
