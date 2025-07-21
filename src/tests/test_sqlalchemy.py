@@ -67,6 +67,7 @@ from utilities.sqlalchemy import (
     _SelectedOrAll,
     _tuple_to_mapping,
     check_connect,
+    check_connect_async,
     check_engine,
     columnwise_max,
     columnwise_min,
@@ -137,8 +138,11 @@ def _upsert_lists(
 
 
 class TestCheckConnect:
-    def test_main(self, *, test_engine: Engine) -> None:
+    def test_sync(self, *, test_engine: Engine) -> None:
         assert check_connect(test_engine)
+
+    async def test_async(self, *, test_async_engine: AsyncEngine) -> None:
+        assert await check_connect_async(test_async_engine)
 
 
 class TestCheckEngine:
