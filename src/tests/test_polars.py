@@ -2832,5 +2832,4 @@ class TestZonedDateTimePeriodDType:
     @given(time_zone=sampled_from([UTC, (UTC, UTC)]))
     def test_main(self, *, time_zone: ZoneInfo | tuple[ZoneInfo, ZoneInfo]) -> None:
         dtype = zoned_datetime_period_dtype(time_zone=time_zone)
-        assert isinstance(dtype, Datetime | Struct)
-        assert dtype.time_zone is not None
+        assert isinstance(dtype, Struct)
