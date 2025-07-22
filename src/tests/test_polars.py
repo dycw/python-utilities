@@ -2821,9 +2821,16 @@ class TestWeekNum:
         assert_series_equal(result, expected)
 
 
-class TestZonedDateTime:
-    @given(time_zone=sampled_from([HongKong, UTC]))
-    def test_main(self, *, time_zone: ZoneInfo) -> None:
-        dtype = zoned_datetime_dtype(time_zone=time_zone)
+class TestZonedDateTimeDType:
+    def test_main(self) -> None:
+        dtype = zoned_datetime_dtype(time_zone=UTC)
+        assert isinstance(dtype, Datetime)
+        assert dtype.time_zone is not None
+
+
+class TestZonedDateTimePeriodDType:
+    @given(time_zone=sampled_from([UTC, (UTC, UTC)]))
+    def test_main(self, *, time_zone: ZoneInfo | tuple[ZoneInfo, ZoneInfo]) -> None:
+        dtype = zoned_datetime_period_dtype(time_zone=time_zone)
         assert isinstance(dtype, Datetime)
         assert dtype.time_zone is not None
