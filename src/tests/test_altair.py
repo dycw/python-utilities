@@ -28,7 +28,7 @@ from utilities.altair import (
 )
 from utilities.functions import ensure_class
 from utilities.hypothesis import dates, text_ascii, zoned_datetimes
-from utilities.polars import DatetimeUTC, zoned_datetime
+from utilities.polars import DatetimeUTC, zoned_datetime_dtype
 from utilities.tzdata import HongKong, Tokyo
 from utilities.whenever import get_now
 from utilities.zoneinfo import UTC
@@ -97,7 +97,10 @@ class TestPlotDataFrames:
     def test_auto_localization(self, *, time_zone: ZoneInfo) -> None:
         df = DataFrame(
             data=[(dt.datetime(2000, 1, 1, 12, tzinfo=time_zone), 0.0)],
-            schema={"datetime": zoned_datetime(time_zone=time_zone), "value": Float64},
+            schema={
+                "datetime": zoned_datetime_dtype(time_zone=time_zone),
+                "value": Float64,
+            },
             orient="row",
         )
         chart = plot_dataframes(df, x="datetime", y="value")

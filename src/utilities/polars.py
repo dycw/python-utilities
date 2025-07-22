@@ -1097,7 +1097,7 @@ def _dataclass_to_schema_datetime(
 ) -> PolarsDataType:
     if field.value.tzinfo is None:
         return Datetime
-    return zoned_datetime(time_zone=ensure_time_zone(field.value.tzinfo))
+    return zoned_datetime_dtype(time_zone=ensure_time_zone(field.value.tzinfo))
 
 
 def _dataclass_to_schema_one(
@@ -2259,7 +2259,7 @@ def _struct_from_dataclass_one(
     if ann is dt.datetime:
         if time_zone is None:
             raise _StructFromDataClassTimeZoneMissingError
-        return zoned_datetime(time_zone=time_zone)
+        return zoned_datetime_dtype(time_zone=time_zone)
     if is_dataclass_class(ann):
         return struct_from_dataclass(ann, time_zone=time_zone)
     if (isinstance(ann, type) and issubclass(ann, enum.Enum)) or (
@@ -2388,11 +2388,28 @@ def week_num(column: IntoExprColumn, /, *, start: WeekDay = "mon") -> Expr | Ser
 ##
 
 
-def zoned_datetime(
+def zoned_datetime_dtype(
     *, time_unit: TimeUnit = "us", time_zone: TimeZoneLike = UTC
 ) -> Datetime:
     """Create a zoned datetime data type."""
     return Datetime(time_unit=time_unit, time_zone=get_time_zone_name(time_zone))
+
+
+def zoned_datetime_period_dtype(
+    *,
+    time_unit: TimeUnit = "us",
+    time_zone: TimeZoneLike | tuple[TimeZoneLike, TimeZoneLike] = UTC,
+) -> Struct:
+    """Create a zoned datetime period data type."""
+    match time_zone:
+        case start, end:
+            return struct_dtype(
+                start=zoned_datetime_dtype(time_unit=time_unit, time_zone=start),
+                end=zoned_datetime_dtype(time_unit=time_unit, time_zone=end),
+            )
+        case _:
+            dtype = zoned_datetime_dtype(time_unit=time_unit, time_zone=time_zone)
+            return struct_dtype(start=dtype, end=dtype)
 
 
 __all__ = [
@@ -2470,5 +2487,6 @@ __all__ = [
     "unique_element",
     "write_dataframe",
     "write_series",
-    "zoned_datetime",
+    "zoned_datetime_dtype",
+    "zoned_datetime_period_dtype",
 ]

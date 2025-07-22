@@ -79,7 +79,7 @@ from utilities.orjson import (
     serialize,
     write_object,
 )
-from utilities.polars import check_polars_dataframe, zoned_datetime
+from utilities.polars import check_polars_dataframe, zoned_datetime_dtype
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args
@@ -174,7 +174,7 @@ class TestGetLogRecords:
                 "level": UInt64,
                 "path_name": String,
                 "line_num": UInt64,
-                "datetime": zoned_datetime(time_zone=LOCAL_TIME_ZONE),
+                "datetime": zoned_datetime_dtype(time_zone=LOCAL_TIME_ZONE),
                 "func_name": String,
                 "stack_info": String,
                 "extra": Object,
