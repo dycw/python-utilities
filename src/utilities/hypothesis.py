@@ -56,12 +56,16 @@ from utilities.math import (
     MAX_FLOAT64,
     MAX_INT32,
     MAX_INT64,
+    MAX_UINT8,
+    MAX_UINT16,
     MAX_UINT32,
     MAX_UINT64,
     MIN_FLOAT32,
     MIN_FLOAT64,
     MIN_INT32,
     MIN_INT64,
+    MIN_UINT8,
+    MIN_UINT16,
     MIN_UINT32,
     MIN_UINT64,
     is_zero,
@@ -836,7 +840,7 @@ def random_states(
     """Strategy for generating `numpy` random states."""
     from numpy.random import RandomState
 
-    seed_ = draw2(draw, seed, integers(0, MAX_UINT32))
+    seed_ = draw2(draw, seed, uint32s())
     return RandomState(seed=seed_)
 
 
@@ -1227,6 +1231,36 @@ def _triples_map[T](elements: list[T], /) -> tuple[T, T, T]:
 
 
 @composite
+def uint8s(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[int] = MIN_UINT8,
+    max_value: MaybeSearchStrategy[int] = MAX_UINT8,
+) -> int:
+    """Strategy for generating uint8s."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    min_value_ = max(min_value_, MIN_UINT8)
+    max_value_ = min(max_value_, MAX_UINT8)
+    return draw(integers(min_value=min_value_, max_value=max_value_))
+
+
+@composite
+def uint16s(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[int] = MIN_UINT16,
+    max_value: MaybeSearchStrategy[int] = MAX_UINT16,
+) -> int:
+    """Strategy for generating uint16s."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    min_value_ = max(min_value_, MIN_UINT16)
+    max_value_ = min(max_value_, MAX_UINT16)
+    return draw(integers(min_value=min_value_, max_value=max_value_))
+
+
+@composite
 def uint32s(
     draw: DrawFn,
     /,
@@ -1426,6 +1460,8 @@ __all__ = [
     "time_deltas",
     "times",
     "triples",
+    "uint8s",
+    "uint16s",
     "uint32s",
     "uint64s",
     "urls",
