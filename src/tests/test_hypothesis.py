@@ -84,6 +84,8 @@ from utilities.hypothesis import (
     time_deltas,
     times,
     triples,
+    uint8s,
+    uint16s,
     uint32s,
     uint64s,
     urls,
@@ -98,12 +100,16 @@ from utilities.math import (
     MAX_FLOAT64,
     MAX_INT32,
     MAX_INT64,
+    MAX_UINT8,
+    MAX_UINT16,
     MAX_UINT32,
     MAX_UINT64,
     MIN_FLOAT32,
     MIN_FLOAT64,
     MIN_INT32,
     MIN_INT64,
+    MIN_UINT8,
+    MIN_UINT16,
     MIN_UINT32,
     MIN_UINT64,
 )
@@ -947,6 +953,22 @@ class TestTriples:
             assert second != third
         if sorted_:
             assert first <= second <= third
+
+
+class TestUInt8s:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(uint8s(), sorted=True))
+        x = data.draw(uint8s(min_value=min_value, max_value=max_value))
+        assert max(min_value, MIN_UINT8) <= x <= min(max_value, MAX_UINT8)
+
+
+class TestUInt16s:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(uint16s(), sorted=True))
+        x = data.draw(uint16s(min_value=min_value, max_value=max_value))
+        assert max(min_value, MIN_UINT16) <= x <= min(max_value, MAX_UINT16)
 
 
 class TestUInt32s:
