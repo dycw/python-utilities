@@ -35,7 +35,7 @@ from utilities.iterables import (
     chunked,
     one,
 )
-from utilities.polars import zoned_datetime
+from utilities.polars import zoned_datetime_dtype
 from utilities.reprlib import get_repr
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
@@ -390,7 +390,7 @@ def _select_to_dataframe_map_table_column_type_to_dtype(
         return pl.Date
     if is_subclass_gen(py_type, dt.datetime):
         has_tz: bool = type_use.timezone
-        return zoned_datetime(time_zone=time_zone) if has_tz else Datetime()
+        return zoned_datetime_dtype(time_zone=time_zone) if has_tz else Datetime()
     if issubclass(py_type, dt.time):
         return Time
     if issubclass(py_type, dt.timedelta):
