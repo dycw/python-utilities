@@ -65,7 +65,7 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
     from whenever import TimeDelta
 
-    from utilities.types import MaybeType, TimeZoneLike
+    from utilities.types import Delta, MaybeType, TimeZoneLike
 
 
 async def insert_dataframe(
@@ -228,7 +228,7 @@ async def select_to_dataframe(
     in_clauses: tuple[Column[Any], Iterable[Any]] | None = None,
     in_clauses_chunk_size: int | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    timeout: TimeDelta | None = None,
+    timeout: Delta | None = None,
     **kwargs: Any,
 ) -> DataFrame: ...
 @overload
@@ -243,7 +243,7 @@ async def select_to_dataframe(
     in_clauses: None = None,
     in_clauses_chunk_size: int | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    timeout: TimeDelta | None = None,
+    timeout: Delta | None = None,
     **kwargs: Any,
 ) -> Iterable[DataFrame]: ...
 @overload
@@ -258,7 +258,7 @@ async def select_to_dataframe(
     in_clauses: tuple[Column[Any], Iterable[Any]],
     in_clauses_chunk_size: int | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    timeout: TimeDelta | None = None,
+    timeout: Delta | None = None,
     **kwargs: Any,
 ) -> AsyncIterable[DataFrame]: ...
 @overload
@@ -273,7 +273,7 @@ async def select_to_dataframe(
     in_clauses: tuple[Column[Any], Iterable[Any]] | None = None,
     in_clauses_chunk_size: int | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    timeout: TimeDelta | None = None,
+    timeout: Delta | None = None,
     **kwargs: Any,
 ) -> DataFrame | Iterable[DataFrame] | AsyncIterable[DataFrame]: ...
 async def select_to_dataframe(
@@ -287,7 +287,7 @@ async def select_to_dataframe(
     in_clauses: tuple[Column[Any], Iterable[Any]] | None = None,
     in_clauses_chunk_size: int | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    timeout: TimeDelta | None = None,
+    timeout: Delta | None = None,
     error: MaybeType[BaseException] = TimeoutError,
     **kwargs: Any,
 ) -> DataFrame | Iterable[DataFrame] | AsyncIterable[DataFrame]:
