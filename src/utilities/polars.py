@@ -1340,11 +1340,22 @@ def get_data_type_or_series_time_zone(
             dtype = series.dtype
         case _ as never:
             assert_never(never)
-    if not isinstance(dtype, Datetime):
-        raise _GetDataTypeOrSeriesTimeZoneNotDateTimeError(dtype=dtype)
-    if dtype.time_zone is None:
-        raise _GetDataTypeOrSeriesTimeZoneNotZonedError(dtype=dtype)
-    return ZoneInfo(dtype.time_zone)
+    match dtype:
+        case Datetime() as datetime:
+            if datetime.time_zone is None:
+                raise _GetDataTypeOrSeriesTimeZoneNotZonedError(dtype=datetime)
+            return ZoneInfo(datetime.time_zone)
+        case Struct() as struct:
+            try:
+                return one({
+                    get_data_type_or_series_time_zone(f.dtype) for f in struct.fields
+                })
+            except OneNonUniqueError as error:
+                raise _GetDataTypeOrSeriesTimeZoneStructNonUniqueError(
+                    dtype=struct, first=error.first, second=error.second
+                ) from None
+        case _:
+            raise _GetDataTypeOrSeriesTimeZoneNotDateTimeError(dtype=dtype)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1364,6 +1375,18 @@ class _GetDataTypeOrSeriesTimeZoneNotZonedError(GetDataTypeOrSeriesTimeZoneError
     @override
     def __str__(self) -> str:
         return f"Data type must be zoned; got {self.dtype}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetDataTypeOrSeriesTimeZoneStructNonUniqueError(
+    GetDataTypeOrSeriesTimeZoneError
+):
+    first: ZoneInfo
+    second: ZoneInfo
+
+    @override
+    def __str__(self) -> str:
+        return f"Struct data type must contain exactly one time zone; got {self.first}, {self.second} and perhaps more"
 
 
 ##
