@@ -8,7 +8,7 @@ from enum import auto
 from itertools import chain, repeat
 from math import isfinite, nan
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never, cast
 from uuid import UUID, uuid4
 
 import hypothesis.strategies
@@ -114,6 +114,7 @@ from utilities.polars import (
     _FiniteEWMWeightsError,
     _GetDataTypeOrSeriesTimeZoneNotDateTimeError,
     _GetDataTypeOrSeriesTimeZoneNotZonedError,
+    _GetDataTypeOrSeriesTimeZoneStructNonUniqueError,
     _GetSeriesNumberOfDecimalsAllNullError,
     _GetSeriesNumberOfDecimalsNotFloatError,
     _InsertBetweenMissingColumnsError,
@@ -1483,18 +1484,32 @@ class TestFloorDateTime:
 
 class TestGetDataTypeOrSeriesTimeZone:
     @given(
-        time_zone=sampled_from([HongKong, UTC]), case=sampled_from(["dtype", "series"])
+        time_zone=sampled_from([HongKong, UTC]),
+        flat_or_struct=sampled_from(["flat", "struct"]),
+        dtype_or_series=sampled_from(["dtype", "series"]),
     )
     def test_main(
-        self, *, time_zone: ZoneInfo, case: Literal["dtype", "series"]
+        self,
+        *,
+        time_zone: ZoneInfo,
+        flat_or_struct: Literal["flat", "struct"],
+        dtype_or_series: Literal["dtype", "series"],
     ) -> None:
-        dtype = zoned_datetime_dtype(time_zone=time_zone)
-        match case:
+        match flat_or_struct:
+            case "flat":
+                dtype = zoned_datetime_dtype(time_zone=time_zone)
+            case "struct":
+                dtype = zoned_datetime_period_dtype(time_zone=time_zone)
+            case _ as never:
+                assert_never(never)
+        match dtype_or_series:
             case "dtype":
-                dtype_or_series = dtype
+                obj = dtype
             case "series":
-                dtype_or_series = Series(dtype=dtype)
-        result = get_data_type_or_series_time_zone(dtype_or_series)
+                obj = Series(dtype=dtype)
+            case _ as never:
+                assert_never(never)
+        result = get_data_type_or_series_time_zone(obj)
         assert result is time_zone
 
     def test_error_not_datetime(self) -> None:
@@ -1510,6 +1525,15 @@ class TestGetDataTypeOrSeriesTimeZone:
             match="Data type must be zoned; got .*",
         ):
             _ = get_data_type_or_series_time_zone(Datetime)
+
+    def test_error_struct_non_unique(self) -> None:
+        with raises(
+            _GetDataTypeOrSeriesTimeZoneStructNonUniqueError,
+            match="Struct data type must contain exactly one time zone; got .*, .* and perhaps more",
+        ):
+            _ = get_data_type_or_series_time_zone(
+                struct_dtype(start=DatetimeHongKong, end=DatetimeUTC)
+            )
 
 
 class TestGetExprName:
