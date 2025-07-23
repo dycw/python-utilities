@@ -270,7 +270,6 @@ type TimeZoneLike = (
 
 
 __all__ = [
-    "Collection",
     "Coro",
     "Dataclass",
     "DateDeltaLike",
@@ -295,6 +294,7 @@ __all__ = [
     "MaybeCallablePathLike",
     "MaybeCallableStr",
     "MaybeCallableZonedDateTime",
+    "MaybeCollection",
     "MaybeCollectionStr",
     "MaybeCoro",
     "MaybeIterable",
