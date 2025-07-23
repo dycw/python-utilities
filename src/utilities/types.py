@@ -131,7 +131,7 @@ type MaybeList[T] = T | list[T]
 type MaybeSequence[T] = T | Sequence[T]
 # iterables - str
 type CollectionStr = (
-    frozenset[str] | list[str] | Mapping[str, Any] | set[str] | tuple[str, ...]
+    dict[str, Any] | frozenset[str] | list[str] | set[str] | tuple[str, ...]
 )
 type MaybeCollectionStr = str | CollectionStr
 type MaybeListStr = MaybeList[str]
