@@ -123,16 +123,17 @@ IPv6AddressLike = MaybeStr[IPv6Address]
 
 
 # iterables
-type CollectionStr = frozenset[str] | list[str] | set[str] | tuple[str, ...]
 type IterableHashable[T: Hashable] = tuple[T, ...] | frozenset[T]
-type MaybeCollectionStr = str | CollectionStr
 type MaybeCollection[T] = T | Collection[T]
 type MaybeIterableHashable[T: Hashable] = T | IterableHashable[T]
 type MaybeIterable[T] = T | Iterable[T]
 type MaybeListStr = MaybeList[str]
 type MaybeList[T] = T | list[T]
-type MaybeSequenceStr = str | SequenceStr
 type MaybeSequence[T] = T | Sequence[T]
+# iterables - str
+type CollectionStr = frozenset[str] | list[str] | set[str] | tuple[str, ...]
+type MaybeCollectionStr = str | CollectionStr
+type MaybeSequenceStr = str | SequenceStr
 type SequenceStr = list[str] | tuple[str, ...]
 
 
