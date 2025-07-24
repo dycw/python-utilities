@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from functools import partial
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast, overload
 
-from atools import memoize
+import atools
+from whenever import TimeDelta
 
-from utilities.types import Coro
+from utilities.types import Coro, PathLike
 
 if TYPE_CHECKING:
-    from whenever import TimeDelta
+    from atools._memoize_decorator import Keygen, Pickler
 
 
 type _Key[**P, T] = tuple[Callable[P, Coro[T]], TimeDelta]
@@ -34,6 +37,63 @@ async def call_memoized[**P, T](
             func
         )
     return await memoized_func(*args, **kwargs)
+
+
+##
+
+
+@overload
+def memoize[F: Callable[..., Coro[Any]]](
+    func: F,
+    /,
+    *,
+    db_path: PathLike | None = None,
+    duration: float | TimeDelta | None = None,
+    keygen: Keygen | None = None,
+    pickler: Pickler | None = None,
+    size: int | None = None,
+) -> F: ...
+@overload
+def memoize[F: Callable[..., Coro[Any]]](
+    func: None = None,
+    /,
+    *,
+    db_path: PathLike | None = None,
+    duration: float | TimeDelta | None = None,
+    keygen: Keygen | None = None,
+    pickler: Pickler | None = None,
+    size: int | None = None,
+) -> Callable[[F], F]: ...
+def memoize[F: Callable[..., Coro[Any]]](
+    func: F | None = None,
+    /,
+    *,
+    db_path: PathLike | None = None,
+    duration: float | TimeDelta | None = None,
+    keygen: Keygen | None = None,
+    pickler: Pickler | None = None,
+    size: int | None = None,
+) -> F | Callable[[F], F]:
+    """Memoize a function."""
+    if func is None:
+        result = partial(
+            memoize,
+            db_path=db_path,
+            duration=duration,
+            keygen=keygen,
+            pickler=pickler,
+            size=size,
+        )
+        return cast("Callable[[F], F]", result)
+    return atools.memoize(
+        db_path=None if db_path is None else Path(db_path),
+        duration=duration.py_timedelta()
+        if isinstance(duration, TimeDelta)
+        else duration,
+        keygen=keygen,
+        pickler=pickler,
+        size=size,
+    )(func)
 
 
 __all__ = ["call_memoized"]
