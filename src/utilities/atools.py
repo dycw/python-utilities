@@ -93,7 +93,7 @@ def memoize[F: Callable[..., Coro[Any]]](
         keygen=keygen,
         pickler=pickler,
         size=size,
-    )
+    )(func)
 
 
 __all__ = ["call_memoized"]
