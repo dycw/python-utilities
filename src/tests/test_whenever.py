@@ -1235,12 +1235,12 @@ class TestToZonedDateTime:
     def test_callable(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time=lambda: date_time) == date_time
 
-    @given(date_time=zoned_datetimes_2000)
-    def test_error_py_date_time(self, *, date_time: ZonedDateTime) -> None:
-        with raises(ToZonedDateTimeError, match="za"):
-            _ = to_zoned_date_time(
-                date_time=date_time.py_datetime().replace(tzinfo=None)
-            )
+    def test_error_py_date_time(self) -> None:
+        with raises(
+            ToZonedDateTimeError,
+            match=r"Expected date-time to have a `ZoneInfo` or `dt\.UTC` as its timezone; got None",
+        ):
+            _ = to_zoned_date_time(date_time=NOW_UTC.py_datetime().replace(tzinfo=None))
 
 
 class TestTwoDigitYearMonth:
