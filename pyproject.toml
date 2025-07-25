@@ -352,6 +352,7 @@ reportUnknownArgumentType = false
 reportUnknownMemberType = false
 reportUnknownParameterType = false
 reportUnknownVariableType = false
+reportUnnecessaryComparison = false
 reportUnnecessaryTypeIgnoreComment = true
 reportUnusedCallResult = true
 reportUnusedImport = false
