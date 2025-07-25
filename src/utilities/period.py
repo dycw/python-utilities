@@ -2,7 +2,16 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Self, TypedDict, assert_never, overload, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Self,
+    TypedDict,
+    TypeVar,
+    assert_never,
+    overload,
+    override,
+)
 from zoneinfo import ZoneInfo
 
 from whenever import Date, DateDelta, PlainDateTime, Time, TimeDelta, ZonedDateTime
@@ -16,10 +25,12 @@ from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 if TYPE_CHECKING:
     from utilities.types import TimeZoneLike
 
+_TDate_co = TypeVar("_TDate_co", Date, dt.date, covariant=True)
+_TTime_co = TypeVar("_TTime_co", Time, dt.time, covariant=True)
+_TDateTime_co = TypeVar("_TDateTime_co", ZonedDateTime, dt.datetime, covariant=True)
 
-class PeriodDict[T: (Date | Time | ZonedDateTime | dt.date | dt.time | dt.datetime)](
-    TypedDict
-):
+
+class PeriodDict[T](TypedDict):
     start: T
     end: T
 
@@ -85,7 +96,7 @@ class DatePeriod:
         return f"{fc(start)}-{fc(end)}"
 
     @classmethod
-    def from_dict(cls, mapping: PeriodDict[Date | dt.date], /) -> Self:
+    def from_dict(cls, mapping: PeriodDict[_TDate_co], /) -> Self:
         """Convert the dictionary to a period."""
         match mapping["start"]:
             case Date() as start:
@@ -140,7 +151,7 @@ class TimePeriod:
         return DatePeriod(start, end).at((self.start, self.end), time_zone=time_zone)
 
     @classmethod
-    def from_dict(cls, mapping: PeriodDict[Time | dt.time], /) -> Self:
+    def from_dict(cls, mapping: PeriodDict[_TTime_co], /) -> Self:
         """Convert the dictionary to a period."""
         match mapping["start"]:
             case Time() as start:
@@ -271,7 +282,7 @@ class ZonedDateTimePeriod:
         return f"{fc(start.to_plain())}-{fc(end, fmt='%Y%m%dT%H')}"
 
     @classmethod
-    def from_dict(cls, mapping: PeriodDict[ZonedDateTime | dt.datetime], /) -> Self:
+    def from_dict(cls, mapping: PeriodDict[_TDateTime_co], /) -> Self:
         """Convert the dictionary to a period."""
         match mapping["start"]:
             case ZonedDateTime() as start:
