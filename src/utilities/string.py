@@ -13,7 +13,7 @@ def substitute_environ(path_or_text: Path | str, /, **kwargs: Any) -> str:
             return substitute_environ(path.read_text(), **kwargs)
         case str() as text:
             return Template(text).substitute(environ, **kwargs)
-        case _ as never:
+        case never:
             assert_never(never)
 
 

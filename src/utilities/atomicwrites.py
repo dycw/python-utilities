@@ -57,7 +57,7 @@ def move(
             raise ImpossibleCaseError(
                 case=[f"{source.is_file()=}", f"{source.is_dir()=}"]
             )
-        case _ as never:
+        case never:
             assert_never(never)
 
 

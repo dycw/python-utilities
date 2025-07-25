@@ -16,7 +16,7 @@ def ensure_pattern(pattern: PatternLike, /, *, flags: int = 0) -> Pattern[str]:
             return pattern
         case str():
             return re.compile(pattern, flags=flags)
-        case _ as never:
+        case never:
             assert_never(never)
 
 

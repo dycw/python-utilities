@@ -46,7 +46,7 @@ def repr_error(error: MaybeType[BaseException], /) -> str:
             return f"{error_obj.__class__.__name__}({error_obj})"
         case type() as error_cls:
             return error_cls.__name__
-        case _ as never:
+        case never:
             assert_never(never)
 
 

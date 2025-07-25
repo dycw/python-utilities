@@ -90,7 +90,7 @@ def pqdm_starmap[T](
                 **_get_desc(desc, func),
                 **kwargs,
             )
-        case _ as never:
+        case never:
             assert_never(never)
     return list(result)
 

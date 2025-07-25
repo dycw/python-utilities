@@ -359,9 +359,9 @@ def lift_listener[F1: Callable[..., MaybeCoro[None]], F2: Callable](
                             error_typed(event, exc)
 
                     lifted = listener_have_error_async
-                case _ as never:
+                case never:
                     assert_never(never)
-        case _ as never:
+        case never:
             assert_never(never)
 
     if decorators is not None:

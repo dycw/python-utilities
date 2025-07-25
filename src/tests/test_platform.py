@@ -38,7 +38,7 @@ class TestGetMaxPID:
                 assert isinstance(result, int)
             case "linux":  # skipif-not-linux
                 assert isinstance(result, int)
-            case _ as never:
+            case never:
                 assert_never(never)
 
     def test_constant(self) -> None:
@@ -49,7 +49,7 @@ class TestGetMaxPID:
                 assert isinstance(MAX_PID, int)
             case "linux":  # skipif-not-linux
                 assert isinstance(MAX_PID, int)
-            case _ as never:
+            case never:
                 assert_never(never)
 
 
@@ -93,5 +93,5 @@ class TestMaybeYieldLowerCase:
                 assert all(text == text.lower() for text in result)
             case "linux":  # skipif-not-linux
                 assert result == text
-            case _ as never:
+            case never:
                 assert_never(never)

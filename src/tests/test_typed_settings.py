@@ -211,7 +211,7 @@ class TestExtendedTSConverter:
                 expected = Path.cwd().joinpath(path)
             case False:
                 expected = Path(path)
-            case _ as never:
+            case never:
                 assert_never(never)
         assert settings.value == expected
 

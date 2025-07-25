@@ -295,7 +295,7 @@ class CheckIterablesEqualError[T](Exception):
                 yield "right was longer"
             case None:
                 pass
-            case _ as never:
+            case never:
                 assert_never(never)
 
 
@@ -690,7 +690,7 @@ def cmp_nullable[T: SupportsLT](x: T | None, y: T | None, /) -> Sign:
             return 1
         case _, _:
             return cast("Sign", (x > y) - (x < y))
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -1068,7 +1068,7 @@ def one_str(
             it = (t for t in as_list if t.startswith(text))
         case True, False:
             it = (t for t in as_list if t.lower().startswith(text.lower()))
-        case _ as never:
+        case never:
             assert_never(never)
     try:
         return one(it)
@@ -1109,7 +1109,7 @@ class OneStrEmptyError(OneStrError):
                 tail = f"any string starting with {self.text!r}"
             case True, False:
                 tail = f"any string starting with {self.text!r} (modulo case)"
-            case _ as never:
+            case never:
                 assert_never(never)
         return f"{head} {tail}"
 
@@ -1131,7 +1131,7 @@ class OneStrNonUniqueError(OneStrError):
                 mid = f"exactly one string starting with {self.text!r}"
             case True, False:
                 mid = f"exactly one string starting with {self.text!r} (modulo case)"
-            case _ as never:
+            case never:
                 assert_never(never)
         return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
 
@@ -1382,7 +1382,7 @@ def _sort_iterable_cmp_floats(x: float, y: float, /) -> Sign:
             return -1
         case False, False:
             return cast("Sign", (x > y) - (x < y))
-        case _ as never:
+        case never:
             assert_never(never)
 
 

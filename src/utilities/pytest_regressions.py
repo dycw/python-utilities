@@ -117,7 +117,7 @@ class PolarsRegressionFixture:
                 data["approx_n_unique"] = approx_n_unique
                 data["glimpse"] = df.glimpse(return_as_string=True)
                 data["null_count"] = df.null_count().row(0, named=True)
-            case _ as never:
+            case never:
                 assert_never(never)
         self._fixture.check(data, suffix=suffix)
 

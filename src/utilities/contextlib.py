@@ -210,7 +210,7 @@ def _make_handler(
                 _ = loop.call_soon_threadsafe(
                     create_task, agcm.__aexit__(None, None, None)
                 )
-            case _ as never:
+            case never:
                 assert_never(never)
         if callable(orig_handler):  # pragma: no cover
             orig_handler(signum, frame)

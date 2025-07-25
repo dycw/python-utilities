@@ -206,7 +206,7 @@ def bucket_mapping[T, U, UH: Hashable](
             return {k: frozenset(map(pre, v)) for k, v in mapping.items()}
         case Callable(), "unique":
             return _bucket_mapping_unique({k: map(pre, v) for k, v in mapping.items()})
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -374,7 +374,7 @@ def _yield_splits2[T](
                 len_tail = max(len_win - head, 0)
                 if len_tail >= 1:
                     yield window, head, len_tail
-            case _ as never:
+            case never:
                 assert_never(never)
 
 

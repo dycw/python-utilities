@@ -731,7 +731,7 @@ def round_(
                     return 0
                 case -1:
                     return floor(x)
-                case _ as never:
+                case never:
                     assert_never(never)
         case "standard-tie-floor":
             return _round_tie_standard(x, "floor", rel_tol=rel_tol, abs_tol=abs_tol)
@@ -743,7 +743,7 @@ def round_(
             )
         case "standard-tie-away-zero":
             return _round_tie_standard(x, "away-zero", rel_tol=rel_tol, abs_tol=abs_tol)
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -876,7 +876,7 @@ def sign(
             if is_negative(x, rel_tol=rel_tol, abs_tol=abs_tol):
                 return -1
             return 0
-        case _ as never:
+        case never:
             assert_never(never)
 
 

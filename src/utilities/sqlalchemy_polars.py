@@ -122,7 +122,7 @@ async def insert_dataframe(
                 timeout_insert=timeout_insert,
                 error_insert=error_insert,
             )
-        case _ as never:
+        case never:
             assert_never(never)
 
 

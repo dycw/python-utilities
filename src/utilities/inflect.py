@@ -15,7 +15,7 @@ def counted_noun(obj: int | Sized, noun: str, /) -> str:
             ...
         case Sized() as sized:
             count = len(sized)
-        case _ as never:
+        case never:
             assert_never(never)
     word = cast("Word", noun)
     sin_or_plu = _ENGINE.plural_noun(word, count=count)

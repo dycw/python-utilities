@@ -48,7 +48,7 @@ def get_cpu_use(*, n: IntOrAll = "all") -> int:
             raise GetCPUUseError(n=n)
         case "all":
             return CPU_COUNT
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -105,7 +105,7 @@ def get_env_var(
                 return None
             case str(), _:
                 return default
-            case _ as never:
+            case never:
                 assert_never(never)
     return environ[key_use]
 

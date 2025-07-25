@@ -148,7 +148,7 @@ def get_version(
             return parse_version(version)
         case Callable() as func:
             return get_version(version=func())
-        case _ as never:
+        case never:
             assert_never(never)
 
 
