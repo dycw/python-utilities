@@ -522,7 +522,7 @@ async def publish[T](
     /,
     *,
     serializer: Callable[[T], EncodableT],
-    timeout: Delta = _PUBLISH_TIMEOUT,
+    timeout: Delta | None = _PUBLISH_TIMEOUT,
 ) -> int: ...
 @overload
 async def publish(
@@ -532,7 +532,7 @@ async def publish(
     /,
     *,
     serializer: None = None,
-    timeout: Delta = _PUBLISH_TIMEOUT,
+    timeout: Delta | None = _PUBLISH_TIMEOUT,
 ) -> int: ...
 @overload
 async def publish[T](
@@ -542,7 +542,7 @@ async def publish[T](
     /,
     *,
     serializer: Callable[[T], EncodableT] | None = None,
-    timeout: Delta = _PUBLISH_TIMEOUT,
+    timeout: Delta | None = _PUBLISH_TIMEOUT,
 ) -> int: ...
 async def publish[T](
     redis: Redis,
@@ -551,7 +551,7 @@ async def publish[T](
     /,
     *,
     serializer: Callable[[T], EncodableT] | None = None,
-    timeout: Delta = _PUBLISH_TIMEOUT,
+    timeout: Delta | None = _PUBLISH_TIMEOUT,
 ) -> int:
     """Publish an object to a channel."""
     match data, serializer:  # skipif-ci-and-not-linux
@@ -587,7 +587,7 @@ async def publish_many[T](
     /,
     *,
     serializer: Callable[[T], EncodableT] | None = None,
-    timeout: Delta = _PUBLISH_TIMEOUT,
+    timeout: Delta | None = _PUBLISH_TIMEOUT,
 ) -> Sequence[bool]:
     """Publish an object/multiple objects to a channel."""
     async with TaskGroup() as tg:
@@ -613,7 +613,7 @@ async def _try_publish[T](
     /,
     *,
     serializer: Callable[[T], EncodableT] | None = None,
-    timeout: Delta = _PUBLISH_TIMEOUT,
+    timeout: Delta | None = _PUBLISH_TIMEOUT,
 ) -> bool:
     try:
         _ = await publish(redis, channel, data, serializer=serializer, timeout=timeout)
