@@ -1415,6 +1415,11 @@ def zoned_datetimes(
     return zoned
 
 
+zoned_datetimes_2000 = zoned_datetimes(
+    min_value=ZonedDateTime(2000, 1, 1, tz=UTC.key),
+    max_value=ZonedDateTime(2000, 12, 31, tz=UTC.key),
+)
+
 __all__ = [
     "Draw2Error",
     "MaybeSearchStrategy",
@@ -1468,4 +1473,5 @@ __all__ = [
     "versions",
     "year_months",
     "zoned_datetimes",
+    "zoned_datetimes_2000",
 ]
