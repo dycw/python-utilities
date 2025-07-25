@@ -32,6 +32,7 @@ from utilities.hypothesis import (
     sentinels,
     times,
     zoned_datetimes,
+    zoned_datetimes_2000,
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo
@@ -1182,12 +1183,6 @@ class TestToYears:
             _ToYearsTimeError, match="Delta must not contain a time part; got .*"
         ):
             _ = to_years(delta)
-
-
-zoned_datetimes_2000 = zoned_datetimes(
-    min_value=ZonedDateTime(2000, 1, 1, tz=UTC.key),
-    max_value=ZonedDateTime(2000, 12, 31, tz=UTC.key),
-)
 
 
 class TestToZonedDateTime:

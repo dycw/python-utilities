@@ -4,7 +4,7 @@ from re import search
 from typing import TYPE_CHECKING, Any, cast
 
 from hypothesis import HealthCheck, given, settings
-from hypothesis.strategies import DataObject, data
+from hypothesis.strategies import DataObject, data, sampled_from
 from pytest import mark, param, raises
 from whenever import Date, Time, ZonedDateTime
 
@@ -17,6 +17,7 @@ from utilities.hypothesis import (
     time_deltas,
     times,
     zoned_datetimes,
+    zoned_datetimes_2000,
 )
 from utilities.period import (
     DatePeriod,
@@ -145,13 +146,19 @@ class TestDatePeriod:
         expected = DatePeriod(start - delta, end - delta)
         assert result == expected
 
-    @given(dates=pairs(dates(), sorted=True))
-    def test_to_dict(self, *, dates: tuple[Date, Date]) -> None:
+    @given(data=data(), dates=pairs(dates(), sorted=True))
+    def test_to_and_from_dict(
+        self, *, data: DataObject, dates: tuple[Date, Date]
+    ) -> None:
         start, end = dates
         period = DatePeriod(start, end)
-        result = period.to_dict()
-        expected = _PeriodAsDict(start=start, end=end)
-        assert result == expected
+        dict1 = period.to_dict()
+        dict2 = _PeriodAsDict(
+            start=data.draw(sampled_from([dict1["start"], dict1["start"].py_date()])),
+            end=data.draw(sampled_from([dict1["end"], dict1["end"].py_date()])),
+        )
+        result = DatePeriod.from_dict(dict2)
+        assert result == period
 
     @given(dates=pairs(dates(), unique=True, sorted=True))
     def test_error_period_invalid(self, *, dates: tuple[Date, Date]) -> None:
@@ -224,13 +231,19 @@ class TestTimePeriod:
             result,
         )
 
-    @given(times=pairs(times()))
-    def test_to_dict(self, *, times: tuple[Time, Time]) -> None:
+    @given(data=data(), times=pairs(times()))
+    def test_to_and_from_dict(
+        self, *, data: DataObject, times: tuple[Time, Time]
+    ) -> None:
         start, end = times
         period = TimePeriod(start, end)
-        result = period.to_dict()
-        expected = _PeriodAsDict(start=start, end=end)
-        assert result == expected
+        dict1 = period.to_dict()
+        dict2 = _PeriodAsDict(
+            start=data.draw(sampled_from([dict1["start"], dict1["start"].py_time()])),
+            end=data.draw(sampled_from([dict1["end"], dict1["end"].py_time()])),
+        )
+        result = TimePeriod.from_dict(dict2)
+        assert result == period
 
 
 class TestZonedDateTimePeriod:
@@ -455,13 +468,21 @@ class TestZonedDateTimePeriod:
         expected = ZonedDateTimePeriod(start - delta, end - delta)
         assert result == expected
 
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
-    def test_to_dict(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
+    @given(data=data(), datetimes=pairs(zoned_datetimes_2000, sorted=True))
+    def test_to_and_from_dict(
+        self, data: DataObject, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]
+    ) -> None:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
-        result = period.to_dict()
-        expected = _PeriodAsDict(start=start, end=end)
-        assert result == expected
+        dict1 = period.to_dict()
+        dict2 = _PeriodAsDict(
+            start=data.draw(
+                sampled_from([dict1["start"], dict1["start"].py_datetime()])
+            ),
+            end=data.draw(sampled_from([dict1["end"], dict1["end"].py_datetime()])),
+        )
+        result = ZonedDateTimePeriod.from_dict(dict2)
+        assert result == period
 
     @given(datetimes=pairs(zoned_datetimes(), sorted=True))
     def test_to_tz(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
