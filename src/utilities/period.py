@@ -30,7 +30,9 @@ _TTime_co = TypeVar("_TTime_co", Time, dt.time, covariant=True)
 _TDateTime_co = TypeVar("_TDateTime_co", ZonedDateTime, dt.datetime, covariant=True)
 
 
-class PeriodDict[T](TypedDict):
+class PeriodDict[T: Date | Time | ZonedDateTime | dt.date | dt.time | dt.datetime](
+    TypedDict
+):
     start: T
     end: T
 
