@@ -153,9 +153,10 @@ class TestDatePeriod:
         start, end = dates
         period = DatePeriod(start, end)
         dict1 = period.to_dict()
+        dstart, dend = dict1["start"], dict1["end"]
         dict2 = _PeriodAsDict(
-            start=data.draw(sampled_from([dict1["start"], dict1["start"].py_date()])),
-            end=data.draw(sampled_from([dict1["end"], dict1["end"].py_date()])),
+            start=data.draw(sampled_from([dstart, dstart.py_date()])),
+            end=data.draw(sampled_from([dend, dend.py_date()])),
         )
         result = DatePeriod.from_dict(dict2)
         assert result == period
@@ -238,9 +239,10 @@ class TestTimePeriod:
         start, end = times
         period = TimePeriod(start, end)
         dict1 = period.to_dict()
+        dstart, dend = dict1["start"], dict1["end"]
         dict2 = _PeriodAsDict(
-            start=data.draw(sampled_from([dict1["start"], dict1["start"].py_time()])),
-            end=data.draw(sampled_from([dict1["end"], dict1["end"].py_time()])),
+            start=data.draw(sampled_from([dstart, dstart.py_time()])),
+            end=data.draw(sampled_from([dend, dend.py_time()])),
         )
         result = TimePeriod.from_dict(dict2)
         assert result == period
@@ -475,11 +477,10 @@ class TestZonedDateTimePeriod:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
         dict1 = period.to_dict()
+        dstart, dend = dict1["start"], dict1["end"]
         dict2 = _PeriodAsDict(
-            start=data.draw(
-                sampled_from([dict1["start"], dict1["start"].py_datetime()])
-            ),
-            end=data.draw(sampled_from([dict1["end"], dict1["end"].py_datetime()])),
+            start=data.draw(sampled_from([dstart, dstart.py_datetime()])),
+            end=data.draw(sampled_from([dend, dend.py_datetime()])),
         )
         result = ZonedDateTimePeriod.from_dict(dict2)
         assert result == period
