@@ -16,6 +16,7 @@ from typing import (
     overload,
     override,
 )
+from zoneinfo import ZoneInfo
 
 from whenever import (
     Date,
@@ -36,8 +37,6 @@ from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
-    from zoneinfo import ZoneInfo
-
     from utilities.types import (
         DateOrDateTimeDelta,
         DateTimeRoundMode,
@@ -1418,22 +1417,40 @@ class _ToYearsTimeError(ToYearsError):
 
 
 @overload
-def to_zoned_date_time(*, date_time: MaybeCallableZonedDateTime) -> ZonedDateTime: ...
+def to_zoned_date_time(
+    *, date_time: MaybeCallableZonedDateTime | dt.datetime
+) -> ZonedDateTime: ...
 @overload
 def to_zoned_date_time(*, date_time: None) -> None: ...
 @overload
 def to_zoned_date_time(*, date_time: Sentinel) -> Sentinel: ...
 def to_zoned_date_time(
-    *, date_time: MaybeCallableZonedDateTime | None | Sentinel = sentinel
+    *, date_time: MaybeCallableZonedDateTime | dt.datetime | None | Sentinel = sentinel
 ) -> ZonedDateTime | None | Sentinel:
     """Resolve into a zoned date_time."""
     match date_time:
         case ZonedDateTime() | None | Sentinel():
             return date_time
+        case dt.datetime():
+            if isinstance(date_time.tzinfo, ZoneInfo):
+                return ZonedDateTime.from_py_datetime(date_time)
+            if date_time.tzinfo is dt.UTC:
+                return ZonedDateTime.from_py_datetime(date_time.astimezone(UTC))
+            raise ToZonedDateTimeError(date_time=date_time)
         case Callable() as func:
             return to_zoned_date_time(date_time=func())
         case _ as never:
             assert_never(never)
+    return None
+
+
+@dataclass(kw_only=True, slots=True)
+class ToZonedDateTimeError(Exception):
+    date_time: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Expected date-time to have a `ZoneInfo` or `dt.UTC` as its timezone; got {self.date_time.tzinfo}"
 
 
 ##
