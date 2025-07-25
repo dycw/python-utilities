@@ -25,9 +25,11 @@ from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 if TYPE_CHECKING:
     from utilities.types import TimeZoneLike
 
-_TDate_co = TypeVar("_TDate_co", Date, dt.date, covariant=True)
-_TTime_co = TypeVar("_TTime_co", Time, dt.time, covariant=True)
-_TDateTime_co = TypeVar("_TDateTime_co", ZonedDateTime, dt.datetime, covariant=True)
+_TDate_co = TypeVar("_TDate_co", bound=Date | dt.date, covariant=True)
+_TTime_co = TypeVar("_TTime_co", bound=Time | dt.time, covariant=True)
+_TDateTime_co = TypeVar(
+    "_TDateTime_co", bound=ZonedDateTime | dt.datetime, covariant=True
+)
 
 
 class PeriodDict[T: Date | Time | ZonedDateTime | dt.date | dt.time | dt.datetime](
