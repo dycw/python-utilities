@@ -64,6 +64,7 @@ from utilities.whenever import (
     ToMonthsAndDaysError,
     ToNanosecondsError,
     ToPyTimeDeltaError,
+    ToZonedDateTimeError,
     WheneverLogRecord,
     _MinMaxDatePeriodError,
     _RoundDateOrDateTimeDateTimeIntraDayWithWeekdayError,
@@ -1183,6 +1184,12 @@ class TestToYears:
             _ = to_years(delta)
 
 
+zoned_datetimes_2000 = zoned_datetimes(
+    min_value=ZonedDateTime(2000, 1, 1, tz=UTC.key),
+    max_value=ZonedDateTime(2000, 12, 31, tz=UTC.key),
+)
+
+
 class TestToZonedDateTime:
     @given(date_time=zoned_datetimes())
     def test_date_time(self, *, date_time: ZonedDateTime) -> None:
@@ -1191,6 +1198,17 @@ class TestToZonedDateTime:
     @given(date_time=none() | sentinels())
     def test_none_or_sentinel(self, *, date_time: None | Sentinel) -> None:
         assert to_zoned_date_time(date_time=date_time) is date_time
+
+    @given(date_time=zoned_datetimes_2000)
+    def test_py_date_time_zone_info(self, *, date_time: ZonedDateTime) -> None:
+        assert to_zoned_date_time(date_time=date_time.py_datetime()) == date_time
+
+    @given(date_time=zoned_datetimes_2000)
+    def test_py_date_time_dt_utc(self, *, date_time: ZonedDateTime) -> None:
+        result = to_zoned_date_time(
+            date_time=date_time.py_datetime().astimezone(dt.UTC)
+        )
+        assert result == date_time
 
     @given(date_time1=zoned_datetimes(), date_time2=zoned_datetimes())
     def test_replace_non_sentinel(
@@ -1216,6 +1234,13 @@ class TestToZonedDateTime:
     @given(date_time=zoned_datetimes())
     def test_callable(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time=lambda: date_time) == date_time
+
+    def test_error_py_date_time(self) -> None:
+        with raises(
+            ToZonedDateTimeError,
+            match=r"Expected date-time to have a `ZoneInfo` or `dt\.UTC` as its timezone; got None",
+        ):
+            _ = to_zoned_date_time(date_time=NOW_UTC.py_datetime().replace(tzinfo=None))
 
 
 class TestTwoDigitYearMonth:
