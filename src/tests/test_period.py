@@ -21,7 +21,7 @@ from utilities.hypothesis import (
 )
 from utilities.period import (
     DatePeriod,
-    PeriodAsDict,
+    PeriodDict,
     TimePeriod,
     ZonedDateTimePeriod,
     _PeriodExactEqArgumentsError,
@@ -154,7 +154,7 @@ class TestDatePeriod:
         period = DatePeriod(start, end)
         dict1 = period.to_dict()
         dstart, dend = dict1["start"], dict1["end"]
-        dict2 = PeriodAsDict(
+        dict2 = PeriodDict(
             start=data.draw(sampled_from([dstart, dstart.py_date()])),
             end=data.draw(sampled_from([dend, dend.py_date()])),
         )
@@ -240,7 +240,7 @@ class TestTimePeriod:
         period = TimePeriod(start, end)
         dict1 = period.to_dict()
         dstart, dend = dict1["start"], dict1["end"]
-        dict2 = PeriodAsDict(
+        dict2 = PeriodDict(
             start=data.draw(sampled_from([dstart, dstart.py_time()])),
             end=data.draw(sampled_from([dend, dend.py_time()])),
         )
@@ -478,7 +478,7 @@ class TestZonedDateTimePeriod:
         period = ZonedDateTimePeriod(start, end)
         dict1 = period.to_dict()
         dstart, dend = dict1["start"], dict1["end"]
-        dict2 = PeriodAsDict(
+        dict2 = PeriodDict(
             start=data.draw(sampled_from([dstart, dstart.py_datetime()])),
             end=data.draw(sampled_from([dend, dend.py_datetime()])),
         )
