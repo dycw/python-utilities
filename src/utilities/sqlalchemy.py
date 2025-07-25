@@ -166,7 +166,7 @@ async def check_engine(
             query = "select * from all_objects"
         case "sqlite":
             query = "select * from sqlite_master where type='table'"
-        case _ as never:
+        case never:
             assert_never(never)
     statement = text(query)
     async with yield_connection(engine, timeout=timeout, error=error) as conn:
@@ -312,7 +312,7 @@ def create_engine(
             return sqlalchemy.create_engine(url, poolclass=poolclass)
         case True:
             return sqlalchemy.ext.asyncio.create_async_engine(url, poolclass=poolclass)
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -339,7 +339,7 @@ async def ensure_tables_created(
             match = "ORA-00955: name is already used by an existing object"
         case "sqlite":
             match = "table .* already exists"
-        case _ as never:
+        case never:
             assert_never(never)
     async with yield_connection(engine, timeout=timeout, error=error) as conn:
         for table in tables:
@@ -368,7 +368,7 @@ async def ensure_tables_dropped(
             match = "ORA-00942: table or view does not exist"
         case "sqlite":
             match = "no such table"
-        case _ as never:
+        case never:
             assert_never(never)
     async with yield_connection(engine, timeout=timeout, error=error) as conn:
         for table in tables:
@@ -493,7 +493,7 @@ def get_chunk_size(
         case int() as num_cols:
             size = floor(chunk_size_frac * max_params / num_cols)
             return max(size, 1)
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -777,7 +777,7 @@ def _normalize_upsert_item(
                 yield _NormalizedItem(mapping=values, table=norm.table)
         case "all":
             yield from normalized
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -890,7 +890,7 @@ def _upsert_items_build(
             insert = sqlite_insert
         case "mssql" | "mysql" | "oracle" as dialect:  # pragma: no cover
             raise NotImplementedError(dialect)
-        case _ as never:
+        case never:
             assert_never(never)
     ins = insert(table).values(values)
     primary_key = cast("Any", table.primary_key)
@@ -912,7 +912,7 @@ def _upsert_items_apply_on_conflict_do_update(
             columns = merge_sets(*values)
         case "all":
             columns = {c.name for c in insert.excluded}
-        case _ as never:
+        case never:
             assert_never(never)
     set_ = {c: getattr(insert.excluded, c) for c in columns}
     match insert:
@@ -920,7 +920,7 @@ def _upsert_items_apply_on_conflict_do_update(
             return insert.on_conflict_do_update(constraint=primary_key, set_=set_)
         case sqlite_Insert():
             return insert.on_conflict_do_update(index_elements=primary_key, set_=set_)
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -1029,7 +1029,7 @@ def _get_dialect_max_params(
         ):
             dialect = _get_dialect(engine_or_conn)
             return _get_dialect_max_params(dialect)
-        case _ as never:
+        case never:
             assert_never(never)
 
 
