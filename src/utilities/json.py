@@ -36,7 +36,7 @@ def run_prettier(source: bytes | str | Path, /) -> bytes | str | None:
             with writer(path, overwrite=True) as temp:
                 _ = temp.write_bytes(result)
             return None
-        case _ as never:
+        case never:
             assert_never(never)
 
 

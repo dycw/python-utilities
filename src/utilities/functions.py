@@ -960,7 +960,7 @@ def to_bool(
             return bool_
         case Callable() as func:
             return to_bool(bool_=func())
-        case _ as never:
+        case never:
             assert_never(never)
 
 

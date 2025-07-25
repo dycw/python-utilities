@@ -208,7 +208,7 @@ def acf(
             df_confints = _acf_process_confints(confints)
             df_qstats_pvalues = _acf_process_qstats_pvalues(qstats, pvalues)
             return join(df_acfs, df_confints, df_qstats_pvalues, on=["lag"], how="left")
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -345,7 +345,7 @@ def bernoulli(
             return bernoulli(series.len(), true=true, seed=seed, name=name)
         case DataFrame() as df:
             return bernoulli(df.height, true=true, seed=seed, name=name)
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -379,7 +379,7 @@ def boolean_value_counts(
                 (false / total).alias("false (%)"),
                 (null / total).alias("null (%)"),
             )
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -763,7 +763,7 @@ def choice(
                 name=name,
                 dtype=dtype,
             )
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -899,7 +899,7 @@ def _cross_or_touch(
             ...
         case str() | Expr() | Series():
             other = ensure_expr_or_series(other)
-        case _ as never:
+        case never:
             assert_never(never)
     enough = int_range(end=pl.len()) >= 1
     match cross_or_touch, up_or_down:
@@ -911,7 +911,7 @@ def _cross_or_touch(
             current = expr >= other
         case "touch", "down":
             current = expr <= other
-        case _ as never:
+        case never:
             assert_never(never)
     prev = current.shift()
     result = when(enough & expr.is_finite()).then(current & ~prev)
@@ -1338,7 +1338,7 @@ def get_data_type_or_series_time_zone(
             dtype = dtype_cls()
         case Series() as series:
             dtype = series.dtype
-        case _ as never:
+        case never:
             assert_never(never)
     match dtype:
         case Datetime() as datetime:
@@ -1400,7 +1400,7 @@ def get_expr_name(obj: Series | DataFrame, expr: IntoExprColumn, /) -> str:
         case DataFrame() as df:
             selected = df.select(expr)
             return one(selected.columns)
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -1598,7 +1598,7 @@ def integers(
                 name=name,
                 dtype=dtype,
             )
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -1903,7 +1903,7 @@ def map_over_columns(
             return _map_over_series_one(func, series)
         case DataFrame() as df:
             return df.select(*(_map_over_series_one(func, df[c]) for c in df.columns))
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -1983,7 +1983,7 @@ def normal(
             return normal(
                 df.height, loc=loc, scale=scale, seed=seed, name=name, dtype=dtype
             )
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -2215,7 +2215,7 @@ def _reconstruct_dtype(obj: _DeconDType, /) -> PolarsDataType:
             return List(_reconstruct_dtype(inner))
         case "Struct", inner:
             return Struct(_reconstruct_schema(inner))
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -2345,7 +2345,7 @@ def try_reify_expr(
             return series
         case DataFrame() as df:
             return df[get_expr_name(df, expr)]
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -2378,7 +2378,7 @@ def uniform(
             return uniform(
                 df.height, low=low, high=high, seed=seed, name=name, dtype=dtype
             )
-        case _ as never:
+        case never:
             assert_never(never)
 
 

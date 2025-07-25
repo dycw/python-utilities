@@ -94,7 +94,7 @@ def _parse_path(
             return get_path(path=pwd).joinpath(path).resolve()
         case False:
             return Path(path)
-        case _ as never:
+        case never:
             assert_never(never)
 
 

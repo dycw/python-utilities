@@ -69,7 +69,7 @@ def get_path(
             return Path.cwd()
         case Callable() as func:
             return get_path(path=func())
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -164,7 +164,7 @@ def get_root(*, path: MaybeCallablePathLike | None = None) -> Path:
             raise ImpossibleCaseError(  # pragma: no cover
                 case=[f"{repo=}", f"{package=}"]
             )
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -213,7 +213,7 @@ def get_tail(
             return _get_tail_core(path, next(iter(matches)))
         case _, "later":
             return _get_tail_core(path, next(iter(reversed(matches))))
-        case _ as never:
+        case never:
             assert_never(never)
 
 

@@ -214,7 +214,7 @@ def is_nullable_lt[T: SupportsLT](x: T | None, y: T | None, /) -> bool | None:
             return True
         case 0:
             return None
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -520,7 +520,7 @@ def parse_dataclass[T: Dataclass](
             )
         case Mapping() as keys_to_serializes:
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     fields = list(
         yield_fields(
@@ -1002,7 +1002,7 @@ def _empty_error_str_core(
             return f"any field starting with {key!r}"
         case True, False:
             return f"any field starting with {key!r} (modulo case)"
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -1043,7 +1043,7 @@ def _non_unique_error_str_core(
             head_msg = f"exactly one field starting with {key!r}"
         case True, False:
             head_msg = f"exactly one field starting with {key!r} (modulo case)"
-        case _ as never:
+        case never:
             assert_never(never)
     return f"{head_msg}; got {first!r}, {second!r} and perhaps more"
 

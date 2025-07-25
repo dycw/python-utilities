@@ -58,7 +58,7 @@ class DatePeriod:
                 start = end = time
             case Time() as start, Time() as end:
                 ...
-            case _ as never:
+            case never:
                 assert_never(never)
         tz = ensure_time_zone(time_zone).key
         return ZonedDateTimePeriod(
@@ -119,7 +119,7 @@ class TimePeriod:
                 start = end = date
             case Date() as start, Date() as end:
                 ...
-            case _ as never:
+            case never:
                 assert_never(never)
         return DatePeriod(start, end).at((self.start, self.end), time_zone=time_zone)
 

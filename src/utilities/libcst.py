@@ -54,7 +54,7 @@ def generate_import_from(
         case _, str():
             alias = ImportAlias(name=Name(name), asname=AsName(Name(asname)))
             names = [alias]
-        case _ as never:
+        case never:
             assert_never(never)
     return ImportFrom(module=split_dotted_str(module), names=names)
 
@@ -92,9 +92,9 @@ def parse_import(import_: Import | ImportFrom, /) -> Sequence[_ParseImportOutput
                     return [_parse_import_from_one(module, n) for n in names]
                 case ImportStar():
                     return [_ParseImportOutput(module=module, name="*")]
-                case _ as never:
+                case never:
                     assert_never(never)
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -108,7 +108,7 @@ def _parse_import_from_one(module: str, alias: ImportAlias, /) -> _ParseImportOu
             return _ParseImportOutput(module=module, name=name)
         case Attribute() as attr:
             raise _ParseImportAliasError(module=module, attr=attr)
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -162,7 +162,7 @@ def join_dotted_str(name_or_attr: Name | Attribute, /) -> str:
                 curr = value
             case BaseExpression():  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{curr=}"])
-            case _ as never:
+            case never:
                 assert_never(never)
     return ".".join(reversed(parts))
 
@@ -180,7 +180,7 @@ def render_module(source: str | Module, /) -> str:
                 return text
         case Module() as module:
             return render_module(module.code)
-        case _ as never:
+        case never:
             assert_never(never)
 
 

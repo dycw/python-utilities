@@ -84,7 +84,7 @@ def concurrent_starmap[T](
                 initargs=initargs,
             ) as pool:
                 result = pool.map(apply, iterable, timeout=timeout, chunksize=chunksize)
-        case _ as never:
+        case never:
             assert_never(never)
     return list(result)
 

@@ -61,7 +61,7 @@ def get_max_pid() -> int | None:
                 return int(path.read_text())
             except FileNotFoundError:  # pragma: no cover
                 return None
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -80,7 +80,7 @@ def get_strftime(text: str, /) -> str:
             return text
         case "linux":  # skipif-not-linux
             return sub("%Y", "%4Y", text)
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -96,7 +96,7 @@ def maybe_yield_lower_case(text: Iterable[str], /) -> Iterator[str]:
             yield from (t.lower() for t in text)
         case "linux":  # skipif-not-linux
             yield from text
-        case _ as never:
+        case never:
             assert_never(never)
 
 

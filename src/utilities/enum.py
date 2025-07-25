@@ -95,7 +95,7 @@ def parse_enum[E: Enum](
                 by_name=by_name.name,
                 by_value=by_value.name,
             )
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -116,7 +116,7 @@ def _parse_enum_one[E: Enum](
             names = [e.name for e in enum]
         case "values":
             names = [ensure_str(e.value) for e in enum]
-        case _ as never:
+        case never:
             assert_never(never)
     try:
         name = one_str(names, value, case_sensitive=case_sensitive)

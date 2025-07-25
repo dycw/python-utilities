@@ -38,7 +38,7 @@ def ensure_time_zone(obj: TimeZoneLike, /) -> ZoneInfo:
             if datetime.tzinfo is None:
                 raise _EnsureTimeZonePlainDateTimeError(datetime=datetime)
             return ensure_time_zone(datetime.tzinfo)
-        case _ as never:
+        case never:
             assert_never(never)
 
 

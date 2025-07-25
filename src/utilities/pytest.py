@@ -207,7 +207,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
 
             return cast("Any", throttle_async_on_try)
 
-        case _ as never:
+        case never:
             assert_never(never)
 
 

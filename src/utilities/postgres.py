@@ -190,7 +190,7 @@ def _path_pg_dump(path: PathLike, /, *, format_: _PGDumpFormat = "plain") -> Pat
             suffix = None
         case "tar":
             suffix = ".tar"
-        case _ as never:
+        case never:
             assert_never(never)
     path = Path(path)
     if suffix is not None:
@@ -379,7 +379,7 @@ def _get_table_name(obj: TableOrORMInstOrClass | str, /) -> str:
             return get_table_name(table_or_orm)
         case str() as name:
             return name
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -395,7 +395,7 @@ def _resolve_data_only_and_clean(
             return ["--clean", "--if-exists"]
         case True, True:
             raise _ResolveDataOnlyAndCleanError
-        case _ as never:
+        case never:
             assert_never(never)
 
 

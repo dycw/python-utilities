@@ -85,7 +85,7 @@ class Date(ParamType):
                     return whenever.Date.parse_common_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
-            case _ as never:
+            case never:
                 assert_never(never)
 
 
@@ -111,7 +111,7 @@ class DateDelta(ParamType):
                     return whenever.DateDelta.parse_common_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
-            case _ as never:
+            case never:
                 assert_never(never)
 
 
@@ -137,7 +137,7 @@ class DateTimeDelta(ParamType):
                     return whenever.DateTimeDelta.parse_common_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
-            case _ as never:
+            case never:
                 assert_never(never)
 
 
@@ -196,7 +196,7 @@ class IPv4Address(ParamType):
                     return parse_object(ipaddress.IPv4Address, value)
                 except ParseObjectError as error:
                     self.fail(str(error), param, ctx)
-            case _ as never:
+            case never:
                 assert_never(never)
 
 
@@ -222,7 +222,7 @@ class IPv6Address(ParamType):
                     return parse_object(ipaddress.IPv6Address, value)
                 except ParseObjectError as error:
                     self.fail(str(error), param, ctx)
-            case _ as never:
+            case never:
                 assert_never(never)
 
 
@@ -248,7 +248,7 @@ class MonthDay(ParamType):
                     return whenever.MonthDay.parse_common_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
-            case _ as never:
+            case never:
                 assert_never(never)
 
 
@@ -274,7 +274,7 @@ class PlainDateTime(ParamType):
                     return whenever.PlainDateTime.parse_common_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
-            case _ as never:
+            case never:
                 assert_never(never)
 
 
@@ -300,7 +300,7 @@ class Time(ParamType):
                     return whenever.Time.parse_common_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
-            case _ as never:
+            case never:
                 assert_never(never)
 
 
@@ -326,7 +326,7 @@ class TimeDelta(ParamType):
                     return whenever.TimeDelta.parse_common_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
-            case _ as never:
+            case never:
                 assert_never(never)
 
 
@@ -352,7 +352,7 @@ class UUID(ParamType):
                     return uuid.UUID(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
-            case _ as never:
+            case never:
                 assert_never(never)
 
 
@@ -378,7 +378,7 @@ class YearMonth(ParamType):
                     return whenever.YearMonth.parse_common_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
-            case _ as never:
+            case never:
                 assert_never(never)
 
 
@@ -404,7 +404,7 @@ class ZonedDateTime(ParamType):
                     return whenever.ZonedDateTime.parse_common_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
-            case _ as never:
+            case never:
                 assert_never(never)
 
 

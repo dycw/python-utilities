@@ -214,7 +214,7 @@ def format_compact(
             fmt_use = "%Y%m%dT%H%M%S" if fmt is None else fmt
         case ZonedDateTime() as datetime:
             return f"{format_compact(datetime.to_plain(), fmt=fmt)}[{datetime.tz}]"
-        case _ as never:
+        case never:
             assert_never(never)
     return obj_use.strftime(get_strftime(fmt_use))
 
@@ -396,7 +396,7 @@ def round_date_or_date_time[T: Date | PlainDateTime | ZonedDateTime](
             raise _RoundDateOrDateTimeDateTimeIntraDayWithWeekdayError(
                 date_time=date_time, delta=delta, weekday=weekday
             )
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -490,7 +490,7 @@ def _round_date_weekly_or_daily(
             return _round_date_daily(date, increment, mode=mode)
         case "D", Weekday():
             raise _RoundDateOrDateTimeDateWithWeekdayError(weekday=weekday)
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -536,7 +536,7 @@ def _round_date_daily(
             threshold = increment // 2 + 1
         case "half_ceil":
             threshold = increment // 2 or 1
-        case _ as never:
+        case never:
             assert_never(never)
     round_up = remainder >= threshold
     return base.add(days=(quotient + round_up) * increment)
@@ -563,7 +563,7 @@ def _round_date_time_intraday[T: PlainDateTime | ZonedDateTime](
             unit_use = "microsecond"
         case "ns":
             unit_use = "nanosecond"
-        case _ as never:
+        case never:
             assert_never(never)
     return date_time.round(unit_use, increment=increment, mode=mode)
 
@@ -662,7 +662,7 @@ def to_date(
             return date
         case Callable() as func:
             return to_date(date=func())
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -729,7 +729,7 @@ def to_days(delta: Delta, /) -> int:
                 raise _ToDaysNanosecondsError(
                     delta=delta, nanoseconds=error.nanoseconds
                 ) from None
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -785,7 +785,7 @@ def to_hours(delta: Delta, /) -> int:
                 raise _ToHoursNanosecondsError(
                     delta=delta, nanoseconds=error.nanoseconds
                 ) from None
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -856,7 +856,7 @@ def to_microseconds(delta: Delta, /) -> int:
                 raise _ToMicrosecondsNanosecondsError(
                     delta=delta, nanoseconds=error.nanoseconds
                 ) from None
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -919,7 +919,7 @@ def to_milliseconds(delta: Delta, /) -> int:
                 raise _ToMillisecondsNanosecondsError(
                     delta=delta, nanoseconds=error.nanoseconds
                 ) from None
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -974,7 +974,7 @@ def to_minutes(delta: Delta, /) -> int:
                 raise _ToMinutesNanosecondsError(
                     delta=delta, nanoseconds=error.nanoseconds
                 ) from None
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -1020,7 +1020,7 @@ def to_months(delta: DateOrDateTimeDelta, /) -> int:
                 return to_months(delta.date_part())
             except _ToMonthsDaysError as error:
                 raise _ToMonthsDaysError(delta=delta, days=error.days) from None
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -1059,7 +1059,7 @@ def to_months_and_days(delta: DateOrDateTimeDelta, /) -> tuple[int, int]:
             if delta.time_part() != TimeDelta():
                 raise ToMonthsAndDaysError(delta=delta)
             return to_months_and_days(delta.date_part())
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -1093,7 +1093,7 @@ def to_nanoseconds(delta: Delta, /) -> int:
                 )
             except ToNanosecondsError as error:
                 raise ToNanosecondsError(delta=delta, months=error.months) from None
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -1127,7 +1127,7 @@ def to_py_date_or_date_time(
             return date_time.py_datetime()
         case None:
             return None
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -1155,7 +1155,7 @@ def to_py_time_delta(delta: Delta | None, /) -> dt.timedelta | None:
             )
         case None:
             return None
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -1273,7 +1273,7 @@ def to_seconds(delta: Delta, /) -> int:
                 raise _ToSecondsNanosecondsError(
                     delta=delta, nanoseconds=error.nanoseconds
                 ) from None
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -1376,7 +1376,7 @@ def to_years(delta: DateOrDateTimeDelta, /) -> int:
                 raise _ToYearsMonthsError(delta=delta, months=error.months) from None
             except _ToYearsDaysError as error:
                 raise _ToYearsDaysError(delta=delta, days=error.days) from None
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -1439,7 +1439,7 @@ def to_zoned_date_time(
             raise ToZonedDateTimeError(date_time=date_time)
         case Callable() as func:
             return to_zoned_date_time(date_time=func())
-        case _ as never:
+        case never:
             assert_never(never)
     return None
 
