@@ -1500,14 +1500,14 @@ class TestGetDataTypeOrSeriesTimeZone:
                 dtype = zoned_datetime_dtype(time_zone=time_zone)
             case "struct":
                 dtype = zoned_datetime_period_dtype(time_zone=time_zone)
-            case _ as never:
+            case never:
                 assert_never(never)
         match dtype_or_series:
             case "dtype":
                 obj = dtype
             case "series":
                 obj = Series(dtype=dtype)
-            case _ as never:
+            case never:
                 assert_never(never)
         result = get_data_type_or_series_time_zone(obj)
         assert result is time_zone

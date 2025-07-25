@@ -386,7 +386,7 @@ class RedisKey[T]:
         match result:  # skipif-ci-and-not-linux
             case 0 | 1 as value:
                 return bool(value)
-            case _ as never:
+            case never:
                 assert_never(never)
 
     async def get(self, redis: Redis, /) -> T:
@@ -561,7 +561,7 @@ async def publish[T](
             raise PublishError(data=data)
         case _, Callable():
             data_use = serializer(data)
-        case _ as never:
+        case never:
             assert_never(never)
     async with timeout_td(timeout):  # skipif-ci-and-not-linux
         response = await redis.publish(channel, data_use)  # skipif-ci-and-not-linux
@@ -710,7 +710,7 @@ async def subscribe[T](
             def transform(message: _RedisMessage, /) -> T:
                 return deserialize(message["data"])
 
-        case _ as never:
+        case never:
             assert_never(never)
 
     task = create_task(  # skipif-ci-and-not-linux

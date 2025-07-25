@@ -275,7 +275,7 @@ class EnhancedTaskGroup(TaskGroup):
                     _ = await super().__aexit__(et, exc, tb)
             case False:
                 _ = await super().__aexit__(et, exc, tb)
-            case _ as never:
+            case never:
                 assert_never(never)
 
     @override
@@ -312,7 +312,7 @@ class EnhancedTaskGroup(TaskGroup):
                     self.create_task(make_coro(*args, **kwargs))
                     for _ in range(self._max_tasks)
                 ]
-            case _ as never:
+            case never:
                 assert_never(never)
 
     async def run_or_create_task[T](
@@ -327,7 +327,7 @@ class EnhancedTaskGroup(TaskGroup):
                 return await coro
             case False:
                 return self.create_task(coro, name=name, context=context)
-            case _ as never:
+            case never:
                 assert_never(never)
 
     def _is_debug(self) -> bool:

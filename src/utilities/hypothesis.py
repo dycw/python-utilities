@@ -180,14 +180,14 @@ def date_deltas(
             min_value_ = DATE_DELTA_MIN
         case DateDelta():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     match max_value_:
         case None:
             max_value_ = DATE_DELTA_MAX
         case DateDelta():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     min_days = to_days(min_value_)
     max_days = to_days(max_value_)
@@ -217,14 +217,14 @@ def date_time_deltas(
             min_value_ = DATE_TIME_DELTA_MIN
         case DateTimeDelta():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     match max_value_:
         case None:
             max_value_ = DATE_TIME_DELTA_MAX
         case DateTimeDelta():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     min_nanos, max_nanos = map(to_nanoseconds, [min_value_, max_value_])
     if draw2(draw, parsable):
@@ -253,14 +253,14 @@ def dates(
             min_value_ = Date.MIN
         case Date():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     match max_value_:
         case None:
             max_value_ = Date.MAX
         case Date():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     if draw2(draw, two_digit):
         min_value_ = max(min_value_, DATE_TWO_DIGIT_YEAR_MIN)
@@ -343,7 +343,7 @@ def draw2[T](
             raise _Draw2InputResolvedToSentinelError
         case _, _, _:
             return value
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -672,14 +672,14 @@ def month_days(
             min_value_ = MonthDay.MIN
         case MonthDay():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     match max_value_:
         case None:
             max_value_ = MonthDay.MAX
         case MonthDay():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     min_date, max_date = [m.in_year(2000) for m in [min_value_, max_value_]]
     date = draw(dates(min_value=min_date, max_value=max_date))
@@ -794,14 +794,14 @@ def plain_datetimes(
             min_value_ = PlainDateTime.MIN
         case PlainDateTime():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     match max_value_:
         case None:
             max_value_ = PlainDateTime.MAX
         case PlainDateTime():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     py_datetime = draw(
         datetimes(
@@ -887,7 +887,7 @@ def setup_hypothesis_profiles(
                     return 100
                 case Profile.ci:
                     return 1000
-                case _ as never:
+                case never:
                     assert_never(never)
 
         @property
@@ -897,7 +897,7 @@ def setup_hypothesis_profiles(
                     return Verbosity.quiet
                 case Profile.ci:
                     return Verbosity.verbose
-                case _ as never:
+                case never:
                     assert_never(never)
 
     phases = {Phase.explicit, Phase.reuse, Phase.generate, Phase.target}
@@ -1154,14 +1154,14 @@ def time_deltas(
             min_value_ = TIME_DELTA_MIN
         case TimeDelta():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     match max_value_:
         case None:
             max_value_ = TIME_DELTA_MAX
         case TimeDelta():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     py_time = draw(
         hypothesis.strategies.timedeltas(
@@ -1189,14 +1189,14 @@ def times(
             min_value_ = Time.MIN
         case Time():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     match max_value_:
         case None:
             max_value_ = Time.MAX
         case Time():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     py_time = draw(
         hypothesis.strategies.times(
@@ -1356,14 +1356,14 @@ def year_months(
             min_value_ = YearMonth.MIN
         case YearMonth():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     match max_value_:
         case None:
             max_value_ = YearMonth.MAX
         case YearMonth():
             ...
-        case _ as never:
+        case never:
             assert_never(never)
     min_date, max_date = [m.on_day(1) for m in [min_value_, max_value_]]
     date = draw(dates(min_value=min_date, max_value=max_date, two_digit=two_digit))
@@ -1391,7 +1391,7 @@ def zoned_datetimes(
         case ZonedDateTime():
             with assume_does_not_raise(ValueError):
                 min_value_ = min_value_.to_tz(time_zone_.key).to_plain()
-        case _ as never:
+        case never:
             assert_never(never)
     match max_value_:
         case None | PlainDateTime():
@@ -1399,7 +1399,7 @@ def zoned_datetimes(
         case ZonedDateTime():
             with assume_does_not_raise(ValueError):
                 max_value_ = max_value_.to_tz(time_zone_.key).to_plain()
-        case _ as never:
+        case never:
             assert_never(never)
     plain = draw(plain_datetimes(min_value=min_value_, max_value=max_value_))
     with (

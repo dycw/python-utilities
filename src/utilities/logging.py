@@ -144,7 +144,7 @@ def basic_config(
                 color_field_styles=color_field_styles,
             )
             handler.setFormatter(formatter)
-        case _ as never:
+        case never:
             assert_never(never)
 
 
@@ -275,7 +275,7 @@ def get_logger(*, logger: LoggerOrName | None = None) -> Logger:
             return logger
         case str() | None:
             return getLogger(logger)
-        case _ as never:
+        case never:
             assert_never(never)
 
 
