@@ -41,7 +41,7 @@ if TYPE_CHECKING:
         DateOrDateTimeDelta,
         DateTimeRoundMode,
         Delta,
-        MaybeCallableDate,
+        MaybeCallableDateLike,
         MaybeCallableZonedDateTime,
         TimeOrDateTimeDelta,
         TimeZoneLike,
@@ -642,26 +642,26 @@ class _RoundDateOrDateTimeDateTimeIntraDayWithWeekdayError(RoundDateOrDateTimeEr
 
 
 @overload
-def to_date(*, date: MaybeCallableDate) -> Date: ...
+def to_date(date: MaybeCallableDateLike, /) -> Date: ...
 @overload
-def to_date(*, date: None) -> None: ...
+def to_date(date: None, /) -> None: ...
 @overload
-def to_date(*, date: Sentinel) -> Sentinel: ...
+def to_date(date: Sentinel, /) -> Sentinel: ...
 @overload
-def to_date(*, date: MaybeCallableDate | Sentinel) -> Date | Sentinel: ...
+def to_date(date: MaybeCallableDateLike | Sentinel, /) -> Date | Sentinel: ...
 @overload
 def to_date(
-    *, date: MaybeCallableDate | None | Sentinel = sentinel
+    date: MaybeCallableDateLike | None | Sentinel = sentinel, /
 ) -> Date | None | Sentinel: ...
 def to_date(
-    *, date: MaybeCallableDate | None | Sentinel = sentinel
+    date: MaybeCallableDateLike | None | Sentinel = sentinel, /
 ) -> Date | None | Sentinel:
     """Get the date."""
     match date:
         case Date() | None | Sentinel():
             return date
         case Callable() as func:
-            return to_date(date=func())
+            return to_date(func())
         case never:
             assert_never(never)
 

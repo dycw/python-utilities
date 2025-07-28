@@ -29,8 +29,8 @@ from utilities.pathlib import (
     is_sub_path,
     list_dir,
     module_path,
-    resolve_path,
     temp_cwd,
+    to_path,
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TemporaryDirectory
@@ -275,20 +275,28 @@ class TestModulePath:
         assert module == expected
 
 
-class TestResolvePath:
+class TestTempCWD:
+    def test_main(self, *, tmp_path: Path) -> None:
+        assert Path.cwd() != tmp_path
+        with temp_cwd(tmp_path):
+            assert Path.cwd() == tmp_path
+        assert Path.cwd() != tmp_path
+
+
+class TestToPath:
     @given(path=paths())
     def test_path(self, *, path: Path) -> None:
-        assert resolve_path(path) == path
+        assert to_path(path) == path
 
     @given(path=paths())
     def test_str(self, *, path: Path) -> None:
-        assert resolve_path(str(path)) == path
+        assert to_path(str(path)) == path
 
     def test_none(self) -> None:
-        assert resolve_path(None) == Path.cwd()
+        assert to_path(None) == Path.cwd()
 
     def test_sentinel(self) -> None:
-        assert resolve_path(sentinel) is sentinel
+        assert to_path(sentinel) is sentinel
 
     @given(path1=paths(), path2=paths())
     def test_replace_non_sentinel(self, *, path1: Path, path2: Path) -> None:
@@ -299,7 +307,7 @@ class TestResolvePath:
             def replace(
                 self, *, path: MaybeCallablePathLike | Sentinel = sentinel
             ) -> Self:
-                return replace_non_sentinel(self, path=resolve_path(path))
+                return replace_non_sentinel(self, path=to_path(path))
 
         obj = Example(path=path1)
         assert obj.path == path1
@@ -308,12 +316,4 @@ class TestResolvePath:
 
     @given(path=paths())
     def test_callable(self, *, path: Path) -> None:
-        assert resolve_path(lambda: path) == path
-
-
-class TestTempCWD:
-    def test_main(self, *, tmp_path: Path) -> None:
-        assert Path.cwd() != tmp_path
-        with temp_cwd(tmp_path):
-            assert Path.cwd() == tmp_path
-        assert Path.cwd() != tmp_path
+        assert to_path(lambda: path) == path

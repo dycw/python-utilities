@@ -140,7 +140,7 @@ if TYPE_CHECKING:
         DateOrDateTimeDelta,
         DateTimeRoundMode,
         Delta,
-        MaybeCallableDate,
+        MaybeCallableDateLike,
         MaybeCallableZonedDateTime,
         TimeOrDateTimeDelta,
     )
@@ -655,11 +655,11 @@ class TestRoundDateOrDateTime:
 class TestToDate:
     @given(date=dates())
     def test_date(self, *, date: Date) -> None:
-        assert to_date(date=date) == date
+        assert to_date(date) == date
 
     @given(date=none() | sentinels())
     def test_none_or_sentinel(self, *, date: None | Sentinel) -> None:
-        assert to_date(date=date) is date
+        assert to_date(date) is date
 
     @given(date1=dates(), date2=dates())
     def test_replace_non_sentinel(self, *, date1: Date, date2: Date) -> None:
@@ -667,8 +667,10 @@ class TestToDate:
         class Example:
             date: Date = field(default_factory=get_today)
 
-            def replace(self, *, date: MaybeCallableDate | Sentinel = sentinel) -> Self:
-                return replace_non_sentinel(self, date=to_date(date=date))
+            def replace(
+                self, *, date: MaybeCallableDateLike | Sentinel = sentinel
+            ) -> Self:
+                return replace_non_sentinel(self, date=to_date(date))
 
         obj = Example(date=date1)
         assert obj.date == date1
@@ -678,7 +680,7 @@ class TestToDate:
 
     @given(date=dates())
     def test_callable(self, *, date: Date) -> None:
-        assert to_date(date=lambda: date) == date
+        assert to_date(lambda: date) == date
 
 
 class TestToDays:
