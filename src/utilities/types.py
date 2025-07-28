@@ -18,6 +18,7 @@ from typing import (
     overload,
     runtime_checkable,
 )
+from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from whenever import (
@@ -232,6 +233,11 @@ type ExcInfo = tuple[type[BaseException], BaseException, TracebackType]
 type OptExcInfo = ExcInfo | tuple[None, None, None]
 
 
+# uuid
+type UUIDLike = MaybeStr[UUID]
+type MaybeCallableUUIDLike = MaybeCallable[UUIDLike | Seed]
+
+
 # whenever
 type DateDeltaLike = MaybeStr[DateDelta]
 type DateLike = MaybeStr[Date]
@@ -286,6 +292,7 @@ __all__ = [
     "MaybeCallableDateLike",
     "MaybeCallablePathLike",
     "MaybeCallableStr",
+    "MaybeCallableUUIDLike",
     "MaybeCallableZonedDateTimeLike",
     "MaybeCollection",
     "MaybeCollectionStr",
@@ -330,6 +337,7 @@ __all__ = [
     "TimeZoneLike",
     "TupleOrStrMapping",
     "TypeLike",
+    "UUIDLike",
     "WeekDay",
     "YearMonthLike",
     "ZonedDateTimeLike",

@@ -896,8 +896,10 @@ class TestToDate:
     def test_none_or_sentinel(self, *, date: None | Sentinel) -> None:
         assert to_date(date) is date
 
-    @given(date1=dates(), date2=dates())
-    def test_replace_non_sentinel(self, *, date1: Date, date2: Date) -> None:
+    @given(dates=pairs(dates()))
+    def test_replace_non_sentinel(self, *, dates: tuple[Date, Date]) -> None:
+        date1, date2 = dates
+
         @dataclass(kw_only=True, slots=True)
         class Example:
             date: Date = field(default_factory=get_today)
