@@ -46,7 +46,7 @@ from utilities.types import SupportsAdd, SupportsLT
 if TYPE_CHECKING:
     from types import NoneType
 
-    from utilities.types import MaybeIterable, MaybeIterableHashable, Sign, StrMapping
+    from utilities.types import MaybeIterable, Sign, StrMapping
 
 
 ##
@@ -61,16 +61,6 @@ def always_iterable[T](obj: MaybeIterable[T], /) -> Iterable[T]:
         return iter(cast("Iterable[T]", obj))
     except TypeError:
         return cast("list[T]", [obj])
-
-
-##
-
-
-def always_iterable_hashable[T](
-    obj: MaybeIterable[T] | None, /
-) -> MaybeIterableHashable[T] | None:
-    """Ensure an object is always hashable."""
-    return None if obj is None else tuple(always_iterable(obj))
 
 
 ##
@@ -1489,7 +1479,6 @@ __all__ = [
     "ResolveIncludeAndExcludeError",
     "SortIterableError",
     "always_iterable",
-    "always_iterable_hashable",
     "apply_bijection",
     "apply_to_tuple",
     "apply_to_varargs",

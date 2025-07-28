@@ -68,7 +68,6 @@ from utilities.iterables import (
     _RangePartitionsTotalError,
     _sort_iterable_cmp_floats,
     always_iterable,
-    always_iterable_hashable,
     apply_bijection,
     apply_to_tuple,
     apply_to_varargs,
@@ -164,27 +163,6 @@ class TestAlwaysIterable:
             yield 1
 
         assert list(always_iterable(yield_ints())) == [0, 1]
-
-
-class TestAlwaysIterableHashable:
-    def test_none(self) -> None:
-        assert always_iterable_hashable(None) is None
-
-    @given(x=integers())
-    def test_integer(self, *, x: int) -> None:
-        assert always_iterable_hashable(x) == (x,)
-
-    @given(x=text())
-    def test_string(self, *, x: str) -> None:
-        assert always_iterable_hashable(x) == (x,)
-
-    @given(x=lists(integers()))
-    def test_list_of_integers(self, *, x: list[int]) -> None:
-        assert always_iterable_hashable(x) == tuple(x)
-
-    @given(x=lists(text()))
-    def test_list_of_strings(self, *, x: list[str]) -> None:
-        assert always_iterable_hashable(x) == tuple(x)
 
 
 class TestApplyBijection:
