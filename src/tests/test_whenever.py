@@ -434,7 +434,7 @@ class TestGetNow:
     @given(time_zone=timezones())
     def test_function(self, *, time_zone: ZoneInfo) -> None:
         with assume_does_not_raise(TimeZoneNotFoundError):
-            now = get_now(time_zone=time_zone)
+            now = get_now(time_zone)
         assert isinstance(now, ZonedDateTime)
         assert now.tz == time_zone.key
 

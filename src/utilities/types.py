@@ -114,10 +114,11 @@ IPv6AddressLike = MaybeStr[IPv6Address]
 
 
 # iterables
+type SequenceLT[T] = list[T] | tuple[T, ...]
+# iterables - maybe
 type MaybeCollection[T] = T | Collection[T]
 type MaybeIterable[T] = T | Iterable[T]
 type MaybeSequence[T] = T | SequenceLT[T]
-type SequenceLT[T] = list[T] | tuple[T, ...]
 # iterables - str
 type SequenceStr = SequenceLT[str]
 type CollectionStr = dict[str, Any] | frozenset[str] | set[str] | SequenceStr
@@ -128,7 +129,7 @@ type MaybeSequenceStr = str | SequenceStr
 
 # logging
 type LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-type LoggerOrName = MaybeStr[Logger]
+type LoggerLike = MaybeStr[Logger]
 
 
 # math
@@ -212,8 +213,8 @@ type SerializeObjectExtra = Mapping[Any, Callable[[Any], str]]
 
 
 # pathlib
-type MaybeCallablePathLike = MaybeCallable[PathLike]
 type PathLike = MaybeStr[Path]
+type MaybeCallablePathLike = MaybeCallable[PathLike]
 
 
 # random
@@ -285,7 +286,7 @@ __all__ = [
     "IPv4AddressLike",
     "IPv6AddressLike",
     "LogLevel",
-    "LoggerOrName",
+    "LoggerLike",
     "MathRoundMode",
     "MaybeCallable",
     "MaybeCallableBoolLike",

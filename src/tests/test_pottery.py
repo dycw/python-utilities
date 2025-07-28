@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from redis.asyncio import Redis
     from whenever import TimeDelta
 
-    from utilities.types import LoggerOrName
+    from utilities.types import LoggerLike
 
 
 class TestExtendLock:
@@ -79,7 +79,7 @@ class TestTryYieldCoroutineLooper:
         lst: list[None],
         /,
         *,
-        logger: LoggerOrName | None = None,
+        logger: LoggerLike | None = None,
         context: ContextVar[bool] | None = None,
     ) -> None:
         async with try_yield_coroutine_looper(
@@ -95,7 +95,7 @@ class TestTryYieldCoroutineLooper:
         lst: list[None],
         /,
         *,
-        logger: LoggerOrName | None = None,
+        logger: LoggerLike | None = None,
         context: ContextVar[bool] | None = None,
     ) -> None:
         await sleep_td(self.delta)

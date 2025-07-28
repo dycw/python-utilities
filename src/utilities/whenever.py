@@ -353,17 +353,17 @@ def from_timestamp_nanos(i: int, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDa
 ##
 
 
-def get_now(*, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
+def get_now(time_zone: TimeZoneLike = UTC, /) -> ZonedDateTime:
     """Get the current zoned datetime."""
     return ZonedDateTime.now(get_time_zone_name(time_zone))
 
 
-NOW_UTC = get_now(time_zone=UTC)
+NOW_UTC = get_now(UTC)
 
 
 def get_now_local() -> ZonedDateTime:
     """Get the current local time."""
-    return get_now(time_zone=LOCAL_TIME_ZONE)
+    return get_now(LOCAL_TIME_ZONE)
 
 
 NOW_LOCAL = get_now_local()
@@ -372,17 +372,17 @@ NOW_LOCAL = get_now_local()
 ##
 
 
-def get_today(*, time_zone: TimeZoneLike = UTC) -> Date:
+def get_today(time_zone: TimeZoneLike = UTC, /) -> Date:
     """Get the current, timezone-aware local date."""
-    return get_now(time_zone=time_zone).date()
+    return get_now(time_zone).date()
 
 
-TODAY_UTC = get_today(time_zone=UTC)
+TODAY_UTC = get_today(UTC)
 
 
 def get_today_local() -> Date:
     """Get the current, timezone-aware local date."""
-    return get_today(time_zone=LOCAL_TIME_ZONE)
+    return get_today(LOCAL_TIME_ZONE)
 
 
 TODAY_LOCAL = get_today_local()
@@ -429,7 +429,7 @@ def min_max_date(
     time_zone: TimeZoneLike = UTC,
 ) -> tuple[Date | None, Date | None]:
     """Compute the min/max date given a combination of dates/ages."""
-    today = get_today(time_zone=time_zone)
+    today = get_today(time_zone)
     min_parts: list[Date] = []
     if min_date is not None:
         min_parts.append(min_date)

@@ -70,7 +70,7 @@ if TYPE_CHECKING:
         Coro,
         Delta,
         ExceptionTypeLike,
-        LoggerOrName,
+        LoggerLike,
         MaybeCallableBoolLike,
         MaybeType,
         PathLike,
@@ -403,7 +403,7 @@ async def loop_until_succeed(
     func: Callable[[], Coro[None]],
     /,
     *,
-    logger: LoggerOrName | None = None,
+    logger: LoggerLike | None = None,
     errors: ExceptionTypeLike[Exception] | None = None,
     sleep: Delta | None = None,
 ) -> bool:
