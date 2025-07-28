@@ -45,7 +45,7 @@ if TYPE_CHECKING:
     from utilities.types import (
         MaybeCallableBool,
         MaybeCallablePathLike,
-        MaybeCallableZonedDateTime,
+        MaybeCallableZonedDateTimeLike,
         PathLike,
     )
     from utilities.version import MaybeCallableVersionLike
@@ -62,7 +62,7 @@ def format_exception_stack(
     /,
     *,
     header: bool = False,
-    start: MaybeCallableZonedDateTime | None = _START,
+    start: MaybeCallableZonedDateTimeLike | None = _START,
     version: MaybeCallableVersionLike | None = None,
     capture_locals: bool = False,
     max_width: int = RICH_MAX_WIDTH,
@@ -93,7 +93,7 @@ def format_exception_stack(
 
 def _yield_header_lines(
     *,
-    start: MaybeCallableZonedDateTime | None = _START,
+    start: MaybeCallableZonedDateTimeLike | None = _START,
     version: MaybeCallableVersionLike | None = None,
 ) -> Iterator[str]:
     """Yield the header lines."""
@@ -205,7 +205,7 @@ def _trim_path(path: PathLike, pattern: str, /) -> Path | None:
 
 def make_except_hook(
     *,
-    start: MaybeCallableZonedDateTime | None = _START,
+    start: MaybeCallableZonedDateTimeLike | None = _START,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
     max_width: int = RICH_MAX_WIDTH,
@@ -242,7 +242,7 @@ def _make_except_hook_inner(
     traceback: TracebackType | None,
     /,
     *,
-    start: MaybeCallableZonedDateTime | None = _START,
+    start: MaybeCallableZonedDateTimeLike | None = _START,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
     max_width: int = RICH_MAX_WIDTH,

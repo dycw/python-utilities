@@ -42,7 +42,7 @@ if TYPE_CHECKING:
         DateTimeRoundMode,
         Delta,
         MaybeCallableDateLike,
-        MaybeCallableZonedDateTime,
+        MaybeCallableZonedDateTimeLike,
         TimeOrDateTimeDelta,
         TimeZoneLike,
     )
@@ -1416,19 +1416,25 @@ class _ToYearsTimeError(ToYearsError):
 
 @overload
 def to_zoned_date_time(
-    *, date_time: MaybeCallableZonedDateTime | dt.datetime
+    date_time: MaybeCallableZonedDateTimeLike | dt.datetime, /
 ) -> ZonedDateTime: ...
 @overload
-def to_zoned_date_time(*, date_time: None) -> None: ...
+def to_zoned_date_time(date_time: None, /) -> None: ...
 @overload
-def to_zoned_date_time(*, date_time: Sentinel) -> Sentinel: ...
+def to_zoned_date_time(date_time: Sentinel, /) -> Sentinel: ...
 def to_zoned_date_time(
-    *, date_time: MaybeCallableZonedDateTime | dt.datetime | None | Sentinel = sentinel
+    date_time: MaybeCallableZonedDateTimeLike
+    | dt.datetime
+    | None
+    | Sentinel = sentinel,
+    /,
 ) -> ZonedDateTime | None | Sentinel:
     """Resolve into a zoned date_time."""
     match date_time:
         case ZonedDateTime() | None | Sentinel():
             return date_time
+        case str():
+            return ZonedDateTime.parse_common_iso(date_time)
         case dt.datetime():
             if isinstance(date_time.tzinfo, ZoneInfo):
                 return ZonedDateTime.from_py_datetime(date_time)
@@ -1436,10 +1442,9 @@ def to_zoned_date_time(
                 return ZonedDateTime.from_py_datetime(date_time.astimezone(UTC))
             raise ToZonedDateTimeError(date_time=date_time)
         case Callable() as func:
-            return to_zoned_date_time(date_time=func())
+            return to_zoned_date_time(func())
         case never:
             assert_never(never)
-    return None
 
 
 @dataclass(kw_only=True, slots=True)

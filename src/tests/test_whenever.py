@@ -141,7 +141,7 @@ if TYPE_CHECKING:
         DateTimeRoundMode,
         Delta,
         MaybeCallableDateLike,
-        MaybeCallableZonedDateTime,
+        MaybeCallableZonedDateTimeLike,
         TimeOrDateTimeDelta,
     )
 
@@ -1198,21 +1198,19 @@ class TestToYears:
 class TestToZonedDateTime:
     @given(date_time=zoned_datetimes())
     def test_date_time(self, *, date_time: ZonedDateTime) -> None:
-        assert to_zoned_date_time(date_time=date_time) == date_time
+        assert to_zoned_date_time(date_time) == date_time
 
     @given(date_time=none() | sentinels())
     def test_none_or_sentinel(self, *, date_time: None | Sentinel) -> None:
-        assert to_zoned_date_time(date_time=date_time) is date_time
+        assert to_zoned_date_time(date_time) is date_time
 
     @given(date_time=zoned_datetimes_2000)
     def test_py_date_time_zone_info(self, *, date_time: ZonedDateTime) -> None:
-        assert to_zoned_date_time(date_time=date_time.py_datetime()) == date_time
+        assert to_zoned_date_time(date_time.py_datetime()) == date_time
 
     @given(date_time=zoned_datetimes_2000)
     def test_py_date_time_dt_utc(self, *, date_time: ZonedDateTime) -> None:
-        result = to_zoned_date_time(
-            date_time=date_time.py_datetime().astimezone(dt.UTC)
-        )
+        result = to_zoned_date_time(date_time.py_datetime().astimezone(dt.UTC))
         assert result == date_time
 
     @given(date_time1=zoned_datetimes(), date_time2=zoned_datetimes())
@@ -1224,10 +1222,10 @@ class TestToZonedDateTime:
             date_time: ZonedDateTime = field(default_factory=get_now)
 
             def replace(
-                self, *, date_time: MaybeCallableZonedDateTime | Sentinel = sentinel
+                self, *, date_time: MaybeCallableZonedDateTimeLike | Sentinel = sentinel
             ) -> Self:
                 return replace_non_sentinel(
-                    self, date_time=to_zoned_date_time(date_time=date_time)
+                    self, date_time=to_zoned_date_time(date_time)
                 )
 
         obj = Example(date_time=date_time1)
@@ -1238,14 +1236,14 @@ class TestToZonedDateTime:
 
     @given(date_time=zoned_datetimes())
     def test_callable(self, *, date_time: ZonedDateTime) -> None:
-        assert to_zoned_date_time(date_time=lambda: date_time) == date_time
+        assert to_zoned_date_time(lambda: date_time) == date_time
 
     def test_error_py_date_time(self) -> None:
         with raises(
             ToZonedDateTimeError,
             match=r"Expected date-time to have a `ZoneInfo` or `dt\.UTC` as its timezone; got None",
         ):
-            _ = to_zoned_date_time(date_time=NOW_UTC.py_datetime().replace(tzinfo=None))
+            _ = to_zoned_date_time(NOW_UTC.py_datetime().replace(tzinfo=None))
 
 
 class TestTwoDigitYearMonth:
