@@ -23,7 +23,7 @@ from uuid import uuid4
 
 from utilities.iterables import CheckDuplicatesError, check_duplicates, transpose
 from utilities.reprlib import get_repr
-from utilities.sentinel import Sentinel, sentinel
+from utilities.sentinel import Sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -445,7 +445,7 @@ def to_bool(bool_: None, /) -> None: ...
 @overload
 def to_bool(bool_: Sentinel, /) -> Sentinel: ...
 def to_bool(
-    bool_: MaybeCallableBoolLike | None | Sentinel = sentinel, /
+    bool_: MaybeCallableBoolLike | None | Sentinel, /
 ) -> bool | None | Sentinel:
     """Convert to a bool."""
     match bool_:

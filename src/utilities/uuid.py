@@ -41,7 +41,7 @@ def to_uuid(
     /,
     *,
     seed: Seed | None = None,
-) -> UUID | None | Sentinel:
+) -> UUID | Sentinel:
     """Convert to a UUID."""
     match uuid:
         case UUID() | Sentinel():

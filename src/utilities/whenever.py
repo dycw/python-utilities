@@ -841,7 +841,7 @@ def to_date(
     /,
     *,
     time_zone: TimeZoneLike = UTC,
-) -> Date | None | Sentinel:
+) -> Date | Sentinel:
     """Convert to a date."""
     match date:
         case Date() | Sentinel():
@@ -1624,7 +1624,7 @@ def to_zoned_date_time(
     /,
     *,
     time_zone: TimeZoneLike = UTC,
-) -> ZonedDateTime | None | Sentinel:
+) -> ZonedDateTime | Sentinel:
     """Convert to a zoned date-time."""
     match date_time:
         case ZonedDateTime() | Sentinel():

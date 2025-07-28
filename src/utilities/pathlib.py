@@ -285,18 +285,18 @@ def temp_cwd(path: PathLike, /) -> Iterator[None]:
 
 
 @overload
-def to_path(path: None, /) -> None: ...
-@overload
 def to_path(path: Sentinel, /) -> Sentinel: ...
 @overload
-def to_path(path: MaybeCallablePathLike = Path.cwd, /) -> Path: ...
+def to_path(path: MaybeCallablePathLike | None = Path.cwd, /) -> Path: ...
 def to_path(
     path: MaybeCallablePathLike | None | Sentinel = Path.cwd, /
-) -> Path | None | Sentinel:
+) -> Path | Sentinel:
     """Get the path."""
     match path:
-        case Path() | None | Sentinel():
+        case Path() | Sentinel():
             return path
+        case None:
+            return Path.cwd()
         case str():
             return Path(path)
         case Callable() as func:
