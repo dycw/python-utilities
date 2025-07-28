@@ -120,10 +120,8 @@ type MaybeIterable[T] = T | Iterable[T]
 type MaybeSequence[T] = T | SequenceLT[T]
 type SequenceLT[T] = list[T] | tuple[T, ...]
 # iterables - str
-type CollectionStr = (
-    dict[str, Any] | frozenset[str] | list[str] | set[str] | tuple[str, ...]
-)
 type SequenceStr = SequenceLT[str]
+type CollectionStr = dict[str, Any] | frozenset[str] | set[str] | SequenceStr
 # iterables - maybe str
 type MaybeCollectionStr = str | CollectionStr
 type MaybeSequenceStr = str | SequenceStr
