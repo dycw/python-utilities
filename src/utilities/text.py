@@ -447,7 +447,7 @@ def to_bool(bool_: Sentinel, /) -> Sentinel: ...
 def to_bool(
     bool_: MaybeCallableBoolLike | None | Sentinel = sentinel, /
 ) -> bool | None | Sentinel:
-    """Get the bool."""
+    """Convert to a bool."""
     match bool_:
         case bool() | None | Sentinel():
             return bool_

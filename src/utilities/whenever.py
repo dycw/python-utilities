@@ -650,7 +650,7 @@ def to_date(date: Sentinel, /) -> Sentinel: ...
 def to_date(
     date: MaybeCallableDateLike | dt.date | None | Sentinel = sentinel, /
 ) -> Date | None | Sentinel:
-    """Get the date."""
+    """Convert to a date."""
     match date:
         case Date() | None | Sentinel():
             return date
@@ -1429,7 +1429,7 @@ def to_zoned_date_time(
     | Sentinel = sentinel,
     /,
 ) -> ZonedDateTime | None | Sentinel:
-    """Resolve into a zoned date_time."""
+    """Convert to a zoned date-time."""
     match date_time:
         case ZonedDateTime() | None | Sentinel():
             return date_time
