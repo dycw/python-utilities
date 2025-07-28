@@ -561,6 +561,9 @@ class TestSizeAndTimeRotatingFileHandler:
 
 
 class TestToLogger:
+    def test_default(self) -> None:
+        assert to_logger().name == "root"
+
     @given(name=text_ascii(min_size=1))
     def test_logger(self, *, name: str) -> None:
         assert to_logger(getLogger(name)).name == name
