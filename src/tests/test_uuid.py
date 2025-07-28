@@ -10,6 +10,7 @@ from hypothesis.strategies import integers, none, randoms, uuids
 
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import pairs, sentinels
+from utilities.sentinel import Sentinel, sentinel
 from utilities.uuid import UUID_EXACT_PATTERN, UUID_PATTERN, generate_uuid, to_uuid
 
 if TYPE_CHECKING:
@@ -58,7 +59,7 @@ class TestToUUID:
             uuid: UUID = field(default_factory=generate_uuid)
 
             def replace(
-                self, *, uuid: MaybeCallableUUIDLike | Sentinel = generate_uuid
+                self, *, uuid: MaybeCallableUUIDLike | Sentinel = sentinel
             ) -> Self:
                 return replace_non_sentinel(self, uuid=to_uuid(uuid))
 
