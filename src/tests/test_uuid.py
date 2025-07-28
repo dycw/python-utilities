@@ -23,8 +23,7 @@ if TYPE_CHECKING:
 class TestGenerateUUID:
     @given(seed=randoms() | none())
     def test_main(self, *, seed: Random | None) -> None:
-        uuid = generate_uuid(seed)
-        assert isinstance(uuid, UUID)
+        assert isinstance(generate_uuid(seed), UUID)
 
     @given(seed=integers())
     def test_deterministic(self, *, seed: int) -> None:
@@ -45,10 +44,9 @@ class TestToUUID:
     def test_none_or_sentinel(self, *, uuid: None | Sentinel) -> None:
         assert to_uuid(uuid) is uuid
 
-    @given(seed=randoms() | none())
-    def test_seed(self, *, seed: Random | None) -> None:
-        uuid = to_uuid(seed)
-        assert isinstance(uuid, UUID)
+    @given(seed=randoms())
+    def test_seed(self, *, seed: Random) -> None:
+        assert isinstance(to_uuid(seed), UUID)
 
     @given(uuids=pairs(uuids()))
     def test_replace_non_sentinel(self, *, uuids: tuple[UUID, UUID]) -> None:
