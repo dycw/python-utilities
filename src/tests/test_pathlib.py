@@ -110,7 +110,7 @@ class TestGetRepoRoot:
     @given(repo=git_repos(), tail=paths())
     @settings(max_examples=1)
     def test_dir(self, *, repo: Path, tail: Path) -> None:
-        root = get_repo_root(path=repo.joinpath(tail))
+        root = get_repo_root(repo.joinpath(tail))
         expected = repo.resolve()
         assert root == expected
 
@@ -119,7 +119,7 @@ class TestGetRepoRoot:
     def test_file(self, *, repo: Path, tail: Path) -> None:
         path = repo.joinpath(tail)
         path.touch()
-        root = get_repo_root(path=path)
+        root = get_repo_root(path)
         expected = repo.resolve()
         assert root == expected
 
@@ -127,7 +127,7 @@ class TestGetRepoRoot:
         with raises(
             GetRepoRootError, match="Path is not part of a `git` repository: .*"
         ):
-            _ = get_repo_root(path=tmp_path)
+            _ = get_repo_root(tmp_path)
 
 
 class TestGetRoot:
@@ -145,7 +145,7 @@ class TestGetRoot:
     def test_package_only(self, *, tmp_path: Path, tail: Path) -> None:
         tmp_path.joinpath("pyproject.toml").touch()
         path = tmp_path.joinpath(tail)
-        result = get_root(path=path)
+        result = get_root(path)
         expected = tmp_path.resolve()
         assert result == expected
 
@@ -156,7 +156,7 @@ class TestGetRoot:
     def test_repo_and_package(self, *, repo: Path, tail: Path) -> None:
         repo.joinpath("pyproject.toml").touch()
         path = repo.joinpath(tail)
-        root = get_root(path=path)
+        root = get_root(path)
         expected = repo.resolve()
         assert root == expected
 
@@ -168,7 +168,7 @@ class TestGetRoot:
         path = repo.joinpath(tail)
         path.mkdir(parents=True)
         path.joinpath("pyproject.toml").touch()
-        root = get_root(path=path)
+        root = get_root(path)
         expected = path.resolve()
         assert root == expected
 
@@ -181,13 +181,13 @@ class TestGetRoot:
             temp.joinpath("pyproject.toml").touch()
             path = temp.joinpath(tail)
             _ = copytree(repo, path)
-            root = get_root(path=path)
+            root = get_root(path)
             expected = path.resolve()
             assert root == expected
 
     def test_error(self, *, tmp_path: Path) -> None:
         with raises(GetRootError, match="Unable to determine root from '.*'"):
-            _ = get_root(path=tmp_path)
+            _ = get_root(tmp_path)
 
 
 class TestGetTail:
