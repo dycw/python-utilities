@@ -14,7 +14,7 @@ from utilities.asyncio import loop_until_succeed, sleep_td, timeout_td
 from utilities.contextlib import enhanced_async_context_manager
 from utilities.contextvars import yield_set_context
 from utilities.iterables import always_iterable
-from utilities.logging import get_logger
+from utilities.logging import to_logger
 from utilities.whenever import MILLISECOND, SECOND, to_seconds
 
 if TYPE_CHECKING:
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
     from whenever import Delta
 
-    from utilities.types import Coro, LoggerLike, MaybeIterable
+    from utilities.types import Coro, LoggerOrName, MaybeIterable
 
 _NUM: int = 1
 _TIMEOUT_TRY_ACQUIRE: Delta = SECOND
@@ -57,7 +57,7 @@ async def try_yield_coroutine_looper(
     timeout_acquire: Delta = _TIMEOUT_TRY_ACQUIRE,
     sleep_acquire: Delta = _SLEEP,
     throttle: Delta | None = None,
-    logger: LoggerLike | None = None,
+    logger: LoggerOrName | None = None,
     sleep_error: Delta | None = None,
     context: ContextVar[bool] | None = None,
 ) -> AsyncIterator[CoroutineLooper | None]:
@@ -81,7 +81,7 @@ async def try_yield_coroutine_looper(
                     yield looper
     except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
         if logger is not None:
-            get_logger(logger=logger).info("%s", error)
+            to_logger(logger=logger).info("%s", error)
         async with nullcontext():
             yield
 
@@ -91,7 +91,7 @@ class CoroutineLooper:
     """Looper, guarded by a lock, to repeatedly call a coroutine until it succeeds."""
 
     lock: AIORedlock
-    logger: LoggerLike | None = None
+    logger: LoggerOrName | None = None
     sleep: Delta | None = None
 
     async def __call__[**P](

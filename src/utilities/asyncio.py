@@ -38,7 +38,7 @@ from typing import (
 
 from utilities.errors import ImpossibleCaseError, is_instance_error
 from utilities.functions import ensure_int, ensure_not_none, to_bool
-from utilities.logging import get_logger
+from utilities.logging import to_logger
 from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.shelve import yield_shelf
@@ -70,7 +70,7 @@ if TYPE_CHECKING:
         Coro,
         Delta,
         ExceptionTypeLike,
-        LoggerLike,
+        LoggerOrName,
         MaybeCallableBoolLike,
         MaybeType,
         PathLike,
@@ -403,7 +403,7 @@ async def loop_until_succeed(
     func: Callable[[], Coro[None]],
     /,
     *,
-    logger: LoggerLike | None = None,
+    logger: LoggerOrName | None = None,
     errors: ExceptionTypeLike[Exception] | None = None,
     sleep: Delta | None = None,
 ) -> bool:
@@ -414,7 +414,7 @@ async def loop_until_succeed(
             await func()
         except Exception as error:  # noqa: BLE001
             if logger is not None:
-                get_logger(logger=logger).error("Error running %r", name, exc_info=True)
+                to_logger(logger=logger).error("Error running %r", name, exc_info=True)
             exc_type, exc_value, traceback = sys.exc_info()
             if (exc_type is None) or (exc_value is None):  # pragma: no cover
                 raise ImpossibleCaseError(
@@ -425,10 +425,10 @@ async def loop_until_succeed(
                 return False
             if sleep is not None:
                 if logger is not None:
-                    get_logger(logger=logger).info("Sleeping for %s...", sleep)
+                    to_logger(logger=logger).info("Sleeping for %s...", sleep)
                 await sleep_td(sleep)
             if logger is not None:
-                get_logger(logger=logger).info("Retrying %r...", name)
+                to_logger(logger=logger).info("Retrying %r...", name)
         else:
             return True
 
