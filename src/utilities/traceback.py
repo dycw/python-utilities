@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from utilities.types import (
-        MaybeCallableBool,
+        MaybeCallableBoolLike,
         MaybeCallablePathLike,
         MaybeCallableZonedDateTimeLike,
         PathLike,
@@ -215,7 +215,7 @@ def make_except_hook(
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
     slack_url: str | None = None,
-    pudb: MaybeCallableBool = False,
+    pudb: MaybeCallableBoolLike = False,
 ) -> Callable[
     [type[BaseException] | None, BaseException | None, TracebackType | None], None
 ]:
@@ -252,7 +252,7 @@ def _make_except_hook_inner(
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
     slack_url: str | None = None,
-    pudb: MaybeCallableBool = False,
+    pudb: MaybeCallableBoolLike = False,
 ) -> None:
     """Exception hook to log the traceback."""
     _ = (exc_type, traceback)

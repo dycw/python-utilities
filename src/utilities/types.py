@@ -39,6 +39,7 @@ _T_contra = TypeVar("_T_contra", contravariant=True)
 
 
 # basic
+type BoolLike = MaybeStr[bool]
 type OpenMode = Literal[
     "r",
     "w",
@@ -62,7 +63,7 @@ type OpenMode = Literal[
     "a+b",
 ]
 type MaybeCallable[T] = T | Callable[[], T]
-type MaybeCallableBool = MaybeCallable[bool]
+type MaybeCallableBoolLike = MaybeCallable[BoolLike]
 type MaybeStr[T] = T | str
 type MaybeType[T] = T | type[T]
 type StrMapping = Mapping[str, Any]
@@ -283,7 +284,7 @@ __all__ = [
     "LoggerOrName",
     "MathRoundMode",
     "MaybeCallable",
-    "MaybeCallableBool",
+    "MaybeCallableBoolLike",
     "MaybeCallableDateLike",
     "MaybeCallableEvent",
     "MaybeCallablePathLike",

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass
 from itertools import chain
 from os import getpid
@@ -9,16 +10,25 @@ from re import IGNORECASE, Match, escape, search
 from textwrap import dedent
 from threading import get_ident
 from time import time_ns
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, overload, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Literal,
+    assert_never,
+    overload,
+    override,
+)
 from uuid import uuid4
 
 from utilities.iterables import CheckDuplicatesError, check_duplicates, transpose
 from utilities.reprlib import get_repr
+from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
-    from utilities.types import StrStrMapping
+    from utilities.types import MaybeCallableBoolLike, StrStrMapping
 
 
 DEFAULT_SEPARATOR = ","
@@ -428,6 +438,30 @@ def strip_and_dedent(text: str, /, *, trailing: bool = False) -> str:
 ##
 
 
+@overload
+def to_bool(bool_: MaybeCallableBoolLike, /) -> bool: ...
+@overload
+def to_bool(bool_: None, /) -> None: ...
+@overload
+def to_bool(bool_: Sentinel, /) -> Sentinel: ...
+def to_bool(
+    bool_: MaybeCallableBoolLike | None | Sentinel = sentinel, /
+) -> bool | None | Sentinel:
+    """Get the bool."""
+    match bool_:
+        case bool() | None | Sentinel():
+            return bool_
+        case str():
+            return parse_bool(bool_)
+        case Callable() as func:
+            return to_bool(func())
+        case never:
+            assert_never(never)
+
+
+##
+
+
 def unique_str() -> str:
     """Generate at unique string."""
     now = time_ns()
@@ -456,5 +490,6 @@ __all__ = [
     "split_str",
     "str_encode",
     "strip_and_dedent",
+    "to_bool",
     "unique_str",
 ]

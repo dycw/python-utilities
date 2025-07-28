@@ -71,7 +71,7 @@ if TYPE_CHECKING:
         Delta,
         ExceptionTypeLike,
         LoggerOrName,
-        MaybeCallableBool,
+        MaybeCallableBoolLike,
         MaybeType,
         PathLike,
         SupportsKeysAndGetItem,
@@ -231,7 +231,7 @@ class EnhancedTaskGroup(TaskGroup):
     _semaphore: Semaphore | None
     _timeout: Delta | None
     _error: MaybeType[BaseException]
-    _debug: MaybeCallableBool
+    _debug: MaybeCallableBoolLike
     _stack: AsyncExitStack
     _timeout_cm: _AsyncGeneratorContextManager[None] | None
 
@@ -242,7 +242,7 @@ class EnhancedTaskGroup(TaskGroup):
         max_tasks: int | None = None,
         timeout: Delta | None = None,
         error: MaybeType[BaseException] = TimeoutError,
-        debug: MaybeCallableBool = False,
+        debug: MaybeCallableBoolLike = False,
     ) -> None:
         super().__init__()
         self._max_tasks = max_tasks
