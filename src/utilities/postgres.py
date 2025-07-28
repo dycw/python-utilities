@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     from utilities.sqlalchemy import TableOrORMInstOrClass
     from utilities.types import (
-        LoggerOrName,
+        LoggerLike,
         MaybeCollection,
         MaybeCollectionStr,
         PathLike,
@@ -53,7 +53,7 @@ async def pg_dump(
     role: str | None = None,
     docker: str | None = None,
     dry_run: bool = False,
-    logger: LoggerOrName | None = None,
+    logger: LoggerLike | None = None,
 ) -> None:
     """Run `pg_dump`."""
     path = _path_pg_dump(path, format_=format_)
@@ -217,7 +217,7 @@ async def restore(
     role: str | None = None,
     docker: str | None = None,
     dry_run: bool = False,
-    logger: LoggerOrName | None = None,
+    logger: LoggerLike | None = None,
 ) -> None:
     """Run `pg_restore`/`psql`."""
     cmd = _build_pg_restore_or_psql(

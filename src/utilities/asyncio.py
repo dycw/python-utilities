@@ -37,11 +37,12 @@ from typing import (
 )
 
 from utilities.errors import ImpossibleCaseError, is_instance_error
-from utilities.functions import ensure_int, ensure_not_none, to_bool
+from utilities.functions import ensure_int, ensure_not_none
 from utilities.logging import to_logger
 from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.shelve import yield_shelf
+from utilities.text import to_bool
 from utilities.warnings import suppress_warnings
 from utilities.whenever import get_now, round_date_or_date_time, to_nanoseconds
 
@@ -70,7 +71,7 @@ if TYPE_CHECKING:
         Coro,
         Delta,
         ExceptionTypeLike,
-        LoggerOrName,
+        LoggerLike,
         MaybeCallableBoolLike,
         MaybeType,
         PathLike,
@@ -331,7 +332,7 @@ class EnhancedTaskGroup(TaskGroup):
                 assert_never(never)
 
     def _is_debug(self) -> bool:
-        return to_bool(bool_=self._debug) or (
+        return to_bool(self._debug) or (
             (self._max_tasks is not None) and (self._max_tasks <= 0)
         )
 
@@ -403,7 +404,7 @@ async def loop_until_succeed(
     func: Callable[[], Coro[None]],
     /,
     *,
-    logger: LoggerOrName | None = None,
+    logger: LoggerLike | None = None,
     errors: ExceptionTypeLike[Exception] | None = None,
     sleep: Delta | None = None,
 ) -> bool:
@@ -414,7 +415,7 @@ async def loop_until_succeed(
             await func()
         except Exception as error:  # noqa: BLE001
             if logger is not None:
-                to_logger(logger=logger).error("Error running %r", name, exc_info=True)
+                to_logger(logger).error("Error running %r", name, exc_info=True)
             exc_type, exc_value, traceback = sys.exc_info()
             if (exc_type is None) or (exc_value is None):  # pragma: no cover
                 raise ImpossibleCaseError(
@@ -425,10 +426,10 @@ async def loop_until_succeed(
                 return False
             if sleep is not None:
                 if logger is not None:
-                    to_logger(logger=logger).info("Sleeping for %s...", sleep)
+                    to_logger(logger).info("Sleeping for %s...", sleep)
                 await sleep_td(sleep)
             if logger is not None:
-                to_logger(logger=logger).info("Retrying %r...", name)
+                to_logger(logger).info("Retrying %r...", name)
         else:
             return True
 
