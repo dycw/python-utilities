@@ -11,7 +11,7 @@ from hypothesis.strategies import integers, none, randoms, uuids
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import pairs, sentinels
 from utilities.sentinel import Sentinel, sentinel
-from utilities.uuid import UUID_EXACT_PATTERN, UUID_PATTERN, generate_uuid, to_uuid
+from utilities.uuid import UUID_EXACT_PATTERN, UUID_PATTERN, get_uuid, to_uuid
 
 if TYPE_CHECKING:
     from random import Random
@@ -20,14 +20,14 @@ if TYPE_CHECKING:
     from utilities.types import MaybeCallableUUIDLike
 
 
-class TestGenerateUUID:
+class TestGetUUID:
     @given(seed=randoms() | none())
     def test_main(self, *, seed: Random | None) -> None:
-        assert isinstance(generate_uuid(seed), UUID)
+        assert isinstance(get_uuid(seed), UUID)
 
     @given(seed=integers())
     def test_deterministic(self, *, seed: int) -> None:
-        uuid1, uuid2 = [generate_uuid(seed) for _ in range(2)]
+        uuid1, uuid2 = [get_uuid(seed) for _ in range(2)]
         assert uuid1 == uuid2
 
 
@@ -54,7 +54,7 @@ class TestToUUID:
 
         @dataclass(kw_only=True, slots=True)
         class Example:
-            uuid: UUID = field(default_factory=generate_uuid)
+            uuid: UUID = field(default_factory=get_uuid)
 
             def replace(
                 self, *, uuid: MaybeCallableUUIDLike | Sentinel = sentinel
@@ -65,7 +65,7 @@ class TestToUUID:
         assert obj.uuid == uuid1
         assert obj.replace().uuid == uuid1
         assert obj.replace(uuid=uuid2).uuid == uuid2
-        assert isinstance(obj.replace(uuid=generate_uuid).uuid, UUID)
+        assert isinstance(obj.replace(uuid=get_uuid).uuid, UUID)
 
 
 class TestUUIDPattern:

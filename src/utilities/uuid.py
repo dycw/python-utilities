@@ -19,7 +19,7 @@ UUID_EXACT_PATTERN = f"^{UUID_PATTERN}$"
 ##
 
 
-def generate_uuid(seed: Seed | None = None, /) -> UUID:
+def get_uuid(seed: Seed | None = None, /) -> UUID:
     """Generate a UUID, possibly with a seed."""
     if seed is None:
         return uuid4()
@@ -46,11 +46,11 @@ def to_uuid(
         case str():
             return UUID(uuid)
         case int() | float() | bytes() | bytearray() | Random() as seed:
-            return generate_uuid(seed)
+            return get_uuid(seed)
         case Callable() as func:
             return to_uuid(func())
         case never:
             assert_never(never)
 
 
-__all__ = ["UUID_EXACT_PATTERN", "UUID_PATTERN", "to_uuid"]
+__all__ = ["UUID_EXACT_PATTERN", "UUID_PATTERN", "get_uuid", "to_uuid"]
