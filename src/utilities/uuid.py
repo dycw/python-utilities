@@ -23,7 +23,7 @@ def get_uuid(seed: Seed | None = None, /) -> UUID:
     """Generate a UUID, possibly with a seed."""
     if seed is None:
         return uuid4()
-    state = get_state(seed=seed)
+    state = get_state(seed)
     return UUID(int=state.getrandbits(128), version=4)
 
 

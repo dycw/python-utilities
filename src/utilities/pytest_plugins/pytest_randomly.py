@@ -17,7 +17,7 @@ else:
         """Fixture for a random state."""
         from utilities.random import get_state
 
-        return get_state(seed=seed)
+        return get_state(seed)
 
 
 __all__ = ["random_state"]
