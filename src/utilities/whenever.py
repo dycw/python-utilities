@@ -828,24 +828,32 @@ class TimePeriod:
 
 
 @overload
-def to_date(date: None, /) -> None: ...
+def to_date(date: Sentinel, /, *, time_zone: TimeZoneLike = UTC) -> Sentinel: ...
 @overload
-def to_date(date: Sentinel, /) -> Sentinel: ...
-@overload
-def to_date(date: MaybeCallableDateLike | dt.date = get_today, /) -> Date: ...
 def to_date(
-    date: MaybeCallableDateLike | dt.date | None | Sentinel = get_today, /
+    date: MaybeCallableDateLike | None | dt.date = get_today,
+    /,
+    *,
+    time_zone: TimeZoneLike = UTC,
+) -> Date: ...
+def to_date(
+    date: MaybeCallableDateLike | dt.date | None | Sentinel = get_today,
+    /,
+    *,
+    time_zone: TimeZoneLike = UTC,
 ) -> Date | None | Sentinel:
     """Convert to a date."""
     match date:
-        case Date() | None | Sentinel():
+        case Date() | Sentinel():
             return date
+        case None:
+            return get_today(time_zone)
         case str():
             return Date.parse_common_iso(date)
         case dt.date():
             return Date.from_py_date(date)
         case Callable() as func:
-            return to_date(func())
+            return to_date(func(), time_zone=time_zone)
         case never:
             assert_never(never)
 
@@ -1601,21 +1609,28 @@ class _ToYearsTimeError(ToYearsError):
 
 
 @overload
-def to_zoned_date_time(date_time: None, /) -> None: ...
-@overload
-def to_zoned_date_time(date_time: Sentinel, /) -> Sentinel: ...
+def to_zoned_date_time(
+    date_time: Sentinel, /, *, time_zone: TimeZoneLike = UTC
+) -> Sentinel: ...
 @overload
 def to_zoned_date_time(
-    date_time: MaybeCallableZonedDateTimeLike | dt.datetime = get_now, /
+    date_time: MaybeCallableZonedDateTimeLike | dt.datetime | None = get_now,
+    /,
+    *,
+    time_zone: TimeZoneLike = UTC,
 ) -> ZonedDateTime: ...
 def to_zoned_date_time(
     date_time: MaybeCallableZonedDateTimeLike | dt.datetime | None | Sentinel = get_now,
     /,
+    *,
+    time_zone: TimeZoneLike = UTC,
 ) -> ZonedDateTime | None | Sentinel:
     """Convert to a zoned date-time."""
     match date_time:
-        case ZonedDateTime() | None | Sentinel():
+        case ZonedDateTime() | Sentinel():
             return date_time
+        case None:
+            return get_now(time_zone)
         case str():
             return ZonedDateTime.parse_common_iso(date_time)
         case dt.datetime():
@@ -1625,7 +1640,7 @@ def to_zoned_date_time(
                 return ZonedDateTime.from_py_datetime(date_time.astimezone(UTC))
             raise ToZonedDateTimeError(date_time=date_time)
         case Callable() as func:
-            return to_zoned_date_time(func())
+            return to_zoned_date_time(func(), time_zone=time_zone)
         case never:
             assert_never(never)
 

@@ -9,7 +9,7 @@ from hypothesis import given
 from hypothesis.strategies import integers, none, randoms, uuids
 
 from utilities.dataclasses import replace_non_sentinel
-from utilities.hypothesis import pairs, sentinels
+from utilities.hypothesis import pairs
 from utilities.sentinel import Sentinel, sentinel
 from utilities.uuid import UUID_EXACT_PATTERN, UUID_PATTERN, get_uuid, to_uuid
 
@@ -43,13 +43,19 @@ class TestToUUID:
     def test_str(self, *, uuid: UUID) -> None:
         assert to_uuid(str(uuid)) == uuid
 
-    @given(uuid=none() | sentinels())
-    def test_none_or_sentinel(self, *, uuid: None | Sentinel) -> None:
-        assert to_uuid(uuid) is uuid
-
     @given(seed=randoms())
     def test_seed(self, *, seed: Random) -> None:
         assert isinstance(to_uuid(seed), UUID)
+
+    @given(uuid=uuids())
+    def test_callable(self, *, uuid: UUID) -> None:
+        assert to_uuid(lambda: uuid) == uuid
+
+    def test_none(self) -> None:
+        assert isinstance(to_uuid(None), UUID)
+
+    def test_sentinel(self) -> None:
+        assert to_uuid(sentinel) is sentinel
 
     @given(uuids=pairs(uuids()))
     def test_replace_non_sentinel(self, *, uuids: tuple[UUID, UUID]) -> None:

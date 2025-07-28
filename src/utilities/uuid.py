@@ -31,24 +31,29 @@ def get_uuid(seed: Seed | None = None, /) -> UUID:
 
 
 @overload
-def to_uuid(uuid: None, /) -> None: ...
+def to_uuid(uuid: Sentinel, /, *, seed: Seed | None = None) -> Sentinel: ...
 @overload
-def to_uuid(uuid: Sentinel, /) -> Sentinel: ...
-@overload
-def to_uuid(uuid: MaybeCallableUUIDLike = get_uuid, /) -> UUID: ...
 def to_uuid(
-    uuid: MaybeCallableUUIDLike | None | Sentinel = get_uuid, /
+    uuid: MaybeCallableUUIDLike | None = get_uuid, /, *, seed: Seed | None = None
+) -> UUID: ...
+def to_uuid(
+    uuid: MaybeCallableUUIDLike | None | Sentinel = get_uuid,
+    /,
+    *,
+    seed: Seed | None = None,
 ) -> UUID | None | Sentinel:
     """Convert to a UUID."""
     match uuid:
-        case UUID() | None | Sentinel():
+        case UUID() | Sentinel():
             return uuid
+        case None:
+            return get_uuid(seed)
         case str():
             return UUID(uuid)
         case int() | float() | bytes() | bytearray() | Random() as seed:
             return get_uuid(seed)
         case Callable() as func:
-            return to_uuid(func())
+            return to_uuid(func(), seed=seed)
         case never:
             assert_never(never)
 

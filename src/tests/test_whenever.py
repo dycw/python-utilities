@@ -37,7 +37,6 @@ from utilities.hypothesis import (
     dates,
     pairs,
     plain_datetimes,
-    sentinels,
     time_deltas,
     times,
     zoned_datetimes,
@@ -895,9 +894,15 @@ class TestToDate:
     def test_py_date(self, *, date: Date) -> None:
         assert to_date(date.py_date()) == date
 
-    @given(date=none() | sentinels())
-    def test_none_or_sentinel(self, *, date: None | Sentinel) -> None:
-        assert to_date(date) is date
+    @given(date=dates())
+    def test_callable(self, *, date: Date) -> None:
+        assert to_date(lambda: date) == date
+
+    def test_none(self) -> None:
+        assert to_date(None) == get_today()
+
+    def test_sentinel(self) -> None:
+        assert to_date(sentinel) is sentinel
 
     @given(dates=pairs(dates()))
     def test_replace_non_sentinel(self, *, dates: tuple[Date, Date]) -> None:
@@ -917,10 +922,6 @@ class TestToDate:
         assert obj.replace().date == date1
         assert obj.replace(date=date2).date == date2
         assert obj.replace(date=get_today).date == get_today()
-
-    @given(date=dates())
-    def test_callable(self, *, date: Date) -> None:
-        assert to_date(lambda: date) == date
 
 
 class TestToDays:
@@ -1435,10 +1436,6 @@ class TestToZonedDateTime:
     def test_date_time(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time) == date_time
 
-    @given(date_time=none() | sentinels())
-    def test_none_or_sentinel(self, *, date_time: None | Sentinel) -> None:
-        assert to_zoned_date_time(date_time) is date_time
-
     @given(date_time=zoned_datetimes_2000)
     def test_py_date_time_zone_info(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time.py_datetime()) == date_time
@@ -1447,6 +1444,16 @@ class TestToZonedDateTime:
     def test_py_date_time_dt_utc(self, *, date_time: ZonedDateTime) -> None:
         result = to_zoned_date_time(date_time.py_datetime().astimezone(dt.UTC))
         assert result == date_time
+
+    @given(date_time=zoned_datetimes())
+    def test_callable(self, *, date_time: ZonedDateTime) -> None:
+        assert to_zoned_date_time(lambda: date_time) == date_time
+
+    def test_none(self) -> None:
+        assert abs(to_zoned_date_time(None) - get_now()) <= SECOND
+
+    def test_sentinel(self) -> None:
+        assert to_zoned_date_time(sentinel) is sentinel
 
     @given(date_times=pairs(zoned_datetimes()))
     def test_replace_non_sentinel(
@@ -1470,10 +1477,6 @@ class TestToZonedDateTime:
         assert obj.replace().date_time == date_time1
         assert obj.replace(date_time=date_time2).date_time == date_time2
         assert abs(obj.replace(date_time=get_now).date_time - get_now()) <= SECOND
-
-    @given(date_time=zoned_datetimes())
-    def test_callable(self, *, date_time: ZonedDateTime) -> None:
-        assert to_zoned_date_time(lambda: date_time) == date_time
 
     def test_error_py_date_time(self) -> None:
         with raises(
