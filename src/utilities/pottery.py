@@ -81,7 +81,7 @@ async def try_yield_coroutine_looper(
                     yield looper
     except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
         if logger is not None:
-            to_logger(logger=logger).info("%s", error)
+            to_logger(logger).info("%s", error)
         async with nullcontext():
             yield
 
