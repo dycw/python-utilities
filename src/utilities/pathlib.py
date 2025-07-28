@@ -52,7 +52,7 @@ def expand_path(path: PathLike, /) -> Path:
 ##
 
 
-def get_package_root(*, path: MaybeCallablePathLike | None = None) -> Path:
+def get_package_root(path: MaybeCallablePathLike = Path.cwd, /) -> Path:
     """Get the package root."""
     path = to_path(path)
     path_dir = path.parent if path.is_file() else path
@@ -112,7 +112,7 @@ class GetRepoRootError(Exception):
 ##
 
 
-def get_root(*, path: MaybeCallablePathLike = Path.cwd) -> Path:
+def get_root(path: MaybeCallablePathLike = Path.cwd, /) -> Path:
     """Get the root of a path."""
     path = to_path(path)
     try:
@@ -120,7 +120,7 @@ def get_root(*, path: MaybeCallablePathLike = Path.cwd) -> Path:
     except GetRepoRootError:
         repo = None
     try:
-        package = get_package_root(path=path)
+        package = get_package_root(path)
     except GetPackageRootError:
         package = None
     match repo, package:

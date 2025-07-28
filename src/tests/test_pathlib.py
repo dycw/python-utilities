@@ -85,7 +85,7 @@ class TestGetPackageRoot:
     def test_dir(self, *, tmp_path: Path, tail: Path) -> None:
         tmp_path.joinpath("pyproject.toml").touch()
         path = tmp_path.joinpath(tail)
-        result = get_package_root(path=path)
+        result = get_package_root(path)
         expected = tmp_path.resolve()
         assert result == expected
 
@@ -97,13 +97,13 @@ class TestGetPackageRoot:
         tmp_path.joinpath("pyproject.toml").touch()
         path = tmp_path.joinpath(tail)
         path.touch()
-        root = get_package_root(path=path)
+        root = get_package_root(path)
         expected = tmp_path.resolve()
         assert root == expected
 
     def test_error(self, *, tmp_path: Path) -> None:
         with raises(GetPackageRootError, match="Path is not part of a package: .*"):
-            _ = get_package_root(path=tmp_path)
+            _ = get_package_root(tmp_path)
 
 
 class TestGetRepoRoot:
@@ -134,7 +134,7 @@ class TestGetRoot:
     @given(repo=git_repos(), tail=paths())
     @settings(max_examples=1)
     def test_repo_only(self, *, repo: Path, tail: Path) -> None:
-        root = get_root(path=repo.joinpath(tail))
+        root = get_root(repo.joinpath(tail))
         expected = repo.resolve()
         assert root == expected
 
