@@ -2,15 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from asyncio import Event
-from collections.abc import (
-    Callable,
-    Collection,
-    Coroutine,
-    Hashable,
-    Iterable,
-    Mapping,
-    Sequence,
-)
+from collections.abc import Callable, Collection, Coroutine, Iterable, Mapping
 from enum import Enum
 from ipaddress import IPv4Address, IPv6Address
 from logging import Logger
@@ -123,20 +115,18 @@ IPv6AddressLike = MaybeStr[IPv6Address]
 
 
 # iterables
-type IterableHashable[T: Hashable] = tuple[T, ...] | frozenset[T]
 type MaybeCollection[T] = T | Collection[T]
-type MaybeIterableHashable[T: Hashable] = T | IterableHashable[T]
 type MaybeIterable[T] = T | Iterable[T]
-type MaybeList[T] = T | list[T]
-type MaybeSequence[T] = T | Sequence[T]
+type MaybeSequence[T] = T | SequenceLT[T]
+type SequenceLT[T] = list[T] | tuple[T, ...]
 # iterables - str
 type CollectionStr = (
     dict[str, Any] | frozenset[str] | list[str] | set[str] | tuple[str, ...]
 )
+type SequenceStr = SequenceLT[str]
+# iterables - maybe str
 type MaybeCollectionStr = str | CollectionStr
-type MaybeListStr = MaybeList[str]
 type MaybeSequenceStr = str | SequenceStr
-type SequenceStr = list[str] | tuple[str, ...]
 
 
 # logging
@@ -288,7 +278,6 @@ __all__ = [
     "ExceptionTypeLike",
     "IPv4AddressLike",
     "IPv6AddressLike",
-    "IterableHashable",
     "LogLevel",
     "LoggerOrName",
     "MathRoundMode",
@@ -303,9 +292,6 @@ __all__ = [
     "MaybeCollectionStr",
     "MaybeCoro",
     "MaybeIterable",
-    "MaybeIterableHashable",
-    "MaybeList",
-    "MaybeListStr",
     "MaybeSequence",
     "MaybeSequenceStr",
     "MaybeStr",
