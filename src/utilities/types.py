@@ -225,6 +225,10 @@ type Seed = int | float | str | bytes | bytearray | Random
 type PatternLike = MaybeStr[Pattern[str]]
 
 
+# text
+type MaybeCallableStr = MaybeCallable[str]
+
+
 # traceback
 type ExcInfo = tuple[type[BaseException], BaseException, TracebackType]
 type OptExcInfo = ExcInfo | tuple[None, None, None]
@@ -284,6 +288,7 @@ __all__ = [
     "MaybeCallableDate",
     "MaybeCallableEvent",
     "MaybeCallablePathLike",
+    "MaybeCallableStr",
     "MaybeCallableStr",
     "MaybeCallableZonedDateTime",
     "MaybeCollection",

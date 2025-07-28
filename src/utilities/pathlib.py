@@ -52,33 +52,9 @@ def expand_path(path: PathLike, /) -> Path:
 ##
 
 
-@overload
-def get_path(*, path: MaybeCallablePathLike | None) -> Path: ...
-@overload
-def get_path(*, path: Sentinel) -> Sentinel: ...
-def get_path(
-    *, path: MaybeCallablePathLike | None | Sentinel = sentinel
-) -> Path | None | Sentinel:
-    """Get the path."""
-    match path:
-        case Path() | Sentinel():
-            return path
-        case str():
-            return Path(path)
-        case None:
-            return Path.cwd()
-        case Callable() as func:
-            return get_path(path=func())
-        case never:
-            assert_never(never)
-
-
-##
-
-
 def get_package_root(*, path: MaybeCallablePathLike | None = None) -> Path:
     """Get the package root."""
-    path = get_path(path=path)
+    path = resolve_path(path)
     path_dir = path.parent if path.is_file() else path
     all_paths = list(chain([path_dir], path_dir.parents))
     try:
@@ -105,7 +81,7 @@ class GetPackageRootError(Exception):
 
 def get_repo_root(*, path: MaybeCallablePathLike | None = None) -> Path:
     """Get the repo root."""
-    path = get_path(path=path)
+    path = resolve_path(path=path)
     path_dir = path.parent if path.is_file() else path
     try:
         output = check_output(
@@ -138,7 +114,7 @@ class GetRepoRootError(Exception):
 
 def get_root(*, path: MaybeCallablePathLike | None = None) -> Path:
     """Get the root of a path."""
-    path = get_path(path=path)
+    path = resolve_path(path=path)
     try:
         repo = get_repo_root(path=path)
     except GetRepoRootError:
@@ -294,6 +270,30 @@ def list_dir(path: PathLike, /) -> Sequence[Path]:
 ##
 
 
+@overload
+def resolve_path(path: MaybeCallablePathLike | None, /) -> Path: ...
+@overload
+def resolve_path(path: Sentinel, /) -> Sentinel: ...
+def resolve_path(
+    path: MaybeCallablePathLike | None | Sentinel = sentinel, /
+) -> Path | None | Sentinel:
+    """Get the path."""
+    match path:
+        case Path() | Sentinel():
+            return path
+        case str():
+            return Path(path)
+        case None:
+            return Path.cwd()
+        case Callable() as func:
+            return resolve_path(func())
+        case never:
+            assert_never(never)
+
+
+##
+
+
 @enhanced_context_manager
 def temp_cwd(path: PathLike, /) -> Iterator[None]:
     """Context manager with temporary current working directory set."""
@@ -313,11 +313,11 @@ __all__ = [
     "ensure_suffix",
     "expand_path",
     "get_package_root",
-    "get_path",
     "get_repo_root",
     "get_tail",
     "is_sub_path",
     "list_dir",
     "module_path",
+    "resolve_path",
     "temp_cwd",
 ]
