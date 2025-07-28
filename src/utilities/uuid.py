@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, assert_never, overload
 from uuid import UUID, uuid4
 
 from utilities.random import get_state
-from utilities.sentinel import Sentinel, sentinel
+from utilities.sentinel import Sentinel
 
 if TYPE_CHECKING:
     from utilities.types import MaybeCallableUUIDLike, Seed
@@ -31,13 +31,13 @@ def get_uuid(seed: Seed | None = None, /) -> UUID:
 
 
 @overload
-def to_uuid(uuid: MaybeCallableUUIDLike, /) -> UUID: ...
-@overload
 def to_uuid(uuid: None, /) -> None: ...
 @overload
 def to_uuid(uuid: Sentinel, /) -> Sentinel: ...
+@overload
+def to_uuid(uuid: MaybeCallableUUIDLike = get_uuid, /) -> UUID: ...
 def to_uuid(
-    uuid: MaybeCallableUUIDLike | None | Sentinel = sentinel, /
+    uuid: MaybeCallableUUIDLike | None | Sentinel = get_uuid, /
 ) -> UUID | None | Sentinel:
     """Convert to a UUID."""
     match uuid:

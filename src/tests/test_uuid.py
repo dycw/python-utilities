@@ -32,6 +32,9 @@ class TestGetUUID:
 
 
 class TestToUUID:
+    def test_default(self) -> None:
+        assert isinstance(to_uuid(), UUID)
+
     @given(uuid=uuids())
     def test_uuid(self, *, uuid: UUID) -> None:
         assert to_uuid(uuid) == uuid
