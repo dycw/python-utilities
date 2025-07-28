@@ -1597,10 +1597,12 @@ class TestGetSeriesNumberOfDecimals:
 
 
 class TestIncreasingAndDecreasingHorizontal:
+    schema: ClassVar[SchemaDict] = {"x": Int64, "y": Int64, "z": Int64}
+
     def test_main(self) -> None:
         df = DataFrame(
             data=[(1, 2, 3), (1, 3, 2), (2, 1, 3), (2, 3, 1), (3, 1, 2), (3, 2, 1)],
-            schema={"x": Int64, "y": Int64, "z": Int64},
+            schema=self.schema,
             orient="row",
         ).with_columns(
             increasing_horizontal("x", "y", "z").alias("inc"),
@@ -1614,6 +1616,15 @@ class TestIncreasingAndDecreasingHorizontal:
             name="dec", values=[False, False, False, False, False, True], dtype=Boolean
         )
         assert_series_equal(df["dec"], dec)
+
+    def test_empty(self) -> None:
+        df = DataFrame(data=[], schema=self.schema, orient="row").with_columns(
+            increasing_horizontal("x", "y", "z").alias("inc"),
+            decreasing_horizontal("x", "y", "z").alias("dec"),
+        )
+        expected = Series(values=[True], dtype=Boolean)
+        assert_series_equal(df["inc"], expected, check_names=False)
+        assert_series_equal(df["dec"], expected, check_names=False)
 
 
 class TestInsertBeforeOrAfter:
