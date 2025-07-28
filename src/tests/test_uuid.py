@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Self
 from uuid import UUID
 
 from hypothesis import given
-from hypothesis.strategies import integers, none, uuids
+from hypothesis.strategies import integers, none, randoms, uuids
 
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import pairs, sentinels
@@ -17,6 +17,18 @@ if TYPE_CHECKING:
 
     from utilities.sentinel import Sentinel
     from utilities.types import MaybeCallableUUIDLike
+
+
+class TestGenerateUUID:
+    @given(seed=randoms() | none())
+    def test_main(self, *, seed: Random | None) -> None:
+        uuid = generate_uuid(seed)
+        assert isinstance(uuid, UUID)
+
+    @given(seed=integers())
+    def test_deterministic(self, *, seed: int) -> None:
+        uuid1, uuid2 = [generate_uuid(seed) for _ in range(2)]
+        assert uuid1 == uuid2
 
 
 class TestToUUID:
@@ -32,11 +44,10 @@ class TestToUUID:
     def test_none_or_sentinel(self, *, uuid: None | Sentinel) -> None:
         assert to_uuid(uuid) is uuid
 
-    @given(seed=integers())
+    @given(seed=randoms() | none())
     def test_seed(self, *, seed: Random | None) -> None:
-        uuid1, uuid2 = uuids = [to_uuid(seed) for _ in range(2)]
-        assert all(isinstance(uuid, UUID) for uuid in uuids)
-        assert uuid1 == uuid2
+        uuid = to_uuid(seed)
+        assert isinstance(uuid, UUID)
 
     @given(dates=pairs(uuids()))
     def test_replace_non_sentinel(self, *, uuids: tuple[UUID, UUID]) -> None:
