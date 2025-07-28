@@ -37,7 +37,7 @@ from utilities.atomicwrites import move_many
 from utilities.dataclasses import replace_non_sentinel
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import OneEmptyError, always_iterable, one
-from utilities.pathlib import ensure_suffix, get_path
+from utilities.pathlib import ensure_suffix, to_path
 from utilities.re import (
     ExtractGroupError,
     ExtractGroupsError,
@@ -329,7 +329,7 @@ def setup_logging(
     )
     logger_use = get_logger(logger=logger)
     name = logger_use.name
-    dir_ = get_path(path=files_dir)
+    dir_ = to_path(path=files_dir)
     levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]
     for level in levels:
         lower = level.lower()

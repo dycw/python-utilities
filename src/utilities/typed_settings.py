@@ -26,7 +26,7 @@ from whenever import (
 )
 
 from utilities.iterables import always_iterable
-from utilities.pathlib import get_path
+from utilities.pathlib import to_path
 from utilities.string import substitute_environ
 
 if TYPE_CHECKING:
@@ -91,7 +91,7 @@ def _parse_path(
     path = substitute_environ(path, **environ)
     match resolve:
         case True:
-            return get_path(path=pwd).joinpath(path).resolve()
+            return to_path(path=pwd).joinpath(path).resolve()
         case False:
             return Path(path)
         case never:

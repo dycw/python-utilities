@@ -17,7 +17,7 @@ from utilities.atomicwrites import writer
 from utilities.errors import repr_error
 from utilities.functions import to_bool
 from utilities.iterables import OneEmptyError, one
-from utilities.pathlib import get_path, module_path
+from utilities.pathlib import module_path, to_path
 from utilities.reprlib import (
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
@@ -262,7 +262,7 @@ def _make_except_hook_inner(
     _ = sys.stderr.write(f"{slim}\n")  # don't 'from sys import stderr'
     if path is not None:
         path = (
-            get_path(path=path)
+            to_path(path=path)
             .joinpath(format_compact(to_local_plain(get_now())))
             .with_suffix(".txt")
         )

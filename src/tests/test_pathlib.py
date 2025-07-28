@@ -294,7 +294,7 @@ class TestToPath:
 
     @given(path=none() | sentinels())
     def test_none_or_sentinel(self, *, path: None | Sentinel) -> None:
-        assert to_path(None) is path
+        assert to_path(path) is path
 
     @given(path1=paths(), path2=paths())
     def test_replace_non_sentinel(self, *, path1: Path, path2: Path) -> None:
