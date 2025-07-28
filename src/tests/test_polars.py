@@ -1115,7 +1115,7 @@ class TestDataClassToSchema:
     @given(time_zone=timezones())
     def test_date_or_datetime_as_zoned_datetime(self, *, time_zone: ZoneInfo) -> None:
         with assume_does_not_raise(TimeZoneNotFoundError):
-            now = get_now(time_zone=time_zone).py_datetime()
+            now = get_now(time_zone).py_datetime()
 
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -1247,7 +1247,7 @@ class TestDataClassToSchema:
     @given(time_zone=timezones())
     def test_zoned_datetime(self, *, time_zone: ZoneInfo) -> None:
         with assume_does_not_raise(TimeZoneNotFoundError):
-            now = get_now(time_zone=time_zone).py_datetime()
+            now = get_now(time_zone).py_datetime()
 
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -1261,8 +1261,8 @@ class TestDataClassToSchema:
     @given(start=timezones(), end=timezones())
     def test_zoned_datetime_nested(self, *, start: ZoneInfo, end: ZoneInfo) -> None:
         with assume_does_not_raise(TimeZoneNotFoundError):
-            now_start = get_now(time_zone=start).py_datetime()
-            now_end = get_now(time_zone=end).py_datetime()
+            now_start = get_now(start).py_datetime()
+            now_end = get_now(end).py_datetime()
 
         @dataclass(kw_only=True, slots=True)
         class Inner:
@@ -1410,7 +1410,7 @@ class TestFiniteEWMMean:
     )
     def test_main(self, *, case: tuple[float, float, list[float], list[float]]) -> None:
         alpha, min_weight, exp_base, exp_result = case
-        state = get_state(seed=0)
+        state = get_state(0)
         series = Series(values=[state.randint(-10, 10) for _ in range(100)])
         base = series.ewm_mean(alpha=alpha)
         exp_base_sr = Series(values=exp_base, dtype=Float64)

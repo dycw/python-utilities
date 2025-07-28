@@ -79,14 +79,14 @@ async def pg_dump(
     )
     if dry_run:
         if logger is not None:
-            to_logger(logger=logger).info("Would run:\n\t%r", str(cmd))
+            to_logger(logger).info("Would run:\n\t%r", str(cmd))
         return
     with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
             output = await stream_command(cmd)
         except KeyboardInterrupt:
             if logger is not None:
-                to_logger(logger=logger).info(
+                to_logger(logger).info(
                     "Cancelled backup to %r after %s", str(path), timer
                 )
             rmtree(path, ignore_errors=True)
@@ -94,12 +94,12 @@ async def pg_dump(
             match output.return_code:
                 case 0:
                     if logger is not None:
-                        to_logger(logger=logger).info(
+                        to_logger(logger).info(
                             "Backup to %r finished after %s", str(path), timer
                         )
                 case _:
                     if logger is not None:
-                        to_logger(logger=logger).exception(
+                        to_logger(logger).exception(
                             "Backup to %r failed after %s\nstderr:\n%s",
                             str(path),
                             timer,
@@ -236,26 +236,26 @@ async def restore(
     )
     if dry_run:
         if logger is not None:
-            to_logger(logger=logger).info("Would run:\n\t%r", str(cmd))
+            to_logger(logger).info("Would run:\n\t%r", str(cmd))
         return
     with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
             output = await stream_command(cmd)
         except KeyboardInterrupt:
             if logger is not None:
-                to_logger(logger=logger).info(
+                to_logger(logger).info(
                     "Cancelled restore from %r after %s", str(path), timer
                 )
         else:
             match output.return_code:
                 case 0:
                     if logger is not None:
-                        to_logger(logger=logger).info(
+                        to_logger(logger).info(
                             "Restore from %r finished after %s", str(path), timer
                         )
                 case _:
                     if logger is not None:
-                        to_logger(logger=logger).exception(
+                        to_logger(logger).exception(
                             "Restore from %r failed after %s\nstderr:\n%s",
                             str(path),
                             timer,
