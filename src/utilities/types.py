@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-from asyncio import Event
 from collections.abc import Callable, Collection, Coroutine, Iterable, Mapping
 from enum import Enum
 from ipaddress import IPv4Address, IPv6Address
@@ -74,7 +73,6 @@ type TupleOrStrMapping = tuple[Any, ...] | StrMapping
 
 # asyncio
 type Coro[T] = Coroutine[Any, Any, T]
-type MaybeCallableEvent = MaybeCallable[Event]
 type MaybeCoro[T] = T | Coro[T]
 
 
@@ -286,7 +284,6 @@ __all__ = [
     "MaybeCallable",
     "MaybeCallableBoolLike",
     "MaybeCallableDateLike",
-    "MaybeCallableEvent",
     "MaybeCallablePathLike",
     "MaybeCallableStr",
     "MaybeCallableZonedDateTimeLike",
