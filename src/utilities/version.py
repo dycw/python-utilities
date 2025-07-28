@@ -173,7 +173,7 @@ def to_version(
         case str():
             return parse_version(version)
         case Callable() as func:
-            return to_version(version=func())
+            return to_version(func())
         case never:
             assert_never(never)
 
