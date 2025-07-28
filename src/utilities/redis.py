@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from redis.typing import EncodableT
 
     from utilities.iterables import MaybeIterable
-    from utilities.types import Delta, MaybeListStr, MaybeSequence, MaybeType, TypeLike
+    from utilities.types import Delta, MaybeSequence, MaybeType, TypeLike
 
 
 _PUBLISH_TIMEOUT: Delta = SECOND
@@ -583,7 +583,7 @@ class PublishError(Exception):
 async def publish_many[T](
     redis: Redis,
     channel: str,
-    data: MaybeSequence[bytes | T] | MaybeListStr,
+    data: MaybeSequence[bytes | str | T],
     /,
     *,
     serializer: Callable[[T], EncodableT] | None = None,

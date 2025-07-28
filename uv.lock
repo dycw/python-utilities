@@ -511,7 +511,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.151.12"
+version = "0.152.0"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -758,7 +758,7 @@ requires-dist = [
     { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
     { name = "coloredlogs", marker = "extra == 'logging'", specifier = ">=15.0.1,<15.1" },
     { name = "dycw-pytest-only", marker = "extra == 'test'", specifier = ">=2.1.1,<2.2" },
-    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.136.1,<6.137" },
+    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.136.6,<6.137" },
     { name = "pudb", marker = "extra == 'test'", specifier = ">=2025.1,<2025.2" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.4.1,<8.5" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=1.1.0,<1.2" },
@@ -818,7 +818,7 @@ fastapi-test = [
 fpdf2 = [{ name = "fpdf2", specifier = ">=2.8.3,<2.9" }]
 hashlib-test = [{ name = "orjson" }]
 http-test = [{ name = "orjson" }]
-hypothesis = [{ name = "hypothesis", specifier = ">=6.136.1,<6.137" }]
+hypothesis = [{ name = "hypothesis", specifier = ">=6.136.6,<6.137" }]
 hypothesis-test = [
     { name = "libcst" },
     { name = "numpy" },
@@ -1138,15 +1138,15 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.136.4"
+version = "6.136.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8a/e2/ebee1678151e8f06f84f10e74229060b5db9f16fd4cac35b44a8286aa669/hypothesis-6.136.4.tar.gz", hash = "sha256:56bf16ba20d39ad7c5f8d3c42a5a7503844a7892dbf6f6e6e79b2188319a56d8", size = 457805, upload-time = "2025-07-25T02:38:14.341Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e2/d6/6c45c56cdc532f25a354cf2c93a3bebc21b91b6a48125e3acfd364161447/hypothesis-6.136.6.tar.gz", hash = "sha256:2ad2e4f2012be4d41c6515b0628d84d48af6e6c38b4db50840bd9ac0899f5856", size = 458049, upload-time = "2025-07-28T09:48:02.495Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8a/95/bcdf24ac537b46d49b73c6a7e9f3b0d66016958299d36c41636afa9187cd/hypothesis-6.136.4-py3-none-any.whl", hash = "sha256:488156d3603a9db6218ab2bf68d75e0fd967671a676ecc478c6b44eb153a7527", size = 524759, upload-time = "2025-07-25T02:38:10.278Z" },
+    { url = "https://files.pythonhosted.org/packages/e9/e2/7fd1a9b12740b3472349f7e3c216e94b1b2e03d32c9d842284b57eb5a3f8/hypothesis-6.136.6-py3-none-any.whl", hash = "sha256:1d6296dde36d42263bd44a084c74e91467e78186676e410167f920aa0374a9e7", size = 524958, upload-time = "2025-07-28T09:47:58.938Z" },
 ]
 
 [[package]]
@@ -1542,11 +1542,11 @@ wheels = [
 
 [[package]]
 name = "narwhals"
-version = "1.48.1"
+version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/9b/da/fe15ccd311ebb8fbbdacc447ba5888306c0b4a6253f628d60df351c36c7d/narwhals-1.48.1.tar.gz", hash = "sha256:b375cfdfc20b84b5ac0926f34c5c1373eb23ebea48d47bf75e282161cda63e34", size = 515882, upload-time = "2025-07-24T19:02:19.14Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d9/58/0fbbfb13662297c8447d1872670da79f3f2a63fb68ae9aac9965cdc2d428/narwhals-2.0.0.tar.gz", hash = "sha256:d967bea54dfb6cd787abf3865ab4d72b8259d8f798c1c12c4eb693d5e9cebb24", size = 525527, upload-time = "2025-07-28T08:12:43.407Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cd/cf/411b2083991c6906634910ea0c5e5ea0a01f7f14da4194b39d7ad054c187/narwhals-1.48.1-py3-none-any.whl", hash = "sha256:76e3b069cf20a2746d8e227686b959530e98e8018c594a04e5f4f6f77e0872d9", size = 377332, upload-time = "2025-07-24T19:02:17.548Z" },
+    { url = "https://files.pythonhosted.org/packages/93/9d/9e2afb7d3d43bfa1a1f80d2da291064753305f9871851f1cd5a60d870893/narwhals-2.0.0-py3-none-any.whl", hash = "sha256:9c9fe8a969b090d783edbcb3b58e1d0d15f5100fdf85b53f5e76d38f4ce7f19a", size = 385206, upload-time = "2025-07-28T08:12:39.545Z" },
 ]
 
 [[package]]

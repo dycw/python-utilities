@@ -69,7 +69,7 @@ http-test = [
   "orjson",
 ]
 hypothesis = [
-  "hypothesis >=6.136.1, <6.137",
+  "hypothesis >=6.136.6, <6.137",
 ]
 hypothesis-test = [
   "libcst",
@@ -229,7 +229,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.151.12"
+version = "0.152.0"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -241,7 +241,7 @@ logging = [
 ]
 test = [
   "dycw-pytest-only >=2.1.1, <2.2",
-  "hypothesis >=6.136.1, <6.137",
+  "hypothesis >=6.136.6, <6.137",
   "pudb >=2025.1, <2025.2",
   "pytest >=8.4.1, <8.5",
   "pytest-asyncio >=1.1.0, <1.2",
@@ -262,7 +262,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.151.12"
+current_version = "0.152.0"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
