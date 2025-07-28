@@ -6,7 +6,7 @@ from dataclasses import dataclass, field, replace
 from functools import total_ordering
 from typing import Any, Self, assert_never, overload, override
 
-from utilities.sentinel import Sentinel, sentinel
+from utilities.sentinel import Sentinel
 from utilities.types import MaybeCallable, MaybeStr
 
 type VersionLike = MaybeStr[Version]
@@ -164,7 +164,7 @@ def to_version(version: None, /) -> None: ...
 @overload
 def to_version(version: Sentinel, /) -> Sentinel: ...
 def to_version(
-    version: MaybeCallableVersionLike | None | Sentinel = sentinel, /
+    version: MaybeCallableVersionLike | None | Sentinel, /
 ) -> Version | None | Sentinel:
     """Convert to a version."""
     match version:

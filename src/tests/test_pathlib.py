@@ -284,6 +284,9 @@ class TestTempCWD:
 
 
 class TestToPath:
+    def test_default(self) -> None:
+        assert to_path() == Path.cwd()
+
     @given(path=paths())
     def test_path(self, *, path: Path) -> None:
         assert to_path(path) == path

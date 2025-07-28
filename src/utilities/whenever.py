@@ -828,13 +828,13 @@ class TimePeriod:
 
 
 @overload
-def to_date(date: MaybeCallableDateLike | dt.date, /) -> Date: ...
-@overload
 def to_date(date: None, /) -> None: ...
 @overload
 def to_date(date: Sentinel, /) -> Sentinel: ...
+@overload
+def to_date(date: MaybeCallableDateLike | dt.date = get_today, /) -> Date: ...
 def to_date(
-    date: MaybeCallableDateLike | dt.date | None | Sentinel = sentinel, /
+    date: MaybeCallableDateLike | dt.date | None | Sentinel = get_today, /
 ) -> Date | None | Sentinel:
     """Convert to a date."""
     match date:
@@ -1601,18 +1601,15 @@ class _ToYearsTimeError(ToYearsError):
 
 
 @overload
-def to_zoned_date_time(
-    date_time: MaybeCallableZonedDateTimeLike | dt.datetime, /
-) -> ZonedDateTime: ...
-@overload
 def to_zoned_date_time(date_time: None, /) -> None: ...
 @overload
 def to_zoned_date_time(date_time: Sentinel, /) -> Sentinel: ...
+@overload
 def to_zoned_date_time(
-    date_time: MaybeCallableZonedDateTimeLike
-    | dt.datetime
-    | None
-    | Sentinel = sentinel,
+    date_time: MaybeCallableZonedDateTimeLike | dt.datetime = get_now, /
+) -> ZonedDateTime: ...
+def to_zoned_date_time(
+    date_time: MaybeCallableZonedDateTimeLike | dt.datetime | None | Sentinel = get_now,
     /,
 ) -> ZonedDateTime | None | Sentinel:
     """Convert to a zoned date-time."""

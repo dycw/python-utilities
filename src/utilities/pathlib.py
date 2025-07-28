@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
-from utilities.sentinel import Sentinel, sentinel
+from utilities.sentinel import Sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -285,13 +285,13 @@ def temp_cwd(path: PathLike, /) -> Iterator[None]:
 
 
 @overload
-def to_path(path: MaybeCallablePathLike, /) -> Path: ...
-@overload
 def to_path(path: None, /) -> None: ...
 @overload
 def to_path(path: Sentinel, /) -> Sentinel: ...
+@overload
+def to_path(path: MaybeCallablePathLike = Path.cwd, /) -> Path: ...
 def to_path(
-    path: MaybeCallablePathLike | None | Sentinel = sentinel, /
+    path: MaybeCallablePathLike | None | Sentinel = Path.cwd, /
 ) -> Path | None | Sentinel:
     """Get the path."""
     match path:

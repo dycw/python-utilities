@@ -86,12 +86,12 @@ def _make_converter[T](
 
 
 def _parse_path(
-    path: str, /, *, resolve: bool = False, pwd: MaybeCallablePathLike | None = None
+    path: str, /, *, resolve: bool = False, pwd: MaybeCallablePathLike = Path.cwd
 ) -> Path:
     path = substitute_environ(path, **environ)
     match resolve:
         case True:
-            return to_path(path=pwd).joinpath(path).resolve()
+            return to_path(pwd).joinpath(path).resolve()
         case False:
             return Path(path)
         case never:

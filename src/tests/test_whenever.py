@@ -880,6 +880,9 @@ class TestTimePeriod:
 
 
 class TestToDate:
+    def test_default(self) -> None:
+        assert to_date() == get_today()
+
     @given(date=dates())
     def test_date(self, *, date: Date) -> None:
         assert to_date(date) == date
@@ -1425,6 +1428,9 @@ class TestToYears:
 
 
 class TestToZonedDateTime:
+    def test_default(self) -> None:
+        assert abs(to_zoned_date_time() - get_now()) <= SECOND
+
     @given(date_time=zoned_datetimes())
     def test_date_time(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time) == date_time
