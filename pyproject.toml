@@ -214,7 +214,7 @@ statsmodels = [
   "statsmodels >=0.14.4, <0.15",
 ]
 typed-settings = [
-  "typed-settings >=24.6.0, <24.7",
+  "typed-settings >=25.0.0, <25.1",
 ]
 tzdata = [
   "tzdata >=2025.2, <2025.3",
