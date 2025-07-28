@@ -657,6 +657,14 @@ class TestToDate:
     def test_date(self, *, date: Date) -> None:
         assert to_date(date) == date
 
+    @given(date=dates())
+    def test_str(self, *, date: Date) -> None:
+        assert to_date(date.format_common_iso()) == date
+
+    @given(date=dates())
+    def test_py_date(self, *, date: Date) -> None:
+        assert to_date(date.py_date()) == date
+
     @given(date=none() | sentinels())
     def test_none_or_sentinel(self, *, date: None | Sentinel) -> None:
         assert to_date(date) is date

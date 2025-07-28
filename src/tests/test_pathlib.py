@@ -6,12 +6,12 @@ from shutil import copytree
 from typing import TYPE_CHECKING, Self
 
 from hypothesis import HealthCheck, given, settings
-from hypothesis.strategies import integers, sets
+from hypothesis.strategies import integers, none, sets
 from pytest import mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.dataclasses import replace_non_sentinel
-from utilities.hypothesis import git_repos, paths, temp_paths
+from utilities.hypothesis import git_repos, paths, sentinels, temp_paths
 from utilities.pathlib import (
     GetPackageRootError,
     GetRepoRootError,
@@ -292,11 +292,9 @@ class TestToPath:
     def test_str(self, *, path: Path) -> None:
         assert to_path(str(path)) == path
 
-    def test_none(self) -> None:
-        assert to_path(None) == Path.cwd()
-
-    def test_sentinel(self) -> None:
-        assert to_path(sentinel) is sentinel
+    @given(path=none() | sentinels())
+    def test_none_or_sentinel(self, *, path: None | Sentinel) -> None:
+        assert to_path(None) is path
 
     @given(path1=paths(), path2=paths())
     def test_replace_non_sentinel(self, *, path1: Path, path2: Path) -> None:

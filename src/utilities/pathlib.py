@@ -79,9 +79,9 @@ class GetPackageRootError(Exception):
 ##
 
 
-def get_repo_root(*, path: MaybeCallablePathLike | None = None) -> Path:
+def get_repo_root(*, path: MaybeCallablePathLike = Path.cwd) -> Path:
     """Get the repo root."""
-    path = to_path(path=path)
+    path = to_path(path)
     path_dir = path.parent if path.is_file() else path
     try:
         output = check_output(
@@ -112,9 +112,9 @@ class GetRepoRootError(Exception):
 ##
 
 
-def get_root(*, path: MaybeCallablePathLike | None = None) -> Path:
+def get_root(*, path: MaybeCallablePathLike = Path.cwd) -> Path:
     """Get the root of a path."""
-    path = to_path(path=path)
+    path = to_path(path)
     try:
         repo = get_repo_root(path=path)
     except GetRepoRootError:
@@ -285,7 +285,9 @@ def temp_cwd(path: PathLike, /) -> Iterator[None]:
 
 
 @overload
-def to_path(path: MaybeCallablePathLike | None, /) -> Path: ...
+def to_path(path: MaybeCallablePathLike, /) -> Path: ...
+@overload
+def to_path(path: None, /) -> None: ...
 @overload
 def to_path(path: Sentinel, /) -> Sentinel: ...
 def to_path(

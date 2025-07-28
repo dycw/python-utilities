@@ -642,24 +642,22 @@ class _RoundDateOrDateTimeDateTimeIntraDayWithWeekdayError(RoundDateOrDateTimeEr
 
 
 @overload
-def to_date(date: MaybeCallableDateLike, /) -> Date: ...
+def to_date(date: MaybeCallableDateLike | dt.date, /) -> Date: ...
 @overload
 def to_date(date: None, /) -> None: ...
 @overload
 def to_date(date: Sentinel, /) -> Sentinel: ...
-@overload
-def to_date(date: MaybeCallableDateLike | Sentinel, /) -> Date | Sentinel: ...
-@overload
 def to_date(
-    date: MaybeCallableDateLike | None | Sentinel = sentinel, /
-) -> Date | None | Sentinel: ...
-def to_date(
-    date: MaybeCallableDateLike | None | Sentinel = sentinel, /
+    date: MaybeCallableDateLike | dt.date | None | Sentinel = sentinel, /
 ) -> Date | None | Sentinel:
     """Get the date."""
     match date:
         case Date() | None | Sentinel():
             return date
+        case str():
+            return Date.parse_common_iso(date)
+        case dt.date():
+            return Date.from_py_date(date)
         case Callable() as func:
             return to_date(func())
         case never:
