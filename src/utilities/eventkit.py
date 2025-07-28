@@ -29,7 +29,7 @@ from eventkit import (
 
 from utilities.functions import apply_decorators
 from utilities.iterables import always_iterable
-from utilities.logging import get_logger
+from utilities.logging import to_logger
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -297,7 +297,7 @@ def lift_listener[F1: Callable[..., MaybeCoro[None]], F2: Callable](
                 except Exception as exc:  # noqa: BLE001
                     if (ignore is not None) and isinstance(exc, ignore):
                         return
-                    get_logger(logger=logger).exception("")
+                    to_logger(logger).exception("")
 
             lifted = listener_no_error_sync
 
@@ -311,7 +311,7 @@ def lift_listener[F1: Callable[..., MaybeCoro[None]], F2: Callable](
                 except Exception as exc:  # noqa: BLE001
                     if (ignore is not None) and isinstance(exc, ignore):
                         return
-                    get_logger(logger=logger).exception("")
+                    to_logger(logger).exception("")
 
             lifted = listener_no_error_async
         case _, _:
