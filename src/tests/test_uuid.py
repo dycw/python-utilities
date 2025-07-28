@@ -49,7 +49,7 @@ class TestToUUID:
         uuid = to_uuid(seed)
         assert isinstance(uuid, UUID)
 
-    @given(dates=pairs(uuids()))
+    @given(uuids=pairs(uuids()))
     def test_replace_non_sentinel(self, *, uuids: tuple[UUID, UUID]) -> None:
         uuid1, uuid2 = uuids
 
