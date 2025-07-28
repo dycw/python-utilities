@@ -49,9 +49,6 @@ dev = [
   "pytest-cov >=6.2.1, <6.3",
   "pytest-timeout >=2.4.0, <2.5",
 ]
-dnspython = [
-  "dnspython >=2.7.0, <2.8",
-]
 eventkit = [
   "eventkit >=1.0.3, <1.1",
 ]
@@ -214,7 +211,7 @@ statsmodels = [
   "statsmodels >=0.14.4, <0.15",
 ]
 typed-settings = [
-  "typed-settings >=24.6.0, <24.7",
+  "typed-settings >=25.0.0, <25.1",
 ]
 tzdata = [
   "tzdata >=2025.2, <2025.3",
@@ -232,7 +229,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.151.11"
+version = "0.151.12"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -265,7 +262,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.151.11"
+current_version = "0.151.12"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"

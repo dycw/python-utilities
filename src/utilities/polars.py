@@ -7,7 +7,7 @@ from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import asdict, dataclass
 from functools import partial, reduce
-from itertools import chain, product
+from itertools import chain, pairwise, product
 from math import ceil, log
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
@@ -1471,6 +1471,37 @@ class _GetSeriesNumberOfDecimalsAllNullError(GetSeriesNumberOfDecimalsError):
 ##
 
 
+@overload
+def increasing_horizontal(*columns: ExprLike) -> Expr: ...
+@overload
+def increasing_horizontal(*columns: Series) -> Series: ...
+@overload
+def increasing_horizontal(*columns: IntoExprColumn) -> Expr | Series: ...
+def increasing_horizontal(*columns: IntoExprColumn) -> Expr | Series:
+    """Check if a set of columns are increasing."""
+    columns2 = ensure_expr_or_series_many(*columns)
+    if len(columns2) == 0:
+        return lit(value=True, dtype=Boolean)
+    return all_horizontal(prev < curr for prev, curr in pairwise(columns2))
+
+
+@overload
+def decreasing_horizontal(*columns: ExprLike) -> Expr: ...
+@overload
+def decreasing_horizontal(*columns: Series) -> Series: ...
+@overload
+def decreasing_horizontal(*columns: IntoExprColumn) -> Expr | Series: ...
+def decreasing_horizontal(*columns: IntoExprColumn) -> Expr | Series:
+    """Check if a set of columns are decreasing."""
+    columns2 = ensure_expr_or_series_many(*columns)
+    if len(columns2) == 0:
+        return lit(value=True, dtype=Boolean)
+    return all_horizontal(prev > curr for prev, curr in pairwise(columns2))
+
+
+##
+
+
 def insert_after(df: DataFrame, column: str, value: IntoExprColumn, /) -> DataFrame:
     """Insert a series after an existing column; not in-place."""
     columns = df.columns
@@ -2472,6 +2503,7 @@ __all__ = [
     "cross",
     "dataclass_to_dataframe",
     "dataclass_to_schema",
+    "decreasing_horizontal",
     "deserialize_dataframe",
     "drop_null_struct_series",
     "ensure_data_type",
@@ -2483,6 +2515,7 @@ __all__ = [
     "get_expr_name",
     "get_frequency_spectrum",
     "get_series_number_of_decimals",
+    "increasing_horizontal",
     "insert_after",
     "insert_before",
     "insert_between",

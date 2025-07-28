@@ -147,6 +147,7 @@ from utilities.polars import (
     cross_rolling_quantile,
     dataclass_to_dataframe,
     dataclass_to_schema,
+    decreasing_horizontal,
     deserialize_dataframe,
     deserialize_series,
     drop_null_struct_series,
@@ -159,6 +160,7 @@ from utilities.polars import (
     get_expr_name,
     get_frequency_spectrum,
     get_series_number_of_decimals,
+    increasing_horizontal,
     insert_after,
     insert_before,
     insert_between,
@@ -1592,6 +1594,39 @@ class TestGetSeriesNumberOfDecimals:
             match="Series must not be all-null; got .*",
         ):
             _ = get_series_number_of_decimals(Series(dtype=Float64))
+
+
+class TestIncreasingAndDecreasingHorizontal:
+    def test_main(self) -> None:
+        df = DataFrame(
+            data=[(1, 2, 3), (1, 3, 2), (2, 1, 3), (2, 3, 1), (3, 1, 2), (3, 2, 1)],
+            schema={"x": Int64, "y": Int64, "z": Int64},
+            orient="row",
+        ).with_columns(
+            increasing_horizontal("x", "y", "z").alias("inc"),
+            decreasing_horizontal("x", "y", "z").alias("dec"),
+        )
+        inc = Series(
+            name="inc", values=[True, False, False, False, False, False], dtype=Boolean
+        )
+        assert_series_equal(df["inc"], inc)
+        dec = Series(
+            name="dec", values=[False, False, False, False, False, True], dtype=Boolean
+        )
+        assert_series_equal(df["dec"], dec)
+
+    def test_empty(self) -> None:
+        df = (
+            Series(name="x", values=[1, 2, 3], dtype=Int64)
+            .to_frame()
+            .with_columns(
+                increasing_horizontal().alias("inc"),
+                decreasing_horizontal().alias("dec"),
+            )
+        )
+        expected = Series(values=[True, True, True], dtype=Boolean)
+        assert_series_equal(df["inc"], expected, check_names=False)
+        assert_series_equal(df["dec"], expected, check_names=False)
 
 
 class TestInsertBeforeOrAfter:
