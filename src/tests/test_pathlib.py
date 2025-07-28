@@ -11,7 +11,7 @@ from pytest import mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.dataclasses import replace_non_sentinel
-from utilities.hypothesis import git_repos, paths, sentinels, temp_paths
+from utilities.hypothesis import git_repos, pairs, paths, sentinels, temp_paths
 from utilities.pathlib import (
     GetPackageRootError,
     GetRepoRootError,
@@ -296,8 +296,10 @@ class TestToPath:
     def test_none_or_sentinel(self, *, path: None | Sentinel) -> None:
         assert to_path(path) is path
 
-    @given(path1=paths(), path2=paths())
-    def test_replace_non_sentinel(self, *, path1: Path, path2: Path) -> None:
+    @given(paths=pairs(paths()))
+    def test_replace_non_sentinel(self, *, paths: tuple[Path, Path]) -> None:
+        path1, path2 = paths
+
         @dataclass(kw_only=True, slots=True)
         class Example:
             path: Path = field(default_factory=Path.cwd)

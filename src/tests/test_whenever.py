@@ -1442,10 +1442,12 @@ class TestToZonedDateTime:
         result = to_zoned_date_time(date_time.py_datetime().astimezone(dt.UTC))
         assert result == date_time
 
-    @given(date_time1=zoned_datetimes(), date_time2=zoned_datetimes())
+    @given(date_times=pairs(zoned_datetimes()))
     def test_replace_non_sentinel(
-        self, *, date_time1: ZonedDateTime, date_time2: ZonedDateTime
+        self, *, date_times: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
+        date_time1, date_time2 = date_times
+
         @dataclass(kw_only=True, slots=True)
         class Example:
             date_time: ZonedDateTime = field(default_factory=get_now)
