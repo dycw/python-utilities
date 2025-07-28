@@ -173,7 +173,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
             def throttle_sync_on_pass(*args: Any, **kwargs: Any) -> None:
                 _skipif_recent(root=root, delta=delta)
                 cast("Callable[..., None]", func)(*args, **kwargs)
-                _write(root=root)
+                _write(root)
 
             return cast("Any", throttle_sync_on_pass)
 
@@ -182,7 +182,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
             @wraps(func)
             def throttle_sync_on_try(*args: Any, **kwargs: Any) -> None:
                 _skipif_recent(root=root, delta=delta)
-                _write(root=root)
+                _write(root)
                 cast("Callable[..., None]", func)(*args, **kwargs)
 
             return cast("Any", throttle_sync_on_try)
@@ -193,7 +193,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
             async def throttle_async_on_pass(*args: Any, **kwargs: Any) -> None:
                 _skipif_recent(root=root, delta=delta)
                 await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
-                _write(root=root)
+                _write(root)
 
             return cast("Any", throttle_async_on_pass)
 
@@ -202,7 +202,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
             @wraps(func)
             async def throttle_async_on_try(*args: Any, **kwargs: Any) -> None:
                 _skipif_recent(root=root, delta=delta)
-                _write(root=root)
+                _write(root)
                 await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
 
             return cast("Any", throttle_async_on_try)
@@ -214,7 +214,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
 def _skipif_recent(*, root: PathLike | None = None, delta: Delta = SECOND) -> None:
     if skip is None:
         return  # pragma: no cover
-    path = _get_path(root=root)
+    path = _get_path(root)
     try:
         contents = path.read_text()
     except FileNotFoundError:
@@ -229,7 +229,7 @@ def _skipif_recent(*, root: PathLike | None = None, delta: Delta = SECOND) -> No
         _ = skip(reason=f"{_get_name()} throttled (age {age})")
 
 
-def _get_path(*, root: PathLike | None = None) -> Path:
+def _get_path(root: PathLike | None = None, /) -> Path:
     if root is None:
         root_use = get_root().joinpath(".pytest_cache", "throttle")  # pragma: no cover
     else:
@@ -246,8 +246,8 @@ def _get_name() -> str:
     return environ["PYTEST_CURRENT_TEST"]
 
 
-def _write(*, root: PathLike | None = None) -> None:
-    path = _get_path(root=root)
+def _write(root: PathLike | None = None, /) -> None:
+    path = _get_path(root)
     with writer(path, overwrite=True) as temp:
         _ = temp.write_text(get_now_local().format_common_iso())
 

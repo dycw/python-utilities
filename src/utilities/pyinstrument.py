@@ -17,11 +17,11 @@ if TYPE_CHECKING:
 
 
 @contextmanager
-def profile(*, path: MaybeCallablePathLike | None = Path.cwd) -> Iterator[None]:
+def profile(path: MaybeCallablePathLike = Path.cwd, /) -> Iterator[None]:
     """Profile the contents of a block."""
     with Profiler() as profiler:
         yield
-    filename = to_path(path=path).joinpath(
+    filename = to_path(path).joinpath(
         f"profile__{format_compact(to_local_plain(get_now()))}.html"
     )
     with writer(filename) as temp:
