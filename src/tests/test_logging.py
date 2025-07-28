@@ -573,4 +573,4 @@ class TestToLogger:
         assert to_logger(name).name == name
 
     def test_none(self) -> None:
-        assert to_logger().name == "root"
+        assert to_logger(None).name == "root"
