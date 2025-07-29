@@ -28,7 +28,7 @@ from utilities.sentinel import Sentinel
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
-    from utilities.types import MaybeCallableBoolLike, StrStrMapping
+    from utilities.types import MaybeCallableBoolLike, MaybeCallableStr, StrStrMapping
 
 
 DEFAULT_SEPARATOR = ","
@@ -462,6 +462,26 @@ def to_bool(
 ##
 
 
+@overload
+def to_str(text: MaybeCallableStr, /) -> str: ...
+@overload
+def to_str(text: None, /) -> None: ...
+@overload
+def to_str(text: Sentinel, /) -> Sentinel: ...
+def to_str(text: MaybeCallableStr | None | Sentinel, /) -> str | None | Sentinel:
+    """Convert to a string."""
+    match text:
+        case str() | None | Sentinel():
+            return text
+        case Callable() as func:
+            return to_str(func())
+        case never:
+            assert_never(never)
+
+
+##
+
+
 def unique_str() -> str:
     """Generate at unique string."""
     now = time_ns()
@@ -491,5 +511,6 @@ __all__ = [
     "str_encode",
     "strip_and_dedent",
     "to_bool",
+    "to_str",
     "unique_str",
 ]
