@@ -38,6 +38,7 @@ from utilities.text import (
     str_encode,
     strip_and_dedent,
     to_bool,
+    to_str,
     unique_str,
 )
 
@@ -338,6 +339,20 @@ class TestToBool:
     @given(bool_=booleans())
     def test_callable(self, *, bool_: bool) -> None:
         assert to_bool(lambda: bool_) is bool_
+
+
+class TestToStr:
+    @given(text=text_ascii())
+    def test_str(self, *, text: str) -> None:
+        assert to_str(text) == text
+
+    @given(text=text_ascii())
+    def test_callable(self, *, text: str) -> None:
+        assert to_str(lambda: text) == text
+
+    @given(text=none() | sentinels())
+    def test_none_or_sentinel(self, *, text: None | Sentinel) -> None:
+        assert to_str(text) is text
 
 
 class TestUniqueStrs:
