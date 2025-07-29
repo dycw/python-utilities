@@ -46,7 +46,7 @@ class TestFormatExceptionStack:
             self._assert_lines(result)
 
     @mark.parametrize("start", [param(get_now), param(None)])
-    def test_header(self, *, start: MaybeCallableZonedDateTimeLike) -> None:
+    def test_header(self, *, start: MaybeCallableZonedDateTimeLike | None) -> None:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
