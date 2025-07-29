@@ -37,7 +37,7 @@ from utilities.atomicwrites import move_many
 from utilities.dataclasses import replace_non_sentinel
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import OneEmptyError, always_iterable, one
-from utilities.pathlib import ensure_suffix, get_path
+from utilities.pathlib import ensure_suffix, to_path
 from utilities.re import (
     ExtractGroupError,
     ExtractGroupsError,
@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from logging import _FilterType
 
     from utilities.types import (
-        LoggerOrName,
+        LoggerLike,
         LogLevel,
         MaybeCallablePathLike,
         MaybeIterable,
@@ -87,7 +87,7 @@ def add_filters(handler: Handler, /, *filters: _FilterType) -> None:
 
 def basic_config(
     *,
-    obj: LoggerOrName | Handler | None = None,
+    obj: LoggerLike | Handler | None = None,
     format_: str | None = None,
     prefix: str | None = None,
     hostname: bool = False,
@@ -121,7 +121,7 @@ def basic_config(
             )
         case str() as name:
             basic_config(
-                obj=get_logger(logger=name),
+                obj=to_logger(name),
                 format_=format_,
                 prefix=prefix,
                 hostname=hostname,
@@ -268,20 +268,6 @@ def _get_plain_formatter(
 ##
 
 
-def get_logger(*, logger: LoggerOrName | None = None) -> Logger:
-    """Get a logger."""
-    match logger:
-        case Logger():
-            return logger
-        case str() | None:
-            return getLogger(logger)
-        case never:
-            assert_never(never)
-
-
-##
-
-
 def get_logging_level_number(level: LogLevel, /) -> int:
     """Get the logging level number."""
     mapping = getLevelNamesMapping()
@@ -305,13 +291,13 @@ class GetLoggingLevelNumberError(Exception):
 
 def setup_logging(
     *,
-    logger: LoggerOrName | None = None,
+    logger: LoggerLike | None = None,
     format_: str | None = None,
     datefmt: str = _DEFAULT_DATEFMT,
     console_level: LogLevel = "INFO",
     console_prefix: str = "❯",  # noqa: RUF001
     console_filters: MaybeIterable[_FilterType] | None = None,
-    files_dir: MaybeCallablePathLike | None = None,
+    files_dir: MaybeCallablePathLike = Path.cwd,
     files_max_bytes: int = _DEFAULT_MAX_BYTES,
     files_when: _When = _DEFAULT_WHEN,
     files_interval: int = 1,
@@ -327,15 +313,14 @@ def setup_logging(
         level=console_level,
         filters=console_filters,
     )
-    logger_use = get_logger(logger=logger)
+    logger_use = to_logger(logger)
     name = logger_use.name
-    dir_ = get_path(path=files_dir)
     levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]
     for level in levels:
         lower = level.lower()
         for stem in [lower, f"{name}-{lower}"]:
             handler = SizeAndTimeRotatingFileHandler(
-                dir_.joinpath(stem).with_suffix(".txt"),
+                to_path(files_dir).joinpath(stem).with_suffix(".txt"),
                 maxBytes=files_max_bytes,
                 when=files_when,
                 interval=files_interval,
@@ -626,6 +611,20 @@ class _Rotation:
         return self.file.replace(index=self.index, start=self.start, end=self.end).path
 
 
+##
+
+
+def to_logger(logger: LoggerLike | None = None, /) -> Logger:
+    """Convert to a logger."""
+    match logger:
+        case Logger():
+            return logger
+        case str() | None:
+            return getLogger(logger)
+        case never:
+            assert_never(never)
+
+
 __all__ = [
     "FilterForKeyError",
     "GetLoggingLevelNumberError",
@@ -634,7 +633,7 @@ __all__ = [
     "basic_config",
     "filter_for_key",
     "get_format_str",
-    "get_logger",
     "get_logging_level_number",
     "setup_logging",
+    "to_logger",
 ]

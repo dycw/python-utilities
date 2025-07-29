@@ -11,7 +11,7 @@ from pytest import mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.dataclasses import replace_non_sentinel
-from utilities.hypothesis import git_repos, paths, temp_paths
+from utilities.hypothesis import git_repos, pairs, paths, temp_paths
 from utilities.pathlib import (
     GetPackageRootError,
     GetRepoRootError,
@@ -23,7 +23,6 @@ from utilities.pathlib import (
     ensure_suffix,
     expand_path,
     get_package_root,
-    get_path,
     get_repo_root,
     get_root,
     get_tail,
@@ -31,6 +30,7 @@ from utilities.pathlib import (
     list_dir,
     module_path,
     temp_cwd,
+    to_path,
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TemporaryDirectory
@@ -77,42 +77,6 @@ class TestExpandPath:
         assert result == expected
 
 
-class TestGetPath:
-    @given(path=paths())
-    def test_path(self, *, path: Path) -> None:
-        assert get_path(path=path) == path
-
-    @given(path=paths())
-    def test_str(self, *, path: Path) -> None:
-        assert get_path(path=str(path)) == path
-
-    def test_none(self) -> None:
-        assert get_path(path=None) == Path.cwd()
-
-    def test_sentinel(self) -> None:
-        assert get_path(path=sentinel) is sentinel
-
-    @given(path1=paths(), path2=paths())
-    def test_replace_non_sentinel(self, *, path1: Path, path2: Path) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            path: Path = field(default_factory=Path.cwd)
-
-            def replace(
-                self, *, path: MaybeCallablePathLike | Sentinel = sentinel
-            ) -> Self:
-                return replace_non_sentinel(self, path=get_path(path=path))
-
-        obj = Example(path=path1)
-        assert obj.path == path1
-        assert obj.replace().path == path1
-        assert obj.replace(path=path2).path == path2
-
-    @given(path=paths())
-    def test_callable(self, *, path: Path) -> None:
-        assert get_path(path=lambda: path) == path
-
-
 class TestGetPackageRoot:
     @given(tail=paths())
     @settings(
@@ -121,7 +85,7 @@ class TestGetPackageRoot:
     def test_dir(self, *, tmp_path: Path, tail: Path) -> None:
         tmp_path.joinpath("pyproject.toml").touch()
         path = tmp_path.joinpath(tail)
-        result = get_package_root(path=path)
+        result = get_package_root(path)
         expected = tmp_path.resolve()
         assert result == expected
 
@@ -133,20 +97,20 @@ class TestGetPackageRoot:
         tmp_path.joinpath("pyproject.toml").touch()
         path = tmp_path.joinpath(tail)
         path.touch()
-        root = get_package_root(path=path)
+        root = get_package_root(path)
         expected = tmp_path.resolve()
         assert root == expected
 
     def test_error(self, *, tmp_path: Path) -> None:
         with raises(GetPackageRootError, match="Path is not part of a package: .*"):
-            _ = get_package_root(path=tmp_path)
+            _ = get_package_root(tmp_path)
 
 
 class TestGetRepoRoot:
     @given(repo=git_repos(), tail=paths())
     @settings(max_examples=1)
     def test_dir(self, *, repo: Path, tail: Path) -> None:
-        root = get_repo_root(path=repo.joinpath(tail))
+        root = get_repo_root(repo.joinpath(tail))
         expected = repo.resolve()
         assert root == expected
 
@@ -155,7 +119,7 @@ class TestGetRepoRoot:
     def test_file(self, *, repo: Path, tail: Path) -> None:
         path = repo.joinpath(tail)
         path.touch()
-        root = get_repo_root(path=path)
+        root = get_repo_root(path)
         expected = repo.resolve()
         assert root == expected
 
@@ -163,14 +127,14 @@ class TestGetRepoRoot:
         with raises(
             GetRepoRootError, match="Path is not part of a `git` repository: .*"
         ):
-            _ = get_repo_root(path=tmp_path)
+            _ = get_repo_root(tmp_path)
 
 
 class TestGetRoot:
     @given(repo=git_repos(), tail=paths())
     @settings(max_examples=1)
     def test_repo_only(self, *, repo: Path, tail: Path) -> None:
-        root = get_root(path=repo.joinpath(tail))
+        root = get_root(repo.joinpath(tail))
         expected = repo.resolve()
         assert root == expected
 
@@ -181,7 +145,7 @@ class TestGetRoot:
     def test_package_only(self, *, tmp_path: Path, tail: Path) -> None:
         tmp_path.joinpath("pyproject.toml").touch()
         path = tmp_path.joinpath(tail)
-        result = get_root(path=path)
+        result = get_root(path)
         expected = tmp_path.resolve()
         assert result == expected
 
@@ -192,7 +156,7 @@ class TestGetRoot:
     def test_repo_and_package(self, *, repo: Path, tail: Path) -> None:
         repo.joinpath("pyproject.toml").touch()
         path = repo.joinpath(tail)
-        root = get_root(path=path)
+        root = get_root(path)
         expected = repo.resolve()
         assert root == expected
 
@@ -204,7 +168,7 @@ class TestGetRoot:
         path = repo.joinpath(tail)
         path.mkdir(parents=True)
         path.joinpath("pyproject.toml").touch()
-        root = get_root(path=path)
+        root = get_root(path)
         expected = path.resolve()
         assert root == expected
 
@@ -217,13 +181,13 @@ class TestGetRoot:
             temp.joinpath("pyproject.toml").touch()
             path = temp.joinpath(tail)
             _ = copytree(repo, path)
-            root = get_root(path=path)
+            root = get_root(path)
             expected = path.resolve()
             assert root == expected
 
     def test_error(self, *, tmp_path: Path) -> None:
         with raises(GetRootError, match="Unable to determine root from '.*'"):
-            _ = get_root(path=tmp_path)
+            _ = get_root(tmp_path)
 
 
 class TestGetTail:
@@ -317,3 +281,44 @@ class TestTempCWD:
         with temp_cwd(tmp_path):
             assert Path.cwd() == tmp_path
         assert Path.cwd() != tmp_path
+
+
+class TestToPath:
+    def test_default(self) -> None:
+        assert to_path() == Path.cwd()
+
+    @given(path=paths())
+    def test_path(self, *, path: Path) -> None:
+        assert to_path(path) == path
+
+    @given(path=paths())
+    def test_str(self, *, path: Path) -> None:
+        assert to_path(str(path)) == path
+
+    @given(path=paths())
+    def test_callable(self, *, path: Path) -> None:
+        assert to_path(lambda: path) == path
+
+    def test_none(self) -> None:
+        assert to_path(None) == Path.cwd()
+
+    def test_sentinel(self) -> None:
+        assert to_path(sentinel) is sentinel
+
+    @given(paths=pairs(paths()))
+    def test_replace_non_sentinel(self, *, paths: tuple[Path, Path]) -> None:
+        path1, path2 = paths
+
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            path: Path = field(default_factory=Path.cwd)
+
+            def replace(
+                self, *, path: MaybeCallablePathLike | Sentinel = sentinel
+            ) -> Self:
+                return replace_non_sentinel(self, path=to_path(path))
+
+        obj = Example(path=path1)
+        assert obj.path == path1
+        assert obj.replace().path == path1
+        assert obj.replace(path=path2).path == path2

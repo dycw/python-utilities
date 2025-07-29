@@ -90,13 +90,11 @@ from utilities.functions import (
     min_nullable,
     not_func,
     second,
-    to_bool,
     yield_object_attributes,
     yield_object_cached_properties,
     yield_object_properties,
 )
-from utilities.hypothesis import sentinels
-from utilities.sentinel import Sentinel, sentinel
+from utilities.sentinel import sentinel
 from utilities.whenever import NOW_UTC, ZERO_TIME, get_now, get_today
 
 if TYPE_CHECKING:
@@ -915,16 +913,6 @@ class TestSecond:
     def test_main(self, *, x: int, y: int) -> None:
         pair = x, y
         assert second(pair) == y
-
-
-class TestToBool:
-    @given(bool_=booleans() | none() | sentinels())
-    def test_bool_none_or_sentinel(self, *, bool_: bool | None | Sentinel) -> None:
-        assert to_bool(bool_=bool_) is bool_
-
-    @given(bool_=booleans())
-    def test_callable(self, *, bool_: bool) -> None:
-        assert to_bool(bool_=lambda: bool_) is bool_
 
 
 class TestYieldObjectAttributes:

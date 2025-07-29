@@ -15,9 +15,8 @@ from typing import TYPE_CHECKING, override
 
 from utilities.atomicwrites import writer
 from utilities.errors import repr_error
-from utilities.functions import to_bool
 from utilities.iterables import OneEmptyError, one
-from utilities.pathlib import get_path, module_path
+from utilities.pathlib import module_path, to_path
 from utilities.reprlib import (
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
@@ -27,8 +26,9 @@ from utilities.reprlib import (
     RICH_MAX_WIDTH,
     yield_mapping_repr,
 )
+from utilities.text import to_bool
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
-from utilities.version import get_version
+from utilities.version import to_version
 from utilities.whenever import (
     format_compact,
     get_now,
@@ -43,9 +43,9 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from utilities.types import (
-        MaybeCallableBool,
+        MaybeCallableBoolLike,
         MaybeCallablePathLike,
-        MaybeCallableZonedDateTime,
+        MaybeCallableZonedDateTimeLike,
         PathLike,
     )
     from utilities.version import MaybeCallableVersionLike
@@ -54,15 +54,12 @@ if TYPE_CHECKING:
 ##
 
 
-_START = get_now()
-
-
 def format_exception_stack(
     error: BaseException,
     /,
     *,
     header: bool = False,
-    start: MaybeCallableZonedDateTime | None = _START,
+    start: MaybeCallableZonedDateTimeLike = get_now,
     version: MaybeCallableVersionLike | None = None,
     capture_locals: bool = False,
     max_width: int = RICH_MAX_WIDTH,
@@ -93,12 +90,12 @@ def format_exception_stack(
 
 def _yield_header_lines(
     *,
-    start: MaybeCallableZonedDateTime | None = _START,
+    start: MaybeCallableZonedDateTimeLike = get_now,
     version: MaybeCallableVersionLike | None = None,
 ) -> Iterator[str]:
     """Yield the header lines."""
     now = get_now_local()
-    start_use = to_zoned_date_time(date_time=start)
+    start_use = to_zoned_date_time(start)
     yield f"Date/time  | {format_compact(now)}"
     if start_use is None:
         start_str = ""
@@ -111,7 +108,7 @@ def _yield_header_lines(
     yield f"User       | {getuser()}"
     yield f"Host       | {gethostname()}"
     yield f"Process ID | {getpid()}"
-    version_use = "" if version is None else get_version(version=version)
+    version_use = "" if version is None else to_version(version)
     yield f"Version    | {version_use}"
     yield ""
 
@@ -205,7 +202,7 @@ def _trim_path(path: PathLike, pattern: str, /) -> Path | None:
 
 def make_except_hook(
     *,
-    start: MaybeCallableZonedDateTime | None = _START,
+    start: MaybeCallableZonedDateTimeLike = get_now,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
     max_width: int = RICH_MAX_WIDTH,
@@ -215,7 +212,7 @@ def make_except_hook(
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
     slack_url: str | None = None,
-    pudb: MaybeCallableBool = False,
+    pudb: MaybeCallableBoolLike = False,
 ) -> Callable[
     [type[BaseException] | None, BaseException | None, TracebackType | None], None
 ]:
@@ -242,7 +239,7 @@ def _make_except_hook_inner(
     traceback: TracebackType | None,
     /,
     *,
-    start: MaybeCallableZonedDateTime | None = _START,
+    start: MaybeCallableZonedDateTimeLike = get_now,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
     max_width: int = RICH_MAX_WIDTH,
@@ -252,7 +249,7 @@ def _make_except_hook_inner(
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
     slack_url: str | None = None,
-    pudb: MaybeCallableBool = False,
+    pudb: MaybeCallableBoolLike = False,
 ) -> None:
     """Exception hook to log the traceback."""
     _ = (exc_type, traceback)
@@ -262,7 +259,7 @@ def _make_except_hook_inner(
     _ = sys.stderr.write(f"{slim}\n")  # don't 'from sys import stderr'
     if path is not None:
         path = (
-            get_path(path=path)
+            to_path(path)
             .joinpath(format_compact(to_local_plain(get_now())))
             .with_suffix(".txt")
         )
@@ -289,7 +286,7 @@ def _make_except_hook_inner(
         except SendToSlackError as error:
             _ = stderr.write(f"{error}\n")
 
-    if to_bool(bool_=pudb):  # pragma: no cover
+    if to_bool(pudb):  # pragma: no cover
         from pudb import post_mortem
 
         post_mortem(tb=traceback, e_type=exc_type, e_value=exc_val)

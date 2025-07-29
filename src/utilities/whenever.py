@@ -10,7 +10,10 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    Self,
     SupportsFloat,
+    TypedDict,
+    TypeVar,
     assert_never,
     cast,
     overload,
@@ -30,25 +33,29 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.dataclasses import replace_non_sentinel
+from utilities.functions import get_class_name
 from utilities.math import sign
 from utilities.platform import get_strftime
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
-from utilities.zoneinfo import UTC, get_time_zone_name
+from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
     from utilities.types import (
         DateOrDateTimeDelta,
         DateTimeRoundMode,
         Delta,
-        MaybeCallableDate,
-        MaybeCallableZonedDateTime,
+        MaybeCallableDateLike,
+        MaybeCallableZonedDateTimeLike,
         TimeOrDateTimeDelta,
         TimeZoneLike,
     )
 
+# type vars
 
-## bounds
+
+# bounds
 
 
 ZONED_DATE_TIME_MIN = PlainDateTime.MIN.assume_tz(UTC.key)
@@ -136,6 +143,112 @@ def sub_year_month(x: YearMonth, /, *, years: int = 0, months: int = 0) -> YearM
     """Subtract from a year-month."""
     y = x.on_day(1) - DateDelta(years=years, months=months)
     return y.year_month()
+
+
+##
+
+
+_TDate_co = TypeVar("_TDate_co", bound=Date | dt.date, covariant=True)
+
+
+@dataclass(repr=False, order=True, unsafe_hash=True, kw_only=False)
+class DatePeriod:
+    """A period of dates."""
+
+    start: Date
+    end: Date
+
+    def __post_init__(self) -> None:
+        if self.start > self.end:
+            raise DatePeriodError(start=self.start, end=self.end)
+
+    def __add__(self, other: DateDelta, /) -> Self:
+        """Offset the period."""
+        return self.replace(start=self.start + other, end=self.end + other)
+
+    def __contains__(self, other: Date, /) -> bool:
+        """Check if a date/datetime lies in the period."""
+        return self.start <= other <= self.end
+
+    @override
+    def __repr__(self) -> str:
+        cls = get_class_name(self)
+        return f"{cls}({self.start}, {self.end})"
+
+    def __sub__(self, other: DateDelta, /) -> Self:
+        """Offset the period."""
+        return self.replace(start=self.start - other, end=self.end - other)
+
+    def at(
+        self, obj: Time | tuple[Time, Time], /, *, time_zone: TimeZoneLike = UTC
+    ) -> ZonedDateTimePeriod:
+        """Combine a date with a time to create a datetime."""
+        match obj:
+            case Time() as time:
+                start = end = time
+            case Time() as start, Time() as end:
+                ...
+            case never:
+                assert_never(never)
+        tz = ensure_time_zone(time_zone).key
+        return ZonedDateTimePeriod(
+            self.start.at(start).assume_tz(tz), self.end.at(end).assume_tz(tz)
+        )
+
+    @property
+    def delta(self) -> DateDelta:
+        """The delta of the period."""
+        return self.end - self.start
+
+    def format_compact(self) -> str:
+        """Format the period in a compact fashion."""
+        fc, start, end = format_compact, self.start, self.end
+        if self.start == self.end:
+            return f"{fc(start)}="
+        if self.start.year_month() == self.end.year_month():
+            return f"{fc(start)}-{fc(end, fmt='%d')}"
+        if self.start.year == self.end.year:
+            return f"{fc(start)}-{fc(end, fmt='%m%d')}"
+        return f"{fc(start)}-{fc(end)}"
+
+    @classmethod
+    def from_dict(cls, mapping: PeriodDict[_TDate_co], /) -> Self:
+        """Convert the dictionary to a period."""
+        match mapping["start"]:
+            case Date() as start:
+                ...
+            case dt.date() as py_date:
+                start = Date.from_py_date(py_date)
+            case never:
+                assert_never(never)
+        match mapping["end"]:
+            case Date() as end:
+                ...
+            case dt.date() as py_date:
+                end = Date.from_py_date(py_date)
+            case never:
+                assert_never(never)
+        return cls(start=start, end=end)
+
+    def replace(
+        self, *, start: Date | Sentinel = sentinel, end: Date | Sentinel = sentinel
+    ) -> Self:
+        """Replace elements of the period."""
+        return replace_non_sentinel(self, start=start, end=end)
+
+    def to_dict(self) -> PeriodDict[Date]:
+        """Convert the period to a dictionary."""
+        return PeriodDict(start=self.start, end=self.end)
+
+
+@dataclass(kw_only=True, slots=True)
+class DatePeriodError(Exception):
+    start: Date
+    end: Date
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid period; got {self.start} > {self.end}"
 
 
 ##
@@ -240,17 +353,17 @@ def from_timestamp_nanos(i: int, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDa
 ##
 
 
-def get_now(*, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
+def get_now(time_zone: TimeZoneLike = UTC, /) -> ZonedDateTime:
     """Get the current zoned datetime."""
     return ZonedDateTime.now(get_time_zone_name(time_zone))
 
 
-NOW_UTC = get_now(time_zone=UTC)
+NOW_UTC = get_now(UTC)
 
 
 def get_now_local() -> ZonedDateTime:
     """Get the current local time."""
-    return get_now(time_zone=LOCAL_TIME_ZONE)
+    return get_now(LOCAL_TIME_ZONE)
 
 
 NOW_LOCAL = get_now_local()
@@ -259,17 +372,17 @@ NOW_LOCAL = get_now_local()
 ##
 
 
-def get_today(*, time_zone: TimeZoneLike = UTC) -> Date:
+def get_today(time_zone: TimeZoneLike = UTC, /) -> Date:
     """Get the current, timezone-aware local date."""
-    return get_now(time_zone=time_zone).date()
+    return get_now(time_zone).date()
 
 
-TODAY_UTC = get_today(time_zone=UTC)
+TODAY_UTC = get_today(UTC)
 
 
 def get_today_local() -> Date:
     """Get the current, timezone-aware local date."""
-    return get_today(time_zone=LOCAL_TIME_ZONE)
+    return get_today(LOCAL_TIME_ZONE)
 
 
 TODAY_LOCAL = get_today_local()
@@ -316,7 +429,7 @@ def min_max_date(
     time_zone: TimeZoneLike = UTC,
 ) -> tuple[Date | None, Date | None]:
     """Compute the min/max date given a combination of dates/ages."""
-    today = get_today(time_zone=time_zone)
+    today = get_today(time_zone)
     min_parts: list[Date] = []
     if min_date is not None:
         min_parts.append(min_date)
@@ -351,6 +464,18 @@ class _MinMaxDatePeriodError(MinMaxDateError):
         return (
             f"Min date must be at most max date; got {self.min_date} > {self.max_date}"
         )
+
+
+##
+
+
+class PeriodDict[T: Date | Time | ZonedDateTime | dt.date | dt.time | dt.datetime](
+    TypedDict
+):
+    """A period as a dictionary."""
+
+    start: T
+    end: T
 
 
 ##
@@ -641,27 +766,94 @@ class _RoundDateOrDateTimeDateTimeIntraDayWithWeekdayError(RoundDateOrDateTimeEr
 ##
 
 
+_TTime_co = TypeVar("_TTime_co", bound=Time | dt.time, covariant=True)
+
+
+@dataclass(repr=False, order=True, unsafe_hash=True, kw_only=False)
+class TimePeriod:
+    """A period of times."""
+
+    start: Time
+    end: Time
+
+    @override
+    def __repr__(self) -> str:
+        cls = get_class_name(self)
+        return f"{cls}({self.start}, {self.end})"
+
+    def at(
+        self, obj: Date | tuple[Date, Date], /, *, time_zone: TimeZoneLike = UTC
+    ) -> ZonedDateTimePeriod:
+        """Combine a date with a time to create a datetime."""
+        match obj:
+            case Date() as date:
+                start = end = date
+            case Date() as start, Date() as end:
+                ...
+            case never:
+                assert_never(never)
+        return DatePeriod(start, end).at((self.start, self.end), time_zone=time_zone)
+
+    @classmethod
+    def from_dict(cls, mapping: PeriodDict[_TTime_co], /) -> Self:
+        """Convert the dictionary to a period."""
+        match mapping["start"]:
+            case Time() as start:
+                ...
+            case dt.time() as py_time:
+                start = Time.from_py_time(py_time)
+            case never:
+                assert_never(never)
+        match mapping["end"]:
+            case Time() as end:
+                ...
+            case dt.time() as py_time:
+                end = Time.from_py_time(py_time)
+            case never:
+                assert_never(never)
+        return cls(start=start, end=end)
+
+    def replace(
+        self, *, start: Time | Sentinel = sentinel, end: Time | Sentinel = sentinel
+    ) -> Self:
+        """Replace elements of the period."""
+        return replace_non_sentinel(self, start=start, end=end)
+
+    def to_dict(self) -> PeriodDict[Time]:
+        """Convert the period to a dictionary."""
+        return PeriodDict(start=self.start, end=self.end)
+
+
+##
+
+
 @overload
-def to_date(*, date: MaybeCallableDate) -> Date: ...
-@overload
-def to_date(*, date: None) -> None: ...
-@overload
-def to_date(*, date: Sentinel) -> Sentinel: ...
-@overload
-def to_date(*, date: MaybeCallableDate | Sentinel) -> Date | Sentinel: ...
+def to_date(date: Sentinel, /, *, time_zone: TimeZoneLike = UTC) -> Sentinel: ...
 @overload
 def to_date(
-    *, date: MaybeCallableDate | None | Sentinel = sentinel
-) -> Date | None | Sentinel: ...
+    date: MaybeCallableDateLike | None | dt.date = get_today,
+    /,
+    *,
+    time_zone: TimeZoneLike = UTC,
+) -> Date: ...
 def to_date(
-    *, date: MaybeCallableDate | None | Sentinel = sentinel
-) -> Date | None | Sentinel:
-    """Get the date."""
+    date: MaybeCallableDateLike | dt.date | None | Sentinel = get_today,
+    /,
+    *,
+    time_zone: TimeZoneLike = UTC,
+) -> Date | Sentinel:
+    """Convert to a date."""
     match date:
-        case Date() | None | Sentinel():
+        case Date() | Sentinel():
             return date
+        case None:
+            return get_today(time_zone)
+        case str():
+            return Date.parse_common_iso(date)
+        case dt.date():
+            return Date.from_py_date(date)
         case Callable() as func:
-            return to_date(date=func())
+            return to_date(func(), time_zone=time_zone)
         case never:
             assert_never(never)
 
@@ -1418,19 +1610,29 @@ class _ToYearsTimeError(ToYearsError):
 
 @overload
 def to_zoned_date_time(
-    *, date_time: MaybeCallableZonedDateTime | dt.datetime
-) -> ZonedDateTime: ...
+    date_time: Sentinel, /, *, time_zone: TimeZoneLike = UTC
+) -> Sentinel: ...
 @overload
-def to_zoned_date_time(*, date_time: None) -> None: ...
-@overload
-def to_zoned_date_time(*, date_time: Sentinel) -> Sentinel: ...
 def to_zoned_date_time(
-    *, date_time: MaybeCallableZonedDateTime | dt.datetime | None | Sentinel = sentinel
-) -> ZonedDateTime | None | Sentinel:
-    """Resolve into a zoned date_time."""
+    date_time: MaybeCallableZonedDateTimeLike | dt.datetime | None = get_now,
+    /,
+    *,
+    time_zone: TimeZoneLike = UTC,
+) -> ZonedDateTime: ...
+def to_zoned_date_time(
+    date_time: MaybeCallableZonedDateTimeLike | dt.datetime | None | Sentinel = get_now,
+    /,
+    *,
+    time_zone: TimeZoneLike = UTC,
+) -> ZonedDateTime | Sentinel:
+    """Convert to a zoned date-time."""
     match date_time:
-        case ZonedDateTime() | None | Sentinel():
+        case ZonedDateTime() | Sentinel():
             return date_time
+        case None:
+            return get_now(time_zone)
+        case str():
+            return ZonedDateTime.parse_common_iso(date_time)
         case dt.datetime():
             if isinstance(date_time.tzinfo, ZoneInfo):
                 return ZonedDateTime.from_py_datetime(date_time)
@@ -1438,10 +1640,9 @@ def to_zoned_date_time(
                 return ZonedDateTime.from_py_datetime(date_time.astimezone(UTC))
             raise ToZonedDateTimeError(date_time=date_time)
         case Callable() as func:
-            return to_zoned_date_time(date_time=func())
+            return to_zoned_date_time(func(), time_zone=time_zone)
         case never:
             assert_never(never)
-    return None
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1518,6 +1719,193 @@ class WheneverLogRecord(LogRecord):
         return len(now.format_common_iso())
 
 
+##
+
+
+_TDateTime_co = TypeVar(
+    "_TDateTime_co", bound=ZonedDateTime | dt.datetime, covariant=True
+)
+
+
+@dataclass(repr=False, order=True, unsafe_hash=True, kw_only=False)
+class ZonedDateTimePeriod:
+    """A period of time."""
+
+    start: ZonedDateTime
+    end: ZonedDateTime
+
+    def __post_init__(self) -> None:
+        if self.start > self.end:
+            raise _ZonedDateTimePeriodInvalidError(start=self.start, end=self.end)
+        if self.start.tz != self.end.tz:
+            raise _ZonedDateTimePeriodTimeZoneError(
+                start=ZoneInfo(self.start.tz), end=ZoneInfo(self.end.tz)
+            )
+
+    def __add__(self, other: TimeDelta, /) -> Self:
+        """Offset the period."""
+        return self.replace(start=self.start + other, end=self.end + other)
+
+    def __contains__(self, other: ZonedDateTime, /) -> bool:
+        """Check if a date/datetime lies in the period."""
+        return self.start <= other <= self.end
+
+    @override
+    def __repr__(self) -> str:
+        cls = get_class_name(self)
+        return f"{cls}({self.start.to_plain()}, {self.end.to_plain()}[{self.time_zone.key}])"
+
+    def __sub__(self, other: TimeDelta, /) -> Self:
+        """Offset the period."""
+        return self.replace(start=self.start - other, end=self.end - other)
+
+    @property
+    def delta(self) -> TimeDelta:
+        """The duration of the period."""
+        return self.end - self.start
+
+    @overload
+    def exact_eq(self, period: ZonedDateTimePeriod, /) -> bool: ...
+    @overload
+    def exact_eq(self, start: ZonedDateTime, end: ZonedDateTime, /) -> bool: ...
+    @overload
+    def exact_eq(
+        self, start: PlainDateTime, end: PlainDateTime, time_zone: ZoneInfo, /
+    ) -> bool: ...
+    def exact_eq(self, *args: Any) -> bool:
+        """Check if a period is exactly equal to another."""
+        if (len(args) == 1) and isinstance(args[0], ZonedDateTimePeriod):
+            return self.start.exact_eq(args[0].start) and self.end.exact_eq(args[0].end)
+        if (
+            (len(args) == 2)
+            and isinstance(args[0], ZonedDateTime)
+            and isinstance(args[1], ZonedDateTime)
+        ):
+            return self.exact_eq(ZonedDateTimePeriod(args[0], args[1]))
+        if (
+            (len(args) == 3)
+            and isinstance(args[0], PlainDateTime)
+            and isinstance(args[1], PlainDateTime)
+            and isinstance(args[2], ZoneInfo)
+        ):
+            return self.exact_eq(
+                ZonedDateTimePeriod(
+                    args[0].assume_tz(args[2].key), args[1].assume_tz(args[2].key)
+                )
+            )
+        raise _ZonedDateTimePeriodExactEqError(args=args)
+
+    def format_compact(self) -> str:
+        """Format the period in a compact fashion."""
+        fc, start, end = format_compact, self.start, self.end
+        if start == end:
+            if end.second != 0:
+                return f"{fc(start)}="
+            if end.minute != 0:
+                return f"{fc(start, fmt='%Y%m%dT%H%M')}="
+            return f"{fc(start, fmt='%Y%m%dT%H')}="
+        if start.date() == end.date():
+            if end.second != 0:
+                return f"{fc(start.to_plain())}-{fc(end, fmt='%H%M%S')}"
+            if end.minute != 0:
+                return f"{fc(start.to_plain())}-{fc(end, fmt='%H%M')}"
+            return f"{fc(start.to_plain())}-{fc(end, fmt='%H')}"
+        if start.date().year_month() == end.date().year_month():
+            if end.second != 0:
+                return f"{fc(start.to_plain())}-{fc(end, fmt='%dT%H%M%S')}"
+            if end.minute != 0:
+                return f"{fc(start.to_plain())}-{fc(end, fmt='%dT%H%M')}"
+            return f"{fc(start.to_plain())}-{fc(end, fmt='%dT%H')}"
+        if start.year == end.year:
+            if end.second != 0:
+                return f"{fc(start.to_plain())}-{fc(end, fmt='%m%dT%H%M%S')}"
+            if end.minute != 0:
+                return f"{fc(start.to_plain())}-{fc(end, fmt='%m%dT%H%M')}"
+            return f"{fc(start.to_plain())}-{fc(end, fmt='%m%dT%H')}"
+        if end.second != 0:
+            return f"{fc(start.to_plain())}-{fc(end)}"
+        if end.minute != 0:
+            return f"{fc(start.to_plain())}-{fc(end, fmt='%Y%m%dT%H%M')}"
+        return f"{fc(start.to_plain())}-{fc(end, fmt='%Y%m%dT%H')}"
+
+    @classmethod
+    def from_dict(cls, mapping: PeriodDict[_TDateTime_co], /) -> Self:
+        """Convert the dictionary to a period."""
+        match mapping["start"]:
+            case ZonedDateTime() as start:
+                ...
+            case dt.date() as py_datetime:
+                start = ZonedDateTime.from_py_datetime(py_datetime)
+            case never:
+                assert_never(never)
+        match mapping["end"]:
+            case ZonedDateTime() as end:
+                ...
+            case dt.date() as py_datetime:
+                end = ZonedDateTime.from_py_datetime(py_datetime)
+            case never:
+                assert_never(never)
+        return cls(start=start, end=end)
+
+    def replace(
+        self,
+        *,
+        start: ZonedDateTime | Sentinel = sentinel,
+        end: ZonedDateTime | Sentinel = sentinel,
+    ) -> Self:
+        """Replace elements of the period."""
+        return replace_non_sentinel(self, start=start, end=end)
+
+    @property
+    def time_zone(self) -> ZoneInfo:
+        """The time zone of the period."""
+        return ZoneInfo(self.start.tz)
+
+    def to_dict(self) -> PeriodDict[ZonedDateTime]:
+        """Convert the period to a dictionary."""
+        return PeriodDict(start=self.start, end=self.end)
+
+    def to_tz(self, time_zone: TimeZoneLike, /) -> Self:
+        """Convert the time zone."""
+        tz = get_time_zone_name(time_zone)
+        return self.replace(start=self.start.to_tz(tz), end=self.end.to_tz(tz))
+
+
+@dataclass(kw_only=True, slots=True)
+class ZonedDateTimePeriodError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ZonedDateTimePeriodInvalidError[T: Date | ZonedDateTime](
+    ZonedDateTimePeriodError
+):
+    start: T
+    end: T
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid period; got {self.start} > {self.end}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ZonedDateTimePeriodTimeZoneError(ZonedDateTimePeriodError):
+    start: ZoneInfo
+    end: ZoneInfo
+
+    @override
+    def __str__(self) -> str:
+        return f"Period must contain exactly one time zone; got {self.start} and {self.end}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ZonedDateTimePeriodExactEqError(ZonedDateTimePeriodError):
+    args: tuple[Any, ...]
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid arguments; got {self.args}"
+
+
 __all__ = [
     "DATE_DELTA_MAX",
     "DATE_DELTA_MIN",
@@ -1547,9 +1935,13 @@ __all__ = [
     "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
+    "DatePeriod",
+    "DatePeriodError",
     "MeanDateTimeError",
     "MinMaxDateError",
+    "PeriodDict",
     "RoundDateOrDateTimeError",
+    "TimePeriod",
     "ToDaysError",
     "ToMinutesError",
     "ToMonthsAndDaysError",
@@ -1560,6 +1952,8 @@ __all__ = [
     "ToWeeksError",
     "ToYearsError",
     "WheneverLogRecord",
+    "ZonedDateTimePeriod",
+    "ZonedDateTimePeriodError",
     "add_year_month",
     "datetime_utc",
     "diff_year_month",

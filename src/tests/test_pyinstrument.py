@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class TestProfile:
     def test_main(self, tmp_path: Path) -> None:
-        with profile(path=tmp_path):
+        with profile(tmp_path):
             sleep(1e-3)
 
         (file,) = tmp_path.iterdir()

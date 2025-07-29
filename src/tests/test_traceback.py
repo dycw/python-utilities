@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import sampled_from
-from pytest import CaptureFixture, mark, param, raises
+from pytest import CaptureFixture, raises
 
 from utilities.iterables import one
 from utilities.traceback import (
@@ -18,12 +18,9 @@ from utilities.traceback import (
     make_except_hook,
 )
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
-from utilities.whenever import get_now
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-
-    from utilities.types import MaybeCallableZonedDateTime
 
 
 class TestFormatExceptionStack:
@@ -45,14 +42,11 @@ class TestFormatExceptionStack:
             result = format_exception_stack(error).splitlines()
             self._assert_lines(result)
 
-    @mark.parametrize("start", [param(get_now), param(None)])
-    def test_header(self, *, start: MaybeCallableZonedDateTime) -> None:
+    def test_header(self) -> None:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
-            result = format_exception_stack(
-                error, header=True, start=start
-            ).splitlines()
+            result = format_exception_stack(error, header=True).splitlines()
             patterns = [
                 rf"^Date/time  \| \d{{8}}T\d{{6}}\[{LOCAL_TIME_ZONE_NAME}\]$",
                 rf"^Started    \| (\d{{8}}T\d{{6}}\[{LOCAL_TIME_ZONE_NAME}\]|)$",

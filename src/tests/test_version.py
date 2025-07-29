@@ -16,30 +16,12 @@ from utilities.version import (
     _VersionNegativeMinorVersionError,
     _VersionNegativePatchVersionError,
     _VersionZeroError,
-    get_version,
     parse_version,
+    to_version,
 )
 
 if TYPE_CHECKING:
     from utilities.sentinel import Sentinel
-
-
-class TestGetVersion:
-    @given(version=versions())
-    def test_version(self, *, version: Version) -> None:
-        assert get_version(version=version) == version
-
-    @given(version=versions())
-    def test_str(self, *, version: Version) -> None:
-        assert get_version(version=str(version)) == version
-
-    @given(version=none() | sentinels())
-    def test_none_or_sentinel(self, *, version: None | Sentinel) -> None:
-        assert get_version(version=version) is version
-
-    @given(version=versions())
-    def test_callable(self, *, version: Version) -> None:
-        assert get_version(version=lambda: version) == version
 
 
 class TestParseVersion:
@@ -140,3 +122,21 @@ class TestVersion:
     def test_error_empty_suffix(self) -> None:
         with raises(_VersionEmptySuffixError, match="Suffix must be non-empty; got .*"):
             _ = Version(suffix="")
+
+
+class TestGetVersion:
+    @given(version=versions())
+    def test_version(self, *, version: Version) -> None:
+        assert to_version(version) == version
+
+    @given(version=versions())
+    def test_str(self, *, version: Version) -> None:
+        assert to_version(str(version)) == version
+
+    @given(version=none() | sentinels())
+    def test_none_or_sentinel(self, *, version: None | Sentinel) -> None:
+        assert to_version(version) is version
+
+    @given(version=versions())
+    def test_callable(self, *, version: Version) -> None:
+        assert to_version(lambda: version) == version

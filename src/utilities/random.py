@@ -17,16 +17,16 @@ SYSTEM_RANDOM = SystemRandom()
 
 def bernoulli(*, true: float = 0.5, seed: Seed | None = None) -> bool:
     """Return a Bernoulli random variate."""
-    seed = get_state(seed=seed)
-    return bool(seed.binomialvariate(p=true))
+    state = get_state(seed)
+    return bool(state.binomialvariate(p=true))
 
 
 ##
 
 
-def get_docker_name(*, seed: Seed | None = None) -> str:
+def get_docker_name(seed: Seed | None = None, /) -> str:
     """Get a docker name."""
-    state = get_state(seed=seed)
+    state = get_state(seed)
     prefix = state.choice(_DOCKER_PREFIXES)
     suffix = state.choice(_DOCKER_SUFFIXES)
     digit = state.randint(0, 9)
@@ -47,16 +47,18 @@ _DOCKER_SUFFIXES = [
 ##
 
 
-def get_state(*, seed: Seed | None = None) -> Random:
+def get_state(seed: Seed | None = None, /) -> Random:
     """Get a random state."""
     return seed if isinstance(seed, Random) else Random(x=seed)
 
 
 ##
+
+
 def shuffle[T](iterable: Iterable[T], /, *, seed: Seed | None = None) -> list[T]:
     """Shuffle an iterable."""
     copy = list(iterable).copy()
-    state = get_state(seed=seed)
+    state = get_state(seed)
     state.shuffle(copy)
     return copy
 

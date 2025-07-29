@@ -10,7 +10,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 from utilities.asyncio import stream_command
 from utilities.iterables import always_iterable
-from utilities.logging import get_logger
+from utilities.logging import to_logger
 from utilities.os import temp_environ
 from utilities.pathlib import ensure_suffix
 from utilities.sqlalchemy import extract_url, get_table_name
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     from utilities.sqlalchemy import TableOrORMInstOrClass
     from utilities.types import (
-        LoggerOrName,
+        LoggerLike,
         MaybeCollection,
         MaybeCollectionStr,
         PathLike,
@@ -53,7 +53,7 @@ async def pg_dump(
     role: str | None = None,
     docker: str | None = None,
     dry_run: bool = False,
-    logger: LoggerOrName | None = None,
+    logger: LoggerLike | None = None,
 ) -> None:
     """Run `pg_dump`."""
     path = _path_pg_dump(path, format_=format_)
@@ -79,14 +79,14 @@ async def pg_dump(
     )
     if dry_run:
         if logger is not None:
-            get_logger(logger=logger).info("Would run:\n\t%r", str(cmd))
+            to_logger(logger).info("Would run:\n\t%r", str(cmd))
         return
     with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
             output = await stream_command(cmd)
         except KeyboardInterrupt:
             if logger is not None:
-                get_logger(logger=logger).info(
+                to_logger(logger).info(
                     "Cancelled backup to %r after %s", str(path), timer
                 )
             rmtree(path, ignore_errors=True)
@@ -94,12 +94,12 @@ async def pg_dump(
             match output.return_code:
                 case 0:
                     if logger is not None:
-                        get_logger(logger=logger).info(
+                        to_logger(logger).info(
                             "Backup to %r finished after %s", str(path), timer
                         )
                 case _:
                     if logger is not None:
-                        get_logger(logger=logger).exception(
+                        to_logger(logger).exception(
                             "Backup to %r failed after %s\nstderr:\n%s",
                             str(path),
                             timer,
@@ -217,7 +217,7 @@ async def restore(
     role: str | None = None,
     docker: str | None = None,
     dry_run: bool = False,
-    logger: LoggerOrName | None = None,
+    logger: LoggerLike | None = None,
 ) -> None:
     """Run `pg_restore`/`psql`."""
     cmd = _build_pg_restore_or_psql(
@@ -236,26 +236,26 @@ async def restore(
     )
     if dry_run:
         if logger is not None:
-            get_logger(logger=logger).info("Would run:\n\t%r", str(cmd))
+            to_logger(logger).info("Would run:\n\t%r", str(cmd))
         return
     with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
             output = await stream_command(cmd)
         except KeyboardInterrupt:
             if logger is not None:
-                get_logger(logger=logger).info(
+                to_logger(logger).info(
                     "Cancelled restore from %r after %s", str(path), timer
                 )
         else:
             match output.return_code:
                 case 0:
                     if logger is not None:
-                        get_logger(logger=logger).info(
+                        to_logger(logger).info(
                             "Restore from %r finished after %s", str(path), timer
                         )
                 case _:
                     if logger is not None:
-                        get_logger(logger=logger).exception(
+                        to_logger(logger).exception(
                             "Restore from %r failed after %s\nstderr:\n%s",
                             str(path),
                             timer,

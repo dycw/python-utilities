@@ -46,7 +46,7 @@ def _get_path(request: FixtureRequest, /) -> Path:
     path = Path(cast("Any", request).fspath)
     root = Path("src", "tests")
     tail = node_id_path(request.node.nodeid, root=root)
-    return get_root(path=path).joinpath(root, "regressions", tail)
+    return get_root(path).joinpath(root, "regressions", tail)
 
 
 __all__ = ["orjson_regression", "polars_regression"]

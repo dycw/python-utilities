@@ -17,7 +17,7 @@ from hypothesis.strategies import (
 )
 from pytest import mark, param, raises
 
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import sentinels, text_ascii
 from utilities.text import (
     ParseBoolError,
     ParseNoneError,
@@ -37,11 +37,14 @@ from utilities.text import (
     split_str,
     str_encode,
     strip_and_dedent,
+    to_bool,
     unique_str,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from utilities.sentinel import Sentinel
 
 
 class TestParseBool:
@@ -321,6 +324,20 @@ class TestStripAndDedent:
         result = strip_and_dedent(text, trailing=trailing)
         expected = "This is line 1.\nThis is line 2." + ("\n" if trailing else "")
         assert result == expected
+
+
+class TestToBool:
+    @given(bool_=booleans() | none() | sentinels())
+    def test_bool_none_or_sentinel(self, *, bool_: bool | None | Sentinel) -> None:
+        assert to_bool(bool_) is bool_
+
+    @given(bool_=booleans())
+    def test_str(self, *, bool_: bool) -> None:
+        assert to_bool(str(bool_)) is bool_
+
+    @given(bool_=booleans())
+    def test_callable(self, *, bool_: bool) -> None:
+        assert to_bool(lambda: bool_) is bool_
 
 
 class TestUniqueStrs:

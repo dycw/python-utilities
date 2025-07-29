@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from pyinstrument.profiler import Profiler
 
 from utilities.atomicwrites import writer
-from utilities.pathlib import get_path
+from utilities.pathlib import to_path
 from utilities.whenever import format_compact, get_now, to_local_plain
 
 if TYPE_CHECKING:
@@ -17,11 +17,11 @@ if TYPE_CHECKING:
 
 
 @contextmanager
-def profile(*, path: MaybeCallablePathLike | None = Path.cwd) -> Iterator[None]:
+def profile(path: MaybeCallablePathLike = Path.cwd, /) -> Iterator[None]:
     """Profile the contents of a block."""
     with Profiler() as profiler:
         yield
-    filename = get_path(path=path).joinpath(
+    filename = to_path(path).joinpath(
         f"profile__{format_compact(to_local_plain(get_now()))}.html"
     )
     with writer(filename) as temp:

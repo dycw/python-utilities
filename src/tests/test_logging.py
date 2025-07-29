@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import sleep
 from io import StringIO
-from logging import Formatter, Logger, StreamHandler, getLogger
+from logging import Formatter, StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, cast
@@ -32,9 +32,9 @@ from utilities.logging import (
     filter_for_key,
     get_format_str,
     get_formatter,
-    get_logger,
     get_logging_level_number,
     setup_logging,
+    to_logger,
 )
 from utilities.text import unique_str
 from utilities.types import LogLevel
@@ -259,24 +259,6 @@ class TestGetFormatter:
                 plain=plain, color_field_styles=color_field_styles
             )
         assert isinstance(formatter, Formatter)
-
-
-class TestGetLogger:
-    def test_logger(self) -> None:
-        logger = getLogger(unique_str())
-        result = get_logger(logger=logger)
-        assert result is logger
-
-    def test_str(self) -> None:
-        name = unique_str()
-        logger = getLogger(name)
-        assert isinstance(logger, Logger)
-        assert logger.name == name
-
-    def test_none(self) -> None:
-        result = get_logger()
-        assert isinstance(result, Logger)
-        assert result.name == "root"
 
 
 class TestGetLoggingLevelNumber:
@@ -576,3 +558,19 @@ class TestSizeAndTimeRotatingFileHandler:
         record = one(r for r in caplog.records if r.name == name)
         path.unlink()
         assert not handler._should_rollover(record)
+
+
+class TestToLogger:
+    def test_default(self) -> None:
+        assert to_logger().name == "root"
+
+    @given(name=text_ascii(min_size=1))
+    def test_logger(self, *, name: str) -> None:
+        assert to_logger(getLogger(name)).name == name
+
+    @given(name=text_ascii(min_size=1))
+    def test_str(self, *, name: str) -> None:
+        assert to_logger(name).name == name
+
+    def test_none(self) -> None:
+        assert to_logger(None).name == "root"

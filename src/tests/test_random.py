@@ -36,7 +36,7 @@ class TestGetDockerName:
 class TestGetState:
     @given(seed=integers() | just(SYSTEM_RANDOM))
     def test_main(self, *, seed: int | SystemRandom) -> None:
-        state = get_state(seed=seed)
+        state = get_state(seed)
         assert isinstance(state, Random)
 
 

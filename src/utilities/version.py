@@ -6,7 +6,7 @@ from dataclasses import dataclass, field, replace
 from functools import total_ordering
 from typing import Any, Self, assert_never, overload, override
 
-from utilities.sentinel import Sentinel, sentinel
+from utilities.sentinel import Sentinel
 from utilities.types import MaybeCallable, MaybeStr
 
 type VersionLike = MaybeStr[Version]
@@ -131,30 +131,6 @@ class _VersionEmptySuffixError(VersionError):
 ##
 
 
-@overload
-def get_version(*, version: MaybeCallableVersionLike) -> Version: ...
-@overload
-def get_version(*, version: None) -> None: ...
-@overload
-def get_version(*, version: Sentinel) -> Sentinel: ...
-def get_version(
-    *, version: MaybeCallableVersionLike | None | Sentinel = sentinel
-) -> Version | None | Sentinel:
-    """Get the version."""
-    match version:
-        case Version() | None | Sentinel():
-            return version
-        case str():
-            return parse_version(version)
-        case Callable() as func:
-            return get_version(version=func())
-        case never:
-            assert_never(never)
-
-
-##
-
-
 def parse_version(version: str, /) -> Version:
     """Parse a string into a version object."""
     try:
@@ -178,12 +154,37 @@ class ParseVersionError(Exception):
         return f"Invalid version string: {self.version!r}"
 
 
+##
+
+
+@overload
+def to_version(version: MaybeCallableVersionLike, /) -> Version: ...
+@overload
+def to_version(version: None, /) -> None: ...
+@overload
+def to_version(version: Sentinel, /) -> Sentinel: ...
+def to_version(
+    version: MaybeCallableVersionLike | None | Sentinel, /
+) -> Version | None | Sentinel:
+    """Convert to a version."""
+    match version:
+        case Version() | None | Sentinel():
+            return version
+        case str():
+            return parse_version(version)
+        case Callable() as func:
+            return to_version(func())
+        case never:
+            assert_never(never)
+
+
+##
 __all__ = [
     "MaybeCallableVersionLike",
     "ParseVersionError",
     "Version",
     "VersionError",
     "VersionLike",
-    "get_version",
     "parse_version",
+    "to_version",
 ]
