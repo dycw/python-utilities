@@ -39,7 +39,6 @@ _T_contra = TypeVar("_T_contra", contravariant=True)
 
 
 # basic
-type BoolLike = MaybeStr[bool]
 type OpenMode = Literal[
     "r",
     "w",
@@ -63,13 +62,15 @@ type OpenMode = Literal[
     "a+b",
 ]
 type MaybeCallable[T] = T | Callable[[], T]
-type MaybeCallableBoolLike = MaybeCallable[BoolLike]
 type MaybeStr[T] = T | str
 type MaybeType[T] = T | type[T]
 type StrMapping = Mapping[str, Any]
 type StrStrMapping = Mapping[str, str]
-type TypeLike[T] = type[T] | tuple[type[T], ...]
 type TupleOrStrMapping = tuple[Any, ...] | StrMapping
+type TypeLike[T] = type[T] | tuple[type[T], ...]
+# basic - derived
+type MaybeCallableBoolLike = MaybeCallable[BoolLike]
+type BoolLike = MaybeStr[bool]
 
 
 # asyncio
@@ -114,12 +115,12 @@ IPv6AddressLike = MaybeStr[IPv6Address]
 
 
 # iterables
-type SequenceLT[T] = list[T] | tuple[T, ...]
-# iterables - maybe
 type MaybeCollection[T] = T | Collection[T]
 type MaybeIterable[T] = T | Iterable[T]
+type MaybeList[T] = T | list[T]
+type SequenceLT[T] = list[T] | tuple[T, ...]
+# iterables - dervied
 type MaybeSequence[T] = T | SequenceLT[T]
-# iterables - str
 type SequenceStr = SequenceLT[str]
 type CollectionStr = dict[str, Any] | frozenset[str] | set[str] | SequenceStr
 # iterables - maybe str
@@ -299,6 +300,7 @@ __all__ = [
     "MaybeCollectionStr",
     "MaybeCoro",
     "MaybeIterable",
+    "MaybeList",
     "MaybeSequence",
     "MaybeSequenceStr",
     "MaybeStr",
