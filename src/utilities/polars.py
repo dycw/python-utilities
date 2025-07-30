@@ -124,6 +124,7 @@ if TYPE_CHECKING:
 
 
 type ExprLike = MaybeStr[Expr]
+type ExprOrSeries = Expr | Series
 DatetimeHongKong = Datetime(time_zone="Asia/Hong_Kong")
 DatetimeTokyo = Datetime(time_zone="Asia/Tokyo")
 DatetimeUSCentral = Datetime(time_zone="US/Central")
@@ -241,11 +242,6 @@ def _acf_process_qstats_pvalues(qstats: NDArrayF, pvalues: NDArrayF, /) -> DataF
 ##
 
 
-# def acf_halflife(series: Series,/)
-
-##
-
-
 def adjust_frequencies(
     series: Series,
     /,
@@ -262,6 +258,37 @@ def adjust_frequencies(
         array, filters=filters, weights=weights, d=d
     )
     return Series(name=series.name, values=adjusted, dtype=Float64)
+
+
+##
+
+
+def all_dataframe_columns(
+    df: DataFrame, expr: IntoExprColumn, /, *exprs: IntoExprColumn
+) -> Series:
+    """Return a DataFrame column with `AND` applied to additional exprs/series."""
+    name = get_expr_name(df, expr)
+    return df.select(all_horizontal(expr, *exprs).alias(name))[name]
+
+
+def any_dataframe_columns(
+    df: DataFrame, expr: IntoExprColumn, /, *exprs: IntoExprColumn
+) -> Series:
+    """Return a DataFrame column with `OR` applied to additional exprs/series."""
+    name = get_expr_name(df, expr)
+    return df.select(any_horizontal(expr, *exprs).alias(name))[name]
+
+
+def all_series(series: Series, /, *columns: ExprOrSeries) -> Series:
+    """Return a Series with `AND` applied to additional exprs/series."""
+    return all_dataframe_columns(series.to_frame(), series.name, *columns)
+
+
+def any_series(series: Series, /, *columns: ExprOrSeries) -> Series:
+    """Return a Series with `OR` applied to additional exprs/series."""
+    df = series.to_frame()
+    name = series.name
+    return df.select(any_horizontal(name, *columns).alias(name))[name]
 
 
 ##
@@ -430,8 +457,8 @@ def ceil_datetime(column: ExprLike, every: ExprLike, /) -> Expr: ...
 @overload
 def ceil_datetime(column: Series, every: ExprLike, /) -> Series: ...
 @overload
-def ceil_datetime(column: IntoExprColumn, every: ExprLike, /) -> Expr | Series: ...
-def ceil_datetime(column: IntoExprColumn, every: ExprLike, /) -> Expr | Series:
+def ceil_datetime(column: IntoExprColumn, every: ExprLike, /) -> ExprOrSeries: ...
+def ceil_datetime(column: IntoExprColumn, every: ExprLike, /) -> ExprOrSeries:
     """Compute the `ceil` of a datetime column."""
     column = ensure_expr_or_series(column)
     rounded = column.dt.round(every)
@@ -852,13 +879,13 @@ def cross(
     up_or_down: Literal["up", "down"],
     other: Number | IntoExprColumn,
     /,
-) -> Expr | Series: ...
+) -> ExprOrSeries: ...
 def cross(
     expr: IntoExprColumn,
     up_or_down: Literal["up", "down"],
     other: Number | IntoExprColumn,
     /,
-) -> Expr | Series:
+) -> ExprOrSeries:
     """Compute when a cross occurs."""
     return _cross_or_touch(expr, "cross", up_or_down, other)
 
@@ -877,13 +904,13 @@ def touch(
     up_or_down: Literal["up", "down"],
     other: Number | IntoExprColumn,
     /,
-) -> Expr | Series: ...
+) -> ExprOrSeries: ...
 def touch(
     expr: IntoExprColumn,
     up_or_down: Literal["up", "down"],
     other: Number | IntoExprColumn,
     /,
-) -> Expr | Series:
+) -> ExprOrSeries:
     """Compute when a touch occurs."""
     return _cross_or_touch(expr, "touch", up_or_down, other)
 
@@ -894,7 +921,7 @@ def _cross_or_touch(
     up_or_down: Literal["up", "down"],
     other: Number | IntoExprColumn,
     /,
-) -> Expr | Series:
+) -> ExprOrSeries:
     """Compute when a column crosses/touches a threshold."""
     expr = ensure_expr_or_series(expr)
     match other:
@@ -966,7 +993,7 @@ def cross_rolling_quantile(
     weights: list[float] | None = None,
     min_samples: int | None = None,
     center: bool = False,
-) -> Expr | Series: ...
+) -> ExprOrSeries: ...
 def cross_rolling_quantile(
     expr: IntoExprColumn,
     up_or_down: Literal["up", "down"],
@@ -978,7 +1005,7 @@ def cross_rolling_quantile(
     weights: list[float] | None = None,
     min_samples: int | None = None,
     center: bool = False,
-) -> Expr | Series:
+) -> ExprOrSeries:
     """Compute when a column crosses its rolling quantile."""
     expr = ensure_expr_or_series(expr)
     rolling = expr.rolling_quantile(
@@ -1183,8 +1210,8 @@ def ensure_expr_or_series(column: ExprLike, /) -> Expr: ...
 @overload
 def ensure_expr_or_series(column: Series, /) -> Series: ...
 @overload
-def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series: ...
-def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
+def ensure_expr_or_series(column: IntoExprColumn, /) -> ExprOrSeries: ...
+def ensure_expr_or_series(column: IntoExprColumn, /) -> ExprOrSeries:
     """Ensure a column expression or Series is returned."""
     return col(column) if isinstance(column, str) else column
 
@@ -1194,7 +1221,7 @@ def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
 
 def ensure_expr_or_series_many(
     *columns: IntoExprColumn, **named_columns: IntoExprColumn
-) -> Sequence[Expr | Series]:
+) -> Sequence[ExprOrSeries]:
     """Ensure a set of column expressions and/or Series are returned."""
     args = map(ensure_expr_or_series, columns)
     kwargs = (ensure_expr_or_series(v).alias(k) for k, v in named_columns.items())
@@ -1236,7 +1263,7 @@ def finite_ewm_mean(
     half_life: float | None = None,
     alpha: float | None = None,
     min_weight: float = _FINITE_EWM_MIN_WEIGHT,
-) -> Expr | Series: ...
+) -> ExprOrSeries: ...
 def finite_ewm_mean(
     column: IntoExprColumn,
     /,
@@ -1246,7 +1273,7 @@ def finite_ewm_mean(
     half_life: float | None = None,
     alpha: float | None = None,
     min_weight: float = _FINITE_EWM_MIN_WEIGHT,
-) -> Expr | Series:
+) -> ExprOrSeries:
     """Compute a finite EWMA."""
     try:
         weights = _finite_ewm_weights(
@@ -1312,8 +1339,8 @@ def floor_datetime(column: ExprLike, every: ExprLike, /) -> Expr: ...
 @overload
 def floor_datetime(column: Series, every: ExprLike, /) -> Series: ...
 @overload
-def floor_datetime(column: IntoExprColumn, every: ExprLike, /) -> Expr | Series: ...
-def floor_datetime(column: IntoExprColumn, every: ExprLike, /) -> Expr | Series:
+def floor_datetime(column: IntoExprColumn, every: ExprLike, /) -> ExprOrSeries: ...
+def floor_datetime(column: IntoExprColumn, every: ExprLike, /) -> ExprOrSeries:
     """Compute the `floor` of a datetime column."""
     column = ensure_expr_or_series(column)
     rounded = column.dt.round(every)
@@ -1479,8 +1506,8 @@ def increasing_horizontal(*columns: ExprLike) -> Expr: ...
 @overload
 def increasing_horizontal(*columns: Series) -> Series: ...
 @overload
-def increasing_horizontal(*columns: IntoExprColumn) -> Expr | Series: ...
-def increasing_horizontal(*columns: IntoExprColumn) -> Expr | Series:
+def increasing_horizontal(*columns: IntoExprColumn) -> ExprOrSeries: ...
+def increasing_horizontal(*columns: IntoExprColumn) -> ExprOrSeries:
     """Check if a set of columns are increasing."""
     columns2 = ensure_expr_or_series_many(*columns)
     if len(columns2) == 0:
@@ -1493,8 +1520,8 @@ def decreasing_horizontal(*columns: ExprLike) -> Expr: ...
 @overload
 def decreasing_horizontal(*columns: Series) -> Series: ...
 @overload
-def decreasing_horizontal(*columns: IntoExprColumn) -> Expr | Series: ...
-def decreasing_horizontal(*columns: IntoExprColumn) -> Expr | Series:
+def decreasing_horizontal(*columns: IntoExprColumn) -> ExprOrSeries: ...
+def decreasing_horizontal(*columns: IntoExprColumn) -> ExprOrSeries:
     """Check if a set of columns are decreasing."""
     columns2 = ensure_expr_or_series_many(*columns)
     if len(columns2) == 0:
@@ -1653,13 +1680,13 @@ def is_near_event(
     before: int = 0,
     after: int = 0,
     **named_exprs: IntoExprColumn,
-) -> Expr | Series: ...
+) -> ExprOrSeries: ...
 def is_near_event(
     *exprs: IntoExprColumn,
     before: int = 0,
     after: int = 0,
     **named_exprs: IntoExprColumn,
-) -> Expr | Series:
+) -> ExprOrSeries:
     """Compute the rows near any event."""
     if before <= -1:
         raise _IsNearEventBeforeError(before=before)
@@ -2044,10 +2071,10 @@ def order_of_magnitude(column: Series, /, *, round_: bool = False) -> Series: ..
 @overload
 def order_of_magnitude(
     column: IntoExprColumn, /, *, round_: bool = False
-) -> Expr | Series: ...
+) -> ExprOrSeries: ...
 def order_of_magnitude(
     column: IntoExprColumn, /, *, round_: bool = False
-) -> Expr | Series:
+) -> ExprOrSeries:
     """Compute the order of magnitude of a column."""
     column = ensure_expr_or_series(column)
     result = column.abs().log10()
@@ -2448,7 +2475,7 @@ class _StructFromDataClassTypeError(StructFromDataClassError):
 
 def try_reify_expr(
     expr: IntoExprColumn, /, *exprs: IntoExprColumn, **named_exprs: IntoExprColumn
-) -> Expr | Series:
+) -> ExprOrSeries:
     """Try reify an expression."""
     expr = ensure_expr_or_series(expr)
     all_exprs = ensure_expr_or_series_many(*exprs, **named_exprs)
@@ -2515,8 +2542,8 @@ def week_num(column: ExprLike, /, *, start: WeekDay = "mon") -> Expr: ...
 @overload
 def week_num(column: Series, /, *, start: WeekDay = "mon") -> Series: ...
 @overload
-def week_num(column: IntoExprColumn, /, *, start: WeekDay = "mon") -> Expr | Series: ...
-def week_num(column: IntoExprColumn, /, *, start: WeekDay = "mon") -> Expr | Series:
+def week_num(column: IntoExprColumn, /, *, start: WeekDay = "mon") -> ExprOrSeries: ...
+def week_num(column: IntoExprColumn, /, *, start: WeekDay = "mon") -> ExprOrSeries:
     """Compute the week number of a date column."""
     column = ensure_expr_or_series(column)
     epoch = column.dt.epoch(time_unit="d").alias("epoch")
@@ -2562,6 +2589,7 @@ __all__ = [
     "DatetimeUSEastern",
     "DatetimeUTC",
     "DropNullStructSeriesError",
+    "ExprOrSeries",
     "FiniteEWMMeanError",
     "GetDataTypeOrSeriesTimeZoneError",
     "GetSeriesNumberOfDecimalsError",
@@ -2574,6 +2602,10 @@ __all__ = [
     "StructFromDataClassError",
     "acf",
     "adjust_frequencies",
+    "all_dataframe_columns",
+    "all_series",
+    "any_dataframe_columns",
+    "any_series",
     "append_dataclass",
     "are_frames_equal",
     "bernoulli",

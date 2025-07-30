@@ -84,6 +84,7 @@ from utilities.polars import (
     DatetimeUSEastern,
     DatetimeUTC,
     DropNullStructSeriesError,
+    ExprOrSeries,
     FiniteEWMMeanError,
     InsertAfterError,
     InsertBeforeError,
@@ -132,6 +133,10 @@ from utilities.polars import (
     ac_halflife,
     acf,
     adjust_frequencies,
+    all_dataframe_columns,
+    all_series,
+    any_dataframe_columns,
+    any_series,
     append_dataclass,
     are_frames_equal,
     bernoulli,
@@ -205,6 +210,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
     from zoneinfo import ZoneInfo
 
+    from _pytest.mark import ParameterSet
     from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
     from polars.datatypes import DataTypeClass
 
@@ -279,6 +285,56 @@ class TestAdjustFrequencies:
         y = Series(values=x + noise)
         result = adjust_frequencies(y, filters=lambda f: np.abs(f) <= 0.02)
         assert isinstance(result, Series)
+
+
+class TestAnyAllDataFrameColumnsSeries:
+    cases: ClassVar[list[ParameterSet]] = [
+        param(int_range(end=pl.len()) % 2 == 0),
+        param(int_range(end=4, eager=True) % 2 == 0),
+    ]
+    series: ClassVar[Series] = Series(
+        name="x", values=[True, True, False, False], dtype=Boolean
+    )
+    df: ClassVar[DataFrame] = series.to_frame()
+    exp_all: ClassVar[Series] = Series(
+        name="x", values=[True, False, False, False], dtype=Boolean
+    )
+    exp_any: ClassVar[Series] = Series(
+        name="x", values=[True, True, True, False], dtype=Boolean
+    )
+    exp_empty: ClassVar[Series] = Series(
+        name="x", values=[True, False, True, False], dtype=Boolean
+    )
+
+    @mark.parametrize("column", cases)
+    def test_df_all(self, *, column: ExprOrSeries) -> None:
+        result = all_dataframe_columns(self.df, "x", column)
+        assert_series_equal(result, self.exp_all)
+
+    @mark.parametrize("column", cases)
+    def test_df_any(self, *, column: ExprOrSeries) -> None:
+        result = any_dataframe_columns(self.df, "x", column)
+        assert_series_equal(result, self.exp_any)
+
+    @mark.parametrize("column", cases)
+    def test_df_all_empty(self, *, column: ExprOrSeries) -> None:
+        result = all_dataframe_columns(self.df, column.alias("x"))
+        assert_series_equal(result, self.exp_empty)
+
+    @mark.parametrize("column", cases)
+    def test_df_any_empty(self, *, column: ExprOrSeries) -> None:
+        result = any_dataframe_columns(self.df, column.alias("x"))
+        assert_series_equal(result, self.exp_empty)
+
+    @mark.parametrize("column", cases)
+    def test_series_all(self, *, column: ExprOrSeries) -> None:
+        result = all_series(self.series, column)
+        assert_series_equal(result, self.exp_all)
+
+    @mark.parametrize("column", cases)
+    def test_series_any_any_any(self, *, column: ExprOrSeries) -> None:
+        result = any_series(self.series, column)
+        assert_series_equal(result, self.exp_any)
 
 
 class TestAppendDataClass:
