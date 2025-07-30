@@ -132,6 +132,8 @@ from utilities.polars import (
     ac_halflife,
     acf,
     adjust_frequencies,
+    all_series,
+    any_series,
     append_dataclass,
     are_frames_equal,
     bernoulli,
@@ -279,6 +281,27 @@ class TestAdjustFrequencies:
         y = Series(values=x + noise)
         result = adjust_frequencies(y, filters=lambda f: np.abs(f) <= 0.02)
         assert isinstance(result, Series)
+
+
+@mark.only
+class TestAnyAndAllSeries:
+    series: ClassVar[Series] = Series(
+        name="x", values=[True, True, False, False], dtype=Boolean
+    )
+
+    @mark.parametrize(("end", "eager"), [param(4, True), param(pl.len(), False)])
+    def test_all(self, *, end: IntoExprColumn | int, eager: bool) -> None:
+        column = int_range(end=end, eager=eager) % 2 == 0
+        result = all_series(self.series, column)
+        expected = Series(name="x", values=[True, False, False, False], dtype=Boolean)
+        assert_series_equal(result, expected)
+
+    @mark.parametrize(("end", "eager"), [param(4, True), param(pl.len(), False)])
+    def test_any(self, *, end: IntoExprColumn | int, eager: bool) -> None:
+        column = int_range(end=end, eager=eager) % 2 == 0
+        result = any_series(self.series, column)
+        expected = Series(name="x", values=[True, True, True, False], dtype=Boolean)
+        assert_series_equal(result, expected)
 
 
 class TestAppendDataClass:
