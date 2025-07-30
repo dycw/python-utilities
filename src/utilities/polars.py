@@ -286,10 +286,11 @@ def all_dataframe_column(
 
 
 def any_dataframe_column(
-    df: DataFrame, column: IntoExprColumn, /, *columns: IntoExprColumn
+    df: DataFrame, expr: IntoExprColumn, /, *exprs: IntoExprColumn
 ) -> Series:
     """Return a DataFrame column with `OR` applied to additional exprs/series."""
-    return any_series(df[column], *columns)
+    name = get_expr_name(df, expr)
+    return df.select(any_horizontal(expr, *exprs).alias(name))[name]
 
 
 ##
