@@ -275,6 +275,20 @@ def any_series(series: Series, /, *columns: ExprOrSeries) -> Series:
     return df.select(any_horizontal(series, *columns).alias(series.name))[series.name]
 
 
+def all_dataframe_column(
+    df: DataFrame, column: str, /, *columns: ExprOrSeries
+) -> Series:
+    """Return a DataFrame column with `AND` applied to additional exprs/series."""
+    return all_series(df[column], *columns)
+
+
+def any_dataframe_column(
+    df: DataFrame, column: str, /, *columns: ExprOrSeries
+) -> Series:
+    """Return a DataFrame column with `OR` applied to additional exprs/series."""
+    return any_series(df[column], *columns)
+
+
 ##
 
 
@@ -2586,7 +2600,10 @@ __all__ = [
     "StructFromDataClassError",
     "acf",
     "adjust_frequencies",
+    "all_dataframe_column",
     "all_series",
+    "any_dataframe_column",
+    "any_series",
     "append_dataclass",
     "are_frames_equal",
     "bernoulli",
