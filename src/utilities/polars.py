@@ -278,14 +278,15 @@ def any_series(series: Series, /, *columns: ExprOrSeries) -> Series:
 
 
 def all_dataframe_column(
-    df: DataFrame, column: str, /, *columns: ExprOrSeries
+    df: DataFrame, expr: IntoExprColumn, /, *exprs: IntoExprColumn
 ) -> Series:
     """Return a DataFrame column with `AND` applied to additional exprs/series."""
-    return all_series(df[column], *columns)
+    name = get_expr_name(df, expr)
+    return df.select(all_horizontal(expr, *exprs).alias(name))[name]
 
 
 def any_dataframe_column(
-    df: DataFrame, column: str, /, *columns: ExprOrSeries
+    df: DataFrame, column: IntoExprColumn, /, *columns: IntoExprColumn
 ) -> Series:
     """Return a DataFrame column with `OR` applied to additional exprs/series."""
     return any_series(df[column], *columns)

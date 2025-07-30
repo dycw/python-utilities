@@ -323,6 +323,11 @@ class TestAnyAllSeriesDataFrame:
         result = any_dataframe_column(self.df, "x", column)
         assert_series_equal(result, self.exp_any)
 
+    @mark.parametrize("column", cases)
+    def test_empty(self, *, column: ExprOrSeries) -> None:
+        result = all_dataframe_column(self.df, column)
+        assert_series_equal(result, self.exp_all)
+
 
 class TestAppendDataClass:
     @given(
