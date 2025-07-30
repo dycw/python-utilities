@@ -263,21 +263,7 @@ def adjust_frequencies(
 ##
 
 
-def all_series(series: Series, /, *columns: ExprOrSeries) -> Series:
-    """Return a Series with `AND` applied to additional exprs/series."""
-    df = series.to_frame()
-    name = series.name
-    return df.select(all_horizontal(name, *columns).alias(name))[name]
-
-
-def any_series(series: Series, /, *columns: ExprOrSeries) -> Series:
-    """Return a Series with `OR` applied to additional exprs/series."""
-    df = series.to_frame()
-    name = series.name
-    return df.select(any_horizontal(name, *columns).alias(name))[name]
-
-
-def all_dataframe_column(
+def all_dataframe_columns(
     df: DataFrame, expr: IntoExprColumn, /, *exprs: IntoExprColumn
 ) -> Series:
     """Return a DataFrame column with `AND` applied to additional exprs/series."""
@@ -285,12 +271,24 @@ def all_dataframe_column(
     return df.select(all_horizontal(expr, *exprs).alias(name))[name]
 
 
-def any_dataframe_column(
+def any_dataframe_columns(
     df: DataFrame, expr: IntoExprColumn, /, *exprs: IntoExprColumn
 ) -> Series:
     """Return a DataFrame column with `OR` applied to additional exprs/series."""
     name = get_expr_name(df, expr)
     return df.select(any_horizontal(expr, *exprs).alias(name))[name]
+
+
+def all_series(series: Series, /, *columns: ExprOrSeries) -> Series:
+    """Return a Series with `AND` applied to additional exprs/series."""
+    return all_dataframe_columns(series.to_frame(), series.name, *columns)
+
+
+def any_series(series: Series, /, *columns: ExprOrSeries) -> Series:
+    """Return a Series with `OR` applied to additional exprs/series."""
+    df = series.to_frame()
+    name = series.name
+    return df.select(any_horizontal(name, *columns).alias(name))[name]
 
 
 ##
@@ -2604,9 +2602,9 @@ __all__ = [
     "StructFromDataClassError",
     "acf",
     "adjust_frequencies",
-    "all_dataframe_column",
+    "all_dataframe_columns",
     "all_series",
-    "any_dataframe_column",
+    "any_dataframe_columns",
     "any_series",
     "append_dataclass",
     "are_frames_equal",
