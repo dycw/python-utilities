@@ -287,11 +287,10 @@ class TestAdjustFrequencies:
         assert isinstance(result, Series)
 
 
-@mark.only
 class TestAnyAndAllSeries:
     cases: ClassVar[list[ParameterSet]] = [
         param(int_range(end=pl.len()) % 2 == 0),
-        param(int_range(end=4, eager=True) == 0),
+        param(int_range(end=4, eager=True) % 2 == 0),
     ]
     series: ClassVar[Series] = Series(
         name="x", values=[True, True, False, False], dtype=Boolean

@@ -266,13 +266,15 @@ def adjust_frequencies(
 def all_series(series: Series, /, *columns: ExprOrSeries) -> Series:
     """Return a Series with `AND` applied to additional exprs/series."""
     df = series.to_frame()
-    return df.select(all_horizontal(series, *columns).alias(series.name))[series.name]
+    name = series.name
+    return df.select(all_horizontal(name, *columns).alias(name))[name]
 
 
 def any_series(series: Series, /, *columns: ExprOrSeries) -> Series:
     """Return a Series with `OR` applied to additional exprs/series."""
     df = series.to_frame()
-    return df.select(any_horizontal(series, *columns).alias(series.name))[series.name]
+    name = series.name
+    return df.select(any_horizontal(name, *columns).alias(name))[name]
 
 
 def all_dataframe_column(
