@@ -889,7 +889,7 @@ slack-sdk = [{ name = "slack-sdk", specifier = ">=3.36.0,<3.37" }]
 slack-sdk-test = [{ name = "aiohttp" }]
 sqlalchemy = [
     { name = "psycopg" },
-    { name = "sqlalchemy", specifier = ">=2.0.41,<2.1" },
+    { name = "sqlalchemy", specifier = ">=2.0.42,<2.1" },
 ]
 sqlalchemy-polars = [
     { name = "polars" },
