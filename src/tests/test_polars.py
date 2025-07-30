@@ -302,6 +302,9 @@ class TestAnyAllSeriesDataFrame:
     exp_any: ClassVar[Series] = Series(
         name="x", values=[True, True, True, False], dtype=Boolean
     )
+    exp_empty: ClassVar[Series] = Series(
+        name="x", values=[True, False, True, False], dtype=Boolean
+    )
 
     @mark.parametrize("column", cases)
     def test_all_series(self, *, column: ExprOrSeries) -> None:
@@ -325,8 +328,8 @@ class TestAnyAllSeriesDataFrame:
 
     @mark.parametrize("column", cases)
     def test_empty(self, *, column: ExprOrSeries) -> None:
-        result = all_dataframe_column(self.df, column)
-        assert_series_equal(result, self.exp_all)
+        result = all_dataframe_column(self.df, column.alias("x"))
+        assert_series_equal(result, self.exp_empty)
 
 
 class TestAppendDataClass:
