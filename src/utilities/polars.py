@@ -33,6 +33,7 @@ from polars import (
     any_horizontal,
     col,
     concat,
+    datetime_range,
     int_range,
     lit,
     struct,
@@ -49,6 +50,7 @@ from polars.exceptions import (
 )
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
+from whenever import ZonedDateTime
 
 from utilities.dataclasses import _YieldFieldsInstance, yield_fields
 from utilities.errors import ImpossibleCaseError
@@ -128,6 +130,7 @@ DatetimeUSCentral = Datetime(time_zone="US/Central")
 DatetimeUSEastern = Datetime(time_zone="US/Eastern")
 DatetimeUTC = Datetime(time_zone="UTC")
 _FINITE_EWM_MIN_WEIGHT = 0.9999
+
 
 ##
 
@@ -2021,6 +2024,19 @@ def normal(
 ##
 
 
+def offset_datetime(
+    datetime: ZonedDateTime, offset: str, /, *, n: int = 1
+) -> ZonedDateTime:
+    """Offset a datetime as `polars` would."""
+    sr = Series(values=[datetime.py_datetime()])
+    for _ in range(n):
+        sr = sr.dt.offset_by(offset)
+    return ZonedDateTime.from_py_datetime(sr.item())
+
+
+##
+
+
 @overload
 def order_of_magnitude(column: ExprLike, /, *, round_: bool = False) -> Expr: ...
 @overload
@@ -2036,6 +2052,75 @@ def order_of_magnitude(
     column = ensure_expr_or_series(column)
     result = column.abs().log10()
     return result.round().cast(Int64) if round_ else result
+
+
+##
+
+
+@overload
+def period_range(
+    start: ZonedDateTime,
+    end_or_length: ZonedDateTime | int,
+    /,
+    *,
+    interval: str = "1d",
+    time_unit: TimeUnit | None = None,
+    time_zone: TimeZoneLike | None = None,
+    eager: Literal[True],
+) -> Series: ...
+@overload
+def period_range(
+    start: ZonedDateTime,
+    end_or_length: ZonedDateTime | int,
+    /,
+    *,
+    interval: str = "1d",
+    time_unit: TimeUnit | None = None,
+    time_zone: TimeZoneLike | None = None,
+    eager: Literal[False] = False,
+) -> Expr: ...
+@overload
+def period_range(
+    start: ZonedDateTime,
+    end_or_length: ZonedDateTime | int,
+    /,
+    *,
+    interval: str = "1d",
+    time_unit: TimeUnit | None = None,
+    time_zone: TimeZoneLike | None = None,
+    eager: bool = False,
+) -> Series | Expr: ...
+def period_range(
+    start: ZonedDateTime,
+    end_or_length: ZonedDateTime | int,
+    /,
+    *,
+    interval: str = "1d",
+    time_unit: TimeUnit | None = None,
+    time_zone: TimeZoneLike | None = None,
+    eager: bool = False,
+) -> Series | Expr:
+    """Construct a period range."""
+    time_zone_use = None if time_zone is None else ensure_time_zone(time_zone).key
+    match end_or_length:
+        case ZonedDateTime() as end:
+            ...
+        case int() as length:
+            end = offset_datetime(start, interval, n=length)
+        case never:
+            assert_never(never)
+    starts = datetime_range(
+        start.py_datetime(),
+        end.py_datetime(),
+        interval,
+        closed="left",
+        time_unit=time_unit,
+        time_zone=time_zone_use,
+        eager=eager,
+    ).alias("start")
+    ends = (starts.dt.offset_by(interval)).alias("end")
+    period = struct(starts, ends)
+    return try_reify_expr(period, starts, ends)
 
 
 ##
@@ -2529,7 +2614,9 @@ __all__ = [
     "nan_sum_agg",
     "nan_sum_cols",
     "normal",
+    "offset_datetime",
     "order_of_magnitude",
+    "period_range",
     "read_dataframe",
     "read_series",
     "replace_time_zone",

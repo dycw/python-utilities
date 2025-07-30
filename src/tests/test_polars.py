@@ -58,7 +58,7 @@ from polars.exceptions import ComputeError
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
-from whenever import TimeZoneNotFoundError
+from whenever import Time, TimeZoneNotFoundError, ZonedDateTime
 
 import utilities.polars
 from utilities.hypothesis import (
@@ -173,7 +173,9 @@ from utilities.polars import (
     nan_sum_agg,
     nan_sum_cols,
     normal,
+    offset_datetime,
     order_of_magnitude,
+    period_range,
     read_dataframe,
     read_series,
     reify_exprs,
@@ -2205,6 +2207,15 @@ class TestNormal:
         assert series.is_finite().all()
 
 
+class TestOffsetDateTime:
+    @mark.parametrize(("n", "time"), [param(1, Time(13, 30)), param(2, Time(15))])
+    def test_main(self, *, n: int, time: Time) -> None:
+        datetime = ZonedDateTime(2000, 1, 1, 12, tz=UTC.key)
+        result = offset_datetime(datetime, "1h30m", n=n)
+        expected = datetime.replace_time(time)
+        assert result == expected
+
+
 class TestOrderOfMagnitude:
     @given(
         sign=sampled_from([1, -1]),
@@ -2229,6 +2240,19 @@ class TestOrderOfMagnitude:
         assert res_int.dtype == Int64
         assert_series_equal(res_int, Series([exp_int]))
         assert (res_int == exp_int).all()
+
+
+class TestPeriodRange:
+    start: ClassVar[ZonedDateTime] = ZonedDateTime(2000, 1, 1, 12, tz=UTC.key)
+    end: ClassVar[ZonedDateTime] = ZonedDateTime(2000, 1, 1, 15, tz=UTC.key)
+
+    @mark.parametrize("end_or_length", [param(end), param(3)])
+    def test_main(self, *, end_or_length: ZonedDateTime | int) -> None:
+        rng = period_range(self.start, end_or_length, interval="1h", eager=True)
+        assert len(rng) == 3
+        assert rng.dtype == zoned_datetime_period_dtype()
+        assert rng[0]["start"] == self.start.py_datetime()
+        assert rng[-1]["end"] == self.end.py_datetime()
 
 
 class TestReifyExprs:
