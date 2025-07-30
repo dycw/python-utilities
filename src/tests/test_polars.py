@@ -317,12 +317,12 @@ class TestAnyAllSeriesDataFrame:
         assert_series_equal(result, self.exp_any)
 
     @mark.parametrize("column", cases)
-    def test_all_dataframe_column(self, *, column: ExprOrSeries) -> None:
+    def test_df_all(self, *, column: ExprOrSeries) -> None:
         result = all_dataframe_column(self.df, "x", column)
         assert_series_equal(result, self.exp_all)
 
     @mark.parametrize("column", cases)
-    def test_any_dataframe_column(self, *, column: ExprOrSeries) -> None:
+    def test_df_any(self, *, column: ExprOrSeries) -> None:
         result = any_dataframe_column(self.df, "x", column)
         assert_series_equal(result, self.exp_any)
 
