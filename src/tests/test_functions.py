@@ -6,6 +6,8 @@ from functools import cache, cached_property, lru_cache, partial, wraps
 from itertools import chain
 from operator import neg
 from pathlib import Path
+from subprocess import check_output
+from sys import executable
 from types import NoneType
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
@@ -22,7 +24,7 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
@@ -95,6 +97,7 @@ from utilities.functions import (
     yield_object_properties,
 )
 from utilities.sentinel import sentinel
+from utilities.text import parse_bool, strip_and_dedent
 from utilities.whenever import NOW_UTC, ZERO_TIME, get_now, get_today
 
 if TYPE_CHECKING:
@@ -131,24 +134,6 @@ class TestApplyDecorators:
         assert counter == 1
 
 
-class TestEnsureBytes:
-    @given(case=sampled_from([(b"", False), (b"", True), (None, True)]))
-    def test_main(self, *, case: tuple[bytes | None, bool]) -> None:
-        obj, nullable = case
-        _ = ensure_bytes(obj, nullable=nullable)
-
-    @given(
-        case=sampled_from([
-            (False, "Object '.*' of type '.*' must be a byte string"),
-            (True, "Object '.*' of type '.*' must be a byte string or None"),
-        ])
-    )
-    def test_error(self, *, case: tuple[bool, str]) -> None:
-        nullable, match = case
-        with raises(EnsureBytesError, match=match):
-            _ = ensure_bytes(sentinel, nullable=nullable)
-
-
 class TestEnsureBool:
     @given(case=sampled_from([(True, False), (True, True), (None, True)]))
     def test_main(self, *, case: tuple[bool | None, bool]) -> None:
@@ -165,6 +150,24 @@ class TestEnsureBool:
         nullable, match = case
         with raises(EnsureBoolError, match=match):
             _ = ensure_bool(sentinel, nullable=nullable)
+
+
+class TestEnsureBytes:
+    @given(case=sampled_from([(b"", False), (b"", True), (None, True)]))
+    def test_main(self, *, case: tuple[bytes | None, bool]) -> None:
+        obj, nullable = case
+        _ = ensure_bytes(obj, nullable=nullable)
+
+    @given(
+        case=sampled_from([
+            (False, "Object '.*' of type '.*' must be a byte string"),
+            (True, "Object '.*' of type '.*' must be a byte string or None"),
+        ])
+    )
+    def test_error(self, *, case: tuple[bool, str]) -> None:
+        nullable, match = case
+        with raises(EnsureBytesError, match=match):
+            _ = ensure_bytes(sentinel, nullable=nullable)
 
 
 class TestEnsureClass:
@@ -913,6 +916,31 @@ class TestSecond:
     def test_main(self, *, x: int, y: int) -> None:
         pair = x, y
         assert second(pair) == y
+
+
+class TestSkipIfOptimize:
+    @mark.parametrize("optimize", [param(True), param(False)])
+    def test_main(self, *, optimize: bool) -> None:
+        code = strip_and_dedent("""
+            from utilities.functions import skip_if_optimize
+
+            is_run = False
+
+            @skip_if_optimize
+            def func() -> None:
+                global is_run
+                is_run = True
+
+            func()
+            print(is_run)
+        """)
+
+        args = [executable]
+        if optimize:
+            args.append("-O")
+        args.extend(["-c", code])
+        is_run = parse_bool(check_output(args, text=True))
+        assert is_run is not optimize
 
 
 class TestYieldObjectAttributes:
