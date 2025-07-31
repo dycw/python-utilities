@@ -54,7 +54,7 @@ async def pg_dump(
     docker: str | None = None,
     dry_run: bool = False,
     logger: LoggerLike | None = None,
-) -> None:
+) -> bool:
     """Run `pg_dump`."""
     path = _path_pg_dump(path, format_=format_)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -80,7 +80,7 @@ async def pg_dump(
     if dry_run:
         if logger is not None:
             to_logger(logger).info("Would run:\n\t%r", str(cmd))
-        return
+        return True
     with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
             output = await stream_command(cmd)
@@ -90,22 +90,20 @@ async def pg_dump(
                     "Cancelled backup to %r after %s", str(path), timer
                 )
             rmtree(path, ignore_errors=True)
-        else:
-            match output.return_code:
-                case 0:
-                    if logger is not None:
-                        to_logger(logger).info(
-                            "Backup to %r finished after %s", str(path), timer
-                        )
-                case _:
-                    if logger is not None:
-                        to_logger(logger).exception(
-                            "Backup to %r failed after %s\nstderr:\n%s",
-                            str(path),
-                            timer,
-                            output.stderr,
-                        )
-                    rmtree(path, ignore_errors=True)
+            return False
+        if output.return_code != 0:
+            if logger is not None:
+                to_logger(logger).exception(
+                    "Backup to %r failed after %s\nstderr:\n%s",
+                    str(path),
+                    timer,
+                    output.stderr,
+                )
+            rmtree(path, ignore_errors=True)
+            return False
+    if logger is not None:  # pragma: no cover
+        to_logger(logger).info("Backup to %r finished after %s", str(path), timer)
+    return True  # pragma: no cover
 
 
 def _build_pg_dump(
@@ -218,7 +216,7 @@ async def restore(
     docker: str | None = None,
     dry_run: bool = False,
     logger: LoggerLike | None = None,
-) -> None:
+) -> bool:
     """Run `pg_restore`/`psql`."""
     cmd = _build_pg_restore_or_psql(
         url,
@@ -237,7 +235,7 @@ async def restore(
     if dry_run:
         if logger is not None:
             to_logger(logger).info("Would run:\n\t%r", str(cmd))
-        return
+        return True
     with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
         try:
             output = await stream_command(cmd)
@@ -246,21 +244,19 @@ async def restore(
                 to_logger(logger).info(
                     "Cancelled restore from %r after %s", str(path), timer
                 )
-        else:
-            match output.return_code:
-                case 0:
-                    if logger is not None:
-                        to_logger(logger).info(
-                            "Restore from %r finished after %s", str(path), timer
-                        )
-                case _:
-                    if logger is not None:
-                        to_logger(logger).exception(
-                            "Restore from %r failed after %s\nstderr:\n%s",
-                            str(path),
-                            timer,
-                            output.stderr,
-                        )
+            return False
+        if output.return_code != 0:
+            if logger is not None:
+                to_logger(logger).exception(
+                    "Restore from %r failed after %s\nstderr:\n%s",
+                    str(path),
+                    timer,
+                    output.stderr,
+                )
+            return False
+    if logger is not None:  # pragma: no cover
+        to_logger(logger).info("Restore from %r finished after %s", str(path), timer)
+    return True  # pragma: no cover
 
 
 ##
