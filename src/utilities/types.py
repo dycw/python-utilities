@@ -118,6 +118,7 @@ IPv6AddressLike = MaybeStr[IPv6Address]
 type MaybeCollection[T] = T | Collection[T]
 type MaybeIterable[T] = T | Iterable[T]
 type MaybeList[T] = T | list[T]
+type MaybeSet[T] = T | set[T] | frozenset[T]
 type SequenceLT[T] = list[T] | tuple[T, ...]
 # iterables - dervied
 type MaybeSequence[T] = T | SequenceLT[T]
@@ -303,6 +304,7 @@ __all__ = [
     "MaybeList",
     "MaybeSequence",
     "MaybeSequenceStr",
+    "MaybeSet",
     "MaybeStr",
     "MaybeType",
     "MonthDayLike",
