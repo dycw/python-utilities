@@ -935,6 +935,21 @@ def second[U](pair: tuple[Any, U], /) -> U:
 ##
 
 
+def skip_if_optimize[**P](func: Callable[P, None], /) -> Callable[P, None]:
+    """Skip a function if we are in the optimized mode."""
+    if __debug__:
+        return func
+
+    @wraps(func)
+    def wrapped(*args: P.args, **kwargs: P.kwargs) -> None:
+        _ = (args, kwargs)
+
+    return wrapped
+
+
+##
+
+
 def yield_object_attributes(
     obj: Any,
     /,
@@ -1043,6 +1058,7 @@ __all__ = [
     "min_nullable",
     "not_func",
     "second",
+    "skip_if_optimize",
     "yield_object_attributes",
     "yield_object_cached_properties",
     "yield_object_properties",
