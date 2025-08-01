@@ -114,6 +114,7 @@ if TYPE_CHECKING:
         JoinValidation,
         PolarsDataType,
         QuantileMethod,
+        RoundMode,
         SchemaDict,
         TimeUnit,
     )
@@ -2365,6 +2366,29 @@ def _reconstruct_dtype(obj: _DeconDType, /) -> PolarsDataType:
 ##
 
 
+@overload
+def round_to_float(
+    x: ExprLike, y: float, /, *, mode: RoundMode = "half_to_even"
+) -> Expr: ...
+@overload
+def round_to_float(
+    x: Series, y: float, /, *, mode: RoundMode = "half_to_even"
+) -> Series: ...
+@overload
+def round_to_float(
+    x: IntoExprColumn, y: float, /, *, mode: RoundMode = "half_to_even"
+) -> ExprOrSeries: ...
+def round_to_float(
+    x: IntoExprColumn, y: float, /, *, mode: RoundMode = "half_to_even"
+) -> ExprOrSeries:
+    """Round a column to the nearest multiple of another float."""
+    x = ensure_expr_or_series(x)
+    return y * (x / y).round(mode=mode)
+
+
+##
+
+
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
     """Set the first row of a DataFrame as its columns."""
     try:
@@ -2652,6 +2676,7 @@ __all__ = [
     "read_dataframe",
     "read_series",
     "replace_time_zone",
+    "round_to_float",
     "serialize_dataframe",
     "set_first_row_as_columns",
     "struct_dtype",
