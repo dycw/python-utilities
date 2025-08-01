@@ -91,7 +91,7 @@ lightweight-charts = [
   "lightweight-charts >=2.1, <2.2",
 ]
 lightweight-charts-test = [
-  "polars-lts-cpu",
+  "polars",
   "pyarrow",
 ]
 math-test = [
