@@ -114,40 +114,58 @@ def test_engine(*, request: SubRequest, tmp_path: Path) -> Engine:
 
 
 @fixture(params=[param("sqlite"), param("postgresql", marks=SKIPIF_CI)])
-async def test_async_engine(*, request: SubRequest, tmp_path: Path) -> AsyncEngine:
-    from utilities.sqlalchemy import create_engine
-
+async def test_async_engine(
+    *,
+    request: SubRequest,
+    test_async_sqlite_engine: AsyncEngine,
+    test_async_postgres_engine: AsyncEngine,
+) -> AsyncEngine:
     dialect = request.param
     match dialect:
         case "sqlite":
-            db_path = tmp_path / "db.sqlite"
-            return create_engine("sqlite+aiosqlite", database=str(db_path), async_=True)
+            return test_async_sqlite_engine
         case "postgresql":
-            from asyncpg.exceptions import InvalidCatalogNameError
-
-            engine = create_engine(
-                "postgresql+asyncpg",
-                host="localhost",
-                port=5432,
-                database="testing",
-                async_=True,
-            )
-            try:
-                async with engine.begin() as conn:
-                    tables: Sequence[str] = (
-                        (await conn.execute(_select_tables())).scalars().all()
-                    )
-            except InvalidCatalogNameError:
-                ...
-            else:
-                for table in filter(_is_to_drop, tables):
-                    async with engine.begin() as conn:
-                        with suppress(Exception):
-                            _ = await conn.execute(_drop_table(table))
-            return engine
+            return test_async_postgres_engine
         case _:
             msg = f"Unsupported dialect: {dialect}"
             raise NotImplementedError(msg)
+
+
+@fixture
+async def test_async_sqlite_engine(*, tmp_path: Path) -> AsyncEngine:
+    from utilities.sqlalchemy import create_engine
+
+    db_path = tmp_path / "db.sqlite"
+    return create_engine("sqlite+aiosqlite", database=str(db_path), async_=True)
+
+
+@fixture
+@SKIPIF_CI
+async def test_async_postgres_engine() -> AsyncEngine:
+    from asyncpg.exceptions import InvalidCatalogNameError
+
+    from utilities.sqlalchemy import create_engine
+
+    engine = create_engine(
+        "postgresql+asyncpg",
+        host="localhost",
+        port=5432,
+        database="testing",
+        async_=True,
+    )
+    try:
+        async with engine.begin() as conn:
+            tables: Sequence[str] = (
+                (await conn.execute(_select_tables())).scalars().all()
+            )
+    except InvalidCatalogNameError:
+        ...
+    else:
+        for table in filter(_is_to_drop, tables):
+            async with engine.begin() as conn:
+                with suppress(Exception):
+                    _ = await conn.execute(_drop_table(table))
+    return engine
 
 
 def _is_to_drop(table: str, /) -> bool:

@@ -253,6 +253,33 @@ class TestCreateEngine:
         assert isinstance(engine, cls)
 
 
+class TestEnsureDatabaseCreated:
+    async def test_table(self, *, test_async_engine: AsyncEngine) -> None:
+        table = Table(
+            _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
+        )
+        await self._run_test(test_async_engine, table)
+
+    async def test_mapped_class(self, *, test_async_engine: AsyncEngine) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
+            __tablename__ = _table_names()
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+
+        await self._run_test(test_async_engine, Example)
+
+    async def _run_test(
+        self, engine: AsyncEngine, table_or_orm: TableOrORMInstOrClass, /
+    ) -> None:
+        for _ in range(2):
+            await ensure_tables_created(engine, table_or_orm)
+        sel = select(get_table(table_or_orm))
+        async with engine.begin() as conn:
+            _ = (await conn.execute(sel)).all()
+
+
 class TestEnsureTablesCreated:
     async def test_table(self, *, test_async_engine: AsyncEngine) -> None:
         table = Table(
