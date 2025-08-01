@@ -140,12 +140,13 @@ async def test_async_sqlite_engine(*, tmp_path: Path) -> AsyncEngine:
 
 
 @fixture
-@SKIPIF_CI
 async def test_async_postgres_engine() -> AsyncEngine:
     from asyncpg.exceptions import InvalidCatalogNameError
 
     from utilities.sqlalchemy import create_engine
 
+    if IS_CI:
+        skip(reason="Skipped for CI")
     engine = create_engine(
         "postgresql+asyncpg",
         host="localhost",
