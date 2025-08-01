@@ -258,7 +258,6 @@ class TestCreateEngine:
         assert isinstance(engine, cls)
 
 
-@mark.only
 @SKIPIF_CI
 class TestEnsureDatabaseCreatedAndDropped:
     async def test_main(self) -> None:
