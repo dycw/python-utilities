@@ -14,7 +14,7 @@ from hypothesis.strategies import (
     sampled_from,
 )
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
-from pytest import approx, raises
+from pytest import approx, mark, param, raises
 
 from utilities.hypothesis import int32s, numbers, pairs
 from utilities.math import (
@@ -102,6 +102,8 @@ from utilities.math import (
 )
 
 if TYPE_CHECKING:
+    from _pytest.mark import ParameterSet
+
     from utilities.types import MathRoundMode, Number
 
 
@@ -1151,33 +1153,32 @@ class TestRoundFloatImprecisions:
 
 
 class TestRoundToFloat:
-    @given(
-        case=sampled_from([
-            (0.0, 0.5, 0.0),
-            (0.1, 0.5, 0.0),
-            (0.2, 0.5, 0.0),
-            (0.3, 0.5, 0.5),
-            (0.4, 0.5, 0.5),
-            (0.5, 0.5, 0.5),
-            (0.6, 0.5, 0.5),
-            (0.7, 0.5, 0.5),
-            (0.8, 0.5, 1.0),
-            (0.9, 0.5, 1.0),
-            (1.0, 0.5, 1.0),
-            (1.1, 0.5, 1.0),
-            (1.2, 0.5, 1.0),
-            (1.3, 0.5, 1.5),
-            (1.4, 0.5, 1.5),
-            (1.5, 0.5, 1.5),
-            (1.6, 0.5, 1.5),
-            (1.7, 0.5, 1.5),
-            (1.8, 0.5, 2.0),
-            (1.9, 0.5, 2.0),
-            (2.0, 0.5, 2.0),
-        ])
-    )
-    def test_main(self, *, case: tuple[float, float, float]) -> None:
-        x, y, expected = case
+    cases: ClassVar[list[ParameterSet]] = [
+        param(0.0, 0.5, 0.0),
+        param(0.1, 0.5, 0.0),
+        param(0.2, 0.5, 0.0),
+        param(0.3, 0.5, 0.5),
+        param(0.4, 0.5, 0.5),
+        param(0.5, 0.5, 0.5),
+        param(0.6, 0.5, 0.5),
+        param(0.7, 0.5, 0.5),
+        param(0.8, 0.5, 1.0),
+        param(0.9, 0.5, 1.0),
+        param(1.0, 0.5, 1.0),
+        param(1.1, 0.5, 1.0),
+        param(1.2, 0.5, 1.0),
+        param(1.3, 0.5, 1.5),
+        param(1.4, 0.5, 1.5),
+        param(1.5, 0.5, 1.5),
+        param(1.6, 0.5, 1.5),
+        param(1.7, 0.5, 1.5),
+        param(1.8, 0.5, 2.0),
+        param(1.9, 0.5, 2.0),
+        param(2.0, 0.5, 2.0),
+    ]
+
+    @mark.parametrize(("x", "y", "expected"), cases)
+    def test_main(self, *, x: float, y: float, expected: float) -> None:
         result = round_to_float(x, y)
         assert result == approx(expected)
 
