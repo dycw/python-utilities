@@ -91,7 +91,7 @@ lightweight-charts = [
   "lightweight-charts >=2.1, <2.2",
 ]
 lightweight-charts-test = [
-  "polars-lts-cpu",
+  "polars",
   "pyarrow",
 ]
 math-test = [
@@ -119,7 +119,7 @@ orjson-test = [
   "polars",
 ]
 polars = [
-  "polars >=1.31.0, <1.32",
+  "polars >=1.32.0, <1.33",
 ]
 polars-ols = [
   "polars-ols >=0.3.5, <0.4",
@@ -229,7 +229,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.153.8"
+version = "0.153.9"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -262,7 +262,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.153.8"
+current_version = "0.153.9"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
