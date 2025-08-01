@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from asyncio import sleep
 from enum import Enum, StrEnum, auto
+from getpass import getuser
 from itertools import chain
 from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
 from uuid import uuid4
@@ -29,6 +31,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
+from tests.conftest import SKIPIF_CI
 from utilities.hypothesis import int32s, pairs, urls
 from utilities.iterables import one
 from utilities.modules import is_installed
@@ -72,6 +75,8 @@ from utilities.sqlalchemy import (
     columnwise_max,
     columnwise_min,
     create_engine,
+    ensure_database_created,
+    ensure_database_dropped,
     ensure_tables_created,
     ensure_tables_dropped,
     enum_name,
@@ -251,6 +256,35 @@ class TestCreateEngine:
             drivername, database=tmp_path.name, query=query, async_=async_
         )
         assert isinstance(engine, cls)
+
+
+@SKIPIF_CI
+class TestEnsureDatabaseCreatedAndDropped:
+    async def test_main(self) -> None:
+        url = URL.create(
+            "postgresql+asyncpg",
+            username=getuser(),
+            password="password",  # noqa: S106
+            host="localhost",
+            port=5432,
+            database="postgres",
+        )
+        database = f"testing_{_table_names()}"
+        for _ in range(2):
+            await ensure_database_created(url, database)
+            await sleep(0.1)
+        for _ in range(2):
+            await ensure_database_dropped(url, database)
+            await sleep(0.1)
+
+    async def _run_test(
+        self, engine: AsyncEngine, table_or_orm: TableOrORMInstOrClass, /
+    ) -> None:
+        for _ in range(2):
+            await ensure_tables_created(engine, table_or_orm)
+        sel = select(get_table(table_or_orm))
+        async with engine.begin() as conn:
+            _ = (await conn.execute(sel)).all()
 
 
 class TestEnsureTablesCreated:

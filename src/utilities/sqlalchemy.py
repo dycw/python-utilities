@@ -30,7 +30,6 @@ from typing import (
 )
 
 import sqlalchemy
-import sqlalchemy.ext.asyncio
 from sqlalchemy import (
     URL,
     Column,
@@ -63,7 +62,7 @@ from sqlalchemy.exc import (
     OperationalError,
     ProgrammingError,
 )
-from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 from sqlalchemy.orm import (
     DeclarativeBase,
     InstrumentedAttribute,
@@ -311,9 +310,30 @@ def create_engine(
         case False:
             return sqlalchemy.create_engine(url, poolclass=poolclass)
         case True:
-            return sqlalchemy.ext.asyncio.create_async_engine(url, poolclass=poolclass)
+            return create_async_engine(url, poolclass=poolclass)
         case never:
             assert_never(never)
+
+
+##
+
+
+async def ensure_database_created(super_: URL, database: str, /) -> None:
+    """Ensure a database is created."""
+    engine = create_async_engine(super_, isolation_level="AUTOCOMMIT")
+    async with engine.begin() as conn:
+        try:
+            _ = await conn.execute(text(f"CREATE DATABASE {database}"))
+        except (OperationalError, ProgrammingError) as error:
+            if not search('database ".*" already exists', ensure_str(one(error.args))):
+                raise
+
+
+async def ensure_database_dropped(super_: URL, database: str, /) -> None:
+    """Ensure a database is dropped."""
+    engine = create_async_engine(super_, isolation_level="AUTOCOMMIT")
+    async with engine.begin() as conn:
+        _ = await conn.execute(text(f"DROP DATABASE IF EXISTS {database}"))
 
 
 ##
@@ -1284,6 +1304,8 @@ __all__ = [
     "columnwise_max",
     "columnwise_min",
     "create_engine",
+    "ensure_database_created",
+    "ensure_database_dropped",
     "ensure_tables_created",
     "ensure_tables_dropped",
     "enum_name",
