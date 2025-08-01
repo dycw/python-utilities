@@ -318,33 +318,21 @@ def create_engine(
 ##
 
 
-async def ensure_database_created(super_: URL, database_or_url: str | URL, /) -> None:
+async def ensure_database_created(super_: URL, database: str, /) -> None:
     """Ensure a database is created."""
-    match database_or_url:
-        case str() as database:
-            ...
-        case URL() as url:
-            database = extract_url(url).database
-        case never:
-            assert_never(never)
-    async with create_async_engine(super_).begin() as conn:
+    engine = create_async_engine(super_, isolation_level="AUTOCOMMIT")
+    async with engine.begin() as conn:
         try:
             _ = await conn.execute(text(f"CREATE DATABASE {database}"))
-        except OperationalError as error:
-            if not search("Database .* already exists", ensure_str(one(error.args))):
+        except (OperationalError, ProgrammingError) as error:
+            if not search('database ".*" already exists', ensure_str(one(error.args))):
                 raise
 
 
-async def ensure_database_dropped(super_: URL, database_or_url: str | URL, /) -> None:
+async def ensure_database_dropped(super_: URL, database: str, /) -> None:
     """Ensure a database is dropped."""
-    match database_or_url:
-        case str() as database:
-            ...
-        case URL() as url:
-            database = extract_url(url).database
-        case never:
-            assert_never(never)
-    async with create_async_engine(super_).begin() as conn:
+    engine = create_async_engine(super_, isolation_level="AUTOCOMMIT")
+    async with engine.begin() as conn:
         _ = await conn.execute(text(f"DROP DATABASE IF EXISTS {database}"))
 
 

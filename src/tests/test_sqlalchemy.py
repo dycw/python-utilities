@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from asyncio import sleep
 from enum import Enum, StrEnum, auto
+from getpass import getuser
 from itertools import chain
 from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
 from uuid import uuid4
@@ -29,6 +31,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
+from tests.conftest import SKIPIF_CI
 from utilities.hypothesis import int32s, pairs, urls
 from utilities.iterables import one
 from utilities.modules import is_installed
@@ -72,6 +75,8 @@ from utilities.sqlalchemy import (
     columnwise_max,
     columnwise_min,
     create_engine,
+    ensure_database_created,
+    ensure_database_dropped,
     ensure_tables_created,
     ensure_tables_dropped,
     enum_name,
@@ -253,22 +258,25 @@ class TestCreateEngine:
         assert isinstance(engine, cls)
 
 
-class TestEnsureDatabaseCreated:
-    async def test_table(self, *, test_async_engine: AsyncEngine) -> None:
-        table = Table(
-            _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
+@mark.only
+@SKIPIF_CI
+class TestEnsureDatabaseCreatedAndDropped:
+    async def test_main(self) -> None:
+        url = URL.create(
+            "postgresql+asyncpg",
+            username=getuser(),
+            password="password",  # noqa: S106
+            host="localhost",
+            port=5432,
+            database="postgres",
         )
-        await self._run_test(test_async_engine, table)
-
-    async def test_mapped_class(self, *, test_async_engine: AsyncEngine) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
-
-        class Example(Base):
-            __tablename__ = _table_names()
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-
-        await self._run_test(test_async_engine, Example)
+        database = f"testing_{_table_names()}"
+        for _ in range(2):
+            await ensure_database_created(url, database)
+            await sleep(0.1)
+        for _ in range(2):
+            await ensure_database_dropped(url, database)
+            await sleep(0.1)
 
     async def _run_test(
         self, engine: AsyncEngine, table_or_orm: TableOrORMInstOrClass, /
