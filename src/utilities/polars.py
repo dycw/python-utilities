@@ -2383,7 +2383,7 @@ def round_to_float(
 ) -> ExprOrSeries:
     """Round a column to the nearest multiple of another float."""
     x = ensure_expr_or_series(x)
-    return y * (x / y).round(mode=mode)
+    return (x / y).round(mode=mode) * y
 
 
 ##
