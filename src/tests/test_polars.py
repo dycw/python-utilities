@@ -2420,11 +2420,21 @@ class TestReplaceTimeZone:
 
 
 class TestRoundToFloat:
-    @mark.parametrize(("x", "y", "expected"), tests.test_math.TestRoundToFloat.cases)
-    def test_main(self, *, x: float, y: float, expected: float) -> None:
+    @mark.parametrize(("x", "y", "exp_value"), tests.test_math.TestRoundToFloat.cases)
+    def test_main(self, *, x: float, y: float, exp_value: float) -> None:
         series = Series(name="x", values=[x], dtype=Float64)
-        result = round_to_float(series, y).item()
-        assert result == expected
+        result = round_to_float(series, y)
+        expected = Series(name="x", values=[exp_value], dtype=Float64)
+        assert_series_equal(result, expected, check_exact=True)
+
+    def test_dataframe_name(self) -> None:
+        df = (
+            Series(name="x", values=[1.234], dtype=Float64)
+            .to_frame()
+            .with_columns(round_to_float("x", 0.1))
+        )
+        expected = Series(name="x", values=[1.2], dtype=Float64).to_frame()
+        assert_frame_equal(df, expected)
 
 
 class TestSerializeAndDeserializeDataFrame:
