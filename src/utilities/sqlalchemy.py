@@ -128,7 +128,7 @@ def check_connect(engine: Engine, /) -> bool:
     try:
         with engine.connect() as conn:
             return bool(conn.execute(_SELECT).scalar_one())
-    except (gaierror, OperationalError, ProgrammingError):
+    except (gaierror, ConnectionRefusedError, OperationalError, ProgrammingError):
         return False
 
 
@@ -139,7 +139,13 @@ async def check_connect_async(
     try:
         async with timeout_td(timeout), engine.connect() as conn:
             return bool((await conn.execute(_SELECT)).scalar_one())
-    except (gaierror, OperationalError, ProgrammingError, TimeoutError):
+    except (
+        gaierror,
+        ConnectionRefusedError,
+        OperationalError,
+        ProgrammingError,
+        TimeoutError,
+    ):
         return False
 
 
