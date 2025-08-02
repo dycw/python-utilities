@@ -18,6 +18,7 @@ from itertools import chain
 from math import floor
 from operator import ge, le
 from re import search
+from socket import gaierror
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -127,7 +128,7 @@ def check_connect(engine: Engine, /) -> bool:
     try:
         with engine.connect() as conn:
             return bool(conn.execute(_SELECT).scalar_one())
-    except (OperationalError, ProgrammingError):
+    except (gaierror, OperationalError, ProgrammingError):
         return False
 
 
@@ -138,7 +139,7 @@ async def check_connect_async(
     try:
         async with timeout_td(timeout), engine.connect() as conn:
             return bool((await conn.execute(_SELECT)).scalar_one())
-    except (OperationalError, ProgrammingError, TimeoutError):
+    except (gaierror, OperationalError, ProgrammingError, TimeoutError):
         return False
 
 
