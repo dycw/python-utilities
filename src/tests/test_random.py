@@ -39,6 +39,14 @@ class TestGetState:
         state = get_state(seed)
         assert isinstance(state, Random)
 
+    def test_deterministic(self) -> None:
+        expected = [6, 4, 8, 10, 6]
+        for exp in expected:
+            result = get_state(TestGetState.test_deterministic.__qualname__).randint(
+                0, 10
+            )
+            assert result == exp
+
 
 class TestShuffle:
     @given(iterable=iterables(integers()), seed=integers())
@@ -46,8 +54,6 @@ class TestShuffle:
         as_set = set(iterable)
         result = shuffle(as_set, seed=seed)
         assert set(result) == as_set
-        result2 = shuffle(as_set, seed=seed)
-        assert result == result2
 
 
 class TestSystemRandom:

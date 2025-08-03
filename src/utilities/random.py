@@ -3,6 +3,8 @@ from __future__ import annotations
 from random import Random, SystemRandom
 from typing import TYPE_CHECKING
 
+from utilities.functools import cache
+
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
@@ -47,6 +49,7 @@ _DOCKER_SUFFIXES = [
 ##
 
 
+@cache
 def get_state(seed: Seed | None = None, /) -> Random:
     """Get a random state."""
     return seed if isinstance(seed, Random) else Random(x=seed)
