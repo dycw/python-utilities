@@ -8,6 +8,7 @@ from enum import auto
 from itertools import chain, repeat
 from math import isfinite, nan
 from pathlib import Path
+from random import Random
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never, cast
 from uuid import UUID, uuid4
 
@@ -202,7 +203,6 @@ from utilities.polars import (
     zoned_datetime_dtype,
     zoned_datetime_period_dtype,
 )
-from utilities.random import get_state
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
 from utilities.whenever import get_now, get_today
@@ -1440,37 +1440,44 @@ class TestFiniteEWMMean:
         6.849902999800129,
     ]
 
-    @given(
-        case=sampled_from([
-            [
+    @mark.parametrize(
+        ("alpha", "exp_base", "min_weight", "exp_result"),
+        [
+            param(
                 0.75,
-                0.9,
                 alpha_0_75_values,
+                0.9,
                 [-8.28235294117647, -8.070588235294117, 3.2705882352941176],
-            ],
-            [
+            ),
+            param(
                 0.75,
-                0.9999,
                 alpha_0_75_values,
-                [-8.269864158112174, -8.06746317849418, 3.2331284833087284],
-            ],
-            [
-                0.99,
-                0.9,
-                alpha_0_99_values,
-                [-8.970002970002971, -8.00970200970201, 6.849915849915851],
-            ],
-            [
-                0.99,
                 0.9999,
+                [-8.269864158112174, -8.06746317849418, 3.2331284833087284],
+            ),
+            param(
+                0.99,
                 alpha_0_99_values,
+                0.9,
+                [-8.970002970002971, -8.00970200970201, 6.849915849915851],
+            ),
+            param(
+                0.99,
+                alpha_0_99_values,
+                0.9999,
                 [-8.970002000096999, -8.00970002000097, 6.84990300128499],
-            ],
-        ])
+            ),
+        ],
     )
-    def test_main(self, *, case: tuple[float, float, list[float], list[float]]) -> None:
-        alpha, min_weight, exp_base, exp_result = case
-        state = get_state(0)
+    def test_main(
+        self,
+        *,
+        alpha: float,
+        exp_base: list[float],
+        min_weight: float,
+        exp_result: list[float],
+    ) -> None:
+        state = Random(0)
         series = Series(values=[state.randint(-10, 10) for _ in range(100)])
         base = series.ewm_mean(alpha=alpha)
         exp_base_sr = Series(values=exp_base, dtype=Float64)

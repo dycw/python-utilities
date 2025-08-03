@@ -32,12 +32,32 @@ class TestGetDockerName:
         name = get_docker_name()
         assert search(r"^[a-z]+_[a-z]+\d$", name)
 
+    def test_deterministic(self) -> None:
+        expected = [
+            "priceless_hypatia8",
+            "quizzical_aryabhata6",
+            "priceless_wing2",
+            "dazzling_mclean2",
+            "epic_montalcini8",
+        ]
+        for exp in expected:
+            result = get_docker_name(TestGetDockerName.test_deterministic.__qualname__)
+            assert result == exp
+
 
 class TestGetState:
     @given(seed=integers() | just(SYSTEM_RANDOM))
     def test_main(self, *, seed: int | SystemRandom) -> None:
         state = get_state(seed)
         assert isinstance(state, Random)
+
+    def test_deterministic(self) -> None:
+        expected = [6, 4, 8, 10, 6]
+        for exp in expected:
+            result = get_state(TestGetState.test_deterministic.__qualname__).randint(
+                0, 10
+            )
+            assert result == exp
 
 
 class TestShuffle:
@@ -46,8 +66,18 @@ class TestShuffle:
         as_set = set(iterable)
         result = shuffle(as_set, seed=seed)
         assert set(result) == as_set
-        result2 = shuffle(as_set, seed=seed)
-        assert result == result2
+
+    def test_deterministic(self) -> None:
+        expected = [
+            [2, 3, 0, 4, 1],
+            [3, 1, 2, 0, 4],
+            [1, 0, 4, 3, 2],
+            [1, 0, 2, 3, 4],
+            [4, 0, 3, 1, 2],
+        ]
+        for exp in expected:
+            result = shuffle(range(5), seed=TestShuffle.test_deterministic.__qualname__)
+            assert result == exp
 
 
 class TestSystemRandom:

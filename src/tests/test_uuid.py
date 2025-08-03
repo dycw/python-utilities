@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Self
 from uuid import UUID
 
 from hypothesis import given
-from hypothesis.strategies import integers, none, randoms, uuids
+from hypothesis.strategies import none, randoms, uuids
 
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import pairs
@@ -25,10 +25,17 @@ class TestGetUUID:
     def test_main(self, *, seed: Random | None) -> None:
         assert isinstance(get_uuid(seed), UUID)
 
-    @given(seed=integers())
-    def test_deterministic(self, *, seed: int) -> None:
-        uuid1, uuid2 = [get_uuid(seed) for _ in range(2)]
-        assert uuid1 == uuid2
+    def test_deterministic(self) -> None:
+        expected = [
+            UUID("c1887c3c-6d8b-47e3-a6e9-e8b1e502cf8f"),
+            UUID("62333b56-33ff-4020-9126-b19ff1e86e12"),
+            UUID("db8ecae8-5dab-404b-88b0-8ed406820197"),
+            UUID("95977936-0733-413b-96db-a241c3cc55d8"),
+            UUID("24e9640f-8258-495d-899e-9139cf51a545"),
+        ]
+        for exp in expected:
+            result = get_uuid(TestGetUUID.test_deterministic.__qualname__)
+            assert result == exp
 
 
 class TestToUUID:
