@@ -1020,14 +1020,10 @@ class TestToHours:
 class TestToLocalPlainAndFromPlainLocal:
     @given(date_time=zoned_datetimes())
     def test_main(self, *, date_time: ZonedDateTime) -> None:
-        result = to_local_plain(date_time)
-        assert isinstance(result, PlainDateTime)
-
-    @given(datetime=zoned_datetimes())
-    def test_2(self, *, datetime: ZonedDateTime) -> None:
-        text = datetime.to_tz(LOCAL_TIME_ZONE_NAME).to_plain().format_common_iso()
-        result = parse_plain_local(text)
-        assert result == datetime
+        text = to_local_plain(date_time)
+        assert isinstance(text, str)
+        parsed = parse_plain_local(text)
+        assert abs(parsed - date_time) <= SECOND
 
 
 class TestToMicroseconds:

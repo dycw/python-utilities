@@ -31,7 +31,7 @@ from utilities.logging import (
 from utilities.text import unique_str
 from utilities.types import LogLevel
 from utilities.typing import get_args
-from utilities.whenever import format_compact, get_now, to_local_plain
+from utilities.whenever import get_now, to_local_plain
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -337,7 +337,7 @@ class TestRotatingLogFile:
             directory=root, stem="log", suffix=".txt", index=index, start=start, end=end
         )
         assert file.path == root.joinpath(
-            f"log.{index}__{format_compact(to_local_plain(start))}__{format_compact(to_local_plain(end))}.txt"
+            f"log.{index}__{to_local_plain(start)}__{to_local_plain(end)}.txt"
         )
 
 

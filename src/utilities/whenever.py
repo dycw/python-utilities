@@ -52,8 +52,6 @@ if TYPE_CHECKING:
         TimeZoneLike,
     )
 
-# type vars
-
 
 # bounds
 

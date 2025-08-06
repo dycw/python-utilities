@@ -262,9 +262,7 @@ def _make_except_hook_inner(
     _ = sys.stderr.write(f"{slim}\n")  # don't 'from sys import stderr'
     if path is not None:
         path = to_path(path)
-        path_log = path.joinpath(format_compact(to_local_plain(get_now()))).with_suffix(
-            ".txt"
-        )
+        path_log = path.joinpath(to_local_plain(get_now())).with_suffix(".txt")
         full = format_exception_stack(
             exc_val,
             header=True,
