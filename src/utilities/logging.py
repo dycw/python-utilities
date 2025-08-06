@@ -31,7 +31,7 @@ from typing import (
     override,
 )
 
-from whenever import PlainDateTime, ZonedDateTime
+from whenever import ZonedDateTime
 
 from utilities.atomicwrites import move_many
 from utilities.dataclasses import replace_non_sentinel
@@ -45,11 +45,10 @@ from utilities.re import (
     extract_groups,
 )
 from utilities.sentinel import Sentinel, sentinel
-from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.whenever import (
     WheneverLogRecord,
-    format_compact,
     get_now_local,
+    parse_plain_local,
     to_local_plain,
 )
 
@@ -499,10 +498,8 @@ class _RotatingLogFile:
                 stem=stem,
                 suffix=suffix,
                 index=int(index),
-                start=PlainDateTime.parse_common_iso(start).assume_tz(
-                    LOCAL_TIME_ZONE_NAME
-                ),
-                end=PlainDateTime.parse_common_iso(end).assume_tz(LOCAL_TIME_ZONE_NAME),
+                start=parse_plain_local(start),
+                end=parse_plain_local(end),
             )
         try:
             index, end = extract_groups(patterns.pattern2, path.name)
@@ -514,7 +511,7 @@ class _RotatingLogFile:
                 stem=stem,
                 suffix=suffix,
                 index=int(index),
-                end=PlainDateTime.parse_common_iso(end).assume_tz(LOCAL_TIME_ZONE_NAME),
+                end=parse_plain_local(end),
             )
         try:
             index = extract_group(patterns.pattern1, path.name)
@@ -535,9 +532,9 @@ class _RotatingLogFile:
             case int() as index, None, None:
                 tail = str(index)
             case int() as index, None, ZonedDateTime() as end:
-                tail = f"{index}__{format_compact(to_local_plain(end))}"
+                tail = f"{index}__{to_local_plain(end)}"
             case int() as index, ZonedDateTime() as start, ZonedDateTime() as end:
-                tail = f"{index}__{format_compact(to_local_plain(start))}__{format_compact(to_local_plain(end))}"
+                tail = f"{index}__{to_local_plain(start)}__{to_local_plain(end)}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(
                     case=[f"{self.index=}", f"{self.start=}", f"{self.end=}"]

@@ -1008,9 +1008,14 @@ class _ToHoursNanosecondsError(ToHoursError):
 ##
 
 
-def to_local_plain(date_time: ZonedDateTime, /) -> PlainDateTime:
+def to_local_plain(date_time: ZonedDateTime, /) -> str:
     """Convert a datetime to its local/plain variant."""
-    return date_time.to_tz(LOCAL_TIME_ZONE_NAME).to_plain()
+    return format_compact(date_time.to_tz(LOCAL_TIME_ZONE_NAME).to_plain())
+
+
+def parse_plain_local(text: str, /) -> ZonedDateTime:
+    """Parse a plain, local datetime."""
+    return PlainDateTime.parse_common_iso(text).assume_tz(LOCAL_TIME_ZONE_NAME)
 
 
 ##
@@ -1967,6 +1972,7 @@ __all__ = [
     "get_today_local",
     "mean_datetime",
     "min_max_date",
+    "parse_plain_local",
     "round_date_or_date_time",
     "sub_year_month",
     "to_date",
