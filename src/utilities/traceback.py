@@ -97,16 +97,10 @@ def _yield_header_lines(
 ) -> Iterator[str]:
     """Yield the header lines."""
     now = get_now_local()
-    start_use = to_zoned_date_time(start)
     yield f"Date/time  | {format_compact(now)}"
-    if start_use is None:
-        start_str = ""
-    else:
-        start_str = format_compact(start_use.to_tz(LOCAL_TIME_ZONE_NAME))
-    yield f"Started    | {start_str}"
-    delta = None if start_use is None else (now - start_use)
-    delta_str = "" if delta is None else delta.format_common_iso()
-    yield f"Duration   | {delta_str}"
+    start_use = to_zoned_date_time(start).to_tz(LOCAL_TIME_ZONE_NAME)
+    yield f"Started    | {format_compact(start_use)}"
+    yield f"Duration   | {(now - start_use).format_common_iso()}"
     yield f"User       | {getuser()}"
     yield f"Host       | {gethostname()}"
     yield f"Process ID | {getpid()}"
