@@ -13,11 +13,13 @@ from pytest import CaptureFixture, raises
 from utilities.iterables import one
 from utilities.traceback import (
     MakeExceptHookError,
+    _make_except_hook_purge,
     _path_to_dots,
     format_exception_stack,
     make_except_hook,
 )
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
+from utilities.whenever import SECOND, get_now, to_local_plain
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -108,6 +110,14 @@ class TestMakeExceptHook:
         exc_type, exc_val, traceback = exc_info()
         with raises(MakeExceptHookError, match="No exception to log"):
             hook(exc_type, exc_val, traceback)
+
+    def test_purge(self, *, tmp_path: Path) -> None:
+        now = get_now()
+        path = tmp_path.joinpath(to_local_plain(now - 2 * SECOND)).with_suffix(".txt")
+        path.touch()
+        assert len(list(tmp_path.iterdir())) == 1
+        _make_except_hook_purge(tmp_path, SECOND)
+        assert len(list(tmp_path.iterdir())) == 0
 
 
 class TestPathToDots:

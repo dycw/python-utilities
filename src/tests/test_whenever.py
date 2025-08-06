@@ -1017,7 +1017,7 @@ class TestToHours:
             _ = to_hours(delta)
 
 
-class TestToLocalPlainAndFromPlainLocal:
+class TestToLocalPlainAndParsePlainLocal:
     @given(date_time=zoned_datetimes())
     def test_main(self, *, date_time: ZonedDateTime) -> None:
         text = to_local_plain(date_time)
