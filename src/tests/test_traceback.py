@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import sampled_from
-from pytest import CaptureFixture, raises
+from pytest import CaptureFixture, mark, param, raises
 
 from utilities.iterables import one
 from utilities.traceback import (
@@ -23,6 +23,8 @@ from utilities.whenever import SECOND, get_now, to_local_plain
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+    from utilities.types import Delta
 
 
 class TestFormatExceptionStack:
@@ -95,8 +97,9 @@ class TestMakeExceptHook:
             hook(exc_type, exc_val, traceback)
             assert capsys.readouterr() != ""
 
-    def test_file(self, *, tmp_path: Path) -> None:
-        hook = make_except_hook(path=tmp_path)
+    @mark.parametrize("path_max_age", [param(SECOND), param(None)])
+    def test_path(self, *, tmp_path: Path, path_max_age: Delta | None) -> None:
+        hook = make_except_hook(path=tmp_path, path_max_age=path_max_age)
         try:
             _ = 1 / 0
         except ZeroDivisionError:
