@@ -8,20 +8,13 @@ from re import search
 from typing import TYPE_CHECKING, Any, cast
 
 from hypothesis import given
-from hypothesis.strategies import booleans, integers, none, sampled_from
+from hypothesis.strategies import booleans, integers
 from pytest import LogCaptureFixture, mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    pairs,
-    temp_paths,
-    text_ascii,
-    zoned_datetimes,
-)
+from utilities.hypothesis import pairs, temp_paths, text_ascii, zoned_datetimes
 from utilities.iterables import one
 from utilities.logging import (
-    FilterForKeyError,
     GetLoggingLevelNumberError,
     SizeAndTimeRotatingFileHandler,
     _compute_rollover_actions,
@@ -29,7 +22,6 @@ from utilities.logging import (
     _RotatingLogFile,
     add_filters,
     basic_config,
-    filter_for_key,
     get_format_str,
     get_formatter,
     get_logging_level_number,
@@ -207,33 +199,6 @@ class TestComputeRolloverActions:
         assert any(
             p for p in files if search(r"^log\.1\__[\dT]+__[\dT]+\.txt$", p.name)
         )
-
-
-class TestFilterForKey:
-    @given(key=text_ascii(), value=booleans() | none(), default=booleans())
-    def test_main(self, *, key: str, value: bool | None, default: bool) -> None:
-        logger = getLogger(unique_str())
-        logger.addHandler(handler := StreamHandler(buffer := StringIO()))
-        with assume_does_not_raise(FilterForKeyError):
-            filter_ = filter_for_key(key, default=default)
-        add_filters(handler, filter_)
-        match value:
-            case bool():
-                logger.warning("message", extra={key: value})
-                expected = value
-            case None:
-                logger.warning("message")
-                expected = default
-        result = buffer.getvalue() != ""
-        assert result is expected
-
-    def test_sunder(self) -> None:
-        _ = filter_for_key("_key")
-
-    @given(key=sampled_from(["msg", "__dunder__"]))
-    def test_error(self, *, key: str) -> None:
-        with raises(FilterForKeyError, match="Invalid key: '.*'"):
-            _ = filter_for_key(key)
 
 
 class TestGetFormatStr:

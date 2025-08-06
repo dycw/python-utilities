@@ -54,7 +54,7 @@ from utilities.whenever import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Mapping
+    from collections.abc import Iterable, Mapping
     from datetime import time
     from logging import _FilterType
 
@@ -146,42 +146,6 @@ def basic_config(
             handler.setFormatter(formatter)
         case never:
             assert_never(never)
-
-
-##
-
-
-def filter_for_key(
-    key: str, /, *, default: bool = False
-) -> Callable[[LogRecord], bool]:
-    """Make a filter for a given attribute."""
-    if (key in _FILTER_FOR_KEY_BLACKLIST) or key.startswith("__"):
-        raise FilterForKeyError(key=key)
-
-    def filter_(record: LogRecord, /) -> bool:
-        try:
-            value = getattr(record, key)
-        except AttributeError:
-            return default
-        return bool(value)
-
-    return filter_
-
-
-# fmt: off
-_FILTER_FOR_KEY_BLACKLIST = {
-    "args", "created", "exc_info", "exc_text", "filename", "funcName", "getMessage", "levelname", "levelno", "lineno", "module", "msecs", "msg", "name", "pathname", "process", "processName", "relativeCreated", "stack_info", "taskName", "thread", "threadName"
-}
-# fmt: on
-
-
-@dataclass(kw_only=True, slots=True)
-class FilterForKeyError(Exception):
-    key: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid key: {self.key!r}"
 
 
 ##
@@ -626,12 +590,10 @@ def to_logger(logger: LoggerLike | None = None, /) -> Logger:
 
 
 __all__ = [
-    "FilterForKeyError",
     "GetLoggingLevelNumberError",
     "SizeAndTimeRotatingFileHandler",
     "add_filters",
     "basic_config",
-    "filter_for_key",
     "get_format_str",
     "get_logging_level_number",
     "setup_logging",
