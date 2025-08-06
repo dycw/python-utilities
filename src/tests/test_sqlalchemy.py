@@ -99,7 +99,7 @@ from utilities.sqlalchemy import (
 )
 from utilities.text import strip_and_dedent
 from utilities.typing import get_args, get_literal_elements
-from utilities.whenever import MILLISECOND, format_compact, get_now, to_local_plain
+from utilities.whenever import MILLISECOND, get_now, to_local_plain
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -111,7 +111,7 @@ if TYPE_CHECKING:
 def _table_names() -> str:
     """Generate at unique string."""
     key = str(uuid4()).replace("-", "")
-    return f"{format_compact(to_local_plain(get_now()))}_{key}"
+    return f"{to_local_plain(get_now())}_{key}"
 
 
 @overload

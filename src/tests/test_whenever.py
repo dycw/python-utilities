@@ -122,6 +122,7 @@ from utilities.whenever import (
     get_today_local,
     mean_datetime,
     min_max_date,
+    parse_plain_local,
     round_date_or_date_time,
     sub_year_month,
     to_date,
@@ -1016,11 +1017,13 @@ class TestToHours:
             _ = to_hours(delta)
 
 
-class TestToLocalPlain:
+class TestToLocalPlainAndParsePlainLocal:
     @given(date_time=zoned_datetimes())
     def test_main(self, *, date_time: ZonedDateTime) -> None:
-        result = to_local_plain(date_time)
-        assert isinstance(result, PlainDateTime)
+        text = to_local_plain(date_time)
+        assert isinstance(text, str)
+        parsed = parse_plain_local(text)
+        assert abs(parsed - date_time) <= SECOND
 
 
 class TestToMicroseconds:

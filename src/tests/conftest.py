@@ -7,13 +7,11 @@ from typing import TYPE_CHECKING
 
 from hypothesis import HealthCheck
 from pytest import fixture, mark, param, skip
-from whenever import PlainDateTime
 
 from utilities.contextlib import enhanced_context_manager
 from utilities.platform import IS_MAC, IS_NOT_LINUX, IS_WINDOWS
 from utilities.re import ExtractGroupError, extract_group
-from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
-from utilities.whenever import MINUTE, get_now
+from utilities.whenever import MINUTE, get_now, parse_plain_local
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
@@ -174,11 +172,7 @@ def _is_to_drop(table: str, /) -> bool:
         datetime_str = extract_group(r"^(\d{8}T\d{6})_", table)
     except ExtractGroupError:
         return True
-    datetime = PlainDateTime.parse_common_iso(datetime_str).assume_tz(
-        LOCAL_TIME_ZONE_NAME
-    )
-    now = get_now()
-    return (now - datetime) >= MINUTE
+    return (get_now() - parse_plain_local(datetime_str)) >= MINUTE
 
 
 def _select_tables() -> TextClause:

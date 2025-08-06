@@ -33,6 +33,7 @@ from utilities.whenever import (
     format_compact,
     get_now,
     get_now_local,
+    parse_plain_local,
     to_local_plain,
     to_zoned_date_time,
 )
@@ -43,6 +44,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from utilities.types import (
+        Delta,
         MaybeCallableBoolLike,
         MaybeCallablePathLike,
         MaybeCallableZonedDateTimeLike,
@@ -95,16 +97,10 @@ def _yield_header_lines(
 ) -> Iterator[str]:
     """Yield the header lines."""
     now = get_now_local()
-    start_use = to_zoned_date_time(start)
     yield f"Date/time  | {format_compact(now)}"
-    if start_use is None:
-        start_str = ""
-    else:
-        start_str = format_compact(start_use.to_tz(LOCAL_TIME_ZONE_NAME))
-    yield f"Started    | {start_str}"
-    delta = None if start_use is None else (now - start_use)
-    delta_str = "" if delta is None else delta.format_common_iso()
-    yield f"Duration   | {delta_str}"
+    start_use = to_zoned_date_time(start).to_tz(LOCAL_TIME_ZONE_NAME)
+    yield f"Started    | {format_compact(start_use)}"
+    yield f"Duration   | {(now - start_use).format_common_iso()}"
     yield f"User       | {getuser()}"
     yield f"Host       | {gethostname()}"
     yield f"Process ID | {getpid()}"
@@ -205,6 +201,7 @@ def make_except_hook(
     start: MaybeCallableZonedDateTimeLike = get_now,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
+    path_max_age: Delta | None = None,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
     max_length: int | None = RICH_MAX_LENGTH,
@@ -222,6 +219,7 @@ def make_except_hook(
         start=start,
         version=version,
         path=path,
+        path_max_age=path_max_age,
         max_width=max_width,
         indent_size=indent_size,
         max_length=max_length,
@@ -242,6 +240,7 @@ def _make_except_hook_inner(
     start: MaybeCallableZonedDateTimeLike = get_now,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
+    path_max_age: Delta | None = None,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
     max_length: int | None = RICH_MAX_LENGTH,
@@ -258,11 +257,8 @@ def _make_except_hook_inner(
     slim = format_exception_stack(exc_val, header=True, start=start, version=version)
     _ = sys.stderr.write(f"{slim}\n")  # don't 'from sys import stderr'
     if path is not None:
-        path = (
-            to_path(path)
-            .joinpath(format_compact(to_local_plain(get_now())))
-            .with_suffix(".txt")
-        )
+        path = to_path(path)
+        path_log = path.joinpath(to_local_plain(get_now())).with_suffix(".txt")
         full = format_exception_stack(
             exc_val,
             header=True,
@@ -276,8 +272,10 @@ def _make_except_hook_inner(
             max_depth=max_depth,
             expand_all=expand_all,
         )
-        with writer(path, overwrite=True) as temp:
+        with writer(path_log, overwrite=True) as temp:
             _ = temp.write_text(full)
+        if path_max_age is not None:
+            _make_except_hook_purge(path, path_max_age)
     if slack_url is not None:  # pragma: no cover
         from utilities.slack_sdk import SendToSlackError, send_to_slack
 
@@ -285,11 +283,21 @@ def _make_except_hook_inner(
             send_to_slack(slack_url, f"```{slim}```")
         except SendToSlackError as error:
             _ = stderr.write(f"{error}\n")
-
     if to_bool(pudb):  # pragma: no cover
         from pudb import post_mortem
 
         post_mortem(tb=traceback, e_type=exc_type, e_value=exc_val)
+
+
+def _make_except_hook_purge(path: PathLike, max_age: Delta, /) -> None:
+    threshold = get_now() - max_age
+    paths = {
+        p
+        for p in Path(path).iterdir()
+        if p.is_file() and (parse_plain_local(p.stem) <= threshold)
+    }
+    for p in paths:
+        p.unlink(missing_ok=True)
 
 
 @dataclass(kw_only=True, slots=True)
