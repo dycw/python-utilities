@@ -39,7 +39,7 @@ from utilities.hypothesis import (
     plain_datetimes,
     time_deltas,
     times,
-    zoned_datetimes,
+    zoned_date_times,
     zoned_datetimes_2000,
 )
 from utilities.sentinel import Sentinel, sentinel
@@ -325,7 +325,7 @@ class TestDatePeriod:
 
 
 class TestDatetimeUTC:
-    @given(datetime=zoned_datetimes())
+    @given(datetime=zoned_date_times())
     def test_main(self, *, datetime: ZonedDateTime) -> None:
         result = datetime_utc(
             datetime.year,
@@ -394,7 +394,7 @@ class TestFormatCompact:
         expected = datetime.round()
         assert parsed == expected
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=zoned_date_times())
     def test_zoned_datetime(self, *, datetime: ZonedDateTime) -> None:
         result = format_compact(datetime)
         assert isinstance(result, str)
@@ -406,7 +406,9 @@ class TestFormatCompact:
 
 class TestFromTimeStamp:
     @given(
-        datetime=zoned_datetimes(time_zone=timezones()).map(lambda d: d.round("second"))
+        datetime=zoned_date_times(time_zone=timezones()).map(
+            lambda d: d.round("second")
+        )
     )
     def test_main(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.timestamp()
@@ -414,7 +416,7 @@ class TestFromTimeStamp:
         assert result == datetime
 
     @given(
-        datetime=zoned_datetimes(time_zone=timezones()).map(
+        datetime=zoned_date_times(time_zone=timezones()).map(
             lambda d: d.round("millisecond")
         )
     )
@@ -423,7 +425,7 @@ class TestFromTimeStamp:
         result = from_timestamp_millis(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    @given(datetime=zoned_datetimes(time_zone=timezones()))
+    @given(datetime=zoned_date_times(time_zone=timezones()))
     def test_nanos(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.timestamp_nanos()
         result = from_timestamp_nanos(timestamp, time_zone=ZoneInfo(datetime.tz))
@@ -477,18 +479,18 @@ class TestGetTodayLocal:
 class TestMeanDateTime:
     threshold: ClassVar[TimeDelta] = 100 * MICROSECOND
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=zoned_date_times())
     def test_one(self, *, datetime: ZonedDateTime) -> None:
         result = mean_datetime([datetime])
         assert result == datetime
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=zoned_date_times())
     def test_many(self, *, datetime: ZonedDateTime) -> None:
         result = mean_datetime([datetime, datetime + MINUTE])
         expected = datetime + 30 * SECOND
         assert abs(result - expected) <= self.threshold
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=zoned_date_times())
     def test_weights(self, *, datetime: ZonedDateTime) -> None:
         result = mean_datetime([datetime, datetime + MINUTE], weights=[1, 3])
         expected = datetime + 45 * SECOND
@@ -1018,7 +1020,7 @@ class TestToHours:
 
 
 class TestToLocalPlainAndParsePlainLocal:
-    @given(date_time=zoned_datetimes())
+    @given(date_time=zoned_date_times())
     def test_main(self, *, date_time: ZonedDateTime) -> None:
         text = to_local_plain(date_time)
         assert isinstance(text, str)
@@ -1435,7 +1437,7 @@ class TestToZonedDateTime:
     def test_default(self) -> None:
         assert abs(to_zoned_date_time() - get_now()) <= SECOND
 
-    @given(date_time=zoned_datetimes())
+    @given(date_time=zoned_date_times())
     def test_date_time(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time) == date_time
 
@@ -1448,7 +1450,7 @@ class TestToZonedDateTime:
         result = to_zoned_date_time(date_time.py_datetime().astimezone(dt.UTC))
         assert result == date_time
 
-    @given(date_time=zoned_datetimes())
+    @given(date_time=zoned_date_times())
     def test_callable(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(lambda: date_time) == date_time
 
@@ -1458,7 +1460,7 @@ class TestToZonedDateTime:
     def test_sentinel(self) -> None:
         assert to_zoned_date_time(sentinel) is sentinel
 
-    @given(date_times=pairs(zoned_datetimes()))
+    @given(date_times=pairs(zoned_date_times()))
     def test_replace_non_sentinel(
         self, *, date_times: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
@@ -1511,7 +1513,7 @@ class TestWheneverLogRecord:
 
 
 class TestZonedDateTimePeriod:
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True), delta=time_deltas())
+    @given(datetimes=pairs(zoned_date_times(), sorted=True), delta=time_deltas())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_add(
         self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime], delta: TimeDelta
@@ -1523,7 +1525,9 @@ class TestZonedDateTimePeriod:
         expected = ZonedDateTimePeriod(start + delta, end + delta)
         assert result == expected
 
-    @given(datetime=zoned_datetimes(), datetimes=pairs(zoned_datetimes(), sorted=True))
+    @given(
+        datetime=zoned_date_times(), datetimes=pairs(zoned_date_times(), sorted=True)
+    )
     def test_contains(
         self, *, datetime: ZonedDateTime, datetimes: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
@@ -1533,7 +1537,9 @@ class TestZonedDateTimePeriod:
         expected = start <= datetime <= end
         assert result is expected
 
-    @given(datetime=zoned_datetimes(), datetimes=pairs(zoned_datetimes(), sorted=True))
+    @given(
+        datetime=zoned_date_times(), datetimes=pairs(zoned_date_times(), sorted=True)
+    )
     def test_contain_datetime(
         self, *, datetime: ZonedDateTime, datetimes: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
@@ -1543,13 +1549,13 @@ class TestZonedDateTimePeriod:
         expected = start <= datetime <= end
         assert result is expected
 
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
+    @given(datetimes=pairs(zoned_date_times(), sorted=True))
     def test_delta(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
         assert period.delta == (end - start)
 
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
+    @given(datetimes=pairs(zoned_date_times(), sorted=True))
     def test_exact_eq(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
@@ -1671,13 +1677,13 @@ class TestZonedDateTimePeriod:
         period = ZonedDateTimePeriod(datetime, datetime)
         assert period.format_compact() == expected
 
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
+    @given(datetimes=pairs(zoned_date_times(), sorted=True))
     def test_hashable(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
         _ = hash(period)
 
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
+    @given(datetimes=pairs(zoned_date_times(), sorted=True))
     def test_replace(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
@@ -1685,7 +1691,7 @@ class TestZonedDateTimePeriod:
         assert new.start == (start - SECOND)
         assert new.end == (end + SECOND)
 
-    @given(data=data(), datetimes=pairs(zoned_datetimes(), sorted=True))
+    @given(data=data(), datetimes=pairs(zoned_date_times(), sorted=True))
     @mark.parametrize("func", [param(repr), param(str)])
     def test_repr(
         self,
@@ -1695,7 +1701,7 @@ class TestZonedDateTimePeriod:
         func: Callable[..., str],
     ) -> None:
         start, end = datetimes
-        datetimes = data.draw(pairs(zoned_datetimes(), sorted=True))
+        datetimes = data.draw(pairs(zoned_date_times(), sorted=True))
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
         result = func(period)
@@ -1705,8 +1711,8 @@ class TestZonedDateTimePeriod:
         )
 
     @given(
-        dates1=pairs(zoned_datetimes(), sorted=True),
-        dates2=pairs(zoned_datetimes(), sorted=True),
+        dates1=pairs(zoned_date_times(), sorted=True),
+        dates2=pairs(zoned_date_times(), sorted=True),
     )
     def test_sortable(
         self,
@@ -1720,7 +1726,7 @@ class TestZonedDateTimePeriod:
         period2 = ZonedDateTimePeriod(start2, end2)
         _ = sorted([period1, period2])
 
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True), delta=time_deltas())
+    @given(datetimes=pairs(zoned_date_times(), sorted=True), delta=time_deltas())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_sub(
         self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime], delta: TimeDelta
@@ -1747,7 +1753,7 @@ class TestZonedDateTimePeriod:
         result = ZonedDateTimePeriod.from_dict(dict2)
         assert result == period
 
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
+    @given(datetimes=pairs(zoned_date_times(), sorted=True))
     def test_to_tz(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
@@ -1758,7 +1764,7 @@ class TestZonedDateTimePeriod:
         expected = ZonedDateTimePeriod(start.to_tz(name), end.to_tz(name))
         assert result == expected
 
-    @given(datetimes=pairs(zoned_datetimes(), unique=True, sorted=True))
+    @given(datetimes=pairs(zoned_date_times(), unique=True, sorted=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_error_period_invalid(
         self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]
@@ -1783,7 +1789,7 @@ class TestZonedDateTimePeriod:
         ):
             _ = ZonedDateTimePeriod(start, end)
 
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
+    @given(datetimes=pairs(zoned_date_times(), sorted=True))
     def test_error_exact_eq(
         self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:

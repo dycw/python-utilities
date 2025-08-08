@@ -71,7 +71,7 @@ from utilities.hypothesis import (
     py_datetimes,
     temp_paths,
     text_ascii,
-    zoned_datetimes,
+    zoned_date_times,
 )
 from utilities.math import number_of_decimals
 from utilities.numpy import DEFAULT_RNG
@@ -392,7 +392,7 @@ class TestAppendDataClass:
 
     @given(
         data=fixed_dictionaries({
-            "datetime": zoned_datetimes().map(lambda d: d.py_datetime())
+            "datetime": zoned_date_times().map(lambda d: d.py_datetime())
         })
     )
     def test_zoned_datetime(self, *, data: StrMapping) -> None:
@@ -1074,7 +1074,7 @@ class TestDataClassToDataFrame:
             lists(
                 builds(
                     Example,
-                    x=zoned_datetimes(time_zone=time_zone).map(
+                    x=zoned_date_times(time_zone=time_zone).map(
                         lambda d: d.py_datetime()
                     ),
                 ),

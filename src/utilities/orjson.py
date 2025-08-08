@@ -5,7 +5,7 @@ import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
-from enum import Enum, unique
+from enum import Enum, StrEnum, unique
 from functools import cached_property, partial
 from itertools import chain
 from logging import Formatter, LogRecord
@@ -52,7 +52,7 @@ from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
 from utilities.tzlocal import LOCAL_TIME_ZONE
 from utilities.version import Version, parse_version
-from utilities.whenever import from_timestamp
+from utilities.whenever import DatePeriod, ZonedDateTimePeriod, from_timestamp
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
@@ -65,10 +65,11 @@ if TYPE_CHECKING:
 
 
 @unique
-class _Prefixes(Enum):
+class _Prefixes(StrEnum):
     dataclass = "dc"
     date = "d"
     date_delta = "dd"
+    date_period = "dp"
     date_time_delta = "D"
     enum = "e"
     exception_class = "Ex"
@@ -77,7 +78,7 @@ class _Prefixes(Enum):
     frozenset_ = "fr"
     list_ = "l"
     month_day = "md"
-    none = "none"
+    none = "0"
     path = "p"
     plain_date_time = "pd"
     py_date = "!d"
@@ -93,6 +94,7 @@ class _Prefixes(Enum):
     version = "v"
     year_month = "ym"
     zoned_date_time = "zd"
+    zoned_date_time_period = "zp"
 
 
 type _DataclassHook = Callable[[type[Dataclass], StrMapping], StrMapping]

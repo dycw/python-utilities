@@ -780,7 +780,7 @@ def _path_parts(draw: DrawFn, /) -> str:
 
 
 @composite
-def plain_datetimes(
+def plain_date_times(
     draw: DrawFn,
     /,
     *,
@@ -1374,7 +1374,7 @@ def year_months(
 
 
 @composite
-def zoned_datetimes(
+def zoned_date_times(
     draw: DrawFn,
     /,
     *,
@@ -1401,7 +1401,7 @@ def zoned_datetimes(
                 max_value_ = max_value_.to_tz(time_zone_.key).to_plain()
         case never:
             assert_never(never)
-    plain = draw(plain_datetimes(min_value=min_value_, max_value=max_value_))
+    plain = draw(plain_date_times(min_value=min_value_, max_value=max_value_))
     with (
         assume_does_not_raise(RepeatedTime),
         assume_does_not_raise(SkippedTime),
@@ -1415,7 +1415,7 @@ def zoned_datetimes(
     return zoned
 
 
-zoned_datetimes_2000 = zoned_datetimes(
+zoned_date_times_2000 = zoned_date_times(
     min_value=ZonedDateTime(2000, 1, 1, tz=UTC.key),
     max_value=ZonedDateTime(2000, 12, 31, tz=UTC.key),
 )
@@ -1427,6 +1427,7 @@ __all__ = [
     "assume_does_not_raise",
     "bool_arrays",
     "date_deltas",
+    "date_periods",
     "date_time_deltas",
     "dates",
     "draw2",
@@ -1446,7 +1447,7 @@ __all__ = [
     "numbers",
     "pairs",
     "paths",
-    "plain_datetimes",
+    "plain_date_times",
     "py_datetimes",
     "random_states",
     "sentinels",
@@ -1472,6 +1473,7 @@ __all__ = [
     "urls",
     "versions",
     "year_months",
-    "zoned_datetimes",
-    "zoned_datetimes_2000",
+    "zoned_date_time_periods",
+    "zoned_date_times",
+    "zoned_date_times_2000",
 ]

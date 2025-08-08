@@ -42,7 +42,7 @@ from utilities.hypothesis import (
     time_deltas,
     times,
     year_months,
-    zoned_datetimes,
+    zoned_date_times,
 )
 from utilities.os import temp_environ
 from utilities.text import strip_and_dedent
@@ -95,7 +95,7 @@ class TestExtendedTSConverter:
         ),
         _Case(
             cls=ZonedDateTime,
-            strategy=zoned_datetimes(),
+            strategy=zoned_date_times(),
             serialize=ZonedDateTime.format_common_iso,
         ),
     ]
@@ -217,7 +217,7 @@ class TestExtendedTSConverter:
 
 
 class TestLoadSettings:
-    @given(root=temp_paths(), datetime=zoned_datetimes())
+    @given(root=temp_paths(), datetime=zoned_date_times())
     def test_main(self, *, root: Path, datetime: ZonedDateTime) -> None:
         @dataclass(frozen=True, kw_only=True, slots=True)
         class Settings:
@@ -238,7 +238,7 @@ class TestLoadSettings:
 
     @given(
         prefix=app_names.map(lambda text: f"TEST_{text}".upper()),
-        datetime=zoned_datetimes(),
+        datetime=zoned_date_times(),
     )
     def test_loaders(self, *, prefix: str, datetime: ZonedDateTime) -> None:
         key = f"{prefix}__DATETIME"

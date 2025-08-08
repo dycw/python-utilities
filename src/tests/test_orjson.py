@@ -58,7 +58,7 @@ from utilities.hypothesis import (
     temp_paths,
     text_ascii,
     text_printable,
-    zoned_datetimes,
+    zoned_date_times,
 )
 from utilities.iterables import always_iterable, one
 from utilities.logging import get_logging_level_number
@@ -203,9 +203,9 @@ class TestGetLogRecords:
         date=dates() | none(),
         min_date=dates() | none(),
         max_date=dates() | none(),
-        datetime=zoned_datetimes() | none(),
-        min_datetime=zoned_datetimes() | none(),
-        max_datetime=zoned_datetimes() | none(),
+        datetime=zoned_date_times() | none(),
+        min_datetime=zoned_date_times() | none(),
+        max_datetime=zoned_date_times() | none(),
         func_name=booleans() | text_ascii() | none(),
         extra=booleans() | text_ascii() | sets(text_ascii()) | none(),
         log_file=booleans() | paths() | text_ascii() | none(),

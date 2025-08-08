@@ -50,7 +50,7 @@ from utilities.hypothesis import (
     times,
     versions,
     year_months,
-    zoned_datetimes,
+    zoned_date_times,
 )
 from utilities.math import MAX_INT64, MIN_INT64
 
@@ -98,7 +98,7 @@ def objects(
         | uuids()
         | versions()
         | year_months()
-        | zoned_datetimes()
+        | zoned_date_times()
     )
     if dataclass_custom_equality:
         base |= builds(DataClassFutureCustomEquality)

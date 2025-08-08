@@ -62,7 +62,7 @@ from utilities.hypothesis import (
     time_deltas,
     times,
     year_months,
-    zoned_datetimes,
+    zoned_date_times,
 )
 from utilities.text import join_strs, strip_and_dedent
 
@@ -335,7 +335,7 @@ class TestParameters:
         _Case(
             param=ZonedDateTime(),
             name="zoned date-time",
-            strategy=zoned_datetimes(),
+            strategy=zoned_date_times(),
             serialize=whenever.ZonedDateTime.format_common_iso,
             failable=True,
         ),

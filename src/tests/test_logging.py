@@ -12,7 +12,7 @@ from hypothesis.strategies import booleans, integers
 from pytest import LogCaptureFixture, mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
-from utilities.hypothesis import pairs, temp_paths, text_ascii, zoned_datetimes
+from utilities.hypothesis import pairs, temp_paths, text_ascii, zoned_date_times
 from utilities.iterables import one
 from utilities.logging import (
     GetLoggingLevelNumberError,
@@ -274,7 +274,7 @@ class TestRotatingLogFile:
         assert result.start is None
         assert result.end is None
 
-    @given(index=integers(min_value=1), end=zoned_datetimes())
+    @given(index=integers(min_value=1), end=zoned_date_times())
     def test_from_path_with_index_and_end(
         self, *, index: int, end: ZonedDateTime
     ) -> None:
@@ -287,7 +287,9 @@ class TestRotatingLogFile:
         assert result.start is None
         assert result.end == end.round()
 
-    @given(index=integers(min_value=1), datetimes=pairs(zoned_datetimes(), sorted=True))
+    @given(
+        index=integers(min_value=1), datetimes=pairs(zoned_date_times(), sorted=True)
+    )
     def test_from_path_with_index_start_and_end(
         self, *, index: int, datetimes: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
@@ -315,7 +317,7 @@ class TestRotatingLogFile:
         file = _RotatingLogFile(directory=root, stem="log", suffix=".txt", index=index)
         assert file.path == root.joinpath(f"log.{index}.txt")
 
-    @given(root=temp_paths(), index=integers(min_value=1), end=zoned_datetimes())
+    @given(root=temp_paths(), index=integers(min_value=1), end=zoned_date_times())
     def test_path_with_index_and_end(
         self, *, root: Path, index: int, end: ZonedDateTime
     ) -> None:
@@ -327,7 +329,7 @@ class TestRotatingLogFile:
     @given(
         root=temp_paths(),
         index=integers(min_value=1),
-        datetimes=pairs(zoned_datetimes(), sorted=True),
+        datetimes=pairs(zoned_date_times(), sorted=True),
     )
     def test_path_with_index_start_and_end(
         self, *, root: Path, index: int, datetimes: tuple[ZonedDateTime, ZonedDateTime]

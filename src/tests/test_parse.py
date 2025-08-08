@@ -56,7 +56,7 @@ from utilities.hypothesis import (
     times,
     versions,
     year_months,
-    zoned_datetimes,
+    zoned_date_times,
 )
 from utilities.math import is_equal
 from utilities.parse import (
@@ -324,7 +324,7 @@ class TestSerializeAndParseObject:
         result = parse_object(YearMonth, serialized)
         assert result == year_month
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=zoned_date_times())
     def test_zoned_datetime(self, *, datetime: ZonedDateTime) -> None:
         serialized = serialize_object(datetime)
         result = parse_object(ZonedDateTime, serialized)

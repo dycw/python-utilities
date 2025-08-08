@@ -91,7 +91,7 @@ from utilities.hypothesis import (
     urls,
     versions,
     year_months,
-    zoned_datetimes,
+    zoned_date_times,
 )
 from utilities.iterables import one
 from utilities.libcst import parse_import
@@ -1066,11 +1066,11 @@ class TestYearMonths:
 class TestZonedDateTimes:
     @given(data=data(), time_zone=timezones())
     def test_main(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
-        min_value = data.draw(zoned_datetimes() | none())
-        max_value = data.draw(zoned_datetimes() | none())
+        min_value = data.draw(zoned_date_times() | none())
+        max_value = data.draw(zoned_date_times() | none())
         with assume_does_not_raise(InvalidArgument):
             datetime = data.draw(
-                zoned_datetimes(
+                zoned_date_times(
                     min_value=min_value, max_value=max_value, time_zone=time_zone
                 )
             )
@@ -1087,5 +1087,5 @@ class TestZonedDateTimes:
     def test_examples(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
         with assume_does_not_raise(TimeZoneNotFoundError):
             max_value = ZonedDateTime(1, 1, 2, tz=time_zone.key)
-        datetime = data.draw(zoned_datetimes(max_value=max_value, time_zone=time_zone))
+        datetime = data.draw(zoned_date_times(max_value=max_value, time_zone=time_zone))
         _ = datetime.py_datetime()
