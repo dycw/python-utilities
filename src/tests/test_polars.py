@@ -1167,25 +1167,13 @@ class TestDataClassToSchema:
         expected = {"x": Object}
         assert result == expected
 
-    @mark.only
     def test_date_period(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: DatePeriod
 
         obj = Example(x=DatePeriod(TODAY_UTC, TODAY_UTC))
-        result = dataclass_to_schema(obj)
-        expected = {"x": Object}
-        assert result == expected
-
-    @mark.skip
-    def test_date_period_nullable(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: DatePeriod | None = None
-
-        obj = Example(x=DatePeriod(TODAY_UTC, TODAY_UTC))
-        result = dataclass_to_schema(obj)
+        result = dataclass_to_schema(obj, globalns=globals())
         expected = {"x": Object}
         assert result == expected
 
@@ -1339,7 +1327,7 @@ class TestDataClassToSchema:
             x: TimePeriod
 
         obj = Example(x=TimePeriod(Time(), Time()))
-        result = dataclass_to_schema(obj)
+        result = dataclass_to_schema(obj, globalns=globals())
         expected = {"x": Object}
         assert result == expected
 
@@ -1369,7 +1357,7 @@ class TestDataClassToSchema:
             x: ZonedDateTimePeriod
 
         obj = Example(x=ZonedDateTimePeriod(NOW_UTC, NOW_UTC))
-        result = dataclass_to_schema(obj)
+        result = dataclass_to_schema(obj, globalns=globals())
         expected = {"x": Object}
         assert result == expected
 

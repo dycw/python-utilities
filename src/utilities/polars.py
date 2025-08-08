@@ -1104,7 +1104,6 @@ def dataclass_to_schema(
             isinstance(field.type_, type)
             and issubclass(field.type_, (DatePeriod, TimePeriod, ZonedDateTimePeriod))
         ):
-            assert 0, [field.type_]
             dtypes = dataclass_to_schema(
                 field.value, globalns=globalns, localns=localns
             )
