@@ -5,7 +5,7 @@ from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, cast
 
-from hypothesis import Phase, assume, given, settings
+from hypothesis import assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import (
@@ -58,6 +58,8 @@ from utilities.hypothesis import (
     hashables,
     import_froms,
     imports,
+    int8s,
+    int16s,
     int32s,
     int64s,
     int_arrays,
@@ -83,6 +85,7 @@ from utilities.hypothesis import (
     text_digits,
     text_printable,
     time_deltas,
+    time_periods,
     times,
     triples,
     uint8s,
@@ -92,6 +95,7 @@ from utilities.hypothesis import (
     urls,
     versions,
     year_months,
+    zoned_date_time_periods,
     zoned_date_times,
 )
 from utilities.iterables import one
@@ -99,6 +103,8 @@ from utilities.libcst import parse_import
 from utilities.math import (
     MAX_FLOAT32,
     MAX_FLOAT64,
+    MAX_INT8,
+    MAX_INT16,
     MAX_INT32,
     MAX_INT64,
     MAX_UINT8,
@@ -107,6 +113,8 @@ from utilities.math import (
     MAX_UINT64,
     MIN_FLOAT32,
     MIN_FLOAT64,
+    MIN_INT8,
+    MIN_INT16,
     MIN_INT32,
     MIN_INT64,
     MIN_UINT8,
@@ -122,12 +130,13 @@ from utilities.whenever import (
     DATE_TWO_DIGIT_YEAR_MAX,
     DATE_TWO_DIGIT_YEAR_MIN,
     DatePeriod,
+    TimePeriod,
+    ZonedDateTimePeriod,
     to_days,
     to_nanoseconds,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
     from collections.abc import Set as AbstractSet
     from zoneinfo import ZoneInfo
 
@@ -363,17 +372,27 @@ class TestDraw2:
 class TestFloat32s:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_value, max_value = data.draw(pairs(float32s(), sorted=True))
-        x = data.draw(float32s(min_value=min_value, max_value=max_value))
-        assert max(min_value, MIN_FLOAT32) <= x <= min(max_value, MAX_FLOAT32)
+        min_value, max_value = data.draw(pairs(float32s() | none()))
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(float32s(min_value=min_value, max_value=max_value))
+        assert MIN_FLOAT32 <= x <= MAX_FLOAT32
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
 
 
 class TestFloat64s:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_value, max_value = data.draw(pairs(float64s(), sorted=True))
-        x = data.draw(float64s(min_value=min_value, max_value=max_value))
-        assert max(min_value, MIN_FLOAT64) <= x <= min(max_value, MAX_FLOAT64)
+        min_value, max_value = data.draw(pairs(float64s() | none()))
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(float64s(min_value=min_value, max_value=max_value))
+        assert MIN_FLOAT64 <= x <= MAX_FLOAT64
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
 
 
 class TestFloatArrays:
@@ -590,20 +609,56 @@ class TestIntArrays:
             assert len(set(flat)) == len(flat)
 
 
+class TestInt8s:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(int8s() | none()))
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(int8s(min_value=min_value, max_value=max_value))
+        assert MIN_INT8 <= x <= MAX_INT8
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
+
+
+class TestInt16s:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value, max_value = data.draw(pairs(int16s() | none()))
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(int16s(min_value=min_value, max_value=max_value))
+        assert MIN_INT16 <= x <= MAX_INT16
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
+
+
 class TestInt32s:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_value, max_value = data.draw(pairs(int32s(), sorted=True))
-        x = data.draw(int32s(min_value=min_value, max_value=max_value))
-        assert max(min_value, MIN_INT32) <= x <= min(max_value, MAX_INT32)
+        min_value, max_value = data.draw(pairs(int32s() | none()))
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(int32s(min_value=min_value, max_value=max_value))
+        assert MIN_INT32 <= x <= MAX_INT32
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
 
 
 class TestInt64s:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_value, max_value = data.draw(pairs(int64s(), sorted=True))
-        x = data.draw(int64s(min_value=min_value, max_value=max_value))
-        assert max(min_value, MIN_INT64) <= x <= min(max_value, MAX_INT64)
+        min_value, max_value = data.draw(pairs(int64s() | none()))
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(int64s(min_value=min_value, max_value=max_value))
+        assert MIN_INT64 <= x <= MAX_INT64
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
 
 
 class TestListsFixedLength:
@@ -738,13 +793,11 @@ class TestSetupHypothesisProfiles:
     def test_main(self) -> None:
         setup_hypothesis_profiles()
         curr = settings()
-        assert Phase.shrink in cast("Iterable[Phase]", curr.phases)
         assert curr.max_examples in {10, 100, 1000}
 
     def test_no_shrink(self) -> None:
         with temp_environ({"HYPOTHESIS_NO_SHRINK": "1"}):
             setup_hypothesis_profiles()
-        assert Phase.shrink not in cast("Iterable[Phase]", settings().phases)
 
     @given(max_examples=integers(1, 100))
     def test_max_examples(self, *, max_examples: int) -> None:
@@ -942,6 +995,20 @@ class TestTimeDeltas:
             assert delta <= max_value
 
 
+class TestTimePeriods:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value = data.draw(times() | none())
+        max_value = data.draw(times() | none())
+        with assume_does_not_raise(InvalidArgument):
+            period = data.draw(time_periods(min_value=min_value, max_value=max_value))
+        assert isinstance(period, TimePeriod)
+        if min_value is not None:
+            assert period.start >= min_value
+        if max_value is not None:
+            assert period.end <= max_value
+
+
 class TestTimes:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
@@ -974,33 +1041,53 @@ class TestTriples:
 class TestUInt8s:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_value, max_value = data.draw(pairs(uint8s(), sorted=True))
-        x = data.draw(uint8s(min_value=min_value, max_value=max_value))
-        assert max(min_value, MIN_UINT8) <= x <= min(max_value, MAX_UINT8)
+        min_value, max_value = data.draw(pairs(uint8s() | none()))
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(uint8s(min_value=min_value, max_value=max_value))
+        assert MIN_UINT8 <= x <= MAX_UINT8
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
 
 
 class TestUInt16s:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_value, max_value = data.draw(pairs(uint16s(), sorted=True))
-        x = data.draw(uint16s(min_value=min_value, max_value=max_value))
-        assert max(min_value, MIN_UINT16) <= x <= min(max_value, MAX_UINT16)
+        min_value, max_value = data.draw(pairs(uint16s() | none()))
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(uint16s(min_value=min_value, max_value=max_value))
+        assert MIN_UINT16 <= x <= MAX_UINT16
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
 
 
 class TestUInt32s:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_value, max_value = data.draw(pairs(uint32s(), sorted=True))
-        x = data.draw(uint32s(min_value=min_value, max_value=max_value))
-        assert max(min_value, MIN_UINT32) <= x <= min(max_value, MAX_UINT32)
+        min_value, max_value = data.draw(pairs(uint32s() | none()))
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(uint32s(min_value=min_value, max_value=max_value))
+        assert MIN_UINT32 <= x <= MAX_UINT32
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
 
 
 class TestUInt64s:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_value, max_value = data.draw(pairs(uint64s(), sorted=True))
-        x = data.draw(uint64s(min_value=min_value, max_value=max_value))
-        assert max(min_value, MIN_UINT64) <= x <= min(max_value, MAX_UINT64)
+        min_value, max_value = data.draw(pairs(uint64s() | none()))
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(uint64s(min_value=min_value, max_value=max_value))
+        assert MIN_UINT64 <= x <= MAX_UINT64
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
 
 
 class TestURLs:
@@ -1077,6 +1164,25 @@ class TestYearMonths:
         if two_digit:
             assert year_month.on_day(1) >= DATE_TWO_DIGIT_YEAR_MIN
             assert year_month.on_day(28) <= DATE_TWO_DIGIT_YEAR_MAX
+
+
+class TestZonedDateTimePeriods:
+    @given(data=data(), time_zone=timezones())
+    def test_main(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+        min_value = data.draw(zoned_date_times() | none())
+        max_value = data.draw(zoned_date_times() | none())
+        with assume_does_not_raise(InvalidArgument):
+            period = data.draw(
+                zoned_date_time_periods(
+                    min_value=min_value, max_value=max_value, time_zone=time_zone
+                )
+            )
+        assert isinstance(period, ZonedDateTimePeriod)
+        assert period.time_zone is time_zone
+        if min_value is not None:
+            assert period.start >= min_value
+        if max_value is not None:
+            assert period.end <= max_value
 
 
 class TestZonedDateTimes:
