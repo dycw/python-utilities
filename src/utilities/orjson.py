@@ -218,7 +218,9 @@ def _pre_process(
         case ZonedDateTime() as date_time:
             return f"[{_Prefixes.zoned_date_time.value}]{date_time}"
         case ZonedDateTimePeriod() as period:
-            return f"[{_Prefixes.time_period.value}]{period.start},{period.end}"
+            return (
+                f"[{_Prefixes.zoned_date_time_period.value}]{period.start},{period.end}"
+            )
         case dt.datetime() as py_datetime:
             match py_datetime.tzinfo:
                 case None:
