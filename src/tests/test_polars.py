@@ -29,6 +29,7 @@ from hypothesis.strategies import (
     sampled_from,
 )
 from numpy import allclose, linspace, pi
+from pandas.core.indexes.datetimes import DatetimeTimedeltaMixin
 from polars import (
     Boolean,
     DataFrame,
@@ -56,7 +57,7 @@ from polars._typing import IntoExprColumn, SchemaDict
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
-from whenever import Time, ZonedDateTime
+from whenever import DateDelta, DateTimeDelta, Time, TimeDelta, ZonedDateTime
 
 import tests.test_math
 import utilities.polars
@@ -201,7 +202,15 @@ from utilities.polars import (
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
-from utilities.whenever import get_now, get_today
+from utilities.whenever import (
+    NOW_UTC,
+    TODAY_UTC,
+    DatePeriod,
+    TimePeriod,
+    ZonedDateTimePeriod,
+    get_now,
+    get_today,
+)
 from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
@@ -1135,6 +1144,36 @@ class TestDataClassToSchema:
         expected = {"x": Object}
         assert result == expected
 
+    def test_date_period(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DatePeriod
+
+        obj = Example(x=DatePeriod(TODAY_UTC, TODAY_UTC))
+        result = dataclass_to_schema(obj)
+        expected = {"x": Object}
+        assert result == expected
+
+    def test_date_delta(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DateDelta = field(default_factory=DateDelta)
+
+        obj = Example()
+        result = dataclass_to_schema(obj)
+        expected = {"x": Object}
+        assert result == expected
+
+    def test_date_time_delta(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DateTimeDelta = field(default_factory=DatetimeTimedeltaMixin)
+
+        obj = Example()
+        result = dataclass_to_schema(obj)
+        expected = {"x": Object}
+        assert result == expected
+
     def test_enum(self) -> None:
         class Truth(enum.Enum):
             true = auto()
@@ -1241,6 +1280,36 @@ class TestDataClassToSchema:
         expected = {"x": Object}
         assert result == expected
 
+    def test_time(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: Time = field(default_factory=Time)
+
+        obj = Example()
+        result = dataclass_to_schema(obj)
+        expected = {"x": Object}
+        assert result == expected
+
+    def test_time_delta(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: TimeDelta = field(default_factory=TimeDelta)
+
+        obj = Example()
+        result = dataclass_to_schema(obj)
+        expected = {"x": Object}
+        assert result == expected
+
+    def test_time_period(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: TimePeriod
+
+        obj = Example(x=TimePeriod(Time(), Time()))
+        result = dataclass_to_schema(obj)
+        expected = {"x": Object}
+        assert result == expected
+
     def test_uuid(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -1257,6 +1326,16 @@ class TestDataClassToSchema:
             x: ZonedDateTime = field(default_factory=get_now)
 
         obj = Example()
+        result = dataclass_to_schema(obj)
+        expected = {"x": Object}
+        assert result == expected
+
+    def test_zoned_date_time_period(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: ZonedDateTimePeriod
+
+        obj = Example(x=ZonedDateTimePeriod(NOW_UTC, NOW_UTC))
         result = dataclass_to_schema(obj)
         expected = {"x": Object}
         assert result == expected

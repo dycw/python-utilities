@@ -44,7 +44,6 @@ dev = [
   "coloredlogs >=15.0.1, <15.1",
   "coverage-conditional-plugin >=0.9.0, <0.10",
   "dycw-pytest-only >=2.1.1, <2.2",
-  "pudb >=2025.1, <2025.2",
   "pyright[nodejs] >=1.1.401, <1.2",
   "pytest-cov >=6.2.1, <6.3",
   "pytest-timeout >=2.4.0, <2.5",
@@ -148,7 +147,6 @@ pyinstrument = [
   "pyinstrument >=5.0.3, <5.1",
 ]
 pytest = [
-  "pudb >=2025.1, <2025.2",
   "pytest >=8.4.1, <8.5",
   "pytest-asyncio >=1.1.0, <1.2",
   "pytest-randomly >=3.16.0, <3.17",
@@ -242,7 +240,6 @@ logging = [
 test = [
   "dycw-pytest-only >=2.1.1, <2.2",
   "hypothesis >=6.137.1, <6.138",
-  "pudb >=2025.1, <2025.2",
   "pytest >=8.4.1, <8.5",
   "pytest-asyncio >=1.1.0, <1.2",
   "pytest-cov >=6.2.1, <6.3",
@@ -366,7 +363,6 @@ addopts = [
   "--color=auto",
   "--durations=10",
   "--durations-min=10",
-  "--pdbcls=pudb.debugger:Debugger",
   "--strict-markers",
   "--timeout=600",
 ]

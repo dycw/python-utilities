@@ -28,7 +28,6 @@ from polars import (
     Series,
     String,
     Struct,
-    Time,
     UInt32,
     all_horizontal,
     any_horizontal,
@@ -51,7 +50,7 @@ from polars.exceptions import (
 )
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
-from whenever import PlainDateTime, ZonedDateTime
+from whenever import DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 from utilities.dataclasses import _YieldFieldsInstance, yield_fields
 from utilities.errors import ImpossibleCaseError
@@ -1103,7 +1102,24 @@ def dataclass_to_schema(
     for field in yield_fields(
         obj, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
     ):
-        if is_dataclass_instance(field.value):
+        if isinstance(
+            field.value,
+            (
+                DatePeriod,
+                DateTimeDelta,
+                Path,
+                PlainDateTime,
+                TimeDelta,
+                TimePeriod,
+                UUID,
+                ZonedDateTime,
+                ZonedDateTimePeriod,
+                whenever.Date,
+                whenever.Time,
+            ),
+        ):
+            dtype = Object
+        elif is_dataclass_instance(field.value):
             dtypes = dataclass_to_schema(
                 field.value, globalns=globalns, localns=localns
             )
@@ -1150,18 +1166,6 @@ def _dataclass_to_schema_one(
         return String
     if obj is dt.date:
         return pl.Date
-    if obj in {
-        whenever.Date,
-        DatePeriod,
-        Path,
-        PlainDateTime,
-        Time,
-        TimePeriod,
-        UUID,
-        ZonedDateTime,
-        ZonedDateTimePeriod,
-    }:
-        return Object
     if isinstance(obj, type) and issubclass(obj, enum.Enum):
         return pl.Enum([e.name for e in obj])
     if is_dataclass_class(obj):
