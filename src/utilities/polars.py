@@ -50,7 +50,7 @@ from polars.exceptions import (
 )
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
-from whenever import DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
+from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 from utilities.dataclasses import _YieldFieldsInstance, yield_fields
 from utilities.errors import ImpossibleCaseError
@@ -1105,6 +1105,7 @@ def dataclass_to_schema(
         if isinstance(
             field.value,
             (
+                DateDelta,
                 DatePeriod,
                 DateTimeDelta,
                 Path,

@@ -29,7 +29,6 @@ from hypothesis.strategies import (
     sampled_from,
 )
 from numpy import allclose, linspace, pi
-from pandas.core.indexes.datetimes import DatetimeTimedeltaMixin
 from polars import (
     Boolean,
     DataFrame,
@@ -1167,7 +1166,7 @@ class TestDataClassToSchema:
     def test_date_time_delta(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: DateTimeDelta = field(default_factory=DatetimeTimedeltaMixin)
+            x: DateTimeDelta = field(default_factory=DateTimeDelta)
 
         obj = Example()
         result = dataclass_to_schema(obj)
