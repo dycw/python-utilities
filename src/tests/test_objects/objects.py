@@ -85,7 +85,6 @@ def objects(
 ) -> SearchStrategy[Any]:
     base = (
         booleans()
-        | date_deltas()
         | date_periods()
         | dates()
         | hypothesis.strategies.dates()
