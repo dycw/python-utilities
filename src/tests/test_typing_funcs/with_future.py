@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     )
 
     from utilities.sentinel import Sentinel
+    from utilities.whenever import DatePeriod, TimePeriod, ZonedDateTimePeriod
 
 
 TrueOrFalseFutureLit = Literal["true", "false"]
@@ -48,6 +49,11 @@ class DataClassFutureDate:
 class DataClassFutureDateDelta:
     delta1: DateDelta
     delta2: whenever.DateDelta
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureDatePeriod:
+    period: DatePeriod
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
@@ -194,6 +200,11 @@ class DataClassFutureTimeDelta:
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureTimePeriod:
+    period: TimePeriod
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureTimeDeltaNullable:
     delta1: TimeDelta | None = None
     delta2: whenever.TimeDelta | None = None
@@ -218,3 +229,8 @@ class DataClassFutureUUID:
 class DataClassFutureZonedDateTime:
     date_time1: ZonedDateTime
     date_time2: whenever.ZonedDateTime
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True)
+class DataClassFutureZonedDateTimePeriod:
+    period: ZonedDateTimePeriod

@@ -367,6 +367,14 @@ def get_now_local() -> ZonedDateTime:
 NOW_LOCAL = get_now_local()
 
 
+def get_now_plain(time_zone: TimeZoneLike = UTC, /) -> PlainDateTime:
+    """Get the current zoned datetime."""
+    return get_now(time_zone).to_plain()
+
+
+NOW_PLAIN = get_now_plain()
+
+
 ##
 
 
@@ -1927,6 +1935,7 @@ __all__ = [
     "MINUTE",
     "MONTH",
     "NOW_LOCAL",
+    "NOW_PLAIN",
     "SECOND",
     "TIME_DELTA_MAX",
     "TIME_DELTA_MIN",
@@ -1966,6 +1975,7 @@ __all__ = [
     "from_timestamp_nanos",
     "get_now",
     "get_now_local",
+    "get_now_plain",
     "get_today",
     "get_today_local",
     "mean_datetime",

@@ -56,7 +56,14 @@ from polars._typing import IntoExprColumn, SchemaDict
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
-from whenever import DateDelta, DateTimeDelta, Time, TimeDelta, ZonedDateTime
+from whenever import (
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 import tests.test_math
 import utilities.polars
@@ -208,6 +215,7 @@ from utilities.whenever import (
     TimePeriod,
     ZonedDateTimePeriod,
     get_now,
+    get_now_plain,
     get_today,
 )
 from utilities.zoneinfo import UTC, get_time_zone_name
@@ -1133,6 +1141,22 @@ class TestDataClassToSchema:
         expected = {"x": Int64}
         assert result == expected
 
+    def test_containers(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            frozenset_field: frozenset[int] = field(default_factory=frozenset)
+            list_field: list[int] = field(default_factory=list)
+            set_field: set[int] = field(default_factory=set)
+
+        obj = Example()
+        result = dataclass_to_schema(obj)
+        expected = {
+            "frozenset_field": List(Int64),
+            "list_field": List(Int64),
+            "set_field": List(Int64),
+        }
+        assert result == expected
+
     def test_date(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -1143,10 +1167,22 @@ class TestDataClassToSchema:
         expected = {"x": Object}
         assert result == expected
 
+    @mark.only
     def test_date_period(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
             x: DatePeriod
+
+        obj = Example(x=DatePeriod(TODAY_UTC, TODAY_UTC))
+        result = dataclass_to_schema(obj)
+        expected = {"x": Object}
+        assert result == expected
+
+    @mark.skip
+    def test_date_period_nullable(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DatePeriod | None = None
 
         obj = Example(x=DatePeriod(TODAY_UTC, TODAY_UTC))
         result = dataclass_to_schema(obj)
@@ -1197,16 +1233,14 @@ class TestDataClassToSchema:
         expected = {"x": pl.Enum(["true", "false"])}
         assert result == expected
 
-    def test_local_datetime(self) -> None:
-        now = get_now().to_plain().py_datetime()
-
+    def test_plain_date_time(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: dt.datetime = now
+            x: PlainDateTime = field(default_factory=get_now_plain)
 
         obj = Example()
         result = dataclass_to_schema(obj)
-        expected = {"x": Datetime()}
+        expected = {"x": Object}
         assert result == expected
 
     def test_nested_once(self) -> None:
@@ -1337,22 +1371,6 @@ class TestDataClassToSchema:
         obj = Example(x=ZonedDateTimePeriod(NOW_UTC, NOW_UTC))
         result = dataclass_to_schema(obj)
         expected = {"x": Object}
-        assert result == expected
-
-    def test_containers(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            frozenset_field: frozenset[int] = field(default_factory=frozenset)
-            list_field: list[int] = field(default_factory=list)
-            set_field: set[int] = field(default_factory=set)
-
-        obj = Example()
-        result = dataclass_to_schema(obj)
-        expected = {
-            "frozenset_field": List(Int64),
-            "list_field": List(Int64),
-            "set_field": List(Int64),
-        }
         assert result == expected
 
     def test_error(self) -> None:

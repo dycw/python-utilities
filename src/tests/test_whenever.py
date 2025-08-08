@@ -62,6 +62,7 @@ from utilities.whenever import (
     MINUTE,
     MONTH,
     NOW_LOCAL,
+    NOW_PLAIN,
     NOW_UTC,
     SECOND,
     TIME_DELTA_MAX,
@@ -121,6 +122,7 @@ from utilities.whenever import (
     from_timestamp_nanos,
     get_now,
     get_now_local,
+    get_now_plain,
     get_today,
     get_today_local,
     mean_datetime,
@@ -430,6 +432,17 @@ class TestGetNowLocal:
     def test_constant(self) -> None:
         assert isinstance(NOW_LOCAL, ZonedDateTime)
         assert NOW_LOCAL.tz == LOCAL_TIME_ZONE_NAME
+
+
+class TestGetNowPlain:
+    @given(time_zone=timezones())
+    def test_function(self, *, time_zone: ZoneInfo) -> None:
+        with assume_does_not_raise(TimeZoneNotFoundError):
+            now = get_now_plain(time_zone)
+        assert isinstance(now, PlainDateTime)
+
+    def test_constant(self) -> None:
+        assert isinstance(NOW_PLAIN, PlainDateTime)
 
 
 class TestGetToday:

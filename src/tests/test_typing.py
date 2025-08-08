@@ -46,6 +46,7 @@ from tests.test_typing_funcs.no_future import (
 from tests.test_typing_funcs.with_future import (
     DataClassFutureDate,
     DataClassFutureDateDelta,
+    DataClassFutureDatePeriod,
     DataClassFutureDateTimeDelta,
     DataClassFutureInt,
     DataClassFutureIntNullable,
@@ -63,9 +64,11 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureTime,
     DataClassFutureTimeDelta,
     DataClassFutureTimeDeltaNullable,
+    DataClassFutureTimePeriod,
     DataClassFutureTypeLiteral,
     DataClassFutureUUID,
     DataClassFutureZonedDateTime,
+    DataClassFutureZonedDateTimePeriod,
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
 )
@@ -99,6 +102,7 @@ from utilities.typing import (
     is_tuple_type,
     is_union_type,
 )
+from utilities.whenever import DatePeriod, TimePeriod, ZonedDateTimePeriod
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -217,6 +221,22 @@ class TestGetTypeHints:
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
         expected = {"delta1": DateDelta, "delta2": DateDelta}
+        assert hints == expected
+
+    @given(data=data())
+    def test_date_period(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            period: DatePeriod
+
+        cls = data.draw(sampled_from([Example, DataClassFutureDatePeriod]))
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(
+            cls,
+            globalns=globals(),  # globals())
+            localns=localns,
+        )
+        expected = {"period": DatePeriod}
         assert hints == expected
 
     @given(data=data())
@@ -416,6 +436,22 @@ class TestGetTypeHints:
         assert hints == expected
 
     @given(data=data())
+    def test_time_period(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            period: TimePeriod
+
+        cls = data.draw(sampled_from([Example, DataClassFutureTimePeriod]))
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(
+            cls,
+            globalns=globals(),  # globals())
+            localns=localns,
+        )
+        expected = {"period": TimePeriod}
+        assert hints == expected
+
+    @given(data=data())
     def test_timedelta_nullable(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -494,6 +530,22 @@ class TestGetTypeHints:
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
         expected = {"date_time1": ZonedDateTime, "date_time2": ZonedDateTime}
+        assert hints == expected
+
+    @given(data=data())
+    def test_zoned_date_time_period(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            period: ZonedDateTimePeriod
+
+        cls = data.draw(sampled_from([Example, DataClassFutureZonedDateTimePeriod]))
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(
+            cls,
+            globalns=globals(),  # globals())
+            localns=localns,
+        )
+        expected = {"period": ZonedDateTimePeriod}
         assert hints == expected
 
 
