@@ -1634,8 +1634,10 @@ class TestZonedDateTimePeriod:
 
     @given(data=data(), datetimes=pairs(zoned_date_times_2000, sorted=True))
     def test_to_and_from_dict(
-        self, data: DataObject, *, period: ZonedDateTimePeriod
+        self, data: DataObject, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
+        start, end = datetimes
+        period = ZonedDateTimePeriod(start, end)
         dict1 = period.to_dict()
         dstart, dend = dict1["start"], dict1["end"]
         dict2 = PeriodDict(
