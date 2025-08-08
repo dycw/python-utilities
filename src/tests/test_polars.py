@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 from enum import auto
 from itertools import chain, repeat
 from math import isfinite, nan
-from pathlib import Path
 from random import Random
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never, cast
 from uuid import UUID, uuid4
@@ -15,6 +14,7 @@ from uuid import UUID, uuid4
 import hypothesis.strategies
 import numpy as np
 import polars as pl
+import whenever
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
@@ -27,14 +27,12 @@ from hypothesis.strategies import (
     lists,
     none,
     sampled_from,
-    timezones,
 )
 from numpy import allclose, linspace, pi
 from polars import (
     Boolean,
     DataFrame,
     DataType,
-    Date,
     Datetime,
     Expr,
     Float64,
@@ -55,18 +53,14 @@ from polars import (
     struct,
 )
 from polars._typing import IntoExprColumn, SchemaDict
-from polars.exceptions import (
-    ComputeError,  # pyright: ignore[reportAttributeAccessIssue]
-)
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
-from whenever import Time, TimeZoneNotFoundError, ZonedDateTime
+from whenever import Time, ZonedDateTime
 
 import tests.test_math
 import utilities.polars
 from utilities.hypothesis import (
-    assume_does_not_raise,
     float64s,
     int64s,
     pairs,
@@ -212,6 +206,7 @@ from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
+    from pathlib import Path
     from zoneinfo import ZoneInfo
 
     from _pytest.mark import ParameterSet
@@ -1026,7 +1021,7 @@ class TestDataClassToDataFrame:
                 "int_field": Int64,
                 "float_field": Float64,
                 "str_field": String,
-                "date_field": Date,
+                "date_field": pl.Date,
             },
         )
 
@@ -1066,32 +1061,16 @@ class TestDataClassToDataFrame:
         df = dataclass_to_dataframe(obj, localns=locals())
         check_polars_dataframe(df, height=len(df), schema_list={"x": String})
 
-    @given(data=data(), time_zone=timezones())
-    def test_zoned_datetime(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+    @given(data=data())
+    def test_zoned_datetime(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: dt.datetime
+            x: ZonedDateTime
 
-        objs = data.draw(
-            lists(
-                builds(
-                    Example,
-                    x=zoned_date_times(time_zone=time_zone).map(
-                        lambda d: d.py_datetime()
-                    ),
-                ),
-                min_size=1,
-            )
-        )
-        with assume_does_not_raise(
-            ComputeError,  # unable to parse time zone
-            ValueError,  # failed to parse timezone
-        ):
-            df = dataclass_to_dataframe(objs, localns=locals())
+        objs = data.draw(lists(builds(Example, x=zoned_date_times()), min_size=1))
+        df = dataclass_to_dataframe(objs, localns=locals())
         check_polars_dataframe(
-            df,
-            height=len(objs),
-            schema_list={"x": zoned_datetime_dtype(time_zone=time_zone)},
+            df, height=len(objs), schema_list={"x": zoned_datetime_dtype()}
         )
 
     def test_error_empty(self) -> None:
@@ -1119,15 +1098,12 @@ class TestDataClassToDataFrame:
 
 class TestDataClassToSchema:
     def test_basic(self) -> None:
-        today = get_today().py_date()
-
         @dataclass(kw_only=True, slots=True)
         class Example:
             bool_field: bool = False
             int_field: int = 0
             float_field: float = 0.0
             str_field: str = ""
-            date_field: dt.date = today
 
         obj = Example()
         result = dataclass_to_schema(obj)
@@ -1136,7 +1112,6 @@ class TestDataClassToSchema:
             "int_field": Int64,
             "float_field": Float64,
             "str_field": String,
-            "date_field": Date,
         }
         assert result == expected
 
@@ -1150,42 +1125,14 @@ class TestDataClassToSchema:
         expected = {"x": Int64}
         assert result == expected
 
-    def test_date_or_datetime_as_date(self) -> None:
-        today = get_today().py_date()
-
+    def test_date(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: dt.date | dt.datetime = today
+            x: whenever.Date = field(default_factory=get_today)
 
         obj = Example()
         result = dataclass_to_schema(obj)
-        expected = {"x": Date}
-        assert result == expected
-
-    def test_date_or_datetime_as_local_datetime(self) -> None:
-        now = get_now().to_plain().py_datetime()
-
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: dt.date | dt.datetime = now
-
-        obj = Example()
-        result = dataclass_to_schema(obj)
-        expected = {"x": Datetime()}
-        assert result == expected
-
-    @given(time_zone=timezones())
-    def test_date_or_datetime_as_zoned_datetime(self, *, time_zone: ZoneInfo) -> None:
-        with assume_does_not_raise(TimeZoneNotFoundError):
-            now = get_now(time_zone).py_datetime()
-
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: dt.date | dt.datetime = now
-
-        obj = Example()
-        result = dataclass_to_schema(obj)
-        expected = {"x": zoned_datetime_dtype(time_zone=time_zone)}
+        expected = {"x": Object}
         assert result == expected
 
     def test_enum(self) -> None:
@@ -1289,9 +1236,8 @@ class TestDataClassToSchema:
         class Example:
             x: Path = PWD
 
-        _ = Path  # add to locals
         obj = Example()
-        result = dataclass_to_schema(obj, localns=locals())
+        result = dataclass_to_schema(obj)
         expected = {"x": Object}
         assert result == expected
 
@@ -1300,44 +1246,19 @@ class TestDataClassToSchema:
         class Example:
             x: UUID = field(default_factory=uuid4)
 
-        _ = UUID  # add to locals
         obj = Example()
-        result = dataclass_to_schema(obj, localns=locals())
+        result = dataclass_to_schema(obj)
         expected = {"x": Object}
         assert result == expected
 
-    @given(time_zone=timezones())
-    def test_zoned_datetime(self, *, time_zone: ZoneInfo) -> None:
-        with assume_does_not_raise(TimeZoneNotFoundError):
-            now = get_now(time_zone).py_datetime()
-
+    def test_zoned_date_time(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: dt.datetime = now
+            x: ZonedDateTime = field(default_factory=get_now)
 
         obj = Example()
         result = dataclass_to_schema(obj)
-        expected = {"x": zoned_datetime_dtype(time_zone=time_zone)}
-        assert result == expected
-
-    @given(start=timezones(), end=timezones())
-    def test_zoned_datetime_nested(self, *, start: ZoneInfo, end: ZoneInfo) -> None:
-        with assume_does_not_raise(TimeZoneNotFoundError):
-            now_start = get_now(start).py_datetime()
-            now_end = get_now(end).py_datetime()
-
-        @dataclass(kw_only=True, slots=True)
-        class Inner:
-            start: dt.datetime = now_start
-            end: dt.datetime = now_end
-
-        @dataclass(kw_only=True, slots=True)
-        class Outer:
-            inner: Inner = field(default_factory=Inner)
-
-        obj = Outer()
-        result = dataclass_to_schema(obj, localns=locals())
-        expected = {"inner": zoned_datetime_period_dtype(time_zone=(start, end))}
+        expected = {"x": Object}
         assert result == expected
 
     def test_containers(self) -> None:
@@ -2450,8 +2371,8 @@ class TestSerializeAndDeserializeDataFrame:
     cases: ClassVar[list[tuple[PolarsDataType, SearchStrategy[Any]]]] = [
         (Boolean, booleans()),
         (Boolean(), booleans()),
-        (Date, hypothesis.strategies.dates()),
-        (Date(), hypothesis.strategies.dates()),
+        (pl.Date, hypothesis.strategies.dates()),
+        (pl.Date(), hypothesis.strategies.dates()),
         (Datetime(), py_datetimes(zoned=False)),
         (Datetime(time_zone=UTC.key), py_datetimes(zoned=True)),
         (Int64, int64s()),
@@ -2550,8 +2471,8 @@ class TestStructFromDataClass:
         class Example:
             bool_: bool
             bool_maybe: bool | None = None
-            date: dt.date
-            date_maybe: dt.date | None = None
+            date: whenever.Date
+            date_maybe: whenever.Date | None = None
             float_: float
             float_maybe: float | None = None
             int_: int
@@ -2563,8 +2484,8 @@ class TestStructFromDataClass:
         expected = Struct({
             "bool_": Boolean,
             "bool_maybe": Boolean,
-            "date": Date,
-            "date_maybe": Date,
+            "date": pl.Date,
+            "date_maybe": pl.Date,
             "float_": Float64,
             "float_maybe": Float64,
             "int_": Int64,

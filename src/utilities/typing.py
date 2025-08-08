@@ -23,6 +23,7 @@ from typing import get_type_hints as _get_type_hints
 from uuid import UUID
 from warnings import warn
 
+import whenever
 from whenever import (
     Date,
     DateDelta,
@@ -137,6 +138,13 @@ def get_type_hints(
         UUID,
         ZonedDateTime,
         dt,
+        whenever.Date,
+        whenever.DateDelta,
+        whenever.DateTimeDelta,
+        whenever.PlainDateTime,
+        whenever.Time,
+        whenever.TimeDelta,
+        whenever.ZonedDateTime,
     }
     globalns_use = globals() | ({} if globalns is None else dict(globalns))
     localns_use = {} if localns is None else dict(localns)

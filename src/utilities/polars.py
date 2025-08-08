@@ -15,10 +15,10 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import polars as pl
+import whenever
 from polars import (
     Boolean,
     DataFrame,
-    Date,
     Datetime,
     Expr,
     Float64,
@@ -28,6 +28,7 @@ from polars import (
     Series,
     String,
     Struct,
+    Time,
     UInt32,
     all_horizontal,
     any_horizontal,
@@ -50,7 +51,7 @@ from polars.exceptions import (
 )
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
-from whenever import ZonedDateTime
+from whenever import PlainDateTime, ZonedDateTime
 
 from utilities.dataclasses import _YieldFieldsInstance, yield_fields
 from utilities.errors import ImpossibleCaseError
@@ -101,6 +102,7 @@ from utilities.typing import (
     is_union_type,
 )
 from utilities.warnings import suppress_warnings
+from utilities.whenever import DatePeriod, TimePeriod, ZonedDateTimePeriod
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
@@ -1112,7 +1114,7 @@ def dataclass_to_schema(
             get_args(field.type_, optional_drop_none=True)
         ) == {dt.date, dt.datetime}:
             if is_instance_gen(field.value, dt.date):
-                dtype = Date
+                dtype = pl.Date
             else:
                 dtype = _dataclass_to_schema_datetime(field)
         else:
@@ -1147,8 +1149,18 @@ def _dataclass_to_schema_one(
     if obj is str:
         return String
     if obj is dt.date:
-        return Date
-    if obj in {Path, UUID}:
+        return pl.Date
+    if obj in {
+        whenever.Date,
+        DatePeriod,
+        Path,
+        PlainDateTime,
+        Time,
+        TimePeriod,
+        UUID,
+        ZonedDateTime,
+        ZonedDateTimePeriod,
+    }:
         return Object
     if isinstance(obj, type) and issubclass(obj, enum.Enum):
         return pl.Enum([e.name for e in obj])
@@ -2444,7 +2456,13 @@ def struct_from_dataclass(
 def _struct_from_dataclass_one(
     ann: Any, /, *, time_zone: TimeZoneLike | None = None
 ) -> PolarsDataType:
-    mapping = {bool: Boolean, dt.date: Date, float: Float64, int: Int64, str: String}
+    mapping = {
+        bool: Boolean,
+        whenever.Date: pl.Date,
+        float: Float64,
+        int: Int64,
+        str: String,
+    }
     with suppress(KeyError):
         return mapping[ann]
     if ann is dt.datetime:

@@ -9,6 +9,7 @@ from types import NoneType
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 from uuid import UUID
 
+import whenever
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
@@ -26,6 +27,15 @@ from hypothesis.strategies import (
     tuples,
 )
 from pytest import mark, param, raises
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureNestedInnerFirstInner,
@@ -35,6 +45,8 @@ from tests.test_typing_funcs.no_future import (
 )
 from tests.test_typing_funcs.with_future import (
     DataClassFutureDate,
+    DataClassFutureDateDelta,
+    DataClassFutureDateTimeDelta,
     DataClassFutureInt,
     DataClassFutureIntNullable,
     DataClassFutureListInts,
@@ -45,12 +57,15 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureNestedOuterFirstOuter,
     DataClassFutureNone,
     DataClassFuturePath,
+    DataClassFuturePlainDateTime,
     DataClassFutureSentinel,
     DataClassFutureStr,
+    DataClassFutureTime,
     DataClassFutureTimeDelta,
     DataClassFutureTimeDeltaNullable,
     DataClassFutureTypeLiteral,
     DataClassFutureUUID,
+    DataClassFutureZonedDateTime,
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
 )
@@ -180,13 +195,42 @@ class TestGetTypeHints:
     def test_date(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            date: dt.date
+            date1: Date
+            date2: whenever.Date
 
         cls = data.draw(sampled_from([Example, DataClassFutureDate]))
         globalns = data.draw(just(globals()) | none())
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
-        expected = {"date": dt.date}
+        expected = {"date1": Date, "date2": Date}
+        assert hints == expected
+
+    @given(data=data())
+    def test_date_delta(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            delta1: DateDelta
+            delta2: whenever.DateDelta
+
+        cls = data.draw(sampled_from([Example, DataClassFutureDateDelta]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"delta1": DateDelta, "delta2": DateDelta}
+        assert hints == expected
+
+    @given(data=data())
+    def test_date_time_delta(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            delta1: DateTimeDelta
+            delta2: whenever.DateTimeDelta
+
+        cls = data.draw(sampled_from([Example, DataClassFutureDateTimeDelta]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"delta1": DateTimeDelta, "delta2": DateTimeDelta}
         assert hints == expected
 
     @given(data=data())
@@ -304,6 +348,20 @@ class TestGetTypeHints:
         assert hints == expected
 
     @given(data=data())
+    def test_plain_date_time(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            date_time1: PlainDateTime
+            date_time2: whenever.PlainDateTime
+
+        cls = data.draw(sampled_from([Example, DataClassFuturePlainDateTime]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"date_time1": PlainDateTime, "date_time2": PlainDateTime}
+        assert hints == expected
+
+    @given(data=data())
     def test_sentinel(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
@@ -330,29 +388,45 @@ class TestGetTypeHints:
         assert hints == expected
 
     @given(data=data())
-    def test_timedelta(self, *, data: DataObject) -> None:
+    def test_time(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            timedelta: dt.timedelta
+            time1: Time
+            time2: whenever.Time
+
+        cls = data.draw(sampled_from([Example, DataClassFutureTime]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"time1": Time, "time2": Time}
+        assert hints == expected
+
+    @given(data=data())
+    def test_time_delta(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            delta1: TimeDelta
+            delta2: whenever.TimeDelta
 
         cls = data.draw(sampled_from([Example, DataClassFutureTimeDelta]))
         globalns = data.draw(just(globals()) | none())
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
-        expected = {"timedelta": dt.timedelta}
+        expected = {"delta1": TimeDelta, "delta2": TimeDelta}
         assert hints == expected
 
     @given(data=data())
     def test_timedelta_nullable(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            timedelta: dt.timedelta | None
+            delta1: TimeDelta | None = None
+            delta2: whenever.TimeDelta | None = None
 
         cls = data.draw(sampled_from([Example, DataClassFutureTimeDeltaNullable]))
         globalns = data.draw(just(globals()) | none())
         localns = data.draw(just(locals()) | none())
         hints = get_type_hints(cls, globalns=globalns, localns=localns)
-        expected = {"timedelta": dt.timedelta | None}
+        expected = {"delta1": TimeDelta | None, "delta2": TimeDelta | None}
         assert hints == expected
 
     @given(data=data())
@@ -407,6 +481,20 @@ class TestGetTypeHints:
             match="Error getting type hints for <.*>; name 'Inner' is not defined",
         ):
             _ = get_type_hints(Outer, warn_name_errors=True)
+
+    @given(data=data())
+    def test_zoned_date_time(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            date_time1: ZonedDateTime
+            date_time2: whenever.ZonedDateTime
+
+        cls = data.draw(sampled_from([Example, DataClassFutureZonedDateTime]))
+        globalns = data.draw(just(globals()) | none())
+        localns = data.draw(just(locals()) | none())
+        hints = get_type_hints(cls, globalns=globalns, localns=localns)
+        expected = {"date_time1": ZonedDateTime, "date_time2": ZonedDateTime}
+        assert hints == expected
 
 
 class TestGetUnionTypeClasses:
