@@ -50,7 +50,7 @@ from utilities.hypothesis import (
     month_days,
     numbers,
     paths,
-    plain_datetimes,
+    plain_date_times,
     text_ascii,
     time_deltas,
     times,
@@ -180,7 +180,7 @@ class TestSerializeAndParseObject:
         result = ensure_path(parse_object(Path, serialized))
         assert result == result.expanduser()
 
-    @given(datetime=plain_datetimes())
+    @given(datetime=plain_date_times())
     def test_plain_datetime(self, *, datetime: PlainDateTime) -> None:
         serialized = serialize_object(datetime)
         result = parse_object(PlainDateTime, serialized)

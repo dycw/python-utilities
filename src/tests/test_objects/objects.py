@@ -42,7 +42,7 @@ from utilities.hypothesis import (
     int64s,
     month_days,
     paths,
-    plain_datetimes,
+    plain_date_times,
     py_datetimes,
     text_ascii,
     text_printable,
@@ -90,7 +90,7 @@ def objects(
         | month_days()
         | none()
         | paths()
-        | plain_datetimes()
+        | plain_date_times()
         | text_printable().filter(lambda x: not x.startswith("["))
         | time_deltas()
         | times()

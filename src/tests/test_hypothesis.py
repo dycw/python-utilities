@@ -46,6 +46,7 @@ from utilities.hypothesis import (
     assume_does_not_raise,
     bool_arrays,
     date_deltas,
+    date_periods,
     date_time_deltas,
     dates,
     draw2,
@@ -65,7 +66,7 @@ from utilities.hypothesis import (
     numbers,
     pairs,
     paths,
-    plain_datetimes,
+    plain_date_times,
     random_states,
     sentinels,
     sets_fixed_length,
@@ -120,6 +121,7 @@ from utilities.version import Version
 from utilities.whenever import (
     DATE_TWO_DIGIT_YEAR_MAX,
     DATE_TWO_DIGIT_YEAR_MIN,
+    DatePeriod,
     to_days,
     to_nanoseconds,
 )
@@ -193,6 +195,20 @@ class TestDateDeltas:
             assert days <= to_days(max_value)
         if parsable:
             assert DateDelta.parse_common_iso(delta.format_common_iso()) == delta
+
+
+class TestDatePeriods:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        min_value = data.draw(dates() | none())
+        max_value = data.draw(dates() | none())
+        with assume_does_not_raise(InvalidArgument):
+            period = data.draw(date_periods(min_value=min_value, max_value=max_value))
+        assert isinstance(period, DatePeriod)
+        if min_value is not None:
+            assert period.start >= min_value
+        if max_value is not None:
+            assert period.end <= max_value
 
 
 class TestDateTimeDeltas:
@@ -671,11 +687,11 @@ class TestPaths:
 class TestPlainDateTimes:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_value = data.draw(plain_datetimes() | none())
-        max_value = data.draw(plain_datetimes() | none())
+        min_value = data.draw(plain_date_times() | none())
+        max_value = data.draw(plain_date_times() | none())
         with assume_does_not_raise(InvalidArgument):
             datetime = data.draw(
-                plain_datetimes(min_value=min_value, max_value=max_value)
+                plain_date_times(min_value=min_value, max_value=max_value)
             )
         assert isinstance(datetime, PlainDateTime)
         assert PlainDateTime.parse_common_iso(datetime.format_common_iso()) == datetime

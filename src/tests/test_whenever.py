@@ -36,7 +36,7 @@ from utilities.hypothesis import (
     date_deltas,
     dates,
     pairs,
-    plain_datetimes,
+    plain_date_times,
     time_deltas,
     times,
     zoned_date_times,
@@ -385,7 +385,7 @@ class TestFormatCompact:
         expected = time.round()
         assert parsed == expected
 
-    @given(datetime=plain_datetimes())
+    @given(datetime=plain_date_times())
     def test_plain_datetime(self, *, datetime: PlainDateTime) -> None:
         result = format_compact(datetime)
         assert isinstance(result, str)
@@ -1775,7 +1775,7 @@ class TestZonedDateTimePeriod:
         ):
             _ = ZonedDateTimePeriod(end, start)
 
-    @given(datetimes=pairs(plain_datetimes(), sorted=True))
+    @given(datetimes=pairs(plain_date_times(), sorted=True))
     def test_error_period_time_zone(
         self, *, datetimes: tuple[PlainDateTime, PlainDateTime]
     ) -> None:

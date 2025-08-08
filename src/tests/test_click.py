@@ -57,7 +57,7 @@ from utilities.hypothesis import (
     date_time_deltas,
     dates,
     month_days,
-    plain_datetimes,
+    plain_date_times,
     text_ascii,
     time_deltas,
     times,
@@ -304,7 +304,7 @@ class TestParameters:
         _Case(
             param=PlainDateTime(),
             name="plain date-time",
-            strategy=plain_datetimes(),
+            strategy=plain_date_times(),
             serialize=whenever.PlainDateTime.format_common_iso,
             failable=True,
         ),

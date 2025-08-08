@@ -36,7 +36,7 @@ from utilities.hypothesis import (
     dates,
     month_days,
     paths,
-    plain_datetimes,
+    plain_date_times,
     temp_paths,
     text_ascii,
     time_deltas,
@@ -82,7 +82,7 @@ class TestExtendedTSConverter:
         ),
         _Case(
             cls=PlainDateTime,
-            strategy=plain_datetimes(),
+            strategy=plain_date_times(),
             serialize=PlainDateTime.format_common_iso,
         ),
         _Case(cls=Time, strategy=times(), serialize=Time.format_common_iso),
