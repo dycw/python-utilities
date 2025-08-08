@@ -90,6 +90,9 @@ from utilities.whenever import (
     DAY,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
+    DatePeriod,
+    TimePeriod,
+    ZonedDateTimePeriod,
     to_date_time_delta,
     to_days,
     to_nanoseconds,
@@ -196,6 +199,26 @@ def date_deltas(
         max_days = min(max_days, to_days(DATE_DELTA_PARSABLE_MAX))
     days = draw(integers(min_value=min_days, max_value=max_days))
     return DateDelta(days=days)
+
+
+##
+
+
+@composite
+def date_periods(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[Date | None] = None,
+    max_value: MaybeSearchStrategy[Date | None] = None,
+    two_digit: MaybeSearchStrategy[bool] = False,
+) -> DatePeriod:
+    """Strategy for generating date periods."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    two_digit_ = draw2(draw, two_digit)
+    strategy = dates(min_value=min_value_, max_value=max_value_, two_digit=two_digit_)
+    start, end = draw(pairs(strategy, sorted=True))
+    return DatePeriod(start, end)
 
 
 ##
@@ -1175,6 +1198,24 @@ def time_deltas(
 
 
 @composite
+def time_periods(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[Time | None] = None,
+    max_value: MaybeSearchStrategy[Time | None] = None,
+) -> TimePeriod:
+    """Strategy for generating time periods."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    strategy = times(min_value=min_value_, max_value=max_value_)
+    start, end = draw(pairs(strategy, sorted=True))
+    return TimePeriod(start, end)
+
+
+##
+
+
+@composite
 def times(
     draw: DrawFn,
     /,
@@ -1374,6 +1415,28 @@ def year_months(
 
 
 @composite
+def zoned_date_time_periods(
+    draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[PlainDateTime | ZonedDateTime | None] = None,
+    max_value: MaybeSearchStrategy[PlainDateTime | ZonedDateTime | None] = None,
+    time_zone: MaybeSearchStrategy[TimeZoneLike] = UTC,
+) -> ZonedDateTimePeriod:
+    """Strategy for generating zoned date-time periods."""
+    min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
+    time_zone_ = draw2(draw, time_zone)
+    strategy = zoned_date_times(
+        min_value=min_value_, max_value=max_value_, time_zone=time_zone_
+    )
+    start, end = draw(pairs(strategy, sorted=True))
+    return ZonedDateTimePeriod(start, end)
+
+
+##
+
+
+@composite
 def zoned_date_times(
     draw: DrawFn,
     /,
@@ -1382,7 +1445,7 @@ def zoned_date_times(
     max_value: MaybeSearchStrategy[PlainDateTime | ZonedDateTime | None] = None,
     time_zone: MaybeSearchStrategy[TimeZoneLike] = UTC,
 ) -> ZonedDateTime:
-    """Strategy for generating zoned datetimes."""
+    """Strategy for generating zoned date-times."""
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
     time_zone_ = ensure_time_zone(draw2(draw, time_zone))
     match min_value_:
@@ -1464,6 +1527,7 @@ __all__ = [
     "text_digits",
     "text_printable",
     "time_deltas",
+    "time_periods",
     "times",
     "triples",
     "uint8s",
