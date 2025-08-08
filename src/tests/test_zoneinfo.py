@@ -55,7 +55,7 @@ class TestEnsureTimeZone:
         assert result is LOCAL_TIME_ZONE
 
     @given(data=data(), time_zone=timezones())
-    def test_standard_zoned_datetime(
+    def test_standard_zoned_date_time(
         self, *, data: DataObject, time_zone: ZoneInfo
     ) -> None:
         datetime = data.draw(datetimes(timezones=just(time_zone)))
@@ -63,7 +63,7 @@ class TestEnsureTimeZone:
         assert result is time_zone
 
     @given(data=data(), time_zone=timezones())
-    def test_whenever_zoned_datetime(
+    def test_whenever_zoned_date_time(
         self, *, data: DataObject, time_zone: ZoneInfo
     ) -> None:
         datetime = data.draw(zoned_date_times(time_zone=time_zone))
