@@ -43,9 +43,9 @@ from polars import (
 from polars._typing import PolarsDataType
 from polars.datatypes import DataType, DataTypeClass
 from polars.exceptions import (
-    ColumnNotFoundError,
+    ColumnNotFoundError,  # pyright: ignore[reportAttributeAccessIssue]
     NoRowsReturnedError,
-    OutOfBoundsError,
+    OutOfBoundsError,  # pyright: ignore[reportAttributeAccessIssue]
     PolarsInefficientMapWarning,
 )
 from polars.schema import Schema

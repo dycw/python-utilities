@@ -52,13 +52,15 @@ from tests.test_typing_funcs.with_future import (
 )
 from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
+    date_periods,
     dates,
     int64s,
     paths,
     temp_paths,
     text_ascii,
     text_printable,
-    zoned_datetimes,
+    time_periods,
+    zoned_date_times,
 )
 from utilities.iterables import always_iterable, one
 from utilities.logging import get_logging_level_number
@@ -84,7 +86,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.types import LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args
 from utilities.tzlocal import LOCAL_TIME_ZONE
-from utilities.whenever import MINUTE, SECOND, get_now
+from utilities.whenever import MINUTE, SECOND, DatePeriod, TimePeriod, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -203,9 +205,9 @@ class TestGetLogRecords:
         date=dates() | none(),
         min_date=dates() | none(),
         max_date=dates() | none(),
-        datetime=zoned_datetimes() | none(),
-        min_datetime=zoned_datetimes() | none(),
-        max_datetime=zoned_datetimes() | none(),
+        datetime=zoned_date_times() | none(),
+        min_datetime=zoned_date_times() | none(),
+        max_datetime=zoned_date_times() | none(),
         func_name=booleans() | text_ascii() | none(),
         extra=booleans() | text_ascii() | sets(text_ascii()) | none(),
         log_file=booleans() | paths() | text_ascii() | none(),
@@ -581,6 +583,11 @@ class TestSerializeAndDeserialize:
         ):
             _ = deserialize(ser, objects=set())
 
+    @given(period=date_periods())
+    def test_date_periods(self, *, period: DatePeriod) -> None:
+        result = deserialize(serialize(period))
+        assert result == period
+
     def test_deserialize_hook(self) -> None:
         obj = DataClassFutureDefaultInInitChild()
         ser = serialize(obj)
@@ -645,6 +652,11 @@ class TestSerializeAndDeserialize:
         result = deserialize(serialize(obj), objects={SubTuple})
         assert is_equal(result, obj)
 
+    @given(period=time_periods())
+    def test_time_periods(self, *, period: TimePeriod) -> None:
+        result = deserialize(serialize(period))
+        assert result == period
+
     def test_unserializable(self) -> None:
         ser = serialize(sentinel)
         exp_ser = b'{"[dc|Unserializable]":{"qualname":"Sentinel","repr":"<sentinel>","str":"<sentinel>"}}'
@@ -666,7 +678,7 @@ class TestSerialize:
     def test_dataclass(self) -> None:
         obj = DataClassFutureNone(none=None)
         result = serialize(obj)
-        expected = b'{"[dc|DataClassFutureNone]":{"none":"[none]"}}'
+        expected = b'{"[dc|DataClassFutureNone]":{"none":"[0]"}}'
         assert result == expected
 
     def test_dataclass_nested(self) -> None:
@@ -706,6 +718,11 @@ class TestSerialize:
 
         result = serialize(CustomError(1, 2, 3))
         expected = b'{"[ex|TestSerialize.test_exception_instance.<locals>.CustomError]":{"[tu]":[1,2,3]}}'
+        assert result == expected
+
+    def test_none(self) -> None:
+        result = serialize(None)
+        expected = b'"[0]"'
         assert result == expected
 
     @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))

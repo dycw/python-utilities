@@ -69,7 +69,7 @@ http-test = [
   "orjson",
 ]
 hypothesis = [
-  "hypothesis >=6.136.7, <6.137",
+  "hypothesis >=6.137.1, <6.138",
 ]
 hypothesis-test = [
   "libcst",
@@ -119,7 +119,7 @@ orjson-test = [
   "polars",
 ]
 polars = [
-  "polars >=1.32.0, <1.33",
+  "polars >=1.32.2, <1.33",
 ]
 polars-ols = [
   "polars-ols >=0.3.5, <0.4",
@@ -168,7 +168,7 @@ pytest-test = [
   "pytest-rerunfailures",
 ]
 redis = [
-  "redis >=6.2.0, <6.3",
+  "redis >=6.4.0, <6.5",
   "orjson",
 ]
 redis-test = [
@@ -229,7 +229,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.154.0"
+version = "0.155.0"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -241,7 +241,7 @@ logging = [
 ]
 test = [
   "dycw-pytest-only >=2.1.1, <2.2",
-  "hypothesis >=6.136.7, <6.137",
+  "hypothesis >=6.137.1, <6.138",
   "pudb >=2025.1, <2025.2",
   "pytest >=8.4.1, <8.5",
   "pytest-asyncio >=1.1.0, <1.2",
@@ -262,7 +262,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.154.0"
+current_version = "0.155.0"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"

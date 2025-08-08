@@ -34,13 +34,16 @@ from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import (
     assume_does_not_raise,
     date_deltas,
+    date_periods,
     dates,
     pairs,
-    plain_datetimes,
+    plain_date_times,
     time_deltas,
+    time_periods,
     times,
-    zoned_datetimes,
-    zoned_datetimes_2000,
+    zoned_date_time_periods,
+    zoned_date_times,
+    zoned_date_times_2000,
 )
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
@@ -195,54 +198,43 @@ class TestAddAndSubYearMonth:
 
 
 class TestDatePeriod:
-    @given(dates=pairs(dates(), sorted=True), delta=date_deltas())
+    @given(period=date_periods(), delta=date_deltas())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_add(self, *, dates: tuple[Date, Date], delta: DateDelta) -> None:
-        start, end = dates
-        period = DatePeriod(start, end)
+    def test_add(self, *, period: DatePeriod, delta: DateDelta) -> None:
         with assume_does_not_raise(ValueError, match="Resulting date out of range"):
             result = period + delta
-        expected = DatePeriod(start + delta, end + delta)
+        expected = DatePeriod(period.start + delta, period.end + delta)
         assert result == expected
 
-    @given(dates=pairs(dates(), sorted=True), time=times())
-    def test_at_time(self, *, dates: tuple[Date, Date], time: Time) -> None:
-        start, end = dates
-        period = DatePeriod(start, end)
+    @given(period=date_periods(), time=times())
+    def test_at_time(self, *, period: DatePeriod, time: Time) -> None:
         result = period.at(time)
         expected = ZonedDateTimePeriod(
-            start.at(time).assume_tz(UTC.key), end.at(time).assume_tz(UTC.key)
+            period.start.at(time).assume_tz(UTC.key),
+            period.end.at(time).assume_tz(UTC.key),
         )
         assert result.exact_eq(expected)
 
-    @given(dates=pairs(dates(), sorted=True), times=pairs(times()))
-    def test_at_times(
-        self, *, dates: tuple[Date, Date], times: tuple[Time, Time]
-    ) -> None:
-        start_date, end_date = dates
-        period = DatePeriod(start_date, end_date)
+    @given(period=date_periods(), times=pairs(times()))
+    def test_at_times(self, *, period: DatePeriod, times: tuple[Time, Time]) -> None:
         start_time, end_time = times
         with assume_does_not_raise(_ZonedDateTimePeriodInvalidError):
             result = period.at((start_time, end_time))
         expected = ZonedDateTimePeriod(
-            start_date.at(start_time).assume_tz(UTC.key),
-            end_date.at(end_time).assume_tz(UTC.key),
+            period.start.at(start_time).assume_tz(UTC.key),
+            period.end.at(end_time).assume_tz(UTC.key),
         )
         assert result.exact_eq(expected)
 
-    @given(date=dates(), dates=pairs(dates(), sorted=True))
-    def test_contains(self, *, date: Date, dates: tuple[Date, Date]) -> None:
-        start, end = dates
-        period = DatePeriod(start, end)
+    @given(period=date_periods(), date=dates())
+    def test_contains(self, *, period: DatePeriod, date: Date) -> None:
         result = date in period
-        expected = start <= date <= end
+        expected = period.start <= date <= period.end
         assert result is expected
 
-    @given(dates=pairs(dates(), sorted=True))
-    def test_delta(self, *, dates: tuple[Date, Date]) -> None:
-        start, end = dates
-        period = DatePeriod(start, end)
-        assert period.delta == (end - start)
+    @given(period=date_periods())
+    def test_delta(self, *, period: DatePeriod) -> None:
+        assert period.delta == (period.end - period.start)
 
     @mark.parametrize(
         ("end", "expected"),
@@ -260,54 +252,36 @@ class TestDatePeriod:
         period = DatePeriod(Date(2000, 1, 1), end)
         assert period.format_compact() == expected
 
-    @given(dates=pairs(dates(), sorted=True))
-    def test_hashable(self, *, dates: tuple[Date, Date]) -> None:
-        start, end = dates
-        period = DatePeriod(start, end)
+    @given(period=date_periods())
+    def test_hashable(self, *, period: DatePeriod) -> None:
         _ = hash(period)
 
-    @given(dates=pairs(dates(), sorted=True))
-    def test_replace(self, *, dates: tuple[Date, Date]) -> None:
-        start, end = dates
-        period = DatePeriod(start, end)
-        new = period.replace(start=start - DAY, end=end + DAY)
-        assert new.start == (start - DAY)
-        assert new.end == (end + DAY)
+    @given(period=date_periods())
+    def test_replace(self, *, period: DatePeriod) -> None:
+        new = period.replace(start=period.start - DAY, end=period.end + DAY)
+        assert new.start == (period.start - DAY)
+        assert new.end == (period.end + DAY)
 
-    @given(dates=pairs(dates(), sorted=True))
+    @given(period=date_periods())
     @mark.parametrize("func", [param(repr), param(str)])
-    def test_repr(self, *, dates: tuple[Date, Date], func: Callable[..., str]) -> None:
-        start, end = dates
-        period = DatePeriod(start, end)
+    def test_repr(self, *, period: DatePeriod, func: Callable[..., str]) -> None:
         result = func(period)
         assert search(r"^DatePeriod\(\d{4}-\d{2}-\d{2}, \d{4}-\d{2}-\d{2}\)$", result)
 
-    @given(dates1=pairs(dates(), sorted=True), dates2=pairs(dates(), sorted=True))
-    def test_sortable(
-        self, *, dates1: tuple[Date, Date], dates2: tuple[Date, Date]
-    ) -> None:
-        start1, end1 = dates1
-        start2, end2 = dates2
-        period1 = DatePeriod(start1, end1)
-        period2 = DatePeriod(start2, end2)
-        _ = sorted([period1, period2])
+    @given(periods=pairs(date_periods()))
+    def test_sortable(self, *, periods: tuple[DatePeriod, DatePeriod]) -> None:
+        _ = sorted(periods)
 
-    @given(dates=pairs(dates(), sorted=True), delta=date_deltas())
+    @given(period=date_periods(), delta=date_deltas())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_sub(self, *, dates: tuple[Date, Date], delta: DateDelta) -> None:
-        start, end = dates
-        period = DatePeriod(start, end)
+    def test_sub(self, *, period: DatePeriod, delta: DateDelta) -> None:
         with assume_does_not_raise(ValueError, match="Resulting date out of range"):
             result = period - delta
-        expected = DatePeriod(start - delta, end - delta)
+        expected = DatePeriod(period.start - delta, period.end - delta)
         assert result == expected
 
-    @given(data=data(), dates=pairs(dates(), sorted=True))
-    def test_to_and_from_dict(
-        self, *, data: DataObject, dates: tuple[Date, Date]
-    ) -> None:
-        start, end = dates
-        period = DatePeriod(start, end)
+    @given(data=data(), period=date_periods())
+    def test_to_and_from_dict(self, *, data: DataObject, period: DatePeriod) -> None:
         dict1 = period.to_dict()
         dstart, dend = dict1["start"], dict1["end"]
         dict2 = PeriodDict(
@@ -325,7 +299,7 @@ class TestDatePeriod:
 
 
 class TestDatetimeUTC:
-    @given(datetime=zoned_datetimes())
+    @given(datetime=zoned_date_times())
     def test_main(self, *, datetime: ZonedDateTime) -> None:
         result = datetime_utc(
             datetime.year,
@@ -385,7 +359,7 @@ class TestFormatCompact:
         expected = time.round()
         assert parsed == expected
 
-    @given(datetime=plain_datetimes())
+    @given(datetime=plain_date_times())
     def test_plain_datetime(self, *, datetime: PlainDateTime) -> None:
         result = format_compact(datetime)
         assert isinstance(result, str)
@@ -394,7 +368,7 @@ class TestFormatCompact:
         expected = datetime.round()
         assert parsed == expected
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=zoned_date_times())
     def test_zoned_datetime(self, *, datetime: ZonedDateTime) -> None:
         result = format_compact(datetime)
         assert isinstance(result, str)
@@ -406,7 +380,9 @@ class TestFormatCompact:
 
 class TestFromTimeStamp:
     @given(
-        datetime=zoned_datetimes(time_zone=timezones()).map(lambda d: d.round("second"))
+        datetime=zoned_date_times(time_zone=timezones()).map(
+            lambda d: d.round("second")
+        )
     )
     def test_main(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.timestamp()
@@ -414,7 +390,7 @@ class TestFromTimeStamp:
         assert result == datetime
 
     @given(
-        datetime=zoned_datetimes(time_zone=timezones()).map(
+        datetime=zoned_date_times(time_zone=timezones()).map(
             lambda d: d.round("millisecond")
         )
     )
@@ -423,7 +399,7 @@ class TestFromTimeStamp:
         result = from_timestamp_millis(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    @given(datetime=zoned_datetimes(time_zone=timezones()))
+    @given(datetime=zoned_date_times(time_zone=timezones()))
     def test_nanos(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.timestamp_nanos()
         result = from_timestamp_nanos(timestamp, time_zone=ZoneInfo(datetime.tz))
@@ -477,18 +453,18 @@ class TestGetTodayLocal:
 class TestMeanDateTime:
     threshold: ClassVar[TimeDelta] = 100 * MICROSECOND
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=zoned_date_times())
     def test_one(self, *, datetime: ZonedDateTime) -> None:
         result = mean_datetime([datetime])
         assert result == datetime
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=zoned_date_times())
     def test_many(self, *, datetime: ZonedDateTime) -> None:
         result = mean_datetime([datetime, datetime + MINUTE])
         expected = datetime + 30 * SECOND
         assert abs(result - expected) <= self.threshold
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=zoned_date_times())
     def test_weights(self, *, datetime: ZonedDateTime) -> None:
         result = mean_datetime([datetime, datetime + MINUTE], weights=[1, 3])
         expected = datetime + 45 * SECOND
@@ -800,75 +776,45 @@ class TestRoundDateOrDateTime:
 
 
 class TestTimePeriod:
-    @given(times=pairs(times()), date=dates())
-    def test_at_day(self, *, times: tuple[Time, Time], date: Date) -> None:
-        start, end = times
-        period = TimePeriod(start, end)
+    @given(period=time_periods(), date=dates())
+    def test_at_day(self, *, period: TimePeriod, date: Date) -> None:
         with assume_does_not_raise(_ZonedDateTimePeriodInvalidError):
             result = period.at(date)
         expected = ZonedDateTimePeriod(
-            date.at(start).assume_tz(UTC.key), date.at(end).assume_tz(UTC.key)
+            date.at(period.start).assume_tz(UTC.key),
+            date.at(period.end).assume_tz(UTC.key),
         )
         assert result.exact_eq(expected)
 
-    @given(times=pairs(times()), dates=pairs(dates(), sorted=True))
-    def test_at_days(
-        self, *, times: tuple[Time, Time], dates: tuple[Date, Date]
-    ) -> None:
-        start_time, end_time = times
-        period = TimePeriod(start_time, end_time)
+    @given(period=time_periods(), dates=pairs(dates(), sorted=True))
+    def test_at_days(self, *, period: TimePeriod, dates: tuple[Date, Date]) -> None:
         start_date, end_date = dates
         with assume_does_not_raise(_ZonedDateTimePeriodInvalidError):
             result = period.at((start_date, end_date))
         expected = ZonedDateTimePeriod(
-            start_date.at(start_time).assume_tz(UTC.key),
-            end_date.at(end_time).assume_tz(UTC.key),
+            start_date.at(period.start).assume_tz(UTC.key),
+            end_date.at(period.end).assume_tz(UTC.key),
         )
         assert result.exact_eq(expected)
 
-    @given(dates=pairs(dates(), sorted=True), times=pairs(times()))
-    def test_at_times(
-        self, *, dates: tuple[Date, Date], times: tuple[Time, Time]
-    ) -> None:
-        start_date, end_date = dates
-        period = DatePeriod(start_date, end_date)
-        start_time, end_time = times
-        with assume_does_not_raise(_ZonedDateTimePeriodInvalidError):
-            result = period.at((start_time, end_time))
-        expected = ZonedDateTimePeriod(
-            start_date.at(start_time).assume_tz(UTC.key),
-            end_date.at(end_time).assume_tz(UTC.key),
-        )
-        assert result.exact_eq(expected)
-
-    @given(times=pairs(times()), new_times=pairs(times()))
-    def test_replace(
-        self, *, times: tuple[Time, Time], new_times: tuple[Time, Time]
-    ) -> None:
-        start, end = times
-        period = TimePeriod(start, end)
+    @given(period=time_periods(), new_times=pairs(times()))
+    def test_replace(self, *, period: TimePeriod, new_times: tuple[Time, Time]) -> None:
         new_start, new_end = new_times
         new = period.replace(start=new_start, end=new_end)
         assert new.start == new_start
         assert new.end == new_end
 
-    @given(times=pairs(times()))
+    @given(period=time_periods())
     @mark.parametrize("func", [param(repr), param(str)])
-    def test_repr(self, *, times: tuple[Time, Time], func: Callable[..., str]) -> None:
-        start, end = times
-        period = TimePeriod(start, end)
+    def test_repr(self, *, period: TimePeriod, func: Callable[..., str]) -> None:
         result = func(period)
         assert search(
             r"^TimePeriod\(\d{2}:\d{2}:\d{2}(\.\d{1,6})?, \d{2}:\d{2}:\d{2}(\.\d{1,6})?\)$",
             result,
         )
 
-    @given(data=data(), times=pairs(times()))
-    def test_to_and_from_dict(
-        self, *, data: DataObject, times: tuple[Time, Time]
-    ) -> None:
-        start, end = times
-        period = TimePeriod(start, end)
+    @given(data=data(), period=time_periods())
+    def test_to_and_from_dict(self, *, data: DataObject, period: TimePeriod) -> None:
         dict1 = period.to_dict()
         dstart, dend = dict1["start"], dict1["end"]
         dict2 = PeriodDict(
@@ -1018,7 +964,7 @@ class TestToHours:
 
 
 class TestToLocalPlainAndParsePlainLocal:
-    @given(date_time=zoned_datetimes())
+    @given(date_time=zoned_date_times())
     def test_main(self, *, date_time: ZonedDateTime) -> None:
         text = to_local_plain(date_time)
         assert isinstance(text, str)
@@ -1435,20 +1381,20 @@ class TestToZonedDateTime:
     def test_default(self) -> None:
         assert abs(to_zoned_date_time() - get_now()) <= SECOND
 
-    @given(date_time=zoned_datetimes())
+    @given(date_time=zoned_date_times())
     def test_date_time(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time) == date_time
 
-    @given(date_time=zoned_datetimes_2000)
+    @given(date_time=zoned_date_times_2000)
     def test_py_date_time_zone_info(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time.py_datetime()) == date_time
 
-    @given(date_time=zoned_datetimes_2000)
+    @given(date_time=zoned_date_times_2000)
     def test_py_date_time_dt_utc(self, *, date_time: ZonedDateTime) -> None:
         result = to_zoned_date_time(date_time.py_datetime().astimezone(dt.UTC))
         assert result == date_time
 
-    @given(date_time=zoned_datetimes())
+    @given(date_time=zoned_date_times())
     def test_callable(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(lambda: date_time) == date_time
 
@@ -1458,7 +1404,7 @@ class TestToZonedDateTime:
     def test_sentinel(self) -> None:
         assert to_zoned_date_time(sentinel) is sentinel
 
-    @given(date_times=pairs(zoned_datetimes()))
+    @given(date_times=pairs(zoned_date_times()))
     def test_replace_non_sentinel(
         self, *, date_times: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
@@ -1511,48 +1457,28 @@ class TestWheneverLogRecord:
 
 
 class TestZonedDateTimePeriod:
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True), delta=time_deltas())
+    @given(period=zoned_date_time_periods(), delta=time_deltas())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_add(
-        self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime], delta: TimeDelta
-    ) -> None:
-        start, end = datetimes
-        period = ZonedDateTimePeriod(start, end)
+    def test_add(self, *, period: ZonedDateTimePeriod, delta: TimeDelta) -> None:
         with assume_does_not_raise(ValueError, match="Instant is out of range"):
             result = period + delta
-        expected = ZonedDateTimePeriod(start + delta, end + delta)
+        expected = ZonedDateTimePeriod(period.start + delta, period.end + delta)
         assert result == expected
 
-    @given(datetime=zoned_datetimes(), datetimes=pairs(zoned_datetimes(), sorted=True))
+    @given(datetime=zoned_date_times(), period=zoned_date_time_periods())
     def test_contains(
-        self, *, datetime: ZonedDateTime, datetimes: tuple[ZonedDateTime, ZonedDateTime]
+        self, *, datetime: ZonedDateTime, period: ZonedDateTimePeriod
     ) -> None:
-        start, end = datetimes
-        period = ZonedDateTimePeriod(start, end)
         result = datetime in period
-        expected = start <= datetime <= end
+        expected = period.start <= datetime <= period.end
         assert result is expected
 
-    @given(datetime=zoned_datetimes(), datetimes=pairs(zoned_datetimes(), sorted=True))
-    def test_contain_datetime(
-        self, *, datetime: ZonedDateTime, datetimes: tuple[ZonedDateTime, ZonedDateTime]
-    ) -> None:
-        start, end = datetimes
-        period = ZonedDateTimePeriod(start, end)
-        result = datetime in period
-        expected = start <= datetime <= end
-        assert result is expected
+    @given(period=zoned_date_time_periods())
+    def test_delta(self, *, period: ZonedDateTimePeriod) -> None:
+        assert period.delta == (period.end - period.start)
 
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
-    def test_delta(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
-        start, end = datetimes
-        period = ZonedDateTimePeriod(start, end)
-        assert period.delta == (end - start)
-
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
-    def test_exact_eq(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
-        start, end = datetimes
-        period = ZonedDateTimePeriod(start, end)
+    @given(period=zoned_date_time_periods())
+    def test_exact_eq(self, *, period: ZonedDateTimePeriod) -> None:
         assert period.exact_eq(period)
         assert period.exact_eq(period.start, period.end)
         assert period.exact_eq(
@@ -1671,68 +1597,42 @@ class TestZonedDateTimePeriod:
         period = ZonedDateTimePeriod(datetime, datetime)
         assert period.format_compact() == expected
 
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
-    def test_hashable(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
-        start, end = datetimes
-        period = ZonedDateTimePeriod(start, end)
+    @given(period=zoned_date_time_periods())
+    def test_hashable(self, *, period: ZonedDateTimePeriod) -> None:
         _ = hash(period)
 
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
-    def test_replace(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
-        start, end = datetimes
-        period = ZonedDateTimePeriod(start, end)
-        new = period.replace(start=start - SECOND, end=end + SECOND)
-        assert new.start == (start - SECOND)
-        assert new.end == (end + SECOND)
+    @given(period=zoned_date_time_periods())
+    def test_replace(self, *, period: ZonedDateTimePeriod) -> None:
+        new = period.replace(start=period.start - SECOND, end=period.end + SECOND)
+        assert new.start == (period.start - SECOND)
+        assert new.end == (period.end + SECOND)
 
-    @given(data=data(), datetimes=pairs(zoned_datetimes(), sorted=True))
+    @given(period=zoned_date_time_periods())
     @mark.parametrize("func", [param(repr), param(str)])
     def test_repr(
-        self,
-        *,
-        data: DataObject,
-        datetimes: tuple[ZonedDateTime, ZonedDateTime],
-        func: Callable[..., str],
+        self, *, period: ZonedDateTimePeriod, func: Callable[..., str]
     ) -> None:
-        start, end = datetimes
-        datetimes = data.draw(pairs(zoned_datetimes(), sorted=True))
-        start, end = datetimes
-        period = ZonedDateTimePeriod(start, end)
         result = func(period)
         assert search(
             r"^ZonedDateTimePeriod\(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?, \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?\[.+\]\)$",
             result,
         )
 
-    @given(
-        dates1=pairs(zoned_datetimes(), sorted=True),
-        dates2=pairs(zoned_datetimes(), sorted=True),
-    )
+    @given(periods=pairs(zoned_date_time_periods()))
     def test_sortable(
-        self,
-        *,
-        dates1: tuple[ZonedDateTime, ZonedDateTime],
-        dates2: tuple[ZonedDateTime, ZonedDateTime],
+        self, *, periods: tuple[ZonedDateTimePeriod, ZonedDateTimePeriod]
     ) -> None:
-        start1, end1 = dates1
-        start2, end2 = dates2
-        period1 = ZonedDateTimePeriod(start1, end1)
-        period2 = ZonedDateTimePeriod(start2, end2)
-        _ = sorted([period1, period2])
+        _ = sorted(periods)
 
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True), delta=time_deltas())
+    @given(period=zoned_date_time_periods(), delta=time_deltas())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_sub(
-        self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime], delta: TimeDelta
-    ) -> None:
-        start, end = datetimes
-        period = ZonedDateTimePeriod(start, end)
+    def test_sub(self, *, period: ZonedDateTimePeriod, delta: TimeDelta) -> None:
         with assume_does_not_raise(ValueError, match="Instant is out of range"):
             result = period - delta
-        expected = ZonedDateTimePeriod(start - delta, end - delta)
+        expected = ZonedDateTimePeriod(period.start - delta, period.end - delta)
         assert result == expected
 
-    @given(data=data(), datetimes=pairs(zoned_datetimes_2000, sorted=True))
+    @given(data=data(), datetimes=pairs(zoned_date_times_2000, sorted=True))
     def test_to_and_from_dict(
         self, data: DataObject, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
@@ -1747,18 +1647,16 @@ class TestZonedDateTimePeriod:
         result = ZonedDateTimePeriod.from_dict(dict2)
         assert result == period
 
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
-    def test_to_tz(self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]) -> None:
-        start, end = datetimes
-        period = ZonedDateTimePeriod(start, end)
+    @given(period=zoned_date_time_periods())
+    def test_to_tz(self, *, period: ZonedDateTimePeriod) -> None:
         with assume_does_not_raise(OverflowError, match="date value out of range"):
             result = period.to_tz(UTC)
         assert result.time_zone == UTC
         name = get_time_zone_name(UTC)
-        expected = ZonedDateTimePeriod(start.to_tz(name), end.to_tz(name))
+        expected = ZonedDateTimePeriod(period.start.to_tz(name), period.end.to_tz(name))
         assert result == expected
 
-    @given(datetimes=pairs(zoned_datetimes(), unique=True, sorted=True))
+    @given(datetimes=pairs(zoned_date_times(), unique=True, sorted=True))
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_error_period_invalid(
         self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]
@@ -1769,7 +1667,7 @@ class TestZonedDateTimePeriod:
         ):
             _ = ZonedDateTimePeriod(end, start)
 
-    @given(datetimes=pairs(plain_datetimes(), sorted=True))
+    @given(datetimes=pairs(plain_date_times(), sorted=True))
     def test_error_period_time_zone(
         self, *, datetimes: tuple[PlainDateTime, PlainDateTime]
     ) -> None:
@@ -1783,13 +1681,9 @@ class TestZonedDateTimePeriod:
         ):
             _ = ZonedDateTimePeriod(start, end)
 
-    @given(datetimes=pairs(zoned_datetimes(), sorted=True))
-    def test_error_exact_eq(
-        self, *, datetimes: tuple[ZonedDateTime, ZonedDateTime]
-    ) -> None:
-        start, end = datetimes
-        period = ZonedDateTimePeriod(start, end)
+    @given(period=zoned_date_time_periods())
+    def test_error_exact_eq(self, *, period: ZonedDateTimePeriod) -> None:
         with raises(
             _ZonedDateTimePeriodExactEqError, match=r"Invalid arguments; got \(.*\)"
         ):
-            _ = period.exact_eq(cast("Any", start))
+            _ = period.exact_eq(cast("Any", None))

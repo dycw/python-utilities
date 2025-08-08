@@ -37,20 +37,23 @@ from tests.test_typing_funcs.with_future import (
 from utilities.hypothesis import (
     assume_does_not_raise,
     date_deltas,
+    date_periods,
     date_time_deltas,
     dates,
     int64s,
     month_days,
     paths,
-    plain_datetimes,
+    plain_date_times,
     py_datetimes,
     text_ascii,
     text_printable,
     time_deltas,
+    time_periods,
     times,
     versions,
     year_months,
-    zoned_datetimes,
+    zoned_date_time_periods,
+    zoned_date_times,
 )
 from utilities.math import MAX_INT64, MIN_INT64
 
@@ -82,6 +85,7 @@ def objects(
 ) -> SearchStrategy[Any]:
     base = (
         booleans()
+        | date_periods()
         | dates()
         | hypothesis.strategies.dates()
         | py_datetimes(zoned=booleans())
@@ -90,15 +94,17 @@ def objects(
         | month_days()
         | none()
         | paths()
-        | plain_datetimes()
+        | plain_date_times()
         | text_printable().filter(lambda x: not x.startswith("["))
         | time_deltas()
+        | time_periods()
         | times()
         | hypothesis.strategies.times()
         | uuids()
         | versions()
         | year_months()
-        | zoned_datetimes()
+        | zoned_date_time_periods()
+        | zoned_date_times()
     )
     if dataclass_custom_equality:
         base |= builds(DataClassFutureCustomEquality)

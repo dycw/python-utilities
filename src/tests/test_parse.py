@@ -50,13 +50,13 @@ from utilities.hypothesis import (
     month_days,
     numbers,
     paths,
-    plain_datetimes,
+    plain_date_times,
     text_ascii,
     time_deltas,
     times,
     versions,
     year_months,
-    zoned_datetimes,
+    zoned_date_times,
 )
 from utilities.math import is_equal
 from utilities.parse import (
@@ -180,7 +180,7 @@ class TestSerializeAndParseObject:
         result = ensure_path(parse_object(Path, serialized))
         assert result == result.expanduser()
 
-    @given(datetime=plain_datetimes())
+    @given(datetime=plain_date_times())
     def test_plain_datetime(self, *, datetime: PlainDateTime) -> None:
         serialized = serialize_object(datetime)
         result = parse_object(PlainDateTime, serialized)
@@ -324,7 +324,7 @@ class TestSerializeAndParseObject:
         result = parse_object(YearMonth, serialized)
         assert result == year_month
 
-    @given(datetime=zoned_datetimes())
+    @given(datetime=zoned_date_times())
     def test_zoned_datetime(self, *, datetime: ZonedDateTime) -> None:
         serialized = serialize_object(datetime)
         result = parse_object(ZonedDateTime, serialized)

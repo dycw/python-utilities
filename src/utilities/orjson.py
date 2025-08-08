@@ -5,7 +5,7 @@ import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
-from enum import Enum, unique
+from enum import Enum, StrEnum, unique
 from functools import cached_property, partial
 from itertools import chain
 from logging import Formatter, LogRecord
@@ -52,7 +52,12 @@ from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
 from utilities.tzlocal import LOCAL_TIME_ZONE
 from utilities.version import Version, parse_version
-from utilities.whenever import from_timestamp
+from utilities.whenever import (
+    DatePeriod,
+    TimePeriod,
+    ZonedDateTimePeriod,
+    from_timestamp,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
@@ -65,10 +70,11 @@ if TYPE_CHECKING:
 
 
 @unique
-class _Prefixes(Enum):
+class _Prefixes(StrEnum):
     dataclass = "dc"
     date = "d"
     date_delta = "dd"
+    date_period = "dp"
     date_time_delta = "D"
     enum = "e"
     exception_class = "Ex"
@@ -77,7 +83,7 @@ class _Prefixes(Enum):
     frozenset_ = "fr"
     list_ = "l"
     month_day = "md"
-    none = "none"
+    none = "0"
     path = "p"
     plain_date_time = "pd"
     py_date = "!d"
@@ -87,12 +93,14 @@ class _Prefixes(Enum):
     set_ = "s"
     time = "ti"
     time_delta = "td"
+    time_period = "tp"
     tuple_ = "tu"
     unserializable = "un"
     uuid = "uu"
     version = "v"
     year_month = "ym"
     zoned_date_time = "zd"
+    zoned_date_time_period = "zp"
 
 
 type _DataclassHook = Callable[[type[Dataclass], StrMapping], StrMapping]
@@ -167,8 +175,10 @@ def _pre_process(
             return f"[{_Prefixes.date.value}]{date}"
         case DateDelta() as date:
             return f"[{_Prefixes.date_delta.value}]{date}"
-        case DateTimeDelta() as date:
-            return f"[{_Prefixes.date_time_delta.value}]{date}"
+        case DatePeriod() as period:
+            return f"[{_Prefixes.date_period.value}]{period.start},{period.end}"
+        case DateTimeDelta() as date_time_delta:
+            return f"[{_Prefixes.date_time_delta.value}]{date_time_delta}"
         case Exception() as error_:
             return {
                 f"[{_Prefixes.exception_instance.value}|{type(error_).__qualname__}]": pre(
@@ -187,14 +197,16 @@ def _pre_process(
             return f"[{_Prefixes.month_day.value}]{month_day!s}"
         case Path() as path:
             return f"[{_Prefixes.path.value}]{path!s}"
-        case PlainDateTime() as datetime:
-            return f"[{_Prefixes.plain_date_time.value}]{datetime}"
-        case str() as str_:
-            return str_
+        case PlainDateTime() as date_time:
+            return f"[{_Prefixes.plain_date_time.value}]{date_time}"
+        case str() as text:
+            return text
         case Time() as time:
             return f"[{_Prefixes.time.value}]{time}"
         case TimeDelta() as time_delta:
             return f"[{_Prefixes.time_delta.value}]{time_delta}"
+        case TimePeriod() as period:
+            return f"[{_Prefixes.time_period.value}]{period.start},{period.end}"
         case type() as error_cls if issubclass(error_cls, Exception):
             return f"[{_Prefixes.exception_class.value}|{error_cls.__qualname__}]"
         case UUID() as uuid:
@@ -203,8 +215,12 @@ def _pre_process(
             return f"[{_Prefixes.version.value}]{version}"
         case YearMonth() as year_month:
             return f"[{_Prefixes.year_month.value}]{year_month}"
-        case ZonedDateTime() as datetime:
-            return f"[{_Prefixes.zoned_date_time.value}]{datetime}"
+        case ZonedDateTime() as date_time:
+            return f"[{_Prefixes.zoned_date_time.value}]{date_time}"
+        case ZonedDateTimePeriod() as period:
+            return (
+                f"[{_Prefixes.zoned_date_time_period.value}]{period.start},{period.end}"
+            )
         case dt.datetime() as py_datetime:
             match py_datetime.tzinfo:
                 case None:
@@ -369,6 +385,7 @@ def deserialize(
 (
     _DATE_PATTERN,
     _DATE_DELTA_PATTERN,
+    _DATE_PERIOD_PATTERN,
     _DATE_TIME_DELTA_PATTERN,
     _FLOAT_PATTERN,
     _MONTH_DAY_PATTERN,
@@ -381,15 +398,18 @@ def deserialize(
     _PY_ZONED_DATE_TIME_PATTERN,
     _TIME_PATTERN,
     _TIME_DELTA_PATTERN,
+    _TIME_PERIOD_PATTERN,
     _UUID_PATTERN,
     _VERSION_PATTERN,
     _YEAR_MONTH_PATTERN,
     _ZONED_DATE_TIME_PATTERN,
+    _ZONED_DATE_TIME_PERIOD_PATTERN,
 ) = [
     re.compile(r"^\[" + p.value + r"\](" + ".*" + ")$")
     for p in [
         _Prefixes.date,
         _Prefixes.date_delta,
+        _Prefixes.date_period,
         _Prefixes.date_time_delta,
         _Prefixes.float_,
         _Prefixes.month_day,
@@ -402,10 +422,12 @@ def deserialize(
         _Prefixes.py_zoned_date_time,
         _Prefixes.time,
         _Prefixes.time_delta,
+        _Prefixes.time_period,
         _Prefixes.uuid,
         _Prefixes.version,
         _Prefixes.year_month,
         _Prefixes.zoned_date_time,
+        _Prefixes.zoned_date_time_period,
     ]
 ]
 
@@ -453,6 +475,9 @@ def _object_hook(
                 return Date.parse_common_iso(match.group(1))
             if match := _DATE_DELTA_PATTERN.search(text):
                 return DateDelta.parse_common_iso(match.group(1))
+            if match := _DATE_PERIOD_PATTERN.search(text):
+                start, end = map(Date.parse_common_iso, match.group(1).split(","))
+                return DatePeriod(start, end)
             if match := _DATE_TIME_DELTA_PATTERN.search(text):
                 return DateTimeDelta.parse_common_iso(match.group(1))
             if match := _FLOAT_PATTERN.search(text):
@@ -475,6 +500,9 @@ def _object_hook(
                 return Time.parse_common_iso(match.group(1))
             if match := _TIME_DELTA_PATTERN.search(text):
                 return TimeDelta.parse_common_iso(match.group(1))
+            if match := _TIME_PERIOD_PATTERN.search(text):
+                start, end = map(Time.parse_common_iso, match.group(1).split(","))
+                return TimePeriod(start, end)
             if match := _UUID_PATTERN.search(text):
                 return UUID(match.group(1))
             if match := _VERSION_PATTERN.search(text):
@@ -483,6 +511,11 @@ def _object_hook(
                 return YearMonth.parse_common_iso(match.group(1))
             if match := _ZONED_DATE_TIME_PATTERN.search(text):
                 return ZonedDateTime.parse_common_iso(match.group(1))
+            if match := _ZONED_DATE_TIME_PERIOD_PATTERN.search(text):
+                start, end = map(
+                    ZonedDateTime.parse_common_iso, match.group(1).split(",")
+                )
+                return ZonedDateTimePeriod(start, end)
             if (
                 exc_class := _object_hook_exception_class(
                     text, data=data, objects=objects, redirects=redirects

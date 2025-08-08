@@ -57,12 +57,12 @@ from utilities.hypothesis import (
     date_time_deltas,
     dates,
     month_days,
-    plain_datetimes,
+    plain_date_times,
     text_ascii,
     time_deltas,
     times,
     year_months,
-    zoned_datetimes,
+    zoned_date_times,
 )
 from utilities.text import join_strs, strip_and_dedent
 
@@ -304,7 +304,7 @@ class TestParameters:
         _Case(
             param=PlainDateTime(),
             name="plain date-time",
-            strategy=plain_datetimes(),
+            strategy=plain_date_times(),
             serialize=whenever.PlainDateTime.format_common_iso,
             failable=True,
         ),
@@ -335,7 +335,7 @@ class TestParameters:
         _Case(
             param=ZonedDateTime(),
             name="zoned date-time",
-            strategy=zoned_datetimes(),
+            strategy=zoned_date_times(),
             serialize=whenever.ZonedDateTime.format_common_iso,
             failable=True,
         ),
