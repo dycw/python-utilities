@@ -55,7 +55,9 @@ from polars import (
     struct,
 )
 from polars._typing import IntoExprColumn, SchemaDict
-from polars.exceptions import ComputeError
+from polars.exceptions import (
+    ComputeError,  # pyright: ignore[reportAttributeAccessIssue]
+)
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises

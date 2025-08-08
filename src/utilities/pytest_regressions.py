@@ -91,7 +91,9 @@ class PolarsRegressionFixture:
     def check(self, obj: Series | DataFrame, /, *, suffix: str | None = None) -> None:
         """Check the Series/DataFrame summary against the baseline."""
         from polars import DataFrame, Series, col
-        from polars.exceptions import InvalidOperationError
+        from polars.exceptions import (
+            InvalidOperationError,  # pyright: ignore[reportAttributeAccessIssue]
+        )
 
         data: StrMapping = {
             "describe": obj.describe(percentiles=[i / 10 for i in range(1, 10)]).rows(
