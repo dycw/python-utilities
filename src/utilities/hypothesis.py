@@ -235,6 +235,7 @@ def date_time_deltas(
     *,
     min_value: MaybeSearchStrategy[DateTimeDelta | None] = None,
     max_value: MaybeSearchStrategy[DateTimeDelta | None] = None,
+    nativable: MaybeSearchStrategy[bool] = False,
     parsable: MaybeSearchStrategy[bool] = False,
 ) -> DateTimeDelta:
     """Strategy for generating date deltas."""
@@ -253,11 +254,21 @@ def date_time_deltas(
             ...
         case never:
             assert_never(never)
-    min_nanos, max_nanos = map(to_nanoseconds, [min_value_, max_value_])
-    if draw2(draw, parsable):
-        min_nanos = max(min_nanos, to_nanoseconds(DATE_TIME_DELTA_PARSABLE_MIN))
-        max_nanos = min(max_nanos, to_nanoseconds(DATE_TIME_DELTA_PARSABLE_MAX))
-    nanos = draw(integers(min_value=min_nanos, max_value=max_nanos))
+    if draw2(draw, nativable):
+        min_nanos, max_nanos = map(to_nanoseconds, [min_value_, max_value_])
+        if draw2(draw, parsable):
+            min_nanos = max(min_nanos, to_nanoseconds(DATE_TIME_DELTA_PARSABLE_MIN))
+            max_nanos = min(max_nanos, to_nanoseconds(DATE_TIME_DELTA_PARSABLE_MAX))
+        min_micros, _ = divmod(min_nanos, 1000)
+        max_micros, _ = divmod(max_nanos, 1000)
+        micros = draw(integers(min_value=min_micros + 1, max_value=max_micros))
+        nanos = 1000 * micros
+    else:
+        min_nanos, max_nanos = map(to_nanoseconds, [min_value_, max_value_])
+        if draw2(draw, parsable):
+            min_nanos = max(min_nanos, to_nanoseconds(DATE_TIME_DELTA_PARSABLE_MIN))
+            max_nanos = min(max_nanos, to_nanoseconds(DATE_TIME_DELTA_PARSABLE_MAX))
+        nanos = draw(integers(min_value=min_nanos, max_value=max_nanos))
     return to_date_time_delta(nanos)
 
 

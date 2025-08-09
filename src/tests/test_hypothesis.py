@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from itertools import pairwise
 from pathlib import Path
 from re import search
@@ -134,6 +135,7 @@ from utilities.whenever import (
     ZonedDateTimePeriod,
     to_days,
     to_nanoseconds,
+    to_py_time_delta,
 )
 
 if TYPE_CHECKING:
@@ -197,6 +199,7 @@ class TestDateDeltas:
                 date_deltas(min_value=min_value, max_value=max_value, parsable=parsable)
             )
         assert isinstance(delta, DateDelta)
+        assert isinstance(to_py_time_delta(delta), dt.timedelta)
         days = to_days(delta)
         if min_value is not None:
             assert days >= to_days(min_value)
@@ -221,14 +224,17 @@ class TestDatePeriods:
 
 
 class TestDateTimeDeltas:
-    @given(data=data(), parsable=booleans())
-    def test_main(self, *, data: DataObject, parsable: bool) -> None:
+    @given(data=data(), nativable=booleans(), parsable=booleans())
+    def test_main(self, *, data: DataObject, nativable: bool, parsable: bool) -> None:
         min_value = data.draw(date_time_deltas() | none())
         max_value = data.draw(date_time_deltas() | none())
         with assume_does_not_raise(InvalidArgument):
             delta = data.draw(
                 date_time_deltas(
-                    min_value=min_value, max_value=max_value, parsable=parsable
+                    min_value=min_value,
+                    max_value=max_value,
+                    nativable=nativable,
+                    parsable=parsable,
                 )
             )
         assert isinstance(delta, DateTimeDelta)
@@ -237,6 +243,8 @@ class TestDateTimeDeltas:
             assert nanos >= to_nanoseconds(min_value)
         if max_value is not None:
             assert nanos <= to_nanoseconds(max_value)
+        if nativable:
+            assert isinstance(to_py_time_delta(delta), dt.timedelta)
         if parsable:
             assert DateTimeDelta.parse_common_iso(delta.format_common_iso()) == delta
 
@@ -989,6 +997,7 @@ class TestTimeDeltas:
             delta = data.draw(time_deltas(min_value=min_value, max_value=max_value))
         assert isinstance(delta, TimeDelta)
         assert TimeDelta.parse_common_iso(delta.format_common_iso()) == delta
+        assert isinstance(to_py_time_delta(delta), dt.timedelta)
         if min_value is not None:
             assert delta >= min_value
         if max_value is not None:

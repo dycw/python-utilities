@@ -34,6 +34,7 @@ from polars import (
     DataFrame,
     DataType,
     Datetime,
+    Duration,
     Expr,
     Float64,
     Int32,
@@ -56,24 +57,22 @@ from polars._typing import IntoExprColumn, SchemaDict
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
-from whenever import (
-    DateDelta,
-    DateTimeDelta,
-    PlainDateTime,
-    Time,
-    TimeDelta,
-    ZonedDateTime,
-)
+from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 import tests.test_math
 import utilities.polars
 from utilities.hypothesis import (
+    date_deltas,
+    date_time_deltas,
+    dates,
     float64s,
     int64s,
     pairs,
     py_datetimes,
     temp_paths,
     text_ascii,
+    time_deltas,
+    times,
     zoned_date_times,
 )
 from utilities.math import number_of_decimals
@@ -403,17 +402,13 @@ class TestAppendDataClass:
         height = 0 if (row.a is None) and (row.b is None) else 1
         check_polars_dataframe(result, height=height, schema_list=df.schema)
 
-    @given(
-        data=fixed_dictionaries({
-            "datetime": zoned_date_times().map(lambda d: d.py_datetime())
-        })
-    )
+    @given(data=fixed_dictionaries({"datetime": zoned_date_times()}))
     def test_zoned_datetime(self, *, data: StrMapping) -> None:
         df = DataFrame(schema={"datetime": DatetimeUTC})
 
         @dataclass(kw_only=True, slots=True)
         class Row:
-            datetime: dt.datetime
+            datetime: ZonedDateTime
 
         row = Row(**data)
         result = append_dataclass(df, row)
@@ -1025,7 +1020,6 @@ class TestDataClassToDataFrame:
             int_field: int
             float_field: float
             str_field: str
-            date_field: dt.date
 
         objs = data.draw(lists(builds(Example, int_field=int64s()), min_size=1))
         df = dataclass_to_dataframe(objs)
@@ -1037,9 +1031,38 @@ class TestDataClassToDataFrame:
                 "int_field": Int64,
                 "float_field": Float64,
                 "str_field": String,
-                "date_field": pl.Date,
             },
         )
+
+    @given(data=data())
+    def test_date(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: whenever.Date
+
+        objs = data.draw(lists(builds(Example, x=dates()), min_size=1))
+        df = dataclass_to_dataframe(objs)
+        check_polars_dataframe(df, height=len(objs), schema_list={"x": pl.Date})
+
+    @given(data=data())
+    def test_date_delta(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DateDelta
+
+        objs = data.draw(lists(builds(Example, x=date_deltas()), min_size=1))
+        df = dataclass_to_dataframe(objs)
+        check_polars_dataframe(df, height=len(objs), schema_list={"x": Duration})
+
+    @given(data=data())
+    def test_date_time_delta(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DateTimeDelta
+
+        objs = data.draw(lists(builds(Example, x=date_time_deltas()), min_size=1))
+        df = dataclass_to_dataframe(objs)
+        check_polars_dataframe(df, height=len(objs), schema_list={"x": Duration})
 
     @given(data=data())
     def test_nested(self, *, data: DataObject) -> None:
@@ -1066,6 +1089,26 @@ class TestDataClassToDataFrame:
         obj = data.draw(builds(Example))
         df = dataclass_to_dataframe(obj, localns=locals())
         check_polars_dataframe(df, height=len(df), schema_list={"x": String})
+
+    @given(data=data())
+    def test_time(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: whenever.Time
+
+        objs = data.draw(lists(builds(Example, x=times()), min_size=1))
+        df = dataclass_to_dataframe(objs)
+        check_polars_dataframe(df, height=len(objs), schema_list={"x": pl.Time})
+
+    @given(data=data())
+    def test_time_delta(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: TimeDelta
+
+        objs = data.draw(lists(builds(Example, x=time_deltas()), min_size=1))
+        df = dataclass_to_dataframe(objs)
+        check_polars_dataframe(df, height=len(objs), schema_list={"x": Duration})
 
     @given(data=data())
     def test_uuid(self, *, data: DataObject) -> None:
@@ -2280,8 +2323,10 @@ class TestNormal:
 
 
 class TestOffsetDateTime:
-    @mark.parametrize(("n", "time"), [param(1, Time(13, 30)), param(2, Time(15))])
-    def test_main(self, *, n: int, time: Time) -> None:
+    @mark.parametrize(
+        ("n", "time"), [param(1, whenever.Time(13, 30)), param(2, whenever.Time(15))]
+    )
+    def test_main(self, *, n: int, time: whenever.Time) -> None:
         datetime = ZonedDateTime(2000, 1, 1, 12, tz=UTC.key)
         result = offset_datetime(datetime, "1h30m", n=n)
         expected = datetime.replace_time(time)
