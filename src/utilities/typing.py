@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from itertools import chain
@@ -136,7 +135,6 @@ def get_type_hints(
         TimeDelta,
         UUID,
         ZonedDateTime,
-        dt,
         whenever.Date,
         whenever.DateDelta,
         whenever.DateTimeDelta,
