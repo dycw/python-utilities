@@ -1060,7 +1060,9 @@ class TestDataClassToDataFrame:
         class Example:
             x: DateTimeDelta
 
-        objs = data.draw(lists(builds(Example, x=date_time_deltas()), min_size=1))
+        objs = data.draw(
+            lists(builds(Example, x=date_time_deltas(nativable=True)), min_size=1)
+        )
         df = dataclass_to_dataframe(objs)
         check_polars_dataframe(df, height=len(objs), schema_list={"x": Duration})
 
@@ -1347,7 +1349,7 @@ class TestDataClassToSchema:
     def test_time(self) -> None:
         @dataclass(kw_only=True, slots=True)
         class Example:
-            x: Time = field(default_factory=Time)
+            x: whenever.Time = field(default_factory=whenever.Time)
 
         obj = Example()
         result = dataclass_to_schema(obj)
@@ -1369,7 +1371,7 @@ class TestDataClassToSchema:
         class Example:
             x: TimePeriod
 
-        obj = Example(x=TimePeriod(Time(), Time()))
+        obj = Example(x=TimePeriod(whenever.Time(), whenever.Time()))
         result = dataclass_to_schema(obj, globalns=globals())
         expected = {"x": Object}
         assert result == expected
