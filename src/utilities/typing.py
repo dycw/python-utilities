@@ -414,18 +414,10 @@ def is_subclass_gen(cls: Any, parent: Any, /) -> bool:
 
 
 def _is_subclass_gen_type[T](cls: type[Any], parent: type[T], /) -> TypeGuard[type[T]]:
-    return (
-        issubclass(cls, parent)
-        and not (
-            issubclass(cls, bool)
-            and issubclass(parent, int)
-            and not issubclass(parent, bool)
-        )
-        and not (
-            issubclass(cls, dt.datetime)
-            and issubclass(parent, dt.date)
-            and not issubclass(parent, dt.datetime)
-        )
+    return issubclass(cls, parent) and not (
+        issubclass(cls, bool)
+        and issubclass(parent, int)
+        and not issubclass(parent, bool)
     )
 
 

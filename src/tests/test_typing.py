@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -782,11 +781,6 @@ class TestIsSubclassGen:
             param(int, int, True),
             param(bool, (bool, int), True),
             param(int, (bool, int), True),
-            # types - datetime/date
-            param(dt.date, dt.date, True),
-            param(dt.date, dt.datetime, False),
-            param(dt.datetime, dt.date, False),
-            param(dt.datetime, dt.datetime, True),
             # parent union
             param(bool, Number, False),
             param(int, Number, True),
