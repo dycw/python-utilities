@@ -461,29 +461,6 @@ class BooleanValueCountsError(Exception):
 ##
 
 
-@overload
-def ceil_datetime(column: ExprLike, every: ExprLike, /) -> Expr: ...
-@overload
-def ceil_datetime(column: Series, every: ExprLike, /) -> Series: ...
-@overload
-def ceil_datetime(column: IntoExprColumn, every: ExprLike, /) -> ExprOrSeries: ...
-def ceil_datetime(column: IntoExprColumn, every: ExprLike, /) -> ExprOrSeries:
-    """Compute the `ceil` of a datetime column."""
-    column = ensure_expr_or_series(column)
-    rounded = column.dt.round(every)
-    ceil = (
-        when(column <= rounded)
-        .then(rounded)
-        .otherwise(column.dt.offset_by(every).dt.round(every))
-    )
-    if isinstance(column, Expr):
-        return ceil
-    return DataFrame().with_columns(ceil.alias(column.name))[column.name]
-
-
-##
-
-
 def check_polars_dataframe(
     df: DataFrame,
     /,
@@ -1361,29 +1338,6 @@ class _FiniteEWMWeightsError(Exception):
     @override
     def __str__(self) -> str:
         return f"Min weight must be at least 0 and less than 1; got {self.min_weight}"
-
-
-##
-
-
-@overload
-def floor_datetime(column: ExprLike, every: ExprLike, /) -> Expr: ...
-@overload
-def floor_datetime(column: Series, every: ExprLike, /) -> Series: ...
-@overload
-def floor_datetime(column: IntoExprColumn, every: ExprLike, /) -> ExprOrSeries: ...
-def floor_datetime(column: IntoExprColumn, every: ExprLike, /) -> ExprOrSeries:
-    """Compute the `floor` of a datetime column."""
-    column = ensure_expr_or_series(column)
-    rounded = column.dt.round(every)
-    floor = (
-        when(column >= rounded)
-        .then(rounded)
-        .otherwise(column.dt.offset_by("-" + every).dt.round(every))
-    )
-    if isinstance(column, Expr):
-        return floor
-    return DataFrame().with_columns(floor.alias(column.name))[column.name]
 
 
 ##
@@ -2663,7 +2617,6 @@ __all__ = [
     "are_frames_equal",
     "bernoulli",
     "boolean_value_counts",
-    "ceil_datetime",
     "check_polars_dataframe",
     "choice",
     "collect_series",
@@ -2680,7 +2633,6 @@ __all__ = [
     "ensure_expr_or_series",
     "ensure_expr_or_series_many",
     "finite_ewm_mean",
-    "floor_datetime",
     "get_data_type_or_series_time_zone",
     "get_expr_name",
     "get_frequency_spectrum",

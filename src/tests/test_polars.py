@@ -48,7 +48,6 @@ from polars import (
     col,
     concat,
     date_range,
-    datetime_range,
     int_range,
     lit,
     struct,
@@ -151,7 +150,6 @@ from utilities.polars import (
     are_frames_equal,
     bernoulli,
     boolean_value_counts,
-    ceil_datetime,
     check_polars_dataframe,
     choice,
     collect_series,
@@ -170,7 +168,6 @@ from utilities.polars import (
     ensure_expr_or_series,
     ensure_expr_or_series_many,
     finite_ewm_mean,
-    floor_datetime,
     get_data_type_or_series_time_zone,
     get_expr_name,
     get_frequency_spectrum,
@@ -536,44 +533,6 @@ class TestBooleanValueCounts:
             BooleanValueCountsError, match="Column 'z' must be Boolean; got Int64"
         ):
             _ = boolean_value_counts(self.df, col("x").cast(Int64).alias("z"))
-
-
-class TestCeilDateTime:
-    start: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC)
-    end: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC)
-    expected: ClassVar[Series] = Series(
-        values=[
-            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-        ]
-    )
-
-    def test_expr(self) -> None:
-        data = datetime_range(self.start, self.end, interval="10s")
-        result = collect_series(ceil_datetime(data, "1m"))
-        assert_series_equal(result, self.expected, check_names=False)
-
-    def test_series(self) -> None:
-        data = datetime_range(self.start, self.end, interval="10s", eager=True)
-        result = ceil_datetime(data, "1m")
-        assert_series_equal(result, self.expected, check_names=False)
 
 
 class TestCheckPolarsDataFrame:
@@ -1603,44 +1562,6 @@ class TestFiniteEWMWeights:
             match=r"Min weight must be at least 0 and less than 1; got 1\.0",
         ):
             _ = _finite_ewm_weights(min_weight=1.0)
-
-
-class TestFloorDateTime:
-    start: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC)
-    end: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC)
-    expected: ClassVar[Series] = Series(
-        values=[
-            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-        ]
-    )
-
-    def test_expr(self) -> None:
-        data = datetime_range(self.start, self.end, interval="10s")
-        result = collect_series(floor_datetime(data, "1m"))
-        assert_series_equal(result, self.expected, check_names=False)
-
-    def test_series(self) -> None:
-        data = datetime_range(self.start, self.end, interval="10s", eager=True)
-        result = floor_datetime(data, "1m")
-        assert_series_equal(result, self.expected, check_names=False)
 
 
 class TestGetDataTypeOrSeriesTimeZone:
