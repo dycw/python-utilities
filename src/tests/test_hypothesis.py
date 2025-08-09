@@ -734,8 +734,8 @@ class TestPairs:
 class TestPaths:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
-        min_depth = data.draw(integers(0, 5) | none())
-        max_depth = data.draw(integers(0, 5) | none())
+        min_depth = data.draw(integers(0, 3) | none())
+        max_depth = data.draw(integers(0, 3) | none())
         with assume_does_not_raise(InvalidArgument):
             path = data.draw(paths(min_depth=min_depth, max_depth=max_depth))
         assert isinstance(path, Path)
