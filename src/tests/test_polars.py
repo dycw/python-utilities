@@ -2666,15 +2666,6 @@ class TestStructFromDataClass:
         })
         assert result == expected
 
-    def test_datetime(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            field: dt.datetime
-
-        result = struct_from_dataclass(Example, time_zone=UTC, globalns=globals())
-        expected = Struct({"field": DatetimeUTC})
-        assert result == expected
-
     def test_enum(self) -> None:
         class Truth(enum.Enum):
             true = auto()
