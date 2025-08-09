@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from itertools import chain
@@ -263,8 +264,18 @@ def is_instance_gen(obj: Any, type_: Any, /) -> bool:
 
 
 def _is_instance_gen_type[T](obj: Any, type_: type[T], /) -> TypeGuard[T]:
-    return isinstance(obj, type_) and not (
-        isinstance(obj, bool) and issubclass(type_, int) and not issubclass(type_, bool)
+    return (
+        isinstance(obj, type_)
+        and not (
+            isinstance(obj, bool)
+            and issubclass(type_, int)
+            and not issubclass(type_, bool)
+        )
+        and not (
+            isinstance(obj, dt.datetime)
+            and issubclass(type_, dt.date)
+            and not issubclass(type_, dt.datetime)
+        )
     )
 
 
@@ -412,10 +423,18 @@ def is_subclass_gen(cls: Any, parent: Any, /) -> bool:
 
 
 def _is_subclass_gen_type[T](cls: type[Any], parent: type[T], /) -> TypeGuard[type[T]]:
-    return issubclass(cls, parent) and not (
-        issubclass(cls, bool)
-        and issubclass(parent, int)
-        and not issubclass(parent, bool)
+    return (
+        issubclass(cls, parent)
+        and not (
+            issubclass(cls, bool)
+            and issubclass(parent, int)
+            and not issubclass(parent, bool)
+        )
+        and not (
+            issubclass(cls, dt.datetime)
+            and issubclass(parent, dt.date)
+            and not issubclass(parent, dt.datetime)
+        )
     )
 
 

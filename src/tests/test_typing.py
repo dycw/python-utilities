@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,6 +16,8 @@ from hypothesis.strategies import (
     SearchStrategy,
     booleans,
     data,
+    dates,
+    datetimes,
     floats,
     integers,
     just,
@@ -656,6 +659,11 @@ class TestIsInstanceGen:
             param(integers(), int, None, True),
             param(booleans(), (bool, int), None, True),
             param(integers(), (bool, int), None, True),
+            # types - datetime/date
+            param(dates(), dt.date, None, True),
+            param(dates(), dt.datetime, None, False),
+            param(datetimes(), dt.date, None, False),
+            param(datetimes(), dt.datetime, None, True),
             # parent union
             param(booleans(), Number, 2, False),
             param(integers(), Number, None, True),
@@ -781,6 +789,11 @@ class TestIsSubclassGen:
             param(int, int, True),
             param(bool, (bool, int), True),
             param(int, (bool, int), True),
+            # types - datetime/date
+            param(dt.date, dt.date, True),
+            param(dt.date, dt.datetime, False),
+            param(dt.datetime, dt.date, False),
+            param(dt.datetime, dt.datetime, True),
             # parent union
             param(bool, Number, False),
             param(int, Number, True),
