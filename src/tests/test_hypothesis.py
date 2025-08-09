@@ -224,8 +224,8 @@ class TestDatePeriods:
 
 
 class TestDateTimeDeltas:
-    @given(data=data(), nativable=booleans(), parsable=booleans())
-    def test_main(self, *, data: DataObject, nativable: bool, parsable: bool) -> None:
+    @given(data=data(), parsable=booleans(), nativable=booleans())
+    def test_main(self, *, data: DataObject, parsable: bool, nativable: bool) -> None:
         min_value = data.draw(date_time_deltas() | none())
         max_value = data.draw(date_time_deltas() | none())
         with assume_does_not_raise(InvalidArgument):
@@ -233,8 +233,8 @@ class TestDateTimeDeltas:
                 date_time_deltas(
                     min_value=min_value,
                     max_value=max_value,
-                    nativable=nativable,
                     parsable=parsable,
+                    nativable=nativable,
                 )
             )
         assert isinstance(delta, DateTimeDelta)
@@ -243,10 +243,10 @@ class TestDateTimeDeltas:
             assert nanos >= to_nanoseconds(min_value)
         if max_value is not None:
             assert nanos <= to_nanoseconds(max_value)
-        if nativable:
-            assert isinstance(to_py_time_delta(delta), dt.timedelta)
         if parsable:
             assert DateTimeDelta.parse_common_iso(delta.format_common_iso()) == delta
+        if nativable:
+            assert isinstance(to_py_time_delta(delta), dt.timedelta)
 
 
 class TestDates:
