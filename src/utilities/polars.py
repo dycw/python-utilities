@@ -1066,7 +1066,10 @@ def _dataclass_to_dataframe_cast(series: Series, /) -> Series:
         end = _dataclass_to_dataframe_cast(
             series.map_elements(lambda x: x["end"], return_dtype=Object)
         ).alias("end")
-        return concat_series(start, end).select(x=struct(start=start, end=end))["x"]
+        name = series.name
+        return concat_series(start, end).select(
+            struct(start=start, end=end).alias(name)
+        )[name]
     raise NotImplementedError(series)  # pragma: no cover
 
 
