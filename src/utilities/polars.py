@@ -15,11 +15,12 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import polars as pl
+import whenever
 from polars import (
     Boolean,
     DataFrame,
-    Date,
     Datetime,
+    Duration,
     Expr,
     Float64,
     Int64,
@@ -50,9 +51,9 @@ from polars.exceptions import (
 )
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
-from whenever import ZonedDateTime
+from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
-from utilities.dataclasses import _YieldFieldsInstance, yield_fields
+from utilities.dataclasses import yield_fields
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     EnsureIntError,
@@ -93,14 +94,18 @@ from utilities.typing import (
     get_args,
     get_type_hints,
     is_frozenset_type,
-    is_instance_gen,
     is_list_type,
     is_literal_type,
     is_optional_type,
     is_set_type,
-    is_union_type,
 )
 from utilities.warnings import suppress_warnings
+from utilities.whenever import (
+    DatePeriod,
+    TimePeriod,
+    ZonedDateTimePeriod,
+    to_py_time_delta,
+)
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
@@ -1052,14 +1057,35 @@ def dataclass_to_dataframe(
 
 def _dataclass_to_dataframe_cast(series: Series, /) -> Series:
     if series.dtype == Object:
+        if series.map_elements(
+            make_isinstance(whenever.Date), return_dtype=Boolean
+        ).all():
+            return series.map_elements(lambda x: x.py_date(), return_dtype=pl.Date)
+        if series.map_elements(make_isinstance(DateDelta), return_dtype=Boolean).all():
+            return series.map_elements(to_py_time_delta, return_dtype=Duration)
+        if series.map_elements(
+            make_isinstance(DateTimeDelta), return_dtype=Boolean
+        ).all():
+            return series.map_elements(to_py_time_delta, return_dtype=Duration)
         is_path = series.map_elements(make_isinstance(Path), return_dtype=Boolean).all()
         is_uuid = series.map_elements(make_isinstance(UUID), return_dtype=Boolean).all()
         if is_path or is_uuid:
             with suppress_warnings(category=PolarsInefficientMapWarning):
                 return series.map_elements(str, return_dtype=String)
-        else:  # pragma: no cover
-            msg = f"{is_path=}, f{is_uuid=}"
-            raise NotImplementedError(msg)
+        if series.map_elements(
+            make_isinstance(whenever.Time), return_dtype=Boolean
+        ).all():
+            return series.map_elements(lambda x: x.py_time(), return_dtype=pl.Time)
+        if series.map_elements(make_isinstance(TimeDelta), return_dtype=Boolean).all():
+            return series.map_elements(to_py_time_delta, return_dtype=Duration)
+        if series.map_elements(
+            make_isinstance(ZonedDateTime), return_dtype=Boolean
+        ).all():
+            return_dtype = zoned_datetime_dtype(time_zone=one({dt.tz for dt in series}))
+            return series.map_elements(
+                lambda x: x.py_datetime(), return_dtype=return_dtype
+            )
+        raise NotImplementedError(series)  # pragma: no cover
     return series
 
 
@@ -1101,34 +1127,20 @@ def dataclass_to_schema(
     for field in yield_fields(
         obj, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
     ):
-        if is_dataclass_instance(field.value):
+        if is_dataclass_instance(field.value) and not (
+            isinstance(field.type_, type)
+            and issubclass(field.type_, (DatePeriod, TimePeriod, ZonedDateTimePeriod))
+        ):
             dtypes = dataclass_to_schema(
                 field.value, globalns=globalns, localns=localns
             )
             dtype = struct_dtype(**dtypes)
-        elif field.type_ is dt.datetime:
-            dtype = _dataclass_to_schema_datetime(field)
-        elif is_union_type(field.type_) and set(
-            get_args(field.type_, optional_drop_none=True)
-        ) == {dt.date, dt.datetime}:
-            if is_instance_gen(field.value, dt.date):
-                dtype = Date
-            else:
-                dtype = _dataclass_to_schema_datetime(field)
         else:
             dtype = _dataclass_to_schema_one(
                 field.type_, globalns=globalns, localns=localns
             )
         out[field.name] = dtype
     return out
-
-
-def _dataclass_to_schema_datetime(
-    field: _YieldFieldsInstance[dt.datetime], /
-) -> PolarsDataType:
-    if field.value.tzinfo is None:
-        return Datetime
-    return zoned_datetime_dtype(time_zone=ensure_time_zone(field.value.tzinfo))
 
 
 def _dataclass_to_schema_one(
@@ -1138,20 +1150,35 @@ def _dataclass_to_schema_one(
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
 ) -> PolarsDataType:
-    if obj is bool:
-        return Boolean
-    if obj is int:
-        return Int64
-    if obj is float:
-        return Float64
-    if obj is str:
-        return String
-    if obj is dt.date:
-        return Date
-    if obj in {Path, UUID}:
-        return Object
-    if isinstance(obj, type) and issubclass(obj, enum.Enum):
-        return pl.Enum([e.name for e in obj])
+    if isinstance(obj, type):
+        if issubclass(obj, bool):
+            return Boolean
+        if issubclass(obj, int):
+            return Int64
+        if issubclass(obj, float):
+            return Float64
+        if issubclass(obj, str):
+            return String
+        if issubclass(
+            obj,
+            (
+                DateDelta,
+                DatePeriod,
+                DateTimeDelta,
+                Path,
+                PlainDateTime,
+                TimeDelta,
+                TimePeriod,
+                UUID,
+                ZonedDateTime,
+                ZonedDateTimePeriod,
+                whenever.Date,
+                whenever.Time,
+            ),
+        ):
+            return Object
+        if issubclass(obj, enum.Enum):
+            return pl.Enum([e.name for e in obj])
     if is_dataclass_class(obj):
         out: dict[str, Any] = {}
         for field in yield_fields(obj, globalns=globalns, localns=localns):
@@ -2444,7 +2471,13 @@ def struct_from_dataclass(
 def _struct_from_dataclass_one(
     ann: Any, /, *, time_zone: TimeZoneLike | None = None
 ) -> PolarsDataType:
-    mapping = {bool: Boolean, dt.date: Date, float: Float64, int: Int64, str: String}
+    mapping = {
+        bool: Boolean,
+        whenever.Date: pl.Date,
+        float: Float64,
+        int: Int64,
+        str: String,
+    }
     with suppress(KeyError):
         return mapping[ann]
     if ann is dt.datetime:

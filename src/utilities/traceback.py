@@ -284,7 +284,7 @@ def _make_except_hook_inner(
         except SendToSlackError as error:
             _ = stderr.write(f"{error}\n")
     if to_bool(pudb):  # pragma: no cover
-        from pudb import post_mortem
+        from pudb import post_mortem  # pyright: ignore[reportMissingImports]
 
         post_mortem(tb=traceback, e_type=exc_type, e_value=exc_val)
 
