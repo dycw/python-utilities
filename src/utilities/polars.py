@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 import enum
 from collections.abc import Callable, Iterator, Sequence
 from collections.abc import Set as AbstractSet
@@ -136,6 +135,10 @@ DatetimeTokyo = Datetime(time_zone="Asia/Tokyo")
 DatetimeUSCentral = Datetime(time_zone="US/Central")
 DatetimeUSEastern = Datetime(time_zone="US/Eastern")
 DatetimeUTC = Datetime(time_zone="UTC")
+DatePeriodDType = Struct({"start": pl.Date, "end": pl.Date})
+TimePeriodDType = Struct({"start": pl.Time, "end": pl.Time})
+
+
 _FINITE_EWM_MIN_WEIGHT = 0.9999
 
 
@@ -1056,37 +1059,38 @@ def dataclass_to_dataframe(
 
 
 def _dataclass_to_dataframe_cast(series: Series, /) -> Series:
-    if series.dtype == Object:
-        if series.map_elements(
-            make_isinstance(whenever.Date), return_dtype=Boolean
-        ).all():
-            return series.map_elements(lambda x: x.py_date(), return_dtype=pl.Date)
-        if series.map_elements(make_isinstance(DateDelta), return_dtype=Boolean).all():
-            return series.map_elements(to_py_time_delta, return_dtype=Duration)
-        if series.map_elements(
-            make_isinstance(DateTimeDelta), return_dtype=Boolean
-        ).all():
-            return series.map_elements(to_py_time_delta, return_dtype=Duration)
-        is_path = series.map_elements(make_isinstance(Path), return_dtype=Boolean).all()
-        is_uuid = series.map_elements(make_isinstance(UUID), return_dtype=Boolean).all()
-        if is_path or is_uuid:
-            with suppress_warnings(category=PolarsInefficientMapWarning):
-                return series.map_elements(str, return_dtype=String)
-        if series.map_elements(
-            make_isinstance(whenever.Time), return_dtype=Boolean
-        ).all():
-            return series.map_elements(lambda x: x.py_time(), return_dtype=pl.Time)
-        if series.map_elements(make_isinstance(TimeDelta), return_dtype=Boolean).all():
-            return series.map_elements(to_py_time_delta, return_dtype=Duration)
-        if series.map_elements(
-            make_isinstance(ZonedDateTime), return_dtype=Boolean
-        ).all():
-            return_dtype = zoned_datetime_dtype(time_zone=one({dt.tz for dt in series}))
-            return series.map_elements(
-                lambda x: x.py_datetime(), return_dtype=return_dtype
-            )
-        raise NotImplementedError(series)  # pragma: no cover
-    return series
+    if series.dtype != Object:
+        return series
+    if series.map_elements(make_isinstance(whenever.Date), return_dtype=Boolean).all():
+        return series.map_elements(lambda x: x.py_date(), return_dtype=pl.Date)
+    if series.map_elements(make_isinstance(DateDelta), return_dtype=Boolean).all():
+        return series.map_elements(to_py_time_delta, return_dtype=Duration)
+    if series.map_elements(make_isinstance(DateTimeDelta), return_dtype=Boolean).all():
+        return series.map_elements(to_py_time_delta, return_dtype=Duration)
+    is_path = series.map_elements(make_isinstance(Path), return_dtype=Boolean).all()
+    is_uuid = series.map_elements(make_isinstance(UUID), return_dtype=Boolean).all()
+    if is_path or is_uuid:
+        with suppress_warnings(category=PolarsInefficientMapWarning):
+            return series.map_elements(str, return_dtype=String)
+    if series.map_elements(make_isinstance(whenever.Time), return_dtype=Boolean).all():
+        return series.map_elements(lambda x: x.py_time(), return_dtype=pl.Time)
+    if series.map_elements(make_isinstance(TimeDelta), return_dtype=Boolean).all():
+        return series.map_elements(to_py_time_delta, return_dtype=Duration)
+    if series.map_elements(make_isinstance(ZonedDateTime), return_dtype=Boolean).all():
+        return_dtype = zoned_date_time_dtype(time_zone=one({dt.tz for dt in series}))
+        return series.map_elements(lambda x: x.py_datetime(), return_dtype=return_dtype)
+    if series.map_elements(
+        lambda x: isinstance(x, dict) and (set(x) == {"start", "end"}),
+        return_dtype=Boolean,
+    ).all():
+        start = _dataclass_to_dataframe_cast(
+            series.map_elements(lambda x: x["start"], return_dtype=Object)
+        ).alias("start")
+        end = _dataclass_to_dataframe_cast(
+            series.map_elements(lambda x: x["end"], return_dtype=Object)
+        ).alias("end")
+        return concat_series(start, end).select(x=struct(start=start, end=end))["x"]
+    raise NotImplementedError(series)  # pragma: no cover
 
 
 @dataclass(kw_only=True, slots=True)
@@ -2480,10 +2484,6 @@ def _struct_from_dataclass_one(
     }
     with suppress(KeyError):
         return mapping[ann]
-    if ann is dt.datetime:
-        if time_zone is None:
-            raise _StructFromDataClassTimeZoneMissingError
-        return zoned_datetime_dtype(time_zone=time_zone)
     if is_dataclass_class(ann):
         return struct_from_dataclass(ann, time_zone=time_zone)
     if (isinstance(ann, type) and issubclass(ann, enum.Enum)) or (
@@ -2510,13 +2510,6 @@ class _StructFromDataClassNotADataclassError(StructFromDataClassError):
     @override
     def __str__(self) -> str:
         return f"Object must be a dataclass; got {self.cls}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _StructFromDataClassTimeZoneMissingError(StructFromDataClassError):
-    @override
-    def __str__(self) -> str:
-        return "Time-zone must be given"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -2612,27 +2605,27 @@ def week_num(column: IntoExprColumn, /, *, start: WeekDay = "mon") -> ExprOrSeri
 ##
 
 
-def zoned_datetime_dtype(
+def zoned_date_time_dtype(
     *, time_unit: TimeUnit = "us", time_zone: TimeZoneLike = UTC
 ) -> Datetime:
-    """Create a zoned datetime data type."""
+    """Create a zoned date-time data type."""
     return Datetime(time_unit=time_unit, time_zone=get_time_zone_name(time_zone))
 
 
-def zoned_datetime_period_dtype(
+def zoned_date_time_period_dtype(
     *,
     time_unit: TimeUnit = "us",
     time_zone: TimeZoneLike | tuple[TimeZoneLike, TimeZoneLike] = UTC,
 ) -> Struct:
-    """Create a zoned datetime period data type."""
+    """Create a zoned date-time period data type."""
     match time_zone:
         case start, end:
             return struct_dtype(
-                start=zoned_datetime_dtype(time_unit=time_unit, time_zone=start),
-                end=zoned_datetime_dtype(time_unit=time_unit, time_zone=end),
+                start=zoned_date_time_dtype(time_unit=time_unit, time_zone=start),
+                end=zoned_date_time_dtype(time_unit=time_unit, time_zone=end),
             )
         case _:
-            dtype = zoned_datetime_dtype(time_unit=time_unit, time_zone=time_zone)
+            dtype = zoned_date_time_dtype(time_unit=time_unit, time_zone=time_zone)
             return struct_dtype(start=dtype, end=dtype)
 
 
@@ -2641,6 +2634,7 @@ __all__ = [
     "CheckPolarsDataFrameError",
     "ColumnsToDictError",
     "DataClassToDataFrameError",
+    "DatePeriodDType",
     "DatetimeHongKong",
     "DatetimeTokyo",
     "DatetimeUSCentral",
@@ -2658,6 +2652,7 @@ __all__ = [
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "StructFromDataClassError",
+    "TimePeriodDType",
     "acf",
     "adjust_frequencies",
     "all_dataframe_columns",
@@ -2721,6 +2716,6 @@ __all__ = [
     "unique_element",
     "write_dataframe",
     "write_series",
-    "zoned_datetime_dtype",
-    "zoned_datetime_period_dtype",
+    "zoned_date_time_dtype",
+    "zoned_date_time_period_dtype",
 ]
