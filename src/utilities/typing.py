@@ -265,18 +265,8 @@ def is_instance_gen(obj: Any, type_: Any, /) -> bool:
 
 
 def _is_instance_gen_type[T](obj: Any, type_: type[T], /) -> TypeGuard[T]:
-    return (
-        isinstance(obj, type_)
-        and not (
-            isinstance(obj, bool)
-            and issubclass(type_, int)
-            and not issubclass(type_, bool)
-        )
-        and not (
-            isinstance(obj, dt.datetime)
-            and issubclass(type_, dt.date)
-            and not issubclass(type_, dt.datetime)
-        )
+    return isinstance(obj, type_) and not (
+        isinstance(obj, bool) and issubclass(type_, int) and not issubclass(type_, bool)
     )
 
 

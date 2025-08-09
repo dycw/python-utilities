@@ -16,8 +16,6 @@ from hypothesis.strategies import (
     SearchStrategy,
     booleans,
     data,
-    dates,
-    datetimes,
     floats,
     integers,
     just,
@@ -659,11 +657,6 @@ class TestIsInstanceGen:
             param(integers(), int, None, True),
             param(booleans(), (bool, int), None, True),
             param(integers(), (bool, int), None, True),
-            # types - datetime/date
-            param(dates(), dt.date, None, True),
-            param(dates(), dt.datetime, None, False),
-            param(datetimes(), dt.date, None, False),
-            param(datetimes(), dt.datetime, None, True),
             # parent union
             param(booleans(), Number, 2, False),
             param(integers(), Number, None, True),
