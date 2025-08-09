@@ -1042,6 +1042,23 @@ class TestDataClassToDataFrame:
         check_polars_dataframe(df, height=len(objs), schema_list={"x": Duration})
 
     @given(data=data())
+    def test_multiple_periods(self, *, data: DataObject) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: DatePeriod
+            y: DatePeriod
+
+        objs = data.draw(
+            lists(builds(Example, x=date_periods(), y=date_periods()), min_size=1)
+        )
+        df = dataclass_to_dataframe(objs, globalns=globals())
+        check_polars_dataframe(
+            df,
+            height=len(objs),
+            schema_list={"x": DatePeriodDType, "y": DatePeriodDType},
+        )
+
+    @given(data=data())
     def test_nested(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
         class Inner:
