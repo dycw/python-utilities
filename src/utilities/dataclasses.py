@@ -25,7 +25,7 @@ from utilities.parse import (
     serialize_object,
 )
 from utilities.re import ExtractGroupError, extract_group
-from utilities.sentinel import Sentinel, sentinel
+from utilities.sentinel import Sentinel, is_sentinel, sentinel
 from utilities.text import (
     BRACKETS,
     LIST_SEPARATOR,
@@ -275,8 +275,7 @@ def mapping_to_dataclass[T: Dataclass](
     default = {
         f.name
         for f in fields_use
-        if (not isinstance(f.default, Sentinel))
-        or (not isinstance(f.default_factory, Sentinel))
+        if (not is_sentinel(f.default)) or (not is_sentinel(f.default_factory))
     }
     have = set(field_names_to_values) | default
     missing = {f.name for f in fields_use} - have
@@ -434,12 +433,10 @@ def replace_non_sentinel[T: Dataclass](
     """Replace attributes on a dataclass, filtering out sentinel values."""
     if in_place:
         for k, v in kwargs.items():
-            if not isinstance(v, Sentinel):
+            if not is_sentinel(v):
                 setattr(obj, k, v)
         return None
-    return replace(
-        obj, **{k: v for k, v in kwargs.items() if not isinstance(v, Sentinel)}
-    )
+    return replace(obj, **{k: v for k, v in kwargs.items() if not is_sentinel(v)})
 
 
 ##
@@ -912,17 +909,11 @@ class _YieldFieldsInstance[T]:
         extra: Mapping[type[U], Callable[[U, U], bool]] | None = None,
     ) -> bool:
         """Check if the field value equals its default."""
-        if isinstance(self.default, Sentinel) and isinstance(
-            self.default_factory, Sentinel
-        ):
+        if is_sentinel(self.default) and is_sentinel(self.default_factory):
             return False
-        if (not isinstance(self.default, Sentinel)) and isinstance(
-            self.default_factory, Sentinel
-        ):
+        if (not is_sentinel(self.default)) and is_sentinel(self.default_factory):
             expected = self.default
-        elif isinstance(self.default, Sentinel) and (
-            not isinstance(self.default_factory, Sentinel)
-        ):
+        elif is_sentinel(self.default) and (not is_sentinel(self.default_factory)):
             expected = self.default_factory()
         else:  # pragma: no cover
             raise ImpossibleCaseError(

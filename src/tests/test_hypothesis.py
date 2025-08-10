@@ -125,7 +125,7 @@ from utilities.math import (
 )
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
-from utilities.sentinel import Sentinel
+from utilities.sentinel import is_sentinel
 from utilities.version import Version
 from utilities.whenever import (
     DATE_TWO_DIGIT_YEAR_MAX,
@@ -142,6 +142,7 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from zoneinfo import ZoneInfo
 
+    from utilities.sentinel import Sentinel
     from utilities.tempfile import TemporaryDirectory
     from utilities.types import Number
 
@@ -786,7 +787,7 @@ class TestSentinels:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
         sentinel = data.draw(sentinels())
-        assert isinstance(sentinel, Sentinel)
+        assert is_sentinel(sentinel)
 
 
 class TestSetsFixedLength:
