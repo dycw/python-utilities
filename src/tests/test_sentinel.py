@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, sampled_from
@@ -10,12 +10,19 @@ from utilities.sentinel import (
     SENTINEL_REPR,
     ParseSentinelError,
     Sentinel,
+    is_sentinel,
     parse_sentinel,
     sentinel,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+
+class TestIsSentinel:
+    @mark.parametrize(("obj", "expected"), [param(None, False), param(sentinel, True)])
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        assert is_sentinel(obj) is expected
 
 
 class TestParseSentinel:
