@@ -9,7 +9,7 @@ from tqdm.auto import tqdm as tqdm_auto
 from utilities.functions import get_func_name
 from utilities.iterables import apply_to_varargs
 from utilities.os import get_cpu_use
-from utilities.sentinel import Sentinel, sentinel
+from utilities.sentinel import Sentinel, is_sentinel, sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -98,7 +98,7 @@ def pqdm_starmap[T](
 def _get_desc(
     desc: str | None | Sentinel, func: Callable[..., Any], /
 ) -> dict[str, str]:
-    desc_use = get_func_name(func) if isinstance(desc, Sentinel) else desc
+    desc_use = get_func_name(func) if is_sentinel(desc) else desc
     return {} if desc_use is None else {"desc": desc_use}
 
 

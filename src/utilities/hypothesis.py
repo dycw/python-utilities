@@ -77,7 +77,7 @@ from utilities.math import (
 from utilities.os import get_env_var
 from utilities.pathlib import module_path, temp_cwd
 from utilities.platform import IS_WINDOWS
-from utilities.sentinel import Sentinel, sentinel
+from utilities.sentinel import Sentinel, is_sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.version import Version
 from utilities.whenever import (
@@ -363,14 +363,14 @@ def draw2[T](
             return value
         case None, SearchStrategy(), False:
             value2 = draw(default)
-            if isinstance(value2, Sentinel):
+            if is_sentinel(value2):
                 raise _Draw2DefaultGeneratedSentinelError
             return value2
         case Sentinel(), None, _:
             raise _Draw2InputResolvedToSentinelError
         case Sentinel(), SearchStrategy(), True:
             value2 = draw(default)
-            if isinstance(value2, Sentinel):
+            if is_sentinel(value2):
                 raise _Draw2DefaultGeneratedSentinelError
             return value2
         case Sentinel(), SearchStrategy(), False:

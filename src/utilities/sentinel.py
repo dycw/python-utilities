@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from re import IGNORECASE, search
 from typing import Any, override
 
+from typing_extensions import TypeIs
+
 
 class _Meta(type):
     """Metaclass for the sentinel."""
@@ -34,6 +36,13 @@ class Sentinel(metaclass=_Meta):
 
 sentinel = Sentinel()
 
+##
+
+
+def is_sentinel(obj: Any, /) -> TypeIs[Sentinel]:
+    """Check if an object is the sentinel."""
+    return obj is sentinel
+
 
 ##
 
@@ -58,6 +67,7 @@ __all__ = [
     "SENTINEL_REPR",
     "ParseSentinelError",
     "Sentinel",
+    "is_sentinel",
     "parse_sentinel",
     "sentinel",
 ]

@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeGuard, cast, overload, overr
 from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
 from utilities.reprlib import get_repr, get_repr_and_class
-from utilities.sentinel import Sentinel, sentinel
+from utilities.sentinel import Sentinel, is_sentinel, sentinel
 from utilities.types import (
     Dataclass,
     Number,
@@ -864,7 +864,7 @@ def min_nullable[T: SupportsRichComparison, U](
 ) -> T | U:
     """Compute the minimum of a set of values; ignoring nulls."""
     values = (i for i in iterable if i is not None)
-    if isinstance(default, Sentinel):
+    if is_sentinel(default):
         try:
             return min(values)
         except ValueError:
@@ -894,7 +894,7 @@ def max_nullable[T: SupportsRichComparison, U](
 ) -> T | U:
     """Compute the maximum of a set of values; ignoring nulls."""
     values = (i for i in iterable if i is not None)
-    if isinstance(default, Sentinel):
+    if is_sentinel(default):
         try:
             return max(values)
         except ValueError:

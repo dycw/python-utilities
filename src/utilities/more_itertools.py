@@ -21,7 +21,7 @@ from more_itertools import peekable as _peekable
 from utilities.functions import get_class_name
 from utilities.iterables import OneNonUniqueError, one
 from utilities.reprlib import get_repr
-from utilities.sentinel import Sentinel, sentinel
+from utilities.sentinel import Sentinel, is_sentinel, sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping, Sequence
@@ -290,9 +290,7 @@ class peekable[T](_peekable):  # noqa: N801
     def peek[U](self, *, default: U) -> T | U: ...
     @override
     def peek(self, *, default: Any = sentinel) -> Any:  # pyright: ignore[reportIncompatibleMethodOverride]
-        if isinstance(default, Sentinel):
-            return super().peek()
-        return super().peek(default=default)
+        return super().peek() if is_sentinel(default) else super().peek(default=default)
 
     def takewhile(self, predicate: Callable[[T], bool], /) -> Iterator[T]:
         while bool(self) and predicate(self.peek()):

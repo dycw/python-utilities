@@ -40,7 +40,7 @@ from utilities.math import (
     check_integer,
 )
 from utilities.reprlib import get_repr
-from utilities.sentinel import Sentinel, sentinel
+from utilities.sentinel import Sentinel, is_sentinel, sentinel
 from utilities.types import SupportsAdd, SupportsLT
 
 if TYPE_CHECKING:
@@ -1237,7 +1237,7 @@ def reduce_mappings[K, V, W](
 ) -> Mapping[K, V | W]:
     """Reduce a function over the values of a set of mappings."""
     chained = chain_mappings(*sequence)
-    if isinstance(initial, Sentinel):
+    if is_sentinel(initial):
         func2 = cast("Callable[[V, V], V]", func)
         return {k: reduce(func2, v) for k, v in chained.items()}
     func2 = cast("Callable[[W, V], W]", func)
