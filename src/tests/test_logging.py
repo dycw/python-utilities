@@ -78,7 +78,7 @@ class TestBasicConfig:
     ) -> None:
         name = unique_str()
         with set_log_factory:
-            basic_config(obj=name, filters=filters, plain=plain, allow_pytest=True)
+            basic_config(obj=name, filters=filters, plain=plain)
         getLogger(name).warning("message")
         record = one(r for r in caplog.records if r.name == name)
         assert record.message == "message"
@@ -534,12 +534,6 @@ class TestToLogger:
     def test_str(self) -> None:
         name = unique_str()
         assert to_logger(name).name == name
-
-    @mark.parametrize(("allow_pytest", "expected"), [param(False, 1), param(True, 0)])
-    def test_allow_pytest(self, *, allow_pytest: bool, expected: int) -> None:
-        name = unique_str()
-        logger = to_logger(name, allow_pytest=allow_pytest)
-        assert len(logger.filters) == expected
 
     def test_none(self) -> None:
         assert to_logger(None).name == "root"

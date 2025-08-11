@@ -65,17 +65,13 @@ class TestAddListener:
 
                 def listener_sync() -> None: ...
 
-                _ = add_listener(
-                    event, listener_sync, logger=str(root), logger_allow_pytest=True
-                )
+                _ = add_listener(event, listener_sync, logger=str(root))
             case "async":
 
                 async def listener_async() -> None:
                     await sleep(0.01)
 
-                _ = add_listener(
-                    event, listener_async, logger=str(root), logger_allow_pytest=True
-                )
+                _ = add_listener(event, listener_async, logger=str(root))
 
         event.emit(None)
         await sleep(0.01)
@@ -237,7 +233,7 @@ class TestLiftListener:
             LiftListenerError,
             match="Synchronous listener .* cannot be paired with an asynchronous error handler .*",
         ):
-            _ = lift_listener(listener, Event(), error=error, logger_allow_pytest=True)
+            _ = lift_listener(listener, Event(), error=error)
 
 
 class TestLiftedEvent:
