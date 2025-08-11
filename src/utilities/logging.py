@@ -37,7 +37,6 @@ from utilities.atomicwrites import move_many
 from utilities.dataclasses import replace_non_sentinel
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import OneEmptyError, always_iterable, one
-from utilities.os import is_pytest
 from utilities.pathlib import ensure_suffix, to_path
 from utilities.re import (
     ExtractGroupError,
@@ -96,7 +95,6 @@ def basic_config(
     filters: MaybeIterable[_FilterType] | None = None,
     plain: bool = False,
     color_field_styles: Mapping[str, _FieldStyleKeys] | None = None,
-    allow_pytest: bool = False,
 ) -> None:
     """Do the basic config."""
     match obj:
@@ -122,7 +120,7 @@ def basic_config(
             )
         case str() as name:
             basic_config(
-                obj=to_logger(name, allow_pytest=allow_pytest),
+                obj=to_logger(name),
                 format_=format_,
                 prefix=prefix,
                 hostname=hostname,
@@ -262,7 +260,6 @@ def setup_logging(
     console_level: LogLevel = "INFO",
     console_prefix: str = "❯",  # noqa: RUF001
     console_filters: MaybeIterable[_FilterType] | None = None,
-    allow_pytest: bool = False,
     files_dir: MaybeCallablePathLike = Path.cwd,
     files_max_bytes: int = _DEFAULT_MAX_BYTES,
     files_when: _When = _DEFAULT_WHEN,
@@ -279,7 +276,7 @@ def setup_logging(
         level=console_level,
         filters=console_filters,
     )
-    logger_use = to_logger(logger, allow_pytest=allow_pytest)
+    logger_use = to_logger(logger)
     name = logger_use.name
     levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]
     for level in levels:
@@ -578,18 +575,13 @@ class _Rotation:
 ##
 
 
-def to_logger(
-    logger: LoggerLike | None = None, /, *, allow_pytest: bool = False
-) -> Logger:
+def to_logger(logger: LoggerLike | None = None, /) -> Logger:
     """Convert to a logger."""
     match logger:
         case Logger():
             return logger
         case str() | None:
-            logger = getLogger(logger)
-            if not allow_pytest:
-                _ = logger.addFilter(lambda _: not is_pytest())
-            return logger
+            return getLogger(logger)
         case never:
             assert_never(never)
 
