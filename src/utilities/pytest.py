@@ -111,14 +111,6 @@ def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) 
 ##
 
 
-def is_pytest() -> bool:
-    """Check if `pytest` is running."""
-    return "PYTEST_VERSION" in environ
-
-
-##
-
-
 def node_id_path(
     node_id: str, /, *, root: PathLike | None = None, suffix: str | None = None
 ) -> Path:
@@ -257,7 +249,6 @@ __all__ = [
     "add_pytest_addoption",
     "add_pytest_collection_modifyitems",
     "add_pytest_configure",
-    "is_pytest",
     "node_id_path",
     "skipif_linux",
     "skipif_mac",

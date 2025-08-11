@@ -9,7 +9,7 @@ from pytest import fixture, mark, param, raises
 
 from utilities.iterables import one
 from utilities.os import temp_environ
-from utilities.pytest import NodeIdToPathError, is_pytest, node_id_path, throttle
+from utilities.pytest import NodeIdToPathError, node_id_path, throttle
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -23,11 +23,6 @@ def set_asyncio_default_fixture_loop_scope(*, testdir: Testdir) -> None:
         [tool.pytest.ini_options]
         asyncio_default_fixture_loop_scope = "function"
     """)
-
-
-class TestIsPytest:
-    def test_main(self) -> None:
-        assert is_pytest()
 
 
 class TestNodeIdPath:

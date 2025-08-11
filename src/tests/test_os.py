@@ -22,6 +22,7 @@ from utilities.os import (
     get_cpu_use,
     get_env_var,
     is_debug,
+    is_pytest,
     temp_environ,
 )
 from utilities.pytest import skipif_windows
@@ -122,6 +123,11 @@ class TestIsDebug:
     def test_main(self) -> None:
         result = is_debug()
         assert isinstance(result, bool)
+
+
+class TestIsPytest:
+    def test_main(self) -> None:
+        assert is_pytest()
 
 
 class TestTempEnviron:
