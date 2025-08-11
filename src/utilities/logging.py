@@ -37,8 +37,8 @@ from utilities.atomicwrites import move_many
 from utilities.dataclasses import replace_non_sentinel
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import OneEmptyError, always_iterable, one
+from utilities.os import is_pytest
 from utilities.pathlib import ensure_suffix, to_path
-from utilities.pytest import is_pytest
 from utilities.re import (
     ExtractGroupError,
     ExtractGroupsError,
