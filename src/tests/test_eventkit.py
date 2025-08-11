@@ -233,7 +233,7 @@ class TestLiftListener:
             LiftListenerError,
             match="Synchronous listener .* cannot be paired with an asynchronous error handler .*",
         ):
-            _ = lift_listener(listener, Event(), error=error)
+            _ = lift_listener(listener, Event(), error=error, logger_allow_pytest=True)
 
 
 class TestLiftedEvent:
