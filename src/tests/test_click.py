@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+import pathlib
 from dataclasses import dataclass
 from enum import auto
 from operator import attrgetter
@@ -30,11 +31,7 @@ from utilities.click import (
     Date,
     DateDelta,
     DateTimeDelta,
-    DirPath,
     Enum,
-    ExistingDirPath,
-    ExistingFilePath,
-    FilePath,
     FrozenSetChoices,
     FrozenSetEnums,
     FrozenSetInts,
@@ -46,6 +43,7 @@ from utilities.click import (
     ListInts,
     ListStrs,
     MonthDay,
+    Path,
     PlainDateTime,
     Time,
     TimeDelta,
@@ -57,6 +55,7 @@ from utilities.hypothesis import (
     date_time_deltas,
     dates,
     month_days,
+    paths,
     plain_date_times,
     text_ascii,
     time_deltas,
@@ -68,7 +67,6 @@ from utilities.text import join_strs, strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
-    from pathlib import Path
 
 
 class TestContextSettingsHelpOptionNames:
@@ -81,91 +79,17 @@ class TestContextSettingsHelpOptionNames:
         assert result.exit_code == 0
 
 
-class TestFileAndDirPaths:
-    def test_existing_dir_path(self, *, tmp_path: Path) -> None:
+class TestPath:
+    def test_path(self, *, tmp_path: pathlib.Path) -> None:
+        path_use = pathlib.Path("~", tmp_path)
+
         @command()
-        @argument("path", type=ExistingDirPath)
-        def cli(*, path: Path) -> None:
-            from pathlib import Path
+        @argument("path", type=Path())
+        def cli(*, path: pathlib.Path) -> None:
+            assert isinstance(path, pathlib.Path)
+            assert path == path.expanduser()
 
-            assert isinstance(path, Path)
-
-        result = CliRunner().invoke(cli, [str(tmp_path)])
-        assert result.exit_code == 0
-
-        file_path = tmp_path.joinpath("file.txt")
-        file_path.touch()
-        result = CliRunner().invoke(cli, [str(file_path)])
-        assert result.exit_code == 2
-        assert search("is a file", result.stderr)
-
-        non_existent = tmp_path.joinpath("non-existent")
-        result = CliRunner().invoke(cli, [str(non_existent)])
-        assert result.exit_code == 2
-        assert search("does not exist", result.stderr)
-
-    def test_existing_file_path(self, *, tmp_path: Path) -> None:
-        @command()
-        @argument("path", type=ExistingFilePath)
-        def cli(*, path: Path) -> None:
-            from pathlib import Path
-
-            assert isinstance(path, Path)
-
-        result = CliRunner().invoke(cli, [str(tmp_path)])
-        assert result.exit_code == 2
-        assert search("is a directory", result.stderr)
-
-        file_path = tmp_path.joinpath("file.txt")
-        file_path.touch()
-        result = CliRunner().invoke(cli, [str(file_path)])
-        assert result.exit_code == 0
-
-        non_existent = tmp_path.joinpath("non-existent")
-        result = CliRunner().invoke(cli, [str(non_existent)])
-        assert result.exit_code == 2
-        assert search("does not exist", result.stderr)
-
-    def test_dir_path(self, *, tmp_path: Path) -> None:
-        @command()
-        @argument("path", type=DirPath)
-        def cli(*, path: Path) -> None:
-            from pathlib import Path
-
-            assert isinstance(path, Path)
-
-        result = CliRunner().invoke(cli, [str(tmp_path)])
-        assert result.exit_code == 0
-
-        file_path = tmp_path.joinpath("file.txt")
-        file_path.touch()
-        result = CliRunner().invoke(cli, [str(file_path)])
-        assert result.exit_code == 2
-        assert search("is a file", result.stderr)
-
-        non_existent = tmp_path.joinpath("non-existent")
-        result = CliRunner().invoke(cli, [str(non_existent)])
-        assert result.exit_code == 0
-
-    def test_file_path(self, *, tmp_path: Path) -> None:
-        @command()
-        @argument("path", type=FilePath)
-        def cli(*, path: Path) -> None:
-            from pathlib import Path
-
-            assert isinstance(path, Path)
-
-        result = CliRunner().invoke(cli, [str(tmp_path)])
-        assert result.exit_code == 2
-        assert search("is a directory", result.stderr)
-
-        file_path = tmp_path.joinpath("file.txt")
-        file_path.touch()
-        result = CliRunner().invoke(cli, [str(file_path)])
-        assert result.exit_code == 0
-
-        non_existent = tmp_path.joinpath("non-existent")
-        result = CliRunner().invoke(cli, [str(non_existent)])
+        result = CliRunner().invoke(cli, [str(path_use)])
         assert result.exit_code == 0
 
 
@@ -300,6 +224,9 @@ class TestParameters:
             strategy=month_days(),
             serialize=whenever.MonthDay.format_common_iso,
             failable=True,
+        ),
+        _Case(
+            param=Path(), name="path", strategy=paths(), serialize=str, failable=False
         ),
         _Case(
             param=PlainDateTime(),
