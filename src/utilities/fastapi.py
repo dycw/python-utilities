@@ -13,7 +13,7 @@ from utilities.whenever import get_now_local
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
 
-    from utilities.types import Delta
+    from utilities.types import Delta, MaybeType
 
 
 _TASKS: list[Task[None]] = []
@@ -35,14 +35,19 @@ class _PingerReceiverApp(FastAPI):
 
 @enhanced_async_context_manager
 async def yield_ping_receiver(
-    port: int, /, *, host: str = "localhost", timeout: Delta | None = None
+    port: int,
+    /,
+    *,
+    host: str = "localhost",
+    timeout: Delta | None = None,
+    error: MaybeType[BaseException] = TimeoutError,
 ) -> AsyncIterator[None]:
     """Yield the ping receiver."""
     app = _PingerReceiverApp()  # skipif-ci
     server = Server(Config(app, host=host, port=port))  # skipif-ci
     _TASKS.append(create_task(server.serve()))  # skipif-ci
     try:  # skipif-ci
-        async with timeout_td(timeout):
+        async with timeout_td(timeout, error=error):
             yield
     finally:  # skipif-ci
         await server.shutdown()
