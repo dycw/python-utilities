@@ -25,6 +25,7 @@ from utilities.contextlib import enhanced_async_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, identity
 from utilities.iterables import always_iterable, one
+from utilities.os import is_pytest
 from utilities.whenever import MILLISECOND, SECOND, to_milliseconds, to_seconds
 
 if TYPE_CHECKING:
@@ -730,8 +731,6 @@ async def subscribe[T](
         try:
             _ = task.cancel()
         except RuntimeError as error:  # pragma: no cover
-            from utilities.pytest import is_pytest
-
             if (not is_pytest()) or (error.args[0] != "Event loop is closed"):
                 raise
         with suppress(CancelledError):

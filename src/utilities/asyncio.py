@@ -36,6 +36,7 @@ from typing import (
 )
 
 from utilities.functions import ensure_int, ensure_not_none
+from utilities.os import is_pytest
 from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.shelve import yield_shelf
@@ -364,8 +365,6 @@ async def get_items[T](queue: Queue[T], /, *, max_size: int | None = None) -> li
     try:
         items = [await queue.get()]
     except RuntimeError as error:  # pragma: no cover
-        from utilities.pytest import is_pytest
-
         if (not is_pytest()) or (error.args[0] != "Event loop is closed"):
             raise
         return []

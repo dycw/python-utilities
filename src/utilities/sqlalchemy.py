@@ -95,6 +95,7 @@ from utilities.iterables import (
     merge_str_mappings,
     one,
 )
+from utilities.os import is_pytest
 from utilities.reprlib import get_repr
 from utilities.text import secret_str, snake_case
 from utilities.types import (
@@ -976,8 +977,6 @@ async def yield_connection(
         async with timeout_td(timeout, error=error), engine.begin() as conn:
             yield conn
     except GeneratorExit:  # pragma: no cover
-        from utilities.pytest import is_pytest
-
         if not is_pytest():
             raise
         return
