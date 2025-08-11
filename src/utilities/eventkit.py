@@ -48,6 +48,7 @@ def add_listener[E: Event, F: Callable](
     error: Callable[[Event, BaseException], MaybeCoro[None]] | None = None,
     ignore: TypeLike[BaseException] | None = None,
     logger: LoggerLike | None = None,
+    logger_allow_pytest: bool = False,
     decorators: MaybeIterable[Callable[[F], F]] | None = None,
     done: Callable[..., MaybeCoro[None]] | None = None,
     keep_ref: bool = False,
@@ -59,6 +60,7 @@ def add_listener[E: Event, F: Callable](
         error=error,
         ignore=ignore,
         logger=logger,
+        logger_allow_pytest=logger_allow_pytest,
         decorators=decorators,
     )
     return cast("E", event.connect(lifted, done=done, keep_ref=keep_ref))

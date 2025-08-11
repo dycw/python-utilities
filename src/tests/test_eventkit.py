@@ -65,13 +65,17 @@ class TestAddListener:
 
                 def listener_sync() -> None: ...
 
-                _ = add_listener(event, listener_sync, logger=str(root))
+                _ = add_listener(
+                    event, listener_sync, logger=str(root), logger_allow_pytest=True
+                )
             case "async":
 
                 async def listener_async() -> None:
                     await sleep(0.01)
 
-                _ = add_listener(event, listener_async, logger=str(root))
+                _ = add_listener(
+                    event, listener_async, logger=str(root), logger_allow_pytest=True
+                )
 
         event.emit(None)
         await sleep(0.01)
