@@ -38,6 +38,7 @@ from utilities.dataclasses import replace_non_sentinel
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.pathlib import ensure_suffix, to_path
+from utilities.pytest import is_pytest
 from utilities.re import (
     ExtractGroupError,
     ExtractGroupsError,
@@ -581,7 +582,9 @@ def to_logger(logger: LoggerLike | None = None, /) -> Logger:
         case Logger():
             return logger
         case str() | None:
-            return getLogger(logger)
+            logger = getLogger(logger)
+            _ = logger.addFilter(lambda _: not is_pytest())
+            return logger
         case never:
             assert_never(never)
 
