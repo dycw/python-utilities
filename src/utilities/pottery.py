@@ -1,32 +1,27 @@
 from __future__ import annotations
 
-from contextlib import nullcontext, suppress
+from contextlib import suppress
 from dataclasses import dataclass
-from functools import wraps
 from sys import maxsize
 from typing import TYPE_CHECKING, override
 
-from pottery import AIORedlock, ExtendUnlockedLock
+from pottery import AIORedlock
 from pottery.exceptions import ReleaseUnlockedLock
 from redis.asyncio import Redis
 
-from utilities.asyncio import loop_until_succeed, sleep_td, timeout_td
+from utilities.asyncio import sleep_td, timeout_td
 from utilities.contextlib import enhanced_async_context_manager
-from utilities.contextvars import yield_set_context
 from utilities.iterables import always_iterable
-from utilities.logging import to_logger
 from utilities.whenever import MILLISECOND, SECOND, to_seconds
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Callable, Iterable
-    from contextvars import ContextVar
+    from collections.abc import AsyncIterator, Iterable
 
     from whenever import Delta
 
-    from utilities.types import Coro, LoggerLike, MaybeIterable
+    from utilities.types import MaybeIterable
 
 _NUM: int = 1
-_TIMEOUT_TRY_ACQUIRE: Delta = SECOND
 _TIMEOUT_RELEASE: Delta = 10 * SECOND
 _SLEEP: Delta = MILLISECOND
 
@@ -40,79 +35,6 @@ async def extend_lock(
     """Extend a lock."""
     if lock is not None:
         await lock.extend(raise_on_redis_errors=raise_on_redis_errors)
-
-
-##
-
-
-@enhanced_async_context_manager
-async def try_yield_coroutine_looper(
-    redis: MaybeIterable[Redis],
-    key: str,
-    /,
-    *,
-    num: int = _NUM,
-    timeout_release: Delta = _TIMEOUT_RELEASE,
-    num_extensions: int | None = None,
-    timeout_acquire: Delta = _TIMEOUT_TRY_ACQUIRE,
-    sleep_acquire: Delta = _SLEEP,
-    throttle: Delta | None = None,
-    logger: LoggerLike | None = None,
-    sleep_error: Delta | None = None,
-    context: ContextVar[bool] | None = None,
-) -> AsyncIterator[CoroutineLooper | None]:
-    """Try acquire access to a coroutine looper."""
-    try:  # skipif-ci-and-not-linux
-        async with yield_access(
-            redis,
-            key,
-            num=num,
-            timeout_release=timeout_release,
-            num_extensions=num_extensions,
-            timeout_acquire=timeout_acquire,
-            sleep=sleep_acquire,
-            throttle=throttle,
-        ) as lock:
-            looper = CoroutineLooper(lock=lock, logger=logger, sleep=sleep_error)
-            if context is None:
-                yield looper
-            else:
-                with yield_set_context(context):
-                    yield looper
-    except _YieldAccessUnableToAcquireLockError as error:  # skipif-ci-and-not-linux
-        if logger is not None:
-            to_logger(logger).info("%s", error)
-        async with nullcontext():
-            yield
-
-
-@dataclass(order=True, unsafe_hash=True, kw_only=True)
-class CoroutineLooper:
-    """Looper, guarded by a lock, to repeatedly call a coroutine until it succeeds."""
-
-    lock: AIORedlock
-    logger: LoggerLike | None = None
-    sleep: Delta | None = None
-
-    async def __call__[**P](
-        self, func: Callable[P, Coro[None]], *args: P.args, **kwargs: P.kwargs
-    ) -> bool:
-        return await loop_until_succeed(
-            lambda: self._make_coro(func, *args, **kwargs),
-            logger=self.logger,
-            errors=ExtendUnlockedLock,
-            sleep=self.sleep,
-        )
-
-    def _make_coro[**P](
-        self, func: Callable[P, Coro[None]], /, *args: P.args, **kwargs: P.kwargs
-    ) -> Coro[None]:
-        @wraps(func)
-        async def wrapped() -> None:
-            await extend_lock(lock=self.lock)
-            return await func(*args, **kwargs)
-
-        return wrapped()
 
 
 ##
@@ -212,10 +134,4 @@ class _YieldAccessUnableToAcquireLockError(YieldAccessError):
         return f"Unable to acquire any 1 of {self.num} locks for {self.key!r} after {self.timeout}"  # skipif-ci-and-not-linux
 
 
-__all__ = [
-    "CoroutineLooper",
-    "YieldAccessError",
-    "extend_lock",
-    "try_yield_coroutine_looper",
-    "yield_access",
-]
+__all__ = ["YieldAccessError", "extend_lock", "yield_access"]
