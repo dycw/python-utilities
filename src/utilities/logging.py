@@ -576,14 +576,17 @@ class _Rotation:
 ##
 
 
-def to_logger(logger: LoggerLike | None = None, /) -> Logger:
+def to_logger(
+    logger: LoggerLike | None = None, /, *, allow_pytest: bool = False
+) -> Logger:
     """Convert to a logger."""
     match logger:
         case Logger():
             return logger
         case str() | None:
             logger = getLogger(logger)
-            _ = logger.addFilter(lambda _: not is_pytest())
+            if not allow_pytest:
+                _ = logger.addFilter(lambda _: not is_pytest())
             return logger
         case never:
             assert_never(never)
