@@ -48,6 +48,7 @@ def add_listener[E: Event, F: Callable](
     error: Callable[[Event, BaseException], MaybeCoro[None]] | None = None,
     ignore: TypeLike[BaseException] | None = None,
     logger: LoggerLike | None = None,
+    logger_allow_pytest: bool = False,
     decorators: MaybeIterable[Callable[[F], F]] | None = None,
     done: Callable[..., MaybeCoro[None]] | None = None,
     keep_ref: bool = False,
@@ -59,6 +60,7 @@ def add_listener[E: Event, F: Callable](
         error=error,
         ignore=ignore,
         logger=logger,
+        logger_allow_pytest=logger_allow_pytest,
         decorators=decorators,
     )
     return cast("E", event.connect(lifted, done=done, keep_ref=keep_ref))
@@ -284,6 +286,7 @@ def lift_listener[F1: Callable[..., MaybeCoro[None]], F2: Callable](
     error: Callable[[Event, BaseException], MaybeCoro[None]] | None = None,
     ignore: TypeLike[BaseException] | None = None,
     logger: LoggerLike | None = None,
+    logger_allow_pytest: bool = False,
     decorators: MaybeIterable[Callable[[F2], F2]] | None = None,
 ) -> F1:
     match error, bool(iscoroutinefunction(listener)):
@@ -297,7 +300,7 @@ def lift_listener[F1: Callable[..., MaybeCoro[None]], F2: Callable](
                 except Exception as exc:  # noqa: BLE001
                     if (ignore is not None) and isinstance(exc, ignore):
                         return
-                    to_logger(logger).exception("")
+                    to_logger(logger, allow_pytest=logger_allow_pytest).exception("")
 
             lifted = listener_no_error_sync
 
@@ -311,7 +314,7 @@ def lift_listener[F1: Callable[..., MaybeCoro[None]], F2: Callable](
                 except Exception as exc:  # noqa: BLE001
                     if (ignore is not None) and isinstance(exc, ignore):
                         return
-                    to_logger(logger).exception("")
+                    to_logger(logger, allow_pytest=logger_allow_pytest).exception("")
 
             lifted = listener_no_error_async
         case _, _:

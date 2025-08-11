@@ -126,7 +126,15 @@ class GetEnvVarError(Exception):
 
 def is_debug() -> bool:
     """Check if we are in `DEBUG` mode."""
-    return get_env_var("DEBUG", nullable=True) is not None
+    return "DEBUG" in environ
+
+
+##
+
+
+def is_pytest() -> bool:
+    """Check if `pytest` is running."""
+    return "PYTEST_VERSION" in environ
 
 
 ##
@@ -164,5 +172,6 @@ __all__ = [
     "get_cpu_use",
     "get_env_var",
     "is_debug",
+    "is_pytest",
     "temp_environ",
 ]
