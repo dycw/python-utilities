@@ -229,6 +229,7 @@ async def select_to_dataframe(
     in_clauses_chunk_size: int | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     timeout: Delta | None = None,
+    error: MaybeType[BaseException] = TimeoutError,
     **kwargs: Any,
 ) -> DataFrame: ...
 @overload
@@ -244,6 +245,7 @@ async def select_to_dataframe(
     in_clauses_chunk_size: int | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     timeout: Delta | None = None,
+    error: MaybeType[BaseException] = TimeoutError,
     **kwargs: Any,
 ) -> Iterable[DataFrame]: ...
 @overload
@@ -259,6 +261,7 @@ async def select_to_dataframe(
     in_clauses_chunk_size: int | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     timeout: Delta | None = None,
+    error: MaybeType[BaseException] = TimeoutError,
     **kwargs: Any,
 ) -> AsyncIterable[DataFrame]: ...
 @overload
@@ -274,6 +277,7 @@ async def select_to_dataframe(
     in_clauses_chunk_size: int | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     timeout: Delta | None = None,
+    error: MaybeType[BaseException] = TimeoutError,
     **kwargs: Any,
 ) -> DataFrame | Iterable[DataFrame] | AsyncIterable[DataFrame]: ...
 async def select_to_dataframe(

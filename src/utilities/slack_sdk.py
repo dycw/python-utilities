@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from slack_sdk.webhook import WebhookResponse
     from whenever import TimeDelta
 
-    from utilities.types import Delta
+    from utilities.types import Delta, MaybeType
 
 
 _TIMEOUT: Delta = MINUTE
@@ -39,11 +39,16 @@ def _get_client(url: str, /, *, timeout: Delta = _TIMEOUT) -> WebhookClient:
 
 
 async def send_to_slack_async(
-    url: str, text: str, /, *, timeout: TimeDelta = _TIMEOUT
+    url: str,
+    text: str,
+    /,
+    *,
+    timeout: TimeDelta = _TIMEOUT,
+    error: MaybeType[BaseException] = TimeoutError,
 ) -> None:
     """Send a message via Slack."""
     client = _get_async_client(url, timeout=timeout)
-    async with timeout_td(timeout):
+    async with timeout_td(timeout, error=error):
         response = await client.send(text=text)
     if response.status_code != HTTPStatus.OK:  # pragma: no cover
         raise SendToSlackError(text=text, response=response)

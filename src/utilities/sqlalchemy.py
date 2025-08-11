@@ -134,11 +134,15 @@ def check_connect(engine: Engine, /) -> bool:
 
 
 async def check_connect_async(
-    engine: AsyncEngine, /, *, timeout: Delta | None = None
+    engine: AsyncEngine,
+    /,
+    *,
+    timeout: Delta | None = None,
+    error: MaybeType[BaseException] = TimeoutError,
 ) -> bool:
     """Check if an engine can connect."""
     try:
-        async with timeout_td(timeout), engine.connect() as conn:
+        async with timeout_td(timeout, error=error), engine.connect() as conn:
             return bool((await conn.execute(_SELECT)).scalar_one())
     except (
         gaierror,
