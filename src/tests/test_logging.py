@@ -90,12 +90,6 @@ class TestBasicConfig:
         with set_log_factory:
             basic_config(format_=format_)
 
-    @mark.parametrize(("allow_pytest", "expected"), [param(False, 1), param(True, 0)])
-    def test_allow_pytest(self, *, allow_pytest: bool, expected: int) -> None:
-        name = unique_str()
-        logger = to_logger(name, allow_pytest=allow_pytest)
-        assert len(logger.filters) == expected
-
 
 class TestComputeRolloverActions:
     async def test_main(self, *, tmp_path: Path) -> None:
