@@ -6,7 +6,6 @@ import pathlib
 import uuid
 from typing import TYPE_CHECKING, TypedDict, assert_never, override
 
-import click
 import whenever
 from click import Choice, Context, Parameter, ParamType
 from click.types import IntParamType, StringParamType
@@ -29,22 +28,13 @@ if TYPE_CHECKING:
         IPv6AddressLike,
         MaybeStr,
         MonthDayLike,
+        PathLike,
         PlainDateTimeLike,
         TimeDeltaLike,
         TimeLike,
         YearMonthLike,
         ZonedDateTimeLike,
     )
-
-
-FilePath = click.Path(file_okay=True, dir_okay=False, path_type=pathlib.Path)
-DirPath = click.Path(file_okay=False, dir_okay=True, path_type=pathlib.Path)
-ExistingFilePath = click.Path(
-    exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path
-)
-ExistingDirPath = click.Path(
-    exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path
-)
 
 
 class _HelpOptionNames(TypedDict):
@@ -246,6 +236,32 @@ class MonthDay(ParamType):
             case str():
                 try:
                     return whenever.MonthDay.parse_common_iso(value)
+                except ValueError as error:
+                    self.fail(str(error), param, ctx)
+            case never:
+                assert_never(never)
+
+
+class Path(ParamType):
+    """A path-valued parameter."""
+
+    name = "path"
+
+    @override
+    def __repr__(self) -> str:
+        return self.name.upper()
+
+    @override
+    def convert(
+        self, value: PathLike, param: Parameter | None, ctx: Context | None
+    ) -> pathlib.Path:
+        """Convert a value into the `Path` type."""
+        match value:
+            case pathlib.Path():
+                return value.expanduser()
+            case str():
+                try:
+                    return pathlib.Path(value).expanduser()
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
             case never:
@@ -592,11 +608,7 @@ __all__ = [
     "Date",
     "DateDelta",
     "DateTimeDelta",
-    "DirPath",
     "Enum",
-    "ExistingDirPath",
-    "ExistingFilePath",
-    "FilePath",
     "FrozenSetChoices",
     "FrozenSetEnums",
     "FrozenSetParameter",
@@ -609,6 +621,8 @@ __all__ = [
     "ListParameter",
     "ListStrs",
     "MonthDay",
+    "Path",
+    "Path",
     "PlainDateTime",
     "Time",
     "TimeDelta",
