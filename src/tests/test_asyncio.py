@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asyncio import Queue, TaskGroup, run
+from asyncio import Queue, run
 from collections.abc import ItemsView, KeysView, ValuesView
 from contextlib import asynccontextmanager
 from re import search
@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import booleans, dictionaries, integers, lists, none
-from pytest import LogCaptureFixture, RaisesGroup, mark, param, raises
+from pytest import RaisesGroup, raises
 
 from utilities.asyncio import (
     AsyncDict,
@@ -16,7 +16,6 @@ from utilities.asyncio import (
     get_coroutine_name,
     get_items,
     get_items_nowait,
-    loop_until_succeed,
     put_items,
     put_items_nowait,
     sleep_max,
@@ -29,7 +28,6 @@ from utilities.asyncio import (
 )
 from utilities.hypothesis import pairs, text_ascii
 from utilities.pytest import skipif_windows
-from utilities.text import unique_str
 from utilities.timer import Timer
 from utilities.whenever import MILLISECOND, SECOND, get_now
 
@@ -317,70 +315,6 @@ class TestGetItems:
         else:
             result = get_items_nowait(queue, max_size=max_size)
         assert result == xs[:max_size]
-
-
-class TestLoopUntilSucceed:
-    @mark.parametrize("sleep", [param(MILLISECOND), param(None)])
-    @mark.parametrize("use_logger", [param(True), param(False)])
-    async def test_main(
-        self, *, caplog: LogCaptureFixture, sleep: TimeDelta | None, use_logger: bool
-    ) -> None:
-        class CustomError(Exception): ...
-
-        caplog.set_level("DEBUG", logger=(name := unique_str()))
-        counter = 0
-
-        async def func() -> None:
-            nonlocal counter
-            counter += 1
-            if counter <= 3:
-                raise CustomError
-
-        assert await loop_until_succeed(
-            lambda: func(), logger=name if use_logger else None, sleep=sleep
-        )
-        assert counter == 4
-
-        if use_logger:
-            messages = [r.message for r in caplog.records if r.name == name]
-            expected = 3 * (
-                ["Error running 'func'"]
-                + ([] if sleep is None else ["Sleeping for PT0.001S..."])
-                + ["Retrying 'func'..."]
-            )
-            assert messages == expected
-
-    async def test_error_flat(self) -> None:
-        class CustomError(Exception): ...
-
-        counter = 0
-
-        async def func() -> None:
-            nonlocal counter
-            counter += 1
-            if counter <= 3:
-                raise CustomError
-
-        assert not await loop_until_succeed(lambda: func(), errors=CustomError)
-        assert counter == 1
-
-    async def test_error_nested(self) -> None:
-        class CustomError(Exception): ...
-
-        counter = 0
-
-        async def func() -> None:
-            async with TaskGroup() as tg:
-                _ = tg.create_task(inner())
-
-        async def inner() -> None:
-            nonlocal counter
-            counter += 1
-            if counter <= 3:
-                raise CustomError
-
-        assert not await loop_until_succeed(lambda: func(), errors=CustomError)
-        assert counter == 1
 
 
 class TestPutItems:

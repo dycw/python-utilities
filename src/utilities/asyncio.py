@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import sys
 from asyncio import (
     Lock,
     Queue,
@@ -36,9 +35,7 @@ from typing import (
     override,
 )
 
-from utilities.errors import ImpossibleCaseError, is_instance_error
 from utilities.functions import ensure_int, ensure_not_none
-from utilities.logging import to_logger
 from utilities.random import SYSTEM_RANDOM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.shelve import yield_shelf
@@ -70,8 +67,6 @@ if TYPE_CHECKING:
     from utilities.types import (
         Coro,
         Delta,
-        ExceptionTypeLike,
-        LoggerLike,
         MaybeCallableBoolLike,
         MaybeType,
         PathLike,
@@ -400,43 +395,6 @@ def get_items_nowait[T](queue: Queue[T], /, *, max_size: int | None = None) -> l
 ##
 
 
-async def loop_until_succeed(
-    func: Callable[[], Coro[None]],
-    /,
-    *,
-    logger: LoggerLike | None = None,
-    errors: ExceptionTypeLike[Exception] | None = None,
-    sleep: Delta | None = None,
-) -> bool:
-    """Repeatedly call a coroutine until it succeeds."""
-    name = get_coroutine_name(func)
-    while True:
-        try:
-            await func()
-        except Exception as error:  # noqa: BLE001
-            if logger is not None:
-                to_logger(logger).error("Error running %r", name, exc_info=True)
-            exc_type, exc_value, traceback = sys.exc_info()
-            if (exc_type is None) or (exc_value is None):  # pragma: no cover
-                raise ImpossibleCaseError(
-                    case=[f"{exc_type=}", f"{exc_value=}"]
-                ) from None
-            sys.excepthook(exc_type, exc_value, traceback)
-            if (errors is not None) and is_instance_error(error, errors):
-                return False
-            if sleep is not None:
-                if logger is not None:
-                    to_logger(logger).info("Sleeping for %s...", sleep)
-                await sleep_td(sleep)
-            if logger is not None:
-                to_logger(logger).info("Retrying %r...", name)
-        else:
-            return True
-
-
-##
-
-
 async def put_items[T](items: Iterable[T], queue: Queue[T], /) -> None:
     """Put items into a queue; if full then wait."""
     for item in items:
@@ -589,7 +547,6 @@ __all__ = [
     "get_coroutine_name",
     "get_items",
     "get_items_nowait",
-    "loop_until_succeed",
     "put_items",
     "put_items_nowait",
     "sleep_max",
