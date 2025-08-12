@@ -612,7 +612,7 @@ async def insert_items(
     engine: AsyncEngine,
     *items: _InsertItem,
     snake: bool = False,
-    upsert_set_null: bool | None = None,
+    is_upsert: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     timeout_create: Delta | None = None,
@@ -646,10 +646,7 @@ async def insert_items(
         _insert_item_yield_normalized(i, snake=snake) for i in items
     )
     triples = _insert_items_yield_insert_triples(
-        engine,
-        normalized,
-        upsert_set_null=upsert_set_null,
-        chunk_size_frac=chunk_size_frac,
+        engine, normalized, is_upsert=is_upsert, chunk_size_frac=chunk_size_frac
     )
     if not assume_tables_exist:
         triples = list(triples)
@@ -709,23 +706,11 @@ def _insert_items_yield_insert_triples(
     items: Iterable[_NormalizedItem],
     /,
     *,
-    upsert_set_null: bool | None = None,
+    is_upsert: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
 ) -> Iterable[_InsertTriple]:
-    match upsert_set_null:
-        case None:
-            by_non_null = True
-            is_upsert = False
-        case True:
-            by_non_null = False
-            is_upsert = True
-        case False:
-            by_non_null = True
-            is_upsert = True
-        case never:
-            assert_never(never)
     pairs = _insert_items_yield_chunked_pairs(
-        engine, items, by_non_null=by_non_null, chunk_size_frac=chunk_size_frac
+        engine, items, is_upsert=is_upsert, chunk_size_frac=chunk_size_frac
     )
     for table, mappings in pairs:
         match is_upsert, _get_dialect(engine):
@@ -750,34 +735,32 @@ def _insert_items_yield_chunked_pairs(
     items: Iterable[_NormalizedItem],
     /,
     *,
-    by_non_null: bool,
+    is_upsert: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
 ) -> Iterable[_InsertPair]:
-    for table, mappings in _insert_items_yield_raw_pairs(
-        items, by_non_null=by_non_null
-    ):
+    for table, mappings in _insert_items_yield_raw_pairs(items, is_upsert=is_upsert):
         chunk_size = get_chunk_size(engine, table, chunk_size_frac=chunk_size_frac)
         for mappings_i in chunked(mappings, chunk_size):
             yield table, list(mappings_i)
 
 
 def _insert_items_yield_raw_pairs(
-    items: Iterable[_NormalizedItem], /, *, by_non_null: bool
+    items: Iterable[_NormalizedItem], /, *, is_upsert: bool = False
 ) -> Iterable[_InsertPair]:
     by_table: defaultdict[Table, list[StrMapping]] = defaultdict(list)
     for table, mapping in items:
         by_table[table].append(mapping)
     for table, mappings in by_table.items():
         yield from _insert_items_yield_raw_pairs_one(
-            table, mappings, by_non_null=by_non_null
+            table, mappings, is_upsert=is_upsert
         )
 
 
 def _insert_items_yield_raw_pairs_one(
-    table: Table, mappings: Iterable[StrMapping], /, *, by_non_null: bool
+    table: Table, mappings: Iterable[StrMapping], /, *, is_upsert: bool = False
 ) -> Iterable[_InsertPair]:
     merged = _insert_items_yield_merged_mappings(table, mappings)
-    match by_non_null:
+    match is_upsert:
         case True:
             by_keys: defaultdict[frozenset[str], list[StrMapping]] = defaultdict(list)
             for mapping in merged:
@@ -933,7 +916,6 @@ async def upsert_items(
     /,
     *items: _InsertItem,
     snake: bool = False,
-    set_null: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     timeout_create: Delta | None = None,
@@ -942,11 +924,11 @@ async def upsert_items(
     error_insert: type[Exception] = TimeoutError,
 ) -> None:
     """Upsert a set of items into a database."""
-    await insert_items(
+    await insert_items(  # pragma: no cover
         engine,
         *items,
         snake=snake,
-        upsert_set_null=set_null,
+        is_upsert=True,
         chunk_size_frac=chunk_size_frac,
         assume_tables_exist=assume_tables_exist,
         timeout_create=timeout_create,
