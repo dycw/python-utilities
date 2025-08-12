@@ -42,7 +42,6 @@ from utilities.sqlalchemy import (
     InsertItemsError,
     TablenameMixin,
     TableOrORMInstOrClass,
-    UpsertItemsError,
     _ExtractURLDatabaseError,
     _ExtractURLHostError,
     _ExtractURLPasswordError,
@@ -51,6 +50,7 @@ from utilities.sqlalchemy import (
     _get_dialect,
     _get_dialect_max_params,
     _insert_item_yield_normalized,
+    _insert_items_yield_merged_mappings,
     _InsertItem,
     _InsertItemYieldNormalizedError,
     _is_pair_of_sequence_of_tuple_or_string_mapping_and_table,
@@ -65,7 +65,6 @@ from utilities.sqlalchemy import (
     _NormalizedItem,
     _orm_inst_to_dict,
     _prepare_insert_or_upsert_items,
-    _prepare_insert_or_upsert_items_merge_items,
     _PrepareInsertOrUpsertItemsError,
     _SelectedOrAll,
     _tuple_to_mapping,
@@ -1267,7 +1266,7 @@ class TestPrepareInsertOrUpsertItemsMergeItems:
             {"id_": 2, "value": False},
             {"id_": 2, "value": True},
         ]
-        result = _prepare_insert_or_upsert_items_merge_items(table, items)
+        result = _insert_items_yield_merged_mappings(table, items)
         expected = [{"id_": 1, "value": False}, {"id_": 2, "value": True}]
         assert result == expected
         async with test_async_engine.begin() as conn:
@@ -1282,7 +1281,7 @@ class TestPrepareInsertOrUpsertItemsMergeItems:
         )
         await ensure_tables_created(test_async_engine, table)
         items = [{"value": 1}, {"value": 2}]
-        result = _prepare_insert_or_upsert_items_merge_items(table, items)
+        result = _insert_items_yield_merged_mappings(table, items)
         assert result == items
         async with test_async_engine.begin() as conn:
             _ = await conn.execute(table.insert().values(items))
@@ -1296,7 +1295,7 @@ class TestPrepareInsertOrUpsertItemsMergeItems:
         )
         await ensure_tables_created(test_async_engine, table)
         items = [{"value": 1}, {"value": 2}]
-        result = _prepare_insert_or_upsert_items_merge_items(table, items)
+        result = _insert_items_yield_merged_mappings(table, items)
         assert result == items
         async with test_async_engine.begin() as conn:
             _ = await conn.execute(table.insert().values(items))
@@ -1678,7 +1677,7 @@ class TestUpsertItems:
 
     async def test_error(self, *, test_async_engine: AsyncEngine) -> None:
         table = self._make_table()
-        with raises(UpsertItemsError, match="Item must be valid; got None"):
+        with raises(InsertItemsError, match="Item must be valid; got None"):
             _ = await self._run_test(test_async_engine, table, cast("Any", None))
 
     def _make_table(self) -> Table:
