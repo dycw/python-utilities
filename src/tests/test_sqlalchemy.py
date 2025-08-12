@@ -52,7 +52,6 @@ from utilities.sqlalchemy import (
     _insert_item_yield_normalized,
     _insert_items_yield_merged_mappings,
     _InsertItem,
-    _InsertItemYieldNormalizedError,
     _is_pair_of_sequence_of_tuple_or_string_mapping_and_table,
     _is_pair_of_str_mapping_and_table,
     _is_pair_of_tuple_and_table,
@@ -61,12 +60,8 @@ from utilities.sqlalchemy import (
     _MapMappingToTableExtraColumnsError,
     _MapMappingToTableSnakeMapEmptyError,
     _MapMappingToTableSnakeMapNonUniqueError,
-    _normalize_upsert_item,
     _NormalizedItem,
     _orm_inst_to_dict,
-    _prepare_insert_or_upsert_items,
-    _PrepareInsertOrUpsertItemsError,
-    _SelectedOrAll,
     _tuple_to_mapping,
     check_connect,
     check_connect_async,
@@ -97,11 +92,10 @@ from utilities.sqlalchemy import (
     yield_primary_key_columns,
 )
 from utilities.text import strip_and_dedent
-from utilities.typing import get_args, get_literal_elements
+from utilities.typing import get_args
 from utilities.whenever import MILLISECOND, get_now, to_local_plain
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
     from pathlib import Path
 
     from utilities.types import StrMapping
@@ -620,6 +614,8 @@ class TestHashPrimaryKeyValues:
 
 
 class TestInsertItems:
+    # end-to-end
+
     @given(id_=int32s())
     @mark.parametrize("case", [param("tuple"), param("dict")])
     @settings(
@@ -754,6 +750,50 @@ class TestInsertItems:
         cls = self._make_mapped_class()
         with raises(InsertItemsError, match="Item must be valid; got None"):
             await self._run_test(test_async_engine, cls, set(), cast("Any", None))
+
+    # yield merged mappings
+
+    def test_yield_merged_mappings_id_and_value(self) -> None:
+        table = Table(
+            _table_names(),
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
+        items = [
+            {"id_": 1, "value": True},
+            {"id_": 1, "value": False},
+            {"id_": 2, "value": False},
+            {"id_": 2, "value": True},
+        ]
+        result = list(_insert_items_yield_merged_mappings(table, items))
+        expected = [{"id_": 1, "value": False}, {"id_": 2, "value": True}]
+        assert result == expected
+
+    def test_yield_merged_mappings_value_only(self) -> None:
+        table = Table(
+            _table_names(),
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Integer),
+        )
+        items = [{"value": 1}, {"value": 2}]
+        result = list(_insert_items_yield_merged_mappings(table, items))
+        assert result == items
+
+    @mark.only
+    def test_yield_merged_mappings_autoincrement(self) -> None:
+        table = Table(
+            _table_names(),
+            MetaData(),
+            Column("id_", Integer, primary_key=True, autoincrement=True),
+            Column("value", Integer),
+        )
+        items = [{"value": 1}, {"value": 2}]
+        result = list(_insert_items_yield_merged_mappings(table, items))
+        assert result == items
+
+    # private
 
     def _make_table(self, *, title: bool = False) -> Table:
         return Table(
@@ -1233,72 +1273,9 @@ class TestORMInstToDict:
 
 
 class TestPrepareInsertOrUpsertItems:
-    @mark.parametrize(
-        "normalize_item",
-        [param(_insert_item_yield_normalized), param(_normalize_upsert_item)],
-    )
-    async def test_error(
-        self,
-        *,
-        normalize_item: Callable[[Any], Iterator[Any]],
-        test_async_engine: AsyncEngine,
-    ) -> None:
-        with raises(
-            _PrepareInsertOrUpsertItemsError, match="Item must be valid; got None"
-        ):
-            _ = _prepare_insert_or_upsert_items(
-                normalize_item, test_async_engine, cast("Any", None), cast("Any", None)
-            )
-
-
-class TestPrepareInsertOrUpsertItemsMergeItems:
-    async def test_main(self, *, test_async_engine: AsyncEngine) -> None:
-        table = Table(
-            _table_names(),
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-            Column("value", Boolean, nullable=True),
-        )
-        await ensure_tables_created(test_async_engine, table)
-        items = [
-            {"id_": 1, "value": True},
-            {"id_": 1, "value": False},
-            {"id_": 2, "value": False},
-            {"id_": 2, "value": True},
-        ]
-        result = _insert_items_yield_merged_mappings(table, items)
-        expected = [{"id_": 1, "value": False}, {"id_": 2, "value": True}]
-        assert result == expected
-        async with test_async_engine.begin() as conn:
-            _ = await conn.execute(table.insert().values(expected))
-
-    async def test_just_value(self, *, test_async_engine: AsyncEngine) -> None:
-        table = Table(
-            _table_names(),
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-            Column("value", Integer),
-        )
-        await ensure_tables_created(test_async_engine, table)
-        items = [{"value": 1}, {"value": 2}]
-        result = _insert_items_yield_merged_mappings(table, items)
-        assert result == items
-        async with test_async_engine.begin() as conn:
-            _ = await conn.execute(table.insert().values(items))
-
-    async def test_autoincrement(self, *, test_async_engine: AsyncEngine) -> None:
-        table = Table(
-            _table_names(),
-            MetaData(),
-            Column("id_", Integer, primary_key=True, autoincrement=True),
-            Column("value", Integer),
-        )
-        await ensure_tables_created(test_async_engine, table)
-        items = [{"value": 1}, {"value": 2}]
-        result = _insert_items_yield_merged_mappings(table, items)
-        assert result == items
-        async with test_async_engine.begin() as conn:
-            _ = await conn.execute(table.insert().values(items))
+    def test_error(self) -> None:
+        with raises(InsertItemsError, match="Item must be valid; got None"):
+            _ = list(_insert_item_yield_normalized(cast("Any", None)))
 
 
 class TestSelectableToString:
@@ -1526,7 +1503,6 @@ class TestUpsertItems:
         }
         _ = await self._run_test(test_async_engine, cls, post, expected=post_expected)
 
-    @mark.only
     async def test_upsert_multiple_columns(
         self, *, test_async_engine: AsyncEngine
     ) -> None:
@@ -1567,7 +1543,7 @@ class TestUpsertItems:
         assert result == [(True, True), (True, True)]
 
     @given(id_=int32s(), x_init=booleans(), x_post=booleans(), y=booleans())
-    @mark.parametrize("selected_or_all", get_literal_elements(_SelectedOrAll))
+    @mark.parametrize("selected_or_all", ["selected", "all"])
     @settings(
         max_examples=1,
         phases={Phase.generate},

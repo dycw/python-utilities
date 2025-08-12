@@ -714,13 +714,13 @@ def _insert_items_yield_insert_triples(
 ) -> Iterable[_InsertTriple]:
     match upsert_set_null:
         case None:
-            by_non_null = False
+            by_non_null = True
             is_upsert = False
         case True:
-            by_non_null = True
+            by_non_null = False
             is_upsert = True
         case False:
-            by_non_null = False
+            by_non_null = True
             is_upsert = True
         case never:
             assert_never(never)
@@ -792,23 +792,23 @@ def _insert_items_yield_raw_pairs_one(
 
 
 def _insert_items_yield_merged_mappings(
-    table: Table, items: Iterable[StrMapping], /
+    table: Table, mappings: Iterable[StrMapping], /
 ) -> Iterable[StrMapping]:
     columns = list(yield_primary_key_columns(table))
     col_names = [c.name for c in columns]
     cols_auto = {c.name for c in columns if c.autoincrement in {True, "auto"}}
     cols_non_auto = set(col_names) - cols_auto
-    mapping: defaultdict[tuple[Hashable, ...], list[StrMapping]] = defaultdict(list)
-    for item in items:
-        check_subset(cols_non_auto, item)
-        has_all_auto = set(cols_auto).issubset(item)
+    by_key: defaultdict[tuple[Hashable, ...], list[StrMapping]] = defaultdict(list)
+    for mapping in mappings:
+        check_subset(cols_non_auto, mapping)
+        has_all_auto = set(cols_auto).issubset(mapping)
         if has_all_auto:
-            pkey = tuple(item[k] for k in col_names)
-            rest: StrMapping = {k: v for k, v in item.items() if k not in col_names}
-            mapping[pkey].append(rest)
+            pkey = tuple(mapping[k] for k in col_names)
+            rest: StrMapping = {k: v for k, v in mapping.items() if k not in col_names}
+            by_key[pkey].append(rest)
         else:
-            yield item
-    for k, v in mapping.items():
+            yield mapping
+    for k, v in by_key.items():
         head = dict(zip(col_names, k, strict=True))
         yield merge_str_mappings(head, *v)
 
