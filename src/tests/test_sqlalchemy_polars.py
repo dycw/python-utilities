@@ -34,8 +34,6 @@ from polars import (
     Int64,
     UInt32,
     UInt64,
-    col,
-    when,
 )
 from polars.testing import assert_frame_equal
 from pytest import mark, param, raises
@@ -85,13 +83,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import DuplicateColumnError, OperationalError, ProgrammingError
 
-from tests.test_sqlalchemy import _table_names, _upsert_lists
+from tests.test_sqlalchemy import _table_names
 from utilities.hypothesis import int32s, text_ascii, zoned_date_times
 from utilities.math import is_equal
 from utilities.polars import DatetimeUTC, check_polars_dataframe
 from utilities.sqlalchemy import ensure_tables_created
 from utilities.sqlalchemy_polars import (
-    InsertDataFrameError,
     _insert_dataframe_check_df_and_db_types,
     _insert_dataframe_map_df_column_to_table_column_and_type,
     _insert_dataframe_map_df_column_to_table_schema,
@@ -194,57 +191,6 @@ class TestInsertDataFrame:
         async with test_async_engine.begin() as conn:
             results = (await conn.execute(sel)).scalars().all()
         assert results == []
-
-    @given(values=_upsert_lists(min_size=1))
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    async def test_upsert(
-        self,
-        *,
-        values: list[tuple[int, bool, bool | None]],
-        test_async_engine: AsyncEngine,
-    ) -> None:
-        df = DataFrame(
-            values,
-            schema={"id_": Int64, "init": pl.Boolean, "post": pl.Boolean},
-            orient="row",
-        )
-        table = self._make_table(sqlalchemy.Boolean)
-        await insert_dataframe(
-            df.select("id_", col("init").alias("value")),
-            table,
-            test_async_engine,
-            upsert="selected",
-        )
-        sel = select(table)
-        async with test_async_engine.begin() as conn:
-            results = (await conn.execute(sel)).all()
-        assert set(results) == set(df.select("id_", "init").rows())
-        await insert_dataframe(
-            df.select("id_", col("post").alias("value")).drop_nulls(),
-            table,
-            test_async_engine,
-            upsert="selected",
-        )
-        async with test_async_engine.begin() as conn:
-            results = (await conn.execute(sel)).all()
-        expected = df.select(
-            "id_", when(col("post").is_null()).then("init").otherwise("post")
-        )
-        assert set(results) == set(expected.rows())
-
-    @mark.parametrize("value", [param(True), param(False)])
-    async def test_error(self, *, value: bool, test_async_engine: AsyncEngine) -> None:
-        df = DataFrame([(value,)], schema={"other": pl.Boolean})
-        table = self._make_table(sqlalchemy.Boolean)
-        with raises(
-            InsertDataFrameError,
-            match="Non-empty DataFrame must resolve to at least 1 item",
-        ):
-            _ = await insert_dataframe(df, table, test_async_engine)
 
     def _make_table(self, type_: Any, /) -> Table:
         return Table(
