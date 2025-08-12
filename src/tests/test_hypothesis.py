@@ -729,7 +729,7 @@ class TestPairs:
         if unique:
             assert len(set(result)) == len(result)
         if sorted_:
-            assert sorted(result) == sorted
+            assert sorted(result) == list(result)
 
 
 class TestPaths:
@@ -774,7 +774,7 @@ class TestQuadruples:
         if unique:
             assert len(set(result)) == len(result)
         if sorted_:
-            assert sorted(result) == sorted
+            assert sorted(result) == list(result)
 
 
 class TestRandomStates:
@@ -1055,7 +1055,7 @@ class TestTriples:
         if unique:
             assert len(set(result)) == len(result)
         if sorted_:
-            assert sorted(result) == sorted
+            assert sorted(result) == list(result)
 
 
 class TestUInt8s:
