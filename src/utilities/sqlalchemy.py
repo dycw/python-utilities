@@ -604,9 +604,9 @@ async def insert_items(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     timeout_create: Delta | None = None,
-    error_create: type[Exception] = TimeoutError,
+    error_create: MaybeType[Exception] = TimeoutError,
     timeout_insert: Delta | None = None,
-    error_insert: type[Exception] = TimeoutError,
+    error_insert: MaybeType[Exception] = TimeoutError,
 ) -> None:
     """Insert a set of items into a database.
 
@@ -849,9 +849,9 @@ async def migrate_data(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     timeout_create: Delta | None = None,
-    error_create: type[Exception] = TimeoutError,
+    error_create: MaybeType[Exception] = TimeoutError,
     timeout_insert: Delta | None = None,
-    error_insert: type[Exception] = TimeoutError,
+    error_insert: MaybeType[Exception] = TimeoutError,
 ) -> None:
     """Migrate the contents of a table from one database to another."""
     table_from = get_table(table_or_orm_from)

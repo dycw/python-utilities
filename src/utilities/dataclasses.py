@@ -34,7 +34,7 @@ from utilities.text import (
     _SplitKeyValuePairsSplitError,
     split_key_value_pairs,
 )
-from utilities.types import SupportsLT
+from utilities.types import MaybeType, SupportsLT
 from utilities.typing import get_type_hints
 
 if TYPE_CHECKING:
@@ -830,7 +830,7 @@ def yield_fields(
     warn_name_errors: bool = False,
 ) -> Iterator[_YieldFieldsClass[Any]]: ...
 def yield_fields(
-    obj: Dataclass | type[Dataclass],
+    obj: MaybeType[Dataclass],
     /,
     *,
     globalns: StrMapping | None = None,
