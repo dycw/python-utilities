@@ -50,7 +50,9 @@ from utilities.sqlalchemy import (
     _ExtractURLUsernameError,
     _get_dialect,
     _get_dialect_max_params,
+    _insert_item_yield_normalized,
     _InsertItem,
+    _InsertItemYieldNormalizedError,
     _is_pair_of_sequence_of_tuple_or_string_mapping_and_table,
     _is_pair_of_str_mapping_and_table,
     _is_pair_of_tuple_and_table,
@@ -59,10 +61,8 @@ from utilities.sqlalchemy import (
     _MapMappingToTableExtraColumnsError,
     _MapMappingToTableSnakeMapEmptyError,
     _MapMappingToTableSnakeMapNonUniqueError,
-    _normalize_insert_item,
     _normalize_upsert_item,
     _NormalizedItem,
-    _NormalizeInsertItemError,
     _orm_inst_to_dict,
     _prepare_insert_or_upsert_items,
     _prepare_insert_or_upsert_items_merge_items,
@@ -1049,7 +1049,7 @@ class TestNormalizeInsertItem:
                 item = (id_,), table
             case "dict":
                 item = {"id_": id_}, table
-        result = one(_normalize_insert_item(item))
+        result = one(_insert_item_yield_normalized(item))
         expected = _NormalizedItem(mapping={"id_": id_}, table=table)
         assert result == expected
 
@@ -1069,7 +1069,7 @@ class TestNormalizeInsertItem:
                 item = [((id_,)) for id_ in ids], table
             case "dict":
                 item = [({"id_": id_}) for id_ in ids], table
-        result = list(_normalize_insert_item(item))
+        result = list(_insert_item_yield_normalized(item))
         expected = [_NormalizedItem(mapping={"id_": id_}, table=table) for id_ in ids]
         assert result == expected
 
@@ -1089,21 +1089,21 @@ class TestNormalizeInsertItem:
                 item = [(((id_,), table)) for id_ in ids]
             case "dict":
                 item = [({"id_": id_}, table) for id_ in ids]
-        result = list(_normalize_insert_item(item))
+        result = list(_insert_item_yield_normalized(item))
         expected = [_NormalizedItem(mapping={"id_": id_}, table=table) for id_ in ids]
         assert result == expected
 
     @given(id_=int32s())
     def test_mapped_class(self, *, id_: int) -> None:
         cls = self._mapped_class
-        result = one(_normalize_insert_item(cls(id_=id_)))
+        result = one(_insert_item_yield_normalized(cls(id_=id_)))
         expected = _NormalizedItem(mapping={"id_": id_}, table=get_table(cls))
         assert result == expected
 
     @given(ids=sets(int32s(), min_size=1))
     def test_mapped_classes(self, *, ids: set[int]) -> None:
         cls = self._mapped_class
-        result = list(_normalize_insert_item([cls(id_=id_) for id_ in ids]))
+        result = list(_insert_item_yield_normalized([cls(id_=id_) for id_ in ids]))
         expected = [
             _NormalizedItem(mapping={"id_": id_}, table=get_table(cls)) for id_ in ids
         ]
@@ -1125,7 +1125,7 @@ class TestNormalizeInsertItem:
                 item = (id_,), table
             case "dict":
                 item = {"id_": id_}, table
-        result = one(_normalize_insert_item(item, snake=True))
+        result = one(_insert_item_yield_normalized(item, snake=True))
         expected = _NormalizedItem(mapping={"Id_": id_}, table=table)
         assert result == expected
 
@@ -1143,8 +1143,10 @@ class TestNormalizeInsertItem:
         ],
     )
     def test_errors(self, *, item: Any) -> None:
-        with raises(_NormalizeInsertItemError, match="Item must be valid; got .*"):
-            _ = list(_normalize_insert_item(item))
+        with raises(
+            _InsertItemYieldNormalizedError, match="Item must be valid; got .*"
+        ):
+            _ = list(_insert_item_yield_normalized(item))
 
     @property
     def _table(self) -> Table:
@@ -1233,7 +1235,8 @@ class TestORMInstToDict:
 
 class TestPrepareInsertOrUpsertItems:
     @mark.parametrize(
-        "normalize_item", [param(_normalize_insert_item), param(_normalize_upsert_item)]
+        "normalize_item",
+        [param(_insert_item_yield_normalized), param(_normalize_upsert_item)],
     )
     async def test_error(
         self,

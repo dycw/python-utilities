@@ -95,6 +95,7 @@ from utilities.iterables import (
     merge_str_mappings,
     one,
 )
+from utilities.more_itertools import bucket_mapping
 from utilities.os import is_pytest
 from utilities.reprlib import get_repr
 from utilities.text import secret_str, snake_case
@@ -606,12 +607,17 @@ type _InsertItem = (
     | Sequence[_PairOfTupleOrStrMappingAndTable]
     | Sequence[DeclarativeBase]
 )
+type _NormalizedItem = tuple[Table, StrMapping]
+type _InsertItemBatch = (
+    tuple[Table, list[StrMapping]] | tuple[Table, list[StrMapping], Any]
+)
 
 
 async def insert_items(
     engine: AsyncEngine,
     *items: _InsertItem,
     snake: bool = False,
+    upsert_set_null: bool | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     timeout_create: Delta | None = None,
@@ -641,6 +647,11 @@ async def insert_items(
                                                Obj(k1=v21, k2=v22, ...),
                                                ...]
     """
+    normalized = list(
+        chain.from_iterable(
+            _insert_item_yield_normalized(i, snake=snake) for i in items
+        )
+    )
 
     def build_insert(
         table: Table, values: Iterable[StrMapping], /
@@ -653,7 +664,7 @@ async def insert_items(
 
     try:
         prepared = _prepare_insert_or_upsert_items(
-            partial(_normalize_insert_item, snake=snake),
+            partial(_insert_item_yield_normalized, snake=snake),
             engine,
             build_insert,
             *items,
@@ -672,6 +683,69 @@ async def insert_items(
             _ = await conn.execute(ins, parameters=parameters)
 
 
+def _insert_item_yield_normalized(
+    item: _InsertItem, /, *, snake: bool = False
+) -> Iterator[_NormalizedItem]:
+    if _is_pair_of_str_mapping_and_table(item):
+        mapping, table_or_orm = item
+        adjusted = _map_mapping_to_table(mapping, table_or_orm, snake=snake)
+        yield (get_table(table_or_orm), adjusted)
+        return
+    if _is_pair_of_tuple_and_table(item):
+        tuple_, table_or_orm = item
+        mapping = _tuple_to_mapping(tuple_, table_or_orm)
+        yield from _insert_item_yield_normalized((mapping, table_or_orm), snake=snake)
+        return
+    if _is_pair_of_sequence_of_tuple_or_string_mapping_and_table(item):
+        items, table_or_orm = item
+        pairs = [(i, table_or_orm) for i in items]
+        for p in pairs:
+            yield from _insert_item_yield_normalized(p, snake=snake)
+        return
+    if isinstance(item, DeclarativeBase):
+        mapping = _orm_inst_to_dict(item)
+        yield from _insert_item_yield_normalized((mapping, item), snake=snake)
+        return
+    try:
+        _ = iter(item)
+    except TypeError:
+        raise _InsertItemYieldNormalizedError(item=item) from None
+    if all(map(_is_pair_of_tuple_or_str_mapping_and_table, item)):
+        pairs = cast("Sequence[_PairOfTupleOrStrMappingAndTable]", item)
+        for p in pairs:
+            yield from _insert_item_yield_normalized(p, snake=snake)
+        return
+    if all(map(is_orm, item)):
+        classes = cast("Sequence[DeclarativeBase]", item)
+        for c in classes:
+            yield from _insert_item_yield_normalized(c, snake=snake)
+        return
+    raise _InsertItemYieldNormalizedError(item=item)
+
+
+def _insert_items_yield_batches(
+    engine: AsyncEngine,
+    items: Iterable[_InsertItem],
+    /,
+    *,
+    upsert_set_null: bool | None = None,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+) -> Iterable[_InsertItemBatch]:
+    match upsert, _get_dialect(engine):
+        case None, "oracle":
+            yield from _insert_items_yield_batches_insert_oracle(engine, items)
+        case None, _:
+            yield from _insert_items_yield_batches_insert_non_oracle(engine, items)
+        case bool() as set_null, "postgresql":
+            yield from _insert_items_yield_batches_upsert_postgres(
+                engine, items, set_null=set_null
+            )
+        case bool() as set_null, "sqlite":
+            yield from _insert_items_yield_batches_upsert_sqlite(
+                engine, items, set_null=set_null
+            )
+
+
 @dataclass(kw_only=True, slots=True)
 class InsertItemsError(Exception):
     item: _InsertItem
@@ -679,6 +753,10 @@ class InsertItemsError(Exception):
     @override
     def __str__(self) -> str:
         return f"Item must be valid; got {self.item}"
+
+
+async def _execute_inserts() -> None:
+    a
 
 
 ##
@@ -742,55 +820,13 @@ async def migrate_data(
 ##
 
 
-def _normalize_insert_item(
-    item: _InsertItem, /, *, snake: bool = False
-) -> list[_NormalizedItem]:
-    """Normalize an insertion item."""
-    if _is_pair_of_str_mapping_and_table(item):
-        mapping, table_or_orm = item
-        adjusted = _map_mapping_to_table(mapping, table_or_orm, snake=snake)
-        normalized = _NormalizedItem(mapping=adjusted, table=get_table(table_or_orm))
-        return [normalized]
-    if _is_pair_of_tuple_and_table(item):
-        tuple_, table_or_orm = item
-        mapping = _tuple_to_mapping(tuple_, table_or_orm)
-        return _normalize_insert_item((mapping, table_or_orm), snake=snake)
-    if _is_pair_of_sequence_of_tuple_or_string_mapping_and_table(item):
-        items, table_or_orm = item
-        pairs = [(i, table_or_orm) for i in items]
-        normalized = (_normalize_insert_item(p, snake=snake) for p in pairs)
-        return list(chain.from_iterable(normalized))
-    if isinstance(item, DeclarativeBase):
-        mapping = _orm_inst_to_dict(item)
-        return _normalize_insert_item((mapping, item), snake=snake)
-    try:
-        _ = iter(item)
-    except TypeError:
-        raise _NormalizeInsertItemError(item=item) from None
-    if all(map(_is_pair_of_tuple_or_str_mapping_and_table, item)):
-        seq = cast("Sequence[_PairOfTupleOrStrMappingAndTable]", item)
-        normalized = (_normalize_insert_item(p, snake=snake) for p in seq)
-        return list(chain.from_iterable(normalized))
-    if all(map(is_orm, item)):
-        seq = cast("Sequence[DeclarativeBase]", item)
-        normalized = (_normalize_insert_item(p, snake=snake) for p in seq)
-        return list(chain.from_iterable(normalized))
-    raise _NormalizeInsertItemError(item=item)
-
-
 @dataclass(kw_only=True, slots=True)
-class _NormalizeInsertItemError(Exception):
+class _InsertItemYieldNormalizedError(Exception):
     item: _InsertItem
 
     @override
     def __str__(self) -> str:
         return f"Item must be valid; got {self.item}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _NormalizedItem:
-    mapping: StrMapping
-    table: Table
 
 
 def _normalize_upsert_item(
@@ -801,7 +837,7 @@ def _normalize_upsert_item(
     selected_or_all: Literal["selected", "all"] = "selected",
 ) -> Iterator[_NormalizedItem]:
     """Normalize an upsert item."""
-    normalized = _normalize_insert_item(item, snake=snake)
+    normalized = _insert_item_yield_normalized(item, snake=snake)
     match selected_or_all:
         case "selected":
             for norm in normalized:
@@ -951,6 +987,9 @@ def _upsert_items_apply_on_conflict_do_update(
         case postgresql_Insert():  # skipif-ci
             return insert.on_conflict_do_update(constraint=primary_key, set_=set_)
         case sqlite_Insert():
+            obj = insert.on_conflict_do_update(index_elements=primary_key, set_=set_)
+            # breakpoint()
+
             return insert.on_conflict_do_update(index_elements=primary_key, set_=set_)
         case never:
             assert_never(never)
@@ -1237,7 +1276,7 @@ def _prepare_insert_or_upsert_items(
             for normed in normalize_item(item):
                 mapping[normed.table].append(normed.mapping)
                 lengths.add(len(normed.mapping))
-    except _NormalizeInsertItemError as error:
+    except _InsertItemYieldNormalizedError as error:
         raise _PrepareInsertOrUpsertItemsError(item=error.item) from None
     merged: dict[Table, list[StrMapping]] = {
         table: _prepare_insert_or_upsert_items_merge_items(table, values)
