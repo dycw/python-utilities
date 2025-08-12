@@ -910,9 +910,9 @@ def quadruples[T](
     )
 
 
-def _quadruples_map[T](elements: list[T], /) -> tuple[T, T, T]:
-    first, second, third = elements
-    return first, second, third
+def _quadruples_map[T](elements: list[T], /) -> tuple[T, T, T, T]:
+    first, second, third, fourth = elements
+    return first, second, third, fourth
 
 
 ##

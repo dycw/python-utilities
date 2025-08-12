@@ -753,15 +753,14 @@ class TestInsertItems:
         table = self._make_table(value=True)
         init_item = {"id_": id_, "value": init}, table
         await insert_items(test_async_engine, init_item, upsert_set_null=False)
-        sel = select(get_table(table))
+        sel = select(table.c.value)
         async with test_async_engine.begin() as conn:
-            assert (await conn.execute(sel)).one() == (id_, init)
+            assert (await conn.execute(sel)).scalar_one() == init
         post_item = {"id_": id_, "value": post}, table
         await insert_items(test_async_engine, post_item, upsert_set_null=False)
         async with test_async_engine.begin() as conn:
-            assert (await conn.execute(sel)).one() == (
-                id_,
-                init if post is None else post,
+            assert (await conn.execute(sel)).scalar_one() == (
+                init if post is None else post
             )
 
     @given(
@@ -786,27 +785,20 @@ class TestInsertItems:
         init_items = [
             ({"id_": id_, "value": init_i}, table)
             for id_, init_i in zip(ids, init, strict=True)
-            if init_i is not None
         ]
         await insert_items(test_async_engine, *init_items, upsert_set_null=False)
-        sel = select(get_table(table)).order_by(table.c.id_)
+        sel = select(table.c.value).order_by(table.c.id_)
         async with test_async_engine.begin() as conn:
-            assert (await conn.execute(sel)).all() == [
-                (id_, init_i)
-                for id_, init_i in zip(ids, init, strict=True)
-                if init_i is not None
-            ]
+            assert (await conn.execute(sel)).scalars().all() == list(init)
         post_items = [
             ({"id_": id_, "value": post_i}, table)
             for id_, post_i in zip(ids, post, strict=True)
-            if post_i is not None
         ]
         await insert_items(test_async_engine, *post_items, upsert_set_null=False)
         async with test_async_engine.begin() as conn:
-            assert (await conn.execute(sel)).all() == [
-                (id_, init_i if post_i is None else post_i)
-                for id_, init_i, post_i in zip(ids, init, post, strict=True)
-                if (init_i is not None) or (post_i is not None)
+            assert (await conn.execute(sel)).scalars().all() == [
+                (init_i if post_i is None else post_i)
+                for init_i, post_i in zip(init, post, strict=True)
             ]
 
     @given(
@@ -817,7 +809,6 @@ class TestInsertItems:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    @mark.only
     async def test_insert__upsert_two_columns_one_row(
         self,
         *,
@@ -829,71 +820,63 @@ class TestInsertItems:
         table = self._make_table(two_values=True)
         init_item = {"id_": id_, "value1": init[0], "value2": init[1]}, table
         await insert_items(test_async_engine, init_item, upsert_set_null=False)
-        sel = select(get_table(table)).order_by(table.c.id_)
+        sel = select(table.c.value1, table.c.value2).order_by(table.c.id_)
         async with test_async_engine.begin() as conn:
-            assert (await conn.execute(sel)).one() == (id_, init[0], init[1])
+            assert (await conn.execute(sel)).one() == (init[0], init[1])
         post_item = {"id_": id_, "value1": post[0], "value2": post[1]}, table
         await insert_items(test_async_engine, post_item, upsert_set_null=False)
         async with test_async_engine.begin() as conn:
             assert (await conn.execute(sel)).one() == (
-                id_,
                 init[0] if post[0] is None else post[0],
                 init[1] if post[1] is None else post[1],
             )
 
     @given(
-        ids=pairs(int32s(), unique=True),
-        init=quadruples(booleans()),
+        ids=pairs(int32s(), unique=True, sorted=True),
+        init=quadruples(booleans() | none()),
         post=quadruples(booleans() | none()),
     )
     @settings(
-        max_examples=1,
+        max_examples=4,
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_insert__upsert_multiple(
+    async def test_insert__upsert_two_columns_two_rows(
         self,
         *,
-        test_async_engine: AsyncEngine,
         ids: tuple[int, int],
-        init: tuple[bool | None],
-        post: tuple[bool | None],
+        init: tuple[bool | None, bool | None, bool | None, bool | None],
+        test_async_engine: AsyncEngine,
+        post: tuple[bool | None, bool | None, bool | None, bool | None],
     ) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
-
-        class Example(Base):
-            __tablename__ = _table_names()
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            x: Mapped[bool | None] = mapped_column(
-                Boolean, default=None, kw_only=True, nullable=True
-            )
-            y: Mapped[bool | None] = mapped_column(
-                Boolean, default=None, kw_only=True, nullable=True
-            )
-
-        init1, init2 = [
-            Example(id_=id_, x=x, y=y)
-            for id_, x, y in [(1, True, False), (2, False, True)]
+        table = self._make_table(two_values=True)
+        init_items = [
+            ({"id_": ids[0], "value1": init[0], "value2": init[1]}, table),
+            ({"id_": ids[1], "value1": init[2], "value2": init[3]}, table),
         ]
-        await upsert_items(test_async_engine, init1, init2)
-
-        sel = select(Example.x, Example.y).order_by(Example.id_)
+        await insert_items(test_async_engine, *init_items, upsert_set_null=False)
+        sel = select(table.c.value1, table.c.value2).order_by(table.c.id_)
         async with test_async_engine.begin() as conn:
-            result = (await conn.execute(sel)).all()
-        assert result == [(True, False), (False, True)]
-
-        # delta
-        delta1, delta2 = [
-            Example(id_=id_, x=x, y=y)
-            for id_, x, y in [(1, None, True), (2, True, None)]
+            assert (await conn.execute(sel)).all() == [
+                (init[0], init[1]),
+                (init[2], init[3]),
+            ]
+        post_items = [
+            ({"id_": ids[0], "value1": post[0], "value2": post[1]}, table),
+            ({"id_": ids[1], "value1": post[2], "value2": post[3]}, table),
         ]
-        await upsert_items(test_async_engine, delta1, delta2)
-
-        # post
+        await insert_items(test_async_engine, *post_items, upsert_set_null=False)
         async with test_async_engine.begin() as conn:
-            result = (await conn.execute(sel)).all()
-        assert result == [(True, True), (True, True)]
+            assert (await conn.execute(sel)).all() == [
+                (
+                    init[0] if post[0] is None else post[0],
+                    init[1] if post[1] is None else post[1],
+                ),
+                (
+                    init[2] if post[2] is None else post[2],
+                    init[3] if post[3] is None else post[3],
+                ),
+            ]
 
     @given(id_=int32s())
     @settings(
