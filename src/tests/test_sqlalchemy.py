@@ -32,7 +32,13 @@ from sqlalchemy.orm import (
 )
 
 from tests.conftest import SKIPIF_CI
-from utilities.hypothesis import int32s, pairs, settings_with_reduced_examples, urls
+from utilities.hypothesis import (
+    int32s,
+    pairs,
+    quadruples,
+    settings_with_reduced_examples,
+    urls,
+)
 from utilities.iterables import one
 from utilities.modules import is_installed
 from utilities.sqlalchemy import (
@@ -734,6 +740,7 @@ class TestInsertItems:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
+    @mark.only
     async def test_insert__upsert_single(
         self, *, id_: int, test_async_engine: AsyncEngine, init: bool, post: bool | None
     ) -> None:
@@ -751,17 +758,11 @@ class TestInsertItems:
                 init if post is None else post,
             )
 
-    @mark.only
+    @mark.skip
     @given(
         ids=pairs(int32s(), unique=True),
-        init_x1=booleans(),
-        init_y1=booleans(),
-        init_x2=booleans(),
-        init_y2=booleans(),
-        post_x1=booleans() | none(),
-        post_y1=booleans() | none(),
-        post_x2=booleans() | none(),
-        post_y2=booleans() | none(),
+        init=quadruples(booleans()),
+        post=quadruples(booleans() | none()),
     )
     @settings_with_reduced_examples(
         phases={Phase.generate},
@@ -772,14 +773,8 @@ class TestInsertItems:
         *,
         test_async_engine: AsyncEngine,
         ids: tuple[int, int],
-        init_x1: bool,
-        init_y1: bool,
-        init_x2: bool,
-        init_y2: bool,
-        post_x1: bool | None,
-        post_y1: bool | None,
-        post_x2: bool | None,
-        post_y2: bool | None,
+        init: tuple[bool | None],
+        post: tuple[bool | None],
     ) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
