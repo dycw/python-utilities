@@ -612,7 +612,7 @@ async def insert_items(
     engine: AsyncEngine,
     *items: _InsertItem,
     snake: bool = False,
-    upsert: bool = False,
+    upsert_set_null: bool | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     timeout_create: Delta | None = None,
@@ -646,7 +646,10 @@ async def insert_items(
         _insert_item_yield_normalized(i, snake=snake) for i in items
     )
     triples = _insert_items_yield_insert_triples(
-        engine, normalized, upsert=upsert, chunk_size_frac=chunk_size_frac
+        engine,
+        normalized,
+        upsert_set_null=upsert_set_null,
+        chunk_size_frac=chunk_size_frac,
     )
     if not assume_tables_exist:
         triples = list(triples)
@@ -706,14 +709,26 @@ def _insert_items_yield_insert_triples(
     items: Iterable[_NormalizedItem],
     /,
     *,
-    upsert: bool = False,
+    upsert_set_null: bool | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-) -> Iterator[_InsertTriple]:
+) -> Iterable[_InsertTriple]:
+    match upsert_set_null:
+        case None:
+            by_non_null = True
+            is_upsert = False
+        case True:
+            by_non_null = False
+            is_upsert = True
+        case False:
+            by_non_null = True
+            is_upsert = True
+        case never:
+            assert_never(never)
     pairs = _insert_items_yield_chunked_pairs(
-        engine, items, chunk_size_frac=chunk_size_frac
+        engine, items, by_non_null=by_non_null, chunk_size_frac=chunk_size_frac
     )
     for table, mappings in pairs:
-        match upsert, _get_dialect(engine):
+        match is_upsert, _get_dialect(engine):
             case False, "oracle":  # pragma: no cover
                 ins = insert(table)
                 parameters = mappings
@@ -735,39 +750,50 @@ def _insert_items_yield_chunked_pairs(
     items: Iterable[_NormalizedItem],
     /,
     *,
+    by_non_null: bool,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-) -> Iterator[_InsertPair]:
-    for table, mappings in _insert_items_yield_raw_pairs(items):
+) -> Iterable[_InsertPair]:
+    for table, mappings in _insert_items_yield_raw_pairs(
+        items, by_non_null=by_non_null
+    ):
         chunk_size = get_chunk_size(engine, table, chunk_size_frac=chunk_size_frac)
         for mappings_i in chunked(mappings, chunk_size):
             yield table, list(mappings_i)
 
 
 def _insert_items_yield_raw_pairs(
-    items: Iterable[_NormalizedItem], /
-) -> Iterator[_InsertPair]:
+    items: Iterable[_NormalizedItem], /, *, by_non_null: bool
+) -> Iterable[_InsertPair]:
     by_table: defaultdict[Table, list[StrMapping]] = defaultdict(list)
     for table, mapping in items:
         by_table[table].append(mapping)
     for table, mappings in by_table.items():
-        yield from _insert_items_yield_raw_pairs_one(table, mappings)
+        yield from _insert_items_yield_raw_pairs_one(
+            table, mappings, by_non_null=by_non_null
+        )
 
 
 def _insert_items_yield_raw_pairs_one(
-    table: Table, mappings: Iterable[StrMapping], /
-) -> Iterator[_InsertPair]:
+    table: Table, mappings: Iterable[StrMapping], /, *, by_non_null: bool
+) -> Iterable[_InsertPair]:
     merged = _insert_items_yield_merged_mappings(table, mappings)
-    by_keys: defaultdict[frozenset[str], list[StrMapping]] = defaultdict(list)
-    for mapping in merged:
-        non_null = {k: v for k, v in mapping.items() if v is not None}
-        by_keys[frozenset(non_null)].append(non_null)
-    for mappings_i in by_keys.values():
-        yield table, mappings_i
+    match by_non_null:
+        case True:
+            by_keys: defaultdict[frozenset[str], list[StrMapping]] = defaultdict(list)
+            for mapping in merged:
+                non_null = {k: v for k, v in mapping.items() if v is not None}
+                by_keys[frozenset(non_null)].append(non_null)
+            for mappings_i in by_keys.values():
+                yield table, mappings_i
+        case False:
+            yield table, list(merged)
+        case never:
+            assert_never(never)
 
 
 def _insert_items_yield_merged_mappings(
     table: Table, mappings: Iterable[StrMapping], /
-) -> Iterator[StrMapping]:
+) -> Iterable[StrMapping]:
     columns = list(yield_primary_key_columns(table))
     col_names = [c.name for c in columns]
     cols_auto = {c.name for c in columns if c.autoincrement in {True, "auto"}}
@@ -907,6 +933,7 @@ async def upsert_items(
     /,
     *items: _InsertItem,
     snake: bool = False,
+    set_null: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     timeout_create: Delta | None = None,
@@ -919,7 +946,7 @@ async def upsert_items(
         engine,
         *items,
         snake=snake,
-        upsert=True,
+        upsert_set_null=set_null,
         chunk_size_frac=chunk_size_frac,
         assume_tables_exist=assume_tables_exist,
         timeout_create=timeout_create,
