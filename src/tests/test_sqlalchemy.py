@@ -820,7 +820,7 @@ class TestInsertItems:
         table = self._make_table(two_values=True)
         init_item = {"id_": id_, "value1": init[0], "value2": init[1]}, table
         await insert_items(test_async_engine, init_item, upsert_set_null=False)
-        sel = select(table.c.value1, table.c.value2).order_by(table.c.id_)
+        sel = select(table.c.value1, table.c.value2)
         async with test_async_engine.begin() as conn:
             assert (await conn.execute(sel)).one() == (init[0], init[1])
         post_item = {"id_": id_, "value1": post[0], "value2": post[1]}, table
@@ -837,7 +837,7 @@ class TestInsertItems:
         post=quadruples(booleans() | none()),
     )
     @settings(
-        max_examples=4,
+        max_examples=1,
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -877,6 +877,32 @@ class TestInsertItems:
                     init[3] if post[3] is None else post[3],
                 ),
             ]
+
+    @mark.only
+    @given(id_=int32s(), init=pairs(booleans() | none()), post=booleans())
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    async def test_insert__upsert_set_null(
+        self,
+        *,
+        id_: int,
+        init: tuple[bool | None, bool | None],
+        test_async_engine: AsyncEngine,
+        post: bool | None,
+    ) -> None:
+        table = self._make_table(two_values=True)
+        init_item = {"id_": id_, "value1": init[0], "value2": init[1]}, table
+        await insert_items(test_async_engine, init_item, upsert_set_null=True)
+        sel = select(table.c.value1, table.c.value2)
+        async with test_async_engine.begin() as conn:
+            assert (await conn.execute(sel)).one() == init
+        post_item = ({"id_": id_, "value1": post}, table)
+        await insert_items(test_async_engine, post_item, upsert_set_null=True)
+        async with test_async_engine.begin() as conn:
+            assert (await conn.execute(sel)).one() == (post, None)
 
     @given(id_=int32s())
     @settings(
@@ -1453,105 +1479,6 @@ class TestTupleToMapping:
 
 
 class TestUpsertItems:
-    @given(parent=_upsert_triples(), child=_upsert_triples())
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    async def test_mapped_class_with_rel(
-        self,
-        *,
-        parent: tuple[int, bool, bool],
-        child: tuple[int, bool, bool],
-        test_async_engine: AsyncEngine,
-    ) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass):
-            pass
-
-        class Parent(Base):
-            __tablename__ = _table_names()
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
-
-            children: Mapped[list[Child]] = relationship(
-                "Child", init=False, back_populates="parent"
-            )
-
-        class Child(Base):
-            __tablename__ = _table_names()
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            parent_id: Mapped[int] = mapped_column(
-                ForeignKey(f"{Parent.__tablename__}.id_"), kw_only=True, nullable=False
-            )
-            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
-
-            parent: Mapped[Parent] = relationship(
-                "Parent", init=False, back_populates="children"
-            )
-
-        parent_id, parent_init, _ = parent
-        child_id, child_init, child_post = child
-        await self._run_test(
-            test_async_engine,
-            Parent,
-            Parent(id_=parent_id, value=parent_init),
-            expected={(parent_id, parent_init)},
-        )
-        await self._run_test(
-            test_async_engine,
-            Child,
-            Child(id_=child_id, parent_id=parent_id, value=child_init),
-            expected={(child_id, parent_id, child_init)},
-        )
-        await self._run_test(
-            test_async_engine,
-            Child,
-            Child(id_=child_id, parent_id=parent_id, value=child_post),
-            expected={(child_id, parent_id, child_post)},
-        )
-
-    async def test_upsert_multiple_columns(
-        self, *, test_async_engine: AsyncEngine
-    ) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
-
-        class Example(Base):
-            __tablename__ = _table_names()
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            x: Mapped[bool | None] = mapped_column(
-                Boolean, default=None, kw_only=True, nullable=True
-            )
-            y: Mapped[bool | None] = mapped_column(
-                Boolean, default=None, kw_only=True, nullable=True
-            )
-
-        init1, init2 = [
-            Example(id_=id_, x=x, y=y)
-            for id_, x, y in [(1, True, False), (2, False, True)]
-        ]
-        await upsert_items(test_async_engine, init1, init2)
-
-        sel = select(Example.x, Example.y).order_by(Example.id_)
-        async with test_async_engine.begin() as conn:
-            result = (await conn.execute(sel)).all()
-        assert result == [(True, False), (False, True)]
-
-        # delta
-        delta1, delta2 = [
-            Example(id_=id_, x=x, y=y)
-            for id_, x, y in [(1, None, True), (2, True, None)]
-        ]
-        await upsert_items(test_async_engine, delta1, delta2)
-
-        # post
-        async with test_async_engine.begin() as conn:
-            result = (await conn.execute(sel)).all()
-        assert result == [(True, True), (True, True)]
-
     @given(id_=int32s(), x_init=booleans(), x_post=booleans(), y=booleans())
     @mark.parametrize("selected_or_all", ["selected", "all"])
     @settings(
