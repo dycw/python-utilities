@@ -735,14 +735,50 @@ class TestInsertItems:
             test_async_engine, table, {id_}, item, snake=True
         )
 
-    @given(id_=int32s(), init=booleans(), post=booleans() | none())
+    @given(id_=int32s(), init=booleans() | none(), post=booleans() | none())
+    @settings_with_reduced_examples(
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    async def test_insert__upsert_single_column_one_row(
+        self,
+        *,
+        id_: int,
+        test_async_engine: AsyncEngine,
+        init: bool | None,
+        post: bool | None,
+    ) -> None:
+        table = self._make_table(value=True)
+        init_item = {"id_": id_, "value": init}, table
+        await insert_items(test_async_engine, init_item, upsert_set_null=False)
+        sel = select(get_table(table))
+        async with test_async_engine.begin() as conn:
+            assert (await conn.execute(sel)).one() == (id_, init)
+        post_item = {"id_": id_, "value": post}, table
+        await insert_items(test_async_engine, post_item, upsert_set_null=False)
+        async with test_async_engine.begin() as conn:
+            assert (await conn.execute(sel)).one() == (
+                id_,
+                init if post is None else post,
+            )
+
+    @given(
+        ids=pairs(int32s(), unique=True),
+        init=pairs(booleans() | none()),
+        post=pairs(booleans() | none()),
+    )
     @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     @mark.only
-    async def test_insert__upsert_single(
-        self, *, id_: int, test_async_engine: AsyncEngine, init: bool, post: bool | None
+    async def test_insert__upsert_single_column_two_rows(
+        self,
+        *,
+        id_: int,
+        test_async_engine: AsyncEngine,
+        init: tuple[bool | None, bool | None],
+        post: tuple[bool | None, bool | None],
     ) -> None:
         table = self._make_table(value=True)
         init_item = {"id_": id_, "value": init}, table
