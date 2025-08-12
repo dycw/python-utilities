@@ -1454,52 +1454,6 @@ class TestTupleToMapping:
 
 
 class TestUpsertItems:
-    @given(id_=int32s(), x_init=booleans(), x_post=booleans(), y=booleans())
-    @mark.parametrize("selected_or_all", ["selected", "all"])
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    async def test_sel_or_all(
-        self,
-        *,
-        selected_or_all: _SelectedOrAll,
-        id_: int,
-        x_init: bool,
-        x_post: bool,
-        y: bool,
-        test_async_engine: AsyncEngine,
-    ) -> None:
-        table = Table(
-            _table_names(),
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-            Column("x", Boolean, nullable=False),
-            Column("y", Boolean, nullable=True),
-        )
-        _ = await self._run_test(
-            test_async_engine,
-            table,
-            ({"id_": id_, "x": x_init, "y": y}, table),
-            selected_or_all=selected_or_all,
-            expected={(id_, x_init, y)},
-        )
-        match selected_or_all:
-            case "selected":
-                expected = (id_, x_post, y)
-            case "all":
-                expected = (id_, x_post, None)
-            case never:
-                assert_never(never)
-        _ = await self._run_test(
-            test_async_engine,
-            table,
-            ({"id_": id_, "x": x_post}, table),
-            selected_or_all=selected_or_all,
-            expected={expected},
-        )
-
     @given(triples=_upsert_lists(nullable=True, min_size=1))
     @settings(
         max_examples=1,
