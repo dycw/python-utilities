@@ -126,7 +126,7 @@ class GetEnvVarError(Exception):
 
 def is_debug() -> bool:
     """Check if we are in `DEBUG` mode."""
-    return get_env_var("DEBUG", default=None) is not None
+    return get_env_var("DEBUG", nullable=True) is not None
 
 
 ##
