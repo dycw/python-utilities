@@ -60,7 +60,6 @@ from utilities.sqlalchemy import (
     _MapMappingToTableExtraColumnsError,
     _MapMappingToTableSnakeMapEmptyError,
     _MapMappingToTableSnakeMapNonUniqueError,
-    _NormalizedItem,
     _orm_inst_to_dict,
     _tuple_to_mapping,
     check_connect,
@@ -737,6 +736,27 @@ class TestInsertItems:
             test_async_engine, table, {id_}, item, snake=True
         )
 
+    @mark.only
+    @given(id_=int32s(), init=booleans(), post=booleans())
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    async def test_insert__upsert_single(
+        self, *, id_: int, test_async_engine: AsyncEngine, init: bool, post: bool | None
+    ) -> None:
+        table = self._make_table(value=True)
+        init_item = {"id_": id_, "value": init}, table
+        await insert_items(test_async_engine, init_item, upsert_set_null=False)
+        sel = select(get_table(table))
+        async with test_async_engine.begin() as conn:
+            assert (await conn.execute(sel)).one() == (id_, init)
+        post_item = {"id_": id_, "value": post}, table
+        await insert_items(test_async_engine, post_item, upsert_set_null=False)
+        async with test_async_engine.begin() as conn:
+            assert (await conn.execute(sel)).one() == (id_, post)
+
     @given(id_=int32s())
     @settings(
         max_examples=1,
@@ -757,12 +777,7 @@ class TestInsertItems:
     # yield merged mappings
 
     def test_yield_merged_mappings__id_and_value(self) -> None:
-        table = Table(
-            _table_names(),
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-            Column("value", Boolean, nullable=True),
-        )
+        table = self._make_table(value=True)
         items = [
             {"id_": 1, "value": True},
             {"id_": 1, "value": False},
@@ -774,12 +789,7 @@ class TestInsertItems:
         assert result == expected
 
     def test_yield_merged_mappings__value_only(self) -> None:
-        table = Table(
-            _table_names(),
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-            Column("value", Integer),
-        )
+        table = self._make_table(value=True)
         items = [{"value": 1}, {"value": 2}]
         result = list(_insert_items_yield_merged_mappings(table, items))
         assert result == items
@@ -899,7 +909,6 @@ class TestInsertItems:
         expected = (table, {"Id_": id_})
         assert result == expected
 
-    @mark.only
     @mark.parametrize(
         "item",
         [
@@ -919,11 +928,12 @@ class TestInsertItems:
 
     # private
 
-    def _make_table(self, *, title: bool = False) -> Table:
+    def _make_table(self, *, title: bool = False, value: bool = False) -> Table:
         return Table(
             _table_names(),
             MetaData(),
             Column("Id_" if title else "id_", Integer, primary_key=True),
+            *([Column("value", Boolean, nullable=True)] if value else []),
         )
 
     def _make_mapped_class(self) -> type[DeclarativeBase]:
