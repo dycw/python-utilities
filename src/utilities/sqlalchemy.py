@@ -633,7 +633,7 @@ async def insert_items(
     normalized = chain.from_iterable(
         _insert_items_yield_normalized(i, snake=snake) for i in items
     )
-    triples = _insert_items_yield_insert_triples(
+    triples = _insert_items_yield_triples(
         engine, normalized, is_upsert=is_upsert, chunk_size_frac=chunk_size_frac
     )
     if not assume_tables_exist:
@@ -689,7 +689,7 @@ def _insert_items_yield_normalized(
     raise InsertItemsError(item=item)
 
 
-def _insert_items_yield_insert_triples(
+def _insert_items_yield_triples(
     engine: AsyncEngine,
     items: Iterable[_NormalizedItem],
     /,
