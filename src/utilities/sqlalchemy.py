@@ -121,8 +121,8 @@ def check_connect(engine: Engine, /) -> bool:
     try:
         with engine.connect() as conn:
             return bool(conn.execute(_SELECT).scalar_one())
-    except (gaierror, ConnectionRefusedError, DatabaseError):
-        return False  # pragma: no cover
+    except (gaierror, ConnectionRefusedError, DatabaseError):  # pragma: no cover
+        return False
 
 
 async def check_connect_async(
