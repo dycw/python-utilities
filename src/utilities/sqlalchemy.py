@@ -148,7 +148,7 @@ async def check_engine(
     /,
     *,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[Exception] = TimeoutError,
     num_tables: int | tuple[int, float] | None = None,
 ) -> None:
     """Check that an engine can connect.
