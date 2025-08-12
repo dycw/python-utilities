@@ -4,7 +4,7 @@ import datetime as dt
 import decimal
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
+from typing import TYPE_CHECKING, Any, cast, overload, override
 from uuid import UUID
 
 import polars as pl
@@ -44,7 +44,6 @@ from utilities.sqlalchemy import (
     get_chunk_size,
     get_columns,
     insert_items,
-    upsert_items,
 )
 from utilities.text import snake_case
 from utilities.typing import is_subclass_gen
@@ -75,9 +74,9 @@ async def insert_dataframe(
     /,
     *,
     snake: bool = False,
+    is_upsert: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
-    upsert: Literal["selected", "all"] | None = None,
     timeout_create: TimeDelta | None = None,
     error_create: type[Exception] = TimeoutError,
     timeout_insert: TimeDelta | None = None,
@@ -87,43 +86,25 @@ async def insert_dataframe(
     mapping = _insert_dataframe_map_df_schema_to_table(
         df.schema, table_or_orm, snake=snake
     )
-    items = df.select(*mapping).rename(mapping).to_dicts()
+    items = df.select(*mapping).rename(mapping).rows(named=True)
     if len(items) == 0:
-        if not df.is_empty():
-            raise InsertDataFrameError(df=df)
         if not assume_tables_exist:
             await ensure_tables_created(
                 engine, table_or_orm, timeout=timeout_create, error=error_create
             )
         return
-    match upsert:
-        case None:
-            await insert_items(
-                engine,
-                (items, table_or_orm),
-                snake=snake,
-                chunk_size_frac=chunk_size_frac,
-                assume_tables_exist=assume_tables_exist,
-                timeout_create=timeout_create,
-                error_create=error_create,
-                timeout_insert=timeout_insert,
-                error_insert=error_insert,
-            )
-        case "selected" | "all" as selected_or_all:  # skipif-ci-and-not-linux
-            await upsert_items(
-                engine,
-                (items, table_or_orm),
-                snake=snake,
-                chunk_size_frac=chunk_size_frac,
-                selected_or_all=selected_or_all,
-                assume_tables_exist=assume_tables_exist,
-                timeout_create=timeout_create,
-                error_create=error_create,
-                timeout_insert=timeout_insert,
-                error_insert=error_insert,
-            )
-        case never:
-            assert_never(never)
+    await insert_items(
+        engine,
+        (items, table_or_orm),
+        snake=snake,
+        is_upsert=is_upsert,
+        chunk_size_frac=chunk_size_frac,
+        assume_tables_exist=assume_tables_exist,
+        timeout_create=timeout_create,
+        error_create=error_create,
+        timeout_insert=timeout_insert,
+        error_insert=error_insert,
+    )
 
 
 def _insert_dataframe_map_df_schema_to_table(
@@ -205,15 +186,6 @@ def _insert_dataframe_check_df_and_db_types(
         or ((dtype == UInt64) and is_subclass_gen(db_col_type, int))
         or ((dtype == String) and issubclass(db_col_type, str))
     )
-
-
-@dataclass(kw_only=True, slots=True)
-class InsertDataFrameError(Exception):
-    df: DataFrame
-
-    @override
-    def __str__(self) -> str:
-        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
 
 
 @overload
@@ -443,4 +415,4 @@ def _select_to_dataframe_yield_selects_with_in_clauses(
     return (sel.where(in_col.in_(values)) for values in chunked(in_values, chunk_size))
 
 
-__all__ = ["InsertDataFrameError", "insert_dataframe", "select_to_dataframe"]
+__all__ = ["insert_dataframe", "select_to_dataframe"]

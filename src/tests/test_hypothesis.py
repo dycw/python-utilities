@@ -70,6 +70,7 @@ from utilities.hypothesis import (
     pairs,
     paths,
     plain_date_times,
+    quadruples,
     random_states,
     sentinels,
     sets_fixed_length,
@@ -725,11 +726,10 @@ class TestPairs:
         result = data.draw(pairs(integers(), unique=unique, sorted=sorted_))
         assert isinstance(result, tuple)
         assert len(result) == 2
-        first, second = result
         if unique:
-            assert first != second
+            assert len(set(result)) == len(result)
         if sorted_:
-            assert first <= second
+            assert sorted(result) == list(result)
 
 
 class TestPaths:
@@ -763,6 +763,18 @@ class TestPlainDateTimes:
             assert datetime >= min_value
         if max_value is not None:
             assert datetime <= max_value
+
+
+class TestQuadruples:
+    @given(data=data(), unique=booleans(), sorted_=booleans())
+    def test_main(self, *, data: DataObject, unique: bool, sorted_: bool) -> None:
+        result = data.draw(quadruples(integers(), unique=unique, sorted=sorted_))
+        assert isinstance(result, tuple)
+        assert len(result) == 4
+        if unique:
+            assert len(set(result)) == len(result)
+        if sorted_:
+            assert sorted(result) == list(result)
 
 
 class TestRandomStates:
@@ -1040,12 +1052,10 @@ class TestTriples:
         result = data.draw(triples(integers(), unique=unique, sorted=sorted_))
         assert isinstance(result, tuple)
         assert len(result) == 3
-        first, second, third = result
         if unique:
-            assert first != second
-            assert second != third
+            assert len(set(result)) == len(result)
         if sorted_:
-            assert first <= second <= third
+            assert sorted(result) == list(result)
 
 
 class TestUInt8s:
