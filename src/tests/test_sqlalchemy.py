@@ -3,11 +3,11 @@ from __future__ import annotations
 from asyncio import sleep
 from enum import Enum, StrEnum, auto
 from getpass import getuser
-from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
+from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, override
 from uuid import uuid4
 
 from hypothesis import HealthCheck, Phase, given, settings
-from hypothesis.strategies import SearchStrategy, booleans, lists, none, sets, tuples
+from hypothesis.strategies import booleans, lists, none, sets, tuples
 from pytest import mark, param, raises
 from sqlalchemy import (
     URL,
@@ -102,34 +102,6 @@ def _table_names() -> str:
     """Generate at unique string."""
     key = str(uuid4()).replace("-", "")
     return f"{to_local_plain(get_now())}_{key}"
-
-
-@overload
-def _upsert_triples(
-    *, nullable: Literal[True]
-) -> SearchStrategy[tuple[int, bool, bool]]: ...
-@overload
-def _upsert_triples(
-    *, nullable: bool = ...
-) -> SearchStrategy[tuple[int, bool, bool | None]]: ...
-def _upsert_triples(
-    *, nullable: bool = False
-) -> SearchStrategy[tuple[int, bool, bool | None]]:
-    elements = booleans()
-    if nullable:
-        elements |= none()
-    return tuples(int32s(), booleans(), elements)
-
-
-def _upsert_lists(
-    *, nullable: bool = False, min_size: int = 0, max_size: int | None = None
-) -> SearchStrategy[list[tuple[int, bool, bool | None]]]:
-    return lists(
-        _upsert_triples(nullable=nullable),
-        min_size=min_size,
-        max_size=max_size,
-        unique_by=lambda x: x[0],
-    )
 
 
 class TestCheckConnect:
