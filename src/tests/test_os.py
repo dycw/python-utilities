@@ -11,7 +11,7 @@ from hypothesis.strategies import (
     none,
     sampled_from,
 )
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.hypothesis import text_ascii
 from utilities.os import (
@@ -120,9 +120,14 @@ class TestGetEnvVar:
 
 
 class TestIsDebug:
-    def test_main(self) -> None:
-        result = is_debug()
-        assert isinstance(result, bool)
+    @mark.parametrize("env_var", [param("DEBUG"), param("debug")])
+    def test_main(self, *, env_var: str) -> None:
+        with temp_environ({env_var: "1"}):
+            assert is_debug()
+
+    def test_off(self) -> None:
+        with temp_environ(DEBUG=None, debug=None):
+            assert not is_debug()
 
 
 class TestIsPytest:
