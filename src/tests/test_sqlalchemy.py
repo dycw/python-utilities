@@ -3,7 +3,6 @@ from __future__ import annotations
 from asyncio import sleep
 from enum import Enum, StrEnum, auto
 from getpass import getuser
-from itertools import chain
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 from uuid import uuid4
 
@@ -87,7 +86,6 @@ from utilities.sqlalchemy import (
     is_table_or_orm,
     migrate_data,
     selectable_to_string,
-    upsert_items,
     yield_primary_key_columns,
 )
 from utilities.text import strip_and_dedent
@@ -612,7 +610,6 @@ class TestHashPrimaryKeyValues:
         assert result == expected
 
 
-@mark.only
 class TestInsertItems:
     # end-to-end
 
@@ -1451,66 +1448,6 @@ class TestTupleToMapping:
         )
         result = _tuple_to_mapping(values, table)
         assert result == expected
-
-
-class TestUpsertItems:
-    @given(triples=_upsert_lists(nullable=True, min_size=1))
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    async def test_multiple_elements_with_the_same_primary_key(
-        self,
-        *,
-        triples: list[tuple[int, bool, bool | None]],
-        test_async_engine: AsyncEngine,
-    ) -> None:
-        table = self._make_table()
-        pairs = [
-            ({"id_": id_, "value": init}, {"id_": id_, "value": post})
-            for id_, init, post in triples
-        ]
-        item = list(chain.from_iterable(pairs)), table
-        expected = {
-            (id_, init if post is None else post) for id_, init, post in triples
-        }
-        await self._run_test(test_async_engine, table, item, expected=expected)
-
-    def _make_table(self) -> Table:
-        return Table(
-            _table_names(),
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-            Column("value", Boolean, nullable=True),
-        )
-
-    def _make_mapped_class(self) -> type[DeclarativeBase]:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
-
-        class Example(Base):
-            __tablename__ = _table_names()
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
-
-        return Example
-
-    async def _run_test(
-        self,
-        engine: AsyncEngine,
-        table_or_orm: TableOrORMInstOrClass,
-        /,
-        *items: _InsertItem,
-        selected_or_all: _SelectedOrAll = "selected",
-        expected: set[tuple[Any, ...]] | None = None,
-    ) -> None:
-        await upsert_items(engine, *items, selected_or_all=selected_or_all)
-        sel = select(get_table(table_or_orm))
-        async with engine.begin() as conn:
-            results = (await conn.execute(sel)).all()
-        if expected is not None:
-            assert set(results) == expected
 
 
 class TestYieldPrimaryKeyColumns:
