@@ -87,7 +87,6 @@ from utilities.sqlalchemy import (
     is_table_or_orm,
     migrate_data,
     selectable_to_string,
-    upsert_items,
     yield_primary_key_columns,
 )
 from utilities.text import strip_and_dedent
@@ -752,12 +751,12 @@ class TestInsertItems:
     ) -> None:
         table = self._make_table(value=True)
         init_item = {"id_": id_, "value": init}, table
-        await insert_items(test_async_engine, init_item, upsert_set_null=False)
+        await insert_items(test_async_engine, init_item, upsert=False)
         sel = select(table.c.value)
         async with test_async_engine.begin() as conn:
             assert (await conn.execute(sel)).scalar_one() == init
         post_item = {"id_": id_, "value": post}, table
-        await insert_items(test_async_engine, post_item, upsert_set_null=False)
+        await insert_items(test_async_engine, post_item, upsert=False)
         async with test_async_engine.begin() as conn:
             assert (await conn.execute(sel)).scalar_one() == (
                 init if post is None else post
@@ -786,7 +785,7 @@ class TestInsertItems:
             ({"id_": id_, "value": init_i}, table)
             for id_, init_i in zip(ids, init, strict=True)
         ]
-        await insert_items(test_async_engine, *init_items, upsert_set_null=False)
+        await insert_items(test_async_engine, *init_items, upsert=False)
         sel = select(table.c.value).order_by(table.c.id_)
         async with test_async_engine.begin() as conn:
             assert (await conn.execute(sel)).scalars().all() == list(init)
@@ -794,7 +793,7 @@ class TestInsertItems:
             ({"id_": id_, "value": post_i}, table)
             for id_, post_i in zip(ids, post, strict=True)
         ]
-        await insert_items(test_async_engine, *post_items, upsert_set_null=False)
+        await insert_items(test_async_engine, *post_items, upsert=False)
         async with test_async_engine.begin() as conn:
             assert (await conn.execute(sel)).scalars().all() == [
                 (init_i if post_i is None else post_i)
@@ -819,12 +818,12 @@ class TestInsertItems:
     ) -> None:
         table = self._make_table(two_values=True)
         init_item = {"id_": id_, "value1": init[0], "value2": init[1]}, table
-        await insert_items(test_async_engine, init_item, upsert_set_null=False)
+        await insert_items(test_async_engine, init_item, upsert=False)
         sel = select(table.c.value1, table.c.value2)
         async with test_async_engine.begin() as conn:
             assert (await conn.execute(sel)).one() == (init[0], init[1])
         post_item = {"id_": id_, "value1": post[0], "value2": post[1]}, table
-        await insert_items(test_async_engine, post_item, upsert_set_null=False)
+        await insert_items(test_async_engine, post_item, upsert=False)
         async with test_async_engine.begin() as conn:
             assert (await conn.execute(sel)).one() == (
                 init[0] if post[0] is None else post[0],
@@ -854,7 +853,7 @@ class TestInsertItems:
             ({"id_": ids[0], "value1": init[0], "value2": init[1]}, table),
             ({"id_": ids[1], "value1": init[2], "value2": init[3]}, table),
         ]
-        await insert_items(test_async_engine, *init_items, upsert_set_null=False)
+        await insert_items(test_async_engine, *init_items, upsert=False)
         sel = select(table.c.value1, table.c.value2).order_by(table.c.id_)
         async with test_async_engine.begin() as conn:
             assert (await conn.execute(sel)).all() == [
@@ -865,7 +864,7 @@ class TestInsertItems:
             ({"id_": ids[0], "value1": post[0], "value2": post[1]}, table),
             ({"id_": ids[1], "value1": post[2], "value2": post[3]}, table),
         ]
-        await insert_items(test_async_engine, *post_items, upsert_set_null=False)
+        await insert_items(test_async_engine, *post_items, upsert=False)
         async with test_async_engine.begin() as conn:
             assert (await conn.execute(sel)).all() == [
                 (
@@ -877,32 +876,6 @@ class TestInsertItems:
                     init[3] if post[3] is None else post[3],
                 ),
             ]
-
-    @mark.only
-    @given(id_=int32s(), init=pairs(booleans() | none()), post=booleans())
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    async def test_insert__upsert_set_null(
-        self,
-        *,
-        id_: int,
-        init: tuple[bool | None, bool | None],
-        test_async_engine: AsyncEngine,
-        post: bool | None,
-    ) -> None:
-        table = self._make_table(two_values=True)
-        init_item = {"id_": id_, "value1": init[0], "value2": init[1]}, table
-        await insert_items(test_async_engine, init_item, upsert_set_null=True)
-        sel = select(table.c.value1, table.c.value2)
-        async with test_async_engine.begin() as conn:
-            assert (await conn.execute(sel)).one() == init
-        post_item = ({"id_": id_, "value1": post}, table)
-        await insert_items(test_async_engine, post_item, upsert_set_null=True)
-        async with test_async_engine.begin() as conn:
-            assert (await conn.execute(sel)).one() == (post, None)
 
     @given(id_=int32s())
     @settings(
@@ -1479,52 +1452,6 @@ class TestTupleToMapping:
 
 
 class TestUpsertItems:
-    @given(id_=int32s(), x_init=booleans(), x_post=booleans(), y=booleans())
-    @mark.parametrize("selected_or_all", ["selected", "all"])
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    async def test_sel_or_all(
-        self,
-        *,
-        selected_or_all: _SelectedOrAll,
-        id_: int,
-        x_init: bool,
-        x_post: bool,
-        y: bool,
-        test_async_engine: AsyncEngine,
-    ) -> None:
-        table = Table(
-            _table_names(),
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-            Column("x", Boolean, nullable=False),
-            Column("y", Boolean, nullable=True),
-        )
-        _ = await self._run_test(
-            test_async_engine,
-            table,
-            ({"id_": id_, "x": x_init, "y": y}, table),
-            selected_or_all=selected_or_all,
-            expected={(id_, x_init, y)},
-        )
-        match selected_or_all:
-            case "selected":
-                expected = (id_, x_post, y)
-            case "all":
-                expected = (id_, x_post, None)
-            case never:
-                assert_never(never)
-        _ = await self._run_test(
-            test_async_engine,
-            table,
-            ({"id_": id_, "x": x_post}, table),
-            selected_or_all=selected_or_all,
-            expected={expected},
-        )
-
     @given(triples=_upsert_lists(nullable=True, min_size=1))
     @settings(
         max_examples=1,
@@ -1547,41 +1474,6 @@ class TestUpsertItems:
             (id_, init if post is None else post) for id_, init, post in triples
         }
         await self._run_test(test_async_engine, table, item, expected=expected)
-
-    def _make_table(self) -> Table:
-        return Table(
-            _table_names(),
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-            Column("value", Boolean, nullable=True),
-        )
-
-    def _make_mapped_class(self) -> type[DeclarativeBase]:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
-
-        class Example(Base):
-            __tablename__ = _table_names()
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
-
-        return Example
-
-    async def _run_test(
-        self,
-        engine: AsyncEngine,
-        table_or_orm: TableOrORMInstOrClass,
-        /,
-        *items: _InsertItem,
-        selected_or_all: _SelectedOrAll = "selected",
-        expected: set[tuple[Any, ...]] | None = None,
-    ) -> None:
-        await upsert_items(engine, *items, selected_or_all=selected_or_all)
-        sel = select(get_table(table_or_orm))
-        async with engine.begin() as conn:
-            results = (await conn.execute(sel)).all()
-        if expected is not None:
-            assert set(results) == expected
 
 
 class TestYieldPrimaryKeyColumns:
