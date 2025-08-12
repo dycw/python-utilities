@@ -631,7 +631,7 @@ async def insert_items(
                                                ...]
     """
     normalized = chain.from_iterable(
-        _insert_item_yield_normalized(i, snake=snake) for i in items
+        _insert_items_yield_normalized(i, snake=snake) for i in items
     )
     triples = _insert_items_yield_insert_triples(
         engine, normalized, is_upsert=is_upsert, chunk_size_frac=chunk_size_frac
@@ -649,7 +649,7 @@ async def insert_items(
             _ = await conn.execute(ins, parameters=parameters)
 
 
-def _insert_item_yield_normalized(
+def _insert_items_yield_normalized(
     item: _InsertItem, /, *, snake: bool = False
 ) -> Iterator[_NormalizedItem]:
     if _is_pair_of_str_mapping_and_table(item):
@@ -660,17 +660,17 @@ def _insert_item_yield_normalized(
     if _is_pair_of_tuple_and_table(item):
         tuple_, table_or_orm = item
         mapping = _tuple_to_mapping(tuple_, table_or_orm)
-        yield from _insert_item_yield_normalized((mapping, table_or_orm), snake=snake)
+        yield from _insert_items_yield_normalized((mapping, table_or_orm), snake=snake)
         return
     if _is_pair_of_sequence_of_tuple_or_string_mapping_and_table(item):
         items, table_or_orm = item
         pairs = [(i, table_or_orm) for i in items]
         for p in pairs:
-            yield from _insert_item_yield_normalized(p, snake=snake)
+            yield from _insert_items_yield_normalized(p, snake=snake)
         return
     if isinstance(item, DeclarativeBase):
         mapping = _orm_inst_to_dict(item)
-        yield from _insert_item_yield_normalized((mapping, item), snake=snake)
+        yield from _insert_items_yield_normalized((mapping, item), snake=snake)
         return
     try:
         _ = iter(item)
@@ -679,12 +679,12 @@ def _insert_item_yield_normalized(
     if all(map(_is_pair_of_tuple_or_str_mapping_and_table, item)):
         pairs = cast("Sequence[_PairOfTupleOrStrMappingAndTable]", item)
         for p in pairs:
-            yield from _insert_item_yield_normalized(p, snake=snake)
+            yield from _insert_items_yield_normalized(p, snake=snake)
         return
     if all(map(is_orm, item)):
         classes = cast("Sequence[DeclarativeBase]", item)
         for c in classes:
-            yield from _insert_item_yield_normalized(c, snake=snake)
+            yield from _insert_items_yield_normalized(c, snake=snake)
         return
     raise InsertItemsError(item=item)
 

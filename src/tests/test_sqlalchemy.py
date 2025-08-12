@@ -48,8 +48,8 @@ from utilities.sqlalchemy import (
     _ExtractURLUsernameError,
     _get_dialect,
     _get_dialect_max_params,
-    _insert_item_yield_normalized,
     _insert_items_yield_merged_mappings,
+    _insert_items_yield_normalized,
     _InsertItem,
     _is_pair_of_sequence_of_tuple_or_string_mapping_and_table,
     _is_pair_of_str_mapping_and_table,
@@ -916,7 +916,7 @@ class TestInsertItems:
                 item = {"id_": id_}, table
             case never:
                 assert_never(never)
-        result = one(_insert_item_yield_normalized(item))
+        result = one(_insert_items_yield_normalized(item))
         expected = (table, {"id_": id_})
         assert result == expected
 
@@ -938,7 +938,7 @@ class TestInsertItems:
                 item = [({"id_": id_}) for id_ in ids], table
             case never:
                 assert_never(never)
-        result = list(_insert_item_yield_normalized(item))
+        result = list(_insert_items_yield_normalized(item))
         expected = [(table, {"id_": id_}) for id_ in ids]
         assert result == expected
 
@@ -960,21 +960,21 @@ class TestInsertItems:
                 item = [({"id_": id_}, table) for id_ in ids]
             case never:
                 assert_never(never)
-        result = list(_insert_item_yield_normalized(item))
+        result = list(_insert_items_yield_normalized(item))
         expected = [(table, {"id_": id_}) for id_ in ids]
         assert result == expected
 
     @given(id_=int32s())
     def test_yield_normalized__mapped_class(self, *, id_: int) -> None:
         cls = self._make_mapped_class()
-        result = one(_insert_item_yield_normalized(cls(id_=id_)))
+        result = one(_insert_items_yield_normalized(cls(id_=id_)))
         expected = (get_table(cls), {"id_": id_})
         assert result == expected
 
     @given(ids=sets(int32s(), min_size=1))
     def test_yield_normalized__mapped_classes(self, *, ids: set[int]) -> None:
         cls = self._make_mapped_class()
-        result = list(_insert_item_yield_normalized([cls(id_=id_) for id_ in ids]))
+        result = list(_insert_items_yield_normalized([cls(id_=id_) for id_ in ids]))
         expected = [(get_table(cls), {"id_": id_}) for id_ in ids]
         assert result == expected
 
@@ -996,7 +996,7 @@ class TestInsertItems:
                 item = {"id_": id_}, table
             case never:
                 assert_never(never)
-        result = one(_insert_item_yield_normalized(item, snake=True))
+        result = one(_insert_items_yield_normalized(item, snake=True))
         expected = (table, {"Id_": id_})
         assert result == expected
 
@@ -1015,7 +1015,7 @@ class TestInsertItems:
     )
     def test_errors(self, *, item: Any) -> None:
         with raises(InsertItemsError, match="Item must be valid; got .*"):
-            _ = list(_insert_item_yield_normalized(item))
+            _ = list(_insert_items_yield_normalized(item))
 
     # private
 
