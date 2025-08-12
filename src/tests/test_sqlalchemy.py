@@ -4,7 +4,7 @@ from asyncio import sleep
 from enum import Enum, StrEnum, auto
 from getpass import getuser
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
+from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 from uuid import uuid4
 
 from hypothesis import HealthCheck, Phase, assume, given, settings
@@ -623,7 +623,7 @@ class TestInsertItems:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_pair_of_obj_and_table(
+    async def test_insert__pair_of_obj_and_table(
         self,
         *,
         case: Literal["tuple", "dict"],
@@ -636,6 +636,8 @@ class TestInsertItems:
                 item = (id_,), table
             case "dict":
                 item = {"id_": id_}, table
+            case never:
+                assert_never(never)
         await self._run_insert_and_select(test_async_engine, table, {id_}, item)
 
     @given(ids=sets(int32s(), min_size=1))
@@ -653,7 +655,7 @@ class TestInsertItems:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_pair_of_objs_and_table_or_list_of_pairs_of_objs_and_table(
+    async def test_insert__pair_of_objs_and_table_or_list_of_pairs_of_objs_and_table(
         self,
         *,
         case: Literal[
@@ -675,6 +677,8 @@ class TestInsertItems:
                 item = [((id_,), table) for id_ in ids]
             case "list-of-pair-of-dicts":
                 item = [({"id_": id_}, table) for id_ in ids]
+            case never:
+                assert_never(never)
         await self._run_insert_and_select(test_async_engine, table, ids, item)
 
     @given(ids=sets(int32s(), min_size=10, max_size=100))
@@ -683,7 +687,7 @@ class TestInsertItems:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_many_items(
+    async def test_insert__many_items(
         self, *, ids: set[int], test_async_engine: AsyncEngine
     ) -> None:
         table = self._make_table()
@@ -697,7 +701,7 @@ class TestInsertItems:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_mapped_class(
+    async def test_insert__mapped_class(
         self, *, id_: int, test_async_engine: AsyncEngine
     ) -> None:
         cls = self._make_mapped_class()
@@ -709,7 +713,7 @@ class TestInsertItems:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_mapped_classes(
+    async def test_insert__mapped_classes(
         self, *, ids: set[int], test_async_engine: AsyncEngine
     ) -> None:
         cls = self._make_mapped_class()
@@ -724,7 +728,7 @@ class TestInsertItems:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_snake(
+    async def test_insert__snake(
         self, *, id_: int, key: str, test_async_engine: AsyncEngine
     ) -> None:
         table = self._make_table(title=True)
@@ -739,7 +743,7 @@ class TestInsertItems:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_assume_table_exists(
+    async def test_insert__assume_table_exists(
         self, *, id_: int, test_async_engine: AsyncEngine
     ) -> None:
         table = self._make_table()
@@ -748,13 +752,6 @@ class TestInsertItems:
         ):
             await insert_items(
                 test_async_engine, ({"id_": id_}, table), assume_tables_exist=True
-            )
-
-    async def test_error(self, *, test_async_engine: AsyncEngine) -> None:
-        cls = self._make_mapped_class()
-        with raises(InsertItemsError, match="Item must be valid; got None"):
-            await self._run_insert_and_select(
-                test_async_engine, cls, set(), cast("Any", None)
             )
 
     # yield merged mappings
@@ -816,6 +813,8 @@ class TestInsertItems:
                 item = (id_,), table
             case "dict":
                 item = {"id_": id_}, table
+            case never:
+                assert_never(never)
         result = one(_insert_item_yield_normalized(item))
         expected = (table, {"id_": id_})
         assert result == expected
@@ -836,6 +835,8 @@ class TestInsertItems:
                 item = [((id_,)) for id_ in ids], table
             case "dict":
                 item = [({"id_": id_}) for id_ in ids], table
+            case never:
+                assert_never(never)
         result = list(_insert_item_yield_normalized(item))
         expected = [(table, {"id_": id_}) for id_ in ids]
         assert result == expected
@@ -856,6 +857,8 @@ class TestInsertItems:
                 item = [(((id_,), table)) for id_ in ids]
             case "dict":
                 item = [({"id_": id_}, table) for id_ in ids]
+            case never:
+                assert_never(never)
         result = list(_insert_item_yield_normalized(item))
         expected = [(table, {"id_": id_}) for id_ in ids]
         assert result == expected
@@ -868,12 +871,51 @@ class TestInsertItems:
         assert result == expected
 
     @given(ids=sets(int32s(), min_size=1))
-    @mark.only
     def test_yield_normalized__mapped_classes(self, *, ids: set[int]) -> None:
         cls = self._make_mapped_class()
         result = list(_insert_item_yield_normalized([cls(id_=id_) for id_ in ids]))
         expected = [(get_table(cls), {"id_": id_}) for id_ in ids]
         assert result == expected
+
+    @given(id_=int32s())
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    def test_yield_normalize__snake(
+        self, *, case: Literal["tuple", "dict"], id_: int
+    ) -> None:
+        table = self._make_table(title=True)
+        match case:
+            case "tuple":
+                item = (id_,), table
+            case "dict":
+                item = {"id_": id_}, table
+            case never:
+                assert_never(never)
+        result = one(_insert_item_yield_normalized(item, snake=True))
+        expected = (table, {"Id_": id_})
+        assert result == expected
+
+    @mark.only
+    @mark.parametrize(
+        "item",
+        [
+            param((None,), id="tuple, not pair"),
+            param(
+                (None, Table(_table_names(), MetaData())),
+                id="pair, first element invalid",
+            ),
+            param(((1, 2, 3), None), id="pair, second element invalid"),
+            param([None], id="iterable, invalid"),
+            param(None, id="outright invalid"),
+        ],
+    )
+    def test_errors(self, *, item: Any) -> None:
+        with raises(InsertItemsError, match="Item must be valid; got .*"):
+            _ = list(_insert_item_yield_normalized(item))
 
     # private
 
@@ -1153,64 +1195,6 @@ class TestMigrateData:
         )
 
 
-class TestNormalizeInsertItem:
-    @given(id_=int32s())
-    @mark.parametrize("case", [param("tuple"), param("dict")])
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    def test_snake(self, *, case: Literal["tuple", "dict"], id_: int) -> None:
-        table = Table(
-            _table_names(), MetaData(), Column("Id_", Integer, primary_key=True)
-        )
-        match case:
-            case "tuple":
-                item = (id_,), table
-            case "dict":
-                item = {"id_": id_}, table
-        result = one(_insert_item_yield_normalized(item, snake=True))
-        expected = _NormalizedItem(mapping={"Id_": id_}, table=table)
-        assert result == expected
-
-    @mark.parametrize(
-        "item",
-        [
-            param((None,), id="tuple, not pair"),
-            param(
-                (None, Table(_table_names(), MetaData())),
-                id="pair, first element invalid",
-            ),
-            param(((1, 2, 3), None), id="pair, second element invalid"),
-            param([None], id="iterable, invalid"),
-            param(None, id="outright invalid"),
-        ],
-    )
-    def test_errors(self, *, item: Any) -> None:
-        with raises(
-            _InsertItemYieldNormalizedError, match="Item must be valid; got .*"
-        ):
-            _ = list(_insert_item_yield_normalized(item))
-
-    @property
-    def _table(self) -> Table:
-        return Table(
-            _table_names(), MetaData(), Column("id_", Integer, primary_key=True)
-        )
-
-    @property
-    def _mapped_class(self) -> type[DeclarativeBase]:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
-
-        class Example(Base):
-            __tablename__ = _table_names()
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-
-        return Example
-
-
 class TestORMInstToDict:
     @given(id_=int32s())
     def test_main(self, *, id_: int) -> None:
@@ -1276,12 +1260,6 @@ class TestORMInstToDict:
         result = _orm_inst_to_dict(child)
         expected = {"id_": child_id, "parent_id": parent_id}
         assert result == expected
-
-
-class TestPrepareInsertOrUpsertItems:
-    def test_error(self) -> None:
-        with raises(InsertItemsError, match="Item must be valid; got None"):
-            _ = list(_insert_item_yield_normalized(cast("Any", None)))
 
 
 class TestSelectableToString:
@@ -1400,6 +1378,8 @@ class TestUpsertItems:
                     for id_, _, post in triples
                     if post is not None
                 ]
+            case never:
+                assert_never(never)
         init_expected = {(id_, init) for id_, init, _ in triples}
         _ = await self._run_test(test_async_engine, table, init, expected=init_expected)
         post_expected = {
@@ -1584,6 +1564,8 @@ class TestUpsertItems:
                 expected = (id_, x_post, y)
             case "all":
                 expected = (id_, x_post, None)
+            case never:
+                assert_never(never)
         _ = await self._run_test(
             test_async_engine,
             table,
@@ -1656,11 +1638,6 @@ class TestUpsertItems:
             (id_, init if post is None else post) for id_, init, post in triples
         }
         await self._run_test(test_async_engine, table, item, expected=expected)
-
-    async def test_error(self, *, test_async_engine: AsyncEngine) -> None:
-        table = self._make_table()
-        with raises(InsertItemsError, match="Item must be valid; got None"):
-            _ = await self._run_test(test_async_engine, table, cast("Any", None))
 
     def _make_table(self) -> Table:
         return Table(
