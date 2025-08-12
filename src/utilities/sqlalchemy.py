@@ -52,7 +52,10 @@ from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import Insert as postgresql_Insert
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
-from sqlalchemy.dialects.postgresql.asyncpg import PGDialect_asyncpg
+from sqlalchemy.dialects.postgresql.asyncpg import (
+    AsyncAdaptFallback_asyncpg_connection,
+    PGDialect_asyncpg,
+)
 from sqlalchemy.dialects.postgresql.psycopg import PGDialect_psycopg
 from sqlalchemy.dialects.sqlite import Insert as sqlite_Insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
@@ -608,9 +611,8 @@ type _InsertItem = (
     | Sequence[DeclarativeBase]
 )
 type _NormalizedItem = tuple[Table, StrMapping]
-type _InsertItemBatch = (
-    tuple[Table, list[StrMapping]] | tuple[Table, list[StrMapping], Any]
-)
+type _InsertBatch = tuple[Table, Sequence[StrMapping]]
+type _InsertAndParameters = tuple[Insert, Sequence[StrMapping] | None]
 
 
 async def insert_items(
@@ -647,10 +649,14 @@ async def insert_items(
                                                Obj(k1=v21, k2=v22, ...),
                                                ...]
     """
-    normalized = list(
-        chain.from_iterable(
-            _insert_item_yield_normalized(i, snake=snake) for i in items
-        )
+    normalized = chain.from_iterable(
+        _insert_item_yield_normalized(i, snake=snake) for i in items
+    )
+    ins_and_parameters = _insert_items_yield_insert_and_parameters(
+        engine,
+        normalized,
+        upsert_set_null=upsert_set_null,
+        chunk_size_frac=chunk_size_frac,
     )
 
     def build_insert(
@@ -723,36 +729,75 @@ def _insert_item_yield_normalized(
     raise _InsertItemYieldNormalizedError(item=item)
 
 
-def _insert_items_yield_batches(
+def _insert_items_yield_insert_and_parameters(
     engine: AsyncEngine,
-    items: Iterable[_InsertItem],
+    items: Iterable[_NormalizedItem],
     /,
     *,
     upsert_set_null: bool | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-) -> Iterable[_InsertItemBatch]:
-    match upsert, _get_dialect(engine):
-        case None, "oracle":
-            yield from _insert_items_yield_batches_insert_oracle(engine, items)
-        case None, _:
-            yield from _insert_items_yield_batches_insert_non_oracle(engine, items)
-        case bool() as set_null, "postgresql":
-            yield from _insert_items_yield_batches_upsert_postgres(
+) -> Iterable[_InsertAndParameters]:
+    batches = list(
+        _insert_items_yield_chunked_batches(
+            engine,
+            items,
+            upsert_set_null=upsert_set_null,
+            chunk_size_frac=chunk_size_frac,
+        )
+    )
+    match _get_dialect(engine), upsert_set_null:
+        case "oracle", None:  # pragma: no cover
+            for table, mappings in batches:
+                yield insert(table), mappings
+        case _:
+            for table, mappings in batches:
+                yield insert(table).values(mappings), None
+
+
+def _insert_items_yield_chunked_batches(
+    engine: AsyncEngine,
+    items: Iterable[_NormalizedItem],
+    /,
+    *,
+    upsert_set_null: bool | None = None,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+) -> Iterable[_InsertBatch]:
+    for table, mappings in _insert_items_yield_raw_batches(
+        engine, items, upsert_set_null=upsert_set_null
+    ):
+        chunk_size = get_chunk_size(engine, table, chunk_size_frac=chunk_size_frac)
+        for mappings_i in chunked(mappings, chunk_size):
+            yield table, list(mappings_i)
+
+
+def _insert_items_yield_raw_batches(
+    engine: AsyncEngine,
+    items: Iterable[_NormalizedItem],
+    /,
+    *,
+    upsert_set_null: bool | None = None,
+) -> Iterable[_InsertBatch]:
+    match upsert_set_null:
+        case None:
+            yield from _insert_items_yield_raw_batches_insert(engine, items)
+        case bool() as set_null:
+            yield from _insert_items_yield_raw_batches_upsert(
                 engine, items, set_null=set_null
             )
-        case bool() as set_null, "sqlite":
-            yield from _insert_items_yield_batches_upsert_sqlite(
-                engine, items, set_null=set_null
-            )
+        case never:
+            assert_never(never)
 
 
-@dataclass(kw_only=True, slots=True)
-class InsertItemsError(Exception):
-    item: _InsertItem
+def _insert_items_yield_raw_batches_insert(
+    engine: AsyncEngine, items: Iterable[_NormalizedItem], /
+) -> Iterable[_InsertBatch]:
+    a
 
-    @override
-    def __str__(self) -> str:
-        return f"Item must be valid; got {self.item}"
+
+def _insert_items_yield_raw_batches_upsert(
+    engine: AsyncEngine, items: Iterable[_NormalizedItem], /, *, set_null: bool = False
+) -> Iterable[_InsertBatch]:
+    a
 
 
 async def _execute_inserts() -> None:
