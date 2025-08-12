@@ -341,7 +341,7 @@ async def ensure_tables_created(
     /,
     *tables_or_orms: TableOrORMInstOrClass,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[Exception] = TimeoutError,
 ) -> None:
     """Ensure a table/set of tables is/are created."""
     tables = set(map(get_table, tables_or_orms))
@@ -370,7 +370,7 @@ async def ensure_tables_dropped(
     engine: AsyncEngine,
     *tables_or_orms: TableOrORMInstOrClass,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[Exception] = TimeoutError,
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
     tables = set(map(get_table, tables_or_orms))
