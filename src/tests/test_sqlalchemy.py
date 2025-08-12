@@ -7,7 +7,7 @@ from itertools import chain
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 from uuid import uuid4
 
-from hypothesis import HealthCheck, Phase, assume, given, settings
+from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import SearchStrategy, booleans, lists, none, sets, tuples
 from pytest import mark, param, raises
 from sqlalchemy import (
@@ -32,13 +32,7 @@ from sqlalchemy.orm import (
 )
 
 from tests.conftest import SKIPIF_CI
-from utilities.hypothesis import (
-    int32s,
-    pairs,
-    quadruples,
-    settings_with_reduced_examples,
-    urls,
-)
+from utilities.hypothesis import int32s, pairs, quadruples, urls
 from utilities.iterables import one
 from utilities.modules import is_installed
 from utilities.sqlalchemy import (
@@ -752,8 +746,8 @@ class TestInsertItems:
         self,
         *,
         id_: int,
-        test_async_engine: AsyncEngine,
         init: bool | None,
+        test_async_engine: AsyncEngine,
         post: bool | None,
     ) -> None:
         table = self._make_table(value=True)
@@ -780,13 +774,12 @@ class TestInsertItems:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    @mark.only
     async def test_insert__upsert_single_column_two_rows(
         self,
         *,
         ids: tuple[int, int],
-        test_async_engine: AsyncEngine,
         init: tuple[bool | None, bool | None],
+        test_async_engine: AsyncEngine,
         post: tuple[bool | None, bool | None],
     ) -> None:
         table = self._make_table(value=True)
@@ -815,6 +808,38 @@ class TestInsertItems:
                 for id_, init_i, post_i in zip(ids, init, post, strict=True)
                 if (init_i is not None) or (post_i is not None)
             ]
+
+    @given(
+        id_=int32s(), init=pairs(booleans() | none()), post=pairs(booleans() | none())
+    )
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    @mark.only
+    async def test_insert__upsert_two_columns_one_row(
+        self,
+        *,
+        id_: int,
+        test_async_engine: AsyncEngine,
+        init: tuple[bool | None, bool | None],
+        post: tuple[bool | None, bool | None],
+    ) -> None:
+        table = self._make_table(two_values=True)
+        init_item = {"id_": id_, "value1": init[0], "value2": init[1]}, table
+        await insert_items(test_async_engine, init_item, upsert_set_null=False)
+        sel = select(get_table(table)).order_by(table.c.id_)
+        async with test_async_engine.begin() as conn:
+            assert (await conn.execute(sel)).one() == (id_, init[0], init[1])
+        post_item = {"id_": id_, "value1": post[0], "value2": post[1]}, table
+        await insert_items(test_async_engine, post_item, upsert_set_null=False)
+        async with test_async_engine.begin() as conn:
+            assert (await conn.execute(sel)).one() == (
+                id_,
+                init[0] if post[0] is None else post[0],
+                init[1] if post[1] is None else post[1],
+            )
 
     @given(
         ids=pairs(int32s(), unique=True),
@@ -1041,12 +1066,19 @@ class TestInsertItems:
 
     # private
 
-    def _make_table(self, *, title: bool = False, value: bool = False) -> Table:
+    def _make_table(
+        self, *, title: bool = False, value: bool = False, two_values: bool = False
+    ) -> Table:
         return Table(
             _table_names(),
             MetaData(),
             Column("Id_" if title else "id_", Integer, primary_key=True),
             *([Column("value", Boolean, nullable=True)] if value else []),
+            *(
+                [Column(f"value{i}", Boolean, nullable=True) for i in [1, 2]]
+                if two_values
+                else []
+            ),
         )
 
     def _make_mapped_class(self) -> type[DeclarativeBase]:
@@ -1582,48 +1614,6 @@ class TestUpsertItems:
             selected_or_all=selected_or_all,
             expected={expected},
         )
-
-    @given(id_=int32s())
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    async def test_assume_table_exists(
-        self, *, id_: int, test_async_engine: AsyncEngine
-    ) -> None:
-        table = self._make_table()
-        with raises((OperationalError, ProgrammingError)):
-            await upsert_items(
-                test_async_engine,
-                ({"id_": id_, "value": True}, table),
-                assume_tables_exist=True,
-            )
-
-    @given(
-        id1=int32s(),
-        id2=int32s(),
-        value1=booleans() | none(),
-        value2=booleans() | none(),
-    )
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    async def test_both_nulls_and_non_nulls(
-        self,
-        *,
-        id1: int,
-        id2: int,
-        value1: bool | None,
-        value2: bool | None,
-        test_async_engine: AsyncEngine,
-    ) -> None:
-        table = self._make_table()
-        _ = assume(id1 != id2)
-        item = [{"id_": id1, "value": value1}, {"id_": id2, "value": value2}], table
-        await upsert_items(test_async_engine, item)
 
     @given(triples=_upsert_lists(nullable=True, min_size=1))
     @settings(
