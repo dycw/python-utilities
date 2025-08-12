@@ -13,7 +13,7 @@ from collections.abc import (
 from collections.abc import Set as AbstractSet
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from functools import partial, reduce
+from functools import reduce
 from itertools import chain
 from math import floor
 from operator import ge, le
@@ -37,7 +37,6 @@ from sqlalchemy import (
     Connection,
     Engine,
     Insert,
-    PrimaryKeyConstraint,
     Selectable,
     Table,
     and_,
@@ -49,12 +48,10 @@ from sqlalchemy import (
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
-from sqlalchemy.dialects.postgresql import Insert as postgresql_Insert
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.postgresql.asyncpg import PGDialect_asyncpg
 from sqlalchemy.dialects.postgresql.psycopg import PGDialect_psycopg
-from sqlalchemy.dialects.sqlite import Insert as sqlite_Insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import (
@@ -727,30 +724,25 @@ def _insert_items_yield_insert_triples(
             is_upsert = True
         case never:
             assert_never(never)
-    pairs = list(
-        _insert_items_yield_chunked_pairs(
-            engine, items, by_non_null=by_non_null, chunk_size_frac=chunk_size_frac
-        )
+    pairs = _insert_items_yield_chunked_pairs(
+        engine, items, by_non_null=by_non_null, chunk_size_frac=chunk_size_frac
     )
-    match is_upsert, _get_dialect(engine):
-        case False, "oracle":  # pragma: no cover
-            for table, mappings in pairs:
-                yield table, insert(table), mappings
-        case False, _:
-            for table, mappings in pairs:
-                yield table, insert(table), mappings
-        case True, "postgresql":  # skipif-ci-and-not-linux
-            # INSERT OR UPSERT
-            for table, mappings in pairs:
-                yield table, insert(table).values(mappings), None
-        case True, "sqlite":
-            # INSERT OR UPSERT
-            for table, mappings in pairs:
-                yield table, insert(table).values(mappings), None
-        case True, "mssql" | "mysql" | "oracle" as dialect:
-            raise NotImplementedError(dialect)  # pragma: no cover
-        case never:
-            assert_never(never)
+    for table, mappings in pairs:
+        match is_upsert, _get_dialect(engine):
+            case False, "oracle":  # pragma: no cover
+                ins = insert(table)
+                parameters = mappings
+            case False, _:
+                ins = insert(table).values(mappings)
+                parameters = None
+            case True, _:
+                ins = _insert_items_build_insert_with_on_conflict_do_update(
+                    engine, table, mappings
+                )
+                parameters = None
+            case never:
+                assert_never(never)
+        yield table, ins, parameters
 
 
 def _insert_items_yield_chunked_pairs(
@@ -819,6 +811,27 @@ def _insert_items_yield_merged_mappings(
     for k, v in mapping.items():
         head = dict(zip(col_names, k, strict=True))
         yield merge_str_mappings(head, *v)
+
+
+def _insert_items_build_insert_with_on_conflict_do_update(
+    engine: AsyncEngine, table: Table, mappings: Iterable[StrMapping], /
+) -> Insert:
+    primary_key = cast("Any", table.primary_key)
+    mappings = list(mappings)
+    columns = merge_sets(*mappings)
+    match _get_dialect(engine):
+        case "postgresql":  # skipif-ci-and-not-linux
+            ins = postgresql_insert(table).values(mappings)
+            set_ = {c: getattr(ins.excluded, c) for c in columns}
+            return ins.on_conflict_do_update(constraint=primary_key, set_=set_)
+        case "sqlite":
+            ins = sqlite_insert(table).values(mappings)
+            set_ = {c: getattr(ins.excluded, c) for c in columns}
+            return ins.on_conflict_do_update(index_elements=primary_key, set_=set_)
+        case "mssql" | "mysql" | "oracle" as dialect:  # pragma: no cover
+            raise NotImplementedError(dialect)
+        case never:
+            assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -941,62 +954,6 @@ async def upsert_items(
         timeout_insert=timeout_insert,
         error_insert=error_insert,
     )
-
-
-def _upsert_items_build(
-    engine: AsyncEngine,
-    table: Table,
-    values: Iterable[StrMapping],
-    /,
-    *,
-    selected_or_all: Literal["selected", "all"] = "selected",
-) -> Insert:
-    values = list(values)
-    keys = merge_sets(*values)
-    dict_nones = dict.fromkeys(keys)
-    values = [{**dict_nones, **v} for v in values]
-    match _get_dialect(engine):
-        case "postgresql":  # skipif-ci-and-not-linux
-            insert = postgresql_insert
-        case "sqlite":
-            insert = sqlite_insert
-        case "mssql" | "mysql" | "oracle" as dialect:  # pragma: no cover
-            raise NotImplementedError(dialect)
-        case never:
-            assert_never(never)
-    ins = insert(table).values(values)
-    primary_key = cast("Any", table.primary_key)
-    return _upsert_items_apply_on_conflict_do_update(
-        values, ins, primary_key, selected_or_all=selected_or_all
-    )
-
-
-def _upsert_items_apply_on_conflict_do_update(
-    values: Iterable[StrMapping],
-    insert: postgresql_Insert | sqlite_Insert,
-    primary_key: PrimaryKeyConstraint,
-    /,
-    *,
-    selected_or_all: Literal["selected", "all"] = "selected",
-) -> Insert:
-    match selected_or_all:
-        case "selected":
-            columns = merge_sets(*values)
-        case "all":
-            columns = {c.name for c in insert.excluded}
-        case never:
-            assert_never(never)
-    set_ = {c: getattr(insert.excluded, c) for c in columns}
-    match insert:
-        case postgresql_Insert():  # skipif-ci
-            return insert.on_conflict_do_update(constraint=primary_key, set_=set_)
-        case sqlite_Insert():
-            insert.on_conflict_do_update(index_elements=primary_key, set_=set_)
-            # breakpoint()
-
-            return insert.on_conflict_do_update(index_elements=primary_key, set_=set_)
-        case never:
-            assert_never(never)
 
 
 ##
