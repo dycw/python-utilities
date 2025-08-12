@@ -12,7 +12,7 @@ from collections.abc import (
 )
 from collections.abc import Set as AbstractSet
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import reduce
 from itertools import chain
 from math import floor
@@ -1197,60 +1197,6 @@ def _orm_inst_to_dict_predicate(
         return cls_attr.name == name
     except AttributeError:
         return False
-
-
-##
-
-
-@dataclass(kw_only=True, slots=True)
-class _PrepareInsertOrUpsertItems:
-    mapping: dict[Table, list[StrMapping]] = field(default_factory=dict)
-    yield_pairs: Callable[[], Iterator[tuple[Insert, Any]]]
-
-    @property
-    def tables(self) -> Sequence[Table]:
-        return list(self.mapping)
-
-
-def _prepare_insert_or_upsert_items(
-    normalize_item: Callable[[_InsertItem], Iterable[_NormalizedItem]],
-    engine: AsyncEngine,
-    build_insert: Callable[[Table, Iterable[StrMapping]], tuple[Insert, Any]],
-    /,
-    *items: Any,
-    chunk_size_frac: float = CHUNK_SIZE_FRAC,
-) -> _PrepareInsertOrUpsertItems:
-    """Prepare a set of insert/upsert items."""
-    mapping: defaultdict[Table, list[StrMapping]] = defaultdict(list)
-    lengths: set[int] = set()
-    try:
-        for item in items:
-            for normed in normalize_item(item):
-                mapping[normed.table].append(normed.mapping)
-                lengths.add(len(normed.mapping))
-    except _InsertItemYieldNormalizedError as error:
-        raise _PrepareInsertOrUpsertItemsError(item=error.item) from None
-    merged: dict[Table, list[StrMapping]] = {
-        table: _insert_items_yield_merged_mappings(table, values)
-        for table, values in mapping.items()
-    }
-
-    def yield_pairs() -> Iterator[tuple[Insert, None]]:
-        for table, values in merged.items():
-            chunk_size = get_chunk_size(engine, table, chunk_size_frac=chunk_size_frac)
-            for chunk in chunked(values, chunk_size):
-                yield build_insert(table, chunk)
-
-    return _PrepareInsertOrUpsertItems(mapping=mapping, yield_pairs=yield_pairs)
-
-
-@dataclass(kw_only=True, slots=True)
-class _PrepareInsertOrUpsertItemsError(Exception):
-    item: Any
-
-    @override
-    def __str__(self) -> str:
-        return f"Item must be valid; got {self.item}"
 
 
 ##
