@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from asyncio import sleep
 from enum import Enum, StrEnum, auto
 from getpass import getuser
@@ -14,6 +15,7 @@ from sqlalchemy import (
     URL,
     Boolean,
     Column,
+    Date,
     Engine,
     ForeignKey,
     Integer,
@@ -1523,6 +1525,44 @@ class TestUpsertItems:
             (id_, init if post is None else post) for id_, init, post in triples
         }
         _ = await self._run_test(test_async_engine, cls, post, expected=post_expected)
+
+    @mark.only
+    async def test_upsert_multiple_columns(
+        self, *, test_async_engine: AsyncEngine
+    ) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
+            __tablename__ = _table_names()
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            x: Mapped[bool | None] = mapped_column(
+                Boolean, default=None, kw_only=True, nullable=True
+            )
+            y: Mapped[bool | None] = mapped_column(
+                Boolean, default=None, kw_only=True, nullable=True
+            )
+
+        id_ = 1
+        init = Example(id_=id_, x=None, y=True)
+        init2 = Example(id_=2, x=True, y=None)
+        await upsert_items(test_async_engine, init, init2)
+
+        # check init
+        sel = select(Example).where(Example.id_ == 1)
+        async with test_async_engine.begin() as conn:
+            result = (await conn.execute(sel)).one()
+        assert result == (id_, None, True)
+
+        # delta
+        delta1 = Example(id_=1, x=True)
+        delta2 = Example(id_=2, y=True)
+        await upsert_items(test_async_engine, delta1, delta2)
+
+        # post
+        async with test_async_engine.begin() as conn:
+            result = (await conn.execute(sel)).one()
+        assert result == (id_, True, True)
 
     @given(id_=int32s(), x_init=booleans(), x_post=booleans(), y=booleans())
     @mark.parametrize("selected_or_all", get_literal_elements(_SelectedOrAll))
