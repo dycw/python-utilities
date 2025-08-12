@@ -52,10 +52,7 @@ from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import Insert as postgresql_Insert
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
-from sqlalchemy.dialects.postgresql.asyncpg import (
-    AsyncAdaptFallback_asyncpg_connection,
-    PGDialect_asyncpg,
-)
+from sqlalchemy.dialects.postgresql.asyncpg import PGDialect_asyncpg
 from sqlalchemy.dialects.postgresql.psycopg import PGDialect_psycopg
 from sqlalchemy.dialects.sqlite import Insert as sqlite_Insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
@@ -719,10 +716,15 @@ def _insert_items_yield_insert_triples(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
 ) -> Iterable[_InsertTriple]:
     match upsert_set_null:
+        case None:
+            by_non_null = False
+            is_upsert = False
         case True:
             by_non_null = True
-        case False | None:
+            is_upsert = True
+        case False:
             by_non_null = False
+            is_upsert = True
         case never:
             assert_never(never)
     pairs = list(
@@ -730,14 +732,25 @@ def _insert_items_yield_insert_triples(
             engine, items, by_non_null=by_non_null, chunk_size_frac=chunk_size_frac
         )
     )
-    match _get_dialect(engine), upsert_set_null:
-        case "oracle", None:  # pragma: no cover
+    match is_upsert, _get_dialect(engine):
+        case False, "oracle":  # pragma: no cover
             for table, mappings in pairs:
                 yield table, insert(table), mappings
-        case _:
+        case False, _:
+            for table, mappings in pairs:
+                yield table, insert(table), mappings
+        case True, "postgresql":  # skipif-ci-and-not-linux
             # INSERT OR UPSERT
             for table, mappings in pairs:
                 yield table, insert(table).values(mappings), None
+        case True, "sqlite":
+            # INSERT OR UPSERT
+            for table, mappings in pairs:
+                yield table, insert(table).values(mappings), None
+        case True, "mssql" | "mysql" | "oracle" as dialect:
+            raise NotImplementedError(dialect)  # pragma: no cover
+        case never:
+            assert_never(never)
 
 
 def _insert_items_yield_chunked_pairs(
@@ -902,15 +915,12 @@ class TablenameMixin:
 ##
 
 
-type _SelectedOrAll = Literal["selected", "all"]
-
-
 async def upsert_items(
     engine: AsyncEngine,
     /,
     *items: _InsertItem,
     snake: bool = False,
-    selected_or_all: _SelectedOrAll = "selected",
+    set_null: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     timeout_create: Delta | None = None,
@@ -918,51 +928,19 @@ async def upsert_items(
     timeout_insert: Delta | None = None,
     error_insert: type[Exception] = TimeoutError,
 ) -> None:
-    """Upsert a set of items into a database.
-
-    These can be one of the following:
-     - pair of dict & table/class:            {k1=v1, k2=v2, ...), table_cls
-     - pair of list of dicts & table/class:   [{k1=v11, k2=v12, ...},
-                                               {k1=v21, k2=v22, ...},
-                                               ...], table/class
-     - list of pairs of dict & table/class:   [({k1=v11, k2=v12, ...}, table_cls1),
-                                               ({k1=v21, k2=v22, ...}, table_cls2),
-                                               ...]
-     - mapped class:                          Obj(k1=v1, k2=v2, ...)
-     - list of mapped classes:                [Obj(k1=v11, k2=v12, ...),
-                                               Obj(k1=v21, k2=v22, ...),
-                                               ...]
-    """
-
-    def build_insert(
-        table: Table, values: Iterable[StrMapping], /
-    ) -> tuple[Insert, None]:
-        ups = _upsert_items_build(
-            engine, table, values, selected_or_all=selected_or_all
-        )
-        return ups, None
-
-    try:
-        prepared = _prepare_insert_or_upsert_items(
-            partial(
-                _normalize_upsert_item, snake=snake, selected_or_all=selected_or_all
-            ),
-            engine,
-            build_insert,
-            *items,
-            chunk_size_frac=chunk_size_frac,
-        )
-    except _PrepareInsertOrUpsertItemsError as error:
-        raise InsertItemsError(item=error.item) from None
-    if not assume_tables_exist:
-        await ensure_tables_created(
-            engine, *prepared.tables, timeout=timeout_create, error=error_create
-        )
-    for ups, _ in prepared.yield_pairs():
-        async with yield_connection(
-            engine, timeout=timeout_insert, error=error_insert
-        ) as conn:
-            _ = await conn.execute(ups)
+    """Upsert a set of items into a database."""
+    await insert_items(
+        engine,
+        *items,
+        snake=snake,
+        upsert_set_null=set_null,
+        chunk_size_frac=chunk_size_frac,
+        assume_tables_exist=assume_tables_exist,
+        timeout_create=timeout_create,
+        error_create=error_create,
+        timeout_insert=timeout_insert,
+        error_insert=error_insert,
+    )
 
 
 def _upsert_items_build(
@@ -1013,7 +991,7 @@ def _upsert_items_apply_on_conflict_do_update(
         case postgresql_Insert():  # skipif-ci
             return insert.on_conflict_do_update(constraint=primary_key, set_=set_)
         case sqlite_Insert():
-            obj = insert.on_conflict_do_update(index_elements=primary_key, set_=set_)
+            insert.on_conflict_do_update(index_elements=primary_key, set_=set_)
             # breakpoint()
 
             return insert.on_conflict_do_update(index_elements=primary_key, set_=set_)
