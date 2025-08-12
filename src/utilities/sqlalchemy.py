@@ -54,12 +54,7 @@ from sqlalchemy.dialects.postgresql.asyncpg import PGDialect_asyncpg
 from sqlalchemy.dialects.postgresql.psycopg import PGDialect_psycopg
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
-from sqlalchemy.exc import (
-    ArgumentError,
-    DatabaseError,
-    OperationalError,
-    ProgrammingError,
-)
+from sqlalchemy.exc import ArgumentError, DatabaseError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -126,7 +121,7 @@ def check_connect(engine: Engine, /) -> bool:
     try:
         with engine.connect() as conn:
             return bool(conn.execute(_SELECT).scalar_one())
-    except (gaierror, ConnectionRefusedError, OperationalError, ProgrammingError):
+    except (gaierror, ConnectionRefusedError, DatabaseError):
         return False  # pragma: no cover
 
 
@@ -141,13 +136,7 @@ async def check_connect_async(
     try:
         async with timeout_td(timeout, error=error), engine.connect() as conn:
             return bool((await conn.execute(_SELECT)).scalar_one())
-    except (
-        gaierror,
-        ConnectionRefusedError,
-        OperationalError,
-        ProgrammingError,
-        TimeoutError,
-    ):
+    except (gaierror, ConnectionRefusedError, DatabaseError, TimeoutError):
         return False
 
 
