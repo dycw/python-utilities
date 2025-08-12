@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from asyncio import sleep
 from enum import Enum, StrEnum, auto
 from getpass import getuser
@@ -15,7 +14,6 @@ from sqlalchemy import (
     URL,
     Boolean,
     Column,
-    Date,
     Engine,
     ForeignKey,
     Integer,
@@ -1551,7 +1549,7 @@ class TestUpsertItems:
 
         sel = select(Example.x, Example.y).order_by(Example.id_)
         async with test_async_engine.begin() as conn:
-            result = (await conn.execute(sel)).scalars().all()
+            result = (await conn.execute(sel)).all()
         assert result == [(True, False), (False, True)]
 
         # delta
@@ -1563,7 +1561,7 @@ class TestUpsertItems:
 
         # post
         async with test_async_engine.begin() as conn:
-            result = (await conn.execute(sel)).one()
+            result = (await conn.execute(sel)).all()
         assert result == [(True, True), (True, True)]
 
     @given(id_=int32s(), x_init=booleans(), x_post=booleans(), y=booleans())
