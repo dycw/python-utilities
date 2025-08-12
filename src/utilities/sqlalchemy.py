@@ -899,36 +899,6 @@ class TablenameMixin:
 ##
 
 
-async def upsert_items(
-    engine: AsyncEngine,
-    /,
-    *items: _InsertItem,
-    snake: bool = False,
-    chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    assume_tables_exist: bool = False,
-    timeout_create: Delta | None = None,
-    error_create: type[Exception] = TimeoutError,
-    timeout_insert: Delta | None = None,
-    error_insert: type[Exception] = TimeoutError,
-) -> None:
-    """Upsert a set of items into a database."""
-    await insert_items(  # pragma: no cover
-        engine,
-        *items,
-        snake=snake,
-        is_upsert=True,
-        chunk_size_frac=chunk_size_frac,
-        assume_tables_exist=assume_tables_exist,
-        timeout_create=timeout_create,
-        error_create=error_create,
-        timeout_insert=timeout_insert,
-        error_insert=error_insert,
-    )
-
-
-##
-
-
 @asynccontextmanager
 async def yield_connection(
     engine: AsyncEngine,
@@ -1215,7 +1185,6 @@ __all__ = [
     "is_table_or_orm",
     "migrate_data",
     "selectable_to_string",
-    "upsert_items",
     "yield_connection",
     "yield_primary_key_columns",
 ]
