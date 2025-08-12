@@ -32,7 +32,7 @@ from sqlalchemy.orm import (
 )
 
 from tests.conftest import SKIPIF_CI
-from utilities.hypothesis import int32s, pairs, urls
+from utilities.hypothesis import int32s, pairs, settings_with_reduced_examples, urls
 from utilities.iterables import one
 from utilities.modules import is_installed
 from utilities.sqlalchemy import (
@@ -170,8 +170,7 @@ class TestCheckEngine:
 
 class TestColumnwiseMinMax:
     @given(values=sets(pairs(int32s() | none()), min_size=1))
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -617,8 +616,7 @@ class TestInsertItems:
 
     @given(id_=int32s())
     @mark.parametrize("case", [param("tuple"), param("dict")])
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -649,8 +647,7 @@ class TestInsertItems:
             param("list-of-pair-of-tuples"),
         ],
     )
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -681,8 +678,7 @@ class TestInsertItems:
         await self._run_insert_and_select(test_async_engine, table, ids, item)
 
     @given(ids=sets(int32s(), min_size=10, max_size=100))
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -695,8 +691,7 @@ class TestInsertItems:
         )
 
     @given(id_=int32s())
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -707,8 +702,7 @@ class TestInsertItems:
         await self._run_insert_and_select(test_async_engine, cls, {id_}, cls(id_=id_))
 
     @given(ids=sets(int32s(), min_size=1))
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -722,8 +716,7 @@ class TestInsertItems:
 
     @given(id_=int32s())
     @mark.parametrize("key", [param("Id_"), param("id_")])
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -736,10 +729,8 @@ class TestInsertItems:
             test_async_engine, table, {id_}, item, snake=True
         )
 
-    @mark.only
-    @given(id_=int32s(), init=booleans(), post=booleans())
-    @settings(
-        max_examples=1,
+    @given(id_=int32s(), init=booleans(), post=booleans() | none())
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -755,11 +746,79 @@ class TestInsertItems:
         post_item = {"id_": id_, "value": post}, table
         await insert_items(test_async_engine, post_item, upsert_set_null=False)
         async with test_async_engine.begin() as conn:
-            assert (await conn.execute(sel)).one() == (id_, post)
+            assert (await conn.execute(sel)).one() == (
+                id_,
+                init if post is None else post,
+            )
+
+    @mark.only
+    @given(
+        ids=pairs(int32s(), unique=True),
+        init_x1=booleans(),
+        init_y1=booleans(),
+        init_x2=booleans(),
+        init_y2=booleans(),
+        post_x1=booleans() | none(),
+        post_y1=booleans() | none(),
+        post_x2=booleans() | none(),
+        post_y2=booleans() | none(),
+    )
+    @settings_with_reduced_examples(
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    async def test_insert__upsert_multiple(
+        self,
+        *,
+        test_async_engine: AsyncEngine,
+        ids: tuple[int, int],
+        init_x1: bool,
+        init_y1: bool,
+        init_x2: bool,
+        init_y2: bool,
+        post_x1: bool | None,
+        post_y1: bool | None,
+        post_x2: bool | None,
+        post_y2: bool | None,
+    ) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
+            __tablename__ = _table_names()
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            x: Mapped[bool | None] = mapped_column(
+                Boolean, default=None, kw_only=True, nullable=True
+            )
+            y: Mapped[bool | None] = mapped_column(
+                Boolean, default=None, kw_only=True, nullable=True
+            )
+
+        init1, init2 = [
+            Example(id_=id_, x=x, y=y)
+            for id_, x, y in [(1, True, False), (2, False, True)]
+        ]
+        await upsert_items(test_async_engine, init1, init2)
+
+        sel = select(Example.x, Example.y).order_by(Example.id_)
+        async with test_async_engine.begin() as conn:
+            result = (await conn.execute(sel)).all()
+        assert result == [(True, False), (False, True)]
+
+        # delta
+        delta1, delta2 = [
+            Example(id_=id_, x=x, y=y)
+            for id_, x, y in [(1, None, True), (2, True, None)]
+        ]
+        await upsert_items(test_async_engine, delta1, delta2)
+
+        # post
+        async with test_async_engine.begin() as conn:
+            result = (await conn.execute(sel)).all()
+        assert result == [(True, True), (True, True)]
 
     @given(id_=int32s())
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -809,8 +868,7 @@ class TestInsertItems:
 
     @given(id_=int32s())
     @mark.parametrize("case", [param("tuple"), param("dict")])
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -831,8 +889,7 @@ class TestInsertItems:
 
     @given(ids=sets(int32s(), min_size=1))
     @mark.parametrize("case", [param("tuple"), param("dict")])
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -853,8 +910,7 @@ class TestInsertItems:
 
     @given(ids=sets(int32s(), min_size=1))
     @mark.parametrize("case", [param("tuple"), param("dict")])
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -889,8 +945,7 @@ class TestInsertItems:
 
     @given(id_=int32s())
     @mark.parametrize("case", [param("tuple"), param("dict")])
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -1172,8 +1227,7 @@ class TestMigrateData:
             tuples(int32s(), booleans() | none()), min_size=1, unique_by=lambda x: x[0]
         )
     )
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -1325,99 +1379,8 @@ class TestTupleToMapping:
 
 
 class TestUpsertItems:
-    @given(triple=_upsert_triples(nullable=True))
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    async def test_pair_of_dict_and_table(
-        self, *, triple: tuple[int, bool, bool | None], test_async_engine: AsyncEngine
-    ) -> None:
-        table = self._make_table()
-        id_, init, post = triple
-        init_item = {"id_": id_, "value": init}, table
-        await self._run_test(
-            test_async_engine, table, init_item, expected={(id_, init)}
-        )
-        post_item = {"id_": id_, "value": post}, table
-        _ = await self._run_test(
-            test_async_engine,
-            table,
-            post_item,
-            expected={(id_, init if post is None else post)},
-        )
-
-    @given(triples=_upsert_lists(nullable=True, min_size=1))
-    @mark.parametrize(
-        "case", [param("pair-list-of-dicts"), param("list-of-pair-of-dicts")]
-    )
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    async def test_pair_of_list_of_dicts_and_table(
-        self,
-        *,
-        triples: list[tuple[int, bool, bool | None]],
-        case: Literal["pair-list-of-dicts", "list-of-pair-of-dicts"],
-        test_async_engine: AsyncEngine,
-    ) -> None:
-        table = self._make_table()
-        match case:
-            case "pair-list-of-dicts":
-                init = (
-                    [{"id_": id_, "value": init} for id_, init, _ in triples],
-                    table,
-                )
-                post = (
-                    [
-                        {"id_": id_, "value": post}
-                        for id_, _, post in triples
-                        if post is not None
-                    ],
-                    table,
-                )
-            case "list-of-pair-of-dicts":
-                init = [
-                    ({"id_": id_, "value": init}, table) for id_, init, _ in triples
-                ]
-                post = [
-                    ({"id_": id_, "value": post}, table)
-                    for id_, _, post in triples
-                    if post is not None
-                ]
-            case never:
-                assert_never(never)
-        init_expected = {(id_, init) for id_, init, _ in triples}
-        _ = await self._run_test(test_async_engine, table, init, expected=init_expected)
-        post_expected = {
-            (id_, init if post is None else post) for id_, init, post in triples
-        }
-        _ = await self._run_test(test_async_engine, table, post, expected=post_expected)
-
-    @given(triple=_upsert_triples())
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    async def test_mapped_class(
-        self, *, triple: tuple[int, bool, bool], test_async_engine: AsyncEngine
-    ) -> None:
-        cls = self._make_mapped_class()
-        id_, init, post = triple
-        _ = await self._run_test(
-            test_async_engine, cls, cls(id_=id_, value=init), expected={(id_, init)}
-        )
-        _ = await self._run_test(
-            test_async_engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
-        )
-
     @given(parent=_upsert_triples(), child=_upsert_triples())
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -1475,30 +1438,6 @@ class TestUpsertItems:
             expected={(child_id, parent_id, child_post)},
         )
 
-    @given(triples=_upsert_lists(nullable=True, min_size=1))
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    async def test_mapped_classes(
-        self,
-        *,
-        triples: list[tuple[int, bool, bool | None]],
-        test_async_engine: AsyncEngine,
-    ) -> None:
-        cls = self._make_mapped_class()
-        init = [cls(id_=id_, value=init) for id_, init, _ in triples]
-        init_expected = {(id_, init) for id_, init, _ in triples}
-        _ = await self._run_test(test_async_engine, cls, init, expected=init_expected)
-        post = [
-            cls(id_=id_, value=post) for id_, _, post in triples if post is not None
-        ]
-        post_expected = {
-            (id_, init if post is None else post) for id_, init, post in triples
-        }
-        _ = await self._run_test(test_async_engine, cls, post, expected=post_expected)
-
     async def test_upsert_multiple_columns(
         self, *, test_async_engine: AsyncEngine
     ) -> None:
@@ -1540,8 +1479,7 @@ class TestUpsertItems:
 
     @given(id_=int32s(), x_init=booleans(), x_post=booleans(), y=booleans())
     @mark.parametrize("selected_or_all", ["selected", "all"])
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -1585,8 +1523,7 @@ class TestUpsertItems:
         )
 
     @given(id_=int32s())
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -1607,8 +1544,7 @@ class TestUpsertItems:
         value1=booleans() | none(),
         value2=booleans() | none(),
     )
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
@@ -1627,8 +1563,7 @@ class TestUpsertItems:
         await upsert_items(test_async_engine, item)
 
     @given(triples=_upsert_lists(nullable=True, min_size=1))
-    @settings(
-        max_examples=1,
+    @settings_with_reduced_examples(
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )

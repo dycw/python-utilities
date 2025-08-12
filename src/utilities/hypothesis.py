@@ -897,6 +897,27 @@ def py_datetimes(
 ##
 
 
+def quadruples[T](
+    strategy: SearchStrategy[T],
+    /,
+    *,
+    unique: MaybeSearchStrategy[bool] = False,
+    sorted: MaybeSearchStrategy[bool] = False,  # noqa: A002
+) -> SearchStrategy[tuple[T, T, T, T]]:
+    """Strategy for generating quadruples of elements."""
+    return lists_fixed_length(strategy, 4, unique=unique, sorted=sorted).map(
+        _quadruples_map
+    )
+
+
+def _quadruples_map[T](elements: list[T], /) -> tuple[T, T, T]:
+    first, second, third = elements
+    return first, second, third
+
+
+##
+
+
 @composite
 def random_states(
     draw: DrawFn, /, *, seed: MaybeSearchStrategy[int | None] = None
@@ -1555,6 +1576,7 @@ __all__ = [
     "paths",
     "plain_date_times",
     "py_datetimes",
+    "quadruples",
     "random_states",
     "sentinels",
     "sets_fixed_length",
