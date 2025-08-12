@@ -1543,26 +1543,28 @@ class TestUpsertItems:
                 Boolean, default=None, kw_only=True, nullable=True
             )
 
-        id_ = 1
-        init = Example(id_=id_, x=None, y=True)
-        init2 = Example(id_=2, x=True, y=None)
-        await upsert_items(test_async_engine, init, init2)
+        init1, init2 = [
+            Example(id_=id_, x=x, y=y)
+            for id_, x, y in [(1, True, False), (2, False, True)]
+        ]
+        await upsert_items(test_async_engine, init1, init2)
 
-        # check init
-        sel = select(Example).where(Example.id_ == 1)
+        sel = select(Example.x, Example.y).order_by(Example.id_)
         async with test_async_engine.begin() as conn:
-            result = (await conn.execute(sel)).one()
-        assert result == (id_, None, True)
+            result = (await conn.execute(sel)).scalars().all()
+        assert result == [(True, False), (False, True)]
 
         # delta
-        delta1 = Example(id_=1, x=True)
-        delta2 = Example(id_=2, y=True)
+        delta1, delta2 = [
+            Example(id_=id_, x=x, y=y)
+            for id_, x, y in [(1, None, True), (2, True, None)]
+        ]
         await upsert_items(test_async_engine, delta1, delta2)
 
         # post
         async with test_async_engine.begin() as conn:
             result = (await conn.execute(sel)).one()
-        assert result == (id_, True, True)
+        assert result == [(True, True), (True, True)]
 
     @given(id_=int32s(), x_init=booleans(), x_post=booleans(), y=booleans())
     @mark.parametrize("selected_or_all", get_literal_elements(_SelectedOrAll))
