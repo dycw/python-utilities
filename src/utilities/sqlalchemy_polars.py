@@ -40,6 +40,7 @@ from utilities.reprlib import get_repr
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
     TableOrORMInstOrClass,
+    ensure_tables_created,
     get_chunk_size,
     get_columns,
     insert_items,
@@ -86,6 +87,12 @@ async def insert_dataframe(
         df.schema, table_or_orm, snake=snake
     )
     items = df.select(*mapping).rename(mapping).rows(named=True)
+    if len(items) == 0:
+        if not assume_tables_exist:
+            await ensure_tables_created(
+                engine, table_or_orm, timeout=timeout_create, error=error_create
+            )
+        return
     await insert_items(
         engine,
         (items, table_or_orm),

@@ -127,7 +127,7 @@ def check_connect(engine: Engine, /) -> bool:
         with engine.connect() as conn:
             return bool(conn.execute(_SELECT).scalar_one())
     except (gaierror, ConnectionRefusedError, OperationalError, ProgrammingError):
-        return False
+        return False  # pragma: no cover
 
 
 async def check_connect_async(
@@ -333,9 +333,8 @@ async def ensure_database_created(super_: URL, database: str, /) -> None:
     async with engine.begin() as conn:
         try:
             _ = await conn.execute(text(f"CREATE DATABASE {database}"))
-        except (OperationalError, ProgrammingError) as error:
-            if not search('database ".*" already exists', ensure_str(one(error.args))):
-                raise
+        except DatabaseError as error:
+            _ensure_tables_maybe_reraise(error, 'database ".*" already exists')
 
 
 async def ensure_database_dropped(super_: URL, database: str, /) -> None:
