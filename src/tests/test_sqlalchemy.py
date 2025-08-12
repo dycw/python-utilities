@@ -636,7 +636,7 @@ class TestInsertItems:
                 item = (id_,), table
             case "dict":
                 item = {"id_": id_}, table
-        await self._run_test(test_async_engine, table, {id_}, item)
+        await self._run_insert_and_select(test_async_engine, table, {id_}, item)
 
     @given(ids=sets(int32s(), min_size=1))
     @mark.parametrize(
@@ -675,7 +675,7 @@ class TestInsertItems:
                 item = [((id_,), table) for id_ in ids]
             case "list-of-pair-of-dicts":
                 item = [({"id_": id_}, table) for id_ in ids]
-        await self._run_test(test_async_engine, table, ids, item)
+        await self._run_insert_and_select(test_async_engine, table, ids, item)
 
     @given(ids=sets(int32s(), min_size=10, max_size=100))
     @settings(
@@ -687,7 +687,7 @@ class TestInsertItems:
         self, *, ids: set[int], test_async_engine: AsyncEngine
     ) -> None:
         table = self._make_table()
-        await self._run_test(
+        await self._run_insert_and_select(
             test_async_engine, table, ids, [({"id_": id_}, table) for id_ in ids]
         )
 
@@ -701,7 +701,7 @@ class TestInsertItems:
         self, *, id_: int, test_async_engine: AsyncEngine
     ) -> None:
         cls = self._make_mapped_class()
-        await self._run_test(test_async_engine, cls, {id_}, cls(id_=id_))
+        await self._run_insert_and_select(test_async_engine, cls, {id_}, cls(id_=id_))
 
     @given(ids=sets(int32s(), min_size=1))
     @settings(
@@ -713,7 +713,9 @@ class TestInsertItems:
         self, *, ids: set[int], test_async_engine: AsyncEngine
     ) -> None:
         cls = self._make_mapped_class()
-        await self._run_test(test_async_engine, cls, ids, [cls(id_=id_) for id_ in ids])
+        await self._run_insert_and_select(
+            test_async_engine, cls, ids, [cls(id_=id_) for id_ in ids]
+        )
 
     @given(id_=int32s())
     @mark.parametrize("key", [param("Id_"), param("id_")])
@@ -727,7 +729,9 @@ class TestInsertItems:
     ) -> None:
         table = self._make_table(title=True)
         item = {key: id_}, table
-        await self._run_test(test_async_engine, table, {id_}, item, snake=True)
+        await self._run_insert_and_select(
+            test_async_engine, table, {id_}, item, snake=True
+        )
 
     @given(id_=int32s())
     @settings(
@@ -749,11 +753,13 @@ class TestInsertItems:
     async def test_error(self, *, test_async_engine: AsyncEngine) -> None:
         cls = self._make_mapped_class()
         with raises(InsertItemsError, match="Item must be valid; got None"):
-            await self._run_test(test_async_engine, cls, set(), cast("Any", None))
+            await self._run_insert_and_select(
+                test_async_engine, cls, set(), cast("Any", None)
+            )
 
     # yield merged mappings
 
-    def test_yield_merged_mappings_id_and_value(self) -> None:
+    def test_yield_merged_mappings__id_and_value(self) -> None:
         table = Table(
             _table_names(),
             MetaData(),
@@ -770,7 +776,7 @@ class TestInsertItems:
         expected = [{"id_": 1, "value": False}, {"id_": 2, "value": True}]
         assert result == expected
 
-    def test_yield_merged_mappings_value_only(self) -> None:
+    def test_yield_merged_mappings__value_only(self) -> None:
         table = Table(
             _table_names(),
             MetaData(),
@@ -781,8 +787,7 @@ class TestInsertItems:
         result = list(_insert_items_yield_merged_mappings(table, items))
         assert result == items
 
-    @mark.only
-    def test_yield_merged_mappings_autoincrement(self) -> None:
+    def test_yield_merged_mappings__autoincrement(self) -> None:
         table = Table(
             _table_names(),
             MetaData(),
@@ -792,6 +797,83 @@ class TestInsertItems:
         items = [{"value": 1}, {"value": 2}]
         result = list(_insert_items_yield_merged_mappings(table, items))
         assert result == items
+
+    # yield normalized
+
+    @given(id_=int32s())
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    def test_yield_normalized__pair_of_tuple_or_str_mapping_and_table(
+        self, *, case: Literal["tuple", "dict"], id_: int
+    ) -> None:
+        table = self._make_table()
+        match case:
+            case "tuple":
+                item = (id_,), table
+            case "dict":
+                item = {"id_": id_}, table
+        result = one(_insert_item_yield_normalized(item))
+        expected = (table, {"id_": id_})
+        assert result == expected
+
+    @given(ids=sets(int32s(), min_size=1))
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    def test_yield_normalized__pair_of_list_of_tuples_or_str_mappings_and_table(
+        self, *, case: Literal["tuple", "dict"], ids: set[int]
+    ) -> None:
+        table = self._make_table()
+        match case:
+            case "tuple":
+                item = [((id_,)) for id_ in ids], table
+            case "dict":
+                item = [({"id_": id_}) for id_ in ids], table
+        result = list(_insert_item_yield_normalized(item))
+        expected = [(table, {"id_": id_}) for id_ in ids]
+        assert result == expected
+
+    @given(ids=sets(int32s(), min_size=1))
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    @settings(
+        max_examples=1,
+        phases={Phase.generate},
+        suppress_health_check={HealthCheck.function_scoped_fixture},
+    )
+    def test_yield_normalize__list_of_pairs_of_objs_and_table(
+        self, *, case: Literal["tuple", "dict"], ids: set[int]
+    ) -> None:
+        table = self._make_table()
+        match case:
+            case "tuple":
+                item = [(((id_,), table)) for id_ in ids]
+            case "dict":
+                item = [({"id_": id_}, table) for id_ in ids]
+        result = list(_insert_item_yield_normalized(item))
+        expected = [(table, {"id_": id_}) for id_ in ids]
+        assert result == expected
+
+    @given(id_=int32s())
+    def test_yield_normalized__mapped_class(self, *, id_: int) -> None:
+        cls = self._make_mapped_class()
+        result = one(_insert_item_yield_normalized(cls(id_=id_)))
+        expected = (get_table(cls), {"id_": id_})
+        assert result == expected
+
+    @given(ids=sets(int32s(), min_size=1))
+    @mark.only
+    def test_yield_normalized__mapped_classes(self, *, ids: set[int]) -> None:
+        cls = self._make_mapped_class()
+        result = list(_insert_item_yield_normalized([cls(id_=id_) for id_ in ids]))
+        expected = [(get_table(cls), {"id_": id_}) for id_ in ids]
+        assert result == expected
 
     # private
 
@@ -812,7 +894,7 @@ class TestInsertItems:
 
         return Example
 
-    async def _run_test(
+    async def _run_insert_and_select(
         self,
         engine: AsyncEngine,
         table_or_orm: TableOrORMInstOrClass,
@@ -1072,82 +1154,6 @@ class TestMigrateData:
 
 
 class TestNormalizeInsertItem:
-    @given(id_=int32s())
-    @mark.parametrize("case", [param("tuple"), param("dict")])
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    def test_pair_of_tuple_or_str_mapping_and_table(
-        self, *, case: Literal["tuple", "dict"], id_: int
-    ) -> None:
-        table = self._table
-        match case:
-            case "tuple":
-                item = (id_,), table
-            case "dict":
-                item = {"id_": id_}, table
-        result = one(_insert_item_yield_normalized(item))
-        expected = _NormalizedItem(mapping={"id_": id_}, table=table)
-        assert result == expected
-
-    @given(ids=sets(int32s()))
-    @mark.parametrize("case", [param("tuple"), param("dict")])
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    def test_pair_of_list_of_tuples_or_str_mappings_and_table(
-        self, *, case: Literal["tuple", "dict"], ids: set[int]
-    ) -> None:
-        table = self._table
-        match case:
-            case "tuple":
-                item = [((id_,)) for id_ in ids], table
-            case "dict":
-                item = [({"id_": id_}) for id_ in ids], table
-        result = list(_insert_item_yield_normalized(item))
-        expected = [_NormalizedItem(mapping={"id_": id_}, table=table) for id_ in ids]
-        assert result == expected
-
-    @given(ids=sets(int32s()))
-    @mark.parametrize("case", [param("tuple"), param("dict")])
-    @settings(
-        max_examples=1,
-        phases={Phase.generate},
-        suppress_health_check={HealthCheck.function_scoped_fixture},
-    )
-    def test_list_of_pairs_of_objs_and_table(
-        self, *, case: Literal["tuple", "dict"], ids: set[int]
-    ) -> None:
-        table = self._table
-        match case:
-            case "tuple":
-                item = [(((id_,), table)) for id_ in ids]
-            case "dict":
-                item = [({"id_": id_}, table) for id_ in ids]
-        result = list(_insert_item_yield_normalized(item))
-        expected = [_NormalizedItem(mapping={"id_": id_}, table=table) for id_ in ids]
-        assert result == expected
-
-    @given(id_=int32s())
-    def test_mapped_class(self, *, id_: int) -> None:
-        cls = self._mapped_class
-        result = one(_insert_item_yield_normalized(cls(id_=id_)))
-        expected = _NormalizedItem(mapping={"id_": id_}, table=get_table(cls))
-        assert result == expected
-
-    @given(ids=sets(int32s(), min_size=1))
-    def test_mapped_classes(self, *, ids: set[int]) -> None:
-        cls = self._mapped_class
-        result = list(_insert_item_yield_normalized([cls(id_=id_) for id_ in ids]))
-        expected = [
-            _NormalizedItem(mapping={"id_": id_}, table=get_table(cls)) for id_ in ids
-        ]
-        assert result == expected
-
     @given(id_=int32s())
     @mark.parametrize("case", [param("tuple"), param("dict")])
     @settings(
