@@ -1325,6 +1325,22 @@ class _FiniteEWMWeightsError(Exception):
 ##
 
 
+@overload
+def first_true_horizontal(column: Series, /) -> Series: ...
+@overload
+def first_true_horizontal(column1: Series, column2: Series, /) -> Series: ...
+@overload
+def first_true_horizontal(
+    column1: Series, column2: Series, column3: Series, /
+) -> Series: ...
+@overload
+def first_true_horizontal(
+    column1: Series, column2: Series, column3: Series, column4: Series, /
+) -> Series: ...
+@overload
+def first_true_horizontal(*columns: Series) -> Series: ...
+@overload
+def first_true_horizontal(*columns: IntoExprColumn) -> ExprOrSeries: ...
 def first_true_horizontal(*columns: IntoExprColumn) -> ExprOrSeries:
     """Get the index of the first true in each row."""
     columns2 = ensure_expr_or_series_many(*columns)

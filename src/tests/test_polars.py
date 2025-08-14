@@ -9,7 +9,7 @@ from enum import auto
 from itertools import chain, repeat
 from math import isfinite, nan
 from random import Random
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never, cast
 from uuid import UUID, uuid4
 
 import hypothesis.strategies
@@ -2463,7 +2463,7 @@ class TestRoundToFloat:
             RoundToFloatError,
             match="At least 1 of the dividend and/or divisor must be a Series; got .* and .*",
         ):
-            _ = round_to_float(x, y)
+            _ = round_to_float(cast("Any", x), cast("Any", y))
 
 
 class TestSerializeAndDeserializeDataFrame:
