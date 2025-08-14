@@ -90,7 +90,7 @@ from utilities.math import (
     is_non_negative,
 )
 from utilities.reprlib import get_repr
-from utilities.types import MaybeStr, Number, PathLike, WeekDay
+from utilities.types import MaybeStr, Number, PathLike, SupportsFloatOrIndex, WeekDay
 from utilities.typing import (
     get_args,
     is_frozenset_type,
@@ -1589,6 +1589,22 @@ def integers(
             )
         case never:
             assert_never(never)
+
+
+##
+
+
+def is_close(
+    x: IntoExprColumn,
+    y: IntoExprColumn,
+    /,
+    *,
+    rel_tol: SupportsFloatOrIndex = 1e-9,
+    abs_tol: SupportsFloatOrIndex = 0,
+) -> ExprOrSeries:
+    """Check if two columns are close."""
+    x, y = map(ensure_expr_or_series, [x, y])
+    return (x - y).abs() <= (abs_tol + rel_tol * y.abs())
 
 
 ##
