@@ -16,7 +16,7 @@ import hypothesis.strategies
 import numpy as np
 import polars as pl
 import whenever
-from hypothesis import assume, given, reproduce_failure
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -2232,7 +2232,6 @@ class TestNormal:
 
 
 class TestNumberOfDecimals:
-    @mark.only
     @given(
         integer=hypothesis.strategies.integers(
             -tests.test_math.TestNumberOfDecimals.max_int,
@@ -2240,16 +2239,11 @@ class TestNumberOfDecimals:
         ),
         case=sampled_from(tests.test_math.TestNumberOfDecimals.cases),
     )
-    @reproduce_failure("6.138.0", b"AEEBQQg=")
     def test_main(self, *, integer: int, case: tuple[float, int]) -> None:
         frac, expected = case
         x = integer + frac
         series = Series(name="x", values=[x], dtype=Float64)
         result = number_of_decimals(series)
-
-        z = utilities.math.number_of_decimals(x)
-        breakpoint()
-
         assert result.item() == expected
 
 

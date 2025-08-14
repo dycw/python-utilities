@@ -868,7 +868,7 @@ class TestNumberOfDecimals:
         with raises(
             NumberOfDecimalsError,
             match=escape(
-                "Could not determine number of decimals of 1.401298464324817e-45 (up to 20)"
+                "Could not determine number of decimals of 1.401298464324817e-45 (up to 10)"
             ),
         ):
             _ = number_of_decimals(x)
