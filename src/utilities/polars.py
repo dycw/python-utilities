@@ -2422,13 +2422,15 @@ def round_to_float(
 
 def _round_to_float_one(df: DataFrame, /) -> DataFrame:
     decimals: int | None = df["_decimals"].unique().item()
+    name = df.columns[1]
     match decimals:
         case int():
-            return df.with_columns(col(df.columns[1]).round(decimals=decimals))
+            expr = col(name).round(decimals=decimals)
         case None:
-            return df.with_columns(lit(None, dtype=Float64).alias(df.columns[1]))
+            expr = lit(None, dtype=Float64).alias(name)
         case never:
             assert_never(never)
+    return df.with_columns(expr)
 
 
 @dataclass(kw_only=True, slots=True)
