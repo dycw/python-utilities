@@ -1561,7 +1561,7 @@ class TestFiniteEWMWeights:
 
 class TestFirstTrueHorizontal:
     @mark.parametrize(
-        ("row", "expected"),
+        ("values", "expected"),
         [
             param([True, True, True], 0),
             param([False, True, True], 1),
@@ -1569,9 +1569,9 @@ class TestFirstTrueHorizontal:
             param([False, False, False], None),
         ],
     )
-    def test_main(self, *, row: list[bool], expected: int | None) -> None:
-        df = DataFrame([row], schema={str(i): Boolean for i in range(3)}, orient="row")
-        result = first_true_horizontal(df)
+    def test_main(self, *, values: list[bool], expected: int | None) -> None:
+        series = [Series(values=[v], dtype=Boolean) for v in values]
+        result = first_true_horizontal(*series)
         assert result.item() == expected
 
 
@@ -2445,7 +2445,14 @@ class TestRoundToFloat:
     def test_series_and_expr(self) -> None:
         x = Series(name="x", values=[1.234], dtype=Float64)
         y = lit(0.1, dtype=Float64).alias("y")
-        round_to_float(x, y)
+        result = round_to_float(x, y)
+        assert result.item() == 1.2
+
+    def test_expr_and_expr(self) -> None:
+        x = lit(1.234, dtype=Float64).alias("x")
+        y = Series(name="y", values=[0.1], dtype=Float64)
+        result = round_to_float(x, y)
+        assert result.item() == 1.2
 
     @mark.parametrize(
         ("x", "y"),

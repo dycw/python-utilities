@@ -53,6 +53,7 @@ from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
+import utilities.math
 from utilities.dataclasses import yield_fields
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
@@ -1324,10 +1325,11 @@ class _FiniteEWMWeightsError(Exception):
 ##
 
 
-def first_true_horizontal(df: DataFrame, /) -> Series:
+def first_true_horizontal(*columns: IntoExprColumn) -> ExprOrSeries:
     """Get the index of the first true in each row."""
-    expr = when(any_horizontal(pl.all())).then(concat_list(pl.all()).list.arg_max())
-    return one_column(df.select(expr))
+    columns2 = ensure_expr_or_series_many(*columns)
+    expr = when(any_horizontal(*columns2)).then(concat_list(*columns2).list.arg_max())
+    return try_reify_expr(expr, *columns2)
 
 
 ##
@@ -1972,19 +1974,31 @@ def normal(
 ##
 
 
+@overload
+def number_of_decimals(
+    series: ExprLike, /, *, max_decimals: int = MAX_DECIMALS
+) -> Expr: ...
+@overload
 def number_of_decimals(
     series: Series, /, *, max_decimals: int = MAX_DECIMALS
-) -> Series:
+) -> Series: ...
+@overload
+def number_of_decimals(
+    series: IntoExprColumn, /, *, max_decimals: int = MAX_DECIMALS
+) -> ExprOrSeries: ...
+def number_of_decimals(
+    series: IntoExprColumn, /, *, max_decimals: int = MAX_DECIMALS
+) -> ExprOrSeries:
     """Get the number of decimals."""
+    series = ensure_expr_or_series(series)
     frac = series - series.floor()
-    results = [
+    results = (
         _number_of_decimals_check_scale(frac, s) for s in range(max_decimals + 1)
-    ]
-    df_results = concat_series(*results)
-    return first_true_horizontal(df_results)
+    )
+    return first_true_horizontal(*results)
 
 
-def _number_of_decimals_check_scale(frac: Series, scale: int, /) -> Series:
+def _number_of_decimals_check_scale(frac: ExprOrSeries, scale: int, /) -> ExprOrSeries:
     scaled = 10**scale * frac
     return is_close(scaled, scaled.round()).alias(str(scale))
 
@@ -2346,7 +2360,11 @@ def round_to_float(
 ) -> Expr: ...
 @overload
 def round_to_float(
-    x: Series, y: float, /, *, mode: RoundMode = "half_to_even"
+    x: Series, y: float | ExprOrSeries, /, *, mode: RoundMode = "half_to_even"
+) -> Series: ...
+@overload
+def round_to_float(
+    x: ExprLike, y: Series, /, *, mode: RoundMode = "half_to_even"
 ) -> Series: ...
 @overload
 def round_to_float(
@@ -2354,28 +2372,41 @@ def round_to_float(
 ) -> Expr: ...
 @overload
 def round_to_float(
-    x: IntoExprColumn, y: float, /, *, mode: RoundMode = "half_to_even"
+    x: IntoExprColumn, y: float | Series, /, *, mode: RoundMode = "half_to_even"
 ) -> ExprOrSeries: ...
 def round_to_float(
     x: IntoExprColumn, y: float | IntoExprColumn, /, *, mode: RoundMode = "half_to_even"
 ) -> ExprOrSeries:
     """Round a column to the nearest multiple of another float."""
     x = ensure_expr_or_series(x)
+    y = y if isinstance(y, int | float) else ensure_expr_or_series(y)
     match x, y:
-        case Expr() | Series(), float():
+        case Expr() | Series(), int() | float():
             z = (x / y).round(mode=mode) * y
-            return z.round(decimals=number_of_decimals(y) + 1)
-        case Series(), Expr():
-            df = x.to_frame().with_columns(y)
-            x_name, y_name = df.columns
-            assert 0, df
-            z = (x / y).round(mode=mode) * y
-            return z.round(decimals=number_of_decimals(y) + 1)
-            raise RoundToFloatError(x=x, y=y)
+            return z.round(decimals=utilities.math.number_of_decimals(y) + 1)
+        case Series(), Expr() | Series():
+            df = (
+                x.to_frame()
+                .with_columns(y)
+                .with_columns(number_of_decimals(y).alias("_decimals"))
+                .with_row_index(name="_index")
+                .group_by("_decimals")
+                .map_groups(_round_to_float_one)
+                .sort("_index")
+            )
+            return df[df.columns[1]]
+        case Expr(), Series():
+            df = y.to_frame().with_columns(x)
+            return round_to_float(df[df.columns[1]], df[df.columns[0]], mode=mode)
         case Expr(), Expr() | str():
             raise RoundToFloatError(x=x, y=y)
         case never:
             assert_never(never)
+
+
+def _round_to_float_one(df: DataFrame, /) -> DataFrame:
+    decimals: int = df["_decimals"].unique().item()
+    return df.with_columns(col(df.columns[1]).round(decimals=decimals))
 
 
 @dataclass(kw_only=True, slots=True)
@@ -2595,6 +2626,9 @@ __all__ = [
     "InsertBeforeError",
     "InsertBetweenError",
     "IsNearEventError",
+    "OneColumnEmptyError",
+    "OneColumnError",
+    "OneColumnNonUniqueError",
     "RoundToFloatError",
     "SetFirstRowAsColumnsError",
     "TimePeriodDType",
