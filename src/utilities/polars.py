@@ -57,6 +57,9 @@ import utilities.math
 from utilities.dataclasses import yield_fields
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
+    EnsureIntError,
+    ensure_int,
+    get_class_name,
     is_dataclass_class,
     is_dataclass_instance,
     make_isinstance,
@@ -2350,15 +2353,42 @@ def round_to_float(
 ) -> Series: ...
 @overload
 def round_to_float(
+    x: ExprLike, y: Expr, /, *, mode: RoundMode = "half_to_even"
+) -> Expr: ...
+@overload
+def round_to_float(
     x: IntoExprColumn, y: float, /, *, mode: RoundMode = "half_to_even"
 ) -> ExprOrSeries: ...
 def round_to_float(
-    x: IntoExprColumn, y: float, /, *, mode: RoundMode = "half_to_even"
+    x: IntoExprColumn, y: float | IntoExprColumn, /, *, mode: RoundMode = "half_to_even"
 ) -> ExprOrSeries:
     """Round a column to the nearest multiple of another float."""
     x = ensure_expr_or_series(x)
-    z = (x / y).round(mode=mode) * y
-    return z.round(decimals=utilities.math.number_of_decimals(y) + 1)
+    match x, y:
+        case Expr() | Series(), float():
+            z = (x / y).round(mode=mode) * y
+            return z.round(decimals=number_of_decimals(y) + 1)
+        case Series(), Expr():
+            df = x.to_frame().with_columns(y)
+            x_name, y_name = df.columns
+            assert 0, df
+            z = (x / y).round(mode=mode) * y
+            return z.round(decimals=number_of_decimals(y) + 1)
+            raise RoundToFloatError(x=x, y=y)
+        case Expr(), Expr() | str():
+            raise RoundToFloatError(x=x, y=y)
+        case never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class RoundToFloatError(Exception):
+    x: IntoExprColumn
+    y: IntoExprColumn
+
+    @override
+    def __str__(self) -> str:
+        return f"At least 1 of the dividend and/or divisor must be a Series; got {get_class_name(self.x)!r} and {get_class_name(self.y)!r}"
 
 
 ##
@@ -2568,9 +2598,7 @@ __all__ = [
     "InsertBeforeError",
     "InsertBetweenError",
     "IsNearEventError",
-    "OneColumnEmptyError",
-    "OneColumnError",
-    "OneColumnNonUniqueError",
+    "RoundToFloatError",
     "SetFirstRowAsColumnsError",
     "TimePeriodDType",
     "acf",

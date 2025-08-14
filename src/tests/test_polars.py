@@ -95,8 +95,7 @@ from utilities.polars import (
     FiniteEWMMeanError,
     InsertAfterError,
     InsertBeforeError,
-    OneColumnEmptyError,
-    OneColumnNonUniqueError,
+    RoundToFloatError,
     SetFirstRowAsColumnsError,
     TimePeriodDType,
     _check_polars_dataframe_predicates,
@@ -2427,8 +2426,8 @@ class TestReplaceTimeZone:
 class TestRoundToFloat:
     @mark.parametrize(("x", "y", "exp_value"), tests.test_math.TestRoundToFloat.cases)
     def test_main(self, *, x: float, y: float, exp_value: float) -> None:
-        series = Series(name="x", values=[x], dtype=Float64)
-        result = round_to_float(series, y)
+        x = Series(name="x", values=[x], dtype=Float64)
+        result = round_to_float(x, y)
         expected = Series(name="x", values=[exp_value], dtype=Float64)
         assert_series_equal(result, expected, check_exact=True)
 
@@ -2440,6 +2439,22 @@ class TestRoundToFloat:
         )
         expected = Series(name="x", values=[1.2], dtype=Float64).to_frame()
         assert_frame_equal(df, expected)
+
+    def test_series_and_expr(self) -> None:
+        x = Series(name="x", values=[1.234], dtype=Float64)
+        y = lit(0.1, dtype=Float64).alias("y")
+        round_to_float(x, y)
+
+    @mark.parametrize(
+        ("x", "y"),
+        [param("x", "y"), param(col.x, "y"), param("x", col.y), param(col.x, col.y)],
+    )
+    def test_error(self, *, x: IntoExprColumn, y: IntoExprColumn) -> None:
+        with raises(
+            RoundToFloatError,
+            match="At least 1 of the dividend and/or divisor must be a Series; got .* and .*",
+        ):
+            _ = round_to_float(x, y)
 
 
 class TestSerializeAndDeserializeDataFrame:
