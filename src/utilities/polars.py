@@ -63,6 +63,7 @@ from utilities.functions import (
     is_dataclass_class,
     is_dataclass_instance,
     make_isinstance,
+    second,
 )
 from utilities.gzip import read_binary
 from utilities.iterables import (
@@ -2619,7 +2620,9 @@ __all__ = [
     "InsertBeforeError",
     "InsertBetweenError",
     "IsNearEventError",
-    "NumberOfDecimalsError",
+    "OneColumnEmptyError",
+    "OneColumnError",
+    "OneColumnNonUniqueError",
     "SetFirstRowAsColumnsError",
     "TimePeriodDType",
     "acf",
