@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import enum
 import itertools
+import math
 from dataclasses import dataclass, field
 from enum import auto
 from itertools import chain, repeat
@@ -1826,6 +1827,18 @@ class TestIntegers:
         assert series.dtype == Int64
         assert series.len() == length
         assert series.is_between(0, high, closed="left").all()
+
+
+class TestIsClose:
+    @given(values=pairs(float64s()), rel_tol=floats(0.0, 0.1), abs_tol=floats(0.0, 0.1))
+    def test_main(
+        self, *, values: tuple[float, float], rel_tol: float, abs_tol: float
+    ) -> None:
+        x, y = values
+        x_sr, y_sr = [Series(values=[i], dtype=Float64) for i in values]
+        result = utilities.polars.is_close(x_sr, y_sr, rel_tol=rel_tol, abs_tol=abs_tol)
+        expected = math.isclose(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
+        assert result.item() is expected
 
 
 class TestIsNearEvent:

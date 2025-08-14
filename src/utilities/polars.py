@@ -87,7 +87,7 @@ from utilities.math import (
     number_of_decimals,
 )
 from utilities.reprlib import get_repr
-from utilities.types import MaybeStr, Number, PathLike, WeekDay
+from utilities.types import MaybeStr, Number, PathLike, SupportsFloatOrIndex, WeekDay
 from utilities.typing import (
     get_args,
     is_frozenset_type,
@@ -1641,6 +1641,22 @@ def integers(
 ##
 
 
+def is_close(
+    x: IntoExprColumn,
+    y: IntoExprColumn,
+    /,
+    *,
+    rel_tol: SupportsFloatOrIndex = 1e-9,
+    abs_tol: SupportsFloatOrIndex = 0,
+) -> ExprOrSeries:
+    """Check if two columns are close."""
+    x, y = map(ensure_expr_or_series, [x, y])
+    return (x - y).abs() <= (abs_tol + rel_tol * y.abs())
+
+
+##
+
+
 @overload
 def is_near_event(
     *exprs: ExprLike, before: int = 0, after: int = 0, **named_exprs: ExprLike
@@ -2603,6 +2619,7 @@ __all__ = [
     "insert_before",
     "insert_between",
     "integers",
+    "is_close",
     "is_false",
     "is_near_event",
     "is_true",
