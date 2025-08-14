@@ -1329,8 +1329,12 @@ class _FiniteEWMWeightsError(Exception):
 
 def first_true_horizontal(df: DataFrame, /) -> Series:
     """Get the index of the first true in each row."""
-    expr = when(any_horizontal(pl.all())).then(concat_list(pl.all()).list.arg_max())
-    return one_column(df.select(expr))
+    result = (
+        when(any_horizontal(pl.all()))
+        .then(concat_list(pl.all()).list.arg_max())
+        .otherwise(None)
+    )
+    return df.select(result)
 
 
 ##
