@@ -79,6 +79,9 @@ type MaybeCoro[T] = T | Coro[T]
 
 
 # collections.abc
+type SupportsFloatOrIndex = SupportsFloat | SupportsIndex
+
+
 @runtime_checkable
 class SupportsKeysAndGetItem(Protocol[_T, _T_co]):
     def keys(self) -> Iterable[_T]: ...  # pragma: no cover
@@ -328,6 +331,7 @@ __all__ = [
     "SupportsBytes",
     "SupportsComplex",
     "SupportsFloat",
+    "SupportsFloatOrIndex",
     "SupportsGT",
     "SupportsInt",
     "SupportsInt",

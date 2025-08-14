@@ -36,6 +36,7 @@ from polars import (
     datetime_range,
     int_range,
     lit,
+    max_horizontal,
     struct,
     sum_horizontal,
     when,
@@ -1642,6 +1643,42 @@ def integers(
 
 
 @overload
+def is_close(
+    x: ExprLike, y: ExprLike, /, *, rel_tol: float = 1e-9, abs_tol: float = 0
+) -> Expr: ...
+@overload
+def is_close(
+    x: Series, y: Series, /, *, rel_tol: float = 1e-9, abs_tol: float = 0
+) -> Series: ...
+@overload
+def is_close(
+    x: IntoExprColumn,
+    y: IntoExprColumn,
+    /,
+    *,
+    rel_tol: float = 1e-9,
+    abs_tol: float = 0,
+) -> ExprOrSeries: ...
+def is_close(
+    x: IntoExprColumn,
+    y: IntoExprColumn,
+    /,
+    *,
+    rel_tol: float = 1e-9,
+    abs_tol: float = 0,
+) -> ExprOrSeries:
+    """Check if two columns are close."""
+    x, y = map(ensure_expr_or_series, [x, y])
+    result = (x - y).abs() <= max_horizontal(
+        rel_tol * max_horizontal(x.abs(), y.abs()), abs_tol
+    )
+    return try_reify_expr(result, x, y)
+
+
+##
+
+
+@overload
 def is_near_event(
     *exprs: ExprLike, before: int = 0, after: int = 0, **named_exprs: ExprLike
 ) -> Expr: ...
@@ -2603,6 +2640,7 @@ __all__ = [
     "insert_before",
     "insert_between",
     "integers",
+    "is_close",
     "is_false",
     "is_near_event",
     "is_true",
