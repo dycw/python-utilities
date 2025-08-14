@@ -118,7 +118,7 @@ orjson-test = [
   "polars",
 ]
 polars = [
-  "polars >=1.32.2, <1.33",
+  "polars >=1.32.3, <1.33",
 ]
 polars-ols = [
   "polars-ols >=0.3.5, <0.4",
@@ -227,7 +227,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.159.0"
+version = "0.159.1"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -259,7 +259,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.159.0"
+current_version = "0.159.1"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"

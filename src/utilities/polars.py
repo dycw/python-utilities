@@ -42,9 +42,9 @@ from polars import (
 from polars._typing import PolarsDataType
 from polars.datatypes import DataType, DataTypeClass
 from polars.exceptions import (
-    ColumnNotFoundError,  # pyright: ignore[reportAttributeAccessIssue]
+    ColumnNotFoundError,
     NoRowsReturnedError,
-    OutOfBoundsError,  # pyright: ignore[reportAttributeAccessIssue]
+    OutOfBoundsError,
     PolarsInefficientMapWarning,
 )
 from polars.schema import Schema
@@ -337,8 +337,8 @@ def are_frames_equal(
     check_column_order: bool = True,
     check_dtypes: bool = True,
     check_exact: bool = False,
-    rtol: float = 1e-5,
-    atol: float = 1e-8,
+    rel_tol: float = 1e-5,
+    abs_tol: float = 1e-8,
     categorical_as_str: bool = False,
 ) -> bool:
     """Check if two DataFrames are equal."""
@@ -350,8 +350,8 @@ def are_frames_equal(
             check_column_order=check_column_order,
             check_dtypes=check_dtypes,
             check_exact=check_exact,
-            rtol=rtol,
-            atol=atol,
+            rel_tol=rel_tol,
+            abs_tol=abs_tol,
             categorical_as_str=categorical_as_str,
         )
     except AssertionError:
@@ -783,15 +783,6 @@ def choice(
 ##
 
 
-def collect_series(expr: Expr, /) -> Series:
-    """Collect a column expression into a Series."""
-    data = DataFrame().with_columns(expr)
-    return data[one(data.columns)]
-
-
-##
-
-
 def columns_to_dict(df: DataFrame, key: str, value: str, /) -> dict[Any, Any]:
     """Map a pair of columns into a dictionary. Must be unique on `key`."""
     col_key = df[key]
@@ -1044,7 +1035,9 @@ def _dataclass_to_dataframe_cast(series: Series, /) -> Series:
     is_path = series.map_elements(make_isinstance(Path), return_dtype=Boolean).all()
     is_uuid = series.map_elements(make_isinstance(UUID), return_dtype=Boolean).all()
     if is_path or is_uuid:
-        with suppress_warnings(category=PolarsInefficientMapWarning):
+        with suppress_warnings(
+            category=cast("type[Warning]", PolarsInefficientMapWarning)
+        ):
             return series.map_elements(str, return_dtype=String)
     if series.map_elements(make_isinstance(whenever.Time), return_dtype=Boolean).all():
         return series.map_elements(lambda x: x.py_time(), return_dtype=pl.Time)
@@ -1214,6 +1207,14 @@ def ensure_expr_or_series_many(
     args = map(ensure_expr_or_series, columns)
     kwargs = (ensure_expr_or_series(v).alias(k) for k, v in named_columns.items())
     return list(chain(args, kwargs))
+
+
+##
+
+
+def expr_to_series(expr: Expr, /) -> Series:
+    """Collect a column expression into a Series."""
+    return one_column(DataFrame().with_columns(expr))
 
 
 ##
@@ -1393,8 +1394,7 @@ def get_expr_name(obj: Series | DataFrame, expr: IntoExprColumn, /) -> str:
         case Series() as series:
             return get_expr_name(series.to_frame(), expr)
         case DataFrame() as df:
-            selected = df.select(expr)
-            return one(selected.columns)
+            return one_column(df.select(expr)).name
         case never:
             assert_never(never)
 
@@ -1989,6 +1989,43 @@ def offset_datetime(
 ##
 
 
+def one_column(df: DataFrame, /) -> Series:
+    """Return the unique column in a DataFrame."""
+    try:
+        return df[one(df.columns)]
+    except OneEmptyError:
+        raise OneColumnEmptyError(df=df) from None
+    except OneNonUniqueError as error:
+        raise OneColumnNonUniqueError(
+            df=df, first=error.first, second=error.second
+        ) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class OneColumnError(Exception):
+    df: DataFrame
+
+
+@dataclass(kw_only=True, slots=True)
+class OneColumnEmptyError(OneColumnError):
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must not be empty"
+
+
+@dataclass(kw_only=True, slots=True)
+class OneColumnNonUniqueError(OneColumnError):
+    first: str
+    second: str
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must contain exactly one column; got {self.first!r}, {self.second!r} and perhaps more"
+
+
+##
+
+
 @overload
 def order_of_magnitude(column: ExprLike, /, *, round_: bool = False) -> Expr: ...
 @overload
@@ -2110,13 +2147,10 @@ def reify_exprs(
         .with_columns(*all_exprs)
         .drop("_index")
     )
-    match len(df.columns):
-        case 0:
-            raise ImpossibleCaseError(case=[f"{df.columns=}"])  # pragma: no cover
-        case 1:
-            return df[one(df.columns)]
-        case _:
-            return df
+    try:
+        return one_column(df)
+    except OneColumnNonUniqueError:
+        return df
 
 
 @dataclass(kw_only=True, slots=True)
@@ -2519,6 +2553,9 @@ __all__ = [
     "InsertBeforeError",
     "InsertBetweenError",
     "IsNearEventError",
+    "OneColumnEmptyError",
+    "OneColumnError",
+    "OneColumnNonUniqueError",
     "SetFirstRowAsColumnsError",
     "TimePeriodDType",
     "acf",
@@ -2533,7 +2570,6 @@ __all__ = [
     "boolean_value_counts",
     "check_polars_dataframe",
     "choice",
-    "collect_series",
     "columns_to_dict",
     "concat_series",
     "convert_time_zone",
@@ -2545,6 +2581,7 @@ __all__ = [
     "ensure_data_type",
     "ensure_expr_or_series",
     "ensure_expr_or_series_many",
+    "expr_to_series",
     "finite_ewm_mean",
     "get_data_type_or_series_time_zone",
     "get_expr_name",
@@ -2565,6 +2602,7 @@ __all__ = [
     "nan_sum_cols",
     "normal",
     "offset_datetime",
+    "one_column",
     "order_of_magnitude",
     "period_range",
     "read_dataframe",
