@@ -2433,8 +2433,6 @@ class TestRoundToFloat:
         expected = Series(name="x", values=[exp_value], dtype=Float64)
         assert_series_equal(result, expected, check_exact=True)
 
-        assert_series_equal(result, expected, check_exact=True)
-
     def test_dataframe_name(self) -> None:
         df = (
             Series(name="x", values=[1.234], dtype=Float64)
