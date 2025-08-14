@@ -2361,31 +2361,8 @@ def round_to_float(
 ) -> ExprOrSeries:
     """Round a column to the nearest multiple of another float."""
     x = ensure_expr_or_series(x)
-    match x, y:
-        case Expr() | Series(), float():
-            z = (x / y).round(mode=mode) * y
-            return z.round(decimals=number_of_decimals(y) + 1)
-        case Series(), Expr():
-            df = x.to_frame().with_columns(y)
-            x_name, y_name = df.columns
-            assert 0, df
-            z = (x / y).round(mode=mode) * y
-            return z.round(decimals=number_of_decimals(y) + 1)
-            raise RoundToFloatError(x=x, y=y)
-        case Expr(), Expr() | str():
-            raise RoundToFloatError(x=x, y=y)
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class RoundToFloatError(Exception):
-    x: IntoExprColumn
-    y: IntoExprColumn
-
-    @override
-    def __str__(self) -> str:
-        return f"At least 1 of the dividend and/or divisor must be a Series; got {get_class_name(self.x)!r} and {get_class_name(self.y)!r}"
+    z = (x / y).round(mode=mode) * y
+    return z.round(decimals=utilities.math.number_of_decimals(y) + 1)
 
 
 ##
