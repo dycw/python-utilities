@@ -57,9 +57,6 @@ import utilities.math
 from utilities.dataclasses import yield_fields
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
-    EnsureIntError,
-    ensure_int,
-    get_class_name,
     is_dataclass_class,
     is_dataclass_instance,
     make_isinstance,
@@ -2020,15 +2017,12 @@ def number_of_decimals(
         _number_of_decimals_check_scale(frac, s) for s in range(max_decimals + 1)
     ]
     df_results = concat_series(*results)
-    # breakpoint()
-
     return first_true_horizontal(df_results)
 
 
 def _number_of_decimals_check_scale(frac: Series, scale: int, /) -> Series:
     scaled = 10**scale * frac
-    # return (scaled == scaled.round()).alias(str(scale))
-    return (abs(scaled - scaled.round()) <= 1e-20).alias(str(scale))
+    return is_close(scaled, scaled.round()).alias(str(scale))
 
 
 ##
