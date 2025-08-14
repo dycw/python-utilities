@@ -641,7 +641,7 @@ def _is_close(
 ##
 
 
-MAX_DECIMALS = 10
+MAX_DECIMALS = 20
 
 
 def number_of_decimals(x: float, /, *, max_decimals: int = MAX_DECIMALS) -> int:

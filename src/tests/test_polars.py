@@ -2245,6 +2245,18 @@ class TestNumberOfDecimals:
         result = number_of_decimals(series)
         assert result.item() == expected
 
+    def test_error_dtype(self) -> None:
+        with raises(
+            _NumberOfDecimalsDTypeError, match="Data type must be Float64; got Boolean"
+        ):
+            _ = number_of_decimals(Series(dtype=Boolean))
+
+    def test_error_not_zoned(self) -> None:
+        with raises(
+            _NumberOfDecimalsAllNullError, match="Series must not be all-null; got .*"
+        ):
+            _ = number_of_decimals(Series(dtype=Float64))
+
 
 class TestOffsetDateTime:
     @mark.parametrize(
