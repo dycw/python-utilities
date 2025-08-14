@@ -2501,15 +2501,15 @@ class TestStructDType:
 
 
 class TestToTrueAndFalse:
-    series_tt: ClassVar[Series] = Series(values=[True, True], dtype=Boolean)
-    series_tf: ClassVar[Series] = Series(values=[True, False], dtype=Boolean)
-    series_t0: ClassVar[Series] = Series(values=[True, None], dtype=Boolean)
-    series_ft: ClassVar[Series] = Series(values=[False, True], dtype=Boolean)
-    series_ff: ClassVar[Series] = Series(values=[False, False], dtype=Boolean)
-    series_f0: ClassVar[Series] = Series(values=[False, None], dtype=Boolean)
-    series_0t: ClassVar[Series] = Series(values=[None, True], dtype=Boolean)
-    series_0f: ClassVar[Series] = Series(values=[None, False], dtype=Boolean)
-    series_00: ClassVar[Series] = Series(values=[None, None], dtype=Boolean)
+    series_tt: ClassVar[Series] = Series(name="x", values=[True, True], dtype=Boolean)
+    series_tf: ClassVar[Series] = Series(name="x", values=[True, False], dtype=Boolean)
+    series_t0: ClassVar[Series] = Series(name="x", values=[True, None], dtype=Boolean)
+    series_ft: ClassVar[Series] = Series(name="x", values=[False, True], dtype=Boolean)
+    series_ff: ClassVar[Series] = Series(name="x", values=[False, False], dtype=Boolean)
+    series_f0: ClassVar[Series] = Series(name="x", values=[False, None], dtype=Boolean)
+    series_0t: ClassVar[Series] = Series(name="x", values=[None, True], dtype=Boolean)
+    series_0f: ClassVar[Series] = Series(name="x", values=[None, False], dtype=Boolean)
+    series_00: ClassVar[Series] = Series(name="x", values=[None, None], dtype=Boolean)
 
     @mark.parametrize(
         ("series", "exp_values"),
@@ -2527,7 +2527,7 @@ class TestToTrueAndFalse:
     )
     def test_to_true(self, *, series: Series, exp_values: list[bool]) -> None:
         result = to_true(series)
-        exp_series = Series(name="to_true", values=exp_values, dtype=Boolean)
+        exp_series = Series(name="x", values=exp_values, dtype=Boolean)
         assert_series_equal(result, exp_series)
 
     @mark.parametrize(
@@ -2546,7 +2546,7 @@ class TestToTrueAndFalse:
     )
     def test_to_not_true(self, *, series: Series, exp_values: list[bool]) -> None:
         result = to_not_true(series)
-        exp_series = Series(name="to_not_true", values=exp_values, dtype=Boolean)
+        exp_series = Series(name="x", values=exp_values, dtype=Boolean)
         assert_series_equal(result, exp_series)
 
     @mark.parametrize(
@@ -2565,7 +2565,7 @@ class TestToTrueAndFalse:
     )
     def test_to_false(self, *, series: Series, exp_values: list[bool]) -> None:
         result = to_false(series)
-        exp_series = Series(name="to_false", values=exp_values, dtype=Boolean)
+        exp_series = Series(name="x", values=exp_values, dtype=Boolean)
         assert_series_equal(result, exp_series)
 
     @mark.parametrize(
@@ -2584,7 +2584,7 @@ class TestToTrueAndFalse:
     )
     def test_to_not_false(self, *, series: Series, exp_values: list[bool]) -> None:
         result = to_not_false(series)
-        exp_series = Series(name="to_not_false", values=exp_values, dtype=Boolean)
+        exp_series = Series(name="x", values=exp_values, dtype=Boolean)
         assert_series_equal(result, exp_series)
 
 
