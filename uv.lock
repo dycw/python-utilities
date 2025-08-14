@@ -839,7 +839,7 @@ operator = [{ name = "polars" }]
 optuna = [{ name = "optuna", specifier = ">=4.4.0,<4.5" }]
 orjson = [{ name = "orjson", specifier = ">=3.11.0,<3.12" }]
 orjson-test = [{ name = "polars" }]
-polars = [{ name = "polars", specifier = ">=1.32.2,<1.33" }]
+polars = [{ name = "polars", specifier = ">=1.32.3,<1.33" }]
 polars-ols = [{ name = "polars-ols", specifier = ">=0.3.5,<0.4" }]
 polars-ols-test = [{ name = "scikit-learn" }]
 polars-test = [
