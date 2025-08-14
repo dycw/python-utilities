@@ -3,7 +3,6 @@ from __future__ import annotations
 import enum
 from collections.abc import Callable, Iterator, Sequence
 from collections.abc import Set as AbstractSet
-from contextlib import suppress
 from dataclasses import asdict, dataclass
 from functools import partial, reduce
 from itertools import chain, pairwise, product
@@ -59,7 +58,6 @@ from utilities.functions import (
     ensure_int,
     is_dataclass_class,
     is_dataclass_instance,
-    is_iterable_of,
     make_isinstance,
 )
 from utilities.gzip import read_binary
@@ -91,7 +89,6 @@ from utilities.reprlib import get_repr
 from utilities.types import MaybeStr, Number, PathLike, WeekDay
 from utilities.typing import (
     get_args,
-    get_type_hints,
     is_frozenset_type,
     is_list_type,
     is_literal_type,
@@ -1188,27 +1185,6 @@ def _dataclass_to_schema_one(
 ##
 
 
-def drop_null_struct_series(series: Series, /) -> Series:
-    """Drop nulls in a struct-dtype Series as per the <= 1.1 definition."""
-    try:
-        is_not_null = is_not_null_struct_series(series)
-    except IsNotNullStructSeriesError as error:
-        raise DropNullStructSeriesError(series=error.series) from None
-    return series.filter(is_not_null)
-
-
-@dataclass(kw_only=True, slots=True)
-class DropNullStructSeriesError(Exception):
-    series: Series
-
-    @override
-    def __str__(self) -> str:
-        return f"Series must have Struct-dtype; got {self.series.dtype}"
-
-
-##
-
-
 def ensure_data_type(dtype: PolarsDataType, /) -> DataType:
     """Ensure a data type is returned."""
     return dtype if isinstance(dtype, DataType) else dtype()
@@ -1718,68 +1694,28 @@ class _IsNearEventAfterError(IsNearEventError):
 ##
 
 
-def is_not_null_struct_series(series: Series, /) -> Series:
-    """Check if a struct-dtype Series is not null as per the <= 1.1 definition."""
-    try:
-        return ~is_null_struct_series(series)
-    except IsNullStructSeriesError as error:
-        raise IsNotNullStructSeriesError(series=error.series) from None
+@overload
+def is_true(column: ExprLike, /) -> Expr: ...
+@overload
+def is_true(column: Series, /) -> Series: ...
+@overload
+def is_true(column: IntoExprColumn, /) -> ExprOrSeries: ...
+def is_true(column: IntoExprColumn, /) -> ExprOrSeries:
+    """Compute when a boolean series is True."""
+    column = ensure_expr_or_series(column)
+    return (column.is_not_null()) & column
 
 
-@dataclass(kw_only=True, slots=True)
-class IsNotNullStructSeriesError(Exception):
-    series: Series
-
-    @override
-    def __str__(self) -> str:
-        return f"Series must have Struct-dtype; got {self.series.dtype}"
-
-
-##
-
-
-def is_null_struct_series(series: Series, /) -> Series:
-    """Check if a struct-dtype Series is null as per the <= 1.1 definition."""
-    if not isinstance(series.dtype, Struct):
-        raise IsNullStructSeriesError(series=series)
-    paths = _is_null_struct_series_one(series.dtype)
-    paths = list(paths)
-    exprs = map(_is_null_struct_to_expr, paths)
-    expr = all_horizontal(*exprs)
-    return (
-        series.struct.unnest().with_columns(_result=expr)["_result"].rename(series.name)
-    )
-
-
-def _is_null_struct_series_one(
-    dtype: Struct, /, *, root: Iterable[str] = ()
-) -> Iterator[Sequence[str]]:
-    for field in dtype.fields:
-        name = field.name
-        inner = field.dtype
-        path = list(chain(root, [name]))
-        if isinstance(inner, Struct):
-            yield from _is_null_struct_series_one(inner, root=path)
-        else:
-            yield path
-
-
-def _is_null_struct_to_expr(path: Iterable[str], /) -> Expr:
-    head, *tail = path
-    return reduce(_is_null_struct_to_expr_reducer, tail, col(head)).is_null()
-
-
-def _is_null_struct_to_expr_reducer(expr: Expr, path: str, /) -> Expr:
-    return expr.struct[path]
-
-
-@dataclass(kw_only=True, slots=True)
-class IsNullStructSeriesError(Exception):
-    series: Series
-
-    @override
-    def __str__(self) -> str:
-        return f"Series must have Struct-dtype; got {self.series.dtype}"
+@overload
+def is_false(column: ExprLike, /) -> Expr: ...
+@overload
+def is_false(column: Series, /) -> Series: ...
+@overload
+def is_false(column: IntoExprColumn, /) -> ExprOrSeries: ...
+def is_false(column: IntoExprColumn, /) -> ExprOrSeries:
+    """Compute when a boolean series is False."""
+    column = ensure_expr_or_series(column)
+    return (column.is_not_null()) & (~column)
 
 
 ##
@@ -2408,74 +2344,52 @@ def struct_dtype(**kwargs: PolarsDataType) -> Struct:
 ##
 
 
-def struct_from_dataclass(
-    cls: type[Dataclass],
-    /,
-    *,
-    globalns: StrMapping | None = None,
-    localns: StrMapping | None = None,
-    warn_name_errors: bool = False,
-    time_zone: TimeZoneLike | None = None,
-) -> Struct:
-    """Construct the Struct data type for a dataclass."""
-    if not is_dataclass_class(cls):
-        raise _StructFromDataClassNotADataclassError(cls=cls)
-    anns = get_type_hints(
-        cls, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
-    )
-    data_types = {
-        k: _struct_from_dataclass_one(v, time_zone=time_zone) for k, v in anns.items()
-    }
-    return Struct(data_types)
+@overload
+def to_true(column: ExprLike, /) -> Expr: ...
+@overload
+def to_true(column: Series, /) -> Series: ...
+@overload
+def to_true(column: IntoExprColumn, /) -> ExprOrSeries: ...
+def to_true(column: IntoExprColumn, /) -> ExprOrSeries:
+    """Compute when a boolean series turns True."""
+    t = is_true(column)
+    return ((~t).shift() & t).fill_null(value=False)
 
 
-def _struct_from_dataclass_one(
-    ann: Any, /, *, time_zone: TimeZoneLike | None = None
-) -> PolarsDataType:
-    mapping = {
-        bool: Boolean,
-        whenever.Date: pl.Date,
-        float: Float64,
-        int: Int64,
-        str: String,
-    }
-    with suppress(KeyError):
-        return mapping[ann]
-    if is_dataclass_class(ann):
-        return struct_from_dataclass(ann, time_zone=time_zone)
-    if (isinstance(ann, type) and issubclass(ann, enum.Enum)) or (
-        is_literal_type(ann) and is_iterable_of(get_args(ann), str)
-    ):
-        return String
-    if is_optional_type(ann):
-        return _struct_from_dataclass_one(
-            one(get_args(ann, optional_drop_none=True)), time_zone=time_zone
-        )
-    if is_frozenset_type(ann) or is_list_type(ann) or is_set_type(ann):
-        return List(_struct_from_dataclass_one(one(get_args(ann)), time_zone=time_zone))
-    raise _StructFromDataClassTypeError(ann=ann)
+@overload
+def to_not_true(column: ExprLike, /) -> Expr: ...
+@overload
+def to_not_true(column: Series, /) -> Series: ...
+@overload
+def to_not_true(column: IntoExprColumn, /) -> ExprOrSeries: ...
+def to_not_true(column: IntoExprColumn, /) -> ExprOrSeries:
+    """Compute when a boolean series turns non-True."""
+    t = is_true(column)
+    return (t.shift() & (~t)).fill_null(value=False)
 
 
-@dataclass(kw_only=True, slots=True)
-class StructFromDataClassError(Exception): ...
+@overload
+def to_false(column: ExprLike, /) -> Expr: ...
+@overload
+def to_false(column: Series, /) -> Series: ...
+@overload
+def to_false(column: IntoExprColumn, /) -> ExprOrSeries: ...
+def to_false(column: IntoExprColumn, /) -> ExprOrSeries:
+    """Compute when a boolean series turns False."""
+    f = is_false(column)
+    return ((~f).shift() & f).fill_null(value=False)
 
 
-@dataclass(kw_only=True, slots=True)
-class _StructFromDataClassNotADataclassError(StructFromDataClassError):
-    cls: type[Dataclass]
-
-    @override
-    def __str__(self) -> str:
-        return f"Object must be a dataclass; got {self.cls}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _StructFromDataClassTypeError(StructFromDataClassError):
-    ann: Any
-
-    @override
-    def __str__(self) -> str:
-        return f"Unsupported type: {self.ann}"
+@overload
+def to_not_false(column: ExprLike, /) -> Expr: ...
+@overload
+def to_not_false(column: Series, /) -> Series: ...
+@overload
+def to_not_false(column: IntoExprColumn, /) -> ExprOrSeries: ...
+def to_not_false(column: IntoExprColumn, /) -> ExprOrSeries:
+    """Compute when a boolean series turns non-False."""
+    f = is_false(column)
+    return (f.shift() & (~f)).fill_null(value=False)
 
 
 ##
@@ -2597,7 +2511,6 @@ __all__ = [
     "DatetimeUSCentral",
     "DatetimeUSEastern",
     "DatetimeUTC",
-    "DropNullStructSeriesError",
     "ExprOrSeries",
     "FiniteEWMMeanError",
     "GetDataTypeOrSeriesTimeZoneError",
@@ -2606,9 +2519,7 @@ __all__ = [
     "InsertBeforeError",
     "InsertBetweenError",
     "IsNearEventError",
-    "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
-    "StructFromDataClassError",
     "TimePeriodDType",
     "acf",
     "adjust_frequencies",
@@ -2631,7 +2542,6 @@ __all__ = [
     "dataclass_to_schema",
     "decreasing_horizontal",
     "deserialize_dataframe",
-    "drop_null_struct_series",
     "ensure_data_type",
     "ensure_expr_or_series",
     "ensure_expr_or_series_many",
@@ -2645,9 +2555,9 @@ __all__ = [
     "insert_before",
     "insert_between",
     "integers",
+    "is_false",
     "is_near_event",
-    "is_not_null_struct_series",
-    "is_null_struct_series",
+    "is_true",
     "join",
     "join_into_periods",
     "map_over_columns",
@@ -2664,7 +2574,10 @@ __all__ = [
     "serialize_dataframe",
     "set_first_row_as_columns",
     "struct_dtype",
-    "struct_from_dataclass",
+    "to_false",
+    "to_not_false",
+    "to_not_true",
+    "to_true",
     "touch",
     "try_reify_expr",
     "uniform",

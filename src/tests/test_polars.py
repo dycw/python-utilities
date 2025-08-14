@@ -8,7 +8,7 @@ from enum import auto
 from itertools import chain, repeat
 from math import isfinite, nan
 from random import Random
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never
 from uuid import UUID, uuid4
 
 import hypothesis.strategies
@@ -90,13 +90,10 @@ from utilities.polars import (
     DatetimeUSCentral,
     DatetimeUSEastern,
     DatetimeUTC,
-    DropNullStructSeriesError,
     ExprOrSeries,
     FiniteEWMMeanError,
     InsertAfterError,
     InsertBeforeError,
-    IsNotNullStructSeriesError,
-    IsNullStructSeriesError,
     SetFirstRowAsColumnsError,
     TimePeriodDType,
     _check_polars_dataframe_predicates,
@@ -137,8 +134,6 @@ from utilities.polars import (
     _reconstruct_schema,
     _ReifyExprsEmptyError,
     _ReifyExprsSeriesNonUniqueError,
-    _StructFromDataClassNotADataclassError,
-    _StructFromDataClassTypeError,
     ac_halflife,
     acf,
     adjust_frequencies,
@@ -163,7 +158,6 @@ from utilities.polars import (
     decreasing_horizontal,
     deserialize_dataframe,
     deserialize_series,
-    drop_null_struct_series,
     ensure_data_type,
     ensure_expr_or_series,
     ensure_expr_or_series_many,
@@ -176,9 +170,9 @@ from utilities.polars import (
     insert_after,
     insert_before,
     insert_between,
+    is_false,
     is_near_event,
-    is_not_null_struct_series,
-    is_null_struct_series,
+    is_true,
     join,
     join_into_periods,
     map_over_columns,
@@ -197,7 +191,10 @@ from utilities.polars import (
     serialize_series,
     set_first_row_as_columns,
     struct_dtype,
-    struct_from_dataclass,
+    to_false,
+    to_not_false,
+    to_not_true,
+    to_true,
     touch,
     try_reify_expr,
     uniform,
@@ -1449,29 +1446,6 @@ class TestDatetimeDTypes:
         assert name == expected
 
 
-class TestDropNullStructSeries:
-    def test_main(self) -> None:
-        series = Series(
-            values=[
-                {"a": None, "b": None},
-                {"a": True, "b": None},
-                {"a": None, "b": False},
-                {"a": True, "b": False},
-            ],
-            dtype=Struct({"a": Boolean, "b": Boolean}),
-        )
-        result = drop_null_struct_series(series)
-        expected = series[1:]
-        assert_series_equal(result, expected)
-
-    def test_error(self) -> None:
-        series = Series(name="series", values=[1, 2, 3, None], dtype=Int64)
-        with raises(
-            DropNullStructSeriesError, match="Series must have Struct-dtype; got Int64"
-        ):
-            _ = drop_null_struct_series(series)
-
-
 class TestEnsureDataType:
     @given(dtype=sampled_from([Boolean, Boolean()]))
     def test_main(self, *, dtype: MaybeType[Boolean]) -> None:
@@ -1930,68 +1904,20 @@ class TestIsNearEvent:
             _ = is_near_event(after=after)
 
 
-class TestIsNullAndIsNotNullStructSeries:
-    @given(
-        case=sampled_from([
-            (is_null_struct_series, [True, False, False, False]),
-            (is_not_null_struct_series, [False, True, True, True]),
-        ])
+class TestIsTrueAndFalse:
+    series: ClassVar[Series] = Series(
+        name="x", values=[True, False, None], dtype=Boolean
     )
-    def test_main(self, *, case: tuple[Callable[[Series], Series], list[bool]]) -> None:
-        func, exp_values = case
-        series = Series(
-            values=[
-                {"a": None, "b": None},
-                {"a": True, "b": None},
-                {"a": None, "b": False},
-                {"a": True, "b": False},
-            ],
-            dtype=Struct({"a": Boolean, "b": Boolean}),
-        )
-        result = func(series)
-        expected = Series(values=exp_values, dtype=Boolean)
+
+    def test_true(self) -> None:
+        result = is_true(self.series)
+        expected = Series(name="x", values=[True, False, False], dtype=Boolean)
         assert_series_equal(result, expected)
 
-    @given(
-        case=sampled_from([
-            (is_null_struct_series, [False, False, False, True]),
-            (is_not_null_struct_series, [True, True, True, False]),
-        ])
-    )
-    def test_nested(
-        self, *, case: tuple[Callable[[Series], Series], list[bool]]
-    ) -> None:
-        func, exp_values = case
-        series = Series(
-            values=[
-                {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
-                {"a": 1, "b": 2, "inner": None},
-                {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
-                {"a": None, "b": None, "inner": None},
-            ],
-            dtype=Struct({
-                "a": Int64,
-                "b": Int64,
-                "inner": Struct({"lower": Int64, "upper": Int64}),
-            }),
-        )
-        result = func(series)
-        expected = Series(values=exp_values, dtype=Boolean)
+    def test_false(self) -> None:
+        result = is_false(self.series)
+        expected = Series(name="x", values=[False, True, False], dtype=Boolean)
         assert_series_equal(result, expected)
-
-    @given(
-        case=sampled_from([
-            (is_null_struct_series, IsNullStructSeriesError),
-            (is_not_null_struct_series, IsNotNullStructSeriesError),
-        ])
-    )
-    def test_error(
-        self, *, case: tuple[Callable[[Series], Series], type[Exception]]
-    ) -> None:
-        func, error = case
-        series = Series(name="series", values=[1, 2, 3, None], dtype=Int64)
-        with raises(error, match="Series must have Struct-dtype; got Int64"):
-            _ = func(series)
 
 
 class TestJoin:
@@ -2574,130 +2500,92 @@ class TestStructDType:
         assert result == expected
 
 
-class TestStructFromDataClass:
-    def test_simple(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            bool_: bool
-            bool_maybe: bool | None = None
-            date: whenever.Date
-            date_maybe: whenever.Date | None = None
-            float_: float
-            float_maybe: float | None = None
-            int_: int
-            int_maybe: int | None = None
-            str_: str
-            str_maybe: str | None = None
+class TestToTrueAndFalse:
+    series_tt: ClassVar[Series] = Series(name="x", values=[True, True], dtype=Boolean)
+    series_tf: ClassVar[Series] = Series(name="x", values=[True, False], dtype=Boolean)
+    series_t0: ClassVar[Series] = Series(name="x", values=[True, None], dtype=Boolean)
+    series_ft: ClassVar[Series] = Series(name="x", values=[False, True], dtype=Boolean)
+    series_ff: ClassVar[Series] = Series(name="x", values=[False, False], dtype=Boolean)
+    series_f0: ClassVar[Series] = Series(name="x", values=[False, None], dtype=Boolean)
+    series_0t: ClassVar[Series] = Series(name="x", values=[None, True], dtype=Boolean)
+    series_0f: ClassVar[Series] = Series(name="x", values=[None, False], dtype=Boolean)
+    series_00: ClassVar[Series] = Series(name="x", values=[None, None], dtype=Boolean)
 
-        result = struct_from_dataclass(Example, globalns=globals())
-        expected = Struct({
-            "bool_": Boolean,
-            "bool_maybe": Boolean,
-            "date": pl.Date,
-            "date_maybe": pl.Date,
-            "float_": Float64,
-            "float_maybe": Float64,
-            "int_": Int64,
-            "int_maybe": Int64,
-            "str_": String,
-            "str_maybe": String,
-        })
-        assert result == expected
+    @mark.parametrize(
+        ("series", "exp_values"),
+        [
+            param(series_tt, [False, False]),
+            param(series_tf, [False, False]),
+            param(series_t0, [False, False]),
+            param(series_ft, [False, True]),
+            param(series_ff, [False, False]),
+            param(series_f0, [False, False]),
+            param(series_0t, [False, True]),
+            param(series_0f, [False, False]),
+            param(series_00, [False, False]),
+        ],
+    )
+    def test_to_true(self, *, series: Series, exp_values: list[bool]) -> None:
+        result = to_true(series)
+        exp_series = Series(name="x", values=exp_values, dtype=Boolean)
+        assert_series_equal(result, exp_series)
 
-    def test_enum(self) -> None:
-        class Truth(enum.Enum):
-            true = auto()
-            false = auto()
+    @mark.parametrize(
+        ("series", "exp_values"),
+        [
+            param(series_tt, [False, False]),
+            param(series_tf, [False, True]),
+            param(series_t0, [False, True]),
+            param(series_ft, [False, False]),
+            param(series_ff, [False, False]),
+            param(series_f0, [False, False]),
+            param(series_0t, [False, False]),
+            param(series_0f, [False, False]),
+            param(series_00, [False, False]),
+        ],
+    )
+    def test_to_not_true(self, *, series: Series, exp_values: list[bool]) -> None:
+        result = to_not_true(series)
+        exp_series = Series(name="x", values=exp_values, dtype=Boolean)
+        assert_series_equal(result, exp_series)
 
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            field: Truth
+    @mark.parametrize(
+        ("series", "exp_values"),
+        [
+            param(series_tt, [False, False]),
+            param(series_tf, [False, True]),
+            param(series_t0, [False, False]),
+            param(series_ft, [False, False]),
+            param(series_ff, [False, False]),
+            param(series_f0, [False, False]),
+            param(series_0t, [False, False]),
+            param(series_0f, [False, True]),
+            param(series_00, [False, False]),
+        ],
+    )
+    def test_to_false(self, *, series: Series, exp_values: list[bool]) -> None:
+        result = to_false(series)
+        exp_series = Series(name="x", values=exp_values, dtype=Boolean)
+        assert_series_equal(result, exp_series)
 
-        result = struct_from_dataclass(Example, localns=locals())
-        expected = Struct({"field": String})
-        assert result == expected
-
-    def test_literal(self) -> None:
-        LowOrHigh = Literal["low", "high"]  # noqa: N806
-
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            field: LowOrHigh  # pyright: ignore[reportInvalidTypeForm]
-
-        result = struct_from_dataclass(Example, localns=locals())
-        expected = Struct({"field": String})
-        assert result == expected
-
-    def test_containers(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            frozenset_: frozenset[int]
-            list_: list[int]
-            set_: set[int]
-
-        result = struct_from_dataclass(Example, time_zone=UTC)
-        expected = Struct({
-            "frozenset_": List(Int64),
-            "list_": List(Int64),
-            "set_": List(Int64),
-        })
-        assert result == expected
-
-    def test_list_of_struct(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Inner:
-            field: int
-
-        @dataclass(kw_only=True, slots=True)
-        class Outer:
-            inner: list[Inner]
-
-        result = struct_from_dataclass(Outer, localns=locals(), time_zone=UTC)
-        expected = Struct({"inner": List(Struct({"field": Int64}))})
-        assert result == expected
-
-    def test_struct(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Inner:
-            field: int
-
-        @dataclass(kw_only=True, slots=True)
-        class Outer:
-            inner: Inner
-
-        result = struct_from_dataclass(Outer, localns=locals(), time_zone=UTC)
-        expected = Struct({"inner": Struct({"field": Int64})})
-        assert result == expected
-
-    def test_struct_of_list(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Inner:
-            field: list[int]
-
-        @dataclass(kw_only=True, slots=True)
-        class Outer:
-            inner: Inner
-
-        result = struct_from_dataclass(Outer, localns=locals(), time_zone=UTC)
-        expected = Struct({"inner": Struct({"field": List(Int64)})})
-        assert result == expected
-
-    def test_not_a_dataclass_error(self) -> None:
-        with raises(
-            _StructFromDataClassNotADataclassError,
-            match="Object must be a dataclass; got None",
-        ):
-            _ = struct_from_dataclass(cast("Any", None))
-
-    def test_missing_type_error(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            field: None
-
-        with raises(
-            _StructFromDataClassTypeError, match="Unsupported type: <class 'NoneType'>"
-        ):
-            _ = struct_from_dataclass(Example)
+    @mark.parametrize(
+        ("series", "exp_values"),
+        [
+            param(series_tt, [False, False]),
+            param(series_tf, [False, False]),
+            param(series_t0, [False, False]),
+            param(series_ft, [False, True]),
+            param(series_ff, [False, False]),
+            param(series_f0, [False, True]),
+            param(series_0t, [False, False]),
+            param(series_0f, [False, False]),
+            param(series_00, [False, False]),
+        ],
+    )
+    def test_to_not_false(self, *, series: Series, exp_values: list[bool]) -> None:
+        result = to_not_false(series)
+        exp_series = Series(name="x", values=exp_values, dtype=Boolean)
+        assert_series_equal(result, exp_series)
 
 
 class TestTryReifyExpr:
