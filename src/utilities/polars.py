@@ -2353,7 +2353,7 @@ def to_true(column: IntoExprColumn, /) -> ExprOrSeries: ...
 def to_true(column: IntoExprColumn, /) -> ExprOrSeries:
     """Compute when a boolean series turns True."""
     t = is_true(column)
-    return ((~t).shift() & t).fill_null(value=False).alias(to_true.__name__)
+    return ((~t).shift() & t).fill_null(value=False)
 
 
 @overload
@@ -2365,7 +2365,7 @@ def to_not_true(column: IntoExprColumn, /) -> ExprOrSeries: ...
 def to_not_true(column: IntoExprColumn, /) -> ExprOrSeries:
     """Compute when a boolean series turns non-True."""
     t = is_true(column)
-    return (t.shift() & (~t)).fill_null(value=False).alias(to_not_true.__name__)
+    return (t.shift() & (~t)).fill_null(value=False)
 
 
 @overload
@@ -2377,7 +2377,7 @@ def to_false(column: IntoExprColumn, /) -> ExprOrSeries: ...
 def to_false(column: IntoExprColumn, /) -> ExprOrSeries:
     """Compute when a boolean series turns False."""
     f = is_false(column)
-    return ((~f).shift() & f).fill_null(value=False).alias(to_false.__name__)
+    return ((~f).shift() & f).fill_null(value=False)
 
 
 @overload
@@ -2389,7 +2389,7 @@ def to_not_false(column: IntoExprColumn, /) -> ExprOrSeries: ...
 def to_not_false(column: IntoExprColumn, /) -> ExprOrSeries:
     """Compute when a boolean series turns non-False."""
     f = is_false(column)
-    return (f.shift() & (~f)).fill_null(value=False).alias(to_not_false.__name__)
+    return (f.shift() & (~f)).fill_null(value=False)
 
 
 ##

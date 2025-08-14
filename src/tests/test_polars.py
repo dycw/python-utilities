@@ -1905,16 +1905,18 @@ class TestIsNearEvent:
 
 
 class TestIsTrueAndFalse:
-    series: ClassVar[Series] = Series(values=[True, False, None], dtype=Boolean)
+    series: ClassVar[Series] = Series(
+        name="x", values=[True, False, None], dtype=Boolean
+    )
 
     def test_true(self) -> None:
         result = is_true(self.series)
-        expected = Series(name="is_true", values=[True, False, False], dtype=Boolean)
+        expected = Series(name="x", values=[True, False, False], dtype=Boolean)
         assert_series_equal(result, expected)
 
     def test_false(self) -> None:
         result = is_false(self.series)
-        expected = Series(name="is_false", values=[False, True, False], dtype=Boolean)
+        expected = Series(name="x", values=[False, True, False], dtype=Boolean)
         assert_series_equal(result, expected)
 
 
