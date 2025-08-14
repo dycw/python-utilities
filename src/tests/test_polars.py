@@ -164,6 +164,7 @@ from utilities.polars import (
     ensure_expr_or_series_many,
     expr_to_series,
     finite_ewm_mean,
+    first_true_horizontal,
     get_data_type_or_series_time_zone,
     get_expr_name,
     get_frequency_spectrum,
@@ -1556,6 +1557,14 @@ class TestFiniteEWMWeights:
             match=r"Min weight must be at least 0 and less than 1; got 1\.0",
         ):
             _ = _finite_ewm_weights(min_weight=1.0)
+
+
+class TestFirstTrueHorizontal:
+    @mark.parametrize(("row", "expected"), [param([True, True, True], 0)])
+    def test_main(self, *, row: list[bool], expected: int | None) -> None:
+        df = DataFrame([row], schema={str(i): Boolean for i in range(3)}, orient="row")
+        result = first_true_horizontal(df)
+        assert result.item() == expected
 
 
 class TestGetDataTypeOrSeriesTimeZone:
