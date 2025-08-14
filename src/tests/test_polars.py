@@ -16,7 +16,7 @@ import hypothesis.strategies
 import numpy as np
 import polars as pl
 import whenever
-from hypothesis import given
+from hypothesis import assume, given, reproduce_failure
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -60,6 +60,7 @@ from pytest import mark, param, raises
 from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 import tests.test_math
+import utilities.math
 import utilities.polars
 from utilities.hypothesis import (
     date_deltas,
@@ -2231,6 +2232,7 @@ class TestNormal:
 
 
 class TestNumberOfDecimals:
+    @mark.only
     @given(
         integer=hypothesis.strategies.integers(
             -tests.test_math.TestNumberOfDecimals.max_int,
@@ -2238,24 +2240,17 @@ class TestNumberOfDecimals:
         ),
         case=sampled_from(tests.test_math.TestNumberOfDecimals.cases),
     )
+    @reproduce_failure("6.138.0", b"AEEBQQg=")
     def test_main(self, *, integer: int, case: tuple[float, int]) -> None:
         frac, expected = case
         x = integer + frac
         series = Series(name="x", values=[x], dtype=Float64)
         result = number_of_decimals(series)
+
+        z = utilities.math.number_of_decimals(x)
+        breakpoint()
+
         assert result.item() == expected
-
-    def test_error_dtype(self) -> None:
-        with raises(
-            _NumberOfDecimalsDTypeError, match="Data type must be Float64; got Boolean"
-        ):
-            _ = number_of_decimals(Series(dtype=Boolean))
-
-    def test_error_not_zoned(self) -> None:
-        with raises(
-            _NumberOfDecimalsAllNullError, match="Series must not be all-null; got .*"
-        ):
-            _ = number_of_decimals(Series(dtype=Float64))
 
 
 class TestOffsetDateTime:

@@ -658,6 +658,10 @@ def number_of_decimals(x: float, /, *, max_decimals: int = MAX_DECIMALS) -> int:
 
 def _number_of_decimals_check_scale(frac: float, scale: int, /) -> bool:
     scaled = 10**scale * frac
+    rounded = round(scaled)
+    out = isclose(scaled, round(scaled))
+    if scale == 8:
+        breakpoint()
     return isclose(scaled, round(scaled))
 
 

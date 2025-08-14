@@ -1977,34 +1977,20 @@ def number_of_decimals(
     series: Series, /, *, max_decimals: int = MAX_DECIMALS
 ) -> Series:
     """Get the number of decimals."""
-    if not isinstance(dtype := series.dtype, Float64):
-        raise _NumberOfDecimalsDTypeError(dtype=dtype)
     frac = series - series.floor()
     results = [
         _number_of_decimals_check_scale(frac, s) for s in range(max_decimals + 1)
     ]
     df_results = concat_series(*results)
-    assert 0, df_results
-    z
-    decimals = series.map_elements(number_of_decimals, return_dtype=Int64).max()
-    try:
-        return ensure_int(decimals, nullable=nullable)
-    except EnsureIntError:
-        raise _NumberOfDecimalsAllNullError(series=series) from None
+    # breakpoint()
+
+    return first_true_horizontal(df_results)
 
 
-def _number_of_decimals_check_scale(frac: Series, scale: int, /) -> bool:
+def _number_of_decimals_check_scale(frac: Series, scale: int, /) -> Series:
     scaled = 10**scale * frac
-    return ((scaled - scaled.round()) <= 1e-9).alias(str(scale))
-
-
-@dataclass(kw_only=True, slots=True)
-class NumberOfDecimalsError(Exception):
-    series: Series
-
-    @override
-    def __str__(self) -> str:
-        return f"Series must not be all-null; got {self.series}"
+    # return (scaled == scaled.round()).alias(str(scale))
+    return (abs(scaled - scaled.round()) <= 1e-20).alias(str(scale))
 
 
 ##
