@@ -45,8 +45,7 @@ from polars.datatypes import DataType, DataTypeClass
 from polars.exceptions import (
     ColumnNotFoundError,
     NoRowsReturnedError,
-    OutOfBoundsError,
-    PolarsInefficientMapWarning,
+    OutOfBoundsError,  # pyright: ignore[reportAttributeAccessIssue]
 )
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
@@ -96,7 +95,6 @@ from utilities.typing import (
     is_optional_type,
     is_set_type,
 )
-from utilities.warnings import suppress_warnings
 from utilities.whenever import (
     DatePeriod,
     TimePeriod,
@@ -1036,10 +1034,7 @@ def _dataclass_to_dataframe_cast(series: Series, /) -> Series:
     is_path = series.map_elements(make_isinstance(Path), return_dtype=Boolean).all()
     is_uuid = series.map_elements(make_isinstance(UUID), return_dtype=Boolean).all()
     if is_path or is_uuid:
-        with suppress_warnings(
-            category=cast("type[Warning]", PolarsInefficientMapWarning)
-        ):
-            return series.map_elements(str, return_dtype=String)
+        return series.map_elements(str, return_dtype=String)
     if series.map_elements(make_isinstance(whenever.Time), return_dtype=Boolean).all():
         return series.map_elements(lambda x: x.py_time(), return_dtype=pl.Time)
     if series.map_elements(make_isinstance(TimeDelta), return_dtype=Boolean).all():
