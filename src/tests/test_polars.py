@@ -170,7 +170,9 @@ from utilities.polars import (
     insert_after,
     insert_before,
     insert_between,
+    is_false,
     is_near_event,
+    is_true,
     join,
     join_into_periods,
     map_over_columns,
@@ -189,6 +191,10 @@ from utilities.polars import (
     serialize_series,
     set_first_row_as_columns,
     struct_dtype,
+    to_false,
+    to_not_false,
+    to_not_true,
+    to_true,
     touch,
     try_reify_expr,
     uniform,
@@ -1898,6 +1904,20 @@ class TestIsNearEvent:
             _ = is_near_event(after=after)
 
 
+class TestIsTrueAndFalse:
+    series: ClassVar[Series] = Series(values=[True, False, None], dtype=Boolean)
+
+    def test_true(self) -> None:
+        result = is_true(self.series)
+        expected = Series(name="is_true", values=[True, False, False], dtype=Boolean)
+        assert_series_equal(result, expected)
+
+    def test_false(self) -> None:
+        result = is_false(self.series)
+        expected = Series(name="is_false", values=[False, True, False], dtype=Boolean)
+        assert_series_equal(result, expected)
+
+
 class TestJoin:
     def test_main(self) -> None:
         df1 = DataFrame(data=[{"a": 1, "b": 2}], schema={"a": Int64, "b": Int64})
@@ -2476,6 +2496,94 @@ class TestStructDType:
         result = struct_dtype(start=DatetimeUTC, end=DatetimeUTC)
         expected = Struct({"start": DatetimeUTC, "end": DatetimeUTC})
         assert result == expected
+
+
+class TestToTrueAndFalse:
+    series_tt: ClassVar[Series] = Series(values=[True, True], dtype=Boolean)
+    series_tf: ClassVar[Series] = Series(values=[True, False], dtype=Boolean)
+    series_t0: ClassVar[Series] = Series(values=[True, None], dtype=Boolean)
+    series_ft: ClassVar[Series] = Series(values=[False, True], dtype=Boolean)
+    series_ff: ClassVar[Series] = Series(values=[False, False], dtype=Boolean)
+    series_f0: ClassVar[Series] = Series(values=[False, None], dtype=Boolean)
+    series_0t: ClassVar[Series] = Series(values=[None, True], dtype=Boolean)
+    series_0f: ClassVar[Series] = Series(values=[None, False], dtype=Boolean)
+    series_00: ClassVar[Series] = Series(values=[None, None], dtype=Boolean)
+
+    @mark.parametrize(
+        ("series", "exp_values"),
+        [
+            param(series_tt, [False, False]),
+            param(series_tf, [False, False]),
+            param(series_t0, [False, False]),
+            param(series_ft, [False, True]),
+            param(series_ff, [False, False]),
+            param(series_f0, [False, False]),
+            param(series_0t, [False, True]),
+            param(series_0f, [False, False]),
+            param(series_00, [False, False]),
+        ],
+    )
+    def test_to_true(self, *, series: Series, exp_values: list[bool]) -> None:
+        result = to_true(series)
+        exp_series = Series(name="to_true", values=exp_values, dtype=Boolean)
+        assert_series_equal(result, exp_series)
+
+    @mark.parametrize(
+        ("series", "exp_values"),
+        [
+            param(series_tt, [False, False]),
+            param(series_tf, [False, True]),
+            param(series_t0, [False, True]),
+            param(series_ft, [False, False]),
+            param(series_ff, [False, False]),
+            param(series_f0, [False, False]),
+            param(series_0t, [False, False]),
+            param(series_0f, [False, False]),
+            param(series_00, [False, False]),
+        ],
+    )
+    def test_to_not_true(self, *, series: Series, exp_values: list[bool]) -> None:
+        result = to_not_true(series)
+        exp_series = Series(name="to_not_true", values=exp_values, dtype=Boolean)
+        assert_series_equal(result, exp_series)
+
+    @mark.parametrize(
+        ("series", "exp_values"),
+        [
+            param(series_tt, [False, False]),
+            param(series_tf, [False, True]),
+            param(series_t0, [False, False]),
+            param(series_ft, [False, False]),
+            param(series_ff, [False, False]),
+            param(series_f0, [False, False]),
+            param(series_0t, [False, False]),
+            param(series_0f, [False, True]),
+            param(series_00, [False, False]),
+        ],
+    )
+    def test_to_false(self, *, series: Series, exp_values: list[bool]) -> None:
+        result = to_false(series)
+        exp_series = Series(name="to_false", values=exp_values, dtype=Boolean)
+        assert_series_equal(result, exp_series)
+
+    @mark.parametrize(
+        ("series", "exp_values"),
+        [
+            param(series_tt, [False, False]),
+            param(series_tf, [False, False]),
+            param(series_t0, [False, False]),
+            param(series_ft, [False, True]),
+            param(series_ff, [False, False]),
+            param(series_f0, [False, True]),
+            param(series_0t, [False, False]),
+            param(series_0f, [False, False]),
+            param(series_00, [False, False]),
+        ],
+    )
+    def test_to_not_false(self, *, series: Series, exp_values: list[bool]) -> None:
+        result = to_not_false(series)
+        exp_series = Series(name="to_not_false", values=exp_values, dtype=Boolean)
+        assert_series_equal(result, exp_series)
 
 
 class TestTryReifyExpr:
