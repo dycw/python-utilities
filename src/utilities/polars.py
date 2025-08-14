@@ -2145,13 +2145,10 @@ def reify_exprs(
         .with_columns(*all_exprs)
         .drop("_index")
     )
-    match len(df.columns):
-        case 0:
-            raise ImpossibleCaseError(case=[f"{df.columns=}"])  # pragma: no cover
-        case 1:
-            return df[one(df.columns)]
-        case _:
-            return df
+    try:
+        return one_column(df)
+    except OneColumnNonUniqueError:
+        return df
 
 
 @dataclass(kw_only=True, slots=True)
