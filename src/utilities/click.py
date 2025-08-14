@@ -260,10 +260,7 @@ class Path(ParamType):
             case pathlib.Path():
                 return value.expanduser()
             case str():
-                try:
-                    return pathlib.Path(value).expanduser()
-                except ValueError as error:
-                    self.fail(str(error), param, ctx)
+                return pathlib.Path(value).expanduser()
             case never:
                 assert_never(never)
 

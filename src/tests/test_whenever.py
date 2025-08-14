@@ -1398,6 +1398,10 @@ class TestToZonedDateTime:
     def test_date_time(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time) == date_time
 
+    @given(date_time=zoned_date_times())
+    def test_str(self, *, date_time: ZonedDateTime) -> None:
+        assert to_zoned_date_time(date_time.format_common_iso()) == date_time
+
     @given(date_time=zoned_date_times_2000)
     def test_py_date_time_zone_info(self, *, date_time: ZonedDateTime) -> None:
         assert to_zoned_date_time(date_time.py_datetime()) == date_time
