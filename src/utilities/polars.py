@@ -1392,8 +1392,7 @@ def get_expr_name(obj: Series | DataFrame, expr: IntoExprColumn, /) -> str:
         case Series() as series:
             return get_expr_name(series.to_frame(), expr)
         case DataFrame() as df:
-            selected = df.select(expr)
-            return one(selected.columns)
+            return one_column(df.select(expr)).name
         case never:
             assert_never(never)
 
