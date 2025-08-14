@@ -97,6 +97,7 @@ from utilities.polars import (
     InsertBeforeError,
     OneColumnEmptyError,
     OneColumnNonUniqueError,
+    RoundToFloatError,
     SetFirstRowAsColumnsError,
     TimePeriodDType,
     _check_polars_dataframe_predicates,
@@ -2427,8 +2428,8 @@ class TestReplaceTimeZone:
 class TestRoundToFloat:
     @mark.parametrize(("x", "y", "exp_value"), tests.test_math.TestRoundToFloat.cases)
     def test_main(self, *, x: float, y: float, exp_value: float) -> None:
-        x = Series(name="x", values=[x], dtype=Float64)
-        result = round_to_float(x, y)
+        x_sr = Series(name="x", values=[x], dtype=Float64)
+        result = round_to_float(x_sr, y)
         expected = Series(name="x", values=[exp_value], dtype=Float64)
         assert_series_equal(result, expected, check_exact=True)
 
