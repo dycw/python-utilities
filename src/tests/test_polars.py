@@ -1830,7 +1830,7 @@ class TestIntegers:
 
 
 class TestIsClose:
-    @given(values=pairs(float64s()), rel_tol=floats(0.0, 0.1), abs_tol=floats(0.0, 0.1))
+    @given(values=pairs(float64s()), rel_tol=floats(0.0, 1.0), abs_tol=floats(0.0, 1.0))
     def test_main(
         self, *, values: tuple[float, float], rel_tol: float, abs_tol: float
     ) -> None:
