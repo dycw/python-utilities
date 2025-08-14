@@ -53,6 +53,7 @@ from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
+import utilities.math
 from utilities.dataclasses import yield_fields
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
@@ -2357,7 +2358,7 @@ def round_to_float(
     """Round a column to the nearest multiple of another float."""
     x = ensure_expr_or_series(x)
     z = (x / y).round(mode=mode) * y
-    return z.round(decimals=number_of_decimals(y) + 1)
+    return z.round(decimals=utilities.math.number_of_decimals(y) + 1)
 
 
 ##
