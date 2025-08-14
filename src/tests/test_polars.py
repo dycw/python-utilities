@@ -9,7 +9,7 @@ from enum import auto
 from itertools import chain, repeat
 from math import isfinite, nan
 from random import Random
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never, cast
 from uuid import UUID, uuid4
 
 import hypothesis.strategies
@@ -97,6 +97,7 @@ from utilities.polars import (
     InsertBeforeError,
     OneColumnEmptyError,
     OneColumnNonUniqueError,
+    RoundToFloatError,
     SetFirstRowAsColumnsError,
     TimePeriodDType,
     _check_polars_dataframe_predicates,
@@ -1560,7 +1561,7 @@ class TestFiniteEWMWeights:
 
 class TestFirstTrueHorizontal:
     @mark.parametrize(
-        ("row", "expected"),
+        ("values", "expected"),
         [
             param([True, True, True], 0),
             param([False, True, True], 1),
@@ -1568,9 +1569,9 @@ class TestFirstTrueHorizontal:
             param([False, False, False], None),
         ],
     )
-    def test_main(self, *, row: list[bool], expected: int | None) -> None:
-        df = DataFrame([row], schema={str(i): Boolean for i in range(3)}, orient="row")
-        result = first_true_horizontal(df)
+    def test_main(self, *, values: list[bool], expected: int | None) -> None:
+        series = [Series(values=[v], dtype=Boolean) for v in values]
+        result = first_true_horizontal(*series)
         assert result.item() == expected
 
 
@@ -2427,8 +2428,8 @@ class TestReplaceTimeZone:
 class TestRoundToFloat:
     @mark.parametrize(("x", "y", "exp_value"), tests.test_math.TestRoundToFloat.cases)
     def test_main(self, *, x: float, y: float, exp_value: float) -> None:
-        series = Series(name="x", values=[x], dtype=Float64)
-        result = round_to_float(series, y)
+        x_sr = Series(name="x", values=[x], dtype=Float64)
+        result = round_to_float(x_sr, y)
         expected = Series(name="x", values=[exp_value], dtype=Float64)
         assert_series_equal(result, expected, check_exact=True)
 
@@ -2440,6 +2441,29 @@ class TestRoundToFloat:
         )
         expected = Series(name="x", values=[1.2], dtype=Float64).to_frame()
         assert_frame_equal(df, expected)
+
+    def test_series_and_expr(self) -> None:
+        x = Series(name="x", values=[1.234], dtype=Float64)
+        y = lit(0.1, dtype=Float64).alias("y")
+        result = round_to_float(x, y)
+        assert result.item() == 1.2
+
+    def test_expr_and_expr(self) -> None:
+        x = lit(1.234, dtype=Float64).alias("x")
+        y = Series(name="y", values=[0.1], dtype=Float64)
+        result = round_to_float(x, y)
+        assert result.item() == 1.2
+
+    @mark.parametrize(
+        ("x", "y"),
+        [param("x", "y"), param(col.x, "y"), param("x", col.y), param(col.x, col.y)],
+    )
+    def test_error(self, *, x: IntoExprColumn, y: IntoExprColumn) -> None:
+        with raises(
+            RoundToFloatError,
+            match="At least 1 of the dividend and/or divisor must be a Series; got .* and .*",
+        ):
+            _ = round_to_float(cast("Any", x), cast("Any", y))
 
 
 class TestSerializeAndDeserializeDataFrame:
