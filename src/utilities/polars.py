@@ -337,8 +337,8 @@ def are_frames_equal(
     check_column_order: bool = True,
     check_dtypes: bool = True,
     check_exact: bool = False,
-    rtol: float = 1e-5,
-    atol: float = 1e-8,
+    rel_tol: float = 1e-5,
+    abs_tol: float = 1e-8,
     categorical_as_str: bool = False,
 ) -> bool:
     """Check if two DataFrames are equal."""
@@ -350,8 +350,8 @@ def are_frames_equal(
             check_column_order=check_column_order,
             check_dtypes=check_dtypes,
             check_exact=check_exact,
-            rtol=rtol,
-            atol=atol,
+            rel_tol=rel_tol,
+            abs_tol=abs_tol,
             categorical_as_str=categorical_as_str,
         )
     except AssertionError:
