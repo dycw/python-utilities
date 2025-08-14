@@ -2433,6 +2433,8 @@ class TestRoundToFloat:
         expected = Series(name="x", values=[exp_value], dtype=Float64)
         assert_series_equal(result, expected, check_exact=True)
 
+        assert_series_equal(result, expected, check_exact=True)
+
     def test_dataframe_name(self) -> None:
         df = (
             Series(name="x", values=[1.234], dtype=Float64)
@@ -2442,11 +2444,12 @@ class TestRoundToFloat:
         expected = Series(name="x", values=[1.2], dtype=Float64).to_frame()
         assert_frame_equal(df, expected)
 
-    def test_series_and_expr(self) -> None:
+    @mark.parametrize(("y_value", "expected"), [param(0.1, 1.2), param(None, None)])
+    def test_series_and_expr(self, *, y_value: float, expected: float | None) -> None:
         x = Series(name="x", values=[1.234], dtype=Float64)
-        y = lit(0.1, dtype=Float64).alias("y")
+        y = lit(y_value, dtype=Float64).alias("y")
         result = round_to_float(x, y)
-        assert result.item() == 1.2
+        assert result.item() == expected
 
     def test_expr_and_expr(self) -> None:
         x = lit(1.234, dtype=Float64).alias("x")
