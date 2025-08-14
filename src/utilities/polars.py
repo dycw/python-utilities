@@ -46,7 +46,7 @@ from polars.datatypes import DataType, DataTypeClass
 from polars.exceptions import (
     ColumnNotFoundError,
     NoRowsReturnedError,
-    OutOfBoundsError,  # pyright: ignore[reportAttributeAccessIssue]
+    OutOfBoundsError,
     PolarsInefficientMapWarning,
 )
 from polars.schema import Schema
@@ -1586,42 +1586,6 @@ def integers(
             )
         case never:
             assert_never(never)
-
-
-##
-
-
-@overload
-def is_close(
-    x: ExprLike, y: ExprLike, /, *, rel_tol: float = 1e-9, abs_tol: float = 0
-) -> Expr: ...
-@overload
-def is_close(
-    x: Series, y: Series, /, *, rel_tol: float = 1e-9, abs_tol: float = 0
-) -> Series: ...
-@overload
-def is_close(
-    x: IntoExprColumn,
-    y: IntoExprColumn,
-    /,
-    *,
-    rel_tol: float = 1e-9,
-    abs_tol: float = 0,
-) -> ExprOrSeries: ...
-def is_close(
-    x: IntoExprColumn,
-    y: IntoExprColumn,
-    /,
-    *,
-    rel_tol: float = 1e-9,
-    abs_tol: float = 0,
-) -> ExprOrSeries:
-    """Check if two columns are close."""
-    x, y = map(ensure_expr_or_series, [x, y])
-    result = (x - y).abs() <= max_horizontal(
-        rel_tol * max_horizontal(x.abs(), y.abs()), abs_tol
-    )
-    return try_reify_expr(result, x, y)
 
 
 ##
