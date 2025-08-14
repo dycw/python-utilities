@@ -59,6 +59,7 @@ from utilities.functions import (
     is_dataclass_class,
     is_dataclass_instance,
     make_isinstance,
+    second,
 )
 from utilities.gzip import read_binary
 from utilities.iterables import (
@@ -1989,6 +1990,43 @@ def offset_datetime(
 ##
 
 
+def one_column(df: DataFrame, /) -> Series:
+    """Return the unique column in a DataFrame."""
+    try:
+        return df[one(df.columns)]
+    except OneEmptyError:
+        raise OneColumnEmptyError(df=df) from None
+    except OneNonUniqueError as error:
+        raise OneColumnNonUniqueError(
+            df=df, first=error.first, second=error.second
+        ) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class OneColumnError(Exception):
+    df: DataFrame
+
+
+@dataclass(kw_only=True, slots=True)
+class OneColumnEmptyError(OneColumnError):
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must not be empty"
+
+
+@dataclass(kw_only=True, slots=True)
+class OneColumnNonUniqueError(OneColumnError):
+    first: str
+    second: str
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must contain exactly one column; got {self.first!r}, {self.second!r} and perhaps more"
+
+
+##
+
+
 @overload
 def order_of_magnitude(column: ExprLike, /, *, round_: bool = False) -> Expr: ...
 @overload
@@ -2519,6 +2557,9 @@ __all__ = [
     "InsertBeforeError",
     "InsertBetweenError",
     "IsNearEventError",
+    "OneColumnEmptyError",
+    "OneColumnError",
+    "OneColumnNonUniqueError",
     "SetFirstRowAsColumnsError",
     "TimePeriodDType",
     "acf",
@@ -2565,6 +2606,7 @@ __all__ = [
     "nan_sum_cols",
     "normal",
     "offset_datetime",
+    "one_column",
     "order_of_magnitude",
     "period_range",
     "read_dataframe",

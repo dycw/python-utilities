@@ -94,6 +94,8 @@ from utilities.polars import (
     FiniteEWMMeanError,
     InsertAfterError,
     InsertBeforeError,
+    OneColumnEmptyError,
+    OneColumnNonUniqueError,
     SetFirstRowAsColumnsError,
     TimePeriodDType,
     _check_polars_dataframe_predicates,
@@ -180,6 +182,7 @@ from utilities.polars import (
     nan_sum_cols,
     normal,
     offset_datetime,
+    one_column,
     order_of_magnitude,
     period_range,
     read_dataframe,
@@ -2237,6 +2240,27 @@ class TestOffsetDateTime:
         result = offset_datetime(datetime, "1h30m", n=n)
         expected = datetime.replace_time(time)
         assert result == expected
+
+
+class TestOneColumn:
+    def test_main(self) -> None:
+        series = int_range(end=10, eager=True).alias("x")
+        df = series.to_frame()
+        result = one_column(df)
+        assert_series_equal(result, series)
+
+    def test_error_empty(self) -> None:
+        with raises(OneColumnEmptyError, match="DataFrame must not be empty"):
+            _ = one_column(DataFrame())
+
+    def test_error_non_unique(self) -> None:
+        x, y = [int_range(end=10, eager=True).alias(name) for name in ["x", "y"]]
+        df = concat_series(x, y)
+        with raises(
+            OneColumnNonUniqueError,
+            match="DataFrame must contain exactly one column; got 'x', 'y' and perhaps more",
+        ):
+            _ = one_column(df)
 
 
 class TestOrderOfMagnitude:
