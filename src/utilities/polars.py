@@ -80,12 +80,12 @@ from utilities.iterables import (
 )
 from utilities.json import write_formatted_json
 from utilities.math import (
+    MAX_DECIMALS,
     CheckIntegerError,
     check_integer,
     ewm_parameters,
     is_less_than,
     is_non_negative,
-    number_of_decimals,
 )
 from utilities.reprlib import get_repr
 from utilities.types import MaybeStr, Number, PathLike, WeekDay
@@ -1428,56 +1428,6 @@ def get_frequency_spectrum(series: Series, /, *, d: int = 1) -> DataFrame:
 
 
 @overload
-def get_series_number_of_decimals(
-    series: Series, /, *, nullable: Literal[True]
-) -> int | None: ...
-@overload
-def get_series_number_of_decimals(
-    series: Series, /, *, nullable: Literal[False] = False
-) -> int: ...
-@overload
-def get_series_number_of_decimals(
-    series: Series, /, *, nullable: bool = False
-) -> int | None: ...
-def get_series_number_of_decimals(
-    series: Series, /, *, nullable: bool = False
-) -> int | None:
-    """Get the number of decimals of a series."""
-    if not isinstance(dtype := series.dtype, Float64):
-        raise _GetSeriesNumberOfDecimalsNotFloatError(dtype=dtype)
-    decimals = series.map_elements(number_of_decimals, return_dtype=Int64).max()
-    try:
-        return ensure_int(decimals, nullable=nullable)
-    except EnsureIntError:
-        raise _GetSeriesNumberOfDecimalsAllNullError(series=series) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class GetSeriesNumberOfDecimalsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _GetSeriesNumberOfDecimalsNotFloatError(GetSeriesNumberOfDecimalsError):
-    dtype: DataType
-
-    @override
-    def __str__(self) -> str:
-        return f"Data type must be Float64; got {self.dtype}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _GetSeriesNumberOfDecimalsAllNullError(GetSeriesNumberOfDecimalsError):
-    series: Series
-
-    @override
-    def __str__(self) -> str:
-        return f"Series must not be all-null; got {self.series}"
-
-
-##
-
-
-@overload
 def increasing_horizontal(*columns: ExprLike) -> Expr: ...
 @overload
 def increasing_horizontal(*columns: Series) -> Series: ...
@@ -2018,6 +1968,43 @@ def normal(
             )
         case never:
             assert_never(never)
+
+
+##
+
+
+def number_of_decimals(
+    series: Series, /, *, max_decimals: int = MAX_DECIMALS
+) -> Series:
+    """Get the number of decimals."""
+    if not isinstance(dtype := series.dtype, Float64):
+        raise _NumberOfDecimalsDTypeError(dtype=dtype)
+    frac = series - series.floor()
+    results = [
+        _number_of_decimals_check_scale(frac, s) for s in range(max_decimals + 1)
+    ]
+    df_results = concat_series(*results)
+    assert 0, df_results
+    z
+    decimals = series.map_elements(number_of_decimals, return_dtype=Int64).max()
+    try:
+        return ensure_int(decimals, nullable=nullable)
+    except EnsureIntError:
+        raise _NumberOfDecimalsAllNullError(series=series) from None
+
+
+def _number_of_decimals_check_scale(frac: Series, scale: int, /) -> bool:
+    scaled = 10**scale * frac
+    return ((scaled - scaled.round()) <= 1e-9).alias(str(scale))
+
+
+@dataclass(kw_only=True, slots=True)
+class NumberOfDecimalsError(Exception):
+    series: Series
+
+    @override
+    def __str__(self) -> str:
+        return f"Series must not be all-null; got {self.series}"
 
 
 ##
@@ -2595,14 +2582,11 @@ __all__ = [
     "ExprOrSeries",
     "FiniteEWMMeanError",
     "GetDataTypeOrSeriesTimeZoneError",
-    "GetSeriesNumberOfDecimalsError",
     "InsertAfterError",
     "InsertBeforeError",
     "InsertBetweenError",
     "IsNearEventError",
-    "OneColumnEmptyError",
-    "OneColumnError",
-    "OneColumnNonUniqueError",
+    "NumberOfDecimalsError",
     "SetFirstRowAsColumnsError",
     "TimePeriodDType",
     "acf",
@@ -2634,7 +2618,6 @@ __all__ = [
     "get_data_type_or_series_time_zone",
     "get_expr_name",
     "get_frequency_spectrum",
-    "get_series_number_of_decimals",
     "increasing_horizontal",
     "insert_after",
     "insert_before",
@@ -2650,6 +2633,7 @@ __all__ = [
     "nan_sum_agg",
     "nan_sum_cols",
     "normal",
+    "number_of_decimals",
     "offset_datetime",
     "one_column",
     "order_of_magnitude",

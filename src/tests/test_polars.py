@@ -78,7 +78,6 @@ from utilities.hypothesis import (
     zoned_date_time_periods,
     zoned_date_times,
 )
-from utilities.math import number_of_decimals
 from utilities.numpy import DEFAULT_RNG
 from utilities.pathlib import PWD
 from utilities.polars import (
@@ -123,8 +122,6 @@ from utilities.polars import (
     _GetDataTypeOrSeriesTimeZoneNotDateTimeError,
     _GetDataTypeOrSeriesTimeZoneNotZonedError,
     _GetDataTypeOrSeriesTimeZoneStructNonUniqueError,
-    _GetSeriesNumberOfDecimalsAllNullError,
-    _GetSeriesNumberOfDecimalsNotFloatError,
     _InsertBetweenMissingColumnsError,
     _InsertBetweenNonConsecutiveError,
     _IsNearEventAfterError,
@@ -169,7 +166,6 @@ from utilities.polars import (
     get_data_type_or_series_time_zone,
     get_expr_name,
     get_frequency_spectrum,
-    get_series_number_of_decimals,
     increasing_horizontal,
     insert_after,
     insert_before,
@@ -183,6 +179,7 @@ from utilities.polars import (
     nan_sum_agg,
     nan_sum_cols,
     normal,
+    number_of_decimals,
     offset_datetime,
     one_column,
     order_of_magnitude,
@@ -1660,34 +1657,6 @@ class TestGetFrequencySpectrum:
         assert allclose(result.filter(col("frequency").abs() > 0.02)["amplitude"], 0.0)
 
 
-class TestGetSeriesNumberOfDecimals:
-    @given(data=data(), n=hypothesis.strategies.integers(1, 10), nullable=booleans())
-    def test_main(self, *, data: DataObject, n: int, nullable: bool) -> None:
-        strategy = int64s() | none() if nullable else int64s()
-        ints_or_none = data.draw(lists(strategy, min_size=1, max_size=10))
-        values = [None if i is None else i / 10**n for i in ints_or_none]
-        series = Series(values=values, dtype=Float64)
-        result = get_series_number_of_decimals(series, nullable=nullable)
-        if not nullable:
-            assert result is not None
-            expected = max(number_of_decimals(v) for v in values if v is not None)
-            assert result == expected
-
-    def test_error_not_float(self) -> None:
-        with raises(
-            _GetSeriesNumberOfDecimalsNotFloatError,
-            match="Data type must be Float64; got Boolean",
-        ):
-            _ = get_series_number_of_decimals(Series(dtype=Boolean))
-
-    def test_error_not_zoned(self) -> None:
-        with raises(
-            _GetSeriesNumberOfDecimalsAllNullError,
-            match="Series must not be all-null; got .*",
-        ):
-            _ = get_series_number_of_decimals(Series(dtype=Float64))
-
-
 class TestIncreasingAndDecreasingHorizontal:
     def test_main(self) -> None:
         df = DataFrame(
@@ -2259,6 +2228,34 @@ class TestNormal:
         assert series.dtype == Float64
         assert series.len() == length
         assert series.is_finite().all()
+
+
+class TestNumberOfDecimals:
+    @given(
+        integer=hypothesis.strategies.integers(
+            -tests.test_math.TestNumberOfDecimals.max_int,
+            tests.test_math.TestNumberOfDecimals.max_int,
+        ),
+        case=sampled_from(tests.test_math.TestNumberOfDecimals.cases),
+    )
+    def test_main(self, *, integer: int, case: tuple[float, int]) -> None:
+        frac, expected = case
+        x = integer + frac
+        series = Series(name="x", values=[x], dtype=Float64)
+        result = number_of_decimals(series)
+        assert result.item() == expected
+
+    def test_error_dtype(self) -> None:
+        with raises(
+            _NumberOfDecimalsDTypeError, match="Data type must be Float64; got Boolean"
+        ):
+            _ = number_of_decimals(Series(dtype=Boolean))
+
+    def test_error_not_zoned(self) -> None:
+        with raises(
+            _NumberOfDecimalsAllNullError, match="Series must not be all-null; got .*"
+        ):
+            _ = number_of_decimals(Series(dtype=Float64))
 
 
 class TestOffsetDateTime:

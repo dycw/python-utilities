@@ -843,22 +843,20 @@ class TestMaxLongAndDouble:
 
 class TestNumberOfDecimals:
     max_int: ClassVar[int] = int(1e6)
+    cases: ClassVar[list[tuple[float, int]]] = [
+        (0.0, 0),
+        (0.1, 1),
+        (0.12, 2),
+        (0.123, 3),
+        (0.1234, 4),
+        (0.12345, 5),
+        (0.123456, 6),
+        (0.1234567, 7),
+        (0.12345678, 8),
+        (0.123456789, 9),
+    ]
 
-    @given(
-        integer=integers(-max_int, max_int),
-        case=sampled_from([
-            (0.0, 0),
-            (0.1, 1),
-            (0.12, 2),
-            (0.123, 3),
-            (0.1234, 4),
-            (0.12345, 5),
-            (0.123456, 6),
-            (0.1234567, 7),
-            (0.12345678, 8),
-            (0.123456789, 9),
-        ]),
-    )
+    @given(integer=integers(-max_int, max_int), case=sampled_from(cases))
     def test_main(self, *, integer: int, case: tuple[float, int]) -> None:
         frac, expected = case
         x = integer + frac
