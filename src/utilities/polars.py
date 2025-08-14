@@ -59,7 +59,6 @@ from utilities.functions import (
     is_dataclass_class,
     is_dataclass_instance,
     make_isinstance,
-    second,
 )
 from utilities.gzip import read_binary
 from utilities.iterables import (
@@ -784,15 +783,6 @@ def choice(
 ##
 
 
-def collect_series(expr: Expr, /) -> Series:
-    """Collect a column expression into a Series."""
-    data = DataFrame().with_columns(expr)
-    return data[one(data.columns)]
-
-
-##
-
-
 def columns_to_dict(df: DataFrame, key: str, value: str, /) -> dict[Any, Any]:
     """Map a pair of columns into a dictionary. Must be unique on `key`."""
     col_key = df[key]
@@ -1215,6 +1205,14 @@ def ensure_expr_or_series_many(
     args = map(ensure_expr_or_series, columns)
     kwargs = (ensure_expr_or_series(v).alias(k) for k, v in named_columns.items())
     return list(chain(args, kwargs))
+
+
+##
+
+
+def expr_to_series(expr: Expr, /) -> Series:
+    """Collect a column expression into a Series."""
+    return one_column(DataFrame().with_columns(expr))
 
 
 ##
@@ -2574,7 +2572,6 @@ __all__ = [
     "boolean_value_counts",
     "check_polars_dataframe",
     "choice",
-    "collect_series",
     "columns_to_dict",
     "concat_series",
     "convert_time_zone",
@@ -2586,6 +2583,7 @@ __all__ = [
     "ensure_data_type",
     "ensure_expr_or_series",
     "ensure_expr_or_series_many",
+    "expr_to_series",
     "finite_ewm_mean",
     "get_data_type_or_series_time_zone",
     "get_expr_name",

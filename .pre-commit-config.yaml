@@ -1,7 +1,7 @@
 repos:
   # fixers
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.8
+    rev: v0.12.9
     hooks:
       - id: ruff-check
         args: [--fix]
@@ -17,7 +17,7 @@ repos:
       - id: pretty-format-toml
         args: [--autofix, --trailing-commas]
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.8.6
+    rev: 0.8.10
     hooks:
       - id: uv-sync # after version bump
         args: [--all-packages, --upgrade]
@@ -37,12 +37,12 @@ repos:
     hooks:
       - id: nitpick-check
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.10.0.1
+    rev: v0.11.0.1
     hooks:
       - id: shellcheck
   # fixers/linters
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-executables-have-shebangs
       - id: check-merge-conflict

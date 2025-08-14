@@ -149,7 +149,6 @@ from utilities.polars import (
     boolean_value_counts,
     check_polars_dataframe,
     choice,
-    collect_series,
     columns_to_dict,
     concat_series,
     convert_time_zone,
@@ -163,6 +162,7 @@ from utilities.polars import (
     ensure_data_type,
     ensure_expr_or_series,
     ensure_expr_or_series_many,
+    expr_to_series,
     finite_ewm_mean,
     get_data_type_or_series_time_zone,
     get_expr_name,
@@ -830,14 +830,6 @@ class TestChoice:
         assert series.is_in(list(elements)).all()
 
 
-class TestCollectSeries:
-    def test_main(self) -> None:
-        expr = int_range(end=10)
-        series = collect_series(expr)
-        expected = int_range(end=10, eager=True)
-        assert_series_equal(series, expected)
-
-
 class TestColumnsToDict:
     def test_main(self) -> None:
         df = DataFrame(
@@ -1471,6 +1463,14 @@ class TestEnsureExprOrSeriesMany:
         assert len(result) == 2
         for r in result:
             assert isinstance(r, Expr | Series)
+
+
+class TestExprToSeries:
+    def test_main(self) -> None:
+        expr = int_range(end=10)
+        series = expr_to_series(expr)
+        expected = int_range(end=10, eager=True)
+        assert_series_equal(series, expected)
 
 
 class TestFiniteEWMMean:
