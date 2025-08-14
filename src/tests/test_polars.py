@@ -1560,7 +1560,15 @@ class TestFiniteEWMWeights:
 
 
 class TestFirstTrueHorizontal:
-    @mark.parametrize(("row", "expected"), [param([True, True, True], 0)])
+    @mark.parametrize(
+        ("row", "expected"),
+        [
+            param([True, True, True], 0),
+            param([False, True, True], 1),
+            param([False, False, True], 2),
+            param([False, False, False], None),
+        ],
+    )
     def test_main(self, *, row: list[bool], expected: int | None) -> None:
         df = DataFrame([row], schema={str(i): Boolean for i in range(3)}, orient="row")
         result = first_true_horizontal(df)
