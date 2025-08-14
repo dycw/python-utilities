@@ -90,7 +90,7 @@ from utilities.math import (
     is_non_negative,
 )
 from utilities.reprlib import get_repr
-from utilities.types import MaybeStr, Number, PathLike, SupportsFloatOrIndex, WeekDay
+from utilities.types import MaybeStr, Number, PathLike, WeekDay
 from utilities.typing import (
     get_args,
     is_frozenset_type,
@@ -1594,17 +1594,37 @@ def integers(
 ##
 
 
+@overload
+def is_close(
+    x: ExprLike, y: ExprLike, /, *, rel_tol: float = 1e-9, abs_tol: float = 0
+) -> Expr: ...
+@overload
+def is_close(
+    x: Series, y: Series, /, *, rel_tol: float = 1e-9, abs_tol: float = 0
+) -> Series: ...
+@overload
 def is_close(
     x: IntoExprColumn,
     y: IntoExprColumn,
     /,
     *,
-    rel_tol: SupportsFloatOrIndex = 1e-9,
-    abs_tol: SupportsFloatOrIndex = 0,
+    rel_tol: float = 1e-9,
+    abs_tol: float = 0,
+) -> ExprOrSeries: ...
+def is_close(
+    x: IntoExprColumn,
+    y: IntoExprColumn,
+    /,
+    *,
+    rel_tol: float = 1e-9,
+    abs_tol: float = 0,
 ) -> ExprOrSeries:
     """Check if two columns are close."""
     x, y = map(ensure_expr_or_series, [x, y])
-    return (x - y).abs() <= (abs_tol + rel_tol * y.abs())
+    result = (x - y).abs() <= max_horizontal(
+        rel_tol * max_horizontal(x.abs(), y.abs()), abs_tol
+    )
+    return try_reify_expr(result, x, y)
 
 
 ##
