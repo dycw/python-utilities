@@ -32,6 +32,7 @@ from polars import (
     any_horizontal,
     col,
     concat,
+    concat_list,
     datetime_range,
     int_range,
     lit,
@@ -1323,6 +1324,15 @@ class _FiniteEWMWeightsError(Exception):
 ##
 
 
+def first_true_horizontal(df: DataFrame, /) -> Series:
+    """Get the index of the first true in each row."""
+    expr = when(any_horizontal(pl.all())).then(concat_list(pl.all()).list.arg_max())
+    return one_column(df.select(expr))
+
+
+##
+
+
 def get_data_type_or_series_time_zone(
     dtype_or_series: PolarsDataType | Series, /
 ) -> ZoneInfo:
@@ -2583,6 +2593,7 @@ __all__ = [
     "ensure_expr_or_series_many",
     "expr_to_series",
     "finite_ewm_mean",
+    "first_true_horizontal",
     "get_data_type_or_series_time_zone",
     "get_expr_name",
     "get_frequency_spectrum",
