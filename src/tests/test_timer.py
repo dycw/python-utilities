@@ -101,6 +101,11 @@ class TestTimer:
             await sleep_td(2 * delta)
         assert timer >= delta
 
+    def test_float(self) -> None:
+        with Timer() as timer:
+            ...
+        assert float(timer) == timer.timedelta.in_seconds()
+
     def test_hashable(self) -> None:
         timer = Timer()
         _ = hash(timer)
