@@ -641,7 +641,10 @@ def _is_close(
 ##
 
 
-def number_of_decimals(x: float, /, *, max_decimals: int = 20) -> int:
+MAX_DECIMALS = 10
+
+
+def number_of_decimals(x: float, /, *, max_decimals: int = MAX_DECIMALS) -> int:
     """Get the number of decimals."""
     _, frac = divmod(x, 1)
     results = (
@@ -889,6 +892,7 @@ def significant_figures(x: float, /, *, n: int = 2) -> str:
 
 
 __all__ = [
+    "MAX_DECIMALS",
     "MAX_FLOAT32",
     "MAX_FLOAT64",
     "MAX_INT8",

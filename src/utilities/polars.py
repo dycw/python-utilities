@@ -53,11 +53,10 @@ from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
+import utilities.math
 from utilities.dataclasses import yield_fields
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
-    EnsureIntError,
-    ensure_int,
     is_dataclass_class,
     is_dataclass_instance,
     make_isinstance,
@@ -80,12 +79,12 @@ from utilities.iterables import (
 )
 from utilities.json import write_formatted_json
 from utilities.math import (
+    MAX_DECIMALS,
     CheckIntegerError,
     check_integer,
     ewm_parameters,
     is_less_than,
     is_non_negative,
-    number_of_decimals,
 )
 from utilities.reprlib import get_repr
 from utilities.types import MaybeStr, Number, PathLike, WeekDay
@@ -1428,56 +1427,6 @@ def get_frequency_spectrum(series: Series, /, *, d: int = 1) -> DataFrame:
 
 
 @overload
-def get_series_number_of_decimals(
-    series: Series, /, *, nullable: Literal[True]
-) -> int | None: ...
-@overload
-def get_series_number_of_decimals(
-    series: Series, /, *, nullable: Literal[False] = False
-) -> int: ...
-@overload
-def get_series_number_of_decimals(
-    series: Series, /, *, nullable: bool = False
-) -> int | None: ...
-def get_series_number_of_decimals(
-    series: Series, /, *, nullable: bool = False
-) -> int | None:
-    """Get the number of decimals of a series."""
-    if not isinstance(dtype := series.dtype, Float64):
-        raise _GetSeriesNumberOfDecimalsNotFloatError(dtype=dtype)
-    decimals = series.map_elements(number_of_decimals, return_dtype=Int64).max()
-    try:
-        return ensure_int(decimals, nullable=nullable)
-    except EnsureIntError:
-        raise _GetSeriesNumberOfDecimalsAllNullError(series=series) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class GetSeriesNumberOfDecimalsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _GetSeriesNumberOfDecimalsNotFloatError(GetSeriesNumberOfDecimalsError):
-    dtype: DataType
-
-    @override
-    def __str__(self) -> str:
-        return f"Data type must be Float64; got {self.dtype}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _GetSeriesNumberOfDecimalsAllNullError(GetSeriesNumberOfDecimalsError):
-    series: Series
-
-    @override
-    def __str__(self) -> str:
-        return f"Series must not be all-null; got {self.series}"
-
-
-##
-
-
-@overload
 def increasing_horizontal(*columns: ExprLike) -> Expr: ...
 @overload
 def increasing_horizontal(*columns: Series) -> Series: ...
@@ -2023,6 +1972,26 @@ def normal(
 ##
 
 
+def number_of_decimals(
+    series: Series, /, *, max_decimals: int = MAX_DECIMALS
+) -> Series:
+    """Get the number of decimals."""
+    frac = series - series.floor()
+    results = [
+        _number_of_decimals_check_scale(frac, s) for s in range(max_decimals + 1)
+    ]
+    df_results = concat_series(*results)
+    return first_true_horizontal(df_results)
+
+
+def _number_of_decimals_check_scale(frac: Series, scale: int, /) -> Series:
+    scaled = 10**scale * frac
+    return is_close(scaled, scaled.round()).alias(str(scale))
+
+
+##
+
+
 def offset_datetime(
     datetime: ZonedDateTime, offset: str, /, *, n: int = 1
 ) -> ZonedDateTime:
@@ -2389,7 +2358,7 @@ def round_to_float(
     """Round a column to the nearest multiple of another float."""
     x = ensure_expr_or_series(x)
     z = (x / y).round(mode=mode) * y
-    return z.round(decimals=number_of_decimals(y) + 1)
+    return z.round(decimals=utilities.math.number_of_decimals(y) + 1)
 
 
 ##
@@ -2595,7 +2564,6 @@ __all__ = [
     "ExprOrSeries",
     "FiniteEWMMeanError",
     "GetDataTypeOrSeriesTimeZoneError",
-    "GetSeriesNumberOfDecimalsError",
     "InsertAfterError",
     "InsertBeforeError",
     "InsertBetweenError",
@@ -2634,7 +2602,6 @@ __all__ = [
     "get_data_type_or_series_time_zone",
     "get_expr_name",
     "get_frequency_spectrum",
-    "get_series_number_of_decimals",
     "increasing_horizontal",
     "insert_after",
     "insert_before",
@@ -2650,6 +2617,7 @@ __all__ = [
     "nan_sum_agg",
     "nan_sum_cols",
     "normal",
+    "number_of_decimals",
     "offset_datetime",
     "one_column",
     "order_of_magnitude",
