@@ -2446,6 +2446,31 @@ class RoundToFloatError(Exception):
 ##
 
 
+def select_exact(
+    df: DataFrame, /, *columns: IntoExprColumn, drop: MaybeIterable[str] | None = None
+) -> DataFrame:
+    """Select an exact set of columns from a DataFrame."""
+    names = [get_expr_name(df, c) for c in columns]
+    drop = set() if drop is None else set(always_iterable(drop))
+    union = set(names) | drop
+    extra = [c for c in df.columns if c not in union]
+    if len(extra) >= 1:
+        raise SelectExactError(columns=extra)
+    return df.select(*columns)
+
+
+@dataclass(kw_only=True, slots=True)
+class SelectExactError(Exception):
+    columns: list[str]
+
+    @override
+    def __str__(self) -> str:
+        return f"All columns must be selected; got {get_repr(self.columns)} remaining"
+
+
+##
+
+
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
     """Set the first row of a DataFrame as its columns."""
     try:
@@ -2654,6 +2679,7 @@ __all__ = [
     "OneColumnError",
     "OneColumnNonUniqueError",
     "RoundToFloatError",
+    "SelectExactError",
     "SetFirstRowAsColumnsError",
     "TimePeriodDType",
     "acf",
@@ -2709,6 +2735,7 @@ __all__ = [
     "read_series",
     "replace_time_zone",
     "round_to_float",
+    "select_exact",
     "serialize_dataframe",
     "set_first_row_as_columns",
     "struct_dtype",
