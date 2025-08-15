@@ -2446,10 +2446,14 @@ class RoundToFloatError(Exception):
 ##
 
 
-def select_exact(df: DataFrame, /, *columns: IntoExprColumn) -> DataFrame:
+def select_exact(
+    df: DataFrame, /, *columns: IntoExprColumn, drop: MaybeIterable[str] | None = None
+) -> DataFrame:
     """Select an exact set of columns from a DataFrame."""
     names = [get_expr_name(df, c) for c in columns]
-    extra = [c for c in df.columns if c not in names]
+    drop = set() if drop is None else set(always_iterable(drop))
+    union = set(names) | drop
+    extra = [c for c in df.columns if c not in union]
     if len(extra) >= 1:
         raise SelectExactError(columns=extra)
     return df.select(*columns)

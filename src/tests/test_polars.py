@@ -2476,11 +2476,20 @@ class TestSelectExact:
         orient="row",
     )
 
-    def test_main(self) -> None:
+    def test_adding_and_reordering(self) -> None:
         df = select_exact(self.df, "y", ~col.x.alias("z"), "x")
         expected = DataFrame(
             data=[(False, False, True), (None, True, False), (True, None, None)],
             schema={"y": Boolean, "z": Boolean, "x": Boolean},
+            orient="row",
+        )
+        assert_frame_equal(df, expected)
+
+    def test_adding_and_dropping(self) -> None:
+        df = select_exact(self.df, "y", ~col.x.alias("z"), drop="x")
+        expected = DataFrame(
+            data=[(False, False), (None, True), (True, None)],
+            schema={"y": Boolean, "z": Boolean},
             orient="row",
         )
         assert_frame_equal(df, expected)
