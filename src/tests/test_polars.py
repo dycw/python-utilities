@@ -98,6 +98,7 @@ from utilities.polars import (
     OneColumnEmptyError,
     OneColumnNonUniqueError,
     RoundToFloatError,
+    SelectExactError,
     SetFirstRowAsColumnsError,
     TimePeriodDType,
     _check_polars_dataframe_predicates,
@@ -191,6 +192,7 @@ from utilities.polars import (
     reify_exprs,
     replace_time_zone,
     round_to_float,
+    select_exact,
     serialize_dataframe,
     serialize_series,
     set_first_row_as_columns,
@@ -2465,6 +2467,30 @@ class TestRoundToFloat:
             match="At least 1 of the dividend and/or divisor must be a Series; got .* and .*",
         ):
             _ = round_to_float(cast("Any", x), cast("Any", y))
+
+
+class TestSelectExact:
+    df: ClassVar[DataFrame] = DataFrame(
+        data=[(True, False), (False, None), (None, True)],
+        schema={"x": Boolean, "y": Boolean},
+        orient="row",
+    )
+
+    def test_main(self) -> None:
+        df = select_exact(self.df, "y", ~col.x.alias("z"), "x")
+        expected = DataFrame(
+            data=[(False, False, True), (None, True, False), (True, None, None)],
+            schema={"y": Boolean, "z": Boolean, "x": Boolean},
+            orient="row",
+        )
+        assert_frame_equal(df, expected)
+
+    def test_error(self) -> None:
+        with raises(
+            SelectExactError,
+            match=r"All columns must be selected; got \['y'\] remaining",
+        ):
+            _ = select_exact(self.df, ~col.x.alias("z"), "x")
 
 
 class TestSerializeAndDeserializeDataFrame:
