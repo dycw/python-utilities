@@ -180,7 +180,7 @@ from utilities.polars import (
     join_into_periods,
     map_over_columns,
     nan_sum_agg,
-    nan_sum_cols,
+    nan_sum_horizonal,
     normal,
     number_of_decimals,
     offset_datetime,
@@ -1563,16 +1563,16 @@ class TestFiniteEWMWeights:
 
 class TestFirstTrueHorizontal:
     @mark.parametrize(
-        ("values", "expected"),
+        ("x", "y", "z", "expected"),
         [
-            param([True, True, True], 0),
-            param([False, True, True], 1),
-            param([False, False, True], 2),
-            param([False, False, False], None),
+            param(True, True, True, 0),
+            param(False, True, True, 1),
+            param(False, False, True, 2),
+            param(False, False, False, None),
         ],
     )
-    def test_main(self, *, values: list[bool], expected: int | None) -> None:
-        series = [Series(values=[v], dtype=Boolean) for v in values]
+    def test_main(self, *, x: bool, y: bool, z: bool, expected: int | None) -> None:
+        series = [Series(values=[i], dtype=Boolean) for i in [x, y, z]]
         result = first_true_horizontal(*series)
         assert result.item() == expected
 
@@ -2188,26 +2188,22 @@ class TestNanSumAgg:
         assert result["value"].item() == expected
 
 
-class TestNanSumCols:
-    @given(
-        case=sampled_from([(None, None, None), (None, 0, 0), (0, None, 0), (1, 2, 3)]),
-        x_kind=sampled_from(["str", "column"]),
-        y_kind=sampled_from(["str", "column"]),
+class TestNanSumHorizontal:
+    @mark.parametrize(
+        ("x", "y", "z", "expected"),
+        [
+            param(1, 2, 3, 6),
+            param(None, 2, 3, 5),
+            param(None, None, 3, 3),
+            param(None, None, None, None),
+        ],
     )
     def test_main(
-        self,
-        *,
-        case: tuple[int | None, int | None, int | None],
-        x_kind: Literal["str", "column"],
-        y_kind: Literal["str", "column"],
+        self, *, x: int | None, y: int | None, z: int | None, expected: int | None
     ) -> None:
-        x, y, expected = case
-        x_use = "x" if x_kind == "str" else col("x")
-        y_use = "y" if y_kind == "str" else col("y")
-        df = DataFrame(
-            data=[(x, y)], schema={"x": Int64, "y": Int64}, orient="row"
-        ).with_columns(z=nan_sum_cols(x_use, y_use))
-        assert df["z"].item() == expected
+        series = [Series(values=[i], dtype=Int64) for i in [x, y, z]]
+        result = nan_sum_horizonal(*series)
+        assert result.item() == expected
 
 
 class TestNormal:

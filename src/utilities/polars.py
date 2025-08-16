@@ -1326,18 +1326,6 @@ class _FiniteEWMWeightsError(Exception):
 
 
 @overload
-def first_true_horizontal(column: Series, /) -> Series: ...
-@overload
-def first_true_horizontal(column1: Series, column2: Series, /) -> Series: ...
-@overload
-def first_true_horizontal(
-    column1: Series, column2: Series, column3: Series, /
-) -> Series: ...
-@overload
-def first_true_horizontal(
-    column1: Series, column2: Series, column3: Series, column4: Series, /
-) -> Series: ...
-@overload
 def first_true_horizontal(*columns: Series) -> Series: ...
 @overload
 def first_true_horizontal(*columns: IntoExprColumn) -> ExprOrSeries: ...
@@ -1931,27 +1919,17 @@ def nan_sum_agg(column: str | Expr, /, *, dtype: PolarsDataType | None = None) -
 ##
 
 
-def nan_sum_cols(
-    column: str | Expr, *columns: str | Expr, dtype: PolarsDataType | None = None
-) -> Expr:
+@overload
+def nan_sum_horizonal(*columns: Series) -> Series: ...
+@overload
+def nan_sum_horizonal(*columns: IntoExprColumn) -> ExprOrSeries: ...
+def nan_sum_horizonal(*columns: IntoExprColumn) -> ExprOrSeries:
     """Nan sum across columns."""
-    all_columns = chain([column], columns)
-    all_exprs = (
-        col(column) if isinstance(column, str) else column for column in all_columns
+    columns2 = ensure_expr_or_series_many(*columns)
+    expr = when(any_horizontal(*(c.is_not_null() for c in columns2))).then(
+        sum_horizontal(*columns2)
     )
-
-    def func(x: Expr, y: Expr, /) -> Expr:
-        return (
-            when(x.is_not_null() & y.is_not_null())
-            .then(x + y)
-            .when(x.is_not_null() & y.is_null())
-            .then(x)
-            .when(x.is_null() & y.is_not_null())
-            .then(y)
-            .otherwise(lit(None, dtype=dtype))
-        )
-
-    return reduce(func, all_exprs)
+    return try_reify_expr(expr, *columns2)
 
 
 ##
@@ -2724,7 +2702,7 @@ __all__ = [
     "join_into_periods",
     "map_over_columns",
     "nan_sum_agg",
-    "nan_sum_cols",
+    "nan_sum_horizonal",
     "normal",
     "number_of_decimals",
     "offset_datetime",
