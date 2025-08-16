@@ -1920,10 +1920,10 @@ def nan_sum_agg(column: str | Expr, /, *, dtype: PolarsDataType | None = None) -
 
 
 @overload
-def nan_sum_horizonal(*columns: Series) -> Series: ...
+def nan_sum_horizontal(*columns: Series) -> Series: ...
 @overload
-def nan_sum_horizonal(*columns: IntoExprColumn) -> ExprOrSeries: ...
-def nan_sum_horizonal(*columns: IntoExprColumn) -> ExprOrSeries:
+def nan_sum_horizontal(*columns: IntoExprColumn) -> ExprOrSeries: ...
+def nan_sum_horizontal(*columns: IntoExprColumn) -> ExprOrSeries:
     """Nan sum across columns."""
     columns2 = ensure_expr_or_series_many(*columns)
     expr = when(any_horizontal(*(c.is_not_null() for c in columns2))).then(
@@ -2702,7 +2702,7 @@ __all__ = [
     "join_into_periods",
     "map_over_columns",
     "nan_sum_agg",
-    "nan_sum_horizonal",
+    "nan_sum_horizontal",
     "normal",
     "number_of_decimals",
     "offset_datetime",
