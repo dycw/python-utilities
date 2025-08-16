@@ -180,7 +180,7 @@ from utilities.polars import (
     join_into_periods,
     map_over_columns,
     nan_sum_agg,
-    nan_sum_horizonal,
+    nan_sum_horizontal,
     normal,
     number_of_decimals,
     offset_datetime,
@@ -2202,7 +2202,7 @@ class TestNanSumHorizontal:
         self, *, x: int | None, y: int | None, z: int | None, expected: int | None
     ) -> None:
         series = [Series(values=[i], dtype=Int64) for i in [x, y, z]]
-        result = nan_sum_horizonal(*series)
+        result = nan_sum_horizontal(*series)
         assert result.item() == expected
 
 
