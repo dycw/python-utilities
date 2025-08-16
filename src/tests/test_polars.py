@@ -2201,7 +2201,7 @@ class TestNanSumHorizontal:
     def test_main(
         self, *, x: int | None, y: int | None, z: int | None, expected: int | None
     ) -> None:
-        series = [Series(values=[i], dtype=Boolean) for i in [x, y, z]]
+        series = [Series(values=[i], dtype=Int64) for i in [x, y, z]]
         result = nan_sum_horizonal(*series)
         assert result.item() == expected
 
