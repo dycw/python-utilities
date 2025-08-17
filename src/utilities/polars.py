@@ -1906,14 +1906,10 @@ def _map_over_series_one(func: Callable[[Series], Series], series: Series, /) ->
 ##
 
 
-def nan_sum_agg(column: str | Expr, /, *, dtype: PolarsDataType | None = None) -> Expr:
+def nan_sum_agg(column: str | Expr, /) -> Expr:
     """Nan sum aggregation."""
     col_use = col(column) if isinstance(column, str) else column
-    return (
-        when(col_use.is_not_null().any())
-        .then(col_use.sum())
-        .otherwise(lit(None, dtype=dtype))
-    )
+    return when(col_use.is_not_null().any()).then(col_use.sum())
 
 
 ##
