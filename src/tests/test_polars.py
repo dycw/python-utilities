@@ -2174,7 +2174,7 @@ class TestNanSumAgg:
             .with_columns(id=lit("id"))
         )
         result = df.group_by("id").agg(nan_sum_agg("x"))
-        assert result["value"].item() == expected
+        assert result.item(0, "x") == expected
 
 
 class TestNanSumHorizontal:
