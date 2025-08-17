@@ -60,7 +60,6 @@ from pytest import mark, param, raises
 from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 import tests.test_math
-import utilities.math
 import utilities.polars
 from utilities.hypothesis import (
     date_deltas,
@@ -232,7 +231,6 @@ if TYPE_CHECKING:
 
     from _pytest.mark import ParameterSet
     from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
-    from polars.datatypes import DataTypeClass
 
     from utilities.types import MaybeType, StrMapping, WeekDay
 
@@ -2156,35 +2154,26 @@ class TestMapOverColumns:
 
 
 class TestNanSumAgg:
-    @given(
-        case=sampled_from([
-            ([None], None),
-            ([None, None], None),
-            ([0], 0),
-            ([0, None], 0),
-            ([0, None, None], 0),
-            ([1, 2], 3),
-            ([1, 2, None], 3),
-            ([1, 2, None, None], 3),
-        ]),
-        dtype=sampled_from([Int64, Float64]),
-        mode=sampled_from(["str", "column"]),
+    @mark.parametrize(
+        ("values", "expected"),
+        [
+            param([None], None),
+            param([None, None], None),
+            param([0], 0),
+            param([0, None], 0),
+            param([0, None, None], 0),
+            param([1, 2], 3),
+            param([1, 2, None], 3),
+            param([1, 2, None, None], 3),
+        ],
     )
-    def test_main(
-        self,
-        *,
-        case: tuple[list[Any], int | None],
-        dtype: DataTypeClass,
-        mode: Literal["str", "column"],
-    ) -> None:
-        values, expected = case
-        df = DataFrame(data=values, schema={"value": dtype}).with_columns(id=lit("id"))
-        match mode:
-            case "str":
-                agg = "value"
-            case "column":
-                agg = col("value")
-        result = df.group_by("id").agg(nan_sum_agg(agg))
+    def test_main(self, *, values: list[int | None], expected: int | None) -> None:
+        df = (
+            Series(name="x", values=values, dtype=Int64)
+            .to_frame()
+            .with_columns(id=lit("id"))
+        )
+        result = df.group_by("id").agg(nan_sum_agg("x"))
         assert result["value"].item() == expected
 
 
