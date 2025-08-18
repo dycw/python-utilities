@@ -2127,7 +2127,7 @@ def period_range(
         time_zone=time_zone_use,
         eager=eager,
     ).alias("start")
-    ends = (starts.dt.offset_by(interval)).alias("end")
+    ends = starts.dt.offset_by(interval).alias("end")
     period = struct(starts, ends)
     return try_reify_expr(period, starts, ends)
 
