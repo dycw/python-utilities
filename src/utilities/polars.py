@@ -104,7 +104,7 @@ from utilities.whenever import (
     ZonedDateTimePeriod,
     to_py_time_delta,
 )
-from utilities.zoneinfo import UTC, to_time_zone_name
+from utilities.zoneinfo import UTC, to_time_zone_name, to_zone_info
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
@@ -2110,7 +2110,7 @@ def period_range(
     eager: bool = False,
 ) -> Series | Expr:
     """Construct a period range."""
-    time_zone_use = None if time_zone is None else to_time_zone_name(time_zone)
+    time_zone_use = None if time_zone is None else to_zone_info(time_zone).key
     match end_or_length:
         case ZonedDateTime() as end:
             ...

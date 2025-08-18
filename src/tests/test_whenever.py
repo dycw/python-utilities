@@ -150,7 +150,7 @@ from utilities.whenever import (
     to_zoned_date_time,
     two_digit_year_month,
 )
-from utilities.zoneinfo import UTC
+from utilities.zoneinfo import UTC, to_time_zone_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -1397,7 +1397,14 @@ class TestToZonedDateTime:
 
     @given(date_time=zoned_date_times())
     def test_date_time(self, *, date_time: ZonedDateTime) -> None:
-        assert to_zoned_date_time(date_time) == date_time
+        assert to_zoned_date_time(date_time).exact_eq(date_time)
+
+    @given(date_time=zoned_date_times())
+    def test_date_time_with_time_zone(self, *, date_time: ZonedDateTime) -> None:
+        assert (
+            to_zoned_date_time(date_time, time_zone=HongKong).exact_eq(date_time)
+            == date_time
+        )
 
     @given(date_time=zoned_date_times())
     def test_str(self, *, date_time: ZonedDateTime) -> None:
@@ -1664,7 +1671,7 @@ class TestZonedDateTimePeriod:
         with assume_does_not_raise(OverflowError, match="date value out of range"):
             result = period.to_tz(UTC)
         assert result.time_zone == UTC
-        name = UTC.key
+        name = to_time_zone_name(UTC)
         expected = ZonedDateTimePeriod(period.start.to_tz(name), period.end.to_tz(name))
         assert result == expected
 
