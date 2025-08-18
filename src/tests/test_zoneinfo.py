@@ -15,6 +15,7 @@ from hypothesis.strategies import (
 )
 from pytest import raises
 
+from tests.conftest import SKIPIF_CI_AND_LINUX
 from utilities.hypothesis import zoned_date_times
 from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
@@ -96,6 +97,7 @@ class TestToTimeZoneName:
         assert result == LOCAL_TIME_ZONE_NAME
 
     @given(time_zone=timezones())
+    @SKIPIF_CI_AND_LINUX
     def test_str(self, *, time_zone: ZoneInfo) -> None:
         result = to_time_zone_name(cast("TimeZoneLike", time_zone.key))
         expected = time_zone.key

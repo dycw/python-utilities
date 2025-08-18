@@ -9,7 +9,7 @@ from hypothesis import HealthCheck
 from pytest import fixture, mark, param, skip
 
 from utilities.contextlib import enhanced_context_manager
-from utilities.platform import IS_MAC, IS_NOT_LINUX, IS_WINDOWS
+from utilities.platform import IS_LINUX, IS_MAC, IS_NOT_LINUX, IS_WINDOWS
 from utilities.re import ExtractGroupError, extract_group
 from utilities.whenever import MINUTE, get_now, parse_plain_local
 
@@ -29,11 +29,13 @@ SKIPIF_CI = mark.skipif(IS_CI, reason="Skipped for CI")
 IS_CI_AND_NOT_LINUX = IS_CI and IS_NOT_LINUX
 IS_CI_AND_WINDOWS = IS_CI and IS_WINDOWS
 IS_CI_AND_MAC = IS_CI and IS_MAC
+IS_CI_AND_LINUX = IS_CI and IS_LINUX
 SKIPIF_CI_AND_NOT_LINUX = mark.skipif(
     IS_CI_AND_NOT_LINUX, reason="Skipped for CI/non-Linux"
 )
 SKIPIF_CI_AND_WINDOWS = mark.skipif(IS_CI_AND_WINDOWS, reason="Skipped for CI/Windows")
 SKIPIF_CI_AND_MAC = mark.skipif(IS_CI_AND_MAC, reason="Skipped for CI/Mac")
+SKIPIF_CI_AND_LINUX = mark.skipif(IS_CI_AND_LINUX, reason="Skipped for CI/Linux")
 
 
 # hypothesis
