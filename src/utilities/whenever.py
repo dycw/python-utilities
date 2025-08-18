@@ -39,7 +39,7 @@ from utilities.math import sign
 from utilities.platform import get_strftime
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
-from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
+from utilities.zoneinfo import UTC, to_time_zone_name, to_zone_info
 
 if TYPE_CHECKING:
     from utilities.types import (
@@ -188,7 +188,7 @@ class DatePeriod:
                 ...
             case never:
                 assert_never(never)
-        tz = ensure_time_zone(time_zone).key
+        tz = to_zone_info(time_zone).key
         return ZonedDateTimePeriod(
             self.start.at(start).assume_tz(tz), self.end.at(end).assume_tz(tz)
         )
@@ -335,17 +335,17 @@ def format_compact(
 
 def from_timestamp(i: float, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
     """Get a zoned datetime from a timestamp."""
-    return ZonedDateTime.from_timestamp(i, tz=get_time_zone_name(time_zone))
+    return ZonedDateTime.from_timestamp(i, tz=to_time_zone_name(time_zone))
 
 
 def from_timestamp_millis(i: int, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
     """Get a zoned datetime from a timestamp (in milliseconds)."""
-    return ZonedDateTime.from_timestamp_millis(i, tz=get_time_zone_name(time_zone))
+    return ZonedDateTime.from_timestamp_millis(i, tz=to_time_zone_name(time_zone))
 
 
 def from_timestamp_nanos(i: int, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
     """Get a zoned datetime from a timestamp (in nanoseconds)."""
-    return ZonedDateTime.from_timestamp_nanos(i, tz=get_time_zone_name(time_zone))
+    return ZonedDateTime.from_timestamp_nanos(i, tz=to_time_zone_name(time_zone))
 
 
 ##
@@ -353,7 +353,7 @@ def from_timestamp_nanos(i: int, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDa
 
 def get_now(time_zone: TimeZoneLike = UTC, /) -> ZonedDateTime:
     """Get the current zoned datetime."""
-    return ZonedDateTime.now(get_time_zone_name(time_zone))
+    return ZonedDateTime.now(to_time_zone_name(time_zone))
 
 
 NOW_UTC = get_now(UTC)
@@ -1639,7 +1639,7 @@ def to_zoned_date_time(
     """Convert to a zoned date-time."""
     match date_time:
         case ZonedDateTime() | Sentinel():
-            return date_time
+            return date_time.to_tz(to_zone_info(time_zone))
         case None:
             return get_now(time_zone)
         case str():
@@ -1878,7 +1878,7 @@ class ZonedDateTimePeriod:
 
     def to_tz(self, time_zone: TimeZoneLike, /) -> Self:
         """Convert the time zone."""
-        tz = get_time_zone_name(time_zone)
+        tz = to_time_zone_name(time_zone)
         return self.replace(start=self.start.to_tz(tz), end=self.end.to_tz(tz))
 
 

@@ -20,10 +20,10 @@ from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import (
     UTC,
-    _EnsureTimeZoneInvalidTZInfoError,
-    _EnsureTimeZonePlainDateTimeError,
-    ensure_time_zone,
-    get_time_zone_name,
+    _ToZoneInfoInvalidTZInfoError,
+    _ToZoneInfoPlainDateTimeError,
+    to_time_zone_name,
+    to_zone_info,
 )
 
 if TYPE_CHECKING:
@@ -45,13 +45,13 @@ class TestEnsureTimeZone:
     ) -> None:
         time_zone, expected = case
         zone_info_or_str: ZoneInfo | dt.timezone | TimeZone = data.draw(
-            sampled_from([time_zone, get_time_zone_name(time_zone)])
+            sampled_from([time_zone, to_time_zone_name(time_zone)])
         )
-        result = ensure_time_zone(zone_info_or_str)
+        result = to_zone_info(zone_info_or_str)
         assert result is expected
 
     def test_local(self) -> None:
-        result = ensure_time_zone("local")
+        result = to_zone_info("local")
         assert result is LOCAL_TIME_ZONE
 
     @given(data=data(), time_zone=timezones())
@@ -59,7 +59,7 @@ class TestEnsureTimeZone:
         self, *, data: DataObject, time_zone: ZoneInfo
     ) -> None:
         datetime = data.draw(datetimes(timezones=just(time_zone)))
-        result = ensure_time_zone(datetime)
+        result = to_zone_info(datetime)
         assert result is time_zone
 
     @given(data=data(), time_zone=timezones())
@@ -67,20 +67,18 @@ class TestEnsureTimeZone:
         self, *, data: DataObject, time_zone: ZoneInfo
     ) -> None:
         datetime = data.draw(zoned_date_times(time_zone=time_zone))
-        result = ensure_time_zone(datetime)
+        result = to_zone_info(datetime)
         assert result is time_zone
 
     def test_error_invalid_tzinfo(self) -> None:
         time_zone = dt.timezone(dt.timedelta(hours=12))
-        with raises(
-            _EnsureTimeZoneInvalidTZInfoError, match="Unsupported time zone: .*"
-        ):
-            _ = ensure_time_zone(time_zone)
+        with raises(_ToZoneInfoInvalidTZInfoError, match="Unsupported time zone: .*"):
+            _ = to_zone_info(time_zone)
 
     @given(datetime=datetimes())
     def test_error_local_datetime(self, *, datetime: dt.datetime) -> None:
-        with raises(_EnsureTimeZonePlainDateTimeError, match="Plain datetime: .*"):
-            _ = ensure_time_zone(datetime)
+        with raises(_ToZoneInfoPlainDateTimeError, match="Plain datetime: .*"):
+            _ = to_zone_info(datetime)
 
 
 class TestGetTimeZoneName:
@@ -89,11 +87,11 @@ class TestGetTimeZoneName:
         zone_info_or_str: ZoneInfo | TimeZone = data.draw(
             sampled_from([ZoneInfo(time_zone), time_zone])
         )
-        result = get_time_zone_name(zone_info_or_str)
+        result = to_time_zone_name(zone_info_or_str)
         assert result == time_zone
 
     def test_local(self) -> None:
-        result = get_time_zone_name("local")
+        result = to_time_zone_name("local")
         assert result == LOCAL_TIME_ZONE_NAME
 
 

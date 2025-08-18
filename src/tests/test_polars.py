@@ -222,7 +222,7 @@ from utilities.whenever import (
     get_now_plain,
     get_today,
 )
-from utilities.zoneinfo import UTC, get_time_zone_name
+from utilities.zoneinfo import UTC, to_time_zone_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -1437,7 +1437,7 @@ class TestDatetimeDTypes:
     )
     def test_main(self, *, case: tuple[ZoneInfo, Datetime]) -> None:
         time_zone, dtype = case
-        name = get_time_zone_name(time_zone)
+        name = to_time_zone_name(time_zone)
         expected = dtype.time_zone
         assert name == expected
 
