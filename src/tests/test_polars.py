@@ -1436,8 +1436,7 @@ class TestDatetimeDTypes:
             param(UTC, DatetimeUTC),
         ],
     )
-    def test_main(self, *, case: tuple[ZoneInfo, Datetime]) -> None:
-        time_zone, dtype = case
+    def test_main(self, *, time_zone: ZoneInfo, dtype: Datetime) -> None:
         name = to_time_zone_name(time_zone)
         expected = dtype.time_zone
         assert name == expected
