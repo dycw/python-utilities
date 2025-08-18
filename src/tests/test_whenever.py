@@ -1395,11 +1395,8 @@ class TestToZonedDateTime:
         assert abs(to_zoned_date_time() - get_now()) <= SECOND
 
     @given(date_time=zoned_date_times())
-    def test_date_time_with_time_zone(self, *, date_time: ZonedDateTime) -> None:
-        assert (
-            to_zoned_date_time(date_time, time_zone=HongKong).exact_eq(date_time)
-            == date_time
-        )
+    def test_date_time(self, *, date_time: ZonedDateTime) -> None:
+        assert to_zoned_date_time(date_time) == date_time
 
     @given(date_time=zoned_date_times())
     def test_str(self, *, date_time: ZonedDateTime) -> None:

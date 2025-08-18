@@ -1639,7 +1639,7 @@ def to_zoned_date_time(
     """Convert to a zoned date-time."""
     match date_time:
         case ZonedDateTime() | Sentinel():
-            return date_time.to_tz(to_zone_info(time_zone))
+            return date_time
         case None:
             return get_now(time_zone)
         case str():
