@@ -103,7 +103,8 @@ class TestToTimeZoneName:
 
     def test_tz_info(self) -> None:
         result = to_time_zone_name(dt.UTC)
-        assert result == "UTC"
+        expected = UTC.key
+        assert result == expected
 
     @given(data=data(), time_zone=timezones())
     def test_py_zoned_date_time(self, *, data: DataObject, time_zone: ZoneInfo) -> None:

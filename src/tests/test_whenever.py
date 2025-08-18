@@ -150,7 +150,7 @@ from utilities.whenever import (
     to_zoned_date_time,
     two_digit_year_month,
 )
-from utilities.zoneinfo import UTC, to_time_zone_name
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -418,7 +418,8 @@ class TestGetNow:
 
     def test_constant(self) -> None:
         assert isinstance(NOW_UTC, ZonedDateTime)
-        assert NOW_UTC.tz == "UTC"
+        expected = UTC.key
+        assert NOW_UTC.tz == expected
 
 
 class TestGetNowLocal:
@@ -1663,7 +1664,7 @@ class TestZonedDateTimePeriod:
         with assume_does_not_raise(OverflowError, match="date value out of range"):
             result = period.to_tz(UTC)
         assert result.time_zone == UTC
-        name = to_time_zone_name(UTC)
+        name = UTC.key
         expected = ZonedDateTimePeriod(period.start.to_tz(name), period.end.to_tz(name))
         assert result == expected
 
