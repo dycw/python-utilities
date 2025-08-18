@@ -39,7 +39,7 @@ from utilities.math import sign
 from utilities.platform import get_strftime
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
-from utilities.zoneinfo import UTC, to_time_zone_name, to_zone_info
+from utilities.zoneinfo import UTC, to_time_zone_name
 
 if TYPE_CHECKING:
     from utilities.types import (
@@ -188,7 +188,7 @@ class DatePeriod:
                 ...
             case never:
                 assert_never(never)
-        tz = to_zone_info(time_zone).key
+        tz = to_time_zone_name(time_zone)
         return ZonedDateTimePeriod(
             self.start.at(start).assume_tz(tz), self.end.at(end).assume_tz(tz)
         )
