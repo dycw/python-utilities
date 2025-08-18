@@ -1638,22 +1638,26 @@ def to_zoned_date_time(
 ) -> ZonedDateTime | Sentinel:
     """Convert to a zoned date-time."""
     match date_time:
-        case ZonedDateTime() | Sentinel():
-            return date_time
+        case ZonedDateTime() as date_time_use:
+            ...
+        case Sentinel():
+            return sentinel
         case None:
             return get_now(time_zone)
         case str():
-            return ZonedDateTime.parse_common_iso(date_time)
+            date_time_use = ZonedDateTime.parse_common_iso(date_time)
         case dt.datetime():
             if isinstance(date_time.tzinfo, ZoneInfo):
-                return ZonedDateTime.from_py_datetime(date_time)
-            if date_time.tzinfo is dt.UTC:
+                date_time_use = ZonedDateTime.from_py_datetime(date_time)
+            elif date_time.tzinfo is dt.UTC:
                 return ZonedDateTime.from_py_datetime(date_time.astimezone(UTC))
-            raise ToZonedDateTimeError(date_time=date_time)
+            else:
+                raise ToZonedDateTimeError(date_time=date_time)
         case Callable() as func:
             return to_zoned_date_time(func(), time_zone=time_zone)
         case never:
             assert_never(never)
+    return date_time_use.to_tz(to_time_zone_name(time_zone))
 
 
 @dataclass(kw_only=True, slots=True)
