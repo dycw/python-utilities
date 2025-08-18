@@ -13,9 +13,6 @@ from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import (
     UTC,
-    _ToTimeZoneNameInvalidKeyError,
-    _ToTimeZoneNameInvalidTZInfoError,
-    _ToTimeZoneNamePlainDateTimeError,
     _ToZoneInfoInvalidTZInfoError,
     _ToZoneInfoPlainDateTimeError,
     to_time_zone_name,
@@ -23,67 +20,73 @@ from utilities.zoneinfo import (
 )
 
 if TYPE_CHECKING:
-    from utilities.types import TimeZoneLike
+    from utilities.types import TimeZone
 
 
-class TestToZoneInfo:
-    @given(time_zone=zone_infos())
-    def test_zone_info(self, *, time_zone: ZoneInfo) -> None:
-        result = to_zone_info(time_zone)
-        assert result is time_zone
-
-    @given(data=data(), time_zone=zone_infos())
-    def test_zoned_date_time(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
-        date_time = data.draw(zoned_date_times(time_zone=time_zone))
-        result = to_zone_info(date_time)
-        assert result is time_zone
+class TestEnsureTimeZone:
+    @given(
+        data=data(),
+        case=sampled_from([
+            (HongKong, HongKong),
+            (Tokyo, Tokyo),
+            (UTC, UTC),
+            (dt.UTC, UTC),
+        ]),
+    )
+    def test_time_zone(
+        self, *, data: DataObject, case: tuple[ZoneInfo | dt.timezone, ZoneInfo]
+    ) -> None:
+        time_zone, expected = case
+        zone_info_or_str: ZoneInfo | dt.timezone | TimeZone = data.draw(
+            sampled_from([time_zone, to_time_zone_name(time_zone)])
+        )
+        result = to_zone_info(zone_info_or_str)
+        assert result is expected
 
     @mark.parametrize("time_zone", [param("local"), param("localtime")])
     def test_local(self, *, time_zone: Literal["local", "localtime"]) -> None:
         result = to_zone_info(time_zone)
         assert result is LOCAL_TIME_ZONE
 
-    @given(time_zone=zone_infos())
-    def test_str(self, *, time_zone: ZoneInfo) -> None:
-        result = to_zone_info(cast("TimeZoneLike", time_zone.key))
+    @given(data=data(), time_zone=timezones())
+    def test_standard_zoned_date_time(
+        self, *, data: DataObject, time_zone: ZoneInfo
+    ) -> None:
+        datetime = data.draw(datetimes(timezones=just(time_zone)))
+        result = to_zone_info(datetime)
         assert result is time_zone
 
     def test_tz_info(self) -> None:
         result = to_zone_info(dt.UTC)
         assert result is UTC
 
-    @given(data=data(), time_zone=zone_infos())
-    def test_py_zoned_date_time(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
-        date_time = data.draw(datetimes(timezones=just(time_zone)))
-        result = to_zone_info(date_time)
+    @given(data=data(), time_zone=timezones())
+    def test_whenever_zoned_date_time(
+        self, *, data: DataObject, time_zone: ZoneInfo
+    ) -> None:
+        datetime = data.draw(zoned_date_times(time_zone=time_zone))
+        result = to_zone_info(datetime)
         assert result is time_zone
 
     def test_error_invalid_tz_info(self) -> None:
         time_zone = dt.timezone(dt.timedelta(hours=12))
-        with raises(
-            _ToZoneInfoInvalidTZInfoError, match=r"Invalid time-zone: UTC\+12:00"
-        ):
+        with raises(_ToZoneInfoInvalidTZInfoError, match="Unsupported time zone: .*"):
             _ = to_zone_info(time_zone)
 
-    @given(date_time=datetimes())
-    def test_error_plain_date_time(self, *, date_time: dt.datetime) -> None:
-        with raises(_ToZoneInfoPlainDateTimeError, match="Plain date-time: .*"):
-            _ = to_zone_info(date_time)
+    @given(datetime=datetimes())
+    def test_error_local_datetime(self, *, datetime: dt.datetime) -> None:
+        with raises(_ToZoneInfoPlainDateTimeError, match="Plain datetime: .*"):
+            _ = to_zone_info(datetime)
 
 
-class TestToTimeZoneName:
-    @given(time_zone=zone_infos())
-    def test_zone_info(self, *, time_zone: ZoneInfo) -> None:
-        result = to_time_zone_name(time_zone)
-        expected = time_zone.key
-        assert result == expected
-
-    @given(data=data(), time_zone=zone_infos())
-    def test_zoned_date_time(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
-        date_time = data.draw(zoned_date_times(time_zone=time_zone))
-        result = to_time_zone_name(date_time)
-        expected = time_zone.key
-        assert result == expected
+class TestGetTimeZoneName:
+    @given(data=data(), time_zone=sampled_from(["Asia/Hong_Kong", "Asia/Tokyo", "UTC"]))
+    def test_main(self, *, data: DataObject, time_zone: TimeZone) -> None:
+        zone_info_or_str: ZoneInfo | TimeZone = data.draw(
+            sampled_from([ZoneInfo(time_zone), time_zone])
+        )
+        result = to_time_zone_name(zone_info_or_str)
+        assert result == time_zone
 
     @mark.parametrize("time_zone", [param("local"), param("localtime")])
     def test_local(self, *, time_zone: Literal["local", "localtime"]) -> None:
