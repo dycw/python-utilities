@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Literal, assert_never
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
@@ -13,7 +13,7 @@ from hypothesis.strategies import (
     sampled_from,
     timezones,
 )
-from pytest import raises
+from pytest import mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_LINUX
 from utilities.hypothesis import zoned_date_times
@@ -31,24 +31,32 @@ if TYPE_CHECKING:
     from utilities.types import TimeZone
 
 
-class TestEnsureTimeZone:
-    @given(
-        data=data(),
-        case=sampled_from([
-            (HongKong, HongKong),
-            (Tokyo, Tokyo),
-            (UTC, UTC),
-            (dt.UTC, UTC),
-        ]),
+class TestToZoneInfo:
+    @mark.parametrize(
+        ("zone_info", "expected"),
+        [
+            param(HongKong, HongKong),
+            param(Tokyo, Tokyo),
+            param(UTC, UTC),
+            param(dt.UTC, UTC),
+        ],
     )
+    @mark.parametrize("case", [param("zone_info"), param("key")])
     def test_time_zone(
-        self, *, data: DataObject, case: tuple[ZoneInfo | dt.timezone, ZoneInfo]
+        self,
+        *,
+        zone_info: ZoneInfo,
+        case: Literal["zone_info", "key"],
+        expected: ZoneInfo,
     ) -> None:
-        time_zone, expected = case
-        zone_info_or_str: ZoneInfo | dt.timezone | TimeZone = data.draw(
-            sampled_from([time_zone, to_time_zone_name(time_zone)])
-        )
-        result = to_zone_info(zone_info_or_str)
+        match case:
+            case "zone_info":
+                obj = zone_info
+            case "key":
+                obj = zone_info.key
+            case never:
+                assert_never(never)
+        result = to_zone_info(obj)
         assert result is expected
 
     def test_local(self) -> None:
@@ -77,12 +85,12 @@ class TestEnsureTimeZone:
 
     def test_error_invalid_tz_info(self) -> None:
         time_zone = dt.timezone(dt.timedelta(hours=12))
-        with raises(_ToZoneInfoInvalidTZInfoError, match="Unsupported time zone: .*"):
+        with raises(_ToZoneInfoInvalidTZInfoError, match="Invalid time-zone: .*"):
             _ = to_zone_info(time_zone)
 
     @given(datetime=datetimes())
     def test_error_local_datetime(self, *, datetime: dt.datetime) -> None:
-        with raises(_ToZoneInfoPlainDateTimeError, match="Plain datetime: .*"):
+        with raises(_ToZoneInfoPlainDateTimeError, match="Plain date-time: .*"):
             _ = to_zone_info(datetime)
 
 
