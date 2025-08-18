@@ -37,7 +37,7 @@ def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
             raise _ToZoneInfoInvalidTZInfoError(time_zone=obj)
         case dt.datetime() as date_time:
             if date_time.tzinfo is None:
-                raise _ToZoneInfoPlainDateTimeError(datetime=date_time)
+                raise _ToZoneInfoPlainDateTimeError(date_time=date_time)
             return to_zone_info(date_time.tzinfo)
         case never:
             assert_never(never)
@@ -86,12 +86,11 @@ def to_time_zone_name(obj: TimeZoneLike, /) -> TimeZone:
                 return "UTC"
             raise _ToTimeZoneNameInvalidTZInfoError(time_zone=obj)
         case dt.datetime() as date_time:
-            if isinstance(date_time.tzinfo, ZoneInfo):
-                return cast("TimeZone", date_time.tzinfo.key)
-            raise _ToTimeZoneNameInvalidDateTimeError(date_time=date_time)
+            if date_time.tzinfo is None:
+                raise _ToTimeZoneNamePlainDateTimeError(date_time=date_time)
+            return to_time_zone_name(date_time.tzinfo)
         case never:
             assert_never(never)
-    return cast("TimeZone", to_zone_info(time_zone).key)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -117,12 +116,12 @@ class _ToTimeZoneNameInvalidTZInfoError(ToTimeZoneNameError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _ToTimeZoneNameInvalidDateTimeError(ToTimeZoneNameError):
+class _ToTimeZoneNamePlainDateTimeError(ToTimeZoneNameError):
     date_time: dt.datetime
 
     @override
     def __str__(self) -> str:
-        return f"Invalid date-time: {self.date_time}"
+        return f"Plain date-time: {self.date_time}"
 
 
 __all__ = [
