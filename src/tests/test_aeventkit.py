@@ -13,7 +13,7 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from
 from pytest import raises
 
-from utilities.eventkit import (
+from utilities.aeventkit import (
     LiftedEvent,
     LiftListenerError,
     TypedEvent,

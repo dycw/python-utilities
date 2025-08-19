@@ -526,7 +526,6 @@ name = "dycw-utilities"
 version = "0.162.0"
 source = { editable = "." }
 dependencies = [
-    { name = "aeventkit" },
     { name = "atomicwrites" },
     { name = "typing-extensions" },
     { name = "tzlocal" },
@@ -765,7 +764,6 @@ tzdata = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aeventkit", specifier = ">=2.1.0" },
     { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
     { name = "coloredlogs", marker = "extra == 'logging'", specifier = ">=15.0.1,<15.1" },
     { name = "dycw-pytest-only", marker = "extra == 'test'", specifier = ">=2.1.1,<2.2" },

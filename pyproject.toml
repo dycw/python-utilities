@@ -219,7 +219,6 @@ tzdata = [
 [project]
 authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
 dependencies = [
-  "aeventkit >=2.1.0",
   "atomicwrites >=1.4.1, <1.5",
   "typing-extensions >=4.14.0, <4.15",
   "tzlocal >=5.3.1, <5.4",
