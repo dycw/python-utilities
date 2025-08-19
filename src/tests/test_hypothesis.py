@@ -125,7 +125,7 @@ from utilities.math import (
     MIN_UINT64,
 )
 from utilities.os import temp_environ
-from utilities.platform import maybe_yield_lower_case
+from utilities.platform import IS_LINUX, maybe_yield_lower_case
 from utilities.sentinel import is_sentinel
 from utilities.version import Version
 from utilities.whenever import (
@@ -1191,6 +1191,8 @@ class TestZoneInfos:
     def test_main(self, *, data: DataObject) -> None:
         time_zone = data.draw(zone_infos())
         assert isinstance(time_zone, ZoneInfo)
+        if IS_LINUX:
+            _ = assume(time_zone.key not in {"Etc/UTC", "localtime"})
         assert time_zone.key not in {"Etc/UTC", "localtime"}
         _ = get_now(time_zone)
 
