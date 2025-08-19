@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Literal, cast
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, datetimes, just, sampled_from
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.hypothesis import zone_infos, zoned_date_times
 from utilities.tzdata import HongKong, Tokyo
@@ -38,8 +38,9 @@ class TestToZoneInfo:
         result = to_zone_info(date_time)
         assert result is time_zone
 
-    def test_local(self) -> None:
-        result = to_zone_info("local")
+    @mark.parametrize("time_zone", [param("local"), param("localtime")])
+    def test_local(self, *, time_zone: Literal["local", "localtime"]) -> None:
+        result = to_zone_info(time_zone)
         assert result is LOCAL_TIME_ZONE
 
     @given(time_zone=zone_infos())
@@ -84,8 +85,9 @@ class TestToTimeZoneName:
         expected = time_zone.key
         assert result == expected
 
-    def test_local(self) -> None:
-        result = to_time_zone_name("local")
+    @mark.parametrize("time_zone", [param("local"), param("localtime")])
+    def test_local(self, *, time_zone: Literal["local", "localtime"]) -> None:
+        result = to_time_zone_name(time_zone)
         assert result == LOCAL_TIME_ZONE_NAME
 
     @given(time_zone=zone_infos())

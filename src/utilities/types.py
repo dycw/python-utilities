@@ -276,7 +276,12 @@ TIME_ZONES: list[TimeZone] = list(get_args(TimeZone.__value__))
 
 
 type TimeZoneLike = (
-    ZoneInfo | ZonedDateTime | Literal["local"] | TimeZone | dt.tzinfo | dt.datetime
+    ZoneInfo
+    | ZonedDateTime
+    | Literal["local", "localtime"]
+    | TimeZone
+    | dt.tzinfo
+    | dt.datetime
 )
 
 
