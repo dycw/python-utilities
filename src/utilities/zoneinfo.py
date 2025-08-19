@@ -27,7 +27,7 @@ def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
             return zone_info
         case ZonedDateTime() as date_time:
             return ZoneInfo(date_time.tz)
-        case "local":
+        case "local" | "localtime":
             return LOCAL_TIME_ZONE
         case str() as key:
             return ZoneInfo(key)
@@ -75,7 +75,7 @@ def to_time_zone_name(obj: TimeZoneLike, /) -> TimeZone:
             return cast("TimeZone", zone_info.key)
         case ZonedDateTime() as date_time:
             return cast("TimeZone", date_time.tz)
-        case "local":
+        case "local" | "localtime":
             return LOCAL_TIME_ZONE_NAME
         case str() as time_zone:
             if time_zone in TIME_ZONES:

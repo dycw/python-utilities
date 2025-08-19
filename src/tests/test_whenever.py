@@ -8,14 +8,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
 from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, given, settings
-from hypothesis.strategies import (
-    DataObject,
-    data,
-    integers,
-    none,
-    sampled_from,
-    timezones,
-)
+from hypothesis.strategies import DataObject, data, integers, none, sampled_from
 from pytest import mark, param, raises
 from whenever import (
     Date,
@@ -24,7 +17,6 @@ from whenever import (
     PlainDateTime,
     Time,
     TimeDelta,
-    TimeZoneNotFoundError,
     Weekday,
     YearMonth,
     ZonedDateTime,
@@ -41,6 +33,7 @@ from utilities.hypothesis import (
     time_deltas,
     time_periods,
     times,
+    zone_infos,
     zoned_date_time_periods,
     zoned_date_times,
     zoned_date_times_2000,
@@ -382,7 +375,7 @@ class TestFormatCompact:
 
 class TestFromTimeStamp:
     @given(
-        datetime=zoned_date_times(time_zone=timezones()).map(
+        datetime=zoned_date_times(time_zone=zone_infos()).map(
             lambda d: d.round("second")
         )
     )
@@ -392,7 +385,7 @@ class TestFromTimeStamp:
         assert result == datetime
 
     @given(
-        datetime=zoned_date_times(time_zone=timezones()).map(
+        datetime=zoned_date_times(time_zone=zone_infos()).map(
             lambda d: d.round("millisecond")
         )
     )
@@ -401,7 +394,7 @@ class TestFromTimeStamp:
         result = from_timestamp_millis(timestamp, time_zone=ZoneInfo(datetime.tz))
         assert result == datetime
 
-    @given(datetime=zoned_date_times(time_zone=timezones()))
+    @given(datetime=zoned_date_times(time_zone=zone_infos()))
     def test_nanos(self, *, datetime: ZonedDateTime) -> None:
         timestamp = datetime.timestamp_nanos()
         result = from_timestamp_nanos(timestamp, time_zone=ZoneInfo(datetime.tz))
@@ -409,10 +402,9 @@ class TestFromTimeStamp:
 
 
 class TestGetNow:
-    @given(time_zone=timezones())
+    @given(time_zone=zone_infos())
     def test_function(self, *, time_zone: ZoneInfo) -> None:
-        with assume_does_not_raise(TimeZoneNotFoundError):
-            now = get_now(time_zone)
+        now = get_now(time_zone)
         assert isinstance(now, ZonedDateTime)
         assert now.tz == time_zone.key
 
@@ -436,10 +428,9 @@ class TestGetNowLocal:
 
 
 class TestGetNowPlain:
-    @given(time_zone=timezones())
+    @given(time_zone=zone_infos())
     def test_function(self, *, time_zone: ZoneInfo) -> None:
-        with assume_does_not_raise(TimeZoneNotFoundError):
-            now = get_now_plain(time_zone)
+        now = get_now_plain(time_zone)
         assert isinstance(now, PlainDateTime)
 
     def test_constant(self) -> None:
@@ -1395,32 +1386,50 @@ class TestToZonedDateTime:
     def test_default(self) -> None:
         assert abs(to_zoned_date_time() - get_now()) <= SECOND
 
-    @given(date_time=zoned_date_times())
-    def test_date_time(self, *, date_time: ZonedDateTime) -> None:
-        assert to_zoned_date_time(date_time) == date_time
+    @given(date_time=zoned_date_times(), time_zone=zone_infos())
+    def test_date_time(self, *, date_time: ZonedDateTime, time_zone: ZoneInfo) -> None:
+        result = to_zoned_date_time(date_time, time_zone=time_zone)
+        expected = date_time.to_tz(time_zone.key)
+        assert result.exact_eq(expected)
 
-    @given(date_time=zoned_date_times())
-    def test_str(self, *, date_time: ZonedDateTime) -> None:
-        assert to_zoned_date_time(date_time.format_common_iso()) == date_time
+    @given(date_time=zoned_date_times(), time_zone=zone_infos())
+    def test_str(self, *, date_time: ZonedDateTime, time_zone: ZoneInfo) -> None:
+        result = to_zoned_date_time(date_time.format_common_iso(), time_zone=time_zone)
+        expected = date_time.to_tz(time_zone.key)
+        assert result.exact_eq(expected)
 
-    @given(date_time=zoned_date_times_2000)
-    def test_py_date_time_zone_info(self, *, date_time: ZonedDateTime) -> None:
-        assert to_zoned_date_time(date_time.py_datetime()) == date_time
+    @given(date_time=zoned_date_times_2000, time_zone=zone_infos())
+    def test_py_date_time_zone_info(
+        self, *, date_time: ZonedDateTime, time_zone: ZoneInfo
+    ) -> None:
+        result = to_zoned_date_time(date_time.py_datetime(), time_zone=time_zone)
+        expected = date_time.to_tz(time_zone.key)
+        assert result.exact_eq(expected)
 
-    @given(date_time=zoned_date_times_2000)
-    def test_py_date_time_dt_utc(self, *, date_time: ZonedDateTime) -> None:
-        result = to_zoned_date_time(date_time.py_datetime().astimezone(dt.UTC))
-        assert result == date_time
+    @given(date_time=zoned_date_times_2000, time_zone=zone_infos())
+    def test_py_date_time_dt_utc(
+        self, *, date_time: ZonedDateTime, time_zone: ZoneInfo
+    ) -> None:
+        result = to_zoned_date_time(
+            date_time.py_datetime().astimezone(dt.UTC), time_zone=time_zone
+        )
+        expected = date_time.to_tz(time_zone.key)
+        assert result.exact_eq(expected)
 
-    @given(date_time=zoned_date_times())
-    def test_callable(self, *, date_time: ZonedDateTime) -> None:
-        assert to_zoned_date_time(lambda: date_time) == date_time
+    @given(date_time=zoned_date_times(), time_zone=zone_infos())
+    def test_callable(self, *, date_time: ZonedDateTime, time_zone: ZoneInfo) -> None:
+        result = to_zoned_date_time(lambda: date_time, time_zone=time_zone)
+        expected = date_time.to_tz(time_zone.key)
+        assert result.exact_eq(expected)
 
-    def test_none(self) -> None:
-        assert abs(to_zoned_date_time(None) - get_now()) <= SECOND
+    @given(time_zone=zone_infos())
+    def test_none(self, *, time_zone: ZoneInfo) -> None:
+        result = to_zoned_date_time(None, time_zone=time_zone)
+        assert abs(result - get_now(time_zone)) <= SECOND
 
-    def test_sentinel(self) -> None:
-        assert to_zoned_date_time(sentinel) is sentinel
+    @given(time_zone=zone_infos())
+    def test_sentinel(self, *, time_zone: ZoneInfo) -> None:
+        assert to_zoned_date_time(sentinel, time_zone=time_zone) is sentinel
 
     @given(date_times=pairs(zoned_date_times()))
     def test_replace_non_sentinel(

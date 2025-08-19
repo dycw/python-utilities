@@ -32,6 +32,7 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
     text,
+    timezones,
     uuids,
 )
 from hypothesis.utils.conventions import not_set
@@ -97,6 +98,7 @@ from utilities.whenever import (
     DatePeriod,
     TimePeriod,
     ZonedDateTimePeriod,
+    get_now,
     to_date_time_delta,
     to_days,
     to_nanoseconds,
@@ -105,6 +107,7 @@ from utilities.zoneinfo import UTC, to_zone_info
 
 if TYPE_CHECKING:
     from collections.abc import Collection, Hashable, Iterable, Iterator
+    from zoneinfo import ZoneInfo
 
     from hypothesis.database import ExampleDatabase
     from libcst import Import, ImportFrom
@@ -835,7 +838,7 @@ def paths(
 @composite
 def _path_parts(draw: DrawFn, /) -> str:
     part = draw(text_ascii(min_size=1, max_size=10))
-    reserved = {"AUX", "NUL", "nuL"}
+    reserved = {"AUX", "NUL", "nuL", "pRn"}
     _ = assume(part not in reserved)
     return part
 
@@ -1477,6 +1480,19 @@ def year_months(
 
 
 @composite
+def zone_infos(draw: DrawFn, /) -> ZoneInfo:
+    """Strategy for generating time-zones."""
+    time_zone = draw(timezones())
+    _ = assume(time_zone.key not in {"Etc/UTC", "localtime"})
+    with assume_does_not_raise(TimeZoneNotFoundError):
+        _ = get_now(time_zone)
+    return time_zone
+
+
+##
+
+
+@composite
 def zoned_date_time_periods(
     draw: DrawFn,
     /,
@@ -1530,7 +1546,6 @@ def zoned_date_times(
     with (
         assume_does_not_raise(RepeatedTime),
         assume_does_not_raise(SkippedTime),
-        assume_does_not_raise(TimeZoneNotFoundError),
         assume_does_not_raise(ValueError, match="Resulting datetime is out of range"),
     ):
         zoned = plain.assume_tz(time_zone_.key, disambiguate="raise")
@@ -1602,6 +1617,7 @@ __all__ = [
     "urls",
     "versions",
     "year_months",
+    "zone_infos",
     "zoned_date_time_periods",
     "zoned_date_times",
     "zoned_date_times_2000",

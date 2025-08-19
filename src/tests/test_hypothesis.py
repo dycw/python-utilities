@@ -5,6 +5,7 @@ from itertools import pairwise
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, cast
+from zoneinfo import ZoneInfo
 
 from hypothesis import assume, given, settings
 from hypothesis.errors import InvalidArgument
@@ -20,7 +21,6 @@ from hypothesis.strategies import (
     just,
     none,
     sets,
-    timezones,
 )
 from libcst import Import, ImportFrom
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
@@ -34,7 +34,6 @@ from whenever import (
     PlainDateTime,
     Time,
     TimeDelta,
-    TimeZoneNotFoundError,
     YearMonth,
     ZonedDateTime,
 )
@@ -97,6 +96,7 @@ from utilities.hypothesis import (
     urls,
     versions,
     year_months,
+    zone_infos,
     zoned_date_time_periods,
     zoned_date_times,
 )
@@ -134,6 +134,7 @@ from utilities.whenever import (
     DatePeriod,
     TimePeriod,
     ZonedDateTimePeriod,
+    get_now,
     to_days,
     to_nanoseconds,
     to_py_time_delta,
@@ -141,7 +142,6 @@ from utilities.whenever import (
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
-    from zoneinfo import ZoneInfo
 
     from utilities.sentinel import Sentinel
     from utilities.tempfile import TemporaryDirectory
@@ -1186,11 +1186,21 @@ class TestYearMonths:
             assert year_month.on_day(28) <= DATE_TWO_DIGIT_YEAR_MAX
 
 
+class TestZoneInfos:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        time_zone = data.draw(zone_infos())
+        assert isinstance(time_zone, ZoneInfo)
+        assert time_zone.key not in {"Etc/UTC", "localtime"}
+        _ = get_now(time_zone)
+
+
 class TestZonedDateTimePeriods:
-    @given(data=data(), time_zone=timezones())
-    def test_main(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
         min_value = data.draw(zoned_date_times() | none())
         max_value = data.draw(zoned_date_times() | none())
+        time_zone = data.draw(zone_infos())
         with assume_does_not_raise(InvalidArgument):
             period = data.draw(
                 zoned_date_time_periods(
@@ -1206,10 +1216,11 @@ class TestZonedDateTimePeriods:
 
 
 class TestZonedDateTimes:
-    @given(data=data(), time_zone=timezones())
-    def test_main(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
         min_value = data.draw(zoned_date_times() | none())
         max_value = data.draw(zoned_date_times() | none())
+        time_zone = data.draw(zone_infos())
         with assume_does_not_raise(InvalidArgument):
             datetime = data.draw(
                 zoned_date_times(
@@ -1225,9 +1236,9 @@ class TestZonedDateTimes:
         if max_value is not None:
             assert datetime <= max_value
 
-    @given(data=data(), time_zone=timezones())
-    def test_examples(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
-        with assume_does_not_raise(TimeZoneNotFoundError):
-            max_value = ZonedDateTime(1, 1, 2, tz=time_zone.key)
+    @given(data=data())
+    def test_examples(self, *, data: DataObject) -> None:
+        time_zone = data.draw(zone_infos())
+        max_value = ZonedDateTime(1, 1, 2, tz=time_zone.key)
         datetime = data.draw(zoned_date_times(max_value=max_value, time_zone=time_zone))
         _ = datetime.py_datetime()
