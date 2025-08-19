@@ -1621,20 +1621,20 @@ class _ToYearsTimeError(ToYearsError):
 
 @overload
 def to_zoned_date_time(
-    date_time: Sentinel, /, *, time_zone: TimeZoneLike = UTC
+    date_time: Sentinel, /, *, time_zone: TimeZoneLike | None = None
 ) -> Sentinel: ...
 @overload
 def to_zoned_date_time(
     date_time: MaybeCallableZonedDateTimeLike | dt.datetime | None = get_now,
     /,
     *,
-    time_zone: TimeZoneLike = UTC,
+    time_zone: TimeZoneLike | None = None,
 ) -> ZonedDateTime: ...
 def to_zoned_date_time(
     date_time: MaybeCallableZonedDateTimeLike | dt.datetime | None | Sentinel = get_now,
     /,
     *,
-    time_zone: TimeZoneLike = UTC,
+    time_zone: TimeZoneLike | None = None,
 ) -> ZonedDateTime | Sentinel:
     """Convert to a zoned date-time."""
     match date_time:
@@ -1643,7 +1643,7 @@ def to_zoned_date_time(
         case Sentinel():
             return sentinel
         case None:
-            return get_now(time_zone)
+            return get_now(UTC if time_zone is None else time_zone)
         case str():
             date_time_use = ZonedDateTime.parse_common_iso(date_time)
         case dt.datetime() as py_date_time:
@@ -1658,6 +1658,8 @@ def to_zoned_date_time(
             return to_zoned_date_time(func(), time_zone=time_zone)
         case never:
             assert_never(never)
+    if time_zone is None:
+        return date_time_use
     return date_time_use.to_tz(to_time_zone_name(time_zone))
 
 
