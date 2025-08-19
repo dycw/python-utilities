@@ -85,7 +85,7 @@ class TestAddListener:
     async def test_with_error_handler(
         self, *, name: str, case: Literal["sync", "async/sync", "async"]
     ) -> None:
-        event = Event(name=name)
+        event = Event(_name=name)
         assert event.name() == name
         called = False
         log: set[tuple[str, type[BaseException]]] = set()
