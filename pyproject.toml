@@ -109,7 +109,7 @@ operator = [
   "polars",
 ]
 optuna = [
-  "optuna >=4.4.0, <4.5",
+  "optuna >=4.5.0, <4.6",
 ]
 orjson = [
   "orjson >=3.11.0, <3.12",
@@ -227,7 +227,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.162.2"
+version = "0.162.3"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -259,7 +259,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.162.2"
+current_version = "0.162.3"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
