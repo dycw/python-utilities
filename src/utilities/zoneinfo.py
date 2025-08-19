@@ -83,7 +83,7 @@ def to_time_zone_name(obj: TimeZoneLike, /) -> TimeZone:
             raise _ToTimeZoneNameInvalidKeyError(time_zone=time_zone)
         case dt.tzinfo() as tzinfo:
             if tzinfo is dt.UTC:
-                return UTC.key
+                return cast("TimeZone", UTC.key)
             raise _ToTimeZoneNameInvalidTZInfoError(time_zone=obj)
         case dt.datetime() as date_time:
             if date_time.tzinfo is None:
