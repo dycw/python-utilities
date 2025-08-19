@@ -1416,9 +1416,14 @@ class TestToZonedDateTime:
         assert result.exact_eq(expected)
 
     @given(date_time=zoned_date_times_2000, time_zone=timezones())
-    def test_py_date_time_dt_utc(self, *, date_time: ZonedDateTime) -> None:
-        result = to_zoned_date_time(date_time.py_datetime().astimezone(dt.UTC))
-        assert result == date_time
+    def test_py_date_time_dt_utc(
+        self, *, date_time: ZonedDateTime, time_zone: ZoneInfo
+    ) -> None:
+        result = to_zoned_date_time(
+            date_time.py_datetime().astimezone(dt.UTC), time_zone=time_zone
+        )
+        expected = date_time.to_tz(time_zone.key)
+        assert result.exact_eq(expected)
 
     @given(date_time=zoned_date_times())
     def test_callable(self, *, date_time: ZonedDateTime) -> None:
