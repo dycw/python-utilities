@@ -7,6 +7,18 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "aeventkit"
+version = "2.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5c/8c/c08db1a1910f8d04ec6a524de522edd0bac181bdf94dbb01183f7685cd77/aeventkit-2.1.0.tar.gz", hash = "sha256:4e7d81bb0a67227121da50a23e19e5bbf13eded541a9f4857eeb6b7b857b738a", size = 24703, upload-time = "2025-06-22T15:54:03.961Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8d/8c/2a4b912b1afa201b25bdd0f5bccf96d5a8b5dccb6131316a8dd2d9cabcc1/aeventkit-2.1.0-py3-none-any.whl", hash = "sha256:962d43f79e731ac43527f2d0defeed118e6dbaa85f1487f5667540ebb8f00729", size = 26678, upload-time = "2025-06-22T15:54:02.141Z" },
+]
+
+[[package]]
 name = "aiohappyeyeballs"
 version = "2.6.1"
 source = { registry = "https://pypi.org/simple" }
@@ -511,7 +523,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.161.2"
+version = "0.162.0"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -542,6 +554,9 @@ test = [
 ]
 
 [package.dev-dependencies]
+aeventkit = [
+    { name = "aeventkit" },
+]
 altair = [
     { name = "altair" },
 ]
@@ -582,9 +597,6 @@ dev = [
     { name = "pyright", extra = ["nodejs"] },
     { name = "pytest-cov" },
     { name = "pytest-timeout" },
-]
-eventkit = [
-    { name = "eventkit" },
 ]
 fastapi = [
     { name = "fastapi" },
@@ -775,6 +787,7 @@ requires-dist = [
 provides-extras = ["logging", "test"]
 
 [package.metadata.requires-dev]
+aeventkit = [{ name = "aeventkit", specifier = ">=2.1.0,<2.2" }]
 altair = [{ name = "altair", specifier = ">=5.5.0,<5.6" }]
 altair-test = [
     { name = "img2pdf" },
@@ -804,7 +817,6 @@ dev = [
     { name = "pytest-cov", specifier = ">=6.2.1,<6.3" },
     { name = "pytest-timeout", specifier = ">=2.4.0,<2.5" },
 ]
-eventkit = [{ name = "eventkit", specifier = ">=1.0.3,<1.1" }]
 fastapi = [{ name = "fastapi", specifier = ">=0.116.0,<0.117" }]
 fastapi-test = [
     { name = "httpx" },
@@ -902,18 +914,6 @@ sqlalchemy-test = [
 statsmodels = [{ name = "statsmodels", specifier = ">=0.14.4,<0.15" }]
 typed-settings = [{ name = "typed-settings", specifier = ">=25.0.0,<25.1" }]
 tzdata = [{ name = "tzdata", specifier = ">=2025.2,<2025.3" }]
-
-[[package]]
-name = "eventkit"
-version = "1.0.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/16/1e/0fac4e45d71ace143a2673ec642701c3cd16f833a0e77a57fa6a40472696/eventkit-1.0.3.tar.gz", hash = "sha256:99497f6f3c638a50ff7616f2f8cd887b18bbff3765dc1bd8681554db1467c933", size = 28320, upload-time = "2023-12-11T11:41:35.339Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/93/d9/7497d650b69b420e1a913329a843e16c715dac883750679240ef00a921e2/eventkit-1.0.3-py3-none-any.whl", hash = "sha256:0e199527a89aff9d195b9671ad45d2cc9f79ecda0900de8ecfb4c864d67ad6a2", size = 31837, upload-time = "2023-12-11T11:41:33.358Z" },
-]
 
 [[package]]
 name = "execnet"
