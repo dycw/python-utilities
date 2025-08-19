@@ -77,7 +77,7 @@ from utilities.math import (
 )
 from utilities.os import get_env_var
 from utilities.pathlib import module_path, temp_cwd
-from utilities.platform import IS_WINDOWS
+from utilities.platform import IS_LINUX, IS_NOT_WINDOWS, IS_WINDOWS
 from utilities.sentinel import Sentinel, is_sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.version import Version
