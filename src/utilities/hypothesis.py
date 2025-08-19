@@ -77,7 +77,7 @@ from utilities.math import (
 )
 from utilities.os import get_env_var
 from utilities.pathlib import module_path, temp_cwd
-from utilities.platform import IS_WINDOWS
+from utilities.platform import IS_LINUX, IS_WINDOWS
 from utilities.sentinel import Sentinel, is_sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.version import Version
@@ -1483,7 +1483,8 @@ def year_months(
 def zone_infos(draw: DrawFn, /) -> ZoneInfo:
     """Strategy for generating time-zones."""
     time_zone = draw(timezones())
-    _ = assume(time_zone.key not in {"Etc/UTC", "localtime"})
+    if IS_LINUX:
+        _ = assume(time_zone.key not in {"Etc/UTC", "localtime"})
     with assume_does_not_raise(TimeZoneNotFoundError):
         _ = get_now(time_zone)
     return time_zone

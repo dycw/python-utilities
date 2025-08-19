@@ -1386,8 +1386,15 @@ class TestToZonedDateTime:
     def test_default(self) -> None:
         assert abs(to_zoned_date_time() - get_now()) <= SECOND
 
+    @given(date_time=zoned_date_times(time_zone=zone_infos()))
+    def test_date_time_without_time_zone(self, *, date_time: ZonedDateTime) -> None:
+        result = to_zoned_date_time(date_time)
+        assert result.exact_eq(date_time)
+
     @given(date_time=zoned_date_times(), time_zone=zone_infos())
-    def test_date_time(self, *, date_time: ZonedDateTime, time_zone: ZoneInfo) -> None:
+    def test_date_time_with_time_zone(
+        self, *, date_time: ZonedDateTime, time_zone: ZoneInfo
+    ) -> None:
         result = to_zoned_date_time(date_time, time_zone=time_zone)
         expected = date_time.to_tz(time_zone.key)
         assert result.exact_eq(expected)
