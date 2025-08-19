@@ -1386,19 +1386,19 @@ class TestToZonedDateTime:
     def test_default(self) -> None:
         assert abs(to_zoned_date_time() - get_now()) <= SECOND
 
-    @given(date_time=zoned_date_times(), time_zone=timezones())
+    @given(date_time=zoned_date_times(), time_zone=zone_infos())
     def test_date_time(self, *, date_time: ZonedDateTime, time_zone: ZoneInfo) -> None:
         result = to_zoned_date_time(date_time, time_zone=time_zone)
         expected = date_time.to_tz(time_zone.key)
         assert result.exact_eq(expected)
 
-    @given(date_time=zoned_date_times(), time_zone=timezones())
+    @given(date_time=zoned_date_times(), time_zone=zone_infos())
     def test_str(self, *, date_time: ZonedDateTime, time_zone: ZoneInfo) -> None:
         result = to_zoned_date_time(date_time.format_common_iso(), time_zone=time_zone)
         expected = date_time.to_tz(time_zone.key)
         assert result.exact_eq(expected)
 
-    @given(date_time=zoned_date_times_2000, time_zone=timezones())
+    @given(date_time=zoned_date_times_2000, time_zone=zone_infos())
     def test_py_date_time_zone_info(
         self, *, date_time: ZonedDateTime, time_zone: ZoneInfo
     ) -> None:
@@ -1406,7 +1406,7 @@ class TestToZonedDateTime:
         expected = date_time.to_tz(time_zone.key)
         assert result.exact_eq(expected)
 
-    @given(date_time=zoned_date_times_2000, time_zone=timezones())
+    @given(date_time=zoned_date_times_2000, time_zone=zone_infos())
     def test_py_date_time_dt_utc(
         self, *, date_time: ZonedDateTime, time_zone: ZoneInfo
     ) -> None:
@@ -1416,18 +1416,18 @@ class TestToZonedDateTime:
         expected = date_time.to_tz(time_zone.key)
         assert result.exact_eq(expected)
 
-    @given(date_time=zoned_date_times(), time_zone=timezones())
+    @given(date_time=zoned_date_times(), time_zone=zone_infos())
     def test_callable(self, *, date_time: ZonedDateTime, time_zone: ZoneInfo) -> None:
         result = to_zoned_date_time(lambda: date_time, time_zone=time_zone)
         expected = date_time.to_tz(time_zone.key)
         assert result.exact_eq(expected)
 
-    @given(time_zone=timezones())
+    @given(time_zone=zone_infos())
     def test_none(self, *, time_zone: ZoneInfo) -> None:
         result = to_zoned_date_time(None, time_zone=time_zone)
         assert abs(result - get_now(time_zone)) <= SECOND
 
-    @given(time_zone=timezones())
+    @given(time_zone=zone_infos())
     def test_sentinel(self, *, time_zone: ZoneInfo) -> None:
         assert to_zoned_date_time(sentinel, time_zone=time_zone) is sentinel
 
