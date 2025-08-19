@@ -1646,15 +1646,14 @@ def to_zoned_date_time(
             return get_now(time_zone)
         case str():
             date_time_use = ZonedDateTime.parse_common_iso(date_time)
-        case dt.datetime():
+        case dt.datetime() as py_date_time:
             if isinstance(date_time.tzinfo, ZoneInfo):
-                date_time_use = ZonedDateTime.from_py_datetime(date_time)
+                py_date_time_use = py_date_time
             elif date_time.tzinfo is dt.UTC:
-                date_time_use = ZonedDateTime.from_py_datetime(
-                    date_time.astimezone(UTC)
-                )
+                py_date_time_use = py_date_time.astimezone(UTC)
             else:
                 raise ToZonedDateTimeError(date_time=date_time)
+            date_time_use = ZonedDateTime.from_py_datetime(py_date_time_use)
         case Callable() as func:
             return to_zoned_date_time(func(), time_zone=time_zone)
         case never:
