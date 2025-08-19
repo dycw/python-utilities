@@ -148,7 +148,7 @@ async def check_engine(
     /,
     *,
     timeout: Delta | None = None,
-    error: MaybeType[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     num_tables: int | tuple[int, float] | None = None,
 ) -> None:
     """Check that an engine can connect.
@@ -341,7 +341,7 @@ async def ensure_tables_created(
     /,
     *tables_or_orms: TableOrORMInstOrClass,
     timeout: Delta | None = None,
-    error: MaybeType[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
 ) -> None:
     """Ensure a table/set of tables is/are created."""
     tables = set(map(get_table, tables_or_orms))
@@ -370,7 +370,7 @@ async def ensure_tables_dropped(
     engine: AsyncEngine,
     *tables_or_orms: TableOrORMInstOrClass,
     timeout: Delta | None = None,
-    error: MaybeType[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
     tables = set(map(get_table, tables_or_orms))
@@ -604,9 +604,9 @@ async def insert_items(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     timeout_create: Delta | None = None,
-    error_create: MaybeType[Exception] = TimeoutError,
+    error_create: MaybeType[BaseException] = TimeoutError,
     timeout_insert: Delta | None = None,
-    error_insert: MaybeType[Exception] = TimeoutError,
+    error_insert: MaybeType[BaseException] = TimeoutError,
 ) -> None:
     """Insert a set of items into a database.
 
@@ -849,9 +849,9 @@ async def migrate_data(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     timeout_create: Delta | None = None,
-    error_create: MaybeType[Exception] = TimeoutError,
+    error_create: MaybeType[BaseException] = TimeoutError,
     timeout_insert: Delta | None = None,
-    error_insert: MaybeType[Exception] = TimeoutError,
+    error_insert: MaybeType[BaseException] = TimeoutError,
 ) -> None:
     """Migrate the contents of a table from one database to another."""
     table_from = get_table(table_or_orm_from)

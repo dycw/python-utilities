@@ -188,7 +188,7 @@ def redis_hash_map_key[K, V](
     value_serializer: Callable[[V], bytes] | None = None,
     value_deserializer: Callable[[bytes], V] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisHashMapKey[K, V]: ...
 @overload
@@ -203,7 +203,7 @@ def redis_hash_map_key[K, V1, V2](
     value_serializer: Callable[[V1 | V2], bytes] | None = None,
     value_deserializer: Callable[[bytes], V1 | V2] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisHashMapKey[K, V1 | V2]: ...
 @overload
@@ -218,7 +218,7 @@ def redis_hash_map_key[K, V1, V2, V3](
     value_serializer: Callable[[V1 | V2 | V3], bytes] | None = None,
     value_deserializer: Callable[[bytes], V1 | V2 | V3] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisHashMapKey[K, V1 | V2 | V3]: ...
 @overload
@@ -233,7 +233,7 @@ def redis_hash_map_key[K1, K2, V](
     value_serializer: Callable[[V], bytes] | None = None,
     value_deserializer: Callable[[bytes], V] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisHashMapKey[K1 | K2, V]: ...
 @overload
@@ -248,7 +248,7 @@ def redis_hash_map_key[K1, K2, V1, V2](
     value_serializer: Callable[[V1 | V2], bytes] | None = None,
     value_deserializer: Callable[[bytes], V1 | V2] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisHashMapKey[K1 | K2, V1 | V2]: ...
 @overload
@@ -263,7 +263,7 @@ def redis_hash_map_key[K1, K2, V1, V2, V3](
     value_serializer: Callable[[V1 | V2 | V3], bytes] | None = None,
     value_deserializer: Callable[[bytes], V1 | V2 | V3] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisHashMapKey[K1 | K2, V1 | V2 | V3]: ...
 @overload
@@ -278,7 +278,7 @@ def redis_hash_map_key[K1, K2, K3, V](
     value_serializer: Callable[[V], bytes] | None = None,
     value_deserializer: Callable[[bytes], V] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisHashMapKey[K1 | K2 | K3, V]: ...
 @overload
@@ -293,7 +293,7 @@ def redis_hash_map_key[K1, K2, K3, V1, V2](
     value_serializer: Callable[[V1 | V2], bytes] | None = None,
     value_deserializer: Callable[[bytes], V1 | V2] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisHashMapKey[K1 | K2 | K3, V1 | V2]: ...
 @overload
@@ -308,7 +308,7 @@ def redis_hash_map_key[K1, K2, K3, V1, V2, V3](
     value_serializer: Callable[[V1 | V2 | V3], bytes] | None = None,
     value_deserializer: Callable[[bytes], V1 | V2 | V3] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisHashMapKey[K1 | K2 | K3, V1 | V2 | V3]: ...
 @overload
@@ -323,7 +323,7 @@ def redis_hash_map_key[K, K1, K2, K3, V, V1, V2, V3](
     value_serializer: Callable[[V1 | V2 | V3], bytes] | None = None,
     value_deserializer: Callable[[bytes], V1 | V2 | V3] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisHashMapKey[K, V]: ...
 def redis_hash_map_key[K, V](
@@ -338,7 +338,7 @@ def redis_hash_map_key[K, V](
     value_deserializer: Callable[[bytes], Any] | None = None,
     timeout: Delta | None = None,
     ttl: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
 ) -> RedisHashMapKey[K, V]:
     """Create a redis key."""
     return RedisHashMapKey(  # skipif-ci-and-not-linux
@@ -426,7 +426,7 @@ def redis_key[T](
     serializer: Callable[[T], bytes] | None = None,
     deserializer: Callable[[bytes], T] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisKey[T]: ...
 @overload
@@ -438,7 +438,7 @@ def redis_key[T1, T2](
     serializer: Callable[[T1 | T2], bytes] | None = None,
     deserializer: Callable[[bytes], T1 | T2] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisKey[T1 | T2]: ...
 @overload
@@ -450,7 +450,7 @@ def redis_key[T1, T2, T3](
     serializer: Callable[[T1 | T2 | T3], bytes] | None = None,
     deserializer: Callable[[bytes], T1 | T2 | T3] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisKey[T1 | T2 | T3]: ...
 @overload
@@ -462,7 +462,7 @@ def redis_key[T1, T2, T3, T4](
     serializer: Callable[[T1 | T2 | T3 | T4], bytes] | None = None,
     deserializer: Callable[[bytes], T1 | T2 | T3 | T4] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisKey[T1 | T2 | T3 | T4]: ...
 @overload
@@ -474,7 +474,7 @@ def redis_key[T1, T2, T3, T4, T5](
     serializer: Callable[[T1 | T2 | T3 | T4 | T5], bytes] | None = None,
     deserializer: Callable[[bytes], T1 | T2 | T3 | T4 | T5] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisKey[T1 | T2 | T3 | T4 | T5]: ...
 @overload
@@ -486,7 +486,7 @@ def redis_key[T, T1, T2, T3, T4, T5](
     serializer: Callable[[T1 | T2 | T3 | T4 | T5], bytes] | None = None,
     deserializer: Callable[[bytes], T1 | T2 | T3 | T4 | T5] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisKey[T]: ...
 def redis_key[T](
@@ -497,7 +497,7 @@ def redis_key[T](
     serializer: Callable[[Any], bytes] | None = None,
     deserializer: Callable[[bytes], Any] | None = None,
     timeout: Delta | None = None,
-    error: type[Exception] = TimeoutError,
+    error: MaybeType[BaseException] = TimeoutError,
     ttl: Delta | None = None,
 ) -> RedisKey[T]:
     """Create a redis key."""
