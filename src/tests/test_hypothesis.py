@@ -1191,7 +1191,6 @@ class TestZoneInfos:
     def test_main(self, *, data: DataObject) -> None:
         time_zone = data.draw(zone_infos())
         assert isinstance(time_zone, ZoneInfo)
-        assert time_zone.key not in {"Etc/UTC", "localtime"}
         _ = get_now(time_zone)
 
 
