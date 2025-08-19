@@ -218,9 +218,7 @@ def _pre_process(
         case ZonedDateTime() as date_time:
             return f"[{_Prefixes.zoned_date_time.value}]{date_time}"
         case ZonedDateTimePeriod() as period:
-            return (
-                f"[{_Prefixes.zoned_date_time_period.value}]{period.start},{period.end}"
-            )
+            return f"[{_Prefixes.zoned_date_time_period.value}]{period.start.to_plain()},{period.end}"
         case dt.datetime() as py_datetime:
             match py_datetime.tzinfo:
                 case None:
@@ -512,9 +510,9 @@ def _object_hook(
             if match := _ZONED_DATE_TIME_PATTERN.search(text):
                 return ZonedDateTime.parse_common_iso(match.group(1))
             if match := _ZONED_DATE_TIME_PERIOD_PATTERN.search(text):
-                start, end = map(
-                    ZonedDateTime.parse_common_iso, match.group(1).split(",")
-                )
+                start, end = match.group(1).split(",")
+                end = ZonedDateTime.parse_common_iso(end)
+                start = PlainDateTime.parse_common_iso(start).assume_tz(end.tz)
                 return ZonedDateTimePeriod(start, end)
             if (
                 exc_class := _object_hook_exception_class(

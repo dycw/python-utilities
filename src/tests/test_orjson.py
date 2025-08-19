@@ -23,6 +23,7 @@ from hypothesis.strategies import (
 from orjson import JSONDecodeError
 from polars import Object, String, UInt64
 from pytest import approx, mark, param, raises
+from whenever import ZonedDateTime
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from tests.test_objects.objects import (
@@ -60,6 +61,7 @@ from utilities.hypothesis import (
     text_ascii,
     text_printable,
     time_periods,
+    zoned_date_time_periods,
     zoned_date_times,
 )
 from utilities.iterables import always_iterable, one
@@ -86,12 +88,21 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.types import LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args
 from utilities.tzlocal import LOCAL_TIME_ZONE
-from utilities.whenever import MINUTE, SECOND, DatePeriod, TimePeriod, get_now
+from utilities.whenever import (
+    HOUR,
+    MINUTE,
+    SECOND,
+    DatePeriod,
+    TimePeriod,
+    ZonedDateTimePeriod,
+    get_now,
+)
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from whenever import Date, ZonedDateTime
+    from whenever import Date
 
     from utilities.types import Dataclass, StrMapping
 
@@ -130,7 +141,7 @@ class TestGetLogRecords:
         assert record.name == str(tmp_path)
         assert record.message == ""
         assert record.level == WARNING
-        assert record.line_num == approx(102, rel=0.1)
+        assert record.line_num == approx(118, rel=0.1)
         assert abs(record.datetime - get_now()) <= MINUTE
         assert record.func_name == "test_main"
         assert record.stack_info is None
@@ -667,6 +678,11 @@ class TestSerializeAndDeserialize:
         )
         assert result == exp_res
 
+    @given(period=zoned_date_time_periods())
+    def test_zoned_date_time_period(self, *, period: ZonedDateTimePeriod) -> None:
+        result = deserialize(serialize(period))
+        assert result == period
+
 
 class TestSerialize:
     @given(text=text_printable())
@@ -729,6 +745,12 @@ class TestSerialize:
     def test_pre_process(self, *, x: int) -> None:
         with raises(_SerializeIntegerError, match="Integer .* is out of range"):
             _ = serialize(x)
+
+    def test_zoned_date_time_period(self) -> None:
+        start = ZonedDateTime(2000, 1, 2, 12, 34, 45, tz=UTC.key)
+        result = serialize(ZonedDateTimePeriod(start, start + HOUR))
+        expected = b'"[zp]2000-01-02T12:34:45,2000-01-02T13:34:45+00:00[UTC]"'
+        assert result == expected
 
 
 class TestObjectHookGetObject:

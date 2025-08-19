@@ -523,7 +523,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.162.2"
+version = "0.162.3"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -848,7 +848,7 @@ memory-profiler = [{ name = "memory-profiler", specifier = ">=0.61.0,<0.62" }]
 more-itertools = [{ name = "more-itertools", specifier = ">=10.7.0,<10.8" }]
 numpy = [{ name = "numpy", specifier = ">=2.3.1,<2.4" }]
 operator = [{ name = "polars" }]
-optuna = [{ name = "optuna", specifier = ">=4.4.0,<4.5" }]
+optuna = [{ name = "optuna", specifier = ">=4.5.0,<4.6" }]
 orjson = [{ name = "orjson", specifier = ">=3.11.0,<3.12" }]
 orjson-test = [{ name = "polars" }]
 polars = [{ name = "polars", specifier = ">=1.32.3,<1.33" }]
@@ -1675,7 +1675,7 @@ wheels = [
 
 [[package]]
 name = "optuna"
-version = "4.4.0"
+version = "4.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
@@ -1686,9 +1686,9 @@ dependencies = [
     { name = "sqlalchemy" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a5/e0/b303190ae8032d12f320a24c42af04038bacb1f3b17ede354dd1044a5642/optuna-4.4.0.tar.gz", hash = "sha256:a9029f6a92a1d6c8494a94e45abd8057823b535c2570819072dbcdc06f1c1da4", size = 467708, upload-time = "2025-06-16T05:13:00.024Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/53/a3/bcd1e5500de6ec794c085a277e5b624e60b4fac1790681d7cdbde25b93a2/optuna-4.5.0.tar.gz", hash = "sha256:264844da16dad744dea295057d8bc218646129c47567d52c35a201d9f99942ba", size = 472338, upload-time = "2025-08-18T06:49:22.402Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5c/5e/068798a8c7087863e7772e9363a880ab13fe55a5a7ede8ec42fab8a1acbb/optuna-4.4.0-py3-none-any.whl", hash = "sha256:fad8d9c5d5af993ae1280d6ce140aecc031c514a44c3b639d8c8658a8b7920ea", size = 395949, upload-time = "2025-06-16T05:12:58.37Z" },
+    { url = "https://files.pythonhosted.org/packages/7f/12/cba81286cbaf0f0c3f0473846cfd992cb240bdcea816bf2ef7de8ed0f744/optuna-4.5.0-py3-none-any.whl", hash = "sha256:5b8a783e84e448b0742501bc27195344a28d2c77bd2feef5b558544d954851b0", size = 400872, upload-time = "2025-08-18T06:49:20.697Z" },
 ]
 
 [[package]]
@@ -2401,14 +2401,14 @@ wheels = [
 
 [[package]]
 name = "pytest-lazy-fixtures"
-version = "1.3.3"
+version = "1.3.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/25/80/6ed742cbab9ccb031ab6e5dbdbc778c218be1275000184619264f4c72f25/pytest_lazy_fixtures-1.3.3.tar.gz", hash = "sha256:2a8a5a97f8646e472e698a65a34c12a40276d12b382dd4d5a501fdb2e1f6c852", size = 34294, upload-time = "2025-08-18T20:57:17.912Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/75/4be4c0bbf8badc4901ffa0594f723179442b282332646f5c210d1d4f05b9/pytest_lazy_fixtures-1.3.4.tar.gz", hash = "sha256:7dd2c110830897b83f041d3a503cbdda10c98ced6dca7602fc43e2f6017c27ed", size = 34713, upload-time = "2025-08-19T09:45:20.666Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/63/d5/31b28b955d96d72ccfd05d4c1cb77ad7fddd972d743a25163f8687ee1622/pytest_lazy_fixtures-1.3.3-py3-none-any.whl", hash = "sha256:b4327c80eb9ed32764fc858979e2aaf7ce0e9cc36ee2586abf338225cd9830c1", size = 8410, upload-time = "2025-08-18T20:57:17.133Z" },
+    { url = "https://files.pythonhosted.org/packages/30/8d/b1143db7ad04d76c5828a79e1e28c87872d39a07e4177485e596e403959c/pytest_lazy_fixtures-1.3.4-py3-none-any.whl", hash = "sha256:3fcb1032f1ffcde367588f4229f7fc6ff64b7a0522c9cd305a08baf39c1c4f5c", size = 8444, upload-time = "2025-08-19T09:45:19.913Z" },
 ]
 
 [[package]]
