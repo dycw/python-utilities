@@ -1425,15 +1425,20 @@ class TestToZonedDateTime:
         expected = date_time.to_tz(time_zone.key)
         assert result.exact_eq(expected)
 
-    @given(date_time=zoned_date_times())
-    def test_callable(self, *, date_time: ZonedDateTime) -> None:
-        assert to_zoned_date_time(lambda: date_time) == date_time
+    @given(date_time=zoned_date_times(), time_zone=timezones())
+    def test_callable(self, *, date_time: ZonedDateTime, time_zone: ZoneInfo) -> None:
+        result = to_zoned_date_time(lambda: date_time, time_zone=time_zone)
+        expected = date_time.to_tz(time_zone.key)
+        assert result.exact_eq(expected)
 
-    def test_none(self) -> None:
-        assert abs(to_zoned_date_time(None) - get_now()) <= SECOND
+    @given(time_zone=timezones())
+    def test_none(self, *, time_zone: ZoneInfo) -> None:
+        result = to_zoned_date_time(None, time_zone=time_zone)
+        assert abs(result - get_now(time_zone)) <= SECOND
 
-    def test_sentinel(self) -> None:
-        assert to_zoned_date_time(sentinel) is sentinel
+    @given(time_zone=timezones())
+    def test_sentinel(self, *, time_zone: ZoneInfo) -> None:
+        assert to_zoned_date_time(sentinel, time_zone=time_zone) is sentinel
 
     @given(date_times=pairs(zoned_date_times()))
     def test_replace_non_sentinel(
