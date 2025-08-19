@@ -1483,6 +1483,7 @@ def year_months(
 def zone_infos(draw: DrawFn, /) -> ZoneInfo:
     """Strategy for generating time-zones."""
     time_zone = draw(timezones())
+    _ = assume(time_zone.key not in {"Etc/UTC", "localtime"})
     with assume_does_not_raise(TimeZoneNotFoundError):
         _ = get_now(time_zone)
     return time_zone
