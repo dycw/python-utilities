@@ -5,6 +5,7 @@ from itertools import pairwise
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, cast
+from zoneinfo import ZoneInfo
 
 from hypothesis import assume, given, settings
 from hypothesis.errors import InvalidArgument
@@ -97,6 +98,7 @@ from utilities.hypothesis import (
     urls,
     versions,
     year_months,
+    zone_infos,
     zoned_date_time_periods,
     zoned_date_times,
 )
@@ -134,6 +136,7 @@ from utilities.whenever import (
     DatePeriod,
     TimePeriod,
     ZonedDateTimePeriod,
+    get_now,
     to_days,
     to_nanoseconds,
     to_py_time_delta,
@@ -141,7 +144,6 @@ from utilities.whenever import (
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
-    from zoneinfo import ZoneInfo
 
     from utilities.sentinel import Sentinel
     from utilities.tempfile import TemporaryDirectory
@@ -1184,6 +1186,14 @@ class TestYearMonths:
         if two_digit:
             assert year_month.on_day(1) >= DATE_TWO_DIGIT_YEAR_MIN
             assert year_month.on_day(28) <= DATE_TWO_DIGIT_YEAR_MAX
+
+
+class TestZoneInfos:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        time_zone = data.draw(zone_infos())
+        assert isinstance(time_zone, ZoneInfo)
+        _ = get_now(time_zone)
 
 
 class TestZonedDateTimePeriods:

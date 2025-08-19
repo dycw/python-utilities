@@ -32,6 +32,7 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
     text,
+    timezones,
     uuids,
 )
 from hypothesis.utils.conventions import not_set
@@ -97,6 +98,7 @@ from utilities.whenever import (
     DatePeriod,
     TimePeriod,
     ZonedDateTimePeriod,
+    get_now,
     to_date_time_delta,
     to_days,
     to_nanoseconds,
@@ -105,6 +107,7 @@ from utilities.zoneinfo import UTC, to_zone_info
 
 if TYPE_CHECKING:
     from collections.abc import Collection, Hashable, Iterable, Iterator
+    from zoneinfo import ZoneInfo
 
     from hypothesis.database import ExampleDatabase
     from libcst import Import, ImportFrom
@@ -1477,6 +1480,18 @@ def year_months(
 
 
 @composite
+def zone_infos(draw: DrawFn, /) -> ZoneInfo:
+    """Strategy for generating time-zones."""
+    zone_info = draw(timezones())
+    with assume_does_not_raise(TimeZoneNotFoundError):
+        _ = get_now(zone_info)
+    return zone_info
+
+
+##
+
+
+@composite
 def zoned_date_time_periods(
     draw: DrawFn,
     /,
@@ -1602,6 +1617,7 @@ __all__ = [
     "urls",
     "versions",
     "year_months",
+    "zone_infos",
     "zoned_date_time_periods",
     "zoned_date_times",
     "zoned_date_times_2000",
