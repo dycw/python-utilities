@@ -838,7 +838,7 @@ def paths(
 @composite
 def _path_parts(draw: DrawFn, /) -> str:
     part = draw(text_ascii(min_size=1, max_size=10))
-    reserved = {"AUX", "NUL", "nuL"}
+    reserved = {"AUX", "NUL", "nuL", "pRn"}
     _ = assume(part not in reserved)
     return part
 
