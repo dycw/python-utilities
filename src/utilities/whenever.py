@@ -1650,7 +1650,9 @@ def to_zoned_date_time(
             if isinstance(date_time.tzinfo, ZoneInfo):
                 date_time_use = ZonedDateTime.from_py_datetime(date_time)
             elif date_time.tzinfo is dt.UTC:
-                return ZonedDateTime.from_py_datetime(date_time.astimezone(UTC))
+                date_time_use = ZonedDateTime.from_py_datetime(
+                    date_time.astimezone(UTC)
+                )
             else:
                 raise ToZonedDateTimeError(date_time=date_time)
         case Callable() as func:
