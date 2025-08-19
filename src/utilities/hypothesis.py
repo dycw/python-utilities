@@ -1482,10 +1482,10 @@ def year_months(
 @composite
 def zone_infos(draw: DrawFn, /) -> ZoneInfo:
     """Strategy for generating time-zones."""
-    zone_info = draw(timezones())
+    time_zone = draw(timezones())
     with assume_does_not_raise(TimeZoneNotFoundError):
-        _ = get_now(zone_info)
-    return zone_info
+        _ = get_now(time_zone)
+    return time_zone
 
 
 ##
