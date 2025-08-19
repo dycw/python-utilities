@@ -141,7 +141,7 @@ class TestGetLogRecords:
         assert record.name == str(tmp_path)
         assert record.message == ""
         assert record.level == WARNING
-        assert record.line_num == approx(102, rel=0.1)
+        assert record.line_num == approx(118, rel=0.1)
         assert abs(record.datetime - get_now()) <= MINUTE
         assert record.func_name == "test_main"
         assert record.stack_info is None
