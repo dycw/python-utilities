@@ -5,18 +5,10 @@ from typing import TYPE_CHECKING, cast
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import (
-    DataObject,
-    data,
-    datetimes,
-    just,
-    sampled_from,
-    timezones,
-)
+from hypothesis.strategies import DataObject, data, datetimes, just, sampled_from
 from pytest import raises
 
-from tests.conftest import SKIPIF_CI_AND_LINUX
-from utilities.hypothesis import zoned_date_times
+from utilities.hypothesis import zone_infos, zoned_date_times
 from utilities.tzdata import HongKong, Tokyo
 from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import (
@@ -35,12 +27,12 @@ if TYPE_CHECKING:
 
 
 class TestToZoneInfo:
-    @given(time_zone=timezones())
+    @given(time_zone=zone_infos())
     def test_zone_info(self, *, time_zone: ZoneInfo) -> None:
         result = to_zone_info(time_zone)
         assert result is time_zone
 
-    @given(data=data(), time_zone=timezones())
+    @given(data=data(), time_zone=zone_infos())
     def test_zoned_date_time(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
         date_time = data.draw(zoned_date_times(time_zone=time_zone))
         result = to_zone_info(date_time)
@@ -50,7 +42,7 @@ class TestToZoneInfo:
         result = to_zone_info("local")
         assert result is LOCAL_TIME_ZONE
 
-    @given(time_zone=timezones())
+    @given(time_zone=zone_infos())
     def test_str(self, *, time_zone: ZoneInfo) -> None:
         result = to_zone_info(cast("TimeZoneLike", time_zone.key))
         assert result is time_zone
@@ -59,7 +51,7 @@ class TestToZoneInfo:
         result = to_zone_info(dt.UTC)
         assert result is UTC
 
-    @given(data=data(), time_zone=timezones())
+    @given(data=data(), time_zone=zone_infos())
     def test_py_zoned_date_time(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
         date_time = data.draw(datetimes(timezones=just(time_zone)))
         result = to_zone_info(date_time)
@@ -79,13 +71,13 @@ class TestToZoneInfo:
 
 
 class TestToTimeZoneName:
-    @given(time_zone=timezones())
+    @given(time_zone=zone_infos())
     def test_zone_info(self, *, time_zone: ZoneInfo) -> None:
         result = to_time_zone_name(time_zone)
         expected = time_zone.key
         assert result == expected
 
-    @given(data=data(), time_zone=timezones())
+    @given(data=data(), time_zone=zone_infos())
     def test_zoned_date_time(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
         date_time = data.draw(zoned_date_times(time_zone=time_zone))
         result = to_time_zone_name(date_time)
@@ -96,8 +88,7 @@ class TestToTimeZoneName:
         result = to_time_zone_name("local")
         assert result == LOCAL_TIME_ZONE_NAME
 
-    @given(time_zone=timezones())
-    @SKIPIF_CI_AND_LINUX
+    @given(time_zone=zone_infos())
     def test_str(self, *, time_zone: ZoneInfo) -> None:
         result = to_time_zone_name(cast("TimeZoneLike", time_zone.key))
         expected = time_zone.key
@@ -108,7 +99,7 @@ class TestToTimeZoneName:
         expected = UTC.key
         assert result == expected
 
-    @given(data=data(), time_zone=timezones())
+    @given(data=data(), time_zone=zone_infos())
     def test_py_zoned_date_time(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
         date_time = data.draw(datetimes(timezones=just(time_zone)))
         result = to_time_zone_name(date_time)

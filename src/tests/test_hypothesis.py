@@ -21,7 +21,6 @@ from hypothesis.strategies import (
     just,
     none,
     sets,
-    timezones,
 )
 from libcst import Import, ImportFrom
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
@@ -35,7 +34,6 @@ from whenever import (
     PlainDateTime,
     Time,
     TimeDelta,
-    TimeZoneNotFoundError,
     YearMonth,
     ZonedDateTime,
 )
@@ -1197,10 +1195,11 @@ class TestZoneInfos:
 
 
 class TestZonedDateTimePeriods:
-    @given(data=data(), time_zone=timezones())
-    def test_main(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
         min_value = data.draw(zoned_date_times() | none())
         max_value = data.draw(zoned_date_times() | none())
+        time_zone = data.draw(zone_infos())
         with assume_does_not_raise(InvalidArgument):
             period = data.draw(
                 zoned_date_time_periods(
@@ -1216,10 +1215,11 @@ class TestZonedDateTimePeriods:
 
 
 class TestZonedDateTimes:
-    @given(data=data(), time_zone=timezones())
-    def test_main(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
         min_value = data.draw(zoned_date_times() | none())
         max_value = data.draw(zoned_date_times() | none())
+        time_zone = data.draw(zone_infos())
         with assume_does_not_raise(InvalidArgument):
             datetime = data.draw(
                 zoned_date_times(
@@ -1235,9 +1235,9 @@ class TestZonedDateTimes:
         if max_value is not None:
             assert datetime <= max_value
 
-    @given(data=data(), time_zone=timezones())
-    def test_examples(self, *, data: DataObject, time_zone: ZoneInfo) -> None:
-        with assume_does_not_raise(TimeZoneNotFoundError):
-            max_value = ZonedDateTime(1, 1, 2, tz=time_zone.key)
+    @given(data=data())
+    def test_examples(self, *, data: DataObject) -> None:
+        time_zone = data.draw(zone_infos())
+        max_value = ZonedDateTime(1, 1, 2, tz=time_zone.key)
         datetime = data.draw(zoned_date_times(max_value=max_value, time_zone=time_zone))
         _ = datetime.py_datetime()
