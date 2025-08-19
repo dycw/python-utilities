@@ -101,7 +101,7 @@ from utilities.whenever import (
     to_days,
     to_nanoseconds,
 )
-from utilities.zoneinfo import UTC, ensure_time_zone
+from utilities.zoneinfo import UTC, to_zone_info
 
 if TYPE_CHECKING:
     from collections.abc import Collection, Hashable, Iterable, Iterator
@@ -1509,7 +1509,7 @@ def zoned_date_times(
 ) -> ZonedDateTime:
     """Strategy for generating zoned date-times."""
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
-    time_zone_ = ensure_time_zone(draw2(draw, time_zone))
+    time_zone_ = to_zone_info(draw2(draw, time_zone))
     match min_value_:
         case None | PlainDateTime():
             ...

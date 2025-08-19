@@ -7,7 +7,8 @@ from zoneinfo import ZoneInfo
 
 from whenever import ZonedDateTime
 
-from utilities.tzlocal import LOCAL_TIME_ZONE
+from utilities.types import TIME_ZONES
+from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 
 if TYPE_CHECKING:
     from utilities.types import TimeZone, TimeZoneLike
@@ -19,13 +20,13 @@ UTC = ZoneInfo("UTC")
 ##
 
 
-def ensure_time_zone(obj: TimeZoneLike, /) -> ZoneInfo:
-    """Ensure the object is a time zone."""
+def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
+    """Convert to a time-zone."""
     match obj:
         case ZoneInfo() as zone_info:
             return zone_info
-        case ZonedDateTime() as datetime:
-            return ZoneInfo(datetime.tz)
+        case ZonedDateTime() as date_time:
+            return ZoneInfo(date_time.tz)
         case "local":
             return LOCAL_TIME_ZONE
         case str() as key:
@@ -33,43 +34,100 @@ def ensure_time_zone(obj: TimeZoneLike, /) -> ZoneInfo:
         case dt.tzinfo() as tzinfo:
             if tzinfo is dt.UTC:
                 return UTC
-            raise _EnsureTimeZoneInvalidTZInfoError(time_zone=obj)
-        case dt.datetime() as datetime:
-            if datetime.tzinfo is None:
-                raise _EnsureTimeZonePlainDateTimeError(datetime=datetime)
-            return ensure_time_zone(datetime.tzinfo)
+            raise _ToZoneInfoInvalidTZInfoError(time_zone=obj)
+        case dt.datetime() as date_time:
+            if date_time.tzinfo is None:
+                raise _ToZoneInfoPlainDateTimeError(date_time=date_time)
+            return to_zone_info(date_time.tzinfo)
         case never:
             assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)
-class EnsureTimeZoneError(Exception): ...
+class ToTimeZoneError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
-class _EnsureTimeZoneInvalidTZInfoError(EnsureTimeZoneError):
+class _ToZoneInfoInvalidTZInfoError(ToTimeZoneError):
     time_zone: dt.tzinfo
 
     @override
     def __str__(self) -> str:
-        return f"Unsupported time zone: {self.time_zone}"
+        return f"Invalid time-zone: {self.time_zone}"
 
 
 @dataclass(kw_only=True, slots=True)
-class _EnsureTimeZonePlainDateTimeError(EnsureTimeZoneError):
-    datetime: dt.datetime
+class _ToZoneInfoPlainDateTimeError(ToTimeZoneError):
+    date_time: dt.datetime
 
     @override
     def __str__(self) -> str:
-        return f"Plain datetime: {self.datetime}"
+        return f"Plain date-time: {self.date_time}"
 
 
 ##
 
 
-def get_time_zone_name(time_zone: TimeZoneLike, /) -> TimeZone:
-    """Get the name of a time zone."""
-    return cast("TimeZone", ensure_time_zone(time_zone).key)
+def to_time_zone_name(obj: TimeZoneLike, /) -> TimeZone:
+    """Convert to a time zone name."""
+    match obj:
+        case ZoneInfo() as zone_info:
+            return cast("TimeZone", zone_info.key)
+        case ZonedDateTime() as date_time:
+            return cast("TimeZone", date_time.tz)
+        case "local":
+            return LOCAL_TIME_ZONE_NAME
+        case str() as time_zone:
+            if time_zone in TIME_ZONES:
+                return time_zone
+            raise _ToTimeZoneNameInvalidKeyError(time_zone=time_zone)
+        case dt.tzinfo() as tzinfo:
+            if tzinfo is dt.UTC:
+                return cast("TimeZone", UTC.key)
+            raise _ToTimeZoneNameInvalidTZInfoError(time_zone=obj)
+        case dt.datetime() as date_time:
+            if date_time.tzinfo is None:
+                raise _ToTimeZoneNamePlainDateTimeError(date_time=date_time)
+            return to_time_zone_name(date_time.tzinfo)
+        case never:
+            assert_never(never)
 
 
-__all__ = ["UTC", "EnsureTimeZoneError", "ensure_time_zone", "get_time_zone_name"]
+@dataclass(kw_only=True, slots=True)
+class ToTimeZoneNameError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToTimeZoneNameInvalidKeyError(ToTimeZoneNameError):
+    time_zone: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid time-zone: {self.time_zone!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToTimeZoneNameInvalidTZInfoError(ToTimeZoneNameError):
+    time_zone: dt.tzinfo
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid time-zone: {self.time_zone}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToTimeZoneNamePlainDateTimeError(ToTimeZoneNameError):
+    date_time: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Plain date-time: {self.date_time}"
+
+
+__all__ = [
+    "UTC",
+    "ToTimeZoneError",
+    "ToTimeZoneNameError",
+    "to_time_zone_name",
+    "to_zone_info",
+]
