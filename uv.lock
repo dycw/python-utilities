@@ -551,6 +551,7 @@ test = [
     { name = "pytest-rng" },
     { name = "pytest-timeout" },
     { name = "pytest-xdist" },
+    { name = "testbook" },
 ]
 
 [package.dev-dependencies]
@@ -783,6 +784,7 @@ requires-dist = [
     { name = "pytest-rng", marker = "extra == 'test'", specifier = ">=1.0.0,<1.1" },
     { name = "pytest-timeout", marker = "extra == 'test'", specifier = ">=2.4.0,<2.5" },
     { name = "pytest-xdist", marker = "extra == 'test'", specifier = ">=3.8.0,<3.9" },
+    { name = "testbook", marker = "extra == 'test'", specifier = ">=0.4.2,<0.5" },
     { name = "typing-extensions", specifier = ">=4.14.0,<4.15" },
     { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
     { name = "whenever", specifier = ">=0.8.7,<0.9" },
