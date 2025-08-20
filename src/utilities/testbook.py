@@ -37,14 +37,14 @@ def build_notebook_tester(
 def _build_test_method(
     path: Path, /, *, delta: Delta | None = None, on_try: bool = False
 ) -> Callable[..., Any]:
+    @testbook(path, execute=True)
     def method(self: Any, tb: Any) -> None:
         _ = (self, tb)  # pragma: no cover
 
     if delta is not None:
         method = throttle(delta=delta, on_try=on_try)(method)
 
-    tbook = testbook(path, execute=True)
-    return tbook(method)
+    return method
 
 
 __all__ = ["build_notebook_tester"]
