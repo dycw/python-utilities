@@ -377,10 +377,9 @@ filterwarnings = [
   "error",
   "ignore:Exception ignored in.* <coroutine object .* at .*>:pytest.PytestUnraisableExceptionWarning",
   "ignore:Exception in thread Thread-.*:pytest.PytestUnhandledThreadExceptionWarning",
-  "ignore:Jupyter is migrating its paths to use standard platformdirs given by the platformdirs library:DeprecationWarning",  # jupyter
+  "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",  # jupyter
   "ignore:ResourceTracker called reentrantly for resource cleanup, which is unsupported:UserWarning",
   "ignore:The garbage collector is trying to clean up non-checked-in connection <AdaptedConnection <Connection(.*)>:RuntimeWarning",  # sqlalchemy
-  "ignore:There is no current event loop:DeprecationWarning",  # eventkit
   "ignore:Using fork.* can cause Polars to deadlock in the child process:RuntimeWarning",  # polars/pqdm
   "ignore:coroutine 'AsyncConnection.close' was never awaited:RuntimeWarning",
   "ignore:loop is closed:ResourceWarning",  # redis
