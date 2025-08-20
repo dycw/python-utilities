@@ -74,8 +74,14 @@ class ParseNoneError(Exception):
         return f"Unable to parse null value; got {self.text!r}"
 
 
+##
+
+
 def pascal_case(text: str, /) -> str:
     """Convert text to pascal case."""
+    snake = snake_case(text)
+    parts = snake.split("_")
+    return "".join(t.capitalize() for t in parts if t)
 
 
 ##

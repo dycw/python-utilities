@@ -30,6 +30,7 @@ from utilities.text import (
     join_strs,
     parse_bool,
     parse_none,
+    pascal_case,
     repr_encode,
     secret_str,
     snake_case,
@@ -102,8 +103,54 @@ class TestParseNone:
 
 
 class TestPascalCase:
-    def test_main(self) -> None:
-        pass
+    @mark.parametrize(
+        ("text", "expected"),
+        [
+            param("API", "api"),
+            param("APIResponse", "api_response"),
+            param("ApplicationController", "application_controller"),
+            param("Area51Controller", "area51_controller"),
+            param("FreeBSD", "free_bsd"),
+            param("HTML", "html"),
+            param("HTMLTidy", "html_tidy"),
+            param("HTMLTidyGenerator", "html_tidy_generator"),
+            param("HTMLVersion", "html_version"),
+            param("NoHTML", "no_html"),
+            param("One   Two", "one_two"),
+            param("One  Two", "one_two"),
+            param("One Two", "one_two"),
+            param("OneTwo", "one_two"),
+            param("One_Two", "one_two"),
+            param("One__Two", "one_two"),
+            param("One___Two", "one_two"),
+            param("Product", "product"),
+            param("SpecialGuest", "special_guest"),
+            param("Text", "text"),
+            param("Text123", "text123"),
+            param("_APIResponse_", "_api_response_"),
+            param("_API_", "_api_"),
+            param("__APIResponse__", "_api_response_"),
+            param("__API__", "_api_"),
+            param("__impliedVolatility_", "_implied_volatility_"),
+            param("_itemID", "_item_id"),
+            param("_lastPrice__", "_last_price_"),
+            param("_symbol", "_symbol"),
+            param("aB", "a_b"),
+            param("changePct", "change_pct"),
+            param("changePct_", "change_pct_"),
+            param("impliedVolatility", "implied_volatility"),
+            param("lastPrice", "last_price"),
+            param("memMB", "mem_mb"),
+            param("sizeX", "size_x"),
+            param("symbol", "symbol"),
+            param("testNTest", "test_n_test"),
+            param("text", "text"),
+            param("text123", "text123"),
+        ],
+    )
+    def test_main(self, *, text: str, expected: str) -> None:
+        result = pascal_case(text)
+        assert result == expected
 
 
 class TestReprEncode:
