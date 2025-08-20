@@ -79,32 +79,17 @@ class ParseNoneError(Exception):
 
 def pascal_case(text: str, /) -> str:
     """Convert text to pascal case."""
-    parts = ACRONYM_SPLIT_PATTERN.findall(text)
+    parts = _SPLIT_TEXT.findall(text)
     parts = [p for p in parts if len(p) >= 1]
     parts = list(map(_pascal_case_one, parts))
     return "".join(parts)
-    assert 0, parts
-    # assert 0, _SPLIT_PATTERN.split(text)
-    assert 0, ACRONYM_SPLIT_PATTERN.findall(text)
-    if not text.isupper():
-        text = _ACRONYM_PATTERN.sub(_pascal_case_one, text)
-        assert 0, text
-        text = "".join(s for s in _SPLIT_PATTERN.split(text) if s)
-        assert 0, text
-    while search("__", text):
-        text = text.replace("__", "_")
-    return text
 
 
 def _pascal_case_one(text: str, /) -> str:
     return text if text.isupper() else text.title()
-    return match.group(0).title()
-    if text.isupper():
-        return text
-    return text.capitalize()
 
 
-ACRONYM_SPLIT_PATTERN = re.compile(
+_PASCAL_PATTERN = re.compile(
     r"""
     [A-Z]+(?=[A-Z][a-z]) | # all caps, followed by Upper+lower (API in APIResponse)
     [A-Z]?[a-z]+         | # normal words (Response)
@@ -113,6 +98,7 @@ ACRONYM_SPLIT_PATTERN = re.compile(
     """,
     re.VERBOSE,
 )
+
 
 ##
 
@@ -127,23 +113,51 @@ def repr_encode(obj: Any, /) -> bytes:
 
 def snake_case(text: str, /) -> str:
     """Convert text into snake case."""
+    leading = bool(search(r"^_", text))
+    trailing = bool(search(r"_$", text))
+    # trailing = (len(parts) >= 1) and (parts[-1] == "")
+    parts = _SPLIT_TEXT.findall(text)
+    # leading = (len(parts) >= 1) and (parts[0] == "")
+    # trailing = (len(parts) >= 1) and (parts[-1] == "")
+    # assert 0, [text, parts, leading, trailing]
+    parts = [p for p in parts if len(p) >= 1]
+    # assert 0, parts
+    # parts = list(map(_snake_case_one, parts))
+    # assert 0, parts
+    parts = list(chain([""] if leading else [], parts, [""] if trailing else []))
+    # assert 0, parts
+    out = "_".join(parts).lower()
+    # assert 0, out
+    return "_".join(parts).lower()
     text = _SPACES_PATTERN.sub("", text)
     if not text.isupper():
-        text = _ACRONYM_PATTERN.sub(_snake_case_title, text)
+        text = _ACRONYM_PATTERN.sub(_snake_case_one, text)
         text = "_".join(s for s in _SPLIT_PATTERN.split(text) if s)
     while search("__", text):
         text = text.replace("__", "_")
     return text.lower()
 
 
-def _snake_case_title(match: Match[str], /) -> str:
-    return match.group(0).title()
+def _snake_case_one(text: str, /) -> str:
+    return text.lower()
 
 
 _ACRONYM_PATTERN = re.compile(r"([A-Z\d]+)(?=[A-Z\d]|$)")
 _SPACES_PATTERN = re.compile(r"\s+")
 _SPLIT_PATTERN = re.compile(r"([\-_]*[A-Z][^A-Z]*[\-_]*)")
 
+_SPLIT_TEXT = re.compile(
+    r"""
+    # [A-Z]+(?=[A-Z][a-z]) |  # all caps followed by Upper+lower (API in APIResponse)
+    # [A-Z]?[a-z]+         |  # normal words (Response)
+    # [A-Z]+               |  # consecutive caps at end or standalone (ID, URL)
+    # \d+                  |  # numbers
+    [A-Z]+(?=[A-Z][a-z0-9]) |  # all caps followed by Upper+lower or digit (API in APIResponse2)
+    [A-Z]?[a-z]+[0-9]*       |  # normal words with optional trailing digits (Text123)
+    [A-Z]+[0-9]*             |  # consecutive caps with optional trailing digits (ID2)
+    """,
+    re.VERBOSE,
+)
 
 ##
 

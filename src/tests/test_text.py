@@ -139,6 +139,7 @@ class TestPascalAndSnakeCase:
             param("SpecialGuest", "SpecialGuest", "special_guest"),
             param("Text", "Text", "text"),
             param("Text123", "Text123", "text123"),
+            param("Text123Text456", "Text123Text456", "text123_text456"),
             param("_APIResponse_", "APIResponse", "_api_response_"),
             param("_API_", "API", "_api_"),
             param("__APIResponse__", "APIResponse", "_api_response_"),
