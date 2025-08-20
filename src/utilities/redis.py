@@ -812,7 +812,7 @@ def _handle_message[T](
             queue.put_nowait(transformed)
     except Exception as error:  # noqa: BLE001
         if error_filter is not None:
-            error_filter(message, error)
+            error_filter(transformed, error)
 
 
 class _RedisMessage(TypedDict):
