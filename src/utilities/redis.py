@@ -781,7 +781,8 @@ async def _subscribe_core[T](
                     filter_=filter_,
                     error_filter=error_filter,
                 )
-            await sleep_td(sleep)
+            else:
+                await sleep_td(sleep)
 
 
 def _is_message(
