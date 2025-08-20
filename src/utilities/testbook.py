@@ -34,7 +34,7 @@ def _build_test_method(
     path: Path, /, *, delta: Delta | None = None, on_try: bool = False
 ) -> Callable[..., Any]:
     def method(self: Any, tb: Any) -> None:
-        _ = (self, tb)
+        _ = (self, tb)  # pragma: no cover
 
     if delta is not None:
         method = throttle(delta=delta, on_try=on_try)(method)
