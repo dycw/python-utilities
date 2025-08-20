@@ -20,7 +20,6 @@ from hypothesis.strategies import (
     sets,
     tuples,
 )
-from orjson import JSONDecodeError
 from polars import Object, String, UInt64
 from pytest import approx, mark, param, raises
 from whenever import ZonedDateTime
@@ -73,6 +72,7 @@ from utilities.orjson import (
     OrjsonFormatter,
     OrjsonLogRecord,
     Unserializable,
+    _DeserializeInvalidJSONError,
     _DeserializeNoObjectsError,
     _DeserializeObjectNotFoundError,
     _object_hook_get_object,
@@ -428,7 +428,7 @@ class TestGetLogRecords:
         assert result.num_lines_error == 1
         assert result.missing == set()
         assert len(result.other_errors) == 1
-        assert isinstance(one(result.other_errors), JSONDecodeError)
+        assert isinstance(one(result.other_errors), _DeserializeInvalidJSONError)
 
 
 class TestOrjsonFormatter:
@@ -751,6 +751,14 @@ class TestSerialize:
         result = serialize(ZonedDateTimePeriod(start, start + HOUR))
         expected = b'"[zp]2000-01-02T12:34:45,2000-01-02T13:34:45+00:00[UTC]"'
         assert result == expected
+
+
+class TestDeserialize:
+    def test_error_invalid_json(self) -> None:
+        with raises(
+            _DeserializeInvalidJSONError, match="Invalid JSON: b'invalid json'"
+        ):
+            _ = deserialize(b"invalid json")
 
 
 class TestObjectHookGetObject:

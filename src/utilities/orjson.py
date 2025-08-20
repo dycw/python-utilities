@@ -20,6 +20,7 @@ from orjson import (
     OPT_PASSTHROUGH_DATACLASS,
     OPT_PASSTHROUGH_DATETIME,
     OPT_SORT_KEYS,
+    JSONDecodeError,
     dumps,
     loads,
 )
@@ -371,13 +372,22 @@ def deserialize(
     redirects: Mapping[str, type[Any]] | None = None,
 ) -> Any:
     """Deserialize an object."""
+    try:
+        obj = loads(data)
+    except JSONDecodeError:
+        raise _DeserializeInvalidJSONError(data=data) from None
     return _object_hook(
-        loads(data),
+        obj,
         data=data,
         dataclass_hook=dataclass_hook,
         objects=objects,
         redirects=redirects,
     )
+
+
+@dataclass(kw_only=True, slots=True)
+class DeerializeError(Exception):
+    obj: Any
 
 
 (
@@ -739,11 +749,19 @@ def _object_hook_get_object(
 @dataclass(kw_only=True, slots=True)
 class DeserializeError(Exception):
     data: bytes
-    qualname: str
+
+
+@dataclass(kw_only=True, slots=True)
+class _DeserializeInvalidJSONError(DeserializeError):
+    @override
+    def __str__(self) -> str:
+        return f"Invalid JSON: {self.data!r}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _DeserializeNoObjectsError(DeserializeError):
+    qualname: str
+
     @override
     def __str__(self) -> str:
         return f"Objects required to deserialize {self.qualname!r} from {self.data!r}"
@@ -751,6 +769,8 @@ class _DeserializeNoObjectsError(DeserializeError):
 
 @dataclass(kw_only=True, slots=True)
 class _DeserializeObjectNotFoundError(DeserializeError):
+    qualname: str
+
     @override
     def __str__(self) -> str:
         return (
