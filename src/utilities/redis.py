@@ -691,7 +691,7 @@ def subscribe[T](
     sleep: Delta = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[Task[None]]: ...
 @enhanced_async_context_manager
-async def subscribe[T, U](
+async def subscribe[T](
     redis: Redis,
     channels: MaybeIterable[str],
     queue: Queue[_RedisMessage] | Queue[bytes] | Queue[T],
