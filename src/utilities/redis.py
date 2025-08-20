@@ -702,10 +702,7 @@ async def subscribe[T](
         case "bytes":
             transform = cast("Any", itemgetter("data"))
         case "text":
-
-            def transform(message: _RedisMessage, /) -> str:  # pyright: ignore[reportRedeclaration]
-                return message["data"].decode()
-
+            transform = cast("Any", _decoded_data)
         case Callable() as deserialize:
 
             def transform(message: _RedisMessage, /) -> T:
@@ -737,16 +734,22 @@ async def subscribe[T](
             await task
 
 
-async def _subscribe_core(
+def _decoded_data(message: _RedisMessage, /) -> str:
+    return message["data"].decode()
+
+
+async def _subscribe_core[T](
     redis: Redis,
     channels: MaybeIterable[str],
-    transform: Callable[[_RedisMessage], Any],
+    transform: Callable[[_RedisMessage], T],
     queue: Queue[Any],
     /,
     *,
     timeout: Delta | None = _SUBSCRIBE_TIMEOUT,
+    error_transform: Callable[[_RedisMessage, Exception], None] | None = None,
+    filter_: Callable[[T], bool] | None = None,
+    error_filter: Callable[[T, Exception], None] | None = None,
     sleep: Delta = _SUBSCRIBE_SLEEP,
-    filter_: Callable[[Any], bool] | None = None,
 ) -> None:
     timeout_use = (  # skipif-ci-and-not-linux
         None if timeout is None else to_seconds(timeout)
@@ -758,11 +761,15 @@ async def _subscribe_core(
         while True:
             message = await pubsub.get_message(timeout=timeout_use)
             if is_subscribe_message(message):
-                transformed = transform(message)
-                if (filter_ is None) or filter_(transformed):
-                    queue.put_nowait(transformed)
-            else:
-                await sleep_td(sleep)
+                _handle_message(
+                    message,
+                    transform,
+                    queue,
+                    error_transform=error_transform,
+                    filter_=filter_,
+                    error_filter=error_filter,
+                )
+            await sleep_td(sleep)
 
 
 def _is_message(
@@ -779,6 +786,33 @@ def _is_message(
         and ("data" in message)
         and isinstance(message["data"], bytes)
     )
+
+
+def _handle_message[T](
+    message: _RedisMessage,
+    transform: Callable[[_RedisMessage], T],
+    queue: Queue[Any],
+    /,
+    *,
+    error_transform: Callable[[_RedisMessage, Exception], None] | None = None,
+    filter_: Callable[[T], bool] | None = None,
+    error_filter: Callable[[T, Exception], None] | None = None,
+) -> None:
+    try:
+        transformed = transform(message)
+    except Exception as error:  # noqa: BLE001
+        if error_transform is not None:
+            error_transform(message, error)
+        return
+    if filter_ is None:
+        queue.put_nowait(transformed)
+        return
+    try:
+        if filter_(transformed):
+            queue.put_nowait(transformed)
+    except Exception as error:  # noqa: BLE001
+        if error_filter is not None:
+            error_filter(message, error)
 
 
 class _RedisMessage(TypedDict):

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from asyncio import Queue
 from itertools import chain, repeat
-from typing import TYPE_CHECKING, Any
+from logging import getLogger
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.strategies import (
@@ -15,18 +16,22 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import mark, param, raises
+from pytest import LogCaptureFixture, fixture, mark, param, raises
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_objects.objects import objects
 from utilities.asyncio import get_items_nowait, sleep_td
+from utilities.functions import get_class_name, identity
 from utilities.hypothesis import int64s, pairs, text_ascii
+from utilities.iterables import one
 from utilities.operator import is_equal
 from utilities.orjson import deserialize, serialize
 from utilities.redis import (
     PublishError,
+    _decoded_data,
+    _handle_message,
     _is_message,
     _RedisMessage,
     publish,
@@ -48,6 +53,98 @@ if TYPE_CHECKING:
 
 
 _PUB_SUB_SLEEP: TimeDelta = 0.1 * SECOND
+
+
+@fixture
+def queue() -> Queue[Any]:
+    return Queue()
+
+
+class TestHandleMessage:
+    message: ClassVar[_RedisMessage] = _RedisMessage(
+        type="message", pattern=None, channel=b"channel", data=b"data"
+    )
+
+    def test_main(self, *, queue: Queue[Any]) -> None:
+        _handle_message(self.message, identity, queue)
+        assert queue.qsize() == 1
+        assert queue.get_nowait() == self.message
+
+    def test_transform(self, *, queue: Queue[Any]) -> None:
+        _handle_message(self.message, _decoded_data, queue)
+        assert queue.qsize() == 1
+        assert queue.get_nowait() == "data"
+
+    def test_error_transform_no_handler(self, *, queue: Queue[Any]) -> None:
+        class CustomError(Exception): ...
+
+        def transform(message: _RedisMessage, /) -> None:
+            raise CustomError(message)
+
+        _handle_message(self.message, transform, queue)
+        assert queue.empty()
+
+    def test_error_transform_with_handler(
+        self, *, caplog: LogCaptureFixture, queue: Queue[Any]
+    ) -> None:
+        logger = getLogger(name := unique_str())
+
+        class CustomError(Exception): ...
+
+        def transform(message: _RedisMessage, /) -> None:
+            raise CustomError(message)
+
+        def error_transform(message: _RedisMessage, error: Exception, /) -> None:
+            logger.warning("Got %r transforming %r", get_class_name(error), message)
+
+        _handle_message(self.message, transform, queue, error_transform=error_transform)
+        assert queue.empty()
+        record = one(r for r in caplog.records if r.name == name)
+        assert record.message == f"Got 'CustomError' transforming {self.message}"
+
+    @mark.parametrize(
+        ("min_length", "expected"),
+        [param(3, False), param(4, False), param(5, True), param(6, True)],
+    )
+    def test_filter(
+        self, *, queue: Queue[Any], min_length: int, expected: bool
+    ) -> None:
+        _handle_message(
+            self.message,
+            _decoded_data,
+            queue,
+            filter_=lambda text: len(text) >= min_length,
+        )
+        result = queue.empty()
+        assert result is expected
+
+    def test_error_filter_no_handler(self, *, queue: Queue[Any]) -> None:
+        _handle_message(
+            self.message,
+            identity,
+            queue,
+            filter_=lambda text: cast("Any", text)["invalid"],
+        )
+        assert queue.empty()
+
+    def test_error_filter_with_handler(
+        self, *, caplog: LogCaptureFixture, queue: Queue[Any]
+    ) -> None:
+        logger = getLogger(name := unique_str())
+
+        def error_filter(message: _RedisMessage, error: Exception, /) -> None:
+            logger.warning("Got %r filtering %r", get_class_name(error), message)
+
+        _handle_message(
+            self.message,
+            identity,
+            queue,
+            filter_=lambda text: cast("Any", text)["invalid"],
+            error_filter=error_filter,
+        )
+        assert queue.empty()
+        record = one(r for r in caplog.records if r.name == name)
+        assert record.message == f"Got 'KeyError' filtering {self.message}"
 
 
 class TestIsMessage:
