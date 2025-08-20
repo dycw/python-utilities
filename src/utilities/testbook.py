@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from utilities.types import Delta, PathLike
 
 
-def build_test_class(
+def build_notebook_tester(
     path: PathLike, /, *, throttle: Delta | None = None, on_try: bool = False
 ) -> object:
     """Build the notebook test class."""
@@ -43,4 +43,4 @@ def _build_test_method(
     return tbook(method)
 
 
-__all__ = ["build_test_class"]
+__all__ = ["build_notebook_tester"]

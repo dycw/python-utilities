@@ -5,16 +5,16 @@ from typing import TYPE_CHECKING
 
 from pytest import mark, param
 
-from utilities.testbook import build_test_class
+from utilities.testbook import build_notebook_tester
 from utilities.whenever import HOUR
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 
-class TestBuildTestClass:
+class TestBuildNotebookTester:
     @mark.parametrize("throttle", [param(HOUR), param(None)])
     def test_main(self, *, tmp_path: Path, throttle: bool) -> None:
         data = {"cells": []}
         _ = tmp_path.joinpath("notebook.ipynb").write_text(dumps(data))
-        _ = build_test_class(tmp_path, throttle=throttle)
+        _ = build_notebook_tester(tmp_path, throttle=throttle)
