@@ -79,10 +79,40 @@ class ParseNoneError(Exception):
 
 def pascal_case(text: str, /) -> str:
     """Convert text to pascal case."""
-    snake = snake_case(text)
-    parts = snake.split("_")
-    return "".join(t.capitalize() for t in parts if t)
+    parts = ACRONYM_SPLIT_PATTERN.findall(text)
+    parts = [p for p in parts if len(p) >= 1]
+    parts = list(map(_pascal_case_one, parts))
+    return "".join(parts)
+    assert 0, parts
+    # assert 0, _SPLIT_PATTERN.split(text)
+    assert 0, ACRONYM_SPLIT_PATTERN.findall(text)
+    if not text.isupper():
+        text = _ACRONYM_PATTERN.sub(_pascal_case_one, text)
+        assert 0, text
+        text = "".join(s for s in _SPLIT_PATTERN.split(text) if s)
+        assert 0, text
+    while search("__", text):
+        text = text.replace("__", "_")
+    return text
 
+
+def _pascal_case_one(text: str, /) -> str:
+    return text if text.isupper() else text.title()
+    return match.group(0).title()
+    if text.isupper():
+        return text
+    return text.capitalize()
+
+
+ACRONYM_SPLIT_PATTERN = re.compile(
+    r"""
+    [A-Z]+(?=[A-Z][a-z]) | # all caps, followed by Upper+lower (API in APIResponse)
+    [A-Z]?[a-z]+         | # normal words (Response)
+    [A-Z]+               | # consecutive caps at end or standalone (ID, URL)
+    \d+                  | # numbers
+    """,
+    re.VERBOSE,
+)
 
 ##
 
@@ -113,6 +143,7 @@ def _snake_case_title(match: Match[str], /) -> str:
 _ACRONYM_PATTERN = re.compile(r"([A-Z\d]+)(?=[A-Z\d]|$)")
 _SPACES_PATTERN = re.compile(r"\s+")
 _SPLIT_PATTERN = re.compile(r"([\-_]*[A-Z][^A-Z]*[\-_]*)")
+
 
 ##
 

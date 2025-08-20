@@ -102,63 +102,67 @@ class TestParseNone:
             _ = parse_none(text)
 
 
-class TestPascalCase:
-    @mark.parametrize(
-        ("text", "expected"),
-        [
-            param("API", "api"),
-            param("APIResponse", "api_response"),
-            param("ApplicationController", "application_controller"),
-            param("Area51Controller", "area51_controller"),
-            param("FreeBSD", "free_bsd"),
-            param("HTML", "html"),
-            param("HTMLTidy", "html_tidy"),
-            param("HTMLTidyGenerator", "html_tidy_generator"),
-            param("HTMLVersion", "html_version"),
-            param("NoHTML", "no_html"),
-            param("One   Two", "one_two"),
-            param("One  Two", "one_two"),
-            param("One Two", "one_two"),
-            param("OneTwo", "one_two"),
-            param("One_Two", "one_two"),
-            param("One__Two", "one_two"),
-            param("One___Two", "one_two"),
-            param("Product", "product"),
-            param("SpecialGuest", "special_guest"),
-            param("Text", "text"),
-            param("Text123", "text123"),
-            param("_APIResponse_", "_api_response_"),
-            param("_API_", "_api_"),
-            param("__APIResponse__", "_api_response_"),
-            param("__API__", "_api_"),
-            param("__impliedVolatility_", "_implied_volatility_"),
-            param("_itemID", "_item_id"),
-            param("_lastPrice__", "_last_price_"),
-            param("_symbol", "_symbol"),
-            param("aB", "a_b"),
-            param("changePct", "change_pct"),
-            param("changePct_", "change_pct_"),
-            param("impliedVolatility", "implied_volatility"),
-            param("lastPrice", "last_price"),
-            param("memMB", "mem_mb"),
-            param("sizeX", "size_x"),
-            param("symbol", "symbol"),
-            param("testNTest", "test_n_test"),
-            param("text", "text"),
-            param("text123", "text123"),
-        ],
-    )
-    def test_main(self, *, text: str, expected: str) -> None:
-        result = pascal_case(text)
-        assert result == expected
-
-
 class TestReprEncode:
     @given(n=integers())
     def test_main(self, *, n: int) -> None:
         result = repr_encode(n)
         expected = repr(n).encode()
         assert result == expected
+
+
+class TestPascalAndSnakeCase:
+    @mark.parametrize(
+        ("text", "exp_pascal", "exp_snake"),
+        [
+            param("API", "API", "api"),
+            param("APIResponse", "APIResponse", "api_response"),
+            param(
+                "ApplicationController",
+                "ApplicationController",
+                "application_controller",
+            ),
+            param("Area51Controller", "Area51Controller", "area51_controller"),
+            param("FreeBSD", "FreeBSD", "free_bsd"),
+            param("HTML", "HTML", "html"),
+            param("HTMLTidy", "HTMLTidy", "html_tidy"),
+            param("HTMLTidyGenerator", "HTMLTidyGenerator", "html_tidy_generator"),
+            param("HTMLVersion", "HTMLVersion", "html_version"),
+            param("NoHTML", "NoHTML", "no_html"),
+            param("One   Two", "OneTwo", "one_two"),
+            param("One  Two", "OneTwo", "one_two"),
+            param("One Two", "OneTwo", "one_two"),
+            param("OneTwo", "OneTwo", "one_two"),
+            param("One_Two", "OneTwo", "one_two"),
+            param("One__Two", "OneTwo", "one_two"),
+            param("One___Two", "OneTwo", "one_two"),
+            param("Product", "Product", "product"),
+            param("SpecialGuest", "SpecialGuest", "special_guest"),
+            param("Text", "Text", "text"),
+            param("Text123", "Text123", "text123"),
+            param("_APIResponse_", "APIResponse", "_api_response_"),
+            param("_API_", "API", "_api_"),
+            param("__APIResponse__", "APIResponse", "_api_response_"),
+            param("__API__", "API", "_api_"),
+            param("__impliedVolatility_", "ImpliedVolatility", "_implied_volatility_"),
+            param("_itemID", "ItemID", "_item_id"),
+            param("_lastPrice__", "LastPrice", "_last_price_"),
+            param("_symbol", "Symbol", "_symbol"),
+            param("aB", "AB", "a_b"),
+            param("changePct", "ChangePct", "change_pct"),
+            param("changePct_", "ChangePct", "change_pct_"),
+            param("impliedVolatility", "ImpliedVolatility", "implied_volatility"),
+            param("lastPrice", "LastPrice", "last_price"),
+            param("memMB", "MemMB", "mem_mb"),
+            param("sizeX", "SizeX", "size_x"),
+            param("symbol", "Symbol", "symbol"),
+            param("testNTest", "TestNTest", "test_n_test"),
+            param("text", "Text", "text"),
+            param("text123", "Text123", "text123"),
+        ],
+    )
+    def test_main(self, *, text: str, exp_pascal: str, exp_snake: str) -> None:
+        assert pascal_case(text) == exp_pascal
+        assert snake_case(text) == exp_snake
 
 
 class TestSecretStr:
@@ -173,57 +177,6 @@ class TestSecretStr:
         assert not isinstance(s.str, secret_str)
         assert repr(s.str) == repr("text")
         assert str(s.str) == "text"
-
-
-class TestSnakeCase:
-    @mark.parametrize(
-        ("text", "expected"),
-        [
-            param("API", "api"),
-            param("APIResponse", "api_response"),
-            param("ApplicationController", "application_controller"),
-            param("Area51Controller", "area51_controller"),
-            param("FreeBSD", "free_bsd"),
-            param("HTML", "html"),
-            param("HTMLTidy", "html_tidy"),
-            param("HTMLTidyGenerator", "html_tidy_generator"),
-            param("HTMLVersion", "html_version"),
-            param("NoHTML", "no_html"),
-            param("One   Two", "one_two"),
-            param("One  Two", "one_two"),
-            param("One Two", "one_two"),
-            param("OneTwo", "one_two"),
-            param("One_Two", "one_two"),
-            param("One__Two", "one_two"),
-            param("One___Two", "one_two"),
-            param("Product", "product"),
-            param("SpecialGuest", "special_guest"),
-            param("Text", "text"),
-            param("Text123", "text123"),
-            param("_APIResponse_", "_api_response_"),
-            param("_API_", "_api_"),
-            param("__APIResponse__", "_api_response_"),
-            param("__API__", "_api_"),
-            param("__impliedVolatility_", "_implied_volatility_"),
-            param("_itemID", "_item_id"),
-            param("_lastPrice__", "_last_price_"),
-            param("_symbol", "_symbol"),
-            param("aB", "a_b"),
-            param("changePct", "change_pct"),
-            param("changePct_", "change_pct_"),
-            param("impliedVolatility", "implied_volatility"),
-            param("lastPrice", "last_price"),
-            param("memMB", "mem_mb"),
-            param("sizeX", "size_x"),
-            param("symbol", "symbol"),
-            param("testNTest", "test_n_test"),
-            param("text", "text"),
-            param("text123", "text123"),
-        ],
-    )
-    def test_main(self, *, text: str, expected: str) -> None:
-        result = snake_case(text)
-        assert result == expected
 
 
 class TestSplitKeyValuePairs:
