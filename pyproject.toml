@@ -31,7 +31,7 @@ core = [
   "atomicwrites >=1.4.1, <1.5",
   "typing-extensions >=4.14.1, <4.15",
   "tzlocal >=5.3.1, <5.4",
-  "whenever >=0.8.7, <0.9",
+  "whenever >=0.8.8, <0.9",
 ]
 cryptography = [
   "cryptography >=45.0.4, <45.1",
@@ -208,6 +208,9 @@ sqlalchemy-test = [
 statsmodels = [
   "statsmodels >=0.14.4, <0.15",
 ]
+testbook = [
+  "testbook >=0.4.2, <0.5",
+]
 typed-settings = [
   "typed-settings >=25.0.0, <25.1",
 ]
@@ -222,12 +225,12 @@ dependencies = [
   "atomicwrites >=1.4.1, <1.5",
   "typing-extensions >=4.14.0, <4.15",
   "tzlocal >=5.3.1, <5.4",
-  "whenever >=0.8.7, <0.9",
+  "whenever >=0.8.8, <0.9",
 ]
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.162.4"
+version = "0.162.5"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -252,6 +255,7 @@ test = [
   "pytest-rng >=1.0.0, <1.1",
   "pytest-timeout >=2.4.0, <2.5",
   "pytest-xdist >=3.8.0, <3.9",
+  "testbook >=0.4.2, <0.5",
 ]
 
 [project.scripts]
@@ -259,7 +263,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.162.4"
+current_version = "0.162.5"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -373,9 +377,9 @@ filterwarnings = [
   "error",
   "ignore:Exception ignored in.* <coroutine object .* at .*>:pytest.PytestUnraisableExceptionWarning",
   "ignore:Exception in thread Thread-.*:pytest.PytestUnhandledThreadExceptionWarning",
+  "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",  # jupyter
   "ignore:ResourceTracker called reentrantly for resource cleanup, which is unsupported:UserWarning",
   "ignore:The garbage collector is trying to clean up non-checked-in connection <AdaptedConnection <Connection(.*)>:RuntimeWarning",  # sqlalchemy
-  "ignore:There is no current event loop:DeprecationWarning",  # eventkit
   "ignore:Using fork.* can cause Polars to deadlock in the child process:RuntimeWarning",  # polars/pqdm
   "ignore:coroutine 'AsyncConnection.close' was never awaited:RuntimeWarning",
   "ignore:loop is closed:ResourceWarning",  # redis
