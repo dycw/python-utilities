@@ -74,6 +74,10 @@ class ParseNoneError(Exception):
         return f"Unable to parse null value; got {self.text!r}"
 
 
+def pascal_case(text: str, /) -> str:
+    """Convert text to pascal case."""
+
+
 ##
 
 
@@ -83,11 +87,6 @@ def repr_encode(obj: Any, /) -> bytes:
 
 
 ##
-
-
-_ACRONYM_PATTERN = re.compile(r"([A-Z\d]+)(?=[A-Z\d]|$)")
-_SPACES_PATTERN = re.compile(r"\s+")
-_SPLIT_PATTERN = re.compile(r"([\-_]*[A-Z][^A-Z]*[\-_]*)")
 
 
 def snake_case(text: str, /) -> str:
@@ -104,6 +103,10 @@ def snake_case(text: str, /) -> str:
 def _snake_case_title(match: Match[str], /) -> str:
     return match.group(0).title()
 
+
+_ACRONYM_PATTERN = re.compile(r"([A-Z\d]+)(?=[A-Z\d]|$)")
+_SPACES_PATTERN = re.compile(r"\s+")
+_SPLIT_PATTERN = re.compile(r"([\-_]*[A-Z][^A-Z]*[\-_]*)")
 
 ##
 
@@ -503,6 +506,7 @@ __all__ = [
     "join_strs",
     "parse_bool",
     "parse_none",
+    "pascal_case",
     "repr_encode",
     "secret_str",
     "snake_case",

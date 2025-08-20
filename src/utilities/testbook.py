@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 
 def build_notebook_tester(
     path: PathLike, /, *, throttle: Delta | None = None, on_try: bool = False
-) -> object:
-    """Build the notebook test class."""
+) -> type[Any]:
+    """Build the notebook tester class."""
     name = f"Test{Path(path).stem}"
     notebooks = [
         path_i
