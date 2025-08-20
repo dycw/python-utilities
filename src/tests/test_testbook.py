@@ -13,12 +13,11 @@ from utilities.whenever import HOUR
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from utilities.types import Delta, StrMapping
+    from utilities.types import Delta
 
 
 class TestBuildNotebookTester:
-    data: ClassVar[StrMapping] = {"cells": []}
-    text: ClassVar[str] = dumps(data)
+    text: ClassVar[str] = dumps({"cells": []})
 
     def test_main(self, *, tmp_path: Path) -> None:
         mapping = {
