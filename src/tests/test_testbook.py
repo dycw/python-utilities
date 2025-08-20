@@ -20,9 +20,17 @@ class TestBuildNotebookTester:
     text: ClassVar[str] = dumps(data)
 
     def test_main(self, *, tmp_path: Path) -> None:
-        _ = tmp_path.joinpath("notebook.ipynb").write_text(self.text)
+        mapping = {
+            "notebook": "test_notebook",
+            "notebook_with_underscores": "test_notebook_with_underscores",
+            "notebook-with-dashes": "test_notebook_with_dashes",
+        }
+        for stem in mapping:
+            _ = tmp_path.joinpath(f"{stem}.ipynb").write_text(self.text)
         tester = build_notebook_tester(tmp_path)
-        assert get_class_name(tester) == "123"
+        assert get_class_name(tester) == "TestTestMain0"
+        for name in mapping.values():
+            assert hasattr(tester, name)
 
     @mark.parametrize("throttle", [param(HOUR), param(None)])
     def test_throttle(self, *, tmp_path: Path, throttle: Delta | None) -> None:
