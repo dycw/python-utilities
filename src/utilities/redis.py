@@ -639,9 +639,11 @@ def subscribe(
     /,
     *,
     timeout: Delta | None = _SUBSCRIBE_TIMEOUT,
-    sleep: Delta = _SUBSCRIBE_SLEEP,
     output: Literal["raw"],
-    filter_: Callable[[_RedisMessage], bool] | None = None,
+    error_transform: Callable[[_RedisMessage, Exception], None] | None = None,
+    filter_: Callable[[bytes], bool] | None = None,
+    error_filter: Callable[[bytes, Exception], None] | None = None,
+    sleep: Delta = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[Task[None]]: ...
 @overload
 @enhanced_async_context_manager
@@ -652,9 +654,11 @@ def subscribe(
     /,
     *,
     timeout: Delta | None = _SUBSCRIBE_TIMEOUT,
-    sleep: Delta = _SUBSCRIBE_SLEEP,
     output: Literal["bytes"],
+    error_transform: Callable[[_RedisMessage, Exception], None] | None = None,
     filter_: Callable[[bytes], bool] | None = None,
+    error_filter: Callable[[bytes, Exception], None] | None = None,
+    sleep: Delta = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[Task[None]]: ...
 @overload
 @enhanced_async_context_manager
@@ -665,9 +669,11 @@ def subscribe(
     /,
     *,
     timeout: Delta | None = _SUBSCRIBE_TIMEOUT,
-    sleep: Delta = _SUBSCRIBE_SLEEP,
     output: Literal["text"] = "text",
+    error_transform: Callable[[_RedisMessage, Exception], None] | None = None,
     filter_: Callable[[str], bool] | None = None,
+    error_filter: Callable[[str, Exception], None] | None = None,
+    sleep: Delta = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[Task[None]]: ...
 @overload
 @enhanced_async_context_manager
@@ -678,31 +684,35 @@ def subscribe[T](
     /,
     *,
     timeout: Delta | None = _SUBSCRIBE_TIMEOUT,
-    sleep: Delta = _SUBSCRIBE_SLEEP,
     output: Callable[[bytes], T],
+    error_transform: Callable[[_RedisMessage, Exception], None] | None = None,
     filter_: Callable[[T], bool] | None = None,
+    error_filter: Callable[[T, Exception], None] | None = None,
+    sleep: Delta = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[Task[None]]: ...
 @enhanced_async_context_manager
-async def subscribe[T](
+async def subscribe[T, U](
     redis: Redis,
     channels: MaybeIterable[str],
     queue: Queue[_RedisMessage] | Queue[bytes] | Queue[T],
     /,
     *,
     timeout: Delta | None = _SUBSCRIBE_TIMEOUT,
-    sleep: Delta = _SUBSCRIBE_SLEEP,
     output: Literal["raw", "bytes", "text"] | Callable[[bytes], T] = "text",
-    filter_: Callable[[Any], bool] | None = None,
+    error_transform: Callable[[_RedisMessage, Exception], None] | None = None,
+    filter_: Callable[[T], bool] | None = None,
+    error_filter: Callable[[T, Exception], None] | None = None,
+    sleep: Delta = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[Task[None]]:
     """Subscribe to the data of a given channel(s)."""
     channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
     match output:  # skipif-ci-and-not-linux
         case "raw":
-            transform = cast("Any", identity)
+            transform = cast("Callable[[_RedisMessage], T]", identity)
         case "bytes":
-            transform = cast("Any", itemgetter("data"))
+            transform = cast("Callable[[_RedisMessage], T]", itemgetter("data"))
         case "text":
-            transform = cast("Any", _decoded_data)
+            transform = cast("Callable[[_RedisMessage], T]", _decoded_data)
         case Callable() as deserialize:
 
             def transform(message: _RedisMessage, /) -> T:
@@ -718,8 +728,10 @@ async def subscribe[T](
             transform,
             queue,
             timeout=timeout,
-            sleep=sleep,
+            error_transform=error_transform,
             filter_=filter_,
+            error_filter=error_filter,
+            sleep=sleep,
         )
     )
     try:  # skipif-ci-and-not-linux
