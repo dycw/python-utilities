@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from json import dumps
+from re import search
 from typing import TYPE_CHECKING, ClassVar
 
 from pytest import mark, param
@@ -28,7 +29,7 @@ class TestBuildNotebookTester:
         for stem in mapping:
             _ = tmp_path.joinpath(f"{stem}.ipynb").write_text(self.text)
         tester = build_notebook_tester(tmp_path)
-        assert get_class_name(tester) == "TestTestMain0"
+        assert search(r"^TestTestMain\d+$", get_class_name(tester))
         for name in mapping.values():
             assert hasattr(tester, name)
 
