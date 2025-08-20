@@ -6,7 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from itertools import chain
 from os import getpid
-from re import IGNORECASE, Match, escape, search
+from re import IGNORECASE, VERBOSE, escape, search
 from textwrap import dedent
 from threading import get_ident
 from time import time_ns
@@ -77,6 +77,21 @@ class ParseNoneError(Exception):
 ##
 
 
+def pascal_case(text: str, /) -> str:
+    """Convert text to pascal case."""
+    parts = _SPLIT_TEXT.findall(text)
+    parts = [p for p in parts if len(p) >= 1]
+    parts = list(map(_pascal_case_one, parts))
+    return "".join(parts)
+
+
+def _pascal_case_one(text: str, /) -> str:
+    return text if text.isupper() else text.title()
+
+
+##
+
+
 def repr_encode(obj: Any, /) -> bytes:
     """Return the representation of the object encoded as bytes."""
     return repr(obj).encode()
@@ -85,25 +100,24 @@ def repr_encode(obj: Any, /) -> bytes:
 ##
 
 
-_ACRONYM_PATTERN = re.compile(r"([A-Z\d]+)(?=[A-Z\d]|$)")
-_SPACES_PATTERN = re.compile(r"\s+")
-_SPLIT_PATTERN = re.compile(r"([\-_]*[A-Z][^A-Z]*[\-_]*)")
-
-
 def snake_case(text: str, /) -> str:
     """Convert text into snake case."""
-    text = _SPACES_PATTERN.sub("", text)
-    if not text.isupper():
-        text = _ACRONYM_PATTERN.sub(_snake_case_title, text)
-        text = "_".join(s for s in _SPLIT_PATTERN.split(text) if s)
-    while search("__", text):
-        text = text.replace("__", "_")
-    return text.lower()
+    leading = bool(search(r"^_", text))
+    trailing = bool(search(r"_$", text))
+    parts = _SPLIT_TEXT.findall(text)
+    parts = (p for p in parts if len(p) >= 1)
+    parts = chain([""] if leading else [], parts, [""] if trailing else [])
+    return "_".join(parts).lower()
 
 
-def _snake_case_title(match: Match[str], /) -> str:
-    return match.group(0).title()
-
+_SPLIT_TEXT = re.compile(
+    r"""
+    [A-Z]+(?=[A-Z][a-z0-9]) | # all caps followed by Upper+lower or digit (API in APIResponse2)
+    [A-Z]?[a-z]+[0-9]*      | # normal words with optional trailing digits (Text123)
+    [A-Z]+[0-9]*            | # consecutive caps with optional trailing digits (ID2)
+    """,
+    flags=VERBOSE,
+)
 
 ##
 
@@ -503,6 +517,7 @@ __all__ = [
     "join_strs",
     "parse_bool",
     "parse_none",
+    "pascal_case",
     "repr_encode",
     "secret_str",
     "snake_case",

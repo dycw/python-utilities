@@ -30,6 +30,7 @@ from utilities.text import (
     join_strs,
     parse_bool,
     parse_none,
+    pascal_case,
     repr_encode,
     secret_str,
     snake_case,
@@ -43,8 +44,6 @@ from utilities.text import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from utilities.sentinel import Sentinel
 
 
@@ -68,20 +67,21 @@ class TestParseBool:
         result = parse_bool(text)
         assert result is value
 
-    @given(
-        text=sampled_from([
-            "00",
-            "11",
-            "ffalsee",
-            "invalid",
-            "nn",
-            "nnoo",
-            "oofff",
-            "oonn",
-            "ttruee",
-            "yy",
-            "yyess",
-        ])
+    @mark.parametrize(
+        "text",
+        [
+            param("00"),
+            param("11"),
+            param("ffalsee"),
+            param("invalid"),
+            param("nn"),
+            param("nnoo"),
+            param("oofff"),
+            param("oonn"),
+            param("ttruee"),
+            param("yy"),
+            param("yyess"),
+        ],
     )
     def test_error(self, *, text: str) -> None:
         with raises(ParseBoolError, match="Unable to parse boolean value; got '.*'"):
@@ -96,7 +96,7 @@ class TestParseNone:
         result = parse_none(text_use)
         assert result is None
 
-    @given(text=sampled_from(["invalid", "nnonee"]))
+    @mark.parametrize("text", [param("invalid"), param("nnonee")])
     def test_error(self, *, text: str) -> None:
         with raises(ParseNoneError, match="Unable to parse null value; got '.*'"):
             _ = parse_none(text)
@@ -108,6 +108,62 @@ class TestReprEncode:
         result = repr_encode(n)
         expected = repr(n).encode()
         assert result == expected
+
+
+class TestPascalAndSnakeCase:
+    @mark.parametrize(
+        ("text", "exp_pascal", "exp_snake"),
+        [
+            param("API", "API", "api"),
+            param("APIResponse", "APIResponse", "api_response"),
+            param(
+                "ApplicationController",
+                "ApplicationController",
+                "application_controller",
+            ),
+            param("Area51Controller", "Area51Controller", "area51_controller"),
+            param("FreeBSD", "FreeBSD", "free_bsd"),
+            param("HTML", "HTML", "html"),
+            param("HTMLTidy", "HTMLTidy", "html_tidy"),
+            param("HTMLTidyGenerator", "HTMLTidyGenerator", "html_tidy_generator"),
+            param("HTMLVersion", "HTMLVersion", "html_version"),
+            param("NoHTML", "NoHTML", "no_html"),
+            param("One   Two", "OneTwo", "one_two"),
+            param("One  Two", "OneTwo", "one_two"),
+            param("One Two", "OneTwo", "one_two"),
+            param("OneTwo", "OneTwo", "one_two"),
+            param("One_Two", "OneTwo", "one_two"),
+            param("One__Two", "OneTwo", "one_two"),
+            param("One___Two", "OneTwo", "one_two"),
+            param("Product", "Product", "product"),
+            param("SpecialGuest", "SpecialGuest", "special_guest"),
+            param("Text", "Text", "text"),
+            param("Text123", "Text123", "text123"),
+            param("Text123Text456", "Text123Text456", "text123_text456"),
+            param("_APIResponse_", "APIResponse", "_api_response_"),
+            param("_API_", "API", "_api_"),
+            param("__APIResponse__", "APIResponse", "_api_response_"),
+            param("__API__", "API", "_api_"),
+            param("__impliedVolatility_", "ImpliedVolatility", "_implied_volatility_"),
+            param("_itemID", "ItemID", "_item_id"),
+            param("_lastPrice__", "LastPrice", "_last_price_"),
+            param("_symbol", "Symbol", "_symbol"),
+            param("aB", "AB", "a_b"),
+            param("changePct", "ChangePct", "change_pct"),
+            param("changePct_", "ChangePct", "change_pct_"),
+            param("impliedVolatility", "ImpliedVolatility", "implied_volatility"),
+            param("lastPrice", "LastPrice", "last_price"),
+            param("memMB", "MemMB", "mem_mb"),
+            param("sizeX", "SizeX", "size_x"),
+            param("symbol", "Symbol", "symbol"),
+            param("testNTest", "TestNTest", "test_n_test"),
+            param("text", "Text", "text"),
+            param("text123", "Text123", "text123"),
+        ],
+    )
+    def test_main(self, *, text: str, exp_pascal: str, exp_snake: str) -> None:
+        assert pascal_case(text) == exp_pascal
+        assert snake_case(text) == exp_snake
 
 
 class TestSecretStr:
@@ -124,74 +180,26 @@ class TestSecretStr:
         assert str(s.str) == "text"
 
 
-class TestSnakeCase:
-    @given(
-        case=sampled_from([
-            ("API", "api"),
-            ("APIResponse", "api_response"),
-            ("ApplicationController", "application_controller"),
-            ("Area51Controller", "area51_controller"),
-            ("FreeBSD", "free_bsd"),
-            ("HTML", "html"),
-            ("HTMLTidy", "html_tidy"),
-            ("HTMLTidyGenerator", "html_tidy_generator"),
-            ("HTMLVersion", "html_version"),
-            ("NoHTML", "no_html"),
-            ("One   Two", "one_two"),
-            ("One  Two", "one_two"),
-            ("One Two", "one_two"),
-            ("OneTwo", "one_two"),
-            ("One_Two", "one_two"),
-            ("One__Two", "one_two"),
-            ("One___Two", "one_two"),
-            ("Product", "product"),
-            ("SpecialGuest", "special_guest"),
-            ("Text", "text"),
-            ("Text123", "text123"),
-            ("_APIResponse_", "_api_response_"),
-            ("_API_", "_api_"),
-            ("__APIResponse__", "_api_response_"),
-            ("__API__", "_api_"),
-            ("__impliedVolatility_", "_implied_volatility_"),
-            ("_itemID", "_item_id"),
-            ("_lastPrice__", "_last_price_"),
-            ("_symbol", "_symbol"),
-            ("aB", "a_b"),
-            ("changePct", "change_pct"),
-            ("changePct_", "change_pct_"),
-            ("impliedVolatility", "implied_volatility"),
-            ("lastPrice", "last_price"),
-            ("memMB", "mem_mb"),
-            ("sizeX", "size_x"),
-            ("symbol", "symbol"),
-            ("testNTest", "test_n_test"),
-            ("text", "text"),
-            ("text123", "text123"),
-        ])
-    )
-    def test_main(self, *, case: tuple[str, str]) -> None:
-        text, expected = case
-        result = snake_case(text)
-        assert result == expected
-
-
 class TestSplitKeyValuePairs:
-    @given(
-        case=sampled_from([
-            ("", []),
-            ("a=1", [("a", "1")]),
-            ("a=1,b=22", [("a", "1"), ("b", "22")]),
-            ("a=1,b=22,c=333", [("a", "1"), ("b", "22"), ("c", "333")]),
-            ("=1", [("", "1")]),
-            ("a=", [("a", "")]),
-            ("a=1,=22,c=333", [("a", "1"), ("", "22"), ("c", "333")]),
-            ("a=1,b=,c=333", [("a", "1"), ("b", ""), ("c", "333")]),
-            ("a=1,b=(22,22,22),c=333", [("a", "1"), ("b", "(22,22,22)"), ("c", "333")]),
-            ("a=1,b=(c=22),c=333", [("a", "1"), ("b", "(c=22)"), ("c", "333")]),
-        ])
+    @mark.parametrize(
+        ("text", "expected"),
+        [
+            param("", []),
+            param("a=1", [("a", "1")]),
+            param("a=1,b=22", [("a", "1"), ("b", "22")]),
+            param("a=1,b=22,c=333", [("a", "1"), ("b", "22"), ("c", "333")]),
+            param("=1", [("", "1")]),
+            param("a=", [("a", "")]),
+            param("a=1,=22,c=333", [("a", "1"), ("", "22"), ("c", "333")]),
+            param("a=1,b=,c=333", [("a", "1"), ("b", ""), ("c", "333")]),
+            param(
+                "a=1,b=(22,22,22),c=333",
+                [("a", "1"), ("b", "(22,22,22)"), ("c", "333")],
+            ),
+            param("a=1,b=(c=22),c=333", [("a", "1"), ("b", "(c=22)"), ("c", "333")]),
+        ],
     )
-    def test_main(self, *, case: tuple[str, Sequence[tuple[str, str]]]) -> None:
-        text, expected = case
+    def test_main(self, *, text: str, expected: str) -> None:
         result = split_key_value_pairs(text)
         assert result == expected
 
@@ -223,22 +231,24 @@ class TestSplitKeyValuePairs:
 
 
 class TestSplitAndJoinStr:
-    @given(
-        data=data(),
-        case=sampled_from([
-            ("", 0, []),
-            (r"\,", 1, [""]),
-            (",", 2, ["", ""]),
-            (",,", 3, ["", "", ""]),
-            ("1", 1, ["1"]),
-            ("1,22", 2, ["1", "22"]),
-            ("1,22,333", 3, ["1", "22", "333"]),
-            ("1,,333", 3, ["1", "", "333"]),
-            ("1,(22,22,22),333", 5, ["1", "(22", "22", "22)", "333"]),
-        ]),
+    @given(data=data())
+    @mark.parametrize(
+        ("text", "n", "expected"),
+        [
+            param("", 0, []),
+            param(r"\,", 1, [""]),
+            param(",", 2, ["", ""]),
+            param(",,", 3, ["", "", ""]),
+            param("1", 1, ["1"]),
+            param("1,22", 2, ["1", "22"]),
+            param("1,22,333", 3, ["1", "22", "333"]),
+            param("1,,333", 3, ["1", "", "333"]),
+            param("1,(22,22,22),333", 5, ["1", "(22", "22", "22)", "333"]),
+        ],
     )
-    def test_main(self, *, data: DataObject, case: tuple[str, int, list[str]]) -> None:
-        text, n, expected = case
+    def test_main(
+        self, *, data: DataObject, text: str, n: int, expected: list[str]
+    ) -> None:
         n_use = data.draw(just(n) | none())
         result = split_str(text, n=n_use)
         if n_use is None:
@@ -247,21 +257,21 @@ class TestSplitAndJoinStr:
             assert result == tuple(expected)
         assert join_strs(result) == text
 
-    @given(
-        data=data(),
-        case=sampled_from([
-            ("1", 1, ["1"]),
-            ("1,22", 2, ["1", "22"]),
-            ("1,22,333", 3, ["1", "22", "333"]),
-            ("1,(22),333", 3, ["1", "(22)", "333"]),
-            ("1,(22,22),333", 3, ["1", "(22,22)", "333"]),
-            ("1,(22,22,22),333", 3, ["1", "(22,22,22)", "333"]),
-        ]),
+    @given(data=data())
+    @mark.parametrize(
+        ("text", "n", "expected"),
+        [
+            param("1", 1, ["1"]),
+            param("1,22", 2, ["1", "22"]),
+            param("1,22,333", 3, ["1", "22", "333"]),
+            param("1,(22),333", 3, ["1", "(22)", "333"]),
+            param("1,(22,22),333", 3, ["1", "(22,22)", "333"]),
+            param("1,(22,22,22),333", 3, ["1", "(22,22,22)", "333"]),
+        ],
     )
     def test_brackets(
-        self, *, data: DataObject, case: tuple[str, int, list[str]]
+        self, *, data: DataObject, text: str, n: int, expected: list[str]
     ) -> None:
-        text, n, expected = case
         n_use = data.draw(just(n) | none())
         result = split_str(text, brackets=[("(", ")")], n=n_use)
         if n_use is None:
