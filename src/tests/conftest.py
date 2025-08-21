@@ -11,7 +11,7 @@ from pytest import fixture, mark, param, skip
 from utilities.contextlib import enhanced_context_manager
 from utilities.platform import IS_LINUX, IS_MAC, IS_NOT_LINUX, IS_WINDOWS
 from utilities.re import ExtractGroupError, extract_group
-from utilities.whenever import MINUTE, get_now, parse_plain_local
+from utilities.whenever import MINUTE, get_now, to_zoned_date_time
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
@@ -171,10 +171,10 @@ async def test_async_postgres_engine() -> AsyncEngine:
 
 def _is_to_drop(table: str, /) -> bool:
     try:
-        datetime_str = extract_group(r"^(\d{8}T\d{6})_", table)
+        date_time = extract_group(r"^(\d{8}T\d{6})_", table)
     except ExtractGroupError:
         return True
-    return (get_now() - parse_plain_local(datetime_str)) >= MINUTE
+    return (get_now() - to_zoned_date_time(date_time)) >= MINUTE
 
 
 def _select_tables() -> TextClause:

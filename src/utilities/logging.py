@@ -47,9 +47,9 @@ from utilities.re import (
 from utilities.sentinel import Sentinel, sentinel
 from utilities.whenever import (
     WheneverLogRecord,
+    format_compact,
     get_now_local,
-    parse_plain_local,
-    to_local_plain,
+    to_zoned_date_time,
 )
 
 if TYPE_CHECKING:
@@ -498,8 +498,8 @@ class _RotatingLogFile:
                 stem=stem,
                 suffix=suffix,
                 index=int(index),
-                start=parse_plain_local(start),
-                end=parse_plain_local(end),
+                start=to_zoned_date_time(start),
+                end=to_zoned_date_time(end),
             )
         try:
             index, end = extract_groups(patterns.pattern2, path.name)
@@ -511,7 +511,7 @@ class _RotatingLogFile:
                 stem=stem,
                 suffix=suffix,
                 index=int(index),
-                end=parse_plain_local(end),
+                end=to_zoned_date_time(end),
             )
         try:
             index = extract_group(patterns.pattern1, path.name)
@@ -532,9 +532,9 @@ class _RotatingLogFile:
             case int() as index, None, None:
                 tail = str(index)
             case int() as index, None, ZonedDateTime() as end:
-                tail = f"{index}__{to_local_plain(end)}"
+                tail = f"{index}__{format_compact(end, path=True)}"
             case int() as index, ZonedDateTime() as start, ZonedDateTime() as end:
-                tail = f"{index}__{to_local_plain(start)}__{to_local_plain(end)}"
+                tail = f"{index}__{format_compact(start, path=True)}__{format_compact(end, path=True)}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(
                     case=[f"{self.index=}", f"{self.start=}", f"{self.end=}"]

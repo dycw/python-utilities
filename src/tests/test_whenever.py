@@ -372,11 +372,11 @@ class TestFormatCompact:
         expected = date_time.round()
         assert parsed == expected
 
-    def test_zoned_date_time_example(self) -> None:
+    def test_zoned_date_time_path(self) -> None:
         date_time = ZonedDateTime(
             2000, 1, 2, 12, 34, 56, nanosecond=123456789, tz=HongKong.key
         )
-        result = format_compact(date_time)
+        result = format_compact(date_time, path=True)
         expected = "20000102T123456[Asia|Hong_Kong]"
         assert result == expected
 

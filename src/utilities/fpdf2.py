@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, override
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 
-from utilities.whenever import get_now, to_local_plain
+from utilities.whenever import format_compact, get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -47,7 +47,7 @@ def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
         def footer(self) -> None:
             self.set_y(-15)
             self.set_font(family="Helvetica", style="I", size=8)
-            page_no, now = (self.page_no(), to_local_plain(get_now()))
+            page_no, now = (self.page_no(), format_compact(get_now_local()))
             text = f"page {page_no}/{{}}; {now}"
             _ = self.cell(
                 w=0,
