@@ -26,6 +26,7 @@ from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, identity
 from utilities.iterables import always_iterable, one
 from utilities.os import is_pytest
+from utilities.typing import is_instance_gen
 from utilities.whenever import MILLISECOND, SECOND, to_milliseconds, to_seconds
 
 if TYPE_CHECKING:
@@ -788,17 +789,7 @@ async def _subscribe_core[T](
 def _is_message(
     message: Any, /, *, channels: Collection[bytes]
 ) -> TypeGuard[_RedisMessage]:
-    return (
-        isinstance(message, Mapping)
-        and ("type" in message)
-        and (message["type"] in {"subscribe", "psubscribe", "message", "pmessage"})
-        and ("pattern" in message)
-        and ((message["pattern"] is None) or isinstance(message["pattern"], str))
-        and ("channel" in message)
-        and (message["channel"] in channels)
-        and ("data" in message)
-        and isinstance(message["data"], bytes)
-    )
+    return is_instance_gen(message, _RedisMessage) and (message["channel"] in channels)
 
 
 def _handle_message[T](
