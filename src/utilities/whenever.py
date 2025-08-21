@@ -331,7 +331,7 @@ def format_compact(
             plain = format_compact(date_time.to_plain(), fmt=fmt)
             tz = date_time.tz
             if path:
-                tz = tz.replace("/", "|")
+                tz = tz.replace("/", "~")
             return f"{plain}[{tz}]"
         case never:
             assert_never(never)
@@ -1648,7 +1648,7 @@ def to_zoned_date_time(
         case None:
             return get_now(UTC if time_zone is None else time_zone)
         case str() as text:
-            date_time_use = ZonedDateTime.parse_common_iso(text.replace("|", "/"))
+            date_time_use = ZonedDateTime.parse_common_iso(text.replace("~", "/"))
         case dt.datetime() as py_date_time:
             if isinstance(date_time.tzinfo, ZoneInfo):
                 py_date_time_use = py_date_time

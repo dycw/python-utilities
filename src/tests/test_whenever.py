@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import DataObject, data, integers, none, sampled_from
+from pathvalidate import validate_filepath
 from pytest import mark, param, raises
 from whenever import (
     Date,
@@ -39,6 +40,7 @@ from utilities.hypothesis import (
     zoned_date_times_2000,
 )
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import TIME_ZONES
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.whenever import (
@@ -158,6 +160,7 @@ if TYPE_CHECKING:
         MaybeCallableDateLike,
         MaybeCallableZonedDateTimeLike,
         TimeOrDateTimeDelta,
+        TimeZone,
     )
 
 
@@ -372,13 +375,27 @@ class TestFormatCompact:
         expected = date_time.round()
         assert parsed == expected
 
-    def test_zoned_date_time_path(self) -> None:
+    @mark.parametrize(
+        ("time_zone", "suffix"),
+        [
+            param("America/Argentina/Buenos_Aires", "America~Argentina~Buenos_Aires"),
+            param("Asia/Hong_Kong", "Asia~Hong_Kong"),
+            param("Etc/GMT", "Etc~GMT"),
+            param("Etc/GMT+1", "Etc~GMT+1"),
+            param("Etc/GMT-1", "Etc~GMT-1"),
+        ],
+    )
+    def test_zoned_date_time_path(self, *, time_zone: TimeZone, suffix: str) -> None:
+        assert time_zone in TIME_ZONES
         date_time = ZonedDateTime(
-            2000, 1, 2, 12, 34, 56, nanosecond=123456789, tz=HongKong.key
+            2000, 1, 2, 12, 34, 56, nanosecond=123456789, tz=time_zone
         )
-        result = format_compact(date_time, path=True)
-        expected = "20000102T123456[Asia|Hong_Kong]"
-        assert result == expected
+        ser = format_compact(date_time, path=True)
+        validate_filepath(ser)
+        expected = f"20000102T123456[{suffix}]"
+        assert ser == expected
+        result = to_zoned_date_time(ser)
+        assert result.exact_eq(date_time.round())
 
 
 class TestFromTimeStamp:
