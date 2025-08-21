@@ -173,7 +173,7 @@ async def test_async_postgres_engine() -> AsyncEngine:
 def _is_to_drop(table: str, /) -> bool:
     now = get_now_local_plain()
     try:
-        text = extract_group(r"^(\d{8}T\d{6})_", table)
+        text = extract_group(r"^(\d{8}T\d{2,})_", table)
     except ExtractGroupError:
         return True
     date_time = PlainDateTime.parse_common_iso(text)
