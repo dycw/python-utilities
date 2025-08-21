@@ -8,7 +8,7 @@ from contextlib import (
     asynccontextmanager,
     contextmanager,
 )
-from functools import partial
+from functools import partial, wraps
 from signal import SIGABRT, SIGFPE, SIGILL, SIGINT, SIGSEGV, SIGTERM, getsignal, signal
 from typing import TYPE_CHECKING, Any, assert_never, cast, overload
 
@@ -77,6 +77,7 @@ def enhanced_context_manager[**P, T_co](
     make_gcm = contextmanager(func)
 
     @contextmanager
+    @wraps(func)
     def wrapped(*args: P.args, **kwargs: P.kwargs) -> Iterator[T_co]:
         gcm = make_gcm(*args, **kwargs)
         sigabrt0 = _swap_handler(SIGABRT, gcm) if sigabrt else None
@@ -159,6 +160,7 @@ def enhanced_async_context_manager[**P, T_co](
     make_agcm = asynccontextmanager(func)
 
     @asynccontextmanager
+    @wraps(func)
     async def wrapped(*args: P.args, **kwargs: P.kwargs) -> AsyncIterator[T_co]:
         agcm = make_agcm(*args, **kwargs)
         sigabrt0 = _swap_handler(SIGABRT, agcm) if sigabrt else None
