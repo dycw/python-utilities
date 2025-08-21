@@ -3,11 +3,11 @@ from __future__ import annotations
 from hypothesis import given
 from hypothesis.strategies import sampled_from
 from numpy import isclose
-from polars import DataFrame, Float64, Series, Struct, col, mean_horizontal
+from polars import DataFrame, Float64, Series, col, mean_horizontal
 from polars.testing import assert_frame_equal
 from sklearn.linear_model import LinearRegression
 
-from utilities.polars import concat_series, integers, normal_rv
+from utilities.polars import concat_series, integers, normal_rv, struct_dtype
 from utilities.polars_ols import compute_rolling_ols
 
 
@@ -100,11 +100,7 @@ class TestComputeRollingOLS:
         expected = DataFrame(
             data=data,
             schema={
-                "coefficients": Struct({
-                    "x1": Float64,
-                    "x2": Float64,
-                    "const": Float64,
-                }),
+                "coefficients": struct_dtype(x1=Float64, x2=Float64, const=Float64),
                 "predictions": Float64,
                 "residuals": Float64,
                 "R2": Float64,
