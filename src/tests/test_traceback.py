@@ -106,7 +106,7 @@ class TestMakeExceptHook:
             exc_type, exc_val, traceback = exc_info()
             hook(exc_type, exc_val, traceback)
         path = one(tmp_path.iterdir())
-        assert search(r"^[\dT]+\.txt$", path.name)
+        assert search(r"^\d{8}T\d{2,}\[[\w|]+\]\.txt$", path.name)
 
     def test_non_error(self) -> None:
         hook = make_except_hook()
