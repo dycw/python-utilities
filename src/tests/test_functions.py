@@ -33,15 +33,12 @@ from utilities.functions import (
     EnsureClassError,
     EnsureDateError,
     EnsureFloatError,
-    EnsureHashableError,
     EnsureIntError,
     EnsureMemberError,
     EnsureNotNoneError,
     EnsureNumberError,
     EnsurePathError,
     EnsurePlainDateTimeError,
-    EnsureSizedError,
-    EnsureSizedNotStrError,
     EnsureStrError,
     EnsureTimeDeltaError,
     EnsureTimeError,
@@ -54,15 +51,12 @@ from utilities.functions import (
     ensure_class,
     ensure_date,
     ensure_float,
-    ensure_hashable,
     ensure_int,
     ensure_member,
     ensure_not_none,
     ensure_number,
     ensure_path,
     ensure_plain_date_time,
-    ensure_sized,
-    ensure_sized_not_str,
     ensure_str,
     ensure_time,
     ensure_time_delta,
@@ -73,20 +67,12 @@ from utilities.functions import (
     get_func_name,
     get_func_qualname,
     identity,
-    is_dataclass_class,
-    is_dataclass_instance,
-    is_hashable,
-    is_iterable_of,
     is_none,
     is_not_none,
-    is_sequence_of,
     is_sequence_of_tuple_or_str_mapping,
-    is_sized,
-    is_sized_not_str,
     is_string_mapping,
     is_tuple,
     is_tuple_or_str_mapping,
-    make_isinstance,
     map_object,
     max_nullable,
     min_nullable,
@@ -232,18 +218,6 @@ class TestEnsureFloat:
             _ = ensure_float(sentinel, nullable=nullable)
 
 
-class TestEnsureHashable:
-    @given(obj=sampled_from([0, (1, 2, 3)]))
-    def test_main(self, *, obj: Any) -> None:
-        assert ensure_hashable(obj) == obj
-
-    def test_error(self) -> None:
-        with raises(
-            EnsureHashableError, match=r"Object '.*' of type '.*' must be hashable"
-        ):
-            _ = ensure_hashable([1, 2, 3])
-
-
 class TestEnsureInt:
     @given(case=sampled_from([(0, False), (0, True), (None, True)]))
     def test_main(self, *, case: tuple[int | None, bool]) -> None:
@@ -361,30 +335,6 @@ class TestEnsurePlainDateTime:
         nullable, match = case
         with raises(EnsurePlainDateTimeError, match=match):
             _ = ensure_plain_date_time(sentinel, nullable=nullable)
-
-
-class TestEnsureSized:
-    @given(obj=sampled_from([[], (), ""]))
-    def test_main(self, *, obj: Any) -> None:
-        _ = ensure_sized(obj)
-
-    def test_error(self) -> None:
-        with raises(EnsureSizedError, match=r"Object '.*' of type '.*' must be sized"):
-            _ = ensure_sized(None)
-
-
-class TestEnsureSizedNotStr:
-    @given(obj=sampled_from([[], ()]))
-    def test_main(self, *, obj: Any) -> None:
-        _ = ensure_sized_not_str(obj)
-
-    @given(obj=sampled_from([None, '""']))
-    def test_error(self, *, obj: Any) -> None:
-        with raises(
-            EnsureSizedNotStrError,
-            match="Object '.*' of type '.*' must be sized and not a string",
-        ):
-            _ = ensure_sized_not_str(obj)
 
 
 class TestEnsureStr:
@@ -610,72 +560,6 @@ class TestIdentity:
         assert identity(x) == x
 
 
-class TestIsDataClassClass:
-    def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: None = None
-
-        assert is_dataclass_class(Example)
-        assert not is_dataclass_class(Example())
-
-    @given(obj=sampled_from([None, type(None)]))
-    def test_others(self, *, obj: Any) -> None:
-        assert not is_dataclass_class(obj)
-
-
-class TestIsDataClassInstance:
-    def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: None = None
-
-        assert not is_dataclass_instance(Example)
-        assert is_dataclass_instance(Example())
-
-    @given(obj=sampled_from([None, type(None)]))
-    def test_others(self, *, obj: Any) -> None:
-        assert not is_dataclass_instance(obj)
-
-
-class TestIsHashable:
-    @given(case=sampled_from([(0, True), ((1, 2, 3), True), ([1, 2, 3], False)]))
-    def test_main(self, *, case: tuple[Any, bool]) -> None:
-        obj, expected = case
-        assert is_hashable(obj) is expected
-
-
-class TestIsIterableOf:
-    @given(
-        case=sampled_from([
-            ([0], True),
-            (["0"], False),
-            ({0}, True),
-            ({0: 0}, True),
-            (None, False),
-            ([None], False),
-        ])
-    )
-    def test_single(self, *, case: tuple[Any, bool]) -> None:
-        obj, expected = case
-        result = is_iterable_of(obj, int)
-        assert result is expected
-
-    @given(
-        case=sampled_from([
-            ([0], True),
-            (["0"], True),
-            ([0, "0"], True),
-            (None, False),
-            ([None], False),
-        ])
-    )
-    def test_multiple(self, *, case: tuple[Any, bool]) -> None:
-        obj, expected = case
-        result = is_iterable_of(obj, (int, str))
-        assert result is expected
-
-
 class TestIsNoneAndIsNotNone:
     @given(
         case=sampled_from([
@@ -691,38 +575,7 @@ class TestIsNoneAndIsNotNone:
         assert result is expected
 
 
-class TestIsSequenceOf:
-    @given(
-        case=sampled_from([
-            ([0], True),
-            (["0"], False),
-            ({0}, False),
-            ({0: 0}, False),
-            (None, False),
-            ([None], False),
-        ])
-    )
-    def test_single(self, *, case: tuple[Any, bool]) -> None:
-        obj, expected = case
-        result = is_sequence_of(obj, int)
-        assert result is expected
-
-    @given(
-        case=sampled_from([
-            ([0], True),
-            (["0"], True),
-            ([0, "0"], True),
-            (None, False),
-            ([None], False),
-        ])
-    )
-    def test_multiple(self, *, case: tuple[Any, bool]) -> None:
-        obj, expected = case
-        result = is_sequence_of(obj, (int, str))
-        assert result is expected
-
-
-class TestIsSequenceOfTupleOrStrgMapping:
+class TestIsSequenceOfTupleOrStrMapping:
     @given(
         case=sampled_from([
             (None, False),
@@ -735,20 +588,6 @@ class TestIsSequenceOfTupleOrStrgMapping:
         obj, expected = case
         result = is_sequence_of_tuple_or_str_mapping(obj)
         assert result is expected
-
-
-class TestIsSized:
-    @given(case=sampled_from([(None, False), ([], True), ((), True), ("", True)]))
-    def test_main(self, *, case: tuple[Any, bool]) -> None:
-        obj, expected = case
-        assert is_sized(obj) is expected
-
-
-class TestIsSizedNotStr:
-    @given(case=sampled_from([(None, False), ([], True), ((), True), ("", False)]))
-    def test_main(self, *, case: tuple[Any, bool]) -> None:
-        obj, expected = case
-        assert is_sized_not_str(obj) is expected
 
 
 class TestIsStringMapping:
@@ -785,22 +624,6 @@ class TestIsTupleOrStringMapping:
     def test_main(self, *, case: tuple[Any, bool]) -> None:
         obj, expected = case
         result = is_tuple_or_str_mapping(obj)
-        assert result is expected
-
-
-class TestMakeIsInstance:
-    @given(case=sampled_from([(True, True), (False, True), (None, False)]))
-    def test_single(self, *, case: tuple[bool | None, bool]) -> None:
-        obj, expected = case
-        func = make_isinstance(bool)
-        result = func(obj)
-        assert result is expected
-
-    @given(case=sampled_from([(0, True), ("0", True), (None, False)]))
-    def test_multiple(self, *, case: tuple[bool | None, bool]) -> None:
-        obj, expected = case
-        func = make_isinstance((int, str))
-        result = func(obj)
         assert result is expected
 
 
