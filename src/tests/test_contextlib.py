@@ -4,6 +4,7 @@ import asyncio
 import time
 from asyncio import run
 from dataclasses import dataclass
+from inspect import signature
 from multiprocessing import Process
 from pathlib import Path
 from typing import TYPE_CHECKING, override
@@ -103,6 +104,15 @@ class TestEnhancedContextManager:
             assert not cleared
         assert cleared
 
+    def test_sync_signature(self) -> None:
+        @enhanced_context_manager
+        def yield_marker(x: int, y: int, /) -> Iterator[int]:
+            yield x + y
+
+        sig = set(signature(yield_marker).parameters)
+        expected = {"x", "y"}
+        assert sig == expected
+
     @given(
         sigabrt=booleans(),
         sigfpe=booleans(),
@@ -141,6 +151,15 @@ class TestEnhancedContextManager:
         async with yield_marker():
             assert not cleared
         assert cleared
+
+    def test_async_signature(self) -> None:
+        @enhanced_async_context_manager
+        async def yield_marker(x: int, y: int, /) -> AsyncIterator[int]:
+            yield x + y
+
+        sig = set(signature(yield_marker).parameters)
+        expected = {"x", "y"}
+        assert sig == expected
 
     @mark.parametrize(
         "target",
