@@ -68,6 +68,7 @@ from utilities.hypothesis import (
     dates,
     float64s,
     int64s,
+    lists_fixed_length,
     pairs,
     py_datetimes,
     temp_paths,
@@ -180,7 +181,7 @@ from utilities.polars import (
     map_over_columns,
     nan_sum_agg,
     nan_sum_horizontal,
-    normal,
+    normal_rv,
     number_of_decimals,
     offset_datetime,
     one_column,
@@ -2195,22 +2196,34 @@ class TestNanSumHorizontal:
         assert result.item() == expected
 
 
-class TestNormal:
+class TestNormalPDF:
+    @given(data=data(), length=hypothesis.strategies.integers(0, 10))
+    def test_main(self, *, data: DataObject, length: int) -> None:
+        data.draw(lists_fixed_length(float64s(), length))
+        locs = float64s()
+        data.draw(locs | lists_fixed_length(locs, length))
+        sigmas = float64s(min_value=0.0)
+        data.draw(sigmas | lists_fixed_length(sigmas, length))
+        series = normal_rv(length)
+        self._assert(series, length)
+
+
+class TestNormalRV:
     @given(length=hypothesis.strategies.integers(0, 10))
     def test_int(self, *, length: int) -> None:
-        series = normal(length)
+        series = normal_rv(length)
         self._assert(series, length)
 
     @given(length=hypothesis.strategies.integers(0, 10))
     def test_series(self, *, length: int) -> None:
         orig = int_range(end=length, eager=True)
-        series = normal(orig)
+        series = normal_rv(orig)
         self._assert(series, length)
 
     @given(length=hypothesis.strategies.integers(0, 10))
     def test_dataframe(self, *, length: int) -> None:
         df = int_range(end=length, eager=True).to_frame()
-        series = normal(df)
+        series = normal_rv(df)
         self._assert(series, length)
 
     def _assert(self, series: Series, length: int, /) -> None:

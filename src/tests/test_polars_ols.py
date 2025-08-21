@@ -7,7 +7,7 @@ from polars import DataFrame, Float64, Series, Struct, col
 from polars.testing import assert_frame_equal
 from sklearn.linear_model import LinearRegression
 
-from utilities.polars import concat_series, integers, normal
+from utilities.polars import concat_series, integers, normal_rv
 from utilities.polars_ols import compute_rolling_ols
 
 
@@ -77,7 +77,9 @@ class TestComputeRollingOLS:
             integers(n, -100, high=100, seed=0).alias("x1"),
             integers(n, -100, high=100, seed=1).alias("x2"),
         ).with_columns(
-            ((col("x1") + 2 * col("x2") + normal(n, scale=10.0, seed=2)) / 3).alias("y")
+            ((col("x1") + 2 * col("x2") + normal_rv(n, scale=10.0, seed=2)) / 3).alias(
+                "y"
+            )
         )
 
     def _assert_series(self, series: Series, /) -> None:

@@ -1929,39 +1929,6 @@ def nan_sum_horizontal(*columns: IntoExprColumn) -> ExprOrSeries:
 ##
 
 
-def normal(
-    obj: int | Series | DataFrame,
-    /,
-    *,
-    loc: float = 0.0,
-    scale: float = 1.0,
-    seed: int | None = None,
-    name: str | None = None,
-    dtype: PolarsDataType = Float64,
-) -> Series:
-    """Construct a series of normally-distributed numbers."""
-    match obj:
-        case int() as height:
-            from numpy.random import default_rng
-
-            rng = default_rng(seed=seed)
-            values = rng.normal(loc=loc, scale=scale, size=height)
-            return Series(name=name, values=values, dtype=dtype)
-        case Series() as series:
-            return normal(
-                series.len(), loc=loc, scale=scale, seed=seed, name=name, dtype=dtype
-            )
-        case DataFrame() as df:
-            return normal(
-                df.height, loc=loc, scale=scale, seed=seed, name=name, dtype=dtype
-            )
-        case never:
-            assert_never(never)
-
-
-##
-
-
 @overload
 def normal_pdf(
     x: ExprLike,
@@ -1999,6 +1966,39 @@ def normal_pdf(
     scale = scale if isinstance(scale, int | float) else ensure_expr_or_series(scale)
     expr = (1 / (scale * sqrt(2 * pi))) * (-(1 / 2) * ((x - loc) / scale) ** 2).exp()
     return try_reify_expr(expr, x)
+
+
+##
+
+
+def normal_rv(
+    obj: int | Series | DataFrame,
+    /,
+    *,
+    loc: float = 0.0,
+    scale: float = 1.0,
+    seed: int | None = None,
+    name: str | None = None,
+    dtype: PolarsDataType = Float64,
+) -> Series:
+    """Construct a series of normally-distributed numbers."""
+    match obj:
+        case int() as height:
+            from numpy.random import default_rng
+
+            rng = default_rng(seed=seed)
+            values = rng.normal(loc=loc, scale=scale, size=height)
+            return Series(name=name, values=values, dtype=dtype)
+        case Series() as series:
+            return normal_rv(
+                series.len(), loc=loc, scale=scale, seed=seed, name=name, dtype=dtype
+            )
+        case DataFrame() as df:
+            return normal_rv(
+                df.height, loc=loc, scale=scale, seed=seed, name=name, dtype=dtype
+            )
+        case never:
+            assert_never(never)
 
 
 ##
@@ -2739,8 +2739,8 @@ __all__ = [
     "map_over_columns",
     "nan_sum_agg",
     "nan_sum_horizontal",
-    "normal",
     "normal_pdf",
+    "normal_rv",
     "number_of_decimals",
     "offset_datetime",
     "one_column",
