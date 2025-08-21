@@ -167,6 +167,8 @@ pytest-test = [
 redis = [
   "redis >=6.4.0, <6.5",
   "orjson",
+]
+redis-test = [
   "pytest-rerunfailures",
 ]
 reprlib-test = [

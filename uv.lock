@@ -714,8 +714,10 @@ pytest-test = [
 ]
 redis = [
     { name = "orjson" },
-    { name = "pytest-rerunfailures" },
     { name = "redis" },
+]
+redis-test = [
+    { name = "pytest-rerunfailures" },
 ]
 reprlib-test = [
     { name = "rich" },
@@ -887,9 +889,9 @@ pytest-test = [
 ]
 redis = [
     { name = "orjson" },
-    { name = "pytest-rerunfailures" },
     { name = "redis", specifier = ">=6.4.0,<6.5" },
 ]
+redis-test = [{ name = "pytest-rerunfailures" }]
 reprlib-test = [{ name = "rich" }]
 scipy = [{ name = "scipy", specifier = ">=1.16.0,<1.17" }]
 sklearn = [{ name = "scikit-learn", specifier = ">=1.7.0,<1.8" }]
