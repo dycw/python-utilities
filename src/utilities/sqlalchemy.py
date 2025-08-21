@@ -66,15 +66,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
 from utilities.asyncio import timeout_td
-from utilities.functions import (
-    ensure_str,
-    get_class_name,
-    is_sequence_of_tuple_or_str_mapping,
-    is_string_mapping,
-    is_tuple,
-    is_tuple_or_str_mapping,
-    yield_object_attributes,
-)
+from utilities.functions import ensure_str, get_class_name, yield_object_attributes
 from utilities.iterables import (
     CheckLengthError,
     CheckSubSetError,
@@ -96,6 +88,12 @@ from utilities.types import (
     MaybeType,
     StrMapping,
     TupleOrStrMapping,
+)
+from utilities.typing import (
+    is_sequence_of_tuple_or_str_mapping,
+    is_string_mapping,
+    is_tuple,
+    is_tuple_or_str_mapping,
 )
 
 if TYPE_CHECKING:

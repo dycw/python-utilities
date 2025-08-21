@@ -6,7 +6,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from random import Random
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Final,
+    Literal,
+    NamedTuple,
+    TypedDict,
+    assert_never,
+)
 from uuid import UUID
 
 import whenever
@@ -71,6 +79,7 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureZonedDateTimePeriod,
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
+    TypedDictFutureIntFloat,
 )
 from utilities.hypothesis import text_ascii
 from utilities.sentinel import Sentinel
@@ -87,20 +96,29 @@ from utilities.typing import (
     get_type_classes,
     get_type_hints,
     get_union_type_classes,
+    is_dataclass_class,
+    is_dataclass_instance,
     is_dict_type,
     is_frozenset_type,
     is_instance_gen,
+    is_iterable_of,
     is_list_type,
     is_literal_type,
     is_mapping_type,
     is_namedtuple_class,
     is_namedtuple_instance,
     is_optional_type,
+    is_sequence_of,
+    is_sequence_of_tuple_or_str_mapping,
     is_sequence_type,
     is_set_type,
+    is_string_mapping,
     is_subclass_gen,
+    is_tuple,
+    is_tuple_or_str_mapping,
     is_tuple_type,
     is_union_type,
+    make_isinstance,
 )
 from utilities.whenever import DatePeriod, TimePeriod, ZonedDateTimePeriod
 
@@ -149,16 +167,16 @@ type _TruthAndTrueAndFalse = _True | _TrueAndFalse
 
 
 class TestGetLiteralElements:
-    @given(
-        case=sampled_from([
-            (_PlusOrMinusOneLit, [1, -1]),
-            (_TruthLit, ["true", "false"]),
-            (_TrueAndFalse, ["true", "false"]),
-            (_TruthAndTrueAndFalse, ["true", "false"]),
-        ])
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(_PlusOrMinusOneLit, [1, -1]),
+            param(_TruthLit, ["true", "false"]),
+            param(_TrueAndFalse, ["true", "false"]),
+            param(_TruthAndTrueAndFalse, ["true", "false"]),
+        ],
     )
-    def test_main(self, *, case: tuple[Any, list[Any]]) -> None:
-        obj, expected = case
+    def test_main(self, *, obj: Any, expected: list[Any]) -> None:
         result = get_literal_elements(obj)
         assert result == expected
 
@@ -477,6 +495,15 @@ class TestGetTypeHints:
         expected = {"truth": TrueOrFalseFutureTypeLit}
         assert hints == expected
 
+    def test_typed_dict(self) -> None:
+        class Example(TypedDict):
+            int_: int
+            float_: float
+
+        hints = get_type_hints(Example)
+        expected = {"int_": int, "float_": float}
+        assert hints == expected
+
     @given(data=data())
     def test_uuid(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -647,6 +674,34 @@ class TestIsAnnotationOfType:
         assert func(obj) is expected
 
 
+class TestIsDataClassClass:
+    def test_main(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: None = None
+
+        assert is_dataclass_class(Example)
+        assert not is_dataclass_class(Example())
+
+    @mark.parametrize("obj", [param(None), param(type(None))])
+    def test_others(self, *, obj: Any) -> None:
+        assert not is_dataclass_class(obj)
+
+
+class TestIsDataClassInstance:
+    def test_main(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: None = None
+
+        assert not is_dataclass_instance(Example)
+        assert is_dataclass_instance(Example())
+
+    @mark.parametrize("obj", [param(None), param(type(None))])
+    def test_others(self, *, obj: Any) -> None:
+        assert not is_dataclass_instance(obj)
+
+
 class TestIsInstanceGen:
     @given(data=data())
     @mark.parametrize(
@@ -739,6 +794,8 @@ class TestIsInstanceGen:
                     sets(strategy, min_size=10 if min_size is None else min_size)
                 )
                 assert not all(is_instance_gen(v, type_) for v in values)
+            case never:
+                assert_never(never)
 
     @given(bool_=booleans())
     def test_bool_value_vs_custom_int(self, *, bool_: bool) -> None:
@@ -753,12 +810,61 @@ class TestIsInstanceGen:
         assert not is_instance_gen(int_, MyInt)
         assert is_instance_gen(MyInt(int_), MyInt)
 
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param({}, False),
+            param({None: False}, False),
+            param({"int_": None}, False),
+            param({"int_": None, "float_": None}, False),
+            param({"int_": 0, "float_": None}, False),
+            param({"int_": None, "float_": 0.0}, False),
+            param({"int_": 0, "float_": 0.0}, True),
+            param({"int_": 0, "float_": 0.0, "extra": None}, True),
+        ],
+    )
+    def test_typed_dict(self, *, obj: Any, expected: bool) -> None:
+        result = is_instance_gen(obj, TypedDictFutureIntFloat)
+        assert result is expected
+
     def test_error(self) -> None:
         with raises(
             IsInstanceGenError,
             match=r"Invalid arguments; got None of type <class 'NoneType'> and typing\.Final of type <class 'typing\._SpecialForm'>",
         ):
             _ = is_instance_gen(None, Final)
+
+
+class TestIsIterableOf:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param([0], True),
+            param(["0"], False),
+            param({0}, True),
+            param({0: 0}, True),
+            param(None, False),
+            param([None], False),
+        ],
+    )
+    def test_single(self, *, obj: Any, expected: bool) -> None:
+        result = is_iterable_of(obj, int)
+        assert result is expected
+
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param([0], True),
+            param(["0"], True),
+            param([0, "0"], True),
+            param(None, False),
+            param([None], False),
+        ],
+    )
+    def test_multiple(self, *, obj: Any, expected: bool) -> None:
+        result = is_iterable_of(obj, (int, str))
+        assert result is expected
 
 
 class TestIsNamedTuple:
@@ -776,6 +882,66 @@ class TestIsNamedTuple:
 
         assert not is_namedtuple_class(Example)
         assert not is_namedtuple_instance(Example(x=0))
+
+
+class TestIsSequenceOf:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param([0], True),
+            param(["0"], False),
+            param({0}, False),
+            param({0: 0}, False),
+            param(None, False),
+            param([None], False),
+        ],
+    )
+    def test_single(self, *, obj: Any, expected: bool) -> None:
+        result = is_sequence_of(obj, int)
+        assert result is expected
+
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param([0], True),
+            param(["0"], True),
+            param([0, "0"], True),
+            param(None, False),
+            param([None], False),
+        ],
+    )
+    def test_multiple(self, *, obj: Any, expected: bool) -> None:
+        result = is_sequence_of(obj, (int, str))
+        assert result is expected
+
+
+class TestIsSequenceOfTupleOrStrMapping:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param([(1, 2, 3)], True),
+            param([{"a": 1, "b": 2, "c": 3}], True),
+            param([(1, 2, 3), {"a": 1, "b": 2, "c": 3}], True),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_sequence_of_tuple_or_str_mapping(obj)
+        assert result is expected
+
+
+class TestIsStringMapping:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param({"a": 1, "b": 2, "c": 3}, True),
+            param({1: "a", 2: "b", 3: "c"}, False),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_string_mapping(obj)
+        assert result is expected
 
 
 class TestIsSubclassGen:
@@ -867,3 +1033,55 @@ class TestIsSubclassGen:
             match="Argument must be a class; got None of type <class 'NoneType'>",
         ):
             _ = is_subclass_gen(None, NoneType)
+
+
+class TestIsTuple:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [param(None, False), param((1, 2, 3), True), param([1, 2, 3], False)],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_tuple(obj)
+        assert result is expected
+
+
+class TestIsTupleOrStringMapping:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param((1, 2, 3), True),
+            param({"a": 1, "b": 2, "c": 3}, True),
+            param({1: "a", 2: "b", 3: "c"}, False),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_tuple_or_str_mapping(obj)
+        assert result is expected
+
+
+class TestMakeIsInstance:
+    @mark.parametrize(
+        ("obj", "expected"), [param(True, True), param(False, True), param(None, False)]
+    )
+    def test_single(self, *, obj: bool | None, expected: bool) -> None:
+        func = make_isinstance(bool)
+        result = func(obj)
+        assert result is expected
+
+    @mark.parametrize(
+        ("obj", "expected"), [param(0, True), param("0", True), param(None, False)]
+    )
+    def test_multiple(self, *, obj: bool | None, expected: bool) -> None:
+        func = make_isinstance((int, str))
+        result = func(obj)
+        assert result is expected
+
+    @mark.parametrize(
+        ("obj", "expected"),
+        [param(None, False), param({"int_": 0, "float_": 0.0}, True)],
+    )
+    def test_typed_dict(self, *, obj: Any, expected: float) -> None:
+        func = make_isinstance(TypedDictFutureIntFloat)
+        result = func(obj)
+        assert result is expected

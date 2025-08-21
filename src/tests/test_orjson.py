@@ -50,7 +50,6 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureTypeLiteral,
     DataClassFutureTypeLiteralNullable,
 )
-from utilities.functions import is_sequence_of
 from utilities.hypothesis import (
     date_periods,
     dates,
@@ -86,7 +85,7 @@ from utilities.orjson import (
 from utilities.polars import check_polars_dataframe, zoned_date_time_dtype
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import LogLevel, MaybeIterable, PathLike
-from utilities.typing import get_args
+from utilities.typing import get_args, is_sequence_of
 from utilities.tzlocal import LOCAL_TIME_ZONE
 from utilities.whenever import (
     HOUR,

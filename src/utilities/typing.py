@@ -1,19 +1,23 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from dataclasses import dataclass, is_dataclass
+from functools import partial
 from itertools import chain
 from pathlib import Path
 from types import NoneType, UnionType
 from typing import (
     Any,
+    ForwardRef,
     Literal,
     NamedTuple,
     Optional,  # pyright: ignore[reportDeprecated]
     TypeAliasType,
     TypeGuard,
     Union,  # pyright: ignore[reportDeprecated]
+    _TypedDictMeta,  # pyright: ignore[reportAttributeAccessIssue]
+    cast,
     get_origin,
     overload,
     override,
@@ -36,7 +40,7 @@ from whenever import (
 
 from utilities.iterables import unique_everseen
 from utilities.sentinel import Sentinel
-from utilities.types import StrMapping
+from utilities.types import Dataclass, StrMapping, TupleOrStrMapping, TypeLike
 
 
 def get_args(obj: Any, /, *, optional_drop_none: bool = False) -> tuple[Any, ...]:
@@ -147,6 +151,10 @@ def get_type_hints(
     globalns_use = globals() | ({} if globalns is None else dict(globalns))
     localns_use = {} if localns is None else dict(localns)
     result: dict[str, Any] = obj.__annotations__
+    result = {
+        k: v.__forward_arg__ if isinstance(v, ForwardRef) else v
+        for k, v in result.items()
+    }
     try:
         hints = _get_type_hints(obj, globalns=globalns_use, localns=localns_use)
     except NameError as error:
@@ -202,6 +210,22 @@ class _GetUnionTypeClassesInternalTypeError(GetUnionTypeClassesError):
 ##
 
 
+def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
+    """Check if an object is a dataclass."""
+    return isinstance(obj, type) and is_dataclass(obj)
+
+
+##
+
+
+def is_dataclass_instance(obj: Any, /) -> TypeGuard[Dataclass]:
+    """Check if an object is an instance of a dataclass."""
+    return (not isinstance(obj, type)) and is_dataclass(obj)
+
+
+##
+
+
 def is_dict_type(obj: Any, /) -> bool:
     """Check if an object is a dict type annotation."""
     return _is_annotation_of_type(obj, dict)
@@ -219,48 +243,168 @@ def is_frozenset_type(obj: Any, /) -> bool:
 
 
 @overload
-def is_instance_gen[T](obj: Any, type_: type[T], /) -> TypeGuard[T]: ...
+def is_instance_gen[T](
+    obj: Any,
+    type_: type[T],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[T]: ...
 @overload
-def is_instance_gen[T1](obj: Any, type_: tuple[T1], /) -> TypeGuard[T1]: ...
+def is_instance_gen[T1](
+    obj: Any,
+    type_: tuple[T1],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[T1]: ...
 @overload
 def is_instance_gen[T1, T2](
-    obj: Any, type_: tuple[T1, T2], /
+    obj: Any,
+    type_: tuple[T1, T2],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
 ) -> TypeGuard[T1 | T2]: ...
 @overload
 def is_instance_gen[T1, T2, T3](
-    obj: Any, type_: tuple[T1, T2, T3], /
+    obj: Any,
+    type_: tuple[T1, T2, T3],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
 ) -> TypeGuard[T1 | T2 | T3]: ...
 @overload
 def is_instance_gen[T1, T2, T3, T4](
-    obj: Any, type_: tuple[T1, T2, T3, T4], /
+    obj: Any,
+    type_: tuple[T1, T2, T3, T4],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
 ) -> TypeGuard[T1 | T2 | T3 | T4]: ...
 @overload
 def is_instance_gen[T1, T2, T3, T4, T5](
-    obj: Any, type_: tuple[T1, T2, T3, T4, T5], /
+    obj: Any,
+    type_: tuple[T1, T2, T3, T4, T5],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
 ) -> TypeGuard[T1 | T2 | T3 | T4 | T5]: ...
 @overload
-def is_instance_gen(obj: Any, type_: Any, /) -> bool: ...
-def is_instance_gen(obj: Any, type_: Any, /) -> bool:
+def is_instance_gen(
+    obj: Any,
+    type_: Any,
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> bool: ...
+def is_instance_gen(
+    obj: Any,
+    type_: Any,
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> bool:
     """Check if an instance relationship holds, except bool<int."""
     # parent
     if isinstance(type_, tuple):
-        return any(is_instance_gen(obj, t) for t in type_)  # skipif-ci-and-not-windows
+        return any(
+            is_instance_gen(
+                obj,
+                t,
+                globalns=globalns,
+                localns=localns,
+                warn_name_errors=warn_name_errors,
+            )
+            for t in type_
+        )  # skipif-ci-and-not-windows
     if is_literal_type(type_):
         return obj in get_args(type_)
     if is_union_type(type_):
-        return any(is_instance_gen(obj, t) for t in get_args(type_))
+        return any(
+            is_instance_gen(
+                obj,
+                t,
+                globalns=globalns,
+                localns=localns,
+                warn_name_errors=warn_name_errors,
+            )
+            for t in get_args(type_)
+        )
     # tuple vs tuple
     if isinstance(obj, tuple) and is_tuple_type(type_):
         type_args = get_args(type_)
         return (len(obj) == len(type_args)) and all(
-            is_instance_gen(o, t) for o, t in zip(obj, type_args, strict=True)
+            is_instance_gen(
+                o,
+                t,
+                globalns=globalns,
+                localns=localns,
+                warn_name_errors=warn_name_errors,
+            )
+            for o, t in zip(obj, type_args, strict=True)
         )
     if isinstance(obj, tuple) is not is_tuple_type(type_):
         return False
     # basic
+    if isinstance(type_, _TypedDictMeta):
+        return _is_instance_typed_dict(
+            obj,
+            type_,
+            globalns=globalns,
+            localns=localns,
+            warn_name_errors=warn_name_errors,
+        )
     if isinstance(type_, type):
         return any(_is_instance_gen_type(obj, t) for t in get_type_classes(type_))
     raise IsInstanceGenError(obj=obj, type_=type_)
+
+
+def _is_instance_typed_dict[T: _TypedDictMeta](
+    obj: Any,
+    type_: type[T],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[T]:
+    if not isinstance(obj, dict):
+        return False
+    if not all(isinstance(k, str) for k in obj):
+        return False
+    obj = cast("dict[str, Any]", obj)
+    hints = get_type_hints(
+        type_, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
+    )
+    if not set(obj).issuperset(hints):
+        return False
+    return all(
+        is_instance_gen(
+            obj[k],
+            hints[k],
+            globalns=globalns,
+            localns=localns,
+            warn_name_errors=warn_name_errors,
+        )
+        for k in hints
+    )
 
 
 def _is_instance_gen_type[T](obj: Any, type_: type[T], /) -> TypeGuard[T]:
@@ -287,6 +431,101 @@ class IsInstanceGenError(Exception):
     @override
     def __str__(self) -> str:
         return f"Invalid arguments; got {self.obj!r} of type {type(self.obj)!r} and {self.type_!r} of type {type(self.type_)!r}"
+
+
+##
+
+
+@overload
+def is_iterable_of[T](
+    obj: Any,
+    cls: type[T],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Iterable[T]]: ...
+@overload
+def is_iterable_of[T1](
+    obj: Any,
+    cls: tuple[type[T1]],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Iterable[T1]]: ...
+@overload
+def is_iterable_of[T1, T2](
+    obj: Any,
+    cls: tuple[type[T1], type[T2]],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Iterable[T1 | T2]]: ...
+@overload
+def is_iterable_of[T1, T2, T3](
+    obj: Any,
+    cls: tuple[type[T1], type[T2], type[T3]],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Iterable[T1 | T2 | T3]]: ...
+@overload
+def is_iterable_of[T1, T2, T3, T4](
+    obj: Any,
+    cls: tuple[type[T1], type[T2], type[T3], type[T4]],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Iterable[T1 | T2 | T3 | T4]]: ...
+@overload
+def is_iterable_of[T1, T2, T3, T4, T5](
+    obj: Any,
+    cls: tuple[type[T1], type[T2], type[T3], type[T4], type[T5]],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Iterable[T1 | T2 | T3 | T4 | T5]]: ...
+@overload
+def is_iterable_of[T](
+    obj: Any,
+    cls: TypeLike[T],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Iterable[T]]: ...
+def is_iterable_of[T](
+    obj: Any,
+    cls: TypeLike[T],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Iterable[T]]:
+    """Check if an object is a iterable of tuple or string mappings."""
+    return isinstance(obj, Iterable) and all(
+        is_instance_gen(
+            o,
+            cls,
+            globalns=globalns,
+            localns=localns,
+            warn_name_errors=warn_name_errors,
+        )
+        for o in obj
+    )
 
 
 ##
@@ -349,6 +588,104 @@ def is_optional_type(obj: Any, /) -> bool:
 ##
 
 
+@overload
+def is_sequence_of[T](
+    obj: Any,
+    cls: type[T],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Sequence[T]]: ...
+@overload
+def is_sequence_of[T1](
+    obj: Any,
+    cls: tuple[type[T1]],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Sequence[T1]]: ...
+@overload
+def is_sequence_of[T1, T2](
+    obj: Any,
+    cls: tuple[type[T1], type[T2]],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Sequence[T1 | T2]]: ...
+@overload
+def is_sequence_of[T1, T2, T3](
+    obj: Any,
+    cls: tuple[type[T1], type[T2], type[T3]],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Sequence[T1 | T2 | T3]]: ...
+@overload
+def is_sequence_of[T1, T2, T3, T4](
+    obj: Any,
+    cls: tuple[type[T1], type[T2], type[T3], type[T4]],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Sequence[T1 | T2 | T3 | T4]]: ...
+@overload
+def is_sequence_of[T1, T2, T3, T4, T5](
+    obj: Any,
+    cls: tuple[type[T1], type[T2], type[T3], type[T4], type[T5]],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Sequence[T1 | T2 | T3 | T4 | T5]]: ...
+@overload
+def is_sequence_of[T](
+    obj: Any,
+    cls: TypeLike[T],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Sequence[T]]: ...
+def is_sequence_of[T](
+    obj: Any,
+    cls: TypeLike[T],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[Sequence[T]]:
+    """Check if an object is a sequence of tuple or string mappings."""
+    return isinstance(obj, Sequence) and is_iterable_of(
+        obj, cls, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
+    )
+
+
+##
+
+
+def is_sequence_of_tuple_or_str_mapping(
+    obj: Any, /
+) -> TypeGuard[Sequence[TupleOrStrMapping]]:
+    """Check if an object is a sequence of tuple or string mappings."""
+    return isinstance(obj, Sequence) and all(map(is_tuple_or_str_mapping, obj))
+
+
+##
+
+
 def is_sequence_type(obj: Any, /) -> bool:
     """Check if an object is a sequence type annotation."""
     return _is_annotation_of_type(obj, Sequence)
@@ -360,6 +697,14 @@ def is_sequence_type(obj: Any, /) -> bool:
 def is_set_type(obj: Any, /) -> bool:
     """Check if an object is a set type annotation."""
     return _is_annotation_of_type(obj, set)
+
+
+##
+
+
+def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
+    """Check if an object is a string mapping."""
+    return isinstance(obj, Mapping) and is_iterable_of(obj, str)
 
 
 ##
@@ -450,6 +795,22 @@ class IsSubclassGenError(Exception):
 ##
 
 
+def is_tuple(obj: Any, /) -> TypeGuard[tuple[Any, ...]]:
+    """Check if an object is a tuple."""
+    return isinstance(obj, tuple)
+
+
+##
+
+
+def is_tuple_or_str_mapping(obj: Any, /) -> TypeGuard[TupleOrStrMapping]:
+    """Check if an object is a tuple or string mapping."""
+    return is_tuple(obj) or is_string_mapping(obj)
+
+
+##
+
+
 def is_tuple_type(obj: Any, /) -> bool:
     """Check if an object is a tuple type annotation."""
     return _is_annotation_of_type(obj, tuple)
@@ -474,6 +835,40 @@ def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
     )
 
 
+##
+
+
+@overload
+def make_isinstance[T](cls: type[T], /) -> Callable[[Any], TypeGuard[T]]: ...
+@overload
+def make_isinstance[T1](cls: tuple[type[T1]], /) -> Callable[[Any], TypeGuard[T1]]: ...
+@overload
+def make_isinstance[T1, T2](
+    cls: tuple[type[T1], type[T2]], /
+) -> Callable[[Any], TypeGuard[T1 | T2]]: ...
+@overload
+def make_isinstance[T1, T2, T3](
+    cls: tuple[type[T1], type[T2], type[T3]], /
+) -> Callable[[Any], TypeGuard[T1 | T2 | T3]]: ...
+@overload
+def make_isinstance[T1, T2, T3, T4](
+    cls: tuple[type[T1], type[T2], type[T3], type[T4]], /
+) -> Callable[[Any], TypeGuard[T1 | T2 | T3 | T4]]: ...
+@overload
+def make_isinstance[T1, T2, T3, T4, T5](
+    cls: tuple[type[T1], type[T2], type[T3], type[T4], type[T5]], /
+) -> Callable[[Any], TypeGuard[T1 | T2 | T3 | T4 | T5]]: ...
+@overload
+def make_isinstance[T](cls: TypeLike[T], /) -> Callable[[Any], TypeGuard[T]]: ...
+def make_isinstance[T](cls: TypeLike[T], /) -> Callable[[Any], TypeGuard[T]]:
+    """Make a curried `isinstance` function."""
+    return partial(_make_instance_core, cls=cls)
+
+
+def _make_instance_core[T](obj: Any, /, *, cls: TypeLike[T]) -> TypeGuard[T]:
+    return is_instance_gen(obj, cls)
+
+
 __all__ = [
     "GetTypeClassesError",
     "GetUnionTypeClassesError",
@@ -483,18 +878,27 @@ __all__ = [
     "get_type_classes",
     "get_type_hints",
     "get_union_type_classes",
+    "is_dataclass_class",
+    "is_dataclass_instance",
     "is_dict_type",
     "is_frozenset_type",
     "is_instance_gen",
+    "is_iterable_of",
     "is_list_type",
     "is_literal_type",
     "is_mapping_type",
     "is_namedtuple_class",
     "is_namedtuple_instance",
     "is_optional_type",
+    "is_sequence_of",
+    "is_sequence_of_tuple_or_str_mapping",
     "is_sequence_type",
     "is_set_type",
+    "is_string_mapping",
     "is_subclass_gen",
+    "is_tuple",
+    "is_tuple_or_str_mapping",
     "is_tuple_type",
     "is_union_type",
+    "make_isinstance",
 ]

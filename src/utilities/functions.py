@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator, Sequence
-from dataclasses import asdict, dataclass, is_dataclass
+from collections.abc import Callable, Iterable, Iterator
+from dataclasses import asdict, dataclass
 from functools import _lru_cache_wrapper, cached_property, partial, reduce, wraps
 from inspect import getattr_static
 from pathlib import Path
@@ -20,17 +20,10 @@ from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
 from utilities.reprlib import get_repr, get_repr_and_class
 from utilities.sentinel import Sentinel, is_sentinel, sentinel
-from utilities.types import (
-    Dataclass,
-    Number,
-    StrMapping,
-    SupportsRichComparison,
-    TupleOrStrMapping,
-    TypeLike,
-)
+from utilities.types import Dataclass, Number, SupportsRichComparison, TypeLike
 
 if TYPE_CHECKING:
-    from collections.abc import Container, Hashable, Sized
+    from collections.abc import Container
 
 
 def apply_decorators[F1: Callable, F2: Callable](
@@ -230,25 +223,6 @@ class EnsureFloatError(Exception):
 ##
 
 
-def ensure_hashable(obj: Any, /) -> Hashable:
-    """Ensure an object is hashable."""
-    if is_hashable(obj):
-        return obj
-    raise EnsureHashableError(obj=obj)
-
-
-@dataclass(kw_only=True, slots=True)
-class EnsureHashableError(Exception):
-    obj: Any
-
-    @override
-    def __str__(self) -> str:
-        return _make_error_msg(self.obj, "hashable")
-
-
-##
-
-
 @overload
 def ensure_int(obj: Any, /, *, nullable: bool) -> int | None: ...
 @overload
@@ -400,44 +374,6 @@ class EnsurePlainDateTimeError(Exception):
     @override
     def __str__(self) -> str:
         return _make_error_msg(self.obj, "a plain date-time", nullable=self.nullable)
-
-
-##
-
-
-def ensure_sized(obj: Any, /) -> Sized:
-    """Ensure an object is sized."""
-    if is_sized(obj):
-        return obj
-    raise EnsureSizedError(obj=obj)
-
-
-@dataclass(kw_only=True, slots=True)
-class EnsureSizedError(Exception):
-    obj: Any
-
-    @override
-    def __str__(self) -> str:
-        return _make_error_msg(self.obj, "sized")
-
-
-##
-
-
-def ensure_sized_not_str(obj: Any, /) -> Sized:
-    """Ensure an object is sized, but not a string."""
-    if is_sized_not_str(obj):
-        return obj
-    raise EnsureSizedNotStrError(obj=obj)
-
-
-@dataclass(kw_only=True, slots=True)
-class EnsureSizedNotStrError(Exception):
-    obj: Any
-
-    @override
-    def __str__(self) -> str:
-        return _make_error_msg(self.obj, "sized and not a string")
 
 
 ##
@@ -633,67 +569,7 @@ def identity[T](obj: T, /) -> T:
 ##
 
 
-def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
-    """Check if an object is a dataclass."""
-    return isinstance(obj, type) and is_dataclass(obj)
-
-
-##
-
-
-def is_dataclass_instance(obj: Any, /) -> TypeGuard[Dataclass]:
-    """Check if an object is an instance of a dataclass."""
-    return (not isinstance(obj, type)) and is_dataclass(obj)
-
-
-##
-
-
-def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:
-    """Check if an object is hashable."""
-    try:
-        _ = hash(obj)
-    except TypeError:
-        return False
-    return True
-
-
-##
-
-
-@overload
-def is_iterable_of[T](obj: Any, cls: type[T], /) -> TypeGuard[Iterable[T]]: ...
-@overload
-def is_iterable_of[T1](
-    obj: Any, cls: tuple[type[T1]], /
-) -> TypeGuard[Iterable[T1]]: ...
-@overload
-def is_iterable_of[T1, T2](
-    obj: Any, cls: tuple[type[T1], type[T2]], /
-) -> TypeGuard[Iterable[T1 | T2]]: ...
-@overload
-def is_iterable_of[T1, T2, T3](
-    obj: Any, cls: tuple[type[T1], type[T2], type[T3]], /
-) -> TypeGuard[Iterable[T1 | T2 | T3]]: ...
-@overload
-def is_iterable_of[T1, T2, T3, T4](
-    obj: Any, cls: tuple[type[T1], type[T2], type[T3], type[T4]], /
-) -> TypeGuard[Iterable[T1 | T2 | T3 | T4]]: ...
-@overload
-def is_iterable_of[T1, T2, T3, T4, T5](
-    obj: Any, cls: tuple[type[T1], type[T2], type[T3], type[T4], type[T5]], /
-) -> TypeGuard[Iterable[T1 | T2 | T3 | T4 | T5]]: ...
-@overload
-def is_iterable_of[T](obj: Any, cls: TypeLike[T], /) -> TypeGuard[Iterable[T]]: ...
-def is_iterable_of[T](obj: Any, cls: TypeLike[T], /) -> TypeGuard[Iterable[T]]:
-    """Check if an object is a iterable of tuple or string mappings."""
-    return isinstance(obj, Iterable) and all(map(make_isinstance(cls), obj))
-
-
-##
-
-
-def is_none(obj: Any, /) -> bool:
+def is_none(obj: Any, /) -> TypeGuard[None]:
     """Check if an object is `None`."""
     return obj is None
 
@@ -704,126 +580,6 @@ def is_none(obj: Any, /) -> bool:
 def is_not_none(obj: Any, /) -> bool:
     """Check if an object is not `None`."""
     return obj is not None
-
-
-##
-
-
-@overload
-def is_sequence_of[T](obj: Any, cls: type[T], /) -> TypeGuard[Sequence[T]]: ...
-@overload
-def is_sequence_of[T1](
-    obj: Any, cls: tuple[type[T1]], /
-) -> TypeGuard[Sequence[T1]]: ...
-@overload
-def is_sequence_of[T1, T2](
-    obj: Any, cls: tuple[type[T1], type[T2]], /
-) -> TypeGuard[Sequence[T1 | T2]]: ...
-@overload
-def is_sequence_of[T1, T2, T3](
-    obj: Any, cls: tuple[type[T1], type[T2], type[T3]], /
-) -> TypeGuard[Sequence[T1 | T2 | T3]]: ...
-@overload
-def is_sequence_of[T1, T2, T3, T4](
-    obj: Any, cls: tuple[type[T1], type[T2], type[T3], type[T4]], /
-) -> TypeGuard[Sequence[T1 | T2 | T3 | T4]]: ...
-@overload
-def is_sequence_of[T1, T2, T3, T4, T5](
-    obj: Any, cls: tuple[type[T1], type[T2], type[T3], type[T4], type[T5]], /
-) -> TypeGuard[Sequence[T1 | T2 | T3 | T4 | T5]]: ...
-@overload
-def is_sequence_of[T](obj: Any, cls: TypeLike[T], /) -> TypeGuard[Sequence[T]]: ...
-def is_sequence_of[T](obj: Any, cls: TypeLike[T], /) -> TypeGuard[Sequence[T]]:
-    """Check if an object is a sequence of tuple or string mappings."""
-    return isinstance(obj, Sequence) and is_iterable_of(obj, cls)
-
-
-##
-
-
-def is_sequence_of_tuple_or_str_mapping(
-    obj: Any, /
-) -> TypeGuard[Sequence[TupleOrStrMapping]]:
-    """Check if an object is a sequence of tuple or string mappings."""
-    return isinstance(obj, Sequence) and all(map(is_tuple_or_str_mapping, obj))
-
-
-##
-
-
-def is_sized(obj: Any, /) -> TypeGuard[Sized]:
-    """Check if an object is sized."""
-    try:
-        _ = len(obj)
-    except TypeError:
-        return False
-    return True
-
-
-##
-
-
-def is_sized_not_str(obj: Any, /) -> TypeGuard[Sized]:
-    """Check if an object is sized, but not a string."""
-    return is_sized(obj) and not isinstance(obj, str)
-
-
-##
-
-
-def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
-    """Check if an object is a string mapping."""
-    return isinstance(obj, dict) and is_iterable_of(obj, str)
-
-
-##
-
-
-def is_tuple(obj: Any, /) -> TypeGuard[tuple[Any, ...]]:
-    """Check if an object is a tuple or string mapping."""
-    return make_isinstance(tuple)(obj)
-
-
-##
-
-
-def is_tuple_or_str_mapping(obj: Any, /) -> TypeGuard[TupleOrStrMapping]:
-    """Check if an object is a tuple or string mapping."""
-    return is_tuple(obj) or is_string_mapping(obj)
-
-
-##
-
-
-@overload
-def make_isinstance[T](cls: type[T], /) -> Callable[[Any], TypeGuard[T]]: ...
-@overload
-def make_isinstance[T1](cls: tuple[type[T1]], /) -> Callable[[Any], TypeGuard[T1]]: ...
-@overload
-def make_isinstance[T1, T2](
-    cls: tuple[type[T1], type[T2]], /
-) -> Callable[[Any], TypeGuard[T1 | T2]]: ...
-@overload
-def make_isinstance[T1, T2, T3](
-    cls: tuple[type[T1], type[T2], type[T3]], /
-) -> Callable[[Any], TypeGuard[T1 | T2 | T3]]: ...
-@overload
-def make_isinstance[T1, T2, T3, T4](
-    cls: tuple[type[T1], type[T2], type[T3], type[T4]], /
-) -> Callable[[Any], TypeGuard[T1 | T2 | T3 | T4]]: ...
-@overload
-def make_isinstance[T1, T2, T3, T4, T5](
-    cls: tuple[type[T1], type[T2], type[T3], type[T4], type[T5]], /
-) -> Callable[[Any], TypeGuard[T1 | T2 | T3 | T4 | T5]]: ...
-@overload
-def make_isinstance[T](cls: TypeLike[T], /) -> Callable[[Any], TypeGuard[T]]: ...
-def make_isinstance[T](cls: TypeLike[T], /) -> Callable[[Any], TypeGuard[T]]:
-    """Make a curried `isinstance` function."""
-    return partial(_make_instance_core, cls=cls)
-
-
-def _make_instance_core[T](obj: Any, /, *, cls: TypeLike[T]) -> TypeGuard[T]:
-    return isinstance(obj, cls)
 
 
 ##
@@ -1000,15 +756,12 @@ __all__ = [
     "EnsureClassError",
     "EnsureDateError",
     "EnsureFloatError",
-    "EnsureHashableError",
     "EnsureIntError",
     "EnsureMemberError",
     "EnsureNotNoneError",
     "EnsureNumberError",
     "EnsurePathError",
     "EnsurePlainDateTimeError",
-    "EnsureSizedError",
-    "EnsureSizedNotStrError",
     "EnsureStrError",
     "EnsureTimeDeltaError",
     "EnsureTimeError",
@@ -1021,15 +774,12 @@ __all__ = [
     "ensure_class",
     "ensure_date",
     "ensure_float",
-    "ensure_hashable",
     "ensure_int",
     "ensure_member",
     "ensure_not_none",
     "ensure_number",
     "ensure_path",
     "ensure_plain_date_time",
-    "ensure_sized",
-    "ensure_sized_not_str",
     "ensure_str",
     "ensure_time",
     "ensure_time_delta",
@@ -1040,19 +790,8 @@ __all__ = [
     "get_func_name",
     "get_func_qualname",
     "identity",
-    "is_dataclass_class",
-    "is_dataclass_instance",
-    "is_hashable",
-    "is_iterable_of",
     "is_none",
     "is_not_none",
-    "is_sequence_of_tuple_or_str_mapping",
-    "is_sized",
-    "is_sized_not_str",
-    "is_string_mapping",
-    "is_tuple",
-    "is_tuple_or_str_mapping",
-    "make_isinstance",
     "map_object",
     "max_nullable",
     "min_nullable",

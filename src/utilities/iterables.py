@@ -31,7 +31,6 @@ from typing import (
 )
 
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import ensure_hashable, ensure_str
 from utilities.math import (
     _CheckIntegerEqualError,
     _CheckIntegerEqualOrApproxError,
@@ -236,8 +235,7 @@ def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
             if lv != rv:
                 errors.append((i, lv, rv))
     except ValueError as error:
-        msg = ensure_str(one(error.args))
-        match msg:
+        match one(error.args):
             case "zip() argument 2 is longer than argument 1":
                 state = "right_longer"
             case "zip() argument 2 is shorter than argument 1":
@@ -690,18 +688,6 @@ def cmp_nullable[T: SupportsLT](x: T | None, y: T | None, /) -> Sign:
 def chunked[T](iterable: Iterable[T], n: int, /) -> Iterator[Sequence[T]]:
     """Break an iterable into lists of length n."""
     return iter(partial(take, n, iter(iterable)), [])
-
-
-##
-
-
-def ensure_hashables(
-    *args: Any, **kwargs: Any
-) -> tuple[list[Hashable], dict[str, Hashable]]:
-    """Ensure a set of positional & keyword arguments are all hashable."""
-    hash_args = list(map(ensure_hashable, args))
-    hash_kwargs = {k: ensure_hashable(v) for k, v in kwargs.items()}
-    return hash_args, hash_kwargs
 
 
 ##
@@ -1480,7 +1466,6 @@ __all__ = [
     "check_unique_modulo_case",
     "chunked",
     "cmp_nullable",
-    "ensure_hashables",
     "ensure_iterable",
     "ensure_iterable_not_str",
     "enumerate_with_edge",

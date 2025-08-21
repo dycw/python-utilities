@@ -6,11 +6,7 @@ from dataclasses import MISSING, dataclass, field, fields, replace
 from typing import TYPE_CHECKING, Any, Literal, assert_never, overload, override
 
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import (
-    get_class_name,
-    is_dataclass_class,
-    is_dataclass_instance,
-)
+from utilities.functions import get_class_name
 from utilities.iterables import (
     OneStrEmptyError,
     OneStrNonUniqueError,
@@ -35,7 +31,7 @@ from utilities.text import (
     split_key_value_pairs,
 )
 from utilities.types import MaybeType, SupportsLT
-from utilities.typing import get_type_hints
+from utilities.typing import get_type_hints, is_dataclass_class, is_dataclass_instance
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator

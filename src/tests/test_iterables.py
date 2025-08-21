@@ -32,7 +32,6 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 
 from tests.test_objects.objects import objects
-from utilities.functions import is_sequence_of
 from utilities.hypothesis import pairs, sentinels, sets_fixed_length, text_ascii
 from utilities.iterables import (
     CheckBijectionError,
@@ -88,7 +87,6 @@ from utilities.iterables import (
     check_unique_modulo_case,
     chunked,
     cmp_nullable,
-    ensure_hashables,
     ensure_iterable,
     ensure_iterable_not_str,
     enumerate_with_edge,
@@ -119,6 +117,7 @@ from utilities.iterables import (
     unique_everseen,
 )
 from utilities.sentinel import Sentinel, sentinel
+from utilities.typing import is_sequence_of
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping, Sequence
@@ -607,11 +606,6 @@ class TestCmpNullable:
         values, expected = case
         result = sorted(data.draw(permutations(values)), key=cmp_to_key(cmp_nullable))
         assert result == expected
-
-
-class TestEnsureHashables:
-    def test_main(self) -> None:
-        assert ensure_hashables(1, 2, a=3, b=4) == ([1, 2], {"a": 3, "b": 4})
 
 
 class TestEnsureIterable:

@@ -6,9 +6,9 @@ from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, cast, override
 
 import utilities.math
-from utilities.functions import is_dataclass_instance
 from utilities.iterables import SortIterableError, sort_iterable
 from utilities.reprlib import get_repr
+from utilities.typing import is_dataclass_instance
 
 if TYPE_CHECKING:
     from utilities.types import Dataclass, Number
