@@ -6,12 +6,14 @@ from dataclasses import dataclass, is_dataclass
 from functools import partial
 from itertools import chain
 from pathlib import Path
+from re import search
 from types import NoneType, UnionType
 from typing import (
     Any,
     ForwardRef,
     Literal,
     NamedTuple,
+    NotRequired,
     Optional,  # pyright: ignore[reportDeprecated]
     TypeAliasType,
     TypeGuard,
@@ -51,6 +53,18 @@ def get_args(obj: Any, /, *, optional_drop_none: bool = False) -> tuple[Any, ...
     if is_optional_type(obj) and optional_drop_none:
         args = tuple(a for a in args if a is not NoneType)
     return args
+
+
+##
+
+
+def get_forward_ref_args(obj: Any, /) -> Mapping[str, str]:
+    """Get the forward args."""
+    return {
+        k: v.__forward_arg__
+        for k, v in obj.__annotations__.items()
+        if isinstance(v, ForwardRef)
+    }
 
 
 ##
@@ -151,21 +165,20 @@ def get_type_hints(
     globalns_use = globals() | ({} if globalns is None else dict(globalns))
     localns_use = {} if localns is None else dict(localns)
     result: dict[str, Any] = obj.__annotations__
-    result = {
-        k: v.__forward_arg__ if isinstance(v, ForwardRef) else v
-        for k, v in result.items()
-    }
+    result = result | dict(get_forward_ref_args(obj))
     try:
-        hints = _get_type_hints(obj, globalns=globalns_use, localns=localns_use)
+        hints = _get_type_hints(
+            obj, globalns=globalns_use, localns=localns_use, include_extras=True
+        )
     except NameError as error:
         if warn_name_errors:
             warn(f"Error getting type hints for {obj!r}; {error}", stacklevel=2)
     else:
-        result.update({
+        result = result | {
             key: value
             for key, value in hints.items()
             if (key not in result) or isinstance(result[key], str)
-        })
+        }
     return result
 
 
@@ -393,17 +406,21 @@ def _is_instance_typed_dict[T: _TypedDictMeta](
     hints = get_type_hints(
         type_, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
     )
-    if not set(obj).issuperset(hints):
+    optional = {
+        k for k, v in type_.__annotations__.items() if is_not_required_annotation(v)
+    }
+    required = {k: v for k, v in hints.items() if k not in optional}
+    if not set(obj).issuperset(required):
         return False
     return all(
         is_instance_gen(
             obj[k],
-            hints[k],
+            required[k],
             globalns=globalns,
             localns=localns,
             warn_name_errors=warn_name_errors,
         )
-        for k in hints
+        for k in required
     )
 
 
@@ -572,6 +589,30 @@ def _is_namedtuple_core(obj: Any, /) -> bool:
     except (AttributeError, ValueError):
         return False
     return base is NamedTuple
+
+
+##
+
+
+def is_not_required_annotation(obj: Any) -> bool:
+    """Check if an annotation is not required."""
+    if is_not_required_type(obj):
+        return True
+    match obj:
+        case str() as text:
+            return bool(search("NotRequired", text))
+        case ForwardRef() as fr:
+            return is_not_required_annotation(fr.__forward_arg__)
+        case _:
+            return False
+
+
+##
+
+
+def is_not_required_type(obj: Any, /) -> bool:
+    """Check if an object is a not-required type annotation."""
+    return (obj is NotRequired) or _is_annotation_of_type(obj, NotRequired)
 
 
 ##
@@ -889,6 +930,8 @@ __all__ = [
     "is_mapping_type",
     "is_namedtuple_class",
     "is_namedtuple_instance",
+    "is_not_required_annotation",
+    "is_not_required_type",
     "is_optional_type",
     "is_sequence_of",
     "is_sequence_of_tuple_or_str_mapping",
