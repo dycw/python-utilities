@@ -31,7 +31,7 @@ from utilities.text import (
     split_key_value_pairs,
 )
 from utilities.types import MaybeType, SupportsLT
-from utilities.typing import get_type_hints
+from utilities.typing import get_type_hints, is_dataclass_class, is_dataclass_instance
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
