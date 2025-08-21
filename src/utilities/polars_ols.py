@@ -6,8 +6,8 @@ from polars import Expr, Series, struct
 from polars_ols import RollingKwargs, compute_rolling_least_squares
 
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import is_sequence_of
 from utilities.polars import concat_series, ensure_expr_or_series
+from utilities.typing import is_sequence_of
 
 if TYPE_CHECKING:
     from polars._typing import IntoExprColumn
