@@ -33,8 +33,6 @@ from utilities.whenever import (
     format_compact,
     get_now,
     get_now_local,
-    parse_plain_local,
-    to_local_plain,
     to_zoned_date_time,
 )
 
@@ -258,7 +256,9 @@ def _make_except_hook_inner(
     _ = sys.stderr.write(f"{slim}\n")  # don't 'from sys import stderr'
     if path is not None:
         path = to_path(path)
-        path_log = path.joinpath(to_local_plain(get_now())).with_suffix(".txt")
+        path_log = path.joinpath(
+            format_compact(get_now_local(), path=True)
+        ).with_suffix(".txt")
         full = format_exception_stack(
             exc_val,
             header=True,
@@ -294,7 +294,7 @@ def _make_except_hook_purge(path: PathLike, max_age: Delta, /) -> None:
     paths = {
         p
         for p in Path(path).iterdir()
-        if p.is_file() and (parse_plain_local(p.stem) <= threshold)
+        if p.is_file() and (to_zoned_date_time(p.stem) <= threshold)
     }
     for p in paths:
         p.unlink(missing_ok=True)

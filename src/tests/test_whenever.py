@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import DataObject, data, integers, none, sampled_from
+from pathvalidate import validate_filepath
 from pytest import mark, param, raises
 from whenever import (
     Date,
@@ -39,6 +40,7 @@ from utilities.hypothesis import (
     zoned_date_times_2000,
 )
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import TIME_ZONES
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.whenever import (
@@ -55,6 +57,7 @@ from utilities.whenever import (
     MINUTE,
     MONTH,
     NOW_LOCAL,
+    NOW_LOCAL_PLAIN,
     NOW_PLAIN,
     NOW_UTC,
     SECOND,
@@ -115,19 +118,18 @@ from utilities.whenever import (
     from_timestamp_nanos,
     get_now,
     get_now_local,
+    get_now_local_plain,
     get_now_plain,
     get_today,
     get_today_local,
     mean_datetime,
     min_max_date,
-    parse_plain_local,
     round_date_or_date_time,
     sub_year_month,
     to_date,
     to_date_time_delta,
     to_days,
     to_hours,
-    to_local_plain,
     to_microseconds,
     to_milliseconds,
     to_minutes,
@@ -158,6 +160,7 @@ if TYPE_CHECKING:
         MaybeCallableDateLike,
         MaybeCallableZonedDateTimeLike,
         TimeOrDateTimeDelta,
+        TimeZone,
     )
 
 
@@ -354,23 +357,45 @@ class TestFormatCompact:
         expected = time.round()
         assert parsed == expected
 
-    @given(datetime=plain_date_times())
-    def test_plain_datetime(self, *, datetime: PlainDateTime) -> None:
-        result = format_compact(datetime)
+    @given(date_time=plain_date_times())
+    def test_plain_date_time(self, *, date_time: PlainDateTime) -> None:
+        result = format_compact(date_time)
         assert isinstance(result, str)
         parsed = PlainDateTime.parse_common_iso(result)
         assert parsed.nanosecond == 0
-        expected = datetime.round()
+        expected = date_time.round()
         assert parsed == expected
 
-    @given(datetime=zoned_date_times())
-    def test_zoned_datetime(self, *, datetime: ZonedDateTime) -> None:
-        result = format_compact(datetime)
+    @given(date_time=zoned_date_times(time_zone=zone_infos()))
+    def test_zoned_date_time(self, *, date_time: ZonedDateTime) -> None:
+        result = format_compact(date_time)
         assert isinstance(result, str)
-        parsed = ZonedDateTime.parse_common_iso(result)
+        parsed = to_zoned_date_time(result)
         assert parsed.nanosecond == 0
-        expected = datetime.round()
+        expected = date_time.round()
         assert parsed == expected
+
+    @mark.parametrize(
+        ("time_zone", "suffix"),
+        [
+            param("America/Argentina/Buenos_Aires", "America~Argentina~Buenos_Aires"),
+            param("Asia/Hong_Kong", "Asia~Hong_Kong"),
+            param("Etc/GMT", "Etc~GMT"),
+            param("Etc/GMT+1", "Etc~GMT+1"),
+            param("Etc/GMT-1", "Etc~GMT-1"),
+        ],
+    )
+    def test_zoned_date_time_path(self, *, time_zone: TimeZone, suffix: str) -> None:
+        assert time_zone in TIME_ZONES
+        date_time = ZonedDateTime(
+            2000, 1, 2, 12, 34, 56, nanosecond=123456789, tz=time_zone
+        )
+        ser = format_compact(date_time, path=True)
+        validate_filepath(ser)
+        expected = f"20000102T123456[{suffix}]"
+        assert ser == expected
+        result = to_zoned_date_time(ser)
+        assert result.exact_eq(date_time.round())
 
 
 class TestFromTimeStamp:
@@ -425,6 +450,15 @@ class TestGetNowLocal:
     def test_constant(self) -> None:
         assert isinstance(NOW_LOCAL, ZonedDateTime)
         assert NOW_LOCAL.tz == LOCAL_TIME_ZONE_NAME
+
+
+class TestGetNowLocalPlain:
+    def test_function(self) -> None:
+        now = get_now_local_plain()
+        assert isinstance(now, PlainDateTime)
+
+    def test_constant(self) -> None:
+        assert isinstance(NOW_LOCAL_PLAIN, PlainDateTime)
 
 
 class TestGetNowPlain:
@@ -968,15 +1002,6 @@ class TestToHours:
             _ = to_hours(delta)
 
 
-class TestToLocalPlainAndParsePlainLocal:
-    @given(date_time=zoned_date_times())
-    def test_main(self, *, date_time: ZonedDateTime) -> None:
-        text = to_local_plain(date_time)
-        assert isinstance(text, str)
-        parsed = parse_plain_local(text)
-        assert abs(parsed - date_time) <= SECOND
-
-
 class TestToMicroseconds:
     @given(days=integers())
     def test_date_delta(self, *, days: int) -> None:
@@ -1399,9 +1424,13 @@ class TestToZonedDateTime:
         expected = date_time.to_tz(time_zone.key)
         assert result.exact_eq(expected)
 
-    @given(date_time=zoned_date_times(), time_zone=zone_infos())
-    def test_str(self, *, date_time: ZonedDateTime, time_zone: ZoneInfo) -> None:
-        result = to_zoned_date_time(date_time.format_common_iso(), time_zone=time_zone)
+    @given(data=data(), date_time=zoned_date_times(), time_zone=zone_infos())
+    def test_str(
+        self, *, data: DataObject, date_time: ZonedDateTime, time_zone: ZoneInfo
+    ) -> None:
+        text = date_time.format_common_iso()
+        text_use = data.draw(sampled_from([text, text.replace("/", "_")]))
+        result = to_zoned_date_time(text_use, time_zone=time_zone)
         expected = date_time.to_tz(time_zone.key)
         assert result.exact_eq(expected)
 

@@ -310,7 +310,11 @@ def diff_year_month(
 
 
 def format_compact(
-    obj: Date | Time | PlainDateTime | ZonedDateTime, /, *, fmt: str | None = None
+    obj: Date | Time | PlainDateTime | ZonedDateTime,
+    /,
+    *,
+    fmt: str | None = None,
+    path: bool = False,
 ) -> str:
     """Format the date/datetime in a compact fashion."""
     match obj:
@@ -320,11 +324,15 @@ def format_compact(
         case Time() as time:
             obj_use = time.round().py_time()
             fmt_use = "%H%M%S" if fmt is None else fmt
-        case PlainDateTime() as datetime:
-            obj_use = datetime.round().py_datetime()
+        case PlainDateTime() as date_time:
+            obj_use = date_time.round().py_datetime()
             fmt_use = "%Y%m%dT%H%M%S" if fmt is None else fmt
-        case ZonedDateTime() as datetime:
-            return f"{format_compact(datetime.to_plain(), fmt=fmt)}[{datetime.tz}]"
+        case ZonedDateTime() as date_time:
+            plain = format_compact(date_time.to_plain(), fmt=fmt)
+            tz = date_time.tz
+            if path:
+                tz = tz.replace("/", "~")
+            return f"{plain}[{tz}]"
         case never:
             assert_never(never)
     return obj_use.strftime(get_strftime(fmt_use))
@@ -352,7 +360,7 @@ def from_timestamp_nanos(i: int, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDa
 
 
 def get_now(time_zone: TimeZoneLike = UTC, /) -> ZonedDateTime:
-    """Get the current zoned datetime."""
+    """Get the current zoned date-time."""
     return ZonedDateTime.now(to_time_zone_name(time_zone))
 
 
@@ -360,7 +368,7 @@ NOW_UTC = get_now(UTC)
 
 
 def get_now_local() -> ZonedDateTime:
-    """Get the current local time."""
+    """Get the current local date-time."""
     return get_now(LOCAL_TIME_ZONE)
 
 
@@ -368,11 +376,19 @@ NOW_LOCAL = get_now_local()
 
 
 def get_now_plain(time_zone: TimeZoneLike = UTC, /) -> PlainDateTime:
-    """Get the current zoned datetime."""
+    """Get the current date-time as a plain date-time."""
     return get_now(time_zone).to_plain()
 
 
 NOW_PLAIN = get_now_plain()
+
+
+def get_now_local_plain() -> PlainDateTime:
+    """Get the current local date-time as a plain date-time."""
+    return get_now_local().to_plain()
+
+
+NOW_LOCAL_PLAIN = get_now_local_plain()
 
 
 ##
@@ -1014,19 +1030,6 @@ class _ToHoursNanosecondsError(ToHoursError):
 ##
 
 
-def to_local_plain(date_time: ZonedDateTime, /) -> str:
-    """Convert a datetime to its local/plain variant."""
-    return format_compact(date_time.to_tz(LOCAL_TIME_ZONE_NAME).to_plain())
-
-
-def parse_plain_local(text: str, /) -> ZonedDateTime:
-    """Parse a plain, local datetime."""
-    return PlainDateTime.parse_common_iso(text).assume_tz(LOCAL_TIME_ZONE_NAME)
-
-
-##
-
-
 def to_microseconds(delta: Delta, /) -> int:
     """Compute the number of microseconds in a delta."""
     match delta:
@@ -1644,8 +1647,8 @@ def to_zoned_date_time(
             return sentinel
         case None:
             return get_now(UTC if time_zone is None else time_zone)
-        case str():
-            date_time_use = ZonedDateTime.parse_common_iso(date_time)
+        case str() as text:
+            date_time_use = ZonedDateTime.parse_common_iso(text.replace("~", "/"))
         case dt.datetime() as py_date_time:
             if isinstance(date_time.tzinfo, ZoneInfo):
                 py_date_time_use = py_date_time
@@ -1925,6 +1928,7 @@ __all__ = [
     "MINUTE",
     "MONTH",
     "NOW_LOCAL",
+    "NOW_LOCAL_PLAIN",
     "NOW_PLAIN",
     "SECOND",
     "TIME_DELTA_MAX",
@@ -1965,18 +1969,17 @@ __all__ = [
     "from_timestamp_nanos",
     "get_now",
     "get_now_local",
+    "get_now_local_plain",
     "get_now_plain",
     "get_today",
     "get_today_local",
     "mean_datetime",
     "min_max_date",
-    "parse_plain_local",
     "round_date_or_date_time",
     "sub_year_month",
     "to_date",
     "to_date_time_delta",
     "to_days",
-    "to_local_plain",
     "to_microseconds",
     "to_milliseconds",
     "to_minutes",

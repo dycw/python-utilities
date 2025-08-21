@@ -153,7 +153,7 @@ class TestEnhancedContextManager:
     def test_multiprocessing_sigterm(
         self, *, tmp_path: Path, target: Callable[..., None]
     ) -> None:
-        sleep = 0.5
+        sleep = 1.0
         marker = tmp_path.joinpath("marker")
         proc = Process(target=target, args=(marker,), kwargs={"sleep": 4 * sleep})
         proc.start()

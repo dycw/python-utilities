@@ -523,7 +523,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.162.11"
+version = "0.163.0"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -683,7 +683,6 @@ pottery = [
 ]
 pottery-test = [
     { name = "orjson" },
-    { name = "pytest-rerunfailures" },
 ]
 pqdm = [
     { name = "pqdm" },
@@ -764,6 +763,9 @@ typed-settings = [
 ]
 tzdata = [
     { name = "tzdata" },
+]
+whenever-test = [
+    { name = "pathvalidate" },
 ]
 
 [package.metadata]
@@ -864,10 +866,7 @@ polars-test = [
     { name = "statsmodels" },
 ]
 pottery = [{ name = "pottery", specifier = ">=3.0.1,<3.1" }]
-pottery-test = [
-    { name = "orjson" },
-    { name = "pytest-rerunfailures" },
-]
+pottery-test = [{ name = "orjson" }]
 pqdm = [{ name = "pqdm", specifier = ">=0.2.0,<0.3" }]
 psutil = [{ name = "psutil", specifier = ">=7.0.0,<7.1" }]
 pyinstrument = [{ name = "pyinstrument", specifier = ">=5.1.0,<5.2" }]
@@ -920,6 +919,7 @@ statsmodels = [{ name = "statsmodels", specifier = ">=0.14.4,<0.15" }]
 testbook = [{ name = "testbook", specifier = ">=0.4.2,<0.5" }]
 typed-settings = [{ name = "typed-settings", specifier = ">=25.0.0,<25.1" }]
 tzdata = [{ name = "tzdata", specifier = ">=2025.2,<2025.3" }]
+whenever-test = [{ name = "pathvalidate" }]
 
 [[package]]
 name = "execnet"
