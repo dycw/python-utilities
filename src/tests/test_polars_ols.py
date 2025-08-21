@@ -3,7 +3,7 @@ from __future__ import annotations
 from hypothesis import given
 from hypothesis.strategies import sampled_from
 from numpy import isclose
-from polars import DataFrame, Float64, Series, Struct, col
+from polars import DataFrame, Float64, Series, Struct, col, mean_horizontal
 from polars.testing import assert_frame_equal
 from sklearn.linear_model import LinearRegression
 
@@ -77,9 +77,7 @@ class TestComputeRollingOLS:
             integers(n, -100, high=100, seed=0).alias("x1"),
             integers(n, -100, high=100, seed=1).alias("x2"),
         ).with_columns(
-            ((col("x1") + 2 * col("x2") + normal_rv(n, scale=10.0, seed=2)) / 3).alias(
-                "y"
-            )
+            y=mean_horizontal("x1", 2 * col.x2, normal_rv(n, scale=10.0, seed=2))
         )
 
     def _assert_series(self, series: Series, /) -> None:
