@@ -16,7 +16,7 @@ import hypothesis.strategies
 import numpy as np
 import polars as pl
 import whenever
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -57,11 +57,13 @@ from polars._typing import IntoExprColumn, SchemaDict
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
+from scipy.stats import norm
 from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 import tests.test_math
 import utilities.polars
 from utilities.hypothesis import (
+    assume_does_not_raise,
     date_deltas,
     date_periods,
     date_time_deltas,
@@ -180,7 +182,8 @@ from utilities.polars import (
     map_over_columns,
     nan_sum_agg,
     nan_sum_horizontal,
-    normal,
+    normal_pdf,
+    normal_rv,
     number_of_decimals,
     offset_datetime,
     one_column,
@@ -2195,22 +2198,39 @@ class TestNanSumHorizontal:
         assert result.item() == expected
 
 
-class TestNormal:
+class TestNormalPDF:
+    @given(
+        xs=lists(float64s(), max_size=10),
+        loc=float64s(),
+        scale=float64s(min_value=0.0, exclude_min=True),
+    )
+    def test_main(self, *, xs: list[float], loc: float, scale: float) -> None:
+        x = Series(name="x", values=xs, dtype=Float64)
+        series = normal_pdf(x, loc=loc, scale=scale)
+        _ = assume(series.is_finite().all())
+        with assume_does_not_raise(
+            RuntimeWarning, match="overflow encountered in (subtract|square|divide)"
+        ):
+            expected = norm.pdf(xs, loc=loc, scale=scale)
+        assert allclose(series, expected)
+
+
+class TestNormalRV:
     @given(length=hypothesis.strategies.integers(0, 10))
     def test_int(self, *, length: int) -> None:
-        series = normal(length)
+        series = normal_rv(length)
         self._assert(series, length)
 
     @given(length=hypothesis.strategies.integers(0, 10))
     def test_series(self, *, length: int) -> None:
         orig = int_range(end=length, eager=True)
-        series = normal(orig)
+        series = normal_rv(orig)
         self._assert(series, length)
 
     @given(length=hypothesis.strategies.integers(0, 10))
     def test_dataframe(self, *, length: int) -> None:
         df = int_range(end=length, eager=True).to_frame()
-        series = normal(df)
+        series = normal_rv(df)
         self._assert(series, length)
 
     def _assert(self, series: Series, length: int, /) -> None:

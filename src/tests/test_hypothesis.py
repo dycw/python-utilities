@@ -381,29 +381,55 @@ class TestDraw2:
 
 
 class TestFloat32s:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
+    @given(data=data(), exclude_min=booleans(), exclude_max=booleans())
+    def test_main(
+        self, *, data: DataObject, exclude_min: bool, exclude_max: bool
+    ) -> None:
         min_value, max_value = data.draw(pairs(float32s() | none()))
         with assume_does_not_raise(InvalidArgument):
-            x = data.draw(float32s(min_value=min_value, max_value=max_value))
+            x = data.draw(
+                float32s(
+                    min_value=min_value,
+                    max_value=max_value,
+                    exclude_min=exclude_min,
+                    exclude_max=exclude_max,
+                )
+            )
         assert MIN_FLOAT32 <= x <= MAX_FLOAT32
         if min_value is not None:
             assert x >= min_value
+            if exclude_min:
+                assert x != min_value
         if max_value is not None:
             assert x <= max_value
+            if exclude_max:
+                assert x != max_value
 
 
 class TestFloat64s:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
+    @given(data=data(), exclude_min=booleans(), exclude_max=booleans())
+    def test_main(
+        self, *, data: DataObject, exclude_min: bool, exclude_max: bool
+    ) -> None:
         min_value, max_value = data.draw(pairs(float64s() | none()))
         with assume_does_not_raise(InvalidArgument):
-            x = data.draw(float64s(min_value=min_value, max_value=max_value))
+            x = data.draw(
+                float64s(
+                    min_value=min_value,
+                    max_value=max_value,
+                    exclude_min=exclude_min,
+                    exclude_max=exclude_max,
+                )
+            )
         assert MIN_FLOAT64 <= x <= MAX_FLOAT64
         if min_value is not None:
             assert x >= min_value
         if max_value is not None:
             assert x <= max_value
+        if max_value is not None:
+            assert x <= max_value
+            if exclude_max:
+                assert x != max_value
 
 
 class TestFloatArrays:

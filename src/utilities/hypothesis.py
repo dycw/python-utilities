@@ -412,6 +412,8 @@ def float32s(
     *,
     min_value: MaybeSearchStrategy[float | None] = None,
     max_value: MaybeSearchStrategy[float | None] = None,
+    exclude_min: MaybeSearchStrategy[bool] = False,
+    exclude_max: MaybeSearchStrategy[bool] = False,
 ) -> float:
     """Strategy for generating float32s."""
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
@@ -419,7 +421,16 @@ def float32s(
     max_value_ = min_nullable([max_value_, MAX_FLOAT32])
     if is_zero(min_value_) and is_zero(max_value_):
         min_value_ = max_value_ = 0.0
-    return draw(floats(min_value_, max_value_, width=32))
+    exclude_min_, exclude_max_ = [draw2(draw, e) for e in [exclude_min, exclude_max]]
+    return draw(
+        floats(
+            min_value_,
+            max_value_,
+            width=32,
+            exclude_min=exclude_min_,
+            exclude_max=exclude_max_,
+        )
+    )
 
 
 @composite
@@ -429,6 +440,8 @@ def float64s(
     *,
     min_value: MaybeSearchStrategy[float | None] = None,
     max_value: MaybeSearchStrategy[float | None] = None,
+    exclude_min: MaybeSearchStrategy[bool] = False,
+    exclude_max: MaybeSearchStrategy[bool] = False,
 ) -> float:
     """Strategy for generating float64s."""
     min_value_, max_value_ = [draw2(draw, v) for v in [min_value, max_value]]
@@ -436,7 +449,16 @@ def float64s(
     max_value_ = min_nullable([max_value_, MAX_FLOAT64])
     if is_zero(min_value_) and is_zero(max_value_):
         min_value_ = max_value_ = 0.0
-    return draw(floats(min_value_, max_value_, width=64))
+    exclude_min_, exclude_max_ = [draw2(draw, e) for e in [exclude_min, exclude_max]]
+    return draw(
+        floats(
+            min_value_,
+            max_value_,
+            width=64,
+            exclude_min=exclude_min_,
+            exclude_max=exclude_max_,
+        )
+    )
 
 
 ##
