@@ -290,7 +290,7 @@ def _make_except_hook_inner(
 
 
 def _make_except_hook_purge(path: PathLike, max_age: Delta, /) -> None:
-    threshold = get_now() - max_age
+    threshold = get_now_local() - max_age
     paths: set[Path] = set()
     for p in Path(path).iterdir():
         if p.is_file():
