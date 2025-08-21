@@ -92,6 +92,14 @@ def _pascal_case_one(text: str, /) -> str:
 ##
 
 
+def prompt_bool(prompt: object = "", /, *, confirm: bool = False) -> bool:
+    """Prompt for a boolean."""
+    return True if confirm else parse_bool(input(prompt))
+
+
+##
+
+
 def repr_encode(obj: Any, /) -> bytes:
     """Return the representation of the object encoded as bytes."""
     return repr(obj).encode()
@@ -518,6 +526,7 @@ __all__ = [
     "parse_bool",
     "parse_none",
     "pascal_case",
+    "prompt_bool",
     "repr_encode",
     "secret_str",
     "snake_case",
