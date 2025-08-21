@@ -16,7 +16,7 @@ import hypothesis.strategies
 import numpy as np
 import polars as pl
 import whenever
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -57,18 +57,19 @@ from polars._typing import IntoExprColumn, SchemaDict
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
+from scipy.stats import norm
 from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 import tests.test_math
 import utilities.polars
 from utilities.hypothesis import (
+    assume_does_not_raise,
     date_deltas,
     date_periods,
     date_time_deltas,
     dates,
     float64s,
     int64s,
-    lists_fixed_length,
     pairs,
     py_datetimes,
     temp_paths,
@@ -181,6 +182,7 @@ from utilities.polars import (
     map_over_columns,
     nan_sum_agg,
     nan_sum_horizontal,
+    normal_pdf,
     normal_rv,
     number_of_decimals,
     offset_datetime,
@@ -2197,15 +2199,20 @@ class TestNanSumHorizontal:
 
 
 class TestNormalPDF:
-    @given(data=data(), length=hypothesis.strategies.integers(0, 10))
-    def test_main(self, *, data: DataObject, length: int) -> None:
-        data.draw(lists_fixed_length(float64s(), length))
-        locs = float64s()
-        data.draw(locs | lists_fixed_length(locs, length))
-        sigmas = float64s(min_value=0.0)
-        data.draw(sigmas | lists_fixed_length(sigmas, length))
-        series = normal_rv(length)
-        self._assert(series, length)
+    @given(
+        xs=lists(float64s(), max_size=10),
+        loc=float64s(),
+        scale=float64s(min_value=0.0, exclude_min=True),
+    )
+    def test_main(self, *, xs: list[float], loc: float, scale: float) -> None:
+        x = Series(name="x", values=xs, dtype=Float64)
+        series = normal_pdf(x, loc=loc, scale=scale)
+        _ = assume(series.is_finite().all())
+        with assume_does_not_raise(
+            RuntimeWarning, match="overflow encountered in (subtract|square|divide)"
+        ):
+            expected = norm.pdf(xs, loc=loc, scale=scale)
+        assert allclose(series, expected)
 
 
 class TestNormalRV:
