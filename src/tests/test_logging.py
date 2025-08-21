@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from asyncio import sleep
+from dataclasses import dataclass, field
 from io import StringIO
-from logging import Formatter, StreamHandler, getLogger
+from logging import Formatter, LoggerAdapter, StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, cast
 
 from hypothesis import given
-from hypothesis.strategies import booleans, integers
+from hypothesis.strategies import integers
 from pytest import LogCaptureFixture, mark, param, raises
 
 from tests.conftest import SKIPIF_CI_AND_WINDOWS
@@ -20,6 +21,7 @@ from utilities.logging import (
     _compute_rollover_actions,
     _FieldStyleKeys,
     _RotatingLogFile,
+    add_adapter,
     add_filters,
     basic_config,
     get_format_str,
@@ -41,14 +43,37 @@ if TYPE_CHECKING:
     from whenever import ZonedDateTime
 
 
+class TestAddAdapter:
+    def test_main(self, *, caplog: LogCaptureFixture) -> None:
+        logger = getLogger(name := unique_str())
+        logger.setLevel("DEBUG")
+
+        def process(msg: str, x: int, /) -> str:
+            return f"x={x}: {msg}"
+
+        @dataclass
+        class Example:
+            x: int = 0
+            logger: LoggerAdapter = field(init=False)
+
+            def __post_init__(self) -> None:
+                self.logger = add_adapter(logger, process, self.x)
+                self.logger.info("Initializing...")
+
+        _ = Example()
+        record = one(r for r in caplog.records if r.name == name)
+        assert record.message == "x=0: Initializing..."
+
+
 class TestAddFilters:
-    @given(expected=booleans())
+    @mark.parametrize("expected", [param(True), param(False)])
     def test_main(self, *, expected: bool) -> None:
         logger = getLogger(unique_str())
         logger.addHandler(handler := StreamHandler(buffer := StringIO()))
+        logger.setLevel("DEBUG")
         add_filters(handler, lambda _: expected)
         assert len(handler.filters) == 1
-        logger.warning("message")
+        logger.info("message")
         result = buffer.getvalue() != ""
         assert result is expected
 
