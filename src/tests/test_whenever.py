@@ -55,6 +55,7 @@ from utilities.whenever import (
     MINUTE,
     MONTH,
     NOW_LOCAL,
+    NOW_LOCAL_PLAIN,
     NOW_PLAIN,
     NOW_UTC,
     SECOND,
@@ -115,19 +116,18 @@ from utilities.whenever import (
     from_timestamp_nanos,
     get_now,
     get_now_local,
+    get_now_local_plain,
     get_now_plain,
     get_today,
     get_today_local,
     mean_datetime,
     min_max_date,
-    parse_plain_local,
     round_date_or_date_time,
     sub_year_month,
     to_date,
     to_date_time_delta,
     to_days,
     to_hours,
-    to_local_plain,
     to_microseconds,
     to_milliseconds,
     to_minutes,
@@ -433,6 +433,15 @@ class TestGetNowLocal:
     def test_constant(self) -> None:
         assert isinstance(NOW_LOCAL, ZonedDateTime)
         assert NOW_LOCAL.tz == LOCAL_TIME_ZONE_NAME
+
+
+class TestGetNowLocalPlain:
+    def test_function(self) -> None:
+        now = get_now_local_plain()
+        assert isinstance(now, PlainDateTime)
+
+    def test_constant(self) -> None:
+        assert isinstance(NOW_LOCAL_PLAIN, PlainDateTime)
 
 
 class TestGetNowPlain:
@@ -974,15 +983,6 @@ class TestToHours:
             match="Delta must not contain extra nanoseconds; got .*",
         ):
             _ = to_hours(delta)
-
-
-class TestToLocalPlainAndParsePlainLocal:
-    @given(date_time=zoned_date_times())
-    def test_main(self, *, date_time: ZonedDateTime) -> None:
-        text = to_local_plain(date_time)
-        assert isinstance(text, str)
-        parsed = parse_plain_local(text)
-        assert abs(parsed - date_time) <= SECOND
 
 
 class TestToMicroseconds:

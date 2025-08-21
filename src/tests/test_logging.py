@@ -31,7 +31,7 @@ from utilities.logging import (
 from utilities.text import unique_str
 from utilities.types import LogLevel
 from utilities.typing import get_args
-from utilities.whenever import get_now, to_local_plain
+from utilities.whenever import format_compact, get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -188,7 +188,7 @@ class TestComputeRolloverActions:
 
         await sleep(1)
         tmp_path.joinpath("log.txt").touch()
-        now = to_local_plain(get_now())
+        now = format_compact(get_now_local(), path=True)
         tmp_path.joinpath(f"log.99__{now}__{now}.txt").touch()
         actions = _compute_rollover_actions(tmp_path, "log", ".txt")
         assert len(actions.deletions) == 2
@@ -278,7 +278,7 @@ class TestRotatingLogFile:
     def test_from_path_with_index_and_end(
         self, *, index: int, end: ZonedDateTime
     ) -> None:
-        path = Path(f"log.{index}__{to_local_plain(end)}.txt")
+        path = Path(f"log.{index}__{format_compact(end, path=True)}.txt")
         result = _RotatingLogFile.from_path(path, "log", ".txt")
         assert result is not None
         assert result.stem == "log"
@@ -294,7 +294,9 @@ class TestRotatingLogFile:
         self, *, index: int, datetimes: tuple[ZonedDateTime, ZonedDateTime]
     ) -> None:
         start, end = datetimes
-        path = Path(f"log.{index}__{to_local_plain(start)}__{to_local_plain(end)}.txt")
+        path = Path(
+            f"log.{index}__{format_compact(start, path=True)}__{format_compact(end, path=True)}.txt"
+        )
         result = _RotatingLogFile.from_path(path, "log", ".txt")
         assert result is not None
         assert result.stem == "log"
@@ -324,7 +326,9 @@ class TestRotatingLogFile:
         file = _RotatingLogFile(
             directory=root, stem="log", suffix=".txt", index=index, end=end
         )
-        assert file.path == root.joinpath(f"log.{index}__{to_local_plain(end)}.txt")
+        assert file.path == root.joinpath(
+            f"log.{index}__{format_compact(end, path=True)}.txt"
+        )
 
     @given(
         root=temp_paths(),
@@ -339,7 +343,7 @@ class TestRotatingLogFile:
             directory=root, stem="log", suffix=".txt", index=index, start=start, end=end
         )
         assert file.path == root.joinpath(
-            f"log.{index}__{to_local_plain(start)}__{to_local_plain(end)}.txt"
+            f"log.{index}__{format_compact(start, path=True)}__{format_compact(end, path=True)}.txt"
         )
 
 
