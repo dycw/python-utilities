@@ -8,6 +8,7 @@ from logging import (
     Formatter,
     Handler,
     Logger,
+    LoggerAdapter,
     LogRecord,
     StreamHandler,
     basicConfig,
@@ -22,6 +23,7 @@ from socket import gethostname
 from typing import (
     TYPE_CHECKING,
     Any,
+    Concatenate,
     Literal,
     NotRequired,
     Self,
@@ -53,7 +55,7 @@ from utilities.whenever import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Callable, Iterable, Mapping, MutableMapping
     from datetime import time
     from logging import _FilterType
 
@@ -63,6 +65,7 @@ if TYPE_CHECKING:
         MaybeCallablePathLike,
         MaybeIterable,
         PathLike,
+        StrMapping,
     )
 
 
@@ -70,6 +73,35 @@ _DEFAULT_DATEFMT = "%Y-%m-%d %H:%M:%S"
 _DEFAULT_BACKUP_COUNT: int = 100
 _DEFAULT_MAX_BYTES: int = 10 * 1024**2
 _DEFAULT_WHEN: _When = "D"
+
+
+##
+
+
+def add_adapter[**P](
+    logger: Logger,
+    process: Callable[Concatenate[str, P], str],
+    /,
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> LoggerAdapter:
+    """Add an adapter to a logger."""
+
+    class CustomAdapter(LoggerAdapter):
+        @override
+        def process(
+            self, msg: str, kwargs: MutableMapping[str, Any]
+        ) -> tuple[str, MutableMapping[str, Any]]:
+            extra = cast("_ArgsAndKwargs", self.extra)
+            new_msg = process(msg, *extra["args"], **extra["kwargs"])
+            return new_msg, kwargs
+
+    return CustomAdapter(logger, extra=_ArgsAndKwargs(args=args, kwargs=kwargs))
+
+
+class _ArgsAndKwargs(TypedDict):
+    args: tuple[Any, ...]
+    kwargs: StrMapping
 
 
 ##
@@ -589,6 +621,7 @@ def to_logger(logger: LoggerLike | None = None, /) -> Logger:
 __all__ = [
     "GetLoggingLevelNumberError",
     "SizeAndTimeRotatingFileHandler",
+    "add_adapter",
     "add_filters",
     "basic_config",
     "get_format_str",

@@ -333,7 +333,7 @@ def is_instance_gen(
                 warn_name_errors=warn_name_errors,
             )
             for t in type_
-        )  # skipif-ci-and-not-windows
+        )
     if is_literal_type(type_):
         return obj in get_args(type_)
     if is_union_type(type_):
