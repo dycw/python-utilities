@@ -88,7 +88,6 @@ from utilities.iterables import (
     check_unique_modulo_case,
     chunked,
     cmp_nullable,
-    ensure_hashables,
     ensure_iterable,
     ensure_iterable_not_str,
     enumerate_with_edge,
@@ -607,11 +606,6 @@ class TestCmpNullable:
         values, expected = case
         result = sorted(data.draw(permutations(values)), key=cmp_to_key(cmp_nullable))
         assert result == expected
-
-
-class TestEnsureHashables:
-    def test_main(self) -> None:
-        assert ensure_hashables(1, 2, a=3, b=4) == ([1, 2], {"a": 3, "b": 4})
 
 
 class TestEnsureIterable:

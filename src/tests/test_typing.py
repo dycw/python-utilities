@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from random import Random
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypedDict
 from uuid import UUID
 
 import whenever
@@ -71,6 +71,7 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureZonedDateTimePeriod,
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
+    TypedDictFutureIntFloat,
 )
 from utilities.hypothesis import text_ascii
 from utilities.sentinel import Sentinel
@@ -477,6 +478,15 @@ class TestGetTypeHints:
         expected = {"truth": TrueOrFalseFutureTypeLit}
         assert hints == expected
 
+    def test_typed_dict(self) -> None:
+        class Example(TypedDict):
+            int_: int
+            float_: float
+
+        hints = get_type_hints(Example)
+        expected = {"int_": int, "float_": float}
+        assert hints == expected
+
     @given(data=data())
     def test_uuid(self, *, data: DataObject) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -752,6 +762,24 @@ class TestIsInstanceGen:
 
         assert not is_instance_gen(int_, MyInt)
         assert is_instance_gen(MyInt(int_), MyInt)
+
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param({}, False),
+            param({None: False}, False),
+            param({"int_": None}, False),
+            param({"int_": None, "float_": None}, False),
+            param({"int_": 0, "float_": None}, False),
+            param({"int_": None, "float_": 0.0}, False),
+            param({"int_": 0, "float_": 0.0}, True),
+            param({"int_": 0, "float_": 0.0, "extra": None}, True),
+        ],
+    )
+    def test_typed_dict(self, *, obj: Any, expected: bool) -> None:
+        result = is_instance_gen(obj, TypedDictFutureIntFloat)
+        assert result is expected
 
     def test_error(self) -> None:
         with raises(

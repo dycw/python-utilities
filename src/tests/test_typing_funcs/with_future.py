@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Literal, override
+from typing import TYPE_CHECKING, Literal, TypedDict, override
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -234,3 +234,8 @@ class DataClassFutureZonedDateTime:
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
 class DataClassFutureZonedDateTimePeriod:
     period: ZonedDateTimePeriod
+
+
+class TypedDictFutureIntFloat(TypedDict):
+    int_: int
+    float_: float

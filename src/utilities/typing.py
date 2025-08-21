@@ -8,12 +8,15 @@ from pathlib import Path
 from types import NoneType, UnionType
 from typing import (
     Any,
+    ForwardRef,
     Literal,
     NamedTuple,
     Optional,  # pyright: ignore[reportDeprecated]
     TypeAliasType,
     TypeGuard,
     Union,  # pyright: ignore[reportDeprecated]
+    _TypedDictMeta,
+    cast,
     get_origin,
     overload,
     override,
@@ -147,6 +150,10 @@ def get_type_hints(
     globalns_use = globals() | ({} if globalns is None else dict(globalns))
     localns_use = {} if localns is None else dict(localns)
     result: dict[str, Any] = obj.__annotations__
+    result = {
+        k: v.__forward_arg__ if isinstance(v, ForwardRef) else v
+        for k, v in result.items()
+    }
     try:
         hints = _get_type_hints(obj, globalns=globalns_use, localns=localns_use)
     except NameError as error:
@@ -219,48 +226,168 @@ def is_frozenset_type(obj: Any, /) -> bool:
 
 
 @overload
-def is_instance_gen[T](obj: Any, type_: type[T], /) -> TypeGuard[T]: ...
+def is_instance_gen[T](
+    obj: Any,
+    type_: type[T],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[T]: ...
 @overload
-def is_instance_gen[T1](obj: Any, type_: tuple[T1], /) -> TypeGuard[T1]: ...
+def is_instance_gen[T1](
+    obj: Any,
+    type_: tuple[T1],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[T1]: ...
 @overload
 def is_instance_gen[T1, T2](
-    obj: Any, type_: tuple[T1, T2], /
+    obj: Any,
+    type_: tuple[T1, T2],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
 ) -> TypeGuard[T1 | T2]: ...
 @overload
 def is_instance_gen[T1, T2, T3](
-    obj: Any, type_: tuple[T1, T2, T3], /
+    obj: Any,
+    type_: tuple[T1, T2, T3],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
 ) -> TypeGuard[T1 | T2 | T3]: ...
 @overload
 def is_instance_gen[T1, T2, T3, T4](
-    obj: Any, type_: tuple[T1, T2, T3, T4], /
+    obj: Any,
+    type_: tuple[T1, T2, T3, T4],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
 ) -> TypeGuard[T1 | T2 | T3 | T4]: ...
 @overload
 def is_instance_gen[T1, T2, T3, T4, T5](
-    obj: Any, type_: tuple[T1, T2, T3, T4, T5], /
+    obj: Any,
+    type_: tuple[T1, T2, T3, T4, T5],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
 ) -> TypeGuard[T1 | T2 | T3 | T4 | T5]: ...
 @overload
-def is_instance_gen(obj: Any, type_: Any, /) -> bool: ...
-def is_instance_gen(obj: Any, type_: Any, /) -> bool:
+def is_instance_gen(
+    obj: Any,
+    type_: Any,
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> bool: ...
+def is_instance_gen(
+    obj: Any,
+    type_: Any,
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> bool:
     """Check if an instance relationship holds, except bool<int."""
     # parent
     if isinstance(type_, tuple):
-        return any(is_instance_gen(obj, t) for t in type_)  # skipif-ci-and-not-windows
+        return any(
+            is_instance_gen(
+                obj,
+                t,
+                globalns=globalns,
+                localns=localns,
+                warn_name_errors=warn_name_errors,
+            )
+            for t in type_
+        )  # skipif-ci-and-not-windows
     if is_literal_type(type_):
         return obj in get_args(type_)
     if is_union_type(type_):
-        return any(is_instance_gen(obj, t) for t in get_args(type_))
+        return any(
+            is_instance_gen(
+                obj,
+                t,
+                globalns=globalns,
+                localns=localns,
+                warn_name_errors=warn_name_errors,
+            )
+            for t in get_args(type_)
+        )
     # tuple vs tuple
     if isinstance(obj, tuple) and is_tuple_type(type_):
         type_args = get_args(type_)
         return (len(obj) == len(type_args)) and all(
-            is_instance_gen(o, t) for o, t in zip(obj, type_args, strict=True)
+            is_instance_gen(
+                o,
+                t,
+                globalns=globalns,
+                localns=localns,
+                warn_name_errors=warn_name_errors,
+            )
+            for o, t in zip(obj, type_args, strict=True)
         )
     if isinstance(obj, tuple) is not is_tuple_type(type_):
         return False
     # basic
+    if isinstance(type_, _TypedDictMeta):
+        return _is_instance_typed_dict(
+            obj,
+            type_,
+            globalns=globalns,
+            localns=localns,
+            warn_name_errors=warn_name_errors,
+        )
     if isinstance(type_, type):
         return any(_is_instance_gen_type(obj, t) for t in get_type_classes(type_))
     raise IsInstanceGenError(obj=obj, type_=type_)
+
+
+def _is_instance_typed_dict[T: _TypedDictMeta](
+    obj: Any,
+    type_: type[T],
+    /,
+    *,
+    globalns: StrMapping | None = None,
+    localns: StrMapping | None = None,
+    warn_name_errors: bool = False,
+) -> TypeGuard[T]:
+    if not isinstance(obj, dict):
+        return False
+    if not all(isinstance(k, str) for k in obj):
+        return False
+    obj = cast("dict[str, Any]", obj)
+    hints = get_type_hints(
+        type_, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
+    )
+    if not set(obj).issuperset(hints):
+        return False
+    return all(
+        is_instance_gen(
+            obj[k],
+            hints[k],
+            globalns=globalns,
+            localns=localns,
+            warn_name_errors=warn_name_errors,
+        )
+        for k in hints
+    )
 
 
 def _is_instance_gen_type[T](obj: Any, type_: type[T], /) -> TypeGuard[T]:

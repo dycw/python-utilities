@@ -28,6 +28,7 @@ from utilities.types import (
     TupleOrStrMapping,
     TypeLike,
 )
+from utilities.typing import is_instance_gen
 
 if TYPE_CHECKING:
     from collections.abc import Container, Hashable, Sized
@@ -823,7 +824,7 @@ def make_isinstance[T](cls: TypeLike[T], /) -> Callable[[Any], TypeGuard[T]]:
 
 
 def _make_instance_core[T](obj: Any, /, *, cls: TypeLike[T]) -> TypeGuard[T]:
-    return isinstance(obj, cls)
+    return is_instance_gen(obj, cls)
 
 
 ##
