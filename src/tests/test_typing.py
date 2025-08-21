@@ -675,7 +675,7 @@ class TestIsDataClassClass:
         assert is_dataclass_class(Example)
         assert not is_dataclass_class(Example())
 
-    @given(obj=sampled_from([None, type(None)]))
+    @mark.parametrize("obj", [param(None), param(type(None))])
     def test_others(self, *, obj: Any) -> None:
         assert not is_dataclass_class(obj)
 
@@ -689,7 +689,7 @@ class TestIsDataClassInstance:
         assert not is_dataclass_instance(Example)
         assert is_dataclass_instance(Example())
 
-    @given(obj=sampled_from([None, type(None)]))
+    @mark.parametrize("obj", [param(None), param(type(None))])
     def test_others(self, *, obj: Any) -> None:
         assert not is_dataclass_instance(obj)
 
