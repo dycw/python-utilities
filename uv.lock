@@ -622,6 +622,7 @@ hypothesis-test = [
     { name = "libcst" },
     { name = "numpy" },
     { name = "pathvalidate" },
+    { name = "pytest-rerunfailures" },
 ]
 inflect = [
     { name = "inflect" },
@@ -708,10 +709,12 @@ pytest-regressions-test = [
 ]
 pytest-test = [
     { name = "orjson" },
+    { name = "pytest-rerunfailures" },
     { name = "pytest-rng" },
 ]
 redis = [
     { name = "orjson" },
+    { name = "pytest-rerunfailures" },
     { name = "redis" },
 ]
 reprlib-test = [
@@ -832,6 +835,7 @@ hypothesis-test = [
     { name = "libcst" },
     { name = "numpy" },
     { name = "pathvalidate" },
+    { name = "pytest-rerunfailures" },
 ]
 inflect = [{ name = "inflect", specifier = ">=7.5.0,<7.6" }]
 jupyter-test = [
@@ -878,10 +882,12 @@ pytest-regressions-test = [
 ]
 pytest-test = [
     { name = "orjson" },
+    { name = "pytest-rerunfailures" },
     { name = "pytest-rng" },
 ]
 redis = [
     { name = "orjson" },
+    { name = "pytest-rerunfailures" },
     { name = "redis", specifier = ">=6.4.0,<6.5" },
 ]
 reprlib-test = [{ name = "rich" }]
