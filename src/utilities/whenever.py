@@ -320,11 +320,13 @@ def format_compact(
         case Time() as time:
             obj_use = time.round().py_time()
             fmt_use = "%H%M%S" if fmt is None else fmt
-        case PlainDateTime() as datetime:
-            obj_use = datetime.round().py_datetime()
+        case PlainDateTime() as date_time:
+            obj_use = date_time.round().py_datetime()
             fmt_use = "%Y%m%dT%H%M%S" if fmt is None else fmt
-        case ZonedDateTime() as datetime:
-            return f"{format_compact(datetime.to_plain(), fmt=fmt)}[{datetime.tz}]"
+        case ZonedDateTime() as date_time:
+            plain = format_compact(date_time.to_plain(), fmt=fmt)
+            tz = date_time.tz.replace("/", "|")
+            return f"{plain}[{tz}]"
         case never:
             assert_never(never)
     return obj_use.strftime(get_strftime(fmt_use))
@@ -1644,8 +1646,8 @@ def to_zoned_date_time(
             return sentinel
         case None:
             return get_now(UTC if time_zone is None else time_zone)
-        case str():
-            date_time_use = ZonedDateTime.parse_common_iso(date_time)
+        case str() as text:
+            date_time_use = ZonedDateTime.parse_common_iso(text.replace("|", "/"))
         case dt.datetime() as py_date_time:
             if isinstance(date_time.tzinfo, ZoneInfo):
                 py_date_time_use = py_date_time

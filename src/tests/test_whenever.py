@@ -354,23 +354,31 @@ class TestFormatCompact:
         expected = time.round()
         assert parsed == expected
 
-    @given(datetime=plain_date_times())
-    def test_plain_datetime(self, *, datetime: PlainDateTime) -> None:
-        result = format_compact(datetime)
+    @given(date_time=plain_date_times())
+    def test_plain_date_time(self, *, date_time: PlainDateTime) -> None:
+        result = format_compact(date_time)
         assert isinstance(result, str)
         parsed = PlainDateTime.parse_common_iso(result)
         assert parsed.nanosecond == 0
-        expected = datetime.round()
+        expected = date_time.round()
         assert parsed == expected
 
-    @given(datetime=zoned_date_times())
-    def test_zoned_datetime(self, *, datetime: ZonedDateTime) -> None:
-        result = format_compact(datetime)
+    @given(date_time=zoned_date_times(time_zone=zone_infos()))
+    def test_zoned_date_time(self, *, date_time: ZonedDateTime) -> None:
+        result = format_compact(date_time)
         assert isinstance(result, str)
-        parsed = ZonedDateTime.parse_common_iso(result)
+        parsed = to_zoned_date_time(result)
         assert parsed.nanosecond == 0
-        expected = datetime.round()
+        expected = date_time.round()
         assert parsed == expected
+
+    def test_zoned_date_time_example(self) -> None:
+        date_time = ZonedDateTime(
+            2000, 1, 2, 12, 34, 56, nanosecond=123456789, tz=HongKong.key
+        )
+        result = format_compact(date_time)
+        expected = "20000102T123456[Asia|Hong_Kong]"
+        assert result == expected
 
 
 class TestFromTimeStamp:
@@ -1399,9 +1407,13 @@ class TestToZonedDateTime:
         expected = date_time.to_tz(time_zone.key)
         assert result.exact_eq(expected)
 
-    @given(date_time=zoned_date_times(), time_zone=zone_infos())
-    def test_str(self, *, date_time: ZonedDateTime, time_zone: ZoneInfo) -> None:
-        result = to_zoned_date_time(date_time.format_common_iso(), time_zone=time_zone)
+    @given(data=data(), date_time=zoned_date_times(), time_zone=zone_infos())
+    def test_str(
+        self, *, data: DataObject, date_time: ZonedDateTime, time_zone: ZoneInfo
+    ) -> None:
+        text = date_time.format_common_iso()
+        text_use = data.draw(sampled_from([text, text.replace("/", "_")]))
+        result = to_zoned_date_time(text_use, time_zone=time_zone)
         expected = date_time.to_tz(time_zone.key)
         assert result.exact_eq(expected)
 
