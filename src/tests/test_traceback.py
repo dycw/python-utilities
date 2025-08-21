@@ -114,7 +114,9 @@ class TestMakeExceptHook:
         with raises(MakeExceptHookError, match="No exception to log"):
             hook(exc_type, exc_val, traceback)
 
-    def test_purge(self, *, tmp_path: Path) -> None:
+
+class TestMakeExceptHookPurge:
+    def test_main(self, *, tmp_path: Path) -> None:
         now = get_now()
         path = tmp_path.joinpath(
             format_compact(now - 2 * SECOND, path=True)
@@ -123,6 +125,11 @@ class TestMakeExceptHook:
         assert len(list(tmp_path.iterdir())) == 1
         _make_except_hook_purge(tmp_path, SECOND)
         assert len(list(tmp_path.iterdir())) == 0
+
+    def test_purge_invalid_path(self, *, tmp_path: Path) -> None:
+        tmp_path.joinpath("invalid").touch()
+        _make_except_hook_purge(tmp_path, SECOND)
+        assert len(list(tmp_path.iterdir())) == 1
 
 
 class TestPathToDots:
