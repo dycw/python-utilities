@@ -6,7 +6,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from random import Random
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypedDict
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Final,
+    Literal,
+    NamedTuple,
+    TypedDict,
+    assert_never,
+)
 from uuid import UUID
 
 import whenever
@@ -786,6 +794,8 @@ class TestIsInstanceGen:
                     sets(strategy, min_size=10 if min_size is None else min_size)
                 )
                 assert not all(is_instance_gen(v, type_) for v in values)
+            case never:
+                assert_never(never)
 
     @given(bool_=booleans())
     def test_bool_value_vs_custom_int(self, *, bool_: bool) -> None:
