@@ -88,6 +88,8 @@ from utilities.typing import (
     get_type_classes,
     get_type_hints,
     get_union_type_classes,
+    is_dataclass_class,
+    is_dataclass_instance,
     is_dict_type,
     is_frozenset_type,
     is_instance_gen,
@@ -658,6 +660,34 @@ class TestIsAnnotationOfType:
         self, *, func: Callable[[Any], bool], obj: Any, expected: bool
     ) -> None:
         assert func(obj) is expected
+
+
+class TestIsDataClassClass:
+    def test_main(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: None = None
+
+        assert is_dataclass_class(Example)
+        assert not is_dataclass_class(Example())
+
+    @given(obj=sampled_from([None, type(None)]))
+    def test_others(self, *, obj: Any) -> None:
+        assert not is_dataclass_class(obj)
+
+
+class TestIsDataClassInstance:
+    def test_main(self) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            x: None = None
+
+        assert not is_dataclass_instance(Example)
+        assert is_dataclass_instance(Example())
+
+    @given(obj=sampled_from([None, type(None)]))
+    def test_others(self, *, obj: Any) -> None:
+        assert not is_dataclass_instance(obj)
 
 
 class TestIsInstanceGen:

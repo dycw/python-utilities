@@ -2,16 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from contextlib import suppress
-from dataclasses import MISSING, dataclass, field, fields, is_dataclass, replace
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    TypeGuard,
-    assert_never,
-    overload,
-    override,
-)
+from dataclasses import MISSING, dataclass, field, fields, replace
+from typing import TYPE_CHECKING, Any, Literal, assert_never, overload, override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
@@ -204,22 +196,6 @@ def dataclass_to_dict[T](
                 value = fld.value
             out[fld.name] = value
     return out if final is None else final(type(obj), out)
-
-
-##
-
-
-def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
-    """Check if an object is a dataclass."""
-    return isinstance(obj, type) and is_dataclass(obj)
-
-
-##
-
-
-def is_dataclass_instance(obj: Any, /) -> TypeGuard[Dataclass]:
-    """Check if an object is an instance of a dataclass."""
-    return (not isinstance(obj, type)) and is_dataclass(obj)
 
 
 ##
@@ -1067,8 +1043,6 @@ __all__ = [
     "YieldFieldsError",
     "dataclass_repr",
     "dataclass_to_dict",
-    "is_dataclass_class",
-    "is_dataclass_instance",
     "is_nullable_lt",
     "mapping_to_dataclass",
     "one_field",

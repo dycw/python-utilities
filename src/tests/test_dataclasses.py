@@ -62,7 +62,6 @@ from utilities.dataclasses import (
     _YieldFieldsInstance,
     dataclass_repr,
     dataclass_to_dict,
-    is_dataclass_class,
     is_nullable_lt,
     mapping_to_dataclass,
     one_field,
@@ -281,34 +280,6 @@ class TestDataClassToDictAndDataClassRepr:
         repr_res = dataclass_repr(obj, localns=locals())
         repr_exp = f"Outer(inner=[TestDataClassToDictAndDataClassRepr.test_nested_in_list_without_recursive.<locals>.Inner(x=0)], y={y}, z={z})"
         assert repr_res == repr_exp
-
-
-class TestIsDataClassClass:
-    def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: None = None
-
-        assert is_dataclass_class(Example)
-        assert not is_dataclass_class(Example())
-
-    @given(obj=sampled_from([None, type(None)]))
-    def test_others(self, *, obj: Any) -> None:
-        assert not is_dataclass_class(obj)
-
-
-class TestIsDataClassInstance:
-    def test_main(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: None = None
-
-        assert not is_dataclass_instance(Example)
-        assert is_dataclass_instance(Example())
-
-    @given(obj=sampled_from([None, type(None)]))
-    def test_others(self, *, obj: Any) -> None:
-        assert not is_dataclass_instance(obj)
 
 
 class TestIsNullableLT:

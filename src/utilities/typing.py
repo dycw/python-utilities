@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, is_dataclass
 from functools import partial
 from itertools import chain
 from pathlib import Path
@@ -40,7 +40,7 @@ from whenever import (
 
 from utilities.iterables import unique_everseen
 from utilities.sentinel import Sentinel
-from utilities.types import StrMapping, TypeLike
+from utilities.types import Dataclass, StrMapping, TypeLike
 
 
 def get_args(obj: Any, /, *, optional_drop_none: bool = False) -> tuple[Any, ...]:
@@ -205,6 +205,22 @@ class _GetUnionTypeClassesInternalTypeError(GetUnionTypeClassesError):
     @override
     def __str__(self) -> str:
         return f"Union type must contain types only; got {self.inner} of type {type(self.inner)!r}"
+
+
+##
+
+
+def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
+    """Check if an object is a dataclass."""
+    return isinstance(obj, type) and is_dataclass(obj)
+
+
+##
+
+
+def is_dataclass_instance(obj: Any, /) -> TypeGuard[Dataclass]:
+    """Check if an object is an instance of a dataclass."""
+    return (not isinstance(obj, type)) and is_dataclass(obj)
 
 
 ##
@@ -828,6 +844,8 @@ __all__ = [
     "get_type_classes",
     "get_type_hints",
     "get_union_type_classes",
+    "is_dataclass_class",
+    "is_dataclass_instance",
     "is_dict_type",
     "is_frozenset_type",
     "is_instance_gen",
