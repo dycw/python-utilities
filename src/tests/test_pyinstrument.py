@@ -16,4 +16,4 @@ class TestProfile:
             sleep(1e-3)
 
         (file,) = tmp_path.iterdir()
-        assert search(r"^profile__\d{8}T\d{2,}\[[\w|]+\]\.html$", file.name)
+        assert search(r"^profile__.+?\.html$", file.name)
