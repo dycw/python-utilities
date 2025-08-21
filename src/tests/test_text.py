@@ -31,6 +31,7 @@ from utilities.text import (
     parse_bool,
     parse_none,
     pascal_case,
+    prompt_bool,
     repr_encode,
     secret_str,
     snake_case,
@@ -164,6 +165,11 @@ class TestPascalAndSnakeCase:
     def test_main(self, *, text: str, exp_pascal: str, exp_snake: str) -> None:
         assert pascal_case(text) == exp_pascal
         assert snake_case(text) == exp_snake
+
+
+class TestPromptBool:
+    def test_main(self) -> None:
+        assert prompt_bool(confirm=True)
 
 
 class TestSecretStr:
