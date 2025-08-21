@@ -290,12 +290,17 @@ def _make_except_hook_inner(
 
 
 def _make_except_hook_purge(path: PathLike, max_age: Delta, /) -> None:
-    threshold = get_now() - max_age
-    paths = {
-        p
-        for p in Path(path).iterdir()
-        if p.is_file() and (to_zoned_date_time(p.stem) <= threshold)
-    }
+    threshold = get_now_local() - max_age
+    paths: set[Path] = set()
+    for p in Path(path).iterdir():
+        if p.is_file():
+            try:
+                date_time = to_zoned_date_time(p.stem)
+            except ValueError:
+                pass
+            else:
+                if date_time <= threshold:
+                    paths.add(p)
     for p in paths:
         p.unlink(missing_ok=True)
 
