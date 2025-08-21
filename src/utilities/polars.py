@@ -56,12 +56,7 @@ from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDa
 import utilities.math
 from utilities.dataclasses import yield_fields
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import (
-    get_class_name,
-    is_dataclass_class,
-    is_dataclass_instance,
-    make_isinstance,
-)
+from utilities.functions import get_class_name
 from utilities.gzip import read_binary
 from utilities.iterables import (
     CheckIterablesEqualError,
@@ -91,11 +86,14 @@ from utilities.reprlib import get_repr
 from utilities.types import MaybeStr, Number, PathLike, WeekDay
 from utilities.typing import (
     get_args,
+    is_dataclass_class,
+    is_dataclass_instance,
     is_frozenset_type,
     is_list_type,
     is_literal_type,
     is_optional_type,
     is_set_type,
+    make_isinstance,
 )
 from utilities.warnings import suppress_warnings
 from utilities.whenever import (

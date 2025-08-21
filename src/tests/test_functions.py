@@ -69,10 +69,6 @@ from utilities.functions import (
     identity,
     is_none,
     is_not_none,
-    is_sequence_of_tuple_or_str_mapping,
-    is_string_mapping,
-    is_tuple,
-    is_tuple_or_str_mapping,
     map_object,
     max_nullable,
     min_nullable,
@@ -572,58 +568,6 @@ class TestIsNoneAndIsNotNone:
     def test_main(self, *, case: tuple[Callable[[Any], bool], Any, bool]) -> None:
         func, obj, expected = case
         result = func(obj)
-        assert result is expected
-
-
-class TestIsSequenceOfTupleOrStrMapping:
-    @given(
-        case=sampled_from([
-            (None, False),
-            ([(1, 2, 3)], True),
-            ([{"a": 1, "b": 2, "c": 3}], True),
-            ([(1, 2, 3), {"a": 1, "b": 2, "c": 3}], True),
-        ])
-    )
-    def test_main(self, *, case: tuple[Any, bool]) -> None:
-        obj, expected = case
-        result = is_sequence_of_tuple_or_str_mapping(obj)
-        assert result is expected
-
-
-class TestIsStringMapping:
-    @given(
-        case=sampled_from([
-            (None, False),
-            ({"a": 1, "b": 2, "c": 3}, True),
-            ({1: "a", 2: "b", 3: "c"}, False),
-        ])
-    )
-    def test_main(self, *, case: tuple[Any, bool]) -> None:
-        obj, expected = case
-        result = is_string_mapping(obj)
-        assert result is expected
-
-
-class TestIsTuple:
-    @given(case=sampled_from([(None, False), ((1, 2, 3), True), ([1, 2, 3], False)]))
-    def test_main(self, *, case: tuple[Any, bool]) -> None:
-        obj, expected = case
-        result = is_tuple(obj)
-        assert result is expected
-
-
-class TestIsTupleOrStringMapping:
-    @given(
-        case=sampled_from([
-            (None, False),
-            ((1, 2, 3), True),
-            ({"a": 1, "b": 2, "c": 3}, True),
-            ({1: "a", 2: "b", 3: "c"}, False),
-        ])
-    )
-    def test_main(self, *, case: tuple[Any, bool]) -> None:
-        obj, expected = case
-        result = is_tuple_or_str_mapping(obj)
         assert result is expected
 
 

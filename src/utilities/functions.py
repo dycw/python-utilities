@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import asdict, dataclass
 from functools import _lru_cache_wrapper, cached_property, partial, reduce, wraps
 from inspect import getattr_static
@@ -20,14 +20,7 @@ from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
 from utilities.reprlib import get_repr, get_repr_and_class
 from utilities.sentinel import Sentinel, is_sentinel, sentinel
-from utilities.types import (
-    Dataclass,
-    Number,
-    StrMapping,
-    SupportsRichComparison,
-    TupleOrStrMapping,
-    TypeLike,
-)
+from utilities.types import Dataclass, Number, SupportsRichComparison, TypeLike
 
 if TYPE_CHECKING:
     from collections.abc import Container
@@ -592,40 +585,6 @@ def is_not_none(obj: Any, /) -> bool:
 ##
 
 
-def is_sequence_of_tuple_or_str_mapping(
-    obj: Any, /
-) -> TypeGuard[Sequence[TupleOrStrMapping]]:
-    """Check if an object is a sequence of tuple or string mappings."""
-    return isinstance(obj, Sequence) and all(map(is_tuple_or_str_mapping, obj))
-
-
-##
-
-
-def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
-    """Check if an object is a string mapping."""
-    return isinstance(obj, dict) and is_iterable_of(obj, str)
-
-
-##
-
-
-def is_tuple(obj: Any, /) -> TypeGuard[tuple[Any, ...]]:
-    """Check if an object is a tuple or string mapping."""
-    return make_isinstance(tuple)(obj)
-
-
-##
-
-
-def is_tuple_or_str_mapping(obj: Any, /) -> TypeGuard[TupleOrStrMapping]:
-    """Check if an object is a tuple or string mapping."""
-    return is_tuple(obj) or is_string_mapping(obj)
-
-
-##
-
-
 def map_object[T](
     func: Callable[[Any], Any], obj: T, /, *, before: Callable[[Any], Any] | None = None
 ) -> T:
@@ -833,10 +792,6 @@ __all__ = [
     "identity",
     "is_none",
     "is_not_none",
-    "is_sequence_of_tuple_or_str_mapping",
-    "is_string_mapping",
-    "is_tuple",
-    "is_tuple_or_str_mapping",
     "map_object",
     "max_nullable",
     "min_nullable",

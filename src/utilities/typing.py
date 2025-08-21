@@ -40,7 +40,7 @@ from whenever import (
 
 from utilities.iterables import unique_everseen
 from utilities.sentinel import Sentinel
-from utilities.types import Dataclass, StrMapping, TypeLike
+from utilities.types import Dataclass, StrMapping, TupleOrStrMapping, TypeLike
 
 
 def get_args(obj: Any, /, *, optional_drop_none: bool = False) -> tuple[Any, ...]:
@@ -676,6 +676,16 @@ def is_sequence_of[T](
 ##
 
 
+def is_sequence_of_tuple_or_str_mapping(
+    obj: Any, /
+) -> TypeGuard[Sequence[TupleOrStrMapping]]:
+    """Check if an object is a sequence of tuple or string mappings."""
+    return isinstance(obj, Sequence) and all(map(is_tuple_or_str_mapping, obj))
+
+
+##
+
+
 def is_sequence_type(obj: Any, /) -> bool:
     """Check if an object is a sequence type annotation."""
     return _is_annotation_of_type(obj, Sequence)
@@ -687,6 +697,14 @@ def is_sequence_type(obj: Any, /) -> bool:
 def is_set_type(obj: Any, /) -> bool:
     """Check if an object is a set type annotation."""
     return _is_annotation_of_type(obj, set)
+
+
+##
+
+
+def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
+    """Check if an object is a string mapping."""
+    return isinstance(obj, dict) and is_iterable_of(obj, str)
 
 
 ##
@@ -777,6 +795,22 @@ class IsSubclassGenError(Exception):
 ##
 
 
+def is_tuple(obj: Any, /) -> TypeGuard[tuple[Any, ...]]:
+    """Check if an object is a tuple."""
+    return is_instance_gen(obj, tuple)
+
+
+##
+
+
+def is_tuple_or_str_mapping(obj: Any, /) -> TypeGuard[TupleOrStrMapping]:
+    """Check if an object is a tuple or string mapping."""
+    return is_tuple(obj) or is_string_mapping(obj)
+
+
+##
+
+
 def is_tuple_type(obj: Any, /) -> bool:
     """Check if an object is a tuple type annotation."""
     return _is_annotation_of_type(obj, tuple)
@@ -857,9 +891,13 @@ __all__ = [
     "is_namedtuple_instance",
     "is_optional_type",
     "is_sequence_of",
+    "is_sequence_of_tuple_or_str_mapping",
     "is_sequence_type",
     "is_set_type",
+    "is_string_mapping",
     "is_subclass_gen",
+    "is_tuple",
+    "is_tuple_or_str_mapping",
     "is_tuple_type",
     "is_union_type",
     "make_isinstance",

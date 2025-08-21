@@ -101,9 +101,13 @@ from utilities.typing import (
     is_namedtuple_instance,
     is_optional_type,
     is_sequence_of,
+    is_sequence_of_tuple_or_str_mapping,
     is_sequence_type,
     is_set_type,
+    is_string_mapping,
     is_subclass_gen,
+    is_tuple,
+    is_tuple_or_str_mapping,
     is_tuple_type,
     is_union_type,
     make_isinstance,
@@ -901,6 +905,35 @@ class TestIsSequenceOf:
         assert result is expected
 
 
+class TestIsSequenceOfTupleOrStrMapping:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param([(1, 2, 3)], True),
+            param([{"a": 1, "b": 2, "c": 3}], True),
+            param([(1, 2, 3), {"a": 1, "b": 2, "c": 3}], True),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_sequence_of_tuple_or_str_mapping(obj)
+        assert result is expected
+
+
+class TestIsStringMapping:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param({"a": 1, "b": 2, "c": 3}, True),
+            param({1: "a", 2: "b", 3: "c"}, False),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_string_mapping(obj)
+        assert result is expected
+
+
 class TestIsSubclassGen:
     @mark.parametrize(
         ("child", "parent", "expected"),
@@ -990,6 +1023,31 @@ class TestIsSubclassGen:
             match="Argument must be a class; got None of type <class 'NoneType'>",
         ):
             _ = is_subclass_gen(None, NoneType)
+
+
+class TestIsTuple:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [param(None, False), param((1, 2, 3), True), param([1, 2, 3], False)],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_tuple(obj)
+        assert result is expected
+
+
+class TestIsTupleOrStringMapping:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param((1, 2, 3), True),
+            param({"a": 1, "b": 2, "c": 3}, True),
+            param({1: "a", 2: "b", 3: "c"}, False),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_tuple_or_str_mapping(obj)
+        assert result is expected
 
 
 class TestMakeIsInstance:
