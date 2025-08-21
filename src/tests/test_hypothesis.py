@@ -40,6 +40,7 @@ from whenever import (
 
 from utilities.functions import ensure_int
 from utilities.hypothesis import (
+    _LINUX_DISALLOW_TIME_ZONES,
     Shape,
     _Draw2DefaultGeneratedSentinelError,
     _Draw2InputResolvedToSentinelError,
@@ -1192,8 +1193,7 @@ class TestZoneInfos:
         time_zone = data.draw(zone_infos())
         assert isinstance(time_zone, ZoneInfo)
         if IS_LINUX:
-            _ = assume(time_zone.key not in {"Etc/UTC", "localtime"})
-        assert time_zone.key not in {"Etc/UTC", "localtime"}
+            assert time_zone.key not in _LINUX_DISALLOW_TIME_ZONES
         _ = get_now(time_zone)
 
 

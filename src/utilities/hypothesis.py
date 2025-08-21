@@ -115,7 +115,7 @@ if TYPE_CHECKING:
     from sqlalchemy import URL
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
-    from utilities.types import Number, TimeZoneLike
+    from utilities.types import Number, TimeZone, TimeZoneLike
 
 
 type MaybeSearchStrategy[_T] = _T | SearchStrategy[_T]
@@ -1484,11 +1484,13 @@ def zone_infos(draw: DrawFn, /) -> ZoneInfo:
     """Strategy for generating time-zones."""
     time_zone = draw(timezones())
     if IS_LINUX:  # skipif-not-linux
-        _ = assume(time_zone.key not in {"Etc/UTC", "localtime"})
+        _ = assume(time_zone.key not in _LINUX_DISALLOW_TIME_ZONES)
     with assume_does_not_raise(TimeZoneNotFoundError):
         _ = get_now(time_zone)
     return time_zone
 
+
+_LINUX_DISALLOW_TIME_ZONES: set[TimeZone] = {"Etc/UTC", "localtime"}
 
 ##
 
