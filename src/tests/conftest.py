@@ -7,11 +7,12 @@ from typing import TYPE_CHECKING
 
 from hypothesis import HealthCheck
 from pytest import fixture, mark, param, skip
+from whenever import PlainDateTime
 
 from utilities.contextlib import enhanced_context_manager
 from utilities.platform import IS_LINUX, IS_MAC, IS_NOT_LINUX, IS_WINDOWS
 from utilities.re import ExtractGroupError, extract_group
-from utilities.whenever import MINUTE, get_now, to_zoned_date_time
+from utilities.whenever import MINUTE, get_now_local_plain
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
@@ -170,11 +171,14 @@ async def test_async_postgres_engine() -> AsyncEngine:
 
 
 def _is_to_drop(table: str, /) -> bool:
+    now = get_now_local_plain()
     try:
-        date_time = extract_group(r"^(\d{8}T\d{6})_", table)
+        text = extract_group(r"^(\d{8}T\d{6})_", table)
     except ExtractGroupError:
         return True
-    return (get_now() - to_zoned_date_time(date_time)) >= MINUTE
+    date_time = PlainDateTime.parse_common_iso(text)
+    age = now.difference(date_time, ignore_dst=True)
+    return age >= MINUTE
 
 
 def _select_tables() -> TextClause:

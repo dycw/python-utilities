@@ -90,7 +90,7 @@ from utilities.sqlalchemy import (
 )
 from utilities.text import strip_and_dedent
 from utilities.typing import get_args
-from utilities.whenever import MILLISECOND, format_compact, get_now_plain
+from utilities.whenever import MILLISECOND, format_compact, get_now_local
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -101,7 +101,7 @@ if TYPE_CHECKING:
 def _table_names() -> str:
     """Generate at unique string."""
     key = str(uuid4()).replace("-", "")
-    return f"{format_compact(get_now_plain())}_{key}"
+    return f"{format_compact(get_now_local())}_{key}"
 
 
 class TestCheckConnect:
