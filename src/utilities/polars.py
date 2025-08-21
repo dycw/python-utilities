@@ -6,7 +6,7 @@ from collections.abc import Set as AbstractSet
 from dataclasses import asdict, dataclass
 from functools import partial, reduce
 from itertools import chain, pairwise, product
-from math import ceil, log
+from math import ceil, log, pi, sqrt
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 from uuid import UUID
@@ -1963,23 +1963,65 @@ def normal(
 
 
 @overload
+def normal_pdf(
+    x: ExprLike,
+    /,
+    *,
+    loc: float | IntoExprColumn = 0.0,
+    scale: float | IntoExprColumn = 1.0,
+) -> Expr: ...
+@overload
+def normal_pdf(
+    x: Series,
+    /,
+    *,
+    loc: float | IntoExprColumn = 0.0,
+    scale: float | IntoExprColumn = 1.0,
+) -> Series: ...
+@overload
+def normal_pdf(
+    x: IntoExprColumn,
+    /,
+    *,
+    loc: float | IntoExprColumn = 0.0,
+    scale: float | IntoExprColumn = 1.0,
+) -> ExprOrSeries: ...
+def normal_pdf(
+    x: IntoExprColumn,
+    /,
+    *,
+    loc: float | IntoExprColumn = 0.0,
+    scale: float | IntoExprColumn = 1.0,
+) -> ExprOrSeries:
+    """Compute the PDF of a normal distribution."""
+    x = ensure_expr_or_series(x)
+    loc = loc if isinstance(loc, int | float) else ensure_expr_or_series(loc)
+    scale = scale if isinstance(scale, int | float) else ensure_expr_or_series(scale)
+    expr = (1 / (scale * sqrt(2 * pi))) * (-(1 / 2) * ((x - loc) / scale) ** 2).exp()
+    return try_reify_expr(expr, x)
+
+
+##
+
+
+@overload
 def number_of_decimals(
-    series: ExprLike, /, *, max_decimals: int = MAX_DECIMALS
+    column: ExprLike, /, *, max_decimals: int = MAX_DECIMALS
 ) -> Expr: ...
 @overload
 def number_of_decimals(
-    series: Series, /, *, max_decimals: int = MAX_DECIMALS
+    column: Series, /, *, max_decimals: int = MAX_DECIMALS
 ) -> Series: ...
 @overload
 def number_of_decimals(
-    series: IntoExprColumn, /, *, max_decimals: int = MAX_DECIMALS
+    column: IntoExprColumn, /, *, max_decimals: int = MAX_DECIMALS
 ) -> ExprOrSeries: ...
 def number_of_decimals(
-    series: IntoExprColumn, /, *, max_decimals: int = MAX_DECIMALS
+    column: IntoExprColumn, /, *, max_decimals: int = MAX_DECIMALS
 ) -> ExprOrSeries:
     """Get the number of decimals."""
-    series = ensure_expr_or_series(series)
-    frac = series - series.floor()
+    column = ensure_expr_or_series(column)
+    frac = column - column.floor()
     results = (
         _number_of_decimals_check_scale(frac, s) for s in range(max_decimals + 1)
     )
@@ -2698,6 +2740,7 @@ __all__ = [
     "nan_sum_agg",
     "nan_sum_horizontal",
     "normal",
+    "normal_pdf",
     "number_of_decimals",
     "offset_datetime",
     "one_column",
