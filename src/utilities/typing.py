@@ -704,7 +704,7 @@ def is_set_type(obj: Any, /) -> bool:
 
 def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
     """Check if an object is a string mapping."""
-    return isinstance(obj, dict) and is_iterable_of(obj, str)
+    return isinstance(obj, Mapping) and is_iterable_of(obj, str)
 
 
 ##
@@ -797,7 +797,7 @@ class IsSubclassGenError(Exception):
 
 def is_tuple(obj: Any, /) -> TypeGuard[tuple[Any, ...]]:
     """Check if an object is a tuple."""
-    return is_instance_gen(obj, tuple)
+    return isinstance(obj, tuple)
 
 
 ##

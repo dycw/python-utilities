@@ -235,8 +235,7 @@ def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
             if lv != rv:
                 errors.append((i, lv, rv))
     except ValueError as error:
-        (msg,) = one(error.args)
-        match msg:
+        match one(error.args):
             case "zip() argument 2 is longer than argument 1":
                 state = "right_longer"
             case "zip() argument 2 is shorter than argument 1":
