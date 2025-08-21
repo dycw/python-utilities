@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, NotRequired, TypedDict
 
 TrueOrFalseNoFutureLit = Literal["true", "false"]
 type TrueOrFalseNoFutureTypeLit = Literal["true", "false"]
@@ -33,3 +33,13 @@ class DataClassNoFutureNestedOuterFirstOuter:
 @dataclass(kw_only=True)
 class DataClassNoFutureNestedOuterFirstInner:
     int_: int
+
+
+class TypedDictNoFutureIntFloat(TypedDict):
+    int_: int
+    float_: float
+
+
+class TypedDictNoFutureIntFloatOptional(TypedDict):
+    int_: int
+    float_: NotRequired[float]

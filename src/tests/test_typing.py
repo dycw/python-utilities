@@ -10,9 +10,11 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Final,
+    ForwardRef,
     Literal,
     NamedTuple,
-    TypedDict,
+    NotRequired,
+    _TypedDictMeta,  # pyright: ignore[reportAttributeAccessIssue]
     assert_never,
 )
 from uuid import UUID
@@ -50,6 +52,8 @@ from tests.test_typing_funcs.no_future import (
     DataClassNoFutureNestedInnerFirstOuter,
     DataClassNoFutureNestedOuterFirstInner,
     DataClassNoFutureNestedOuterFirstOuter,
+    TypedDictNoFutureIntFloat,
+    TypedDictNoFutureIntFloatOptional,
 )
 from tests.test_typing_funcs.with_future import (
     DataClassFutureDate,
@@ -80,6 +84,7 @@ from tests.test_typing_funcs.with_future import (
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
     TypedDictFutureIntFloat,
+    TypedDictFutureIntFloatOptional,
 )
 from utilities.hypothesis import text_ascii
 from utilities.sentinel import Sentinel
@@ -92,6 +97,7 @@ from utilities.typing import (
     _GetUnionTypeClassesInternalTypeError,
     _GetUnionTypeClassesUnionTypeError,
     get_args,
+    get_forward_ref_args,
     get_literal_elements,
     get_type_classes,
     get_type_hints,
@@ -107,6 +113,8 @@ from utilities.typing import (
     is_mapping_type,
     is_namedtuple_class,
     is_namedtuple_instance,
+    is_not_required_annotation,
+    is_not_required_type,
     is_optional_type,
     is_sequence_of,
     is_sequence_of_tuple_or_str_mapping,
@@ -156,6 +164,13 @@ class TestGetArgs:
     ) -> None:
         result = get_args(obj, optional_drop_none=True)
         assert result == expected
+
+
+class TestGetForwardRefArgs:
+    def test_main(self) -> None:
+        args = get_forward_ref_args(TypedDictFutureIntFloat)
+        expected = {"int_": "int", "float_": "float"}
+        assert args == expected
 
 
 type _PlusOrMinusOneLit = Literal[1, -1]
@@ -496,11 +511,7 @@ class TestGetTypeHints:
         assert hints == expected
 
     def test_typed_dict(self) -> None:
-        class Example(TypedDict):
-            int_: int
-            float_: float
-
-        hints = get_type_hints(Example)
+        hints = get_type_hints(TypedDictFutureIntFloat)
         expected = {"int_": int, "float_": float}
         assert hints == expected
 
@@ -637,6 +648,8 @@ class TestIsAnnotationOfType:
             param(is_mapping_type, list[int], False),
             param(is_mapping_type, set[int], False),
             param(is_mapping_type, tuple[int, int], False),
+            param(is_not_required_type, NotRequired, True),
+            param(is_not_required_type, NotRequired[int], True),
             param(is_optional_type, Literal["a", "b", "c"] | None, True),
             param(is_optional_type, Literal["a", "b", "c"], False),
             param(is_optional_type, int | None, True),
@@ -824,8 +837,39 @@ class TestIsInstanceGen:
             param({"int_": 0, "float_": 0.0, "extra": None}, True),
         ],
     )
-    def test_typed_dict(self, *, obj: Any, expected: bool) -> None:
-        result = is_instance_gen(obj, TypedDictFutureIntFloat)
+    @mark.parametrize(
+        "cls", [param(TypedDictNoFutureIntFloat), param(TypedDictFutureIntFloat)]
+    )
+    def test_typed_dict(self, *, obj: Any, cls: _TypedDictMeta, expected: bool) -> None:
+        result = is_instance_gen(obj, cls)
+        assert result is expected
+
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param({}, False),
+            param({None: False}, False),
+            param({"int_": None}, False),
+            param({"int_": 0}, True),
+            param({"int_": None, "float_": None}, False),
+            param({"int_": 0, "float_": None}, True),
+            param({"int_": None, "float_": 0.0}, False),
+            param({"int_": 0, "float_": 0.0}, True),
+            param({"int_": 0, "float_": 0.0, "extra": None}, True),
+        ],
+    )
+    @mark.parametrize(
+        "cls",
+        [
+            param(TypedDictNoFutureIntFloatOptional),
+            param(TypedDictFutureIntFloatOptional),
+        ],
+    )
+    def test_typed_dict_optional(
+        self, *, obj: Any, cls: _TypedDictMeta, expected: bool
+    ) -> None:
+        result = is_instance_gen(obj, cls)
         assert result is expected
 
     def test_error(self) -> None:
@@ -882,6 +926,27 @@ class TestIsNamedTuple:
 
         assert not is_namedtuple_class(Example)
         assert not is_namedtuple_instance(Example(x=0))
+
+
+class TestIsNotRequiredAnnotation:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(NotRequired, True),
+            param(NotRequired[int], True),
+            param(int, False),
+            param("NotRequired", True),
+            param("NotRequired[int]", True),
+            param("int", False),
+            param(ForwardRef("NotRequired"), True),
+            param(ForwardRef("NotRequired[int]"), True),
+            param(ForwardRef("int"), False),
+            param(None, False),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_not_required_annotation(obj)
+        assert result is expected
 
 
 class TestIsSequenceOf:

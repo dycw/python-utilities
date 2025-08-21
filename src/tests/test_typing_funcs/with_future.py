@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Literal, TypedDict, override
+from typing import TYPE_CHECKING, Literal, NotRequired, TypedDict, override
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -239,3 +239,8 @@ class DataClassFutureZonedDateTimePeriod:
 class TypedDictFutureIntFloat(TypedDict):
     int_: int
     float_: float
+
+
+class TypedDictFutureIntFloatOptional(TypedDict):
+    int_: int
+    float_: NotRequired[float]
