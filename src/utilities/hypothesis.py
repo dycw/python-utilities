@@ -1490,7 +1490,10 @@ def zone_infos(draw: DrawFn, /) -> ZoneInfo:
     return time_zone
 
 
-_LINUX_DISALLOW_TIME_ZONES: set[TimeZone] = {"Etc/UTC", "localtime"}
+_LINUX_DISALLOW_TIME_ZONES: set[TimeZone | Literal["localtime"]] = {
+    "Etc/UTC",
+    "localtime",
+}
 
 ##
 
