@@ -88,7 +88,7 @@ from tests.test_typing_funcs.with_future import (
 )
 from utilities.hypothesis import text_ascii
 from utilities.sentinel import Sentinel
-from utilities.types import LogLevel, Number, Parallelism, Seed
+from utilities.types import LogLevel, Number, Parallelism, Seed, StrMapping
 from utilities.typing import (
     IsInstanceGenError,
     IsSubclassGenError,
@@ -510,9 +510,23 @@ class TestGetTypeHints:
         expected = {"truth": TrueOrFalseFutureTypeLit}
         assert hints == expected
 
-    def test_typed_dict(self) -> None:
-        hints = get_type_hints(TypedDictFutureIntFloat)
-        expected = {"int_": int, "float_": float}
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(TypedDictNoFutureIntFloat, {"int_": int, "float_": float}),
+            param(TypedDictFutureIntFloat, {"int_": int, "float_": float}),
+            param(
+                TypedDictNoFutureIntFloatOptional,
+                {"int_": int, "float_": NotRequired[float]},
+            ),
+            param(
+                TypedDictFutureIntFloatOptional,
+                {"int_": int, "float_": NotRequired[float]},
+            ),
+        ],
+    )
+    def test_typed_dict(self, *, obj: _TypedDictMeta, expected: StrMapping) -> None:
+        hints = get_type_hints(obj)
         assert hints == expected
 
     @given(data=data())

@@ -167,7 +167,9 @@ def get_type_hints(
     result: dict[str, Any] = obj.__annotations__
     result = result | dict(get_forward_ref_args(obj))
     try:
-        hints = _get_type_hints(obj, globalns=globalns_use, localns=localns_use)
+        hints = _get_type_hints(
+            obj, globalns=globalns_use, localns=localns_use, include_extras=True
+        )
     except NameError as error:
         if warn_name_errors:
             warn(f"Error getting type hints for {obj!r}; {error}", stacklevel=2)
