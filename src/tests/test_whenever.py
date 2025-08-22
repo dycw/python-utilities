@@ -72,7 +72,6 @@ from utilities.whenever import (
     DatePeriodError,
     MeanDateTimeError,
     MinMaxDateError,
-    PeriodDict,
     TimePeriod,
     ToMonthsAndDaysError,
     ToNanosecondsError,
@@ -280,13 +279,8 @@ class TestDatePeriod:
 
     @given(data=data(), period=date_periods())
     def test_to_and_from_dict(self, *, data: DataObject, period: DatePeriod) -> None:
-        dict1 = period.to_dict()
-        dstart, dend = dict1["start"], dict1["end"]
-        dict2 = PeriodDict(
-            start=data.draw(sampled_from([dstart, dstart.py_date()])),
-            end=data.draw(sampled_from([dend, dend.py_date()])),
-        )
-        result = DatePeriod.from_dict(dict2)
+        dict_ = data.draw(sampled_from([period.to_dict(), period.to_py_dict()]))
+        result = DatePeriod.from_dict(dict_)
         assert result == period
 
     @given(dates=pairs(dates(), unique=True, sorted=True))
@@ -853,14 +847,11 @@ class TestTimePeriod:
         )
 
     @given(data=data(), period=time_periods())
-    def test_to_and_from_dict(self, *, data: DataObject, period: TimePeriod) -> None:
-        dict1 = period.to_dict()
-        dstart, dend = dict1["start"], dict1["end"]
-        dict2 = PeriodDict(
-            start=data.draw(sampled_from([dstart, dstart.py_time()])),
-            end=data.draw(sampled_from([dend, dend.py_time()])),
-        )
-        result = TimePeriod.from_dict(dict2)
+    def test_to_dict_and_from_dict(
+        self, *, data: DataObject, period: TimePeriod
+    ) -> None:
+        dict_ = data.draw(sampled_from([period.to_dict(), period.to_py_dict()]))
+        result = TimePeriod.from_dict(dict_)
         assert result == period
 
 
@@ -1695,13 +1686,8 @@ class TestZonedDateTimePeriod:
     ) -> None:
         start, end = datetimes
         period = ZonedDateTimePeriod(start, end)
-        dict1 = period.to_dict()
-        dstart, dend = dict1["start"], dict1["end"]
-        dict2 = PeriodDict(
-            start=data.draw(sampled_from([dstart, dstart.py_datetime()])),
-            end=data.draw(sampled_from([dend, dend.py_datetime()])),
-        )
-        result = ZonedDateTimePeriod.from_dict(dict2)
+        dict_ = data.draw(sampled_from([period.to_dict(), period.to_py_dict()]))
+        result = ZonedDateTimePeriod.from_dict(dict_)
         assert result == period
 
     @given(period=zoned_date_time_periods())
