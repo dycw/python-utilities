@@ -101,6 +101,8 @@ from utilities.polars import (
     SelectExactError,
     SetFirstRowAsColumnsError,
     TimePeriodDType,
+    _AppendRowExtraKeysError,
+    _AppendRowMissingKeysError,
     _AppendRowPredicateError,
     _check_polars_dataframe_predicates,
     _check_polars_dataframe_schema_list,
@@ -361,61 +363,35 @@ class TestAnyAllDataFrameColumnsSeries:
 
 
 class TestAppendRow:
-    @given(
-        data=fixed_dictionaries({
-            "a": int64s() | none(),
-            "b": floats() | none(),
-            "c": text_ascii() | none(),
-        })
+    rows: ClassVar[list[tuple[int, int]]] = [(i, 2 * i) for i in range(3)]
+    schema: ClassVar[SchemaDict] = {"x": Int64, "y": Int64}
+    df: ClassVar[DataFrame] = DataFrame(data=rows, schema=schema, orient="row")
+
+    @mark.parametrize(
+        "row", [param({"x": 3, "y": 6}), param({"x": 3, "y": 6, "z": None})]
     )
-    def test_columns_and_fields_equal(self, *, data: StrMapping) -> None:
-        df = DataFrame(schema={"a": Int64, "b": Float64, "c": String})
+    def test_main(self, *, row: StrMapping) -> None:
+        result = append_row(self.df, row)
+        expected = DataFrame(
+            data=[*self.rows, (3, 6)], schema=self.schema, orient="row"
+        )
+        assert_frame_equal(result, expected)
 
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            a: int | None = None
-            b: float | None = None
-            c: str | None = None
-
-        row = Row(**data)
-        result = append_row(df, row)
-        height = 0 if (row.a is None) and (row.b is None) and (row.c is None) else 1
-        check_polars_dataframe(result, height=height, schema_list=df.schema)
-
-    @given(data=fixed_dictionaries({"a": int64s() | none(), "b": floats() | none()}))
-    def test_extra_column(self, *, data: StrMapping) -> None:
-        df = DataFrame(schema={"a": Int64, "b": Float64, "c": String})
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            a: int | None = None
-            b: float | None = None
-
-        row = Row(**data)
-        result = append_row(df, row)
-        height = 0 if (row.a is None) and (row.b is None) else 1
-        check_polars_dataframe(result, height=height, schema_list=df.schema)
-
-    def test_disallow_missing_selected(self) -> None:
+    def test_missing_key(self) -> None:
         row = {"x": 3}
-        result = append_row(self.df, row, disallow_missing="x")
+        result = append_row(self.df, row)
         expected = DataFrame(
             data=[*self.rows, (3, None)], schema=self.schema, orient="row"
         )
         assert_frame_equal(result, expected)
 
-    def test_disallow_null_selected(self) -> None:
-        row = {"x": 3, "y": None}
-        result = append_row(self.df, row, disallow_null="x")
+    def test_disallow_missing_specific_ok(self) -> None:
+        row = {"y": 6}
+        result = append_row(self.df, row, disallow_missing="y")
         expected = DataFrame(
-            data=[*self.rows, (3, None)], schema=self.schema, orient="row"
+            data=[*self.rows, (None, 6)], schema=self.schema, orient="row"
         )
         assert_frame_equal(result, expected)
-
-        row = Row(**data)
-        result = append_row(df, row)
-        height = 0 if (row.a is None) and (row.b is None) else 1
-        check_polars_dataframe(result, height=height, schema_list=df.schema)
 
     def test_error_predicate(self) -> None:
         row = {"x": 3}
@@ -427,28 +403,18 @@ class TestAppendRow:
         with raises(_AppendRowExtraKeysError, match=r"Extra key\(s\) found; got {'z'}"):
             _ = append_row(self.df, row, disallow_extra=True)
 
-        row = Row(**data)
-        result = append_row(df, row)
-        check_polars_dataframe(result, height=1, schema_list=df.schema)
-
-    def test_error_predicate(self) -> None:
-        df = DataFrame(schema={"a": Int64, "b": Float64})
-
-    def test_error_disallow_null_all(self) -> None:
-        row = {"x": None, "y": None}
+    def test_error_disallow_missing_all(self) -> None:
         with raises(
-            _AppendRowNullColumnsError,
-            match=r"Null column\(s\) found; got {'[xy]', '[xy]'}",
+            _AppendRowMissingKeysError,
+            match=r"Missing key\(s\) found; got {'[xy]', '[xy]'}",
         ):
-            _ = append_row(self.df, row, disallow_null=True)
+            _ = append_row(self.df, {}, disallow_missing=True)
 
-    def test_error_disallow_null_selected(self) -> None:
-        row = {"x": None, "y": None}
+    def test_error_disallow_missing_specific(self) -> None:
         with raises(
-            _AppendRowPredicateError,
-            match="Dataclass fields .* must be a subset of DataFrame columns .*; dataclass had extra items .*",
+            _AppendRowMissingKeysError, match=r"Missing key\(s\) found; got {'x'}"
         ):
-            _ = append_row(df, row)
+            _ = append_row(self.df, {}, disallow_missing="x")
 
 
 class TestAreFramesEqual:

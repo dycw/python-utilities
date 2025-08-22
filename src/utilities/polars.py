@@ -103,6 +103,7 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC, to_time_zone_name
 
 if TYPE_CHECKING:
+    import datetime as dt
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
     from collections.abc import Set as AbstractSet
 
@@ -307,9 +308,10 @@ def append_row(
     disallow_extra: bool = False,
     disallow_missing: bool | MaybeIterable[str] = False,
     disallow_null: bool | MaybeIterable[str] = False,
+    in_place: bool = False,
 ) -> DataFrame:
     """Append a row to a DataFrame."""
-    if (predicate is not None) and predicate(row):
+    if (predicate is not None) and not predicate(row):
         raise _AppendRowPredicateError(df=df, row=row)
     if disallow_extra and (len(extra := set(row) - set(df.columns)) >= 1):
         raise _AppendRowExtraKeysError(df=df, row=row, extra=extra)
@@ -327,7 +329,7 @@ def append_row(
             null &= set(always_iterable(disallow_null))
         if len(null) >= 1:
             raise _AppendRowNullColumnsError(df=df, row=row, columns=null)
-    return df.extend(other)
+    return df.extend(other) if in_place else df.vstack(other)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -340,7 +342,7 @@ class AppendRowError(Exception):
 class _AppendRowPredicateError(AppendRowError):
     @override
     def __str__(self) -> str:
-        return f"Row {self.row} failed the predicate"
+        return f"Predicate failed; got {get_repr(self.row)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -349,7 +351,7 @@ class _AppendRowExtraKeysError(AppendRowError):
 
     @override
     def __str__(self) -> str:
-        return f"Row has extra keys {self.extra}"
+        return f"Extra key(s) found; got {get_repr(self.extra)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -358,7 +360,7 @@ class _AppendRowMissingKeysError(AppendRowError):
 
     @override
     def __str__(self) -> str:
-        return f"Row has missing keys {self.missing}"
+        return f"Missing key(s) found; got {get_repr(self.missing)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -2506,6 +2508,34 @@ class RoundToFloatError(Exception):
 ##
 
 
+def search_period(
+    series: Series,
+    date_time: ZonedDateTime,
+    /,
+    *,
+    start_or_end: Literal["start", "end"] = "end",
+) -> int | None:
+    """Search a series of periods for the one containing a given date-time."""
+    start, end = [series.struct[k] for k in ["start", "end"]]
+    py_date_time = date_time.py_datetime()
+    match start_or_end:
+        case "start":
+            index = end.search_sorted(py_date_time, side="right")
+            if index >= len(series):
+                return None
+            item: dt.datetime = series[index]["start"]
+            return index if py_date_time >= item else None
+        case "end":
+            index = end.search_sorted(py_date_time, side="left")
+            if index >= len(series):
+                return None
+            item: dt.datetime = series[index]["start"]
+            return index if py_date_time > item else none
+
+
+##
+
+
 def select_exact(
     df: DataFrame, /, *columns: IntoExprColumn, drop: MaybeIterable[str] | None = None
 ) -> DataFrame:
@@ -2797,6 +2827,7 @@ __all__ = [
     "read_series",
     "replace_time_zone",
     "round_to_float",
+    "search_period",
     "select_exact",
     "serialize_dataframe",
     "set_first_row_as_columns",
