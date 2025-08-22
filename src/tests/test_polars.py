@@ -2549,6 +2549,75 @@ class TestSearchPeriod:
                 )
                 assert date_time <= next_start
 
+    @mark.parametrize(
+        ("start_or_end", "time", "expected"),
+        [
+            param("start", whenever.Time(8, 58), None),
+            param("start", whenever.Time(8, 59), None),
+            param("start", whenever.Time(9), 0),
+            param("start", whenever.Time(9, 1), 0),
+            param("start", whenever.Time(9, 59), 0),
+            param("start", whenever.Time(10), 1),
+            param("start", whenever.Time(10, 1), 1),
+            param("start", whenever.Time(10, 59), 1),
+            param("start", whenever.Time(11), 2),
+            param("start", whenever.Time(11, 1), 2),
+            param("start", whenever.Time(11, 59), 2),
+            param("start", whenever.Time(12), None),
+            param("start", whenever.Time(12, 1), None),
+            param("start", whenever.Time(12, 59), None),
+            param("start", whenever.Time(13), 3),
+            param("start", whenever.Time(13, 1), 3),
+            param("start", whenever.Time(13, 59), 3),
+            param("start", whenever.Time(14), None),
+            param("start", whenever.Time(14, 1), None),
+            param("start", whenever.Time(14, 59), None),
+            param("start", whenever.Time(15), 4),
+            param("start", whenever.Time(15, 1), 4),
+            param("start", whenever.Time(15, 59), 4),
+            param("start", whenever.Time(16), None),
+            param("start", whenever.Time(16, 1), None),
+        ],
+    )
+    def test_start(
+        self,
+        *,
+        start_or_end: Literal["start", "end"],
+        time: whenever.Time,
+        expected: int | None,
+    ) -> None:
+        sr = DataFrame(
+            data=[
+                (
+                    self.date.at(whenever.Time(s)).py_datetime(),
+                    self.date.at(whenever.Time(e)).py_datetime(),
+                )
+                for s, e in [(9, 10), (10, 11), (11, 12), (13, 14), (15, 16)]
+            ],
+            schema={"start": DatetimeUTC, "end": DatetimeUTC},
+            orient="row",
+        ).with_columns(datetime=struct("start", "end"))["datetime"]
+        assert len(sr) == 5
+        date_time = self.date.at(time).assume_tz(UTC.key)
+        index = search_period(sr, date_time, start_or_end=start_or_end)
+        if expected is None:
+            assert index is None
+        else:
+            assert index is not None
+            assert 0 <= index <= (len(sr) - 1)
+            start, end = map(
+                to_zoned_date_time, cast("Iterable[dt.datetime]", sr[index].values())
+            )
+            assert start <= date_time < end
+            if index > 0:
+                prev_end = to_zoned_date_time(cast("dt.datetime", sr[index - 1]["end"]))
+                assert prev_end <= date_time
+            if index < (len(sr) - 1):
+                next_start = to_zoned_date_time(
+                    cast("dt.datetime", sr[index + 1]["start"])
+                )
+                assert date_time <= next_start
+
 
 class TestSelectExact:
     df: ClassVar[DataFrame] = DataFrame(

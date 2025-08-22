@@ -2474,32 +2474,17 @@ def search_period(
     py_date_time = date_time.py_datetime()
     match start_or_end:
         case "start":
-            raise NotImplementedError
+            index = end.search_sorted(py_date_time, side="right")
+            if index >= len(series):
+                return None
+            item: dt.datetime = series[index]["start"]
+            return index if py_date_time >= item else None
         case "end":
             index = end.search_sorted(py_date_time, side="left")
             if index >= len(series):
                 return None
             item: dt.datetime = series[index]["start"]
             return index if py_date_time > item else None
-            res1, res2 = (
-                start.search_sorted(py_now, side="left"),
-                start.search_sorted(py_now, side="right"),
-            )
-            res3, res4 = (
-                end.search_sorted(py_now, side="left"),
-                end.search_sorted(py_now, side="right"),
-            )
-            item = sr[res3]["start"] if res3 < 5 else None
-            cmp = py_now > item if item is not None else None
-    start = series.struct["start"].search_sorted(date_time.py_datetime(), side="right")
-    end = series.struct["end"].search_sorted(date_time.py_datetime(), side="right")
-    if start > end:
-        return None
-    assert 0, [start, end]
-
-    return series.struct[start_or_end].search_sorted(
-        date_time.py_datetime(), side="right"
-    )
 
 
 ##
