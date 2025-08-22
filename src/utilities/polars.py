@@ -830,13 +830,15 @@ def choice(
 ##
 
 
-def columns_to_dict(df: DataFrame, key: str, value: str, /) -> dict[Any, Any]:
+def columns_to_dict(
+    df: DataFrame, key: IntoExprColumn, value: IntoExprColumn, /
+) -> dict[Any, Any]:
     """Map a pair of columns into a dictionary. Must be unique on `key`."""
-    col_key = df[key]
-    if col_key.is_duplicated().any():
-        raise ColumnsToDictError(df=df, key=key)
-    col_value = df[value]
-    return dict(zip(col_key, col_value, strict=True))
+    df = df.select(key, value)
+    key_col, value_col = [df[get_expr_name(df, expr)] for expr in [key, value]]
+    if key_col.is_duplicated().any():
+        raise ColumnsToDictError(df=df, key=key_col.name)
+    return dict(zip(key_col, value_col, strict=True))
 
 
 @dataclass(kw_only=True, slots=True)
