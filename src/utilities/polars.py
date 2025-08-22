@@ -2515,7 +2515,7 @@ def search_period(
     start_or_end: Literal["start", "end"] = "end",
 ) -> int | None:
     """Search a series of periods for the one containing a given date-time."""
-    start, end = [series.struct[k] for k in ["start", "end"]]
+    end = series.struct["end"]
     py_date_time = date_time.py_datetime()
     match start_or_end:
         case "start":
