@@ -832,7 +832,6 @@ def choice(
 
 def columns_to_dict(df: DataFrame, key: str, value: str, /) -> dict[Any, Any]:
     """Map a pair of columns into a dictionary. Must be unique on `key`."""
-    # TODO: allow IntoExpr
     col_key = df[key]
     if col_key.is_duplicated().any():
         raise ColumnsToDictError(df=df, key=key)
@@ -2530,7 +2529,7 @@ def search_period(
             if index >= len(series):
                 return None
             item: dt.datetime = series[index]["start"]
-            return index if py_date_time > item else none
+            return index if py_date_time > item else None
 
 
 ##
