@@ -83,7 +83,6 @@ from utilities.hypothesis import (
 from utilities.numpy import DEFAULT_RNG
 from utilities.pathlib import PWD
 from utilities.polars import (
-    AppendDataClassError,
     BooleanValueCountsError,
     ColumnsToDictError,
     DatePeriodDType,
@@ -102,6 +101,10 @@ from utilities.polars import (
     SelectExactError,
     SetFirstRowAsColumnsError,
     TimePeriodDType,
+    _AppendRowExtraKeysError,
+    _AppendRowMissingKeysError,
+    _AppendRowNullColumnsError,
+    _AppendRowPredicateError,
     _check_polars_dataframe_predicates,
     _check_polars_dataframe_schema_list,
     _check_polars_dataframe_schema_set,
@@ -145,7 +148,7 @@ from utilities.polars import (
     all_series,
     any_dataframe_columns,
     any_series,
-    append_dataclass,
+    append_row,
     are_frames_equal,
     bernoulli,
     boolean_value_counts,
@@ -360,91 +363,89 @@ class TestAnyAllDataFrameColumnsSeries:
         assert_series_equal(result, self.exp_any)
 
 
-class TestAppendDataClass:
-    @given(
-        data=fixed_dictionaries({
-            "a": int64s() | none(),
-            "b": floats() | none(),
-            "c": text_ascii() | none(),
-        })
+class TestAppendRow:
+    rows: ClassVar[list[tuple[int, int]]] = [(i, 2 * i) for i in range(3)]
+    schema: ClassVar[SchemaDict] = {"x": Int64, "y": Int64}
+    df: ClassVar[DataFrame] = DataFrame(data=rows, schema=schema, orient="row")
+
+    @mark.parametrize(
+        "row", [param({"x": 3, "y": 6}), param({"x": 3, "y": 6, "z": None})]
     )
-    def test_columns_and_fields_equal(self, *, data: StrMapping) -> None:
-        df = DataFrame(schema={"a": Int64, "b": Float64, "c": String})
+    def test_main(self, *, row: StrMapping) -> None:
+        result = append_row(self.df, row)
+        expected = DataFrame(
+            data=[*self.rows, (3, 6)], schema=self.schema, orient="row"
+        )
+        assert_frame_equal(result, expected)
 
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            a: int | None = None
-            b: float | None = None
-            c: str | None = None
+    def test_missing_key(self) -> None:
+        row = {"x": 3}
+        result = append_row(self.df, row)
+        expected = DataFrame(
+            data=[*self.rows, (3, None)], schema=self.schema, orient="row"
+        )
+        assert_frame_equal(result, expected)
 
-        row = Row(**data)
-        result = append_dataclass(df, row)
-        height = 0 if (row.a is None) and (row.b is None) and (row.c is None) else 1
-        check_polars_dataframe(result, height=height, schema_list=df.schema)
+    def test_disallow_missing_selected(self) -> None:
+        row = {"x": 3}
+        result = append_row(self.df, row, disallow_missing="x")
+        expected = DataFrame(
+            data=[*self.rows, (3, None)], schema=self.schema, orient="row"
+        )
+        assert_frame_equal(result, expected)
 
-    @given(data=fixed_dictionaries({"a": int64s() | none(), "b": floats() | none()}))
-    def test_extra_column(self, *, data: StrMapping) -> None:
-        df = DataFrame(schema={"a": Int64, "b": Float64, "c": String})
+    def test_disallow_null_selected(self) -> None:
+        row = {"x": 3, "y": None}
+        result = append_row(self.df, row, disallow_null="x")
+        expected = DataFrame(
+            data=[*self.rows, (3, None)], schema=self.schema, orient="row"
+        )
+        assert_frame_equal(result, expected)
 
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            a: int | None = None
-            b: float | None = None
+    def test_in_place(self) -> None:
+        df = DataFrame(data=self.rows, schema=self.schema, orient="row")
+        assert df.height == 3
+        row = {"x": 3, "y": 6}
+        _ = append_row(df, row, in_place=True)
+        assert df.height == 4
 
-        row = Row(**data)
-        result = append_dataclass(df, row)
-        height = 0 if (row.a is None) and (row.b is None) else 1
-        check_polars_dataframe(result, height=height, schema_list=df.schema)
+    def test_error_predicate(self) -> None:
+        row = {"x": 3}
+        with raises(_AppendRowPredicateError, match="Predicate failed; got {'x': 3}"):
+            _ = append_row(self.df, row, predicate=lambda row: "y" in row)
 
-    @given(data=fixed_dictionaries({"a": int64s() | none(), "b": floats() | none()}))
-    def test_extra_field_but_none(self, *, data: StrMapping) -> None:
-        df = DataFrame(schema={"a": Int64, "b": Float64})
+    def test_error_disallow_extra(self) -> None:
+        row = {"x": 3, "y": 6, "z": None}
+        with raises(_AppendRowExtraKeysError, match=r"Extra key\(s\) found; got {'z'}"):
+            _ = append_row(self.df, row, disallow_extra=True)
 
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            a: int | None = None
-            b: float | None = None
-            c: str | None = None
-
-        row = Row(**data)
-        result = append_dataclass(df, row)
-        height = 0 if (row.a is None) and (row.b is None) else 1
-        check_polars_dataframe(result, height=height, schema_list=df.schema)
-
-    @given(data=fixed_dictionaries({"datetime": zoned_date_times()}))
-    def test_zoned_datetime(self, *, data: StrMapping) -> None:
-        df = DataFrame(schema={"datetime": DatetimeUTC})
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            datetime: ZonedDateTime
-
-        row = Row(**data)
-        result = append_dataclass(df, row)
-        check_polars_dataframe(result, height=1, schema_list=df.schema)
-
-    @given(
-        data=fixed_dictionaries({
-            "a": int64s() | none(),
-            "b": floats() | none(),
-            "c": text_ascii(),
-        })
-    )
-    def test_error(self, *, data: StrMapping) -> None:
-        df = DataFrame(schema={"a": Int64, "b": Float64})
-
-        @dataclass(kw_only=True, slots=True)
-        class Row:
-            a: int | None = None
-            b: float | None = None
-            c: str
-
-        row = Row(**data)
+    def test_error_disallow_missing_all(self) -> None:
         with raises(
-            AppendDataClassError,
-            match="Dataclass fields .* must be a subset of DataFrame columns .*; dataclass had extra items .*",
+            _AppendRowMissingKeysError,
+            match=r"Missing key\(s\) found; got {'[xy]', '[xy]'}",
         ):
-            _ = append_dataclass(df, row)
+            _ = append_row(self.df, {}, disallow_missing=True)
+
+    def test_error_disallow_missing_selected(self) -> None:
+        with raises(
+            _AppendRowMissingKeysError, match=r"Missing key\(s\) found; got {'x'}"
+        ):
+            _ = append_row(self.df, {}, disallow_missing="x")
+
+    def test_error_disallow_null_all(self) -> None:
+        row = {"x": None, "y": None}
+        with raises(
+            _AppendRowNullColumnsError,
+            match=r"Null column\(s\) found; got {'[xy]', '[xy]'}",
+        ):
+            _ = append_row(self.df, row, disallow_null=True)
+
+    def test_error_disallow_null_selected(self) -> None:
+        row = {"x": None, "y": None}
+        with raises(
+            _AppendRowNullColumnsError, match=r"Null column\(s\) found; got {'x'}"
+        ):
+            _ = append_row(self.df, row, disallow_null="x")
 
 
 class TestAreFramesEqual:
