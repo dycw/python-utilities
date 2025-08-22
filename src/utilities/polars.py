@@ -49,6 +49,7 @@ from polars.exceptions import (
     OutOfBoundsError,
     PolarsInefficientMapWarning,
 )
+from polars.functions.as_datatype import date_
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
@@ -105,6 +106,7 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC, to_time_zone_name
 
 if TYPE_CHECKING:
+    import datetime as dt
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
     from collections.abc import Set as AbstractSet
 
@@ -2460,6 +2462,49 @@ class RoundToFloatError(Exception):
 ##
 
 
+def search_period(
+    series: Series,
+    date_time: ZonedDateTime,
+    /,
+    *,
+    start_or_end: Literal["start", "end"] = "end",
+) -> int | None:
+    """Search a series of periods for the one containing a given date-time."""
+    start, end = [series.struct[k] for k in ["start", "end"]]
+    py_date_time = date_time.py_datetime()
+    match start_or_end:
+        case "start":
+            raise NotImplementedError
+        case "end":
+            index = end.search_sorted(py_date_time, side="left")
+            if index >= len(series):
+                return None
+            item: dt.datetime = series[index]["start"]
+            return index if py_date_time > item else None
+            res1, res2 = (
+                start.search_sorted(py_now, side="left"),
+                start.search_sorted(py_now, side="right"),
+            )
+            res3, res4 = (
+                end.search_sorted(py_now, side="left"),
+                end.search_sorted(py_now, side="right"),
+            )
+            item = sr[res3]["start"] if res3 < 5 else None
+            cmp = py_now > item if item is not None else None
+    start = series.struct["start"].search_sorted(date_time.py_datetime(), side="right")
+    end = series.struct["end"].search_sorted(date_time.py_datetime(), side="right")
+    if start > end:
+        return None
+    assert 0, [start, end]
+
+    return series.struct[start_or_end].search_sorted(
+        date_time.py_datetime(), side="right"
+    )
+
+
+##
+
+
 def select_exact(
     df: DataFrame, /, *columns: IntoExprColumn, drop: MaybeIterable[str] | None = None
 ) -> DataFrame:
@@ -2750,6 +2795,7 @@ __all__ = [
     "read_series",
     "replace_time_zone",
     "round_to_float",
+    "search_period",
     "select_exact",
     "serialize_dataframe",
     "set_first_row_as_columns",
