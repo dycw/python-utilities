@@ -2477,8 +2477,6 @@ class TestRoundToFloat:
 
 
 class TestSearchPeriod:
-    date: ClassVar[whenever.Date] = whenever.Date(2000, 1, 1)
-
     @mark.parametrize(
         ("time", "exp_start", "exp_end"),
         [
