@@ -81,7 +81,7 @@ from utilities.math import (
     is_non_negative,
 )
 from utilities.reprlib import get_repr
-from utilities.types import MaybeStr, Number, PathLike, WeekDay
+from utilities.types import MaybeCollectionStr, MaybeStr, Number, PathLike, WeekDay
 from utilities.typing import (
     get_args,
     is_dataclass_class,
@@ -103,7 +103,6 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC, to_time_zone_name
 
 if TYPE_CHECKING:
-    import datetime as dt
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
     from collections.abc import Set as AbstractSet
 
@@ -306,22 +305,29 @@ def append_row(
     *,
     predicate: Callable[[StrMapping], bool] | None = None,
     disallow_extra: bool = False,
-    disallow_missing: bool = False,
-    disallow_null: bool = False,
+    disallow_missing: bool | MaybeIterable[str] = False,
+    disallow_null: bool | MaybeIterable[str] = False,
 ) -> DataFrame:
     """Append a row to a DataFrame."""
     if (predicate is not None) and predicate(row):
-        raise _AppendRowPredicateError(row=row)
-    non_null_fields = {k: v for k, v in asdict(obj).items() if v is not None}
-    try:
-        check_subset(non_null_fields, df.columns)
-    except CheckSubSetError as error:
-        raise AppendDataClassError(
-            left=error.left, right=error.right, extra=error.extra
-        ) from None
-    row_cols = set(df.columns) & set(non_null_fields)
-    row = dataclass_to_dataframe(obj).select(*row_cols)
-    return concat([df, row], how="diagonal")
+        raise _AppendRowPredicateError(df=df, row=row)
+    if disallow_extra and (len(extra := set(row) - set(df.columns)) >= 1):
+        raise _AppendRowExtraKeysError(df=df, row=row, extra=extra)
+    if disallow_missing is not False:
+        missing = set(df.columns) - set(row)
+        if disallow_missing is not True:
+            missing &= set(always_iterable(disallow_missing))
+        if len(missing) >= 1:
+            raise _AppendRowMissingKeysError(df=df, row=row, missing=missing)
+    other = DataFrame(data=[row], schema=df.schema)
+    if disallow_null:
+        other_null = other.select(col(c).is_null().any() for c in other.columns)
+        null = {k for k, v in other_null.row(0, named=True).items() if v}
+        if disallow_null is not True:
+            null &= set(always_iterable(disallow_null))
+        if len(null) >= 1:
+            raise _AppendRowNullColumnsError(df=df, row=row, columns=null)
+    return df.extend(other)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -335,6 +341,33 @@ class _AppendRowPredicateError(AppendRowError):
     @override
     def __str__(self) -> str:
         return f"Row {self.row} failed the predicate"
+
+
+@dataclass(kw_only=True, slots=True)
+class _AppendRowExtraKeysError(AppendRowError):
+    extra: AbstractSet[str]
+
+    @override
+    def __str__(self) -> str:
+        return f"Row has extra keys {self.extra}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _AppendRowMissingKeysError(AppendRowError):
+    missing: AbstractSet[str]
+
+    @override
+    def __str__(self) -> str:
+        return f"Row has missing keys {self.missing}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _AppendRowNullColumnsError(AppendRowError):
+    columns: AbstractSet[str]
+
+    @override
+    def __str__(self) -> str:
+        return f"Row has nulls columns {self.columns}"
 
 
 ##
@@ -2473,34 +2506,6 @@ class RoundToFloatError(Exception):
 ##
 
 
-def search_period(
-    series: Series,
-    date_time: ZonedDateTime,
-    /,
-    *,
-    start_or_end: Literal["start", "end"] = "end",
-) -> int | None:
-    """Search a series of periods for the one containing a given date-time."""
-    end = series.struct["end"]
-    py_date_time = date_time.py_datetime()
-    match start_or_end:
-        case "start":
-            index = end.search_sorted(py_date_time, side="right")
-            if index >= len(series):
-                return None
-            item: dt.datetime = series[index]["start"]
-            return index if py_date_time >= item else None
-        case "end":
-            index = end.search_sorted(py_date_time, side="left")
-            if index >= len(series):
-                return None
-            item: dt.datetime = series[index]["start"]
-            return index if py_date_time > item else None
-
-
-##
-
-
 def select_exact(
     df: DataFrame, /, *columns: IntoExprColumn, drop: MaybeIterable[str] | None = None
 ) -> DataFrame:
@@ -2792,7 +2797,6 @@ __all__ = [
     "read_series",
     "replace_time_zone",
     "round_to_float",
-    "search_period",
     "select_exact",
     "serialize_dataframe",
     "set_first_row_as_columns",
