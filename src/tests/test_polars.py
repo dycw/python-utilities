@@ -402,6 +402,13 @@ class TestAppendRow:
         )
         assert_frame_equal(result, expected)
 
+    def test_in_place(self) -> None:
+        df = DataFrame(data=self.rows, schema=self.schema, orient="row")
+        assert df.height == 3
+        row = {"x": 3, "y": 6}
+        _ = append_row(df, row, in_place=True)
+        assert df.height == 4
+
     def test_error_predicate(self) -> None:
         row = {"x": 3}
         with raises(_AppendRowPredicateError, match="Predicate failed; got {'x': 3}"):
