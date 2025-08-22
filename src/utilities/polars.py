@@ -105,6 +105,7 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC, to_time_zone_name
 
 if TYPE_CHECKING:
+    import datetime as dt
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
     from collections.abc import Set as AbstractSet
 
@@ -2460,6 +2461,34 @@ class RoundToFloatError(Exception):
 ##
 
 
+def search_period(
+    series: Series,
+    date_time: ZonedDateTime,
+    /,
+    *,
+    start_or_end: Literal["start", "end"] = "end",
+) -> int | None:
+    """Search a series of periods for the one containing a given date-time."""
+    start, end = [series.struct[k] for k in ["start", "end"]]
+    py_date_time = date_time.py_datetime()
+    match start_or_end:
+        case "start":
+            index = end.search_sorted(py_date_time, side="right")
+            if index >= len(series):
+                return None
+            item: dt.datetime = series[index]["start"]
+            return index if py_date_time >= item else None
+        case "end":
+            index = end.search_sorted(py_date_time, side="left")
+            if index >= len(series):
+                return None
+            item: dt.datetime = series[index]["start"]
+            return index if py_date_time > item else None
+
+
+##
+
+
 def select_exact(
     df: DataFrame, /, *columns: IntoExprColumn, drop: MaybeIterable[str] | None = None
 ) -> DataFrame:
@@ -2750,6 +2779,7 @@ __all__ = [
     "read_series",
     "replace_time_zone",
     "round_to_float",
+    "search_period",
     "select_exact",
     "serialize_dataframe",
     "set_first_row_as_columns",
