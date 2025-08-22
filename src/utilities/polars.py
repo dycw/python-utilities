@@ -49,7 +49,6 @@ from polars.exceptions import (
     OutOfBoundsError,
     PolarsInefficientMapWarning,
 )
-from polars.functions.as_datatype import date_
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
