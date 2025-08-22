@@ -13,7 +13,6 @@ from typing import (
     Self,
     SupportsFloat,
     TypedDict,
-    TypeVar,
     assert_never,
     cast,
     overload,
@@ -146,9 +145,6 @@ def sub_year_month(x: YearMonth, /, *, years: int = 0, months: int = 0) -> YearM
 ##
 
 
-_TDate_co = TypeVar("_TDate_co", bound=Date | dt.date, covariant=True)
-
-
 @dataclass(repr=False, order=True, unsafe_hash=True, kw_only=False)
 class DatePeriod:
     """A period of dates."""
@@ -210,7 +206,7 @@ class DatePeriod:
         return f"{fc(start)}-{fc(end)}"
 
     @classmethod
-    def from_dict(cls, mapping: PeriodDict[_TDate_co], /) -> Self:
+    def from_dict(cls, mapping: PeriodDict[Date] | PeriodDict[dt.date], /) -> Self:
         """Convert the dictionary to a period."""
         match mapping["start"]:
             case Date() as start:
@@ -237,6 +233,10 @@ class DatePeriod:
     def to_dict(self) -> PeriodDict[Date]:
         """Convert the period to a dictionary."""
         return PeriodDict(start=self.start, end=self.end)
+
+    def to_py_dict(self) -> PeriodDict[dt.date]:
+        """Convert the period to a dictionary."""
+        return PeriodDict(start=self.start.py_date(), end=self.end.py_date())
 
 
 @dataclass(kw_only=True, slots=True)
@@ -788,9 +788,6 @@ class _RoundDateOrDateTimeDateTimeIntraDayWithWeekdayError(RoundDateOrDateTimeEr
 ##
 
 
-_TTime_co = TypeVar("_TTime_co", bound=Time | dt.time, covariant=True)
-
-
 @dataclass(repr=False, order=True, unsafe_hash=True, kw_only=False)
 class TimePeriod:
     """A period of times."""
@@ -817,7 +814,7 @@ class TimePeriod:
         return DatePeriod(start, end).at((self.start, self.end), time_zone=time_zone)
 
     @classmethod
-    def from_dict(cls, mapping: PeriodDict[_TTime_co], /) -> Self:
+    def from_dict(cls, mapping: PeriodDict[Time] | PeriodDict[dt.time], /) -> Self:
         """Convert the dictionary to a period."""
         match mapping["start"]:
             case Time() as start:
@@ -844,6 +841,10 @@ class TimePeriod:
     def to_dict(self) -> PeriodDict[Time]:
         """Convert the period to a dictionary."""
         return PeriodDict(start=self.start, end=self.end)
+
+    def to_py_dict(self) -> PeriodDict[dt.time]:
+        """Convert the period to a dictionary."""
+        return PeriodDict(start=self.start.py_time(), end=self.end.py_time())
 
 
 ##
@@ -1726,11 +1727,6 @@ class WheneverLogRecord(LogRecord):
 ##
 
 
-_TDateTime_co = TypeVar(
-    "_TDateTime_co", bound=ZonedDateTime | dt.datetime, covariant=True
-)
-
-
 @dataclass(repr=False, order=True, unsafe_hash=True, kw_only=False)
 class ZonedDateTimePeriod:
     """A period of time."""
@@ -1833,7 +1829,9 @@ class ZonedDateTimePeriod:
         return f"{fc(start.to_plain())}-{fc(end, fmt='%Y%m%dT%H')}"
 
     @classmethod
-    def from_dict(cls, mapping: PeriodDict[_TDateTime_co], /) -> Self:
+    def from_dict(
+        cls, mapping: PeriodDict[ZonedDateTime] | PeriodDict[dt.datetime], /
+    ) -> Self:
         """Convert the dictionary to a period."""
         match mapping["start"]:
             case ZonedDateTime() as start:
@@ -1868,6 +1866,10 @@ class ZonedDateTimePeriod:
     def to_dict(self) -> PeriodDict[ZonedDateTime]:
         """Convert the period to a dictionary."""
         return PeriodDict(start=self.start, end=self.end)
+
+    def to_py_dict(self) -> PeriodDict[dt.datetime]:
+        """Convert the period to a dictionary."""
+        return PeriodDict(start=self.start.py_datetime(), end=self.end.py_datetime())
 
     def to_tz(self, time_zone: TimeZoneLike, /) -> Self:
         """Convert the time zone."""
