@@ -2508,8 +2508,14 @@ class TestSearchPeriod:
             param(whenever.Time(16, 2), None, None),
         ],
     )
+    @mark.parametrize("start_or_end", [param("start"), param("end")])
     def test_main(
-        self, *, time: whenever.Time, exp_start: int | None, exp_end: int | None
+        self,
+        *,
+        time: whenever.Time,
+        start_or_end: Literal["start", "end"],
+        exp_start: int | None,
+        exp_end: int | None,
     ) -> None:
         date = whenever.Date(2000, 1, 1)
         sr = DataFrame(
@@ -2525,35 +2531,37 @@ class TestSearchPeriod:
         ).with_columns(datetime=struct("start", "end"))["datetime"]
         assert len(sr) == 5
         date_time = date.at(time).assume_tz(UTC.key)
-        for start_or_end, expected in [("start", exp_start), ("end", exp_end)]:
-            start_or_end = cast('Literal["start", "end"]', start_or_end)
-            index = search_period(sr, date_time, start_or_end=cast("Any", start_or_end))
-            if expected is None:
-                assert index is None
-            else:
-                assert index is not None
-                assert 0 <= index <= (len(sr) - 1)
-                start, end = map(
-                    to_zoned_date_time,
-                    cast("Iterable[dt.datetime]", sr[index].values()),
+        match start_or_end:
+            case "start":
+                expected = exp_start
+            case "end":
+                expected = exp_end
+            case never:
+                assert_never(never)
+        index = search_period(sr, date_time, start_or_end=start_or_end)
+        if expected is None:
+            assert index is None
+        else:
+            assert index is not None
+            assert 0 <= index <= (len(sr) - 1)
+            start, end = map(
+                to_zoned_date_time, cast("Iterable[dt.datetime]", sr[index].values())
+            )
+            match start_or_end:
+                case "start":
+                    assert start <= date_time < end
+                case "end":
+                    assert start < date_time <= end
+                case never:
+                    assert_never(never)
+            if index > 0:
+                prev_end = to_zoned_date_time(cast("dt.datetime", sr[index - 1]["end"]))
+                assert prev_end <= date_time
+            if index < (len(sr) - 1):
+                next_start = to_zoned_date_time(
+                    cast("dt.datetime", sr[index + 1]["start"])
                 )
-                match start_or_end:
-                    case "start":
-                        assert start <= date_time < end
-                    case "end":
-                        assert start < date_time <= end
-                    case never:
-                        assert_never(never)
-                if index > 0:
-                    prev_end = to_zoned_date_time(
-                        cast("dt.datetime", sr[index - 1]["end"])
-                    )
-                    assert prev_end <= date_time
-                if index < (len(sr) - 1):
-                    next_start = to_zoned_date_time(
-                        cast("dt.datetime", sr[index + 1]["start"])
-                    )
-                    assert date_time <= next_start
+                assert date_time <= next_start
 
 
 class TestSelectExact:
