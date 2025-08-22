@@ -306,30 +306,22 @@ def append_row(
     *,
     predicate: Callable[[StrMapping], bool] | None = None,
     disallow_extra: bool = False,
-    disallow_missing: bool | MaybeIterable[str] = False,
-    disallow_null: bool | MaybeIterable[str] = False,
-    in_place: bool = False,
+    disallow_missing: bool = False,
+    disallow_null: bool = False,
 ) -> DataFrame:
     """Append a row to a DataFrame."""
-    if (predicate is not None) and not predicate(row):
-        raise _AppendRowPredicateError(df=df, row=row)
-    if disallow_extra and (len(extra := set(row) - set(df.columns)) >= 1):
-        raise _AppendRowExtraKeysError(df=df, row=row, extra=extra)
-    if disallow_missing is not False:
-        missing = set(df.columns) - set(row)
-        if disallow_missing is not True:
-            missing &= set(always_iterable(disallow_missing))
-        if len(missing) >= 1:
-            raise _AppendRowMissingKeysError(df=df, row=row, missing=missing)
-    other = DataFrame(data=[row], schema=df.schema)
-    if disallow_null:
-        other_null = other.select(col(c).is_null().any() for c in other.columns)
-        null = {k for k, v in other_null.row(0, named=True).items() if v}
-        if disallow_null is not True:
-            null &= set(always_iterable(disallow_null))
-        if len(null) >= 1:
-            raise _AppendRowNullColumnsError(df=df, row=row, columns=null)
-    return df.extend(other) if in_place else df.vstack(other)
+    if (predicate is not None) and predicate(row):
+        raise _AppendRowPredicateError(row=row)
+    non_null_fields = {k: v for k, v in asdict(obj).items() if v is not None}
+    try:
+        check_subset(non_null_fields, df.columns)
+    except CheckSubSetError as error:
+        raise AppendDataClassError(
+            left=error.left, right=error.right, extra=error.extra
+        ) from None
+    row_cols = set(df.columns) & set(non_null_fields)
+    row = dataclass_to_dataframe(obj).select(*row_cols)
+    return concat([df, row], how="diagonal")
 
 
 @dataclass(kw_only=True, slots=True)
@@ -342,34 +334,7 @@ class AppendRowError(Exception):
 class _AppendRowPredicateError(AppendRowError):
     @override
     def __str__(self) -> str:
-        return f"Predicate failed; got {get_repr(self.row)}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _AppendRowExtraKeysError(AppendRowError):
-    extra: AbstractSet[str]
-
-    @override
-    def __str__(self) -> str:
-        return f"Extra key(s) found; got {get_repr(self.extra)}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _AppendRowMissingKeysError(AppendRowError):
-    missing: AbstractSet[str]
-
-    @override
-    def __str__(self) -> str:
-        return f"Missing key(s) found; got {get_repr(self.missing)}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _AppendRowNullColumnsError(AppendRowError):
-    columns: AbstractSet[str]
-
-    @override
-    def __str__(self) -> str:
-        return f"Null column(s) found; got {get_repr(self.columns)}"
+        return f"Row {self.row} failed the predicate"
 
 
 ##
@@ -832,6 +797,7 @@ def choice(
 
 def columns_to_dict(df: DataFrame, key: str, value: str, /) -> dict[Any, Any]:
     """Map a pair of columns into a dictionary. Must be unique on `key`."""
+    # TODO: allow IntoExpr
     col_key = df[key]
     if col_key.is_duplicated().any():
         raise ColumnsToDictError(df=df, key=key)
