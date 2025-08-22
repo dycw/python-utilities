@@ -103,6 +103,7 @@ from utilities.polars import (
     TimePeriodDType,
     _AppendRowExtraKeysError,
     _AppendRowMissingKeysError,
+    _AppendRowNullColumnsError,
     _AppendRowPredicateError,
     _check_polars_dataframe_predicates,
     _check_polars_dataframe_schema_list,
@@ -385,11 +386,19 @@ class TestAppendRow:
         )
         assert_frame_equal(result, expected)
 
-    def test_disallow_missing_specific_ok(self) -> None:
-        row = {"y": 6}
-        result = append_row(self.df, row, disallow_missing="y")
+    def test_disallow_missing_selected(self) -> None:
+        row = {"x": 3}
+        result = append_row(self.df, row, disallow_missing="x")
         expected = DataFrame(
-            data=[*self.rows, (None, 6)], schema=self.schema, orient="row"
+            data=[*self.rows, (3, None)], schema=self.schema, orient="row"
+        )
+        assert_frame_equal(result, expected)
+
+    def test_disallow_null_selected(self) -> None:
+        row = {"x": 3, "y": None}
+        result = append_row(self.df, row, disallow_null="x")
+        expected = DataFrame(
+            data=[*self.rows, (3, None)], schema=self.schema, orient="row"
         )
         assert_frame_equal(result, expected)
 
@@ -410,11 +419,26 @@ class TestAppendRow:
         ):
             _ = append_row(self.df, {}, disallow_missing=True)
 
-    def test_error_disallow_missing_specific(self) -> None:
+    def test_error_disallow_missing_selected(self) -> None:
         with raises(
             _AppendRowMissingKeysError, match=r"Missing key\(s\) found; got {'x'}"
         ):
             _ = append_row(self.df, {}, disallow_missing="x")
+
+    def test_error_disallow_null_all(self) -> None:
+        row = {"x": None, "y": None}
+        with raises(
+            _AppendRowNullColumnsError,
+            match=r"Null column\(s\) found; got {'[xy]', '[xy]'}",
+        ):
+            _ = append_row(self.df, row, disallow_null=True)
+
+    def test_error_disallow_null_selected(self) -> None:
+        row = {"x": None, "y": None}
+        with raises(
+            _AppendRowNullColumnsError, match=r"Null column\(s\) found; got {'x'}"
+        ):
+            _ = append_row(self.df, row, disallow_null="x")
 
 
 class TestAreFramesEqual:

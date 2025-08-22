@@ -61,14 +61,12 @@ from utilities.gzip import read_binary
 from utilities.iterables import (
     CheckIterablesEqualError,
     CheckMappingsEqualError,
-    CheckSubSetError,
     CheckSuperMappingError,
     OneEmptyError,
     OneNonUniqueError,
     always_iterable,
     check_iterables_equal,
     check_mappings_equal,
-    check_subset,
     check_supermapping,
     is_iterable_not_str,
     one,
@@ -83,7 +81,7 @@ from utilities.math import (
     is_non_negative,
 )
 from utilities.reprlib import get_repr
-from utilities.types import MaybeCollectionStr, MaybeStr, Number, PathLike, WeekDay
+from utilities.types import MaybeStr, Number, PathLike, WeekDay
 from utilities.typing import (
     get_args,
     is_dataclass_class,
@@ -371,7 +369,7 @@ class _AppendRowNullColumnsError(AppendRowError):
 
     @override
     def __str__(self) -> str:
-        return f"Row has nulls columns {self.columns}"
+        return f"Null column(s) found; got {get_repr(self.columns)}"
 
 
 ##
