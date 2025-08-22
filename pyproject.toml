@@ -233,7 +233,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.165.4"
+version = "0.166.0"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -266,7 +266,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.165.4"
+current_version = "0.166.0"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
