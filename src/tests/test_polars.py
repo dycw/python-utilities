@@ -838,21 +838,20 @@ class TestChoice:
 
 
 class TestColumnsToDict:
-    def test_main(self) -> None:
-        df = DataFrame(
-            data=[{"a": 1, "b": 11}, {"a": 2, "b": 12}, {"a": 3, "b": 13}],
-            schema={"a": Int64, "b": Int64},
-        )
-        mapping = columns_to_dict(df, "a", "b")
-        assert mapping == {1: 11, 2: 12, 3: 13}
+    schema: ClassVar[SchemaDict] = {"x": Int64, "y": Int64}
+
+    @mark.parametrize("x", [param("x"), param(col.x)])
+    @mark.parametrize("y", [param("y"), param(col.y)])
+    def test_main(self, *, x: IntoExprColumn, y: IntoExprColumn) -> None:
+        df = DataFrame(data=[(1, 2), (3, 4), (5, 6)], schema=self.schema, orient="row")
+        mapping = columns_to_dict(df, x, y)
+        expected = {1: 2, 3: 4, 5: 6}
+        assert mapping == expected
 
     def test_error(self) -> None:
-        df = DataFrame(
-            data=[{"a": 1, "b": 11}, {"a": 2, "b": 12}, {"a": 1, "b": 13}],
-            schema={"a": Int64, "b": Int64},
-        )
-        with raises(ColumnsToDictError, match="DataFrame must be unique on 'a':\n\n.*"):
-            _ = columns_to_dict(df, "a", "b")
+        df = DataFrame(data=[(1, 1), (1, 2), (1, 3)], schema=self.schema, orient="row")
+        with raises(ColumnsToDictError, match="DataFrame must be unique on 'x':\n\n.*"):
+            _ = columns_to_dict(df, "x", "y")
 
 
 class TestConcatSeries:
