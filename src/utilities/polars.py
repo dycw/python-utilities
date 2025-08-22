@@ -2747,6 +2747,7 @@ def zoned_date_time_period_dtype(
 
 
 __all__ = [
+    "AppendRowError",
     "BooleanValueCountsError",
     "CheckPolarsDataFrameError",
     "ColumnsToDictError",
