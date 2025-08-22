@@ -301,8 +301,19 @@ def any_series(series: Series, /, *columns: ExprOrSeries) -> Series:
 ##
 
 
-def append_dataclass(df: DataFrame, obj: Dataclass, /) -> DataFrame:
-    """Append a dataclass object to a DataFrame."""
+def append_row(
+    df: DataFrame,
+    row: StrMapping,
+    /,
+    *,
+    predicate: Callable[[StrMapping], bool] | None = None,
+    disallow_extra: bool = False,
+    disallow_missing: bool = False,
+    disallow_null: bool = False,
+) -> DataFrame:
+    """Append a row to a DataFrame."""
+    if (predicate is not None) and predicate(row):
+        raise _AppendRowPredicateError(row=row)
     non_null_fields = {k: v for k, v in asdict(obj).items() if v is not None}
     try:
         check_subset(non_null_fields, df.columns)
@@ -316,14 +327,16 @@ def append_dataclass(df: DataFrame, obj: Dataclass, /) -> DataFrame:
 
 
 @dataclass(kw_only=True, slots=True)
-class AppendDataClassError[T](Exception):
-    left: AbstractSet[T]
-    right: AbstractSet[T]
-    extra: AbstractSet[T]
+class AppendRowError(Exception):
+    df: DataFrame
+    row: StrMapping
 
+
+@dataclass(kw_only=True, slots=True)
+class _AppendRowPredicateError(AppendRowError):
     @override
     def __str__(self) -> str:
-        return f"Dataclass fields {get_repr(self.left)} must be a subset of DataFrame columns {get_repr(self.right)}; dataclass had extra items {get_repr(self.extra)}"
+        return f"Row {self.row} failed the predicate"
 
 
 ##
@@ -786,6 +799,7 @@ def choice(
 
 def columns_to_dict(df: DataFrame, key: str, value: str, /) -> dict[Any, Any]:
     """Map a pair of columns into a dictionary. Must be unique on `key`."""
+    # TODO: allow IntoExpr
     col_key = df[key]
     if col_key.is_duplicated().any():
         raise ColumnsToDictError(df=df, key=key)
@@ -2731,7 +2745,7 @@ __all__ = [
     "all_series",
     "any_dataframe_columns",
     "any_series",
-    "append_dataclass",
+    "append_row",
     "are_frames_equal",
     "bernoulli",
     "boolean_value_counts",

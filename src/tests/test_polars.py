@@ -83,7 +83,6 @@ from utilities.hypothesis import (
 from utilities.numpy import DEFAULT_RNG
 from utilities.pathlib import PWD
 from utilities.polars import (
-    AppendDataClassError,
     BooleanValueCountsError,
     ColumnsToDictError,
     DatePeriodDType,
@@ -102,6 +101,7 @@ from utilities.polars import (
     SelectExactError,
     SetFirstRowAsColumnsError,
     TimePeriodDType,
+    _AppendRowPredicateError,
     _check_polars_dataframe_predicates,
     _check_polars_dataframe_schema_list,
     _check_polars_dataframe_schema_set,
@@ -145,7 +145,7 @@ from utilities.polars import (
     all_series,
     any_dataframe_columns,
     any_series,
-    append_dataclass,
+    append_row,
     are_frames_equal,
     bernoulli,
     boolean_value_counts,
@@ -360,7 +360,7 @@ class TestAnyAllDataFrameColumnsSeries:
         assert_series_equal(result, self.exp_any)
 
 
-class TestAppendDataClass:
+class TestAppendRow:
     @given(
         data=fixed_dictionaries({
             "a": int64s() | none(),
@@ -378,7 +378,7 @@ class TestAppendDataClass:
             c: str | None = None
 
         row = Row(**data)
-        result = append_dataclass(df, row)
+        result = append_row(df, row)
         height = 0 if (row.a is None) and (row.b is None) and (row.c is None) else 1
         check_polars_dataframe(result, height=height, schema_list=df.schema)
 
@@ -392,7 +392,7 @@ class TestAppendDataClass:
             b: float | None = None
 
         row = Row(**data)
-        result = append_dataclass(df, row)
+        result = append_row(df, row)
         height = 0 if (row.a is None) and (row.b is None) else 1
         check_polars_dataframe(result, height=height, schema_list=df.schema)
 
@@ -407,7 +407,7 @@ class TestAppendDataClass:
             c: str | None = None
 
         row = Row(**data)
-        result = append_dataclass(df, row)
+        result = append_row(df, row)
         height = 0 if (row.a is None) and (row.b is None) else 1
         check_polars_dataframe(result, height=height, schema_list=df.schema)
 
@@ -420,17 +420,10 @@ class TestAppendDataClass:
             datetime: ZonedDateTime
 
         row = Row(**data)
-        result = append_dataclass(df, row)
+        result = append_row(df, row)
         check_polars_dataframe(result, height=1, schema_list=df.schema)
 
-    @given(
-        data=fixed_dictionaries({
-            "a": int64s() | none(),
-            "b": floats() | none(),
-            "c": text_ascii(),
-        })
-    )
-    def test_error(self, *, data: StrMapping) -> None:
+    def test_error_predicate(self) -> None:
         df = DataFrame(schema={"a": Int64, "b": Float64})
 
         @dataclass(kw_only=True, slots=True)
@@ -441,10 +434,10 @@ class TestAppendDataClass:
 
         row = Row(**data)
         with raises(
-            AppendDataClassError,
+            _AppendRowPredicateError,
             match="Dataclass fields .* must be a subset of DataFrame columns .*; dataclass had extra items .*",
         ):
-            _ = append_dataclass(df, row)
+            _ = append_row(df, row)
 
 
 class TestAreFramesEqual:
