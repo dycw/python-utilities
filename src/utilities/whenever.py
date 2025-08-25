@@ -46,6 +46,7 @@ if TYPE_CHECKING:
         DateTimeRoundMode,
         Delta,
         MaybeCallableDateLike,
+        MaybeCallableTimeLike,
         MaybeCallableZonedDateTimeLike,
         TimeOrDateTimeDelta,
         TimeZoneLike,
@@ -368,7 +369,7 @@ NOW_UTC = get_now(UTC)
 
 
 def get_now_local() -> ZonedDateTime:
-    """Get the current local date-time."""
+    """Get the current zoned date-time in the local time-zone."""
     return get_now(LOCAL_TIME_ZONE)
 
 
@@ -376,7 +377,7 @@ NOW_LOCAL = get_now_local()
 
 
 def get_now_plain(time_zone: TimeZoneLike = UTC, /) -> PlainDateTime:
-    """Get the current date-time as a plain date-time."""
+    """Get the current plain date-time."""
     return get_now(time_zone).to_plain()
 
 
@@ -384,11 +385,30 @@ NOW_PLAIN = get_now_plain()
 
 
 def get_now_local_plain() -> PlainDateTime:
-    """Get the current local date-time as a plain date-time."""
+    """Get the current plain date-time in the local time-zone."""
     return get_now_local().to_plain()
 
 
 NOW_LOCAL_PLAIN = get_now_local_plain()
+
+
+##
+
+
+def get_time(time_zone: TimeZoneLike = UTC, /) -> Time:
+    """Get the current time."""
+    return get_now(time_zone).time()
+
+
+TIME_UTC = get_time(UTC)
+
+
+def get_time_local() -> Date:
+    """Get the current time in the local time-zone."""
+    return get_today(LOCAL_TIME_ZONE)
+
+
+TIME_LOCAL = get_time_local()
 
 
 ##
@@ -1511,6 +1531,35 @@ class _ToSecondsNanosecondsError(ToSecondsError):
 ##
 
 
+@overload
+def to_time(time: Sentinel, /) -> Sentinel: ...
+@overload
+def to_time(time: MaybeCallableTimeLike | None | dt.time = get_today, /) -> Time: ...
+def to_time(
+    time: MaybeCallableTimeLike | dt.time | None | Sentinel = get_today,
+    /,
+    *,
+    time_zone: TimeZoneLike = UTC,
+) -> Time | Sentinel:
+    """Convert to a time."""
+    match time:
+        case Time() | Sentinel():
+            return time
+        case None:
+            return get_today(time_zone)
+        case str():
+            return Time.parse_common_iso(time)
+        case dt.time():
+            return Time.from_py_time(time)
+        case Callable() as func:
+            return to_time(func(), time_zone=time_zone)
+        case never:
+            assert_never(never)
+
+
+##
+
+
 def to_weeks(delta: Delta, /) -> int:
     """Compute the number of weeks in a delta."""
     try:
@@ -1935,6 +1984,8 @@ __all__ = [
     "SECOND",
     "TIME_DELTA_MAX",
     "TIME_DELTA_MIN",
+    "TIME_LOCAL",
+    "TIME_UTC",
     "TODAY_LOCAL",
     "TODAY_UTC",
     "WEEK",
@@ -1973,6 +2024,8 @@ __all__ = [
     "get_now_local",
     "get_now_local_plain",
     "get_now_plain",
+    "get_time",
+    "get_time_local",
     "get_today",
     "get_today_local",
     "mean_datetime",
@@ -1991,6 +2044,7 @@ __all__ = [
     "to_py_date_or_date_time",
     "to_py_time_delta",
     "to_seconds",
+    "to_time",
     "to_weeks",
     "to_years",
     "to_zoned_date_time",

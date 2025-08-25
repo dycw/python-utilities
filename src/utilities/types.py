@@ -255,6 +255,7 @@ type DateTimeRoundMode = Literal[
 ]
 type Delta = DateDelta | TimeDelta | DateTimeDelta
 type MaybeCallableDateLike = MaybeCallable[DateLike]
+type MaybeCallableTimeLike = MaybeCallable[TimeLike]
 type MaybeCallableZonedDateTimeLike = MaybeCallable[ZonedDateTimeLike]
 type MonthDayLike = MaybeStr[MonthDay]
 type PlainDateTimeLike = MaybeStr[PlainDateTime]
@@ -308,6 +309,7 @@ __all__ = [
     "MaybeCallableDateLike",
     "MaybeCallablePathLike",
     "MaybeCallableStr",
+    "MaybeCallableTimeLike",
     "MaybeCallableUUIDLike",
     "MaybeCallableZonedDateTimeLike",
     "MaybeCollection",

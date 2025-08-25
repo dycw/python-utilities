@@ -63,8 +63,9 @@ from utilities.whenever import (
     SECOND,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
+    TIME_LOCAL,
+    TIME_UTC,
     TODAY_LOCAL,
-    TODAY_UTC,
     ZERO_DAYS,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
@@ -119,6 +120,8 @@ from utilities.whenever import (
     get_now_local,
     get_now_local_plain,
     get_now_plain,
+    get_time,
+    get_time_local,
     get_today,
     get_today_local,
     mean_datetime,
@@ -465,13 +468,32 @@ class TestGetNowPlain:
         assert isinstance(NOW_PLAIN, PlainDateTime)
 
 
+class TestGetTime:
+    @given(time_zone=zone_infos())
+    def test_function(self, *, time_zone: ZoneInfo) -> None:
+        now = get_time(time_zone)
+        assert isinstance(now, Time)
+
+    def test_constant(self) -> None:
+        assert isinstance(TIME_UTC, Time)
+
+
+class TestGetTimeLocal:
+    def test_function(self) -> None:
+        now = get_time_local()
+        assert isinstance(now, Time)
+
+    def test_constant(self) -> None:
+        assert isinstance(TIME_LOCAL, Time)
+
+
 class TestGetToday:
     def test_function(self) -> None:
         today = get_today()
         assert isinstance(today, Date)
 
     def test_constant(self) -> None:
-        assert isinstance(TODAY_UTC, Date)
+        assert isinstance(TIME_UTC, Date)
 
 
 class TestGetTodayLocal:
@@ -620,7 +642,7 @@ class TestMinMaxDate:
         if (min_date_use is not None) and (max_date_use is not None):
             assert min_date_use <= max_date_use
 
-    @given(dates=pairs(dates(max_value=TODAY_UTC), unique=True, sorted=True))
+    @given(dates=pairs(dates(max_value=TIME_UTC), unique=True, sorted=True))
     def test_error_period(self, *, dates: tuple[Date, Date]) -> None:
         with raises(
             _MinMaxDatePeriodError,
@@ -777,28 +799,28 @@ class TestRoundDateOrDateTime:
             _RoundDateOrDateTimeIncrementError,
             match=r"Duration PT.* increment must be a proper divisor of \d+; got \d+",
         ):
-            _ = round_date_or_date_time(TODAY_UTC, delta)
+            _ = round_date_or_date_time(TIME_UTC, delta)
 
     def test_error_invalid(self) -> None:
         with raises(
             _RoundDateOrDateTimeInvalidDurationError,
             match="Duration must be valid; got P1M",
         ):
-            _ = round_date_or_date_time(TODAY_UTC, MONTH)
+            _ = round_date_or_date_time(TIME_UTC, MONTH)
 
     def test_error_date_with_weekday(self) -> None:
         with raises(
             _RoundDateOrDateTimeDateWithWeekdayError,
             match=r"Daily rounding must not be given a weekday; got Weekday\.MONDAY",
         ):
-            _ = round_date_or_date_time(TODAY_UTC, DAY, weekday=Weekday.MONDAY)
+            _ = round_date_or_date_time(TIME_UTC, DAY, weekday=Weekday.MONDAY)
 
     def test_error_date_with_intraday_delta(self) -> None:
         with raises(
             _RoundDateOrDateTimeDateWithIntradayDeltaError,
             match="Dates must not be given intraday durations; got .* and PT1S",
         ):
-            _ = round_date_or_date_time(TODAY_UTC, SECOND)
+            _ = round_date_or_date_time(TIME_UTC, SECOND)
 
     def test_error_date_time_intra_day_with_weekday(self) -> None:
         with raises(
