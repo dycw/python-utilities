@@ -37,7 +37,7 @@ cryptography = [
   "cryptography >=45.0.4, <45.1",
 ]
 cvxpy = [
-  "cvxpy >=1.7.1, <1.8",
+  "cvxpy >=1.7.2, <1.8",
 ]
 dataclasses-test = [
   "orjson",
@@ -68,7 +68,7 @@ http-test = [
   "orjson",
 ]
 hypothesis = [
-  "hypothesis >=6.138.2, <6.139",
+  "hypothesis >=6.138.3, <6.139",
 ]
 hypothesis-test = [
   "libcst",
@@ -233,7 +233,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.166.2"
+version = "0.166.3"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -245,7 +245,7 @@ logging = [
 ]
 test = [
   "dycw-pytest-only >=2.1.1, <2.2",
-  "hypothesis >=6.138.2, <6.139",
+  "hypothesis >=6.138.3, <6.139",
   "pytest >=8.4.1, <8.5",
   "pytest-asyncio >=1.1.0, <1.2",
   "pytest-cov >=6.2.1, <6.3",
@@ -266,7 +266,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.166.2"
+current_version = "0.166.3"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
