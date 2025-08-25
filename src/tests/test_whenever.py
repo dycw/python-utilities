@@ -40,7 +40,7 @@ from utilities.hypothesis import (
     zoned_date_times_2000,
 )
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import TIME_ZONES
+from utilities.types import TIME_ZONES, MaybeCallableTimeLike
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.whenever import (
@@ -63,6 +63,8 @@ from utilities.whenever import (
     SECOND,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
+    TIME_LOCAL,
+    TIME_UTC,
     TODAY_LOCAL,
     TODAY_UTC,
     ZERO_DAYS,
@@ -119,6 +121,8 @@ from utilities.whenever import (
     get_now_local,
     get_now_local_plain,
     get_now_plain,
+    get_time,
+    get_time_local,
     get_today,
     get_today_local,
     mean_datetime,
@@ -138,6 +142,7 @@ from utilities.whenever import (
     to_py_date_or_date_time,
     to_py_time_delta,
     to_seconds,
+    to_time,
     to_time_delta,
     to_weeks,
     to_years,
@@ -463,6 +468,25 @@ class TestGetNowPlain:
 
     def test_constant(self) -> None:
         assert isinstance(NOW_PLAIN, PlainDateTime)
+
+
+class TestGetTime:
+    @given(time_zone=zone_infos())
+    def test_function(self, *, time_zone: ZoneInfo) -> None:
+        now = get_time(time_zone)
+        assert isinstance(now, Time)
+
+    def test_constant(self) -> None:
+        assert isinstance(TIME_UTC, Time)
+
+
+class TestGetTimeLocal:
+    def test_function(self) -> None:
+        now = get_time_local()
+        assert isinstance(now, Time)
+
+    def test_constant(self) -> None:
+        assert isinstance(TIME_LOCAL, Time)
 
 
 class TestGetToday:
@@ -1308,6 +1332,55 @@ class TestToSeconds:
             match="Delta must not contain extra nanoseconds; got .*",
         ):
             _ = to_seconds(delta)
+
+
+class TestToTime:
+    def test_default(self) -> None:
+        first = get_today().at(to_time()).assume_tz(UTC.key)
+        second = get_today().at(to_time()).assume_tz(UTC.key)
+        assert abs(first - second) <= SECOND
+
+    @given(time=times())
+    def test_time(self, *, time: Time) -> None:
+        assert to_time(time) == time
+
+    @given(time=times())
+    def test_str(self, *, time: Time) -> None:
+        assert to_time(time.format_common_iso()) == time
+
+    @given(time=times())
+    def test_py_time(self, *, time: Time) -> None:
+        assert to_time(time.py_time()) == time
+
+    @given(time=times())
+    def test_callable(self, *, time: Time) -> None:
+        assert to_time(lambda: time) == time
+
+    def test_none(self) -> None:
+        first = get_today().at(to_time(None)).assume_tz(UTC.key)
+        second = get_today().at(get_time()).assume_tz(UTC.key)
+        assert abs(first - second) <= SECOND
+
+    def test_sentinel(self) -> None:
+        assert to_time(sentinel) is sentinel
+
+    @given(times=pairs(times()))
+    def test_replace_non_sentinel(self, *, times: tuple[Time, Time]) -> None:
+        time1, time2 = times
+
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            time: Time = field(default_factory=get_time)
+
+            def replace(
+                self, *, time: MaybeCallableTimeLike | Sentinel = sentinel
+            ) -> Self:
+                return replace_non_sentinel(self, time=to_time(time))
+
+        obj = Example(time=time1)
+        assert obj.time == time1
+        assert obj.replace().time == time1
+        assert obj.replace(time=time2).time == time2
 
 
 class TestToWeeks:
