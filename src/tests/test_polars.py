@@ -221,7 +221,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
 from utilities.whenever import (
     NOW_UTC,
-    TIME_UTC,
+    TODAY_UTC,
     DatePeriod,
     TimePeriod,
     ZonedDateTimePeriod,
@@ -1231,7 +1231,7 @@ class TestDataClassToSchema:
         class Example:
             x: DatePeriod
 
-        obj = Example(x=DatePeriod(TIME_UTC, TIME_UTC))
+        obj = Example(x=DatePeriod(TODAY_UTC, TODAY_UTC))
         result = dataclass_to_schema(obj, globalns=globals())
         expected = {"x": Object}
         assert result == expected
