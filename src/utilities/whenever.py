@@ -403,9 +403,9 @@ def get_time(time_zone: TimeZoneLike = UTC, /) -> Time:
 TIME_UTC = get_time(UTC)
 
 
-def get_time_local() -> Date:
+def get_time_local() -> Time:
     """Get the current time in the local time-zone."""
-    return get_today(LOCAL_TIME_ZONE)
+    return get_time(LOCAL_TIME_ZONE)
 
 
 TIME_LOCAL = get_time_local()
@@ -1398,6 +1398,95 @@ class ToPyTimeDeltaError(Exception):
 ##
 
 
+def to_seconds(delta: Delta, /) -> int:
+    """Compute the number of seconds in a delta."""
+    match delta:
+        case DateDelta():
+            try:
+                days = to_days(delta)
+            except _ToDaysMonthsError as error:
+                raise _ToSecondsMonthsError(delta=delta, months=error.months) from None
+            return 24 * 60 * 60 * days
+        case TimeDelta():
+            nanos = to_nanoseconds(delta)
+            seconds, remainder = divmod(nanos, int(1e9))
+            if remainder != 0:
+                raise _ToSecondsNanosecondsError(delta=delta, nanoseconds=remainder)
+            return seconds
+        case DateTimeDelta():
+            try:
+                return to_seconds(delta.date_part()) + to_seconds(delta.time_part())
+            except _ToSecondsMonthsError as error:
+                raise _ToSecondsMonthsError(delta=delta, months=error.months) from None
+            except _ToSecondsNanosecondsError as error:
+                raise _ToSecondsNanosecondsError(
+                    delta=delta, nanoseconds=error.nanoseconds
+                ) from None
+        case never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class ToSecondsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToSecondsMonthsError(ToSecondsError):
+    delta: DateOrDateTimeDelta
+    months: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain months; got {self.months}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToSecondsNanosecondsError(ToSecondsError):
+    delta: TimeOrDateTimeDelta
+    nanoseconds: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain extra nanoseconds; got {self.nanoseconds}"
+
+
+##
+
+
+@overload
+def to_time(time: Sentinel, /, *, time_zone: TimeZoneLike = UTC) -> Sentinel: ...
+@overload
+def to_time(
+    time: MaybeCallableTimeLike | None | dt.time = get_time,
+    /,
+    *,
+    time_zone: TimeZoneLike = UTC,
+) -> Time: ...
+def to_time(
+    time: MaybeCallableTimeLike | dt.time | None | Sentinel = get_time,
+    /,
+    *,
+    time_zone: TimeZoneLike = UTC,
+) -> Time | Sentinel:
+    """Convert to a time."""
+    match time:
+        case Time() | Sentinel():
+            return time
+        case None:
+            return get_time(time_zone)
+        case str():
+            return Time.parse_common_iso(time)
+        case dt.time():
+            return Time.from_py_time(time)
+        case Callable() as func:
+            return to_time(func(), time_zone=time_zone)
+        case never:
+            assert_never(never)
+
+
+##
+
+
 def to_time_delta(nanos: int, /) -> TimeDelta:
     """Construct a time delta."""
     components = _to_time_delta_components(nanos)
@@ -1471,90 +1560,6 @@ def _to_time_delta_components(nanos: int, /) -> _TimeDeltaComponents:
         milliseconds=millis,
         nanoseconds=nanos,
     )
-
-
-##
-
-
-def to_seconds(delta: Delta, /) -> int:
-    """Compute the number of seconds in a delta."""
-    match delta:
-        case DateDelta():
-            try:
-                days = to_days(delta)
-            except _ToDaysMonthsError as error:
-                raise _ToSecondsMonthsError(delta=delta, months=error.months) from None
-            return 24 * 60 * 60 * days
-        case TimeDelta():
-            nanos = to_nanoseconds(delta)
-            seconds, remainder = divmod(nanos, int(1e9))
-            if remainder != 0:
-                raise _ToSecondsNanosecondsError(delta=delta, nanoseconds=remainder)
-            return seconds
-        case DateTimeDelta():
-            try:
-                return to_seconds(delta.date_part()) + to_seconds(delta.time_part())
-            except _ToSecondsMonthsError as error:
-                raise _ToSecondsMonthsError(delta=delta, months=error.months) from None
-            except _ToSecondsNanosecondsError as error:
-                raise _ToSecondsNanosecondsError(
-                    delta=delta, nanoseconds=error.nanoseconds
-                ) from None
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class ToSecondsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToSecondsMonthsError(ToSecondsError):
-    delta: DateOrDateTimeDelta
-    months: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain months; got {self.months}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToSecondsNanosecondsError(ToSecondsError):
-    delta: TimeOrDateTimeDelta
-    nanoseconds: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain extra nanoseconds; got {self.nanoseconds}"
-
-
-##
-
-
-@overload
-def to_time(time: Sentinel, /) -> Sentinel: ...
-@overload
-def to_time(time: MaybeCallableTimeLike | None | dt.time = get_today, /) -> Time: ...
-def to_time(
-    time: MaybeCallableTimeLike | dt.time | None | Sentinel = get_today,
-    /,
-    *,
-    time_zone: TimeZoneLike = UTC,
-) -> Time | Sentinel:
-    """Convert to a time."""
-    match time:
-        case Time() | Sentinel():
-            return time
-        case None:
-            return get_today(time_zone)
-        case str():
-            return Time.parse_common_iso(time)
-        case dt.time():
-            return Time.from_py_time(time)
-        case Callable() as func:
-            return to_time(func(), time_zone=time_zone)
-        case never:
-            assert_never(never)
 
 
 ##

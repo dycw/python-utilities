@@ -40,7 +40,7 @@ from utilities.hypothesis import (
     zoned_date_times_2000,
 )
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import TIME_ZONES
+from utilities.types import TIME_ZONES, MaybeCallableTimeLike
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.whenever import (
@@ -66,6 +66,7 @@ from utilities.whenever import (
     TIME_LOCAL,
     TIME_UTC,
     TODAY_LOCAL,
+    TODAY_UTC,
     ZERO_DAYS,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
@@ -141,6 +142,7 @@ from utilities.whenever import (
     to_py_date_or_date_time,
     to_py_time_delta,
     to_seconds,
+    to_time,
     to_time_delta,
     to_weeks,
     to_years,
@@ -493,7 +495,7 @@ class TestGetToday:
         assert isinstance(today, Date)
 
     def test_constant(self) -> None:
-        assert isinstance(TIME_UTC, Date)
+        assert isinstance(TODAY_UTC, Date)
 
 
 class TestGetTodayLocal:
@@ -642,7 +644,7 @@ class TestMinMaxDate:
         if (min_date_use is not None) and (max_date_use is not None):
             assert min_date_use <= max_date_use
 
-    @given(dates=pairs(dates(max_value=TIME_UTC), unique=True, sorted=True))
+    @given(dates=pairs(dates(max_value=TODAY_UTC), unique=True, sorted=True))
     def test_error_period(self, *, dates: tuple[Date, Date]) -> None:
         with raises(
             _MinMaxDatePeriodError,
@@ -799,28 +801,28 @@ class TestRoundDateOrDateTime:
             _RoundDateOrDateTimeIncrementError,
             match=r"Duration PT.* increment must be a proper divisor of \d+; got \d+",
         ):
-            _ = round_date_or_date_time(TIME_UTC, delta)
+            _ = round_date_or_date_time(TODAY_UTC, delta)
 
     def test_error_invalid(self) -> None:
         with raises(
             _RoundDateOrDateTimeInvalidDurationError,
             match="Duration must be valid; got P1M",
         ):
-            _ = round_date_or_date_time(TIME_UTC, MONTH)
+            _ = round_date_or_date_time(TODAY_UTC, MONTH)
 
     def test_error_date_with_weekday(self) -> None:
         with raises(
             _RoundDateOrDateTimeDateWithWeekdayError,
             match=r"Daily rounding must not be given a weekday; got Weekday\.MONDAY",
         ):
-            _ = round_date_or_date_time(TIME_UTC, DAY, weekday=Weekday.MONDAY)
+            _ = round_date_or_date_time(TODAY_UTC, DAY, weekday=Weekday.MONDAY)
 
     def test_error_date_with_intraday_delta(self) -> None:
         with raises(
             _RoundDateOrDateTimeDateWithIntradayDeltaError,
             match="Dates must not be given intraday durations; got .* and PT1S",
         ):
-            _ = round_date_or_date_time(TIME_UTC, SECOND)
+            _ = round_date_or_date_time(TODAY_UTC, SECOND)
 
     def test_error_date_time_intra_day_with_weekday(self) -> None:
         with raises(
@@ -1330,6 +1332,55 @@ class TestToSeconds:
             match="Delta must not contain extra nanoseconds; got .*",
         ):
             _ = to_seconds(delta)
+
+
+class TestToTime:
+    def test_default(self) -> None:
+        first = get_today().at(to_time()).assume_tz(UTC.key)
+        second = get_today().at(to_time()).assume_tz(UTC.key)
+        assert abs(first - second) <= SECOND
+
+    @given(time=times())
+    def test_time(self, *, time: Time) -> None:
+        assert to_time(time) == time
+
+    @given(time=times())
+    def test_str(self, *, time: Time) -> None:
+        assert to_time(time.format_common_iso()) == time
+
+    @given(time=times())
+    def test_py_time(self, *, time: Time) -> None:
+        assert to_time(time.py_time()) == time
+
+    @given(time=times())
+    def test_callable(self, *, time: Time) -> None:
+        assert to_time(lambda: time) == time
+
+    def test_none(self) -> None:
+        first = get_today().at(to_time(None)).assume_tz(UTC.key)
+        second = get_today().at(get_time()).assume_tz(UTC.key)
+        assert abs(first - second) <= SECOND
+
+    def test_sentinel(self) -> None:
+        assert to_time(sentinel) is sentinel
+
+    @given(times=pairs(times()))
+    def test_replace_non_sentinel(self, *, times: tuple[Time, Time]) -> None:
+        time1, time2 = times
+
+        @dataclass(kw_only=True, slots=True)
+        class Example:
+            time: Time = field(default_factory=get_time)
+
+            def replace(
+                self, *, time: MaybeCallableTimeLike | Sentinel = sentinel
+            ) -> Self:
+                return replace_non_sentinel(self, time=to_time(time))
+
+        obj = Example(time=time1)
+        assert obj.time == time1
+        assert obj.replace().time == time1
+        assert obj.replace(time=time2).time == time2
 
 
 class TestToWeeks:
