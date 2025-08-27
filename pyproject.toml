@@ -22,14 +22,14 @@ atools = [
   "atools >=0.14.2, <0.15",
 ]
 cachetools = [
-  "cachetools >=6.1.0, <6.2",
+  "cachetools >=6.2.0, <6.3",
 ]
 click = [
   "click >=8.2.1, <8.3",
 ]
 core = [
   "atomicwrites >=1.4.1, <1.5",
-  "typing-extensions >=4.14.1, <4.15",
+  "typing-extensions >=4.15.0, <4.16",
   "tzlocal >=5.3.1, <5.4",
   "whenever >=0.8.8, <0.9",
 ]
@@ -68,7 +68,7 @@ http-test = [
   "orjson",
 ]
 hypothesis = [
-  "hypothesis >=6.138.3, <6.139",
+  "hypothesis >=6.138.6, <6.139",
 ]
 hypothesis-test = [
   "libcst",
@@ -112,7 +112,7 @@ optuna = [
   "optuna >=4.5.0, <4.6",
 ]
 orjson = [
-  "orjson >=3.11.0, <3.12",
+  "orjson >=3.11.3, <3.12",
 ]
 orjson-test = [
   "polars",
@@ -226,14 +226,14 @@ whenever-test = [
 authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
 dependencies = [
   "atomicwrites >=1.4.1, <1.5",
-  "typing-extensions >=4.14.0, <4.15",
+  "typing-extensions >=4.15.0, <4.16",
   "tzlocal >=5.3.1, <5.4",
   "whenever >=0.8.8, <0.9",
 ]
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.166.3"
+version = "0.166.4"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -245,7 +245,7 @@ logging = [
 ]
 test = [
   "dycw-pytest-only >=2.1.1, <2.2",
-  "hypothesis >=6.138.3, <6.139",
+  "hypothesis >=6.138.6, <6.139",
   "pytest >=8.4.1, <8.5",
   "pytest-asyncio >=1.1.0, <1.2",
   "pytest-cov >=6.2.1, <6.3",
@@ -266,7 +266,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.166.3"
+current_version = "0.166.4"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
