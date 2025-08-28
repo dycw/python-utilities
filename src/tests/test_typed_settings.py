@@ -68,40 +68,20 @@ class _Case[T]:
 
 class TestExtendedTSConverter:
     cases: ClassVar[list[_Case]] = [
-        _Case(cls=Date, strategy=dates(), serialize=Date.format_common_iso),
+        _Case(cls=Date, strategy=dates(), serialize=str),
+        _Case(cls=DateDelta, strategy=date_deltas(parsable=True), serialize=str),
         _Case(
-            cls=DateDelta,
-            strategy=date_deltas(parsable=True),
-            serialize=DateDelta.format_common_iso,
-        ),
-        _Case(
-            cls=DateTimeDelta,
-            strategy=date_time_deltas(parsable=True),
-            serialize=DateTimeDelta.format_common_iso,
+            cls=DateTimeDelta, strategy=date_time_deltas(parsable=True), serialize=str
         ),
         _Case(cls=IPv4Address, strategy=ip_addresses(v=4), serialize=str),
         _Case(cls=IPv6Address, strategy=ip_addresses(v=6), serialize=str),
-        _Case(
-            cls=MonthDay, strategy=month_days(), serialize=MonthDay.format_common_iso
-        ),
-        _Case(
-            cls=PlainDateTime,
-            strategy=plain_date_times(),
-            serialize=PlainDateTime.format_common_iso,
-        ),
-        _Case(cls=Time, strategy=times(), serialize=Time.format_common_iso),
-        _Case(
-            cls=TimeDelta, strategy=time_deltas(), serialize=TimeDelta.format_common_iso
-        ),
+        _Case(cls=MonthDay, strategy=month_days(), serialize=str),
+        _Case(cls=PlainDateTime, strategy=plain_date_times(), serialize=str),
+        _Case(cls=Time, strategy=times(), serialize=str),
+        _Case(cls=TimeDelta, strategy=time_deltas(), serialize=str),
         _Case(cls=UUID, strategy=uuids(), serialize=str),
-        _Case(
-            cls=YearMonth, strategy=year_months(), serialize=YearMonth.format_common_iso
-        ),
-        _Case(
-            cls=ZonedDateTime,
-            strategy=zoned_date_times(),
-            serialize=ZonedDateTime.format_common_iso,
-        ),
+        _Case(cls=YearMonth, strategy=year_months(), serialize=str),
+        _Case(cls=ZonedDateTime, strategy=zoned_date_times(), serialize=str),
     ]
 
     @given(data=data())
@@ -231,7 +211,7 @@ class TestLoadSettings:
         _ = file.write_text(
             strip_and_dedent(f"""
                 [app_name]
-                date_time = '{date_time.format_common_iso()}'
+                date_time = {str(date_time)!r}
             """)
         )
         settings = load_settings(Settings, "app_name", start_dir=root)
@@ -248,7 +228,7 @@ class TestLoadSettings:
         class Settings:
             date_time: ZonedDateTime
 
-        with temp_environ({key: date_time.format_common_iso()}):
+        with temp_environ({key: str(date_time)}):
             settings = load_settings(
                 Settings, "app_name", loaders=[EnvLoader(prefix=f"{prefix}__")]
             )
