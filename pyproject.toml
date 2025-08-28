@@ -212,7 +212,7 @@ testbook = [
   "testbook >=0.4.2, <0.5",
 ]
 typed-settings = [
-  "typed-settings >=25.0.0, <25.1",
+  "typed-settings[cattrs] >=25.0.0, <25.1",
 ]
 tzdata = [
   "tzdata >=2025.2, <2025.3",
@@ -233,7 +233,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.166.5"
+version = "0.166.6"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -266,7 +266,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.166.5"
+current_version = "0.166.6"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"

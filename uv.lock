@@ -235,6 +235,19 @@ wheels = [
 ]
 
 [[package]]
+name = "cattrs"
+version = "25.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/57/2b/561d78f488dcc303da4639e02021311728fb7fda8006dd2835550cddd9ed/cattrs-25.1.1.tar.gz", hash = "sha256:c914b734e0f2d59e5b720d145ee010f1fd9a13ee93900922a2f3f9d593b8382c", size = 435016, upload-time = "2025-06-04T20:27:15.44Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/18/b0/215274ef0d835bbc1056392a367646648b6084e39d489099959aefcca2af/cattrs-25.1.1-py3-none-any.whl", hash = "sha256:1b40b2d3402af7be79a7e7e097a9b4cd16d4c06e6d526644b0b26a063a1cc064", size = 69386, upload-time = "2025-06-04T20:27:13.969Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2025.8.3"
 source = { registry = "https://pypi.org/simple" }
@@ -523,7 +536,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.166.5"
+version = "0.166.6"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -760,7 +773,7 @@ testbook = [
     { name = "testbook" },
 ]
 typed-settings = [
-    { name = "typed-settings" },
+    { name = "typed-settings", extra = ["cattrs"] },
 ]
 tzdata = [
     { name = "tzdata" },
@@ -919,7 +932,7 @@ sqlalchemy-test = [
 ]
 statsmodels = [{ name = "statsmodels", specifier = ">=0.14.4,<0.15" }]
 testbook = [{ name = "testbook", specifier = ">=0.4.2,<0.5" }]
-typed-settings = [{ name = "typed-settings", specifier = ">=25.0.0,<25.1" }]
+typed-settings = [{ name = "typed-settings", extras = ["cattrs"], specifier = ">=25.0.0,<25.1" }]
 tzdata = [{ name = "tzdata", specifier = ">=2025.2,<2025.3" }]
 whenever-test = [{ name = "pathvalidate" }]
 
@@ -1165,15 +1178,15 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.138.6"
+version = "6.138.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b9/ad/3f7b2f7ce622e20bfc74bf8d13b2005c547f48292db9fa88d64ef6cfc5f7/hypothesis-6.138.6.tar.gz", hash = "sha256:327973a658eb3a291da9780952064e11ad49508eba1ec9f9528c2df02b598b56", size = 463458, upload-time = "2025-08-27T18:08:30.687Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/26/ca/c5c9e8bade4b09c9f4e61b6d9d6877e5a25c6d1177cffea41572d74728cf/hypothesis-6.138.7.tar.gz", hash = "sha256:e3adc2df34d8e5d5a1f2b3aff399327544525137acfecbac3b0343c189e52126", size = 463466, upload-time = "2025-08-28T10:34:00.081Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/76/34/053dfcf989b6adba524754f6b55a9062694c3d09c0e23f2a15bb06e86aad/hypothesis-6.138.6-py3-none-any.whl", hash = "sha256:40b563fd262e808e47f0e9937ac7f8f513ab4c9647b8f521626c389f90559b4c", size = 530365, upload-time = "2025-08-27T18:08:26.856Z" },
+    { url = "https://files.pythonhosted.org/packages/91/50/3a4320c24b95ead76a1970f9cc568e3ec3e1dd065951f6a900e2b8066ff7/hypothesis-6.138.7-py3-none-any.whl", hash = "sha256:ec96ad34a50fa638491b5c08a37344db57765a9d7cdc863a38aadf27d52c317c", size = 530400, upload-time = "2025-08-28T10:33:56.315Z" },
 ]
 
 [[package]]
@@ -3203,6 +3216,11 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f0/c2/292035683029b7a6c00d952baf1f0ac828e03dd912c383760762eb4a937b/typed_settings-25.0.0.tar.gz", hash = "sha256:29bafd31cd4f5e00fe380c3f003a771d70beae700970512a8e55f142aff5c113", size = 3478917, upload-time = "2025-07-25T20:37:25.415Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/39/20/0fcbf638c7e47b6270dae533e32b7a3d71a733dd33f4aaae1af3747ac3b7/typed_settings-25.0.0-py3-none-any.whl", hash = "sha256:d95ec61a7f8109f91b6bb910237cd801e5d861face2bf09e6563a6a76637fc63", size = 60650, upload-time = "2025-07-25T20:37:23.807Z" },
+]
+
+[package.optional-dependencies]
+cattrs = [
+    { name = "cattrs" },
 ]
 
 [[package]]
