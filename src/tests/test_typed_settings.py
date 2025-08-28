@@ -201,8 +201,8 @@ class TestExtendedTSConverter:
 
 
 class TestLoadSettings:
-    @given(root=temp_paths(), date_time=zoned_date_times())
-    def test_main(self, *, root: Path, date_time: ZonedDateTime) -> None:
+    @given(root=temp_paths(), date_time=zoned_date_times(), app_name=app_names)
+    def test_main(self, *, root: Path, date_time: ZonedDateTime, app_name: str) -> None:
         @dataclass(frozen=True, kw_only=True, slots=True)
         class Settings:
             date_time: ZonedDateTime
@@ -210,18 +210,21 @@ class TestLoadSettings:
         file = root.joinpath("settings.toml")
         _ = file.write_text(
             strip_and_dedent(f"""
-                [app_name]
+                [{app_name}]
                 date_time = {str(date_time)!r}
             """)
         )
-        settings = load_settings(Settings, "app_name", start_dir=root)
+        settings = load_settings(Settings, app_name, start_dir=root)
         assert settings.date_time == date_time
 
     @given(
         prefix=app_names.map(lambda text: f"TEST_{text}".upper()),
         date_time=zoned_date_times(),
+        app_name=app_names,
     )
-    def test_loaders(self, *, prefix: str, date_time: ZonedDateTime) -> None:
+    def test_loaders(
+        self, *, prefix: str, date_time: ZonedDateTime, app_name: str
+    ) -> None:
         key = f"{prefix}__DATE_TIME"
 
         @dataclass(frozen=True, kw_only=True, slots=True)
@@ -234,15 +237,16 @@ class TestLoadSettings:
             )
         assert settings.date_time == date_time
 
-    def test_converter_simple(self, *, tmp_path: Path) -> None:
+    @given(root=temp_paths(), app_name=app_names)
+    def test_converter_simple(self, *, root: Path, app_name: str) -> None:
         @dataclass(frozen=True, kw_only=True, slots=True)
         class Settings:
             sentinel: Sentinel
 
-        file = tmp_path.joinpath("settings.toml")
+        file = root.joinpath("settings.toml")
         _ = file.write_text(
-            strip_and_dedent("""
-                [app_name]
+            strip_and_dedent(f"""
+                [{app_name}]
                 sentinel = 'sentinel'
             """)
         )
@@ -253,12 +257,14 @@ class TestLoadSettings:
             raise ValueError
 
         settings = load_settings(
-            Settings, "app_name", start_dir=tmp_path, converters=[(Sentinel, convert)]
+            Settings, app_name, start_dir=root, converters=[(Sentinel, convert)]
         )
         assert settings.sentinel is sentinel
 
-    @given(data=data(), root=temp_paths(), n=integers())
-    def test_converter_dataclass(self, *, data: DataObject, root: Path, n: int) -> None:
+    @given(data=data(), root=temp_paths(), n=integers(), app_name=app_names)
+    def test_converter_dataclass(
+        self, *, data: DataObject, root: Path, n: int, app_name: str
+    ) -> None:
         @dataclass(repr=False, frozen=True, kw_only=True, slots=True)
         class Left:
             x: int
@@ -294,13 +300,13 @@ class TestLoadSettings:
         file = root.joinpath("settings.toml")
         _ = file.write_text(
             strip_and_dedent(f"""
-                [app_name]
+                [{app_name}]
                 inner = {str(value)!r}
             """)
         )
         settings = load_settings(
             Settings,
-            "app_name",
+            app_name,
             start_dir=root,
             converters=[(Left, Left.parse), (Right, Right.parse)],
         )
