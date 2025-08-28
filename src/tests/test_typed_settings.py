@@ -211,7 +211,7 @@ class TestLoadSettings:
         _ = file.write_text(
             strip_and_dedent(f"""
                 [app_name]
-                date_time = '{date_time.format_common_iso()}'
+                date_time = {str(date_time)!r}
             """)
         )
         settings = load_settings(Settings, "app_name", start_dir=root)
@@ -228,7 +228,7 @@ class TestLoadSettings:
         class Settings:
             date_time: ZonedDateTime
 
-        with temp_environ({key: date_time.format_common_iso()}):
+        with temp_environ({key: str(date_time)}):
             settings = load_settings(
                 Settings, app_name, loaders=[EnvLoader(prefix=f"{prefix}__")]
             )
