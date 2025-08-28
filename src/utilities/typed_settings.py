@@ -30,12 +30,15 @@ from utilities.pathlib import to_path
 from utilities.string import substitute_environ
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
 
     from typed_settings.loaders import Loader
     from typed_settings.processors import Processor
 
     from utilities.types import MaybeCallablePathLike, MaybeIterable, PathLike
+
+
+type _ConverterItem = tuple[type[Any], Callable[..., Any]]
 
 
 ##
@@ -50,9 +53,10 @@ class ExtendedTSConverter(TSConverter):
         *,
         resolve_paths: bool = True,
         strlist_sep: str | Callable[[str], list] | None = ":",
+        extra: Iterable[_ConverterItem] = (),
     ) -> None:
         super().__init__(resolve_paths=resolve_paths, strlist_sep=strlist_sep)
-        cases: list[tuple[type[Any], Callable[..., Any]]] = [
+        cases: list[_ConverterItem] = [
             (Date, Date.parse_common_iso),
             (DateDelta, DateDelta.parse_common_iso),
             (DateTimeDelta, DateTimeDelta.parse_common_iso),
@@ -66,6 +70,7 @@ class ExtendedTSConverter(TSConverter):
             (UUID, UUID),
             (YearMonth, YearMonth.parse_common_iso),
             (ZonedDateTime, ZonedDateTime.parse_common_iso),
+            *extra,
         ]
         extras = {cls: _make_converter(cls, func) for cls, func in cases}
         self.scalar_converters |= extras
@@ -113,6 +118,7 @@ def load_settings[T](
     start_dir: PathLike | None = None,
     loaders: MaybeIterable[Loader] | None = None,
     processors: MaybeIterable[Processor] = (),
+    converters: Iterable[_ConverterItem] = (),
     base_dir: Path = _BASE_DIR,
 ) -> T:
     if not search(r"^[A-Za-z]+(?:_[A-Za-z]+)*$", app_name):
@@ -129,7 +135,7 @@ def load_settings[T](
         cls,
         loaders_use,
         processors=list(always_iterable(processors)),
-        converter=ExtendedTSConverter(),
+        converter=ExtendedTSConverter(extra=converters),
         base_dir=base_dir,
     )
 
