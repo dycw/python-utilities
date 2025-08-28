@@ -47,7 +47,7 @@ from utilities.hypothesis import (
     zoned_date_times,
 )
 from utilities.os import temp_environ
-from utilities.re import extract_group
+from utilities.re import extract_group, extract_groups
 from utilities.sentinel import Sentinel, sentinel
 from utilities.text import strip_and_dedent
 from utilities.typed_settings import (
@@ -309,6 +309,50 @@ class TestLoadSettings:
             app_name,
             start_dir=root,
             converters=[(Left, Left.parse), (Right, Right.parse)],
+        )
+        assert settings.inner == value
+
+    @given(
+        data=data(), root=temp_paths(), x=integers(), y=integers(), app_name=app_names
+    )
+    @mark.only
+    def test_converter_dataclass2(
+        self, *, data: DataObject, root: Path, x: int, y: int, app_name: str
+    ) -> None:
+        @dataclass(repr=False, frozen=True, kw_only=True, slots=True)
+        class Inner:
+            x: int
+            y: int
+
+            @override
+            def __str__(self) -> str:
+                return f"inner[{self.x},{self.y}]"
+
+            @classmethod
+            def parse(cls, text: str, /) -> Self:
+                x, y = extract_group(r"^inner\[(.+?),(.+?)\]$", text)
+                return cls(x=int(x), y=int(y))
+
+        value = Inner(x=x, y=y)
+
+        @dataclass(frozen=True, kw_only=True, slots=True)
+        class Settings:
+            inner: Inner
+
+        file = root.joinpath("settings.toml")
+        text = data.draw(sampled_from([strip_and_dedent(
+            """
+            
+            """
+        ), "asdfasdf"]))
+        _ = file.write_text(
+            strip_and_dedent(f"""
+                [{app_name}]
+                {text}
+            """)
+        )
+        settings = load_settings(
+            Settings, app_name, start_dir=root, converters=[(Inner, Inner.parse)]
         )
         assert settings.inner == value
 
