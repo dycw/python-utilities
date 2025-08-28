@@ -221,7 +221,7 @@ testbook = [
   "testbook >=0.4.2, <0.5",
 ]
 typed-settings = [
-  "typed-settings >=25.0.0, <25.1",
+  "typed-settings[cattrs] >=25.0.0, <25.1",
 ]
 tzdata = [
   "tzdata >=2025.2, <2025.3",

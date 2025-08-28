@@ -6,7 +6,7 @@ from typing import Any, ClassVar, Self, assert_never, override
 from uuid import UUID
 
 import typed_settings
-from hypothesis import given
+from hypothesis import given, reproduce_failure
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -316,6 +316,7 @@ class TestLoadSettings:
         data=data(), root=temp_paths(), x=integers(), y=integers(), app_name=app_names
     )
     @mark.only
+    @reproduce_failure("6.138.7", b"AEEAQQBBAIFBQQE=")
     def test_converter_dataclass2(
         self, *, data: DataObject, root: Path, x: int, y: int, app_name: str
     ) -> None:
@@ -340,19 +341,18 @@ class TestLoadSettings:
             inner: Inner
 
         file = root.joinpath("settings.toml")
-        text = data.draw(sampled_from([strip_and_dedent(
-            """
-            
-            """
-        ), "asdfasdf"]))
+        text = data.draw(sampled_from([f"{{x = {x}, y = {y}}}", repr(str(value))]))
         _ = file.write_text(
             strip_and_dedent(f"""
                 [{app_name}]
-                {text}
+                inner = {text}
             """)
         )
         settings = load_settings(
-            Settings, app_name, start_dir=root, converters=[(Inner, Inner.parse)]
+            Settings,
+            app_name,
+            start_dir=root,
+            converters=[(Inner, Inner.parse)],  # TODO
         )
         assert settings.inner == value
 
