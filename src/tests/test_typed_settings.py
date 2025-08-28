@@ -2,7 +2,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
-from typing import Any, ClassVar, assert_never
+from typing import Any, ClassVar, Self, assert_never, override
 from uuid import UUID
 
 import typed_settings
@@ -12,7 +12,9 @@ from hypothesis.strategies import (
     SearchStrategy,
     booleans,
     data,
+    integers,
     ip_addresses,
+    sampled_from,
     tuples,
     uuids,
 )
@@ -45,6 +47,8 @@ from utilities.hypothesis import (
     zoned_date_times,
 )
 from utilities.os import temp_environ
+from utilities.re import extract_group
+from utilities.sentinel import Sentinel, sentinel
 from utilities.text import strip_and_dedent
 from utilities.typed_settings import (
     ExtendedTSConverter,
@@ -217,41 +221,110 @@ class TestExtendedTSConverter:
 
 
 class TestLoadSettings:
-    @given(root=temp_paths(), datetime=zoned_date_times())
-    def test_main(self, *, root: Path, datetime: ZonedDateTime) -> None:
+    @given(root=temp_paths(), date_time=zoned_date_times())
+    def test_main(self, *, root: Path, date_time: ZonedDateTime) -> None:
         @dataclass(frozen=True, kw_only=True, slots=True)
         class Settings:
-            datetime: ZonedDateTime
+            date_time: ZonedDateTime
 
-        file = Path(root, "file.toml")
-        _ = file.write_text("")
+        file = root.joinpath("settings.toml")
         _ = file.write_text(
             strip_and_dedent(f"""
                 [app_name]
-                datetime = '{datetime.format_common_iso()}'
+                date_time = '{date_time.format_common_iso()}'
             """)
         )
-        settings = load_settings(
-            Settings, "app_name", filenames="file.toml", start_dir=root
-        )
-        assert settings.datetime == datetime
+        settings = load_settings(Settings, "app_name", start_dir=root)
+        assert settings.date_time == date_time
 
     @given(
         prefix=app_names.map(lambda text: f"TEST_{text}".upper()),
-        datetime=zoned_date_times(),
+        date_time=zoned_date_times(),
     )
-    def test_loaders(self, *, prefix: str, datetime: ZonedDateTime) -> None:
-        key = f"{prefix}__DATETIME"
+    def test_loaders(self, *, prefix: str, date_time: ZonedDateTime) -> None:
+        key = f"{prefix}__DATE_TIME"
 
         @dataclass(frozen=True, kw_only=True, slots=True)
         class Settings:
-            datetime: ZonedDateTime
+            date_time: ZonedDateTime
 
-        with temp_environ({key: datetime.format_common_iso()}):
+        with temp_environ({key: date_time.format_common_iso()}):
             settings = load_settings(
                 Settings, "app_name", loaders=[EnvLoader(prefix=f"{prefix}__")]
             )
-        assert settings.datetime == datetime
+        assert settings.date_time == date_time
+
+    def test_converter_simple(self, *, tmp_path: Path) -> None:
+        @dataclass(frozen=True, kw_only=True, slots=True)
+        class Settings:
+            sentinel: Sentinel
+
+        file = tmp_path.joinpath("settings.toml")
+        _ = file.write_text(
+            strip_and_dedent("""
+                [app_name]
+                sentinel = 'sentinel'
+            """)
+        )
+
+        def convert(text: str, /) -> Sentinel:
+            if text == "sentinel":
+                return sentinel
+            raise ValueError
+
+        settings = load_settings(
+            Settings, "app_name", start_dir=tmp_path, converters=[(Sentinel, convert)]
+        )
+        assert settings.sentinel is sentinel
+
+    @given(data=data(), root=temp_paths(), n=integers())
+    def test_converter_dataclass(self, *, data: DataObject, root: Path, n: int) -> None:
+        @dataclass(repr=False, frozen=True, kw_only=True, slots=True)
+        class Left:
+            x: int
+
+            @override
+            def __str__(self) -> str:
+                return f"left{self.x}"
+
+            @classmethod
+            def parse(cls, text: str, /) -> Self:
+                x = extract_group(r"^left(.+?)$", text)
+                return cls(x=int(x))
+
+        @dataclass(frozen=True, kw_only=True, slots=True)
+        class Right:
+            y: int
+
+            @override
+            def __str__(self) -> str:
+                return f"right{self.y}"
+
+            @classmethod
+            def parse(cls, text: str, /) -> Self:
+                y = extract_group(r"^right(.+?)$", text)
+                return cls(y=int(y))
+
+        value = data.draw(sampled_from([Left(x=n), Right(y=n)]))
+
+        @dataclass(frozen=True, kw_only=True, slots=True)
+        class Settings:
+            inner: Left | Right
+
+        file = root.joinpath("settings.toml")
+        _ = file.write_text(
+            strip_and_dedent(f"""
+                [app_name]
+                inner = {str(value)!r}
+            """)
+        )
+        settings = load_settings(
+            Settings,
+            "app_name",
+            start_dir=root,
+            converters=[(Left, Left.parse), (Right, Right.parse)],
+        )
+        assert settings.inner == value
 
     @mark.parametrize("app_name", [param("app_"), param("app1"), param("app__name")])
     def test_error(self, *, app_name: str) -> None:
