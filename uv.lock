@@ -523,7 +523,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.166.13"
+version = "0.166.6"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -1201,15 +1201,15 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.138.13"
+version = "6.138.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/37/42/9cd666af7fd2c3e604f055f756e80d537faba5327cc72cbd44177792d074/hypothesis-6.138.13.tar.gz", hash = "sha256:2bea91629b8b3bb103a5b51442b1037cede3aae26e56ec063c52b9d5d8eaf70b", size = 466041, upload-time = "2025-09-01T14:02:51.468Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/26/ca/c5c9e8bade4b09c9f4e61b6d9d6877e5a25c6d1177cffea41572d74728cf/hypothesis-6.138.7.tar.gz", hash = "sha256:e3adc2df34d8e5d5a1f2b3aff399327544525137acfecbac3b0343c189e52126", size = 463466, upload-time = "2025-08-28T10:34:00.081Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cc/82/823c202c8b349ff31a0718e46ff98074bebfb3aa20813091cea07821c25f/hypothesis-6.138.13-py3-none-any.whl", hash = "sha256:09f1130deb08e5d12fb3b59b55c113fd79debaaab9b224ffac17be8341de4326", size = 533564, upload-time = "2025-09-01T14:02:48.15Z" },
+    { url = "https://files.pythonhosted.org/packages/91/50/3a4320c24b95ead76a1970f9cc568e3ec3e1dd065951f6a900e2b8066ff7/hypothesis-6.138.7-py3-none-any.whl", hash = "sha256:ec96ad34a50fa638491b5c08a37344db57765a9d7cdc863a38aadf27d52c317c", size = 530400, upload-time = "2025-08-28T10:33:56.315Z" },
 ]
 
 [[package]]
