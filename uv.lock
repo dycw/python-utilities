@@ -774,7 +774,7 @@ requires-dist = [
     { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
     { name = "coloredlogs", marker = "extra == 'logging'", specifier = ">=15.0.1,<15.1" },
     { name = "dycw-pytest-only", marker = "extra == 'test'", specifier = ">=2.1.1,<2.2" },
-    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.138.6,<6.139" },
+    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.138.8,<6.139" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.4.1,<8.5" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=1.1.0,<1.2" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=6.2.1,<6.3" },
@@ -833,7 +833,7 @@ fastapi-test = [
 fpdf2 = [{ name = "fpdf2", specifier = ">=2.8.3,<2.9" }]
 hashlib-test = [{ name = "orjson" }]
 http-test = [{ name = "orjson" }]
-hypothesis = [{ name = "hypothesis", specifier = ">=6.138.6,<6.139" }]
+hypothesis = [{ name = "hypothesis", specifier = ">=6.138.8,<6.139" }]
 hypothesis-test = [
     { name = "libcst" },
     { name = "numpy" },
