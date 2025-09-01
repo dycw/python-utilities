@@ -16,8 +16,10 @@ if TYPE_CHECKING:
 
 
 class SopsBaseSettings(CustomBaseSettings):
+    """Base settings for loading secrets using `sops/age`."""
+
     # paths
-    secrets_files: ClassVar[MaybeIterable[PathLike]] = ()
+    secret_files: ClassVar[MaybeIterable[PathLike]] = ()
 
     @classmethod
     @override
@@ -28,7 +30,7 @@ class SopsBaseSettings(CustomBaseSettings):
         /,
     ) -> Iterator[PydanticBaseSettingsSource]:
         yield from super()._yield_base_settings_sources(settings_cls, env_settings)
-        for file in always_iterable(cls.secrets_files):
+        for file in always_iterable(cls.secret_files):
             yield SOPSConfigSettingsSource(
                 settings_cls,  # pyright: ignore[reportArgumentType],
                 json_file=file,

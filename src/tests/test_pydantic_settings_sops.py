@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import re
 from json import dumps
+from subprocess import check_call
 from typing import TYPE_CHECKING, ClassVar
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from tests.conftest import SKIPIF_CI
+from utilities.iterables import one
 from utilities.os import temp_environ
-from utilities.pydantic_settings import CustomBaseSettings, load_settings
+from utilities.pydantic_settings import load_settings
+from utilities.pydantic_settings_sops import SopsBaseSettings
+from utilities.re import extract_group
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -14,64 +18,32 @@ if TYPE_CHECKING:
     from utilities.types import MaybeIterable, PathLike
 
 
-class TestCustomizedBasedSettings:
+class TestSOPSBaseSettings:
+    @SKIPIF_CI
     def test_main(self, *, tmp_path: Path) -> None:
-        file = tmp_path.joinpath("settings.toml")
-        _ = file.write_text(dumps({"x": 1, "y": 2}))
+        unencrypted_file = tmp_path.joinpath("unencrypted.json")
+        _ = unencrypted_file.write_text(dumps({"x": 1, "y": 2}))
+        key_file = tmp_path.joinpath("keys.txt")
+        with key_file.open(mode="w") as file:
+            _ = check_call(["age-keygen"], stdout=file)
+        pattern = re.compile(r"^# public key: (age.+)$")
+        public_line = one(
+            line for line in key_file.read_text().splitlines() if pattern.search(line)
+        )
+        public_key = extract_group(pattern, public_line)
+        encrypted_file = tmp_path.joinpath("encrypted.json")
+        with (
+            temp_environ(SOPS_AGE_RECIPIENTS=public_key),
+            encrypted_file.open(mode="w") as file,
+        ):
+            _ = check_call(["sops", "encrypt", str(unencrypted_file)], stdout=file)
 
-        class Settings(CustomBaseSettings):
-            json_files: ClassVar[MaybeIterable[PathLike]] = file
+        class Settings(SopsBaseSettings):
+            secret_files: ClassVar[MaybeIterable[PathLike]] = encrypted_file
             x: int
             y: int
 
-        settings = load_settings(Settings)
+        with temp_environ(SOPS_AGE_KEY_FILE=str(key_file)):
+            settings = load_settings(Settings)
         assert settings.x == 1
         assert settings.y == 2
-
-    def test_env_var(self) -> None:
-        class Settings(CustomBaseSettings):
-            x: int
-
-        with temp_environ(x="1"):
-            settings = load_settings(Settings)
-        assert settings.x == 1
-
-    def test_env_var_with_prefix(self) -> None:
-        class Settings(CustomBaseSettings):
-            model_config = SettingsConfigDict(env_prefix="test_")
-            x: int
-
-        with temp_environ(test_x="1"):
-            settings = load_settings(Settings)
-        assert settings.x == 1
-
-    def test_env_var_with_nested(self) -> None:
-        class Settings(CustomBaseSettings):
-            inner: Inner
-
-        class Inner(BaseSettings):
-            x: int
-
-        _ = Settings.model_rebuild()
-
-        with temp_environ(inner__x="1"):
-            settings = load_settings(Settings)
-        assert settings.inner.x == 1
-
-    def test_env_var_with_prefix_and_nested(self) -> None:
-        class Settings(CustomBaseSettings):
-            model_config = SettingsConfigDict(env_prefix="test__")
-            inner: Inner
-
-        class Inner(BaseSettings):
-            x: int
-
-        _ = Settings.model_rebuild()
-        with temp_environ(test__inner__x="1"):
-            settings = load_settings(Settings)
-        assert settings.inner.x == 1
-
-    def test_no_files(self) -> None:
-        class Settings(CustomBaseSettings): ...
-
-        _ = load_settings(Settings)

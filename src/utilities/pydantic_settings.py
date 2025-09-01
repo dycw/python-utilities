@@ -18,6 +18,8 @@ if TYPE_CHECKING:
 
 
 class CustomBaseSettings(BaseSettings):
+    """Base settings for loading JSON files."""
+
     # paths
     json_files: ClassVar[MaybeIterable[PathLike]] = ()
 
