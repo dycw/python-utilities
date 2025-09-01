@@ -24,7 +24,9 @@ class CustomBaseSettings(BaseSettings):
     json_files: ClassVar[MaybeIterable[PathLike]] = ()
 
     # config
-    model_config = SettingsConfigDict(env_nested_delimiter="__")
+    model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
+        env_nested_delimiter="__"
+    )
 
     @classmethod
     @override
