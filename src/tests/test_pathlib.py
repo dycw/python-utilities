@@ -123,6 +123,7 @@ class TestGetRepoRoot:
         expected = repo.resolve()
         assert root == expected
 
+    @mark.only
     def test_error_not_a_repo(self, *, tmp_path: Path) -> None:
         with raises(
             _GetRepoRootNotARepoError,
