@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from utilities.types import MaybeIterable, PathLike
 
 
-class TestCustomBasedSettings:
+class TestCustomBaseSettings:
     def test_main(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("settings.toml")
         _ = file.write_text(dumps({"x": 1, "y": 2}))
