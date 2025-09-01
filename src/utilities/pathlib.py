@@ -94,15 +94,30 @@ def get_repo_root(path: MaybeCallablePathLike = Path.cwd, /) -> Path:
         # newer versions of git report "Not a git repository", whilst older
         # versions report "not a git repository"
         if search("fatal: not a git repository", error.stderr, flags=IGNORECASE):
-            raise GetRepoRootError(path=path) from None
+            raise _GetRepoRootNotARepoError(path=path) from None
+        raise  # pragma: no cover
+    except FileNotFoundError as error:
+        if search("No such file or directory: 'git'", error.args[0], flags=IGNORECASE):
+            raise _GetRepoRootGitNotFoundError from None
         raise  # pragma: no cover
     else:
         return Path(output.strip("\n"))
 
 
 @dataclass(kw_only=True, slots=True)
-class GetRepoRootError(Exception):
-    path: PathLike
+class GetRepoRootError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetRepoRootGitNotFoundError(GetRepoRootError):
+    @override
+    def __str__(self) -> str:
+        return "'git' not found"
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetRepoRootNotARepoError(GetRepoRootError):
+    path: Path
 
     @override
     def __str__(self) -> str:
