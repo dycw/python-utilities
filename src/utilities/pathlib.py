@@ -97,7 +97,7 @@ def get_repo_root(path: MaybeCallablePathLike = Path.cwd, /) -> Path:
             raise _GetRepoRootNotARepoError(path=path) from None
         raise  # pragma: no cover
     except FileNotFoundError as error:  # pragma: no cover
-        if search("No such file or directory: 'git'", error.args[0], flags=IGNORECASE):
+        if search("No such file or directory: 'git'", str(error), flags=IGNORECASE):
             raise _GetRepoRootGitNotFoundError from None
         raise
     else:
