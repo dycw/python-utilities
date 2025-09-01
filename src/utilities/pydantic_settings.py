@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, ClassVar, override
 
 from pydantic_settings import (
     BaseSettings,
@@ -9,15 +9,17 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
+from utilities.iterables import always_iterable
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import PathLike
+    from utilities.types import MaybeIterable, PathLike
 
 
 class CustomizedBasedSettings(BaseSettings):
     # paths
-    json_files: tuple[PathLike, ...]
+    json_files: ClassVar[MaybeIterable[PathLike]] = ()
 
     # config
     model_config = SettingsConfigDict(env_nested_delimiter="__")
@@ -43,8 +45,13 @@ class CustomizedBasedSettings(BaseSettings):
         /,
     ) -> Iterator[PydanticBaseSettingsSource]:
         yield env_settings
-        for file in cls.json_files:
+        for file in always_iterable(cls.json_files):
             yield JsonConfigSettingsSource(settings_cls, json_file=file)
 
 
-__all__ = ["CustomizedBasedSettings"]
+def load_settings[T: BaseSettings](cls: type[T], /) -> T:
+    """Load a set of settings."""
+    return cls()
+
+
+__all__ = ["CustomizedBasedSettings", "load_settings"]
