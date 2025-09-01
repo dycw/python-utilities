@@ -146,6 +146,12 @@ pqdm = [
 psutil = [
   "psutil >=7.0.0, <7.1",
 ]
+pydantic-settings = [
+  "pydantic-settings",
+]
+pydantic-settings-sops = [
+  "pydantic-settings-sops",
+]
 pyinstrument = [
   "pyinstrument >=5.1.0, <5.2",
 ]
@@ -236,7 +242,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.166.7"
+version = "0.166.8"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -269,7 +275,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.166.7"
+current_version = "0.166.8"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
