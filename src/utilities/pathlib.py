@@ -85,7 +85,7 @@ def get_repo_root(path: MaybeCallablePathLike = Path.cwd, /) -> Path:
     path_dir = path.parent if path.is_file() else path
     try:
         output = check_output(
-            ["giat", "rev-parse", "--show-toplevel"],
+            ["git", "rev-parse", "--show-toplevel"],
             stderr=PIPE,
             cwd=path_dir,
             text=True,
