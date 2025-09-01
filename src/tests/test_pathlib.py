@@ -14,8 +14,8 @@ from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import git_repos, pairs, paths, temp_paths
 from utilities.pathlib import (
     GetPackageRootError,
-    GetRepoRootError,
     GetRootError,
+    _GetRepoRootNotARepoError,
     _GetTailDisambiguate,
     _GetTailEmptyError,
     _GetTailLengthError,
@@ -123,9 +123,10 @@ class TestGetRepoRoot:
         expected = repo.resolve()
         assert root == expected
 
-    def test_error(self, *, tmp_path: Path) -> None:
+    def test_error_not_a_repo(self, *, tmp_path: Path) -> None:
         with raises(
-            GetRepoRootError, match="Path is not part of a `git` repository: .*"
+            _GetRepoRootNotARepoError,
+            match="Path is not part of a `git` repository: .*",
         ):
             _ = get_repo_root(tmp_path)
 
