@@ -146,6 +146,9 @@ pqdm = [
 psutil = [
   "psutil >=7.0.0, <7.1",
 ]
+pydantic-settings = [
+  "pydantic-settings",
+]
 pyinstrument = [
   "pyinstrument >=5.1.0, <5.2",
 ]
