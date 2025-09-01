@@ -149,6 +149,9 @@ psutil = [
 pydantic-settings = [
   "pydantic-settings",
 ]
+pydantic-settings-sops = [
+  "pydantic-settings-sops",
+]
 pyinstrument = [
   "pyinstrument >=5.1.0, <5.2",
 ]

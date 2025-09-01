@@ -697,6 +697,9 @@ psutil = [
 pydantic-settings = [
     { name = "pydantic-settings" },
 ]
+pydantic-settings-sops = [
+    { name = "pydantic-settings-sops" },
+]
 pyinstrument = [
     { name = "pyinstrument" },
 ]
@@ -879,6 +882,7 @@ pottery-test = [{ name = "orjson" }]
 pqdm = [{ name = "pqdm", specifier = ">=0.2.0,<0.3" }]
 psutil = [{ name = "psutil", specifier = ">=7.0.0,<7.1" }]
 pydantic-settings = [{ name = "pydantic-settings" }]
+pydantic-settings-sops = [{ name = "pydantic-settings-sops" }]
 pyinstrument = [{ name = "pyinstrument", specifier = ">=5.1.0,<5.2" }]
 pytest = [
     { name = "pytest", specifier = ">=8.4.1,<8.5" },
@@ -2332,6 +2336,19 @@ wheels = [
 ]
 
 [[package]]
+name = "pydantic-settings-sops"
+version = "0.1.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic-settings" },
+    { name = "sopsy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/04/7b/e45527771f7f92a1a31bd569a3b092c70ba33b50e8bf7dc18189e8e74057/pydantic_settings_sops-0.1.2.tar.gz", hash = "sha256:8d03ea8233cec696b4737563947bc668a7cd4a2773252b40948f850784d718cd", size = 57702, upload-time = "2025-05-14T13:37:42.844Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/eb/adb8bb3873f4925b3c0c6c223b356ae51303cc9a2068f4f40e9a1d118cbe/pydantic_settings_sops-0.1.2-py3-none-any.whl", hash = "sha256:0e13d68d2630921d4ba1b45806b26d4a38a5bdc8880dba41d439591d331ce903", size = 3905, upload-time = "2025-05-14T13:37:41.532Z" },
+]
+
+[[package]]
 name = "pygments"
 version = "2.19.2"
 source = { registry = "https://pypi.org/simple" }
@@ -3119,6 +3136,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a2/87/a6771e1546d97e7e041b6ae58d80074f81b7d5121207425c964ddf5cfdbd/sniffio-1.3.1.tar.gz", hash = "sha256:f4324edc670a0f49750a81b895f35c3adb843cca46f0530f79fc1babb23789dc", size = 20372, upload-time = "2024-02-25T23:20:04.057Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl", hash = "sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2", size = 10235, upload-time = "2024-02-25T23:20:01.196Z" },
+]
+
+[[package]]
+name = "sopsy"
+version = "1.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/af/bd/55feeb922c4e83c02a36a81d09beebf4cd1dc8ceac36e0d25a39359a2e32/sopsy-1.2.1.tar.gz", hash = "sha256:2159a82f6fee10b7e29b688e4a0bdc1a50e96e8da2357ff46f97554aff0990f1", size = 108860, upload-time = "2025-07-26T19:41:10.626Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8b/d3/fbb22b18176ee0aa41af23ccaeee2ce879158042bf2335dfdcbc14bc5ea6/sopsy-1.2.1-py3-none-any.whl", hash = "sha256:3ff3fae9d53eb52acb5b3c15662db2f9521b8e2fb1a199872c37fb330d84d8c4", size = 7486, upload-time = "2025-07-26T19:41:09.488Z" },
 ]
 
 [[package]]

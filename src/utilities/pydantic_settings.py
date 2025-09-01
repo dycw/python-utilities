@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from utilities.types import MaybeIterable, PathLike
 
 
-class CustomizedBasedSettings(BaseSettings):
+class CustomBaseSettings(BaseSettings):
     # paths
     json_files: ClassVar[MaybeIterable[PathLike]] = ()
 
@@ -54,4 +54,4 @@ def load_settings[T: BaseSettings](cls: type[T], /) -> T:
     return cls()
 
 
-__all__ = ["CustomizedBasedSettings", "load_settings"]
+__all__ = ["CustomBaseSettings", "load_settings"]
