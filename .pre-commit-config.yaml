@@ -1,18 +1,18 @@
 repos:
   # fixers
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.9
+    rev: v0.12.11
     hooks:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.8.10
+    rev: 0.8.14
     hooks:
       - id: uv-lock
         args: [--upgrade]
   - repo: https://github.com/dycw/pre-commit-hooks
-    rev: 0.11.3
+    rev: 0.12.9
     hooks:
       - id: format-requirements
       - id: replace-sequence-str
@@ -22,6 +22,10 @@ repos:
     hooks:
       - id: pretty-format-toml
         args: [--autofix, --trailing-commas]
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.12.0-2
+    hooks:
+      - id: shfmt
   - repo: local
     hooks:
       - id: prettier
