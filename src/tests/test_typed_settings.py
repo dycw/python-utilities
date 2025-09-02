@@ -2,6 +2,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
+from re import findall
 from typing import Any, ClassVar, Self, assert_never, override
 from uuid import UUID
 
@@ -19,7 +20,8 @@ from hypothesis.strategies import (
     uuids,
 )
 from pytest import mark, param, raises
-from typed_settings import EnvLoader, FileLoader, TomlFormat
+from typed_settings import EnvLoader, FileLoader, TomlFormat, find
+from typed_settings.converters import get_default_cattrs_converter
 from whenever import (
     Date,
     DateDelta,
@@ -312,6 +314,56 @@ class TestLoadSettings:
         )
         assert settings.inner == value
 
+    @given(
+        data=data(), root=temp_paths(), x=integers(), y=integers(), app_name=app_names
+    )
+    @mark.skip
+    def test_converter_dataclass2(
+        self, *, data: DataObject, root: Path, x: int, y: int, app_name: str
+    ) -> None:
+        @dataclass(repr=False, frozen=True, kw_only=True, slots=True)
+        class Inner:
+            x: int
+            y: int
+
+            @override
+            def __str__(self) -> str:
+                return f"inner[{self.x},{self.y}]"
+
+            @classmethod
+            def parse(cls, text: str, /) -> Self:
+                x, y = extract_group(r"^inner\[(.+?),(.+?)\]$", text)
+                return cls(x=int(x), y=int(y))
+
+            @classmethod
+            def parse_reg(cls, value: str | Self, _typ: Self) -> Self:
+                if isinstance(value, cls):
+                    return value
+
+                return cls(...)
+
+        value = Inner(x=x, y=y)
+
+        @dataclass(frozen=True, kw_only=True, slots=True)
+        class Settings:
+            inner: Inner
+
+        file = root.joinpath("settings.toml")
+        text = data.draw(sampled_from([f"{{x = {x}, y = {y}}}", repr(str(value))]))
+        _ = file.write_text(
+            strip_and_dedent(f"""
+                [{app_name}]
+                inner = {text}
+            """)
+        )
+        settings = load_settings(
+            Settings,
+            app_name,
+            start_dir=root,
+            converters=[(Inner, Inner.parse_reg)],  # TODO
+        )
+        assert settings.inner == value
+
     @mark.parametrize("app_name", [param("app_"), param("app1"), param("app__name")])
     def test_error(self, *, app_name: str) -> None:
         @dataclass(frozen=True, kw_only=True, slots=True)
@@ -319,3 +371,64 @@ class TestLoadSettings:
 
         with raises(LoadSettingsError, match="Invalid app name; got '.+'"):
             _ = load_settings(Settings, app_name)
+
+
+@mark.only
+@mark.parametrize("text", [param("inner[x=1,y=2]"), param("{x=1, y=2}")])
+def test_converter_dataclass(*, tmp_path: Path, text: str) -> None:
+    from dataclasses import dataclass
+    from typing import Self, override
+
+    import typed_settings
+    from typed_settings import FileLoader, TomlFormat
+
+    x, y = 10, 20
+
+    @dataclass(repr=False, frozen=True, kw_only=True, slots=True)
+    class Inner:
+        x: int
+        y: int
+
+        @override
+        def __str__(self) -> str:
+            return f"inner[{self.x},{self.y}]"
+
+        @classmethod
+        def parse(cls, text: str, /) -> Self:
+            x, y = findall(r"^inner\[(.+?),(.+?)\]$", text)
+            return cls(x=int(x), y=int(y))
+
+    value = Inner(x=x, y=y)
+
+    @dataclass(frozen=True, kw_only=True, slots=True)
+    class Settings:
+        inner: Inner
+
+        @classmethod
+        def parse(cls, value: str | Self, _typ: Self) -> Self:
+            if isinstance(value, cls):
+                return value
+
+            return cls(...)
+
+    file = tmp_path.joinpath("settings.toml")
+    _ = file.write_text(
+        f"""
+            [app_name]
+            inner = {text}
+        """
+    )
+    converter = get_default_cattrs_converter()
+    converter.register_structure_hook(Inner, Inner.parse)
+    settings = typed_settings.load_settings(
+        Settings,
+        loaders=[
+            FileLoader(
+                formats={"*.toml": TomlFormat("app_name")},
+                files=[find("pyproject.toml", start_dir=tmp_path)],
+            )
+        ],
+        converter=converter,
+        base_dir=tmp_path,
+    )
+    assert settings.inner == value

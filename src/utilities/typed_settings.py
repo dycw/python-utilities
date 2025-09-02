@@ -11,7 +11,7 @@ from uuid import UUID
 
 import typed_settings
 from typed_settings import EnvLoader, FileLoader, find
-from typed_settings.converters import TSConverter
+from typed_settings.converters import TSConverter, get_default_cattrs_converter
 from typed_settings.loaders import TomlFormat
 from whenever import (
     Date,
@@ -74,6 +74,7 @@ class ExtendedTSConverter(TSConverter):
         ]
         extras = {cls: _make_converter(cls, func) for cls, func in cases}
         self.scalar_converters |= extras
+        self.composite_hook_factories.clear()
 
 
 def _make_converter[T](
@@ -131,11 +132,17 @@ def load_settings[T](
     loaders_use: list[Loader] = [file_loader, env_loader]
     if loaders is not None:
         loaders_use.extend(always_iterable(loaders))
+        converter = get_default_cattrs_converter()
+        for a, b in converters:
+            converter.register_structure_hook(a, b)
+    # converter = ExtendedTSConverter(extra=converters)
+    converter = get_default_cattrs_converter()
+
     return typed_settings.load_settings(
         cls,
         loaders_use,
         processors=list(always_iterable(processors)),
-        converter=ExtendedTSConverter(extra=converters),
+        converter=converter,
         base_dir=base_dir,
     )
 
