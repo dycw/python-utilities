@@ -1,5 +1,9 @@
 {
   "[dc|DataClassFutureNestedOuterFirstOuter]": {
-    "inner": { "[dc|DataClassFutureNestedOuterFirstInner]": { "int_": 0 } }
+    "inner": {
+      "[dc|DataClassFutureNestedOuterFirstInner]": {
+        "int_": 0
+      }
+    }
   }
 }

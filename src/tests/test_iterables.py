@@ -575,7 +575,7 @@ class TestChunked:
         ],
     )
     def test_main(
-        self, *, iterable: Iterable[str], expected: Sequence[Sequence[str]]
+        self, *, iterable: Iterable[str], expected: Sequence[list[str]]
     ) -> None:
         result = list(chunked(iterable, 3))
         assert result == expected

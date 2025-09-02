@@ -246,7 +246,7 @@ class TestPublish:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_text(self, *, test_redis: Redis, messages: Sequence[str]) -> None:
+    async def test_text(self, *, test_redis: Redis, messages: list[str]) -> None:
         channel = f"test_{unique_str()}"
         queue: Queue[str] = Queue()
         async with subscribe(test_redis, channel, queue):
@@ -291,7 +291,7 @@ class TestPublishMany:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_timeout(self, *, test_redis: Redis, messages: Sequence[str]) -> None:
+    async def test_timeout(self, *, test_redis: Redis, messages: list[str]) -> None:
         result = await publish_many(
             test_redis, unique_str(), messages, timeout=MICROSECOND
         )
@@ -687,8 +687,8 @@ class TestSubscribe:
         *,
         test_redis: Redis,
         data: DataObject,
-        short_messages: Sequence[str],
-        long_messages: Sequence[str],
+        short_messages: list[str],
+        long_messages: list[str],
     ) -> None:
         channel = unique_str()
         messages = data.draw(permutations(list(chain(short_messages, long_messages))))
@@ -713,7 +713,7 @@ class TestSubscribe:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_raw(self, *, test_redis: Redis, messages: Sequence[str]) -> None:
+    async def test_raw(self, *, test_redis: Redis, messages: list[str]) -> None:
         channel = f"test_{unique_str()}"
         queue: Queue[_RedisMessage] = Queue()
         async with subscribe(test_redis, channel, queue, output="raw"):
@@ -737,7 +737,7 @@ class TestSubscribe:
         phases={Phase.generate},
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
-    async def test_text(self, *, test_redis: Redis, messages: Sequence[str]) -> None:
+    async def test_text(self, *, test_redis: Redis, messages: list[str]) -> None:
         channel = f"test_{unique_str()}"
         queue: Queue[_RedisMessage] = Queue()
         async with subscribe(test_redis, channel, queue, output="raw"):

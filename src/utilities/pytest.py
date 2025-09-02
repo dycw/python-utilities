@@ -26,7 +26,7 @@ from utilities.types import MaybeCoro
 from utilities.whenever import SECOND, get_now_local
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Sequence
+    from collections.abc import Callable, Iterable
 
     from utilities.types import Coro, Delta, PathLike
 
@@ -52,7 +52,7 @@ else:
     skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
 
 
-def add_pytest_addoption(parser: Parser, options: Sequence[str], /) -> None:
+def add_pytest_addoption(parser: Parser, options: list[str], /) -> None:
     """Add the `--slow`, etc options to pytest.
 
     Usage:
@@ -73,7 +73,7 @@ def add_pytest_addoption(parser: Parser, options: Sequence[str], /) -> None:
 
 
 def add_pytest_collection_modifyitems(
-    config: Config, items: Iterable[Function], options: Sequence[str], /
+    config: Config, items: Iterable[Function], options: list[str], /
 ) -> None:
     """Add the @mark.skips as necessary.
 

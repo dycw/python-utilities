@@ -1,1 +1,5 @@
-{ "[dc|DataClassFutureLiteral]": { "truth": "true" } }
+{
+  "[dc|DataClassFutureLiteral]": {
+    "truth": "true"
+  }
+}

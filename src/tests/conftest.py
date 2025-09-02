@@ -15,7 +15,7 @@ from utilities.re import ExtractGroupError, extract_group
 from utilities.whenever import MINUTE, get_now_local_plain
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator, Sequence
+    from collections.abc import AsyncIterator, Iterator
     from pathlib import Path
 
     from _pytest.fixtures import SubRequest
@@ -99,9 +99,7 @@ def test_engine(*, request: SubRequest, tmp_path: Path) -> Engine:
             )
             try:
                 with engine.begin() as conn:
-                    tables: Sequence[str] = (
-                        conn.execute(_select_tables()).scalars().all()
-                    )
+                    tables: list[str] = conn.execute(_select_tables()).scalars().all()
             except OperationalError:
                 ...
             else:
@@ -157,9 +155,7 @@ async def test_async_postgres_engine() -> AsyncEngine:
     )
     try:
         async with engine.begin() as conn:
-            tables: Sequence[str] = (
-                (await conn.execute(_select_tables())).scalars().all()
-            )
+            tables: list[str] = (await conn.execute(_select_tables())).scalars().all()
     except InvalidCatalogNameError:
         ...
     else:
