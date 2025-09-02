@@ -54,4 +54,5 @@ repos:
         args: [--fix=lf]
       - id: no-commit-to-branch
       - id: pretty-format-json
+        args: [--autofix]
       - id: trailing-whitespace
