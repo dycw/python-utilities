@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from json import dumps
+import json
 from typing import TYPE_CHECKING, ClassVar
 
+import tomlkit
+import yaml
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from utilities.os import temp_environ
@@ -15,18 +17,38 @@ if TYPE_CHECKING:
 
 
 class TestCustomBaseSettings:
-    def test_main(self, *, tmp_path: Path) -> None:
-        file = tmp_path.joinpath("settings.toml")
-        _ = file.write_text(dumps({"x": 1, "y": 2}))
+    def test_json(self, *, tmp_path: Path) -> None:
+        file = tmp_path.joinpath("settings.json")
+        _ = file.write_text(json.dumps({"x": 1}))
 
         class Settings(CustomBaseSettings):
             json_files: ClassVar[MaybeIterable[PathLike]] = file
             x: int
-            y: int
 
         settings = load_settings(Settings)
         assert settings.x == 1
-        assert settings.y == 2
+
+    def test_toml(self, *, tmp_path: Path) -> None:
+        file = tmp_path.joinpath("settings.toml")
+        _ = file.write_text(tomlkit.dumps({"x": 1}))
+
+        class Settings(CustomBaseSettings):
+            toml_files: ClassVar[MaybeIterable[PathLike]] = file
+            x: int
+
+        settings = load_settings(Settings)
+        assert settings.x == 1
+
+    def test_yaml(self, *, tmp_path: Path) -> None:
+        file = tmp_path.joinpath("settings.yaml")
+        _ = file.write_text(yaml.dump({"x": 1}))
+
+        class Settings(CustomBaseSettings):
+            yaml_files: ClassVar[MaybeIterable[PathLike]] = file
+            x: int
+
+        settings = load_settings(Settings)
+        assert settings.x == 1
 
     def test_env_var(self) -> None:
         class Settings(CustomBaseSettings):

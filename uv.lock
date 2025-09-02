@@ -700,6 +700,10 @@ pydantic-settings = [
 pydantic-settings-sops = [
     { name = "pydantic-settings-sops" },
 ]
+pydantic-settings-test = [
+    { name = "pyyaml" },
+    { name = "tomlkit" },
+]
 pyinstrument = [
     { name = "pyinstrument" },
 ]
@@ -883,6 +887,10 @@ pqdm = [{ name = "pqdm", specifier = ">=0.2.0,<0.3" }]
 psutil = [{ name = "psutil", specifier = ">=7.0.0,<7.1" }]
 pydantic-settings = [{ name = "pydantic-settings" }]
 pydantic-settings-sops = [{ name = "pydantic-settings-sops" }]
+pydantic-settings-test = [
+    { name = "pyyaml" },
+    { name = "tomlkit" },
+]
 pyinstrument = [{ name = "pyinstrument", specifier = ">=5.1.0,<5.2" }]
 pytest = [
     { name = "pytest", specifier = ">=8.4.1,<8.5" },
@@ -3247,6 +3255,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b7/4d/08c89e34946fce2aec4fbb45c9016efd5f4d7f24af8e5d93296e935631d8/threadpoolctl-3.6.0.tar.gz", hash = "sha256:8ab8b4aa3491d812b623328249fab5302a68d2d71745c8a4c719a2fcaba9f44e", size = 21274, upload-time = "2025-03-13T13:49:23.031Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/32/d5/f9a850d79b0851d1d4ef6456097579a9005b31fea68726a4ae5f2d82ddd9/threadpoolctl-3.6.0-py3-none-any.whl", hash = "sha256:43a0b8fd5a2928500110039e43a5eed8480b918967083ea48dc3ab9f13c4a7fb", size = 18638, upload-time = "2025-03-13T13:49:21.846Z" },
+]
+
+[[package]]
+name = "tomlkit"
+version = "0.13.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/cc/18/0bbf3884e9eaa38819ebe46a7bd25dcd56b67434402b66a58c4b8e552575/tomlkit-0.13.3.tar.gz", hash = "sha256:430cf247ee57df2b94ee3fbe588e71d362a941ebb545dec29b53961d61add2a1", size = 185207, upload-time = "2025-06-05T07:13:44.947Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bd/75/8539d011f6be8e29f339c42e633aae3cb73bffa95dd0f9adec09b9c58e85/tomlkit-0.13.3-py3-none-any.whl", hash = "sha256:c89c649d79ee40629a9fda55f8ace8c6a1b42deb912b2a8fd8d942ddadb606b0", size = 38901, upload-time = "2025-06-05T07:13:43.546Z" },
 ]
 
 [[package]]
