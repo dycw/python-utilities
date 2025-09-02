@@ -276,7 +276,7 @@ def split_str(
     separator: str = DEFAULT_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: int | None = None,
-) -> tuple[str, ...]: ...
+) -> list[str]: ...
 def split_str(
     text: str,
     /,
@@ -284,7 +284,7 @@ def split_str(
     separator: str = DEFAULT_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: int | None = None,
-) -> tuple[str, ...]:
+) -> list[str]:
     """Split a string, with a special provision for the empty string."""
     if text == "":
         texts = []
