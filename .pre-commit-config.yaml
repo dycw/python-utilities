@@ -53,4 +53,5 @@ repos:
       - id: mixed-line-ending
         args: [--fix=lf]
       - id: no-commit-to-branch
+      - id: pretty-format-json
       - id: trailing-whitespace
