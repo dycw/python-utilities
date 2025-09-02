@@ -376,7 +376,11 @@ class TestLoadSettings:
 @mark.only
 @mark.parametrize("text", [param("inner[x=1,y=2]"), param("{x=1, y=2}")])
 def test_converter_dataclass(*, tmp_path: Path, text: str) -> None:
+    from dataclasses import dataclass
+    from typing import Self, override
+
     import typed_settings
+    from typed_settings import FileLoader, TomlFormat
 
     x, y = 10, 20
 
@@ -416,7 +420,6 @@ def test_converter_dataclass(*, tmp_path: Path, text: str) -> None:
     )
     converter = get_default_cattrs_converter()
     converter.register_structure_hook(Inner, Inner.parse)
-
     settings = typed_settings.load_settings(
         Settings,
         loaders=[
