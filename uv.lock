@@ -236,15 +236,15 @@ wheels = [
 
 [[package]]
 name = "cattrs"
-version = "25.1.1"
+version = "25.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/57/2b/561d78f488dcc303da4639e02021311728fb7fda8006dd2835550cddd9ed/cattrs-25.1.1.tar.gz", hash = "sha256:c914b734e0f2d59e5b720d145ee010f1fd9a13ee93900922a2f3f9d593b8382c", size = 435016, upload-time = "2025-06-04T20:27:15.44Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/42/988b3a667967e9d2d32346e7ed7edee540ef1cee829b53ef80aa8d4a0222/cattrs-25.2.0.tar.gz", hash = "sha256:f46c918e955db0177be6aa559068390f71988e877c603ae2e56c71827165cc06", size = 506531, upload-time = "2025-08-31T20:41:59.301Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/18/b0/215274ef0d835bbc1056392a367646648b6084e39d489099959aefcca2af/cattrs-25.1.1-py3-none-any.whl", hash = "sha256:1b40b2d3402af7be79a7e7e097a9b4cd16d4c06e6d526644b0b26a063a1cc064", size = 69386, upload-time = "2025-06-04T20:27:13.969Z" },
+    { url = "https://files.pythonhosted.org/packages/20/a5/b3771ac30b590026b9d721187110194ade05bfbea3d98b423a9cafd80959/cattrs-25.2.0-py3-none-any.whl", hash = "sha256:539d7eedee7d2f0706e4e109182ad096d608ba84633c32c75ef3458f1d11e8f1", size = 70040, upload-time = "2025-08-31T20:41:57.543Z" },
 ]
 
 [[package]]
@@ -536,7 +536,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.166.6"
+version = "0.166.12"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -805,7 +805,7 @@ requires-dist = [
     { name = "pytest-randomly", marker = "extra == 'test'", specifier = ">=3.16.0,<3.17" },
     { name = "pytest-regressions", marker = "extra == 'test'", specifier = ">=2.8.2,<2.9" },
     { name = "pytest-repeat", marker = "extra == 'test'", specifier = ">=0.9.4,<0.10" },
-    { name = "pytest-rerunfailures", marker = "extra == 'test'", specifier = ">=15.1,<16" },
+    { name = "pytest-rerunfailures", marker = "extra == 'test'", specifier = ">=16.0,<17" },
     { name = "pytest-rng", marker = "extra == 'test'", specifier = ">=1.0.0,<1.1" },
     { name = "pytest-timeout", marker = "extra == 'test'", specifier = ">=2.4.0,<2.5" },
     { name = "pytest-xdist", marker = "extra == 'test'", specifier = ">=3.8.0,<3.9" },
@@ -1214,15 +1214,15 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.138.7"
+version = "6.138.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/26/ca/c5c9e8bade4b09c9f4e61b6d9d6877e5a25c6d1177cffea41572d74728cf/hypothesis-6.138.7.tar.gz", hash = "sha256:e3adc2df34d8e5d5a1f2b3aff399327544525137acfecbac3b0343c189e52126", size = 463466, upload-time = "2025-08-28T10:34:00.081Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/37/42/9cd666af7fd2c3e604f055f756e80d537faba5327cc72cbd44177792d074/hypothesis-6.138.13.tar.gz", hash = "sha256:2bea91629b8b3bb103a5b51442b1037cede3aae26e56ec063c52b9d5d8eaf70b", size = 466041, upload-time = "2025-09-01T14:02:51.468Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/91/50/3a4320c24b95ead76a1970f9cc568e3ec3e1dd065951f6a900e2b8066ff7/hypothesis-6.138.7-py3-none-any.whl", hash = "sha256:ec96ad34a50fa638491b5c08a37344db57765a9d7cdc863a38aadf27d52c317c", size = 530400, upload-time = "2025-08-28T10:33:56.315Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/82/823c202c8b349ff31a0718e46ff98074bebfb3aa20813091cea07821c25f/hypothesis-6.138.13-py3-none-any.whl", hash = "sha256:09f1130deb08e5d12fb3b59b55c113fd79debaaab9b224ffac17be8341de4326", size = 533564, upload-time = "2025-09-01T14:02:48.15Z" },
 ]
 
 [[package]]
@@ -2635,15 +2635,15 @@ wheels = [
 
 [[package]]
 name = "pytest-rerunfailures"
-version = "15.1"
+version = "16.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a0/78/e6e358545537a8e82c4dc91e72ec0d6f80546a3786dd27c76b06ca09db77/pytest_rerunfailures-15.1.tar.gz", hash = "sha256:c6040368abd7b8138c5b67288be17d6e5611b7368755ce0465dda0362c8ece80", size = 26981, upload-time = "2025-05-08T06:36:33.483Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/79/a0737906bd41e1b62530fd7b96420728657d3e1f9c81a4a78f0846c0e085/pytest_rerunfailures-16.0.tar.gz", hash = "sha256:8bac34cca51873995b355dffdc1812164fef34c6720c2e504f6d07d00f77eaa4", size = 28338, upload-time = "2025-08-29T06:38:19.26Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f3/30/11d836ff01c938969efa319b4ebe2374ed79d28043a12bfc908577aab9f3/pytest_rerunfailures-15.1-py3-none-any.whl", hash = "sha256:f674c3594845aba8b23c78e99b1ff8068556cc6a8b277f728071fdc4f4b0b355", size = 13274, upload-time = "2025-05-08T06:36:32.029Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/d4/b586ca61298c861fc4edf01108cc12127f5a16ff202b1e2e68c4187f81b2/pytest_rerunfailures-16.0-py3-none-any.whl", hash = "sha256:ed1b2c101450991265ff43fc7f2193bf50d29cec5db935e0db2b9651f5130e69", size = 13598, upload-time = "2025-08-29T06:38:16.857Z" },
 ]
 
 [[package]]
