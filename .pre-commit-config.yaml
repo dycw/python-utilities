@@ -6,22 +6,22 @@ repos:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.8.10
+    hooks:
+      - id: uv-lock
+        args: [--upgrade]
   - repo: https://github.com/dycw/pre-commit-hooks
     rev: 0.11.3
     hooks:
       - id: format-requirements
+      - id: replace-sequence-str
       - id: run-bump-my-version
   - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
     rev: v2.15.0
     hooks:
       - id: pretty-format-toml
         args: [--autofix, --trailing-commas]
-  - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.8.10
-    hooks:
-      - id: uv-sync # after version bump
-        args: [--all-packages, --upgrade]
-        stages: [pre-commit, pre-push]
   - repo: local
     hooks:
       - id: prettier
@@ -53,4 +53,6 @@ repos:
       - id: mixed-line-ending
         args: [--fix=lf]
       - id: no-commit-to-branch
+      - id: pretty-format-json
+        args: [--autofix]
       - id: trailing-whitespace
