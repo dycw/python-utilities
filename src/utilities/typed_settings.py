@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, is_dataclass
+from dataclasses import dataclass
 from functools import partial
 from ipaddress import IPv4Address, IPv6Address
 from os import environ
@@ -10,16 +10,8 @@ from typing import TYPE_CHECKING, Any, assert_never, override
 from uuid import UUID
 
 import typed_settings
-from typed_settings import EnvLoader, FileLoader, find, register_strlist_hook
-from typed_settings.converters import (
-    TSConverter,
-    get_default_cattrs_converter,
-    get_default_structure_hooks,
-    register_attrs_hook_factory,
-    register_dataclasses_hook_factory,
-    register_mappingproxy_hook,
-    register_pydantic_hook_factory,
-)
+from typed_settings import EnvLoader, FileLoader, find
+from typed_settings.converters import TSConverter, get_default_cattrs_converter
 from typed_settings.loaders import TomlFormat
 from whenever import (
     Date,
@@ -40,7 +32,6 @@ from utilities.string import substitute_environ
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
-    import cattrs
     from typed_settings.loaders import Loader
     from typed_settings.processors import Processor
 
@@ -141,9 +132,9 @@ def load_settings[T](
     loaders_use: list[Loader] = [file_loader, env_loader]
     if loaders is not None:
         loaders_use.extend(always_iterable(loaders))
-        # converter = get_default_cattrs_converter()
-        # for a, b in converters:
-        #     converter.register_structure_hook(a, b)
+        converter = get_default_cattrs_converter()
+        for a, b in converters:
+            converter.register_structure_hook(a, b)
     # converter = ExtendedTSConverter(extra=converters)
     converter = get_default_cattrs_converter()
 
