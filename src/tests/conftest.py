@@ -99,7 +99,9 @@ def test_engine(*, request: SubRequest, tmp_path: Path) -> Engine:
             )
             try:
                 with engine.begin() as conn:
-                    tables: list[str] = conn.execute(_select_tables()).scalars().all()
+                    tables: list[str] = list(
+                        conn.execute(_select_tables()).scalars().all()
+                    )
             except OperationalError:
                 ...
             else:
@@ -155,7 +157,9 @@ async def test_async_postgres_engine() -> AsyncEngine:
     )
     try:
         async with engine.begin() as conn:
-            tables: list[str] = (await conn.execute(_select_tables())).scalars().all()
+            tables: list[str] = list(
+                (await conn.execute(_select_tables())).scalars().all()
+            )
     except InvalidCatalogNameError:
         ...
     else:
