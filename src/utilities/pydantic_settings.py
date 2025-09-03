@@ -55,10 +55,10 @@ class CustomBaseSettings(BaseSettings):
         yield env_settings
         for file in always_iterable(cls.json_files):
             yield JsonConfigSettingsSource(settings_cls, json_file=file)
-        for file in always_iterable(cls.yaml_files):
-            yield YamlConfigSettingsSource(settings_cls, yaml_file=file)
         for file in always_iterable(cls.toml_files):
             yield TomlConfigSettingsSource(settings_cls, toml_file=file)
+        for file in always_iterable(cls.yaml_files):
+            yield YamlConfigSettingsSource(settings_cls, yaml_file=file)
 
 
 def load_settings[T: BaseSettings](cls: type[T], /) -> T:
