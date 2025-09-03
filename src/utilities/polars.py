@@ -1309,7 +1309,7 @@ def filter_date(
     column = ensure_expr_or_series(column)
     if time_zone is not None:
         column = column.dt.convert_time_zone(time_zone.key)
-    keep = column.is_null() | column.is_not_null()
+    keep = true_like(column)
     date = column.dt.date()
     include, exclude = resolve_include_and_exclude(include=include, exclude=exclude)
     if include is not None:
@@ -1358,7 +1358,7 @@ def filter_time(
     column = ensure_expr_or_series(column)
     if time_zone is not None:
         column = column.dt.convert_time_zone(time_zone.key)
-    keep = column.is_null() | column.is_not_null()
+    keep = true_like(column)
     time = column.dt.time()
     include, exclude = resolve_include_and_exclude(include=include, exclude=exclude)
     if include is not None:
@@ -2749,6 +2749,33 @@ def to_not_false(column: IntoExprColumn, /) -> ExprOrSeries:
 ##
 
 
+@overload
+def true_like(column: ExprLike, /) -> Expr: ...
+@overload
+def true_like(column: Series, /) -> Series: ...
+@overload
+def true_like(column: IntoExprColumn, /) -> ExprOrSeries: ...
+def true_like(column: IntoExprColumn, /) -> ExprOrSeries:
+    """Compute a column of `True` values."""
+    column = ensure_expr_or_series(column)
+    return column.is_null() | column.is_not_null()
+
+
+@overload
+def false_like(column: ExprLike, /) -> Expr: ...
+@overload
+def false_like(column: Series, /) -> Series: ...
+@overload
+def false_like(column: IntoExprColumn, /) -> ExprOrSeries: ...
+def false_like(column: IntoExprColumn, /) -> ExprOrSeries:
+    """Compute a column of `False` values."""
+    column = ensure_expr_or_series(column)
+    return column.is_null() & column.is_not_null()
+
+
+##
+
+
 def try_reify_expr(
     expr: IntoExprColumn, /, *exprs: IntoExprColumn, **named_exprs: IntoExprColumn
 ) -> ExprOrSeries:
@@ -2904,6 +2931,7 @@ __all__ = [
     "ensure_expr_or_series",
     "ensure_expr_or_series_many",
     "expr_to_series",
+    "false_like",
     "filter_date",
     "filter_time",
     "finite_ewm_mean",
