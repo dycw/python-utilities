@@ -25,7 +25,7 @@ from hypothesis.strategies import (
 from libcst import Import, ImportFrom
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
-from pytest import raises
+from pytest import mark, raises
 from whenever import (
     Date,
     DateDelta,
@@ -942,7 +942,7 @@ class TestTempPaths:
         assert len(set(path.iterdir())) == 0
 
     @given(path=temp_paths(), contents=sets(text_ascii(min_size=1), max_size=10))
-    # @mark.flaky
+    @mark.flaky
     def test_writing_files(self, *, path: Path, contents: AbstractSet[str]) -> None:
         assert len(set(path.iterdir())) == 0
         as_set = set(maybe_yield_lower_case(contents))
