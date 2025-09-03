@@ -103,7 +103,7 @@ memory-profiler = [
   "memory-profiler >=0.61.0, <0.62",
 ]
 more-itertools = [
-  "more-itertools >=10.7.0, <10.8",
+  "more-itertools >=10.8.0, <10.9",
 ]
 numpy = [
   "numpy >=2.3.1, <2.4",
