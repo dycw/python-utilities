@@ -1507,7 +1507,6 @@ class TestComputeDateFilter:
         assert_series_equal(result, expected)
 
 
-@mark.only
 class TestComputeTimeFilter:
     def test_main(self) -> None:
         series = datetime_range(
