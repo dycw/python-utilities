@@ -17,7 +17,7 @@ from utilities.parse import ParseObjectError, parse_object
 from utilities.text import split_str
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable
 
     from utilities.types import (
         DateDeltaLike,
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 
 
 class _HelpOptionNames(TypedDict):
-    help_option_names: Sequence[str]
+    help_option_names: list[str]
 
 
 class _ContextSettings(TypedDict):
@@ -469,7 +469,7 @@ class FrozenSetChoices(FrozenSetParameter[Choice, str]):
     @override
     def __init__(
         self,
-        choices: Sequence[str],
+        choices: list[str],
         /,
         *,
         case_sensitive: bool = False,
@@ -554,7 +554,7 @@ class ListChoices(ListParameter[Choice, str]):
     @override
     def __init__(
         self,
-        choices: Sequence[str],
+        choices: list[str],
         /,
         *,
         case_sensitive: bool = False,

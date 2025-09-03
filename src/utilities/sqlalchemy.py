@@ -1073,7 +1073,7 @@ def _map_mapping_to_table(
 @dataclass(kw_only=True, slots=True)
 class _MapMappingToTableError(Exception):
     mapping: StrMapping
-    columns: Sequence[str]
+    columns: list[str]
 
 
 @dataclass(kw_only=True, slots=True)

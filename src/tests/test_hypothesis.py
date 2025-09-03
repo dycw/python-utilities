@@ -760,10 +760,11 @@ class TestPairs:
 
 
 class TestPaths:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        min_depth = data.draw(integers(0, 3) | none())
-        max_depth = data.draw(integers(0, 3) | none())
+    @given(data=data(), depths=pairs(integers(0, 3) | none()))
+    def test_main(
+        self, *, data: DataObject, depths: tuple[int | None, int | None]
+    ) -> None:
+        min_depth, max_depth = depths
         with assume_does_not_raise(InvalidArgument):
             path = data.draw(paths(min_depth=min_depth, max_depth=max_depth))
         assert isinstance(path, Path)

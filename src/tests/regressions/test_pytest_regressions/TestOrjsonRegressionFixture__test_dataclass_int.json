@@ -1,1 +1,5 @@
-{ "[dc|DataClassFutureInt]": { "int_": 0 } }
+{
+  "[dc|DataClassFutureInt]": {
+    "int_": 0
+  }
+}

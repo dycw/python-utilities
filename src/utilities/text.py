@@ -276,7 +276,7 @@ def split_str(
     separator: str = DEFAULT_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: int | None = None,
-) -> Sequence[str]: ...
+) -> tuple[str, ...]: ...
 def split_str(
     text: str,
     /,
@@ -284,7 +284,7 @@ def split_str(
     separator: str = DEFAULT_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: int | None = None,
-) -> Sequence[str]:
+) -> tuple[str, ...]:
     """Split a string, with a special provision for the empty string."""
     if text == "":
         texts = []
@@ -295,7 +295,7 @@ def split_str(
     else:
         texts = _split_str_brackets(text, brackets, separator=separator)
     if n is None:
-        return texts
+        return tuple(texts)
     if len(texts) != n:
         raise _SplitStrCountError(text=text, n=n, texts=texts)
     return tuple(texts)
@@ -307,7 +307,7 @@ def _split_str_brackets(
     /,
     *,
     separator: str = DEFAULT_SEPARATOR,
-) -> Sequence[str]:
+) -> list[str]:
     brackets = list(brackets)
     opens, closes = transpose(brackets)
     close_to_open = {close: open_ for open_, close in brackets}
@@ -315,7 +315,7 @@ def _split_str_brackets(
     escapes = map(escape, chain(chain.from_iterable(brackets), [separator]))
     pattern = re.compile("|".join(escapes))
 
-    results: Sequence[str] = []
+    results: list[str] = []
     stack: deque[tuple[str, int]] = deque()
     last = 0
 
@@ -357,7 +357,7 @@ class SplitStrError(Exception):
 @dataclass(kw_only=True, slots=True)
 class _SplitStrCountError(SplitStrError):
     n: int
-    texts: Sequence[str]
+    texts: list[str]
 
     @override
     def __str__(self) -> str:

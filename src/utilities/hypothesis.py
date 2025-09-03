@@ -847,13 +847,9 @@ def paths(
 ) -> Path:
     """Strategy for generating `Path`s."""
     min_depth_, max_depth_ = [draw2(draw, d) for d in [min_depth, max_depth]]
-    parts = draw(
-        lists(
-            _path_parts(),
-            min_size=0 if min_depth_ is None else min_depth_,
-            max_size=max_depth_,
-        )
-    )
+    min_depth_ = max_nullable([min_depth_, 0])
+    max_depth_ = min_nullable([max_depth_, 10])
+    parts = draw(lists(_path_parts(), min_size=min_depth_, max_size=max_depth_))
     return Path(*parts)
 
 

@@ -12,8 +12,6 @@ from utilities.os import temp_environ
 from utilities.pytest import NodeIdToPathError, node_id_path, throttle
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from _pytest.legacypath import Testdir
 
 
@@ -117,10 +115,10 @@ class TestPytestOptions:
         self,
         *,
         testdir: Testdir,
-        case: Sequence[str],
+        case: list[str],
         passed: int,
         skipped: int,
-        matches: Sequence[str],
+        matches: list[str],
     ) -> None:
         _ = testdir.makeconftest(
             """
@@ -183,10 +181,10 @@ class TestPytestOptions:
         self,
         *,
         testdir: Testdir,
-        case: Sequence[str],
+        case: list[str],
         passed: int,
         skipped: int,
-        matches: Sequence[str],
+        matches: list[str],
     ) -> None:
         _ = testdir.makeconftest(
             """

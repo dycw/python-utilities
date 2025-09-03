@@ -564,7 +564,7 @@ def _check_polars_dataframe_columns(df: DataFrame, columns: Iterable[str], /) ->
 
 @dataclass(kw_only=True, slots=True)
 class _CheckPolarsDataFrameColumnsError(CheckPolarsDataFrameError):
-    columns: Sequence[str]
+    columns: list[str]
 
     @override
     def __str__(self) -> str:

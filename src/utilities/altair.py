@@ -29,8 +29,6 @@ from utilities.iterables import always_iterable
 from utilities.tempfile import TemporaryDirectory
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from polars import DataFrame
 
     from utilities.types import PathLike
@@ -43,7 +41,7 @@ _WIDTH = 800
 
 @dataclass(kw_only=True, slots=True)
 class _PlotDataFramesSpec:
-    y: Sequence[str]
+    y: list[str]
     height: int = _HEIGHT
 
 

@@ -150,7 +150,7 @@ def split_dotted_str(dotted: str, /) -> Name | Attribute:
 
 def join_dotted_str(name_or_attr: Name | Attribute, /) -> str:
     """Join a dotted from from a name/attribute."""
-    parts: Sequence[str] = []
+    parts: list[str] = []
     curr: BaseExpression | Name | Attribute = name_or_attr
     while True:
         match curr:

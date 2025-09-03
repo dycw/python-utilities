@@ -37,7 +37,7 @@ from utilities.whenever import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Callable, Iterator
     from traceback import FrameSummary
     from types import TracebackType
 
@@ -70,7 +70,7 @@ def format_exception_stack(
     expand_all: bool = RICH_EXPAND_ALL,
 ) -> str:
     """Format an exception stack."""
-    lines: Sequence[str] = []
+    lines: list[str] = []
     if header:
         lines.extend(_yield_header_lines(start=start, version=version))
     lines.extend(

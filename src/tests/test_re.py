@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 from re import DOTALL
-from typing import TYPE_CHECKING
 
 from pytest import mark, param, raises
 
@@ -18,9 +17,6 @@ from utilities.re import (
     extract_group,
     extract_groups,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 
 class TestEnsurePattern:
@@ -81,7 +77,7 @@ class TestExtractGroups:
         ("pattern", "text", "expected"),
         [param(r"(\d)", "A0A", ["0"]), param(r"(\d)(\w)", "A0A0", ["0", "A"])],
     )
-    def test_main(self, *, pattern: str, text: str, expected: Sequence[str]) -> None:
+    def test_main(self, *, pattern: str, text: str, expected: list[str]) -> None:
         assert extract_groups(pattern, text) == expected
 
     def test_with_flags(self) -> None:
