@@ -37,7 +37,6 @@ from polars import (
     int_range,
     lit,
     max_horizontal,
-    repeat,
     struct,
     sum_horizontal,
     when,
@@ -1310,7 +1309,7 @@ def filter_date(
     column = ensure_expr_or_series(column)
     if time_zone is not None:
         column = column.dt.convert_time_zone(time_zone.key)
-    keep = repeat(value=True, n=pl.len(), dtype=Boolean, eager=False).alias(column.name)
+    keep = column.is_null() | column.is_not_null()
     date = column.dt.date()
     include, exclude = resolve_include_and_exclude(include=include, exclude=exclude)
     if include is not None:
@@ -1359,7 +1358,7 @@ def filter_time(
     column = ensure_expr_or_series(column)
     if time_zone is not None:
         column = column.dt.convert_time_zone(time_zone.key)
-    keep = repeat(value=True, n=pl.len(), dtype=Boolean, eager=False)
+    keep = column.is_null() | column.is_not_null()
     time = column.dt.time()
     include, exclude = resolve_include_and_exclude(include=include, exclude=exclude)
     if include is not None:
