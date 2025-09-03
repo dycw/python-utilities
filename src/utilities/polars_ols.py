@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, overload
 
-from polars import Expr, Series, struct
+from polars import Expr, Series, struct, when
 from polars_ols import RollingKwargs, compute_rolling_least_squares
 
 from utilities.errors import ImpossibleCaseError
@@ -164,7 +164,7 @@ def _compute_rolling_ols_expr(
         .rolling_sum(window_size, min_samples=min_periods)
         .alias("SST")
     )
-    r2 = (1 - ssr / sst).alias("R2")
+    r2 = when(sst > 0.0).then(1 - ssr / sst).alias("R2")
     return struct(coefficients, predictions, residuals, r2).alias("ols")
 
 
