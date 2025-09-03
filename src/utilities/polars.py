@@ -1310,7 +1310,7 @@ def filter_date(
     column = ensure_expr_or_series(column)
     if time_zone is not None:
         column = column.dt.convert_time_zone(time_zone.key)
-    keep = repeat(value=True, n=pl.len(), dtype=Boolean, eager=False)
+    keep = repeat(value=True, n=pl.len(), dtype=Boolean, eager=False).alias(column.name)
     date = column.dt.date()
     include, exclude = resolve_include_and_exclude(include=include, exclude=exclude)
     if include is not None:

@@ -49,6 +49,7 @@ from polars import (
     col,
     concat,
     date_range,
+    datetime_range,
     int_range,
     lit,
     struct,
@@ -58,7 +59,14 @@ from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 from scipy.stats import norm
-from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 import tests.test_math
 import utilities.polars
@@ -168,6 +176,8 @@ from utilities.polars import (
     ensure_expr_or_series,
     ensure_expr_or_series_many,
     expr_to_series,
+    filter_date,
+    filter_time,
     finite_ewm_mean,
     first_true_horizontal,
     get_data_type_or_series_time_zone,
@@ -1477,6 +1487,43 @@ class TestExprToSeries:
         series = expr_to_series(expr)
         expected = int_range(end=10, eager=True)
         assert_series_equal(series, expected)
+
+
+class TestComputeDateFilter:
+    def test_main(self) -> None:
+        series = datetime_range(
+            start=ZonedDateTime(2024, 1, 1, tz=UTC.key).py_datetime(),
+            end=ZonedDateTime(2024, 1, 4, 12, tz=UTC.key).py_datetime(),
+            interval="12h",
+            eager=True,
+        ).alias("datetime")
+        assert len(series) == 8
+        result = filter_date(series, include=[Date(2024, 1, 2), Date(2024, 1, 3)])
+        expected = Series(
+            name="datetime",
+            values=[False, False, True, True, True, True, False, False],
+            dtype=Boolean,
+        )
+        assert_series_equal(result, expected)
+
+
+@mark.only
+class TestComputeTimeFilter:
+    def test_main(self) -> None:
+        series = datetime_range(
+            start=ZonedDateTime(2024, 1, 1, tz=UTC.key).py_datetime(),
+            end=ZonedDateTime(2024, 1, 3, 0, tz=UTC.key).py_datetime(),
+            interval="6h",
+            eager=True,
+        ).alias("datetime")
+        assert len(series) == 9
+        result = filter_time(series, include=[(whenever.Time(6), whenever.Time(12))])
+        expected = Series(
+            name="datetime",
+            values=[False, True, True, False, False, True, True, False, False],
+            dtype=Boolean,
+        )
+        assert_series_equal(result, expected)
 
 
 class TestFiniteEWMMean:
