@@ -103,7 +103,7 @@ memory-profiler = [
   "memory-profiler >=0.61.0, <0.62",
 ]
 more-itertools = [
-  "more-itertools >=10.7.0, <10.8",
+  "more-itertools >=10.8.0, <10.9",
 ]
 numpy = [
   "numpy >=2.3.1, <2.4",
@@ -151,6 +151,10 @@ pydantic-settings = [
 ]
 pydantic-settings-sops = [
   "pydantic-settings-sops",
+]
+pydantic-settings-test = [
+  "pyyaml",
+  "tomlkit",
 ]
 pyinstrument = [
   "pyinstrument >=5.1.0, <5.2",
@@ -242,7 +246,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.166.14"
+version = "0.166.15"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -275,7 +279,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.166.14"
+current_version = "0.166.15"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
