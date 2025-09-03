@@ -241,15 +241,15 @@ class TestSplitAndJoinStr:
     @mark.parametrize(
         ("text", "n", "expected"),
         [
-            param("", 0, []),
-            param(r"\,", 1, [""]),
-            param(",", 2, ["", ""]),
-            param(",,", 3, ["", "", ""]),
-            param("1", 1, ["1"]),
-            param("1,22", 2, ["1", "22"]),
-            param("1,22,333", 3, ["1", "22", "333"]),
-            param("1,,333", 3, ["1", "", "333"]),
-            param("1,(22,22,22),333", 5, ["1", "(22", "22", "22)", "333"]),
+            param("", 0, ()),
+            param(r"\,", 1, ("",)),
+            param(",", 2, ("", "")),
+            param(",,", 3, ("", "", "")),
+            param("1", 1, ("1",)),
+            param("1,22", 2, ("1", "22")),
+            param("1,22,333", 3, ("1", "22", "333")),
+            param("1,,333", 3, ("1", "", "333")),
+            param("1,(22,22,22),333", 5, ("1", "(22", "22", "22)", "333")),
         ],
     )
     def test_main(
@@ -267,12 +267,12 @@ class TestSplitAndJoinStr:
     @mark.parametrize(
         ("text", "n", "expected"),
         [
-            param("1", 1, ["1"]),
-            param("1,22", 2, ["1", "22"]),
-            param("1,22,333", 3, ["1", "22", "333"]),
-            param("1,(22),333", 3, ["1", "(22)", "333"]),
-            param("1,(22,22),333", 3, ["1", "(22,22)", "333"]),
-            param("1,(22,22,22),333", 3, ["1", "(22,22,22)", "333"]),
+            param("1", 1, ("1",)),
+            param("1,22", 2, ("1", "22")),
+            param("1,22,333", 3, ("1", "22", "333")),
+            param("1,(22),333", 3, ("1", "(22)", "333")),
+            param("1,(22,22),333", 3, ("1", "(22,22)", "333")),
+            param("1,(22,22,22),333", 3, ("1", "(22,22,22)", "333")),
         ],
     )
     def test_brackets(
@@ -286,13 +286,13 @@ class TestSplitAndJoinStr:
             assert result == tuple(expected)
         assert join_strs(result) == text
 
-    @given(texts=lists(text_ascii()))
-    def test_generic(self, *, texts: list[str]) -> None:
+    @given(texts=lists(text_ascii()).map(tuple))
+    def test_generic(self, *, texts: tuple[str, ...]) -> None:
         assert split_str(join_strs(texts)) == texts
 
     @given(texts=sets(text_ascii()))
     def test_sort(self, *, texts: set[str]) -> None:
-        assert split_str(join_strs(texts, sort=True)) == sorted(texts)
+        assert split_str(join_strs(texts, sort=True)) == tuple(sorted(texts))
 
     def test_error_closing_bracket_mismatched(self) -> None:
         with raises(
