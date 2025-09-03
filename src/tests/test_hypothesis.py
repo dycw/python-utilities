@@ -25,7 +25,7 @@ from hypothesis.strategies import (
 from libcst import Import, ImportFrom
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pathvalidate import validate_filepath
-from pytest import mark, raises
+from pytest import raises
 from whenever import (
     Date,
     DateDelta,
@@ -760,10 +760,11 @@ class TestPairs:
 
 
 class TestPaths:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        min_depth = data.draw(integers(0, 3) | none())
-        max_depth = data.draw(integers(0, 3) | none())
+    @given(data=data(), depths=pairs(integers(0, 3) | none()))
+    def test_main(
+        self, *, data: DataObject, depths: tuple[int | None, int | None]
+    ) -> None:
+        min_depth, max_depth = depths
         with assume_does_not_raise(InvalidArgument):
             path = data.draw(paths(min_depth=min_depth, max_depth=max_depth))
         assert isinstance(path, Path)
@@ -941,7 +942,7 @@ class TestTempPaths:
         assert len(set(path.iterdir())) == 0
 
     @given(path=temp_paths(), contents=sets(text_ascii(min_size=1), max_size=10))
-    @mark.flaky
+    # @mark.flaky
     def test_writing_files(self, *, path: Path, contents: AbstractSet[str]) -> None:
         assert len(set(path.iterdir())) == 0
         as_set = set(maybe_yield_lower_case(contents))
