@@ -6,7 +6,7 @@ import itertools
 import math
 from dataclasses import dataclass, field
 from enum import auto
-from itertools import chain, repeat
+from itertools import chain
 from math import isfinite, nan
 from random import Random
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never, cast
@@ -49,6 +49,7 @@ from polars import (
     col,
     concat,
     date_range,
+    datetime_range,
     int_range,
     lit,
     struct,
@@ -58,7 +59,14 @@ from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 from scipy.stats import norm
-from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 import tests.test_math
 import utilities.polars
@@ -168,6 +176,9 @@ from utilities.polars import (
     ensure_expr_or_series,
     ensure_expr_or_series_many,
     expr_to_series,
+    false_like,
+    filter_date,
+    filter_time,
     finite_ewm_mean,
     first_true_horizontal,
     get_data_type_or_series_time_zone,
@@ -208,6 +219,7 @@ from utilities.polars import (
     to_not_true,
     to_true,
     touch,
+    true_like,
     try_reify_expr,
     uniform,
     unique_element,
@@ -1479,6 +1491,42 @@ class TestExprToSeries:
         assert_series_equal(series, expected)
 
 
+class TestComputeDateFilter:
+    def test_main(self) -> None:
+        series = datetime_range(
+            start=ZonedDateTime(2024, 1, 1, tz=UTC.key).py_datetime(),
+            end=ZonedDateTime(2024, 1, 4, 12, tz=UTC.key).py_datetime(),
+            interval="12h",
+            eager=True,
+        ).alias("datetime")
+        assert len(series) == 8
+        result = filter_date(series, include=[Date(2024, 1, 2), Date(2024, 1, 3)])
+        expected = Series(
+            name="datetime",
+            values=[False, False, True, True, True, True, False, False],
+            dtype=Boolean,
+        )
+        assert_series_equal(result, expected)
+
+
+class TestComputeTimeFilter:
+    def test_main(self) -> None:
+        series = datetime_range(
+            start=ZonedDateTime(2024, 1, 1, tz=UTC.key).py_datetime(),
+            end=ZonedDateTime(2024, 1, 3, 0, tz=UTC.key).py_datetime(),
+            interval="6h",
+            eager=True,
+        ).alias("datetime")
+        assert len(series) == 9
+        result = filter_time(series, include=[(whenever.Time(6), whenever.Time(12))])
+        expected = Series(
+            name="datetime",
+            values=[False, True, True, False, False, True, True, False, False],
+            dtype=Boolean,
+        )
+        assert_series_equal(result, expected)
+
+
 class TestFiniteEWMMean:
     alpha_0_75_values: ClassVar[list[float]] = [
         -8.269850726503885,
@@ -1838,7 +1886,9 @@ class TestIsNearEvent:
     def test_no_exprs(self) -> None:
         result = self.df.with_columns(is_near_event().alias("z"))["z"]
         expected = Series(
-            name="z", values=list(repeat(object=False, times=10)), dtype=Boolean
+            name="z",
+            values=list(itertools.repeat(object=False, times=10)),
+            dtype=Boolean,
         )
         assert_series_equal(result, expected)
 
@@ -2781,6 +2831,60 @@ class TestToTrueAndFalse:
         result = to_not_false(series)
         exp_series = Series(name="x", values=exp_values, dtype=Boolean)
         assert_series_equal(result, exp_series)
+
+
+class TestTrueLikeAndFalseLike:
+    @given(length=hypothesis.strategies.integers(0, 10), name=text_ascii())
+    def test_true_expr(self, *, length: int, name: str) -> None:
+        expr = int_range(end=length).alias(name)
+        result = true_like(expr)
+        assert isinstance(result, Expr)
+        result2 = (
+            int_range(end=length, eager=True)
+            .alias(f"_{name}")
+            .to_frame()
+            .with_columns(result)[name]
+        )
+        expected = pl.repeat(value=True, n=length, dtype=Boolean, eager=True).alias(
+            name
+        )
+        assert_series_equal(result2, expected)
+
+    @given(length=hypothesis.strategies.integers(0, 10), name=text_ascii())
+    def test_true_series(self, *, length: int, name: str) -> None:
+        series = int_range(end=length, eager=True).alias(name)
+        result = true_like(series)
+        assert isinstance(result, Series)
+        expected = pl.repeat(value=True, n=length, dtype=Boolean, eager=True).alias(
+            name
+        )
+        assert_series_equal(result, expected)
+
+    @given(length=hypothesis.strategies.integers(0, 10), name=text_ascii())
+    def test_false_expr(self, *, length: int, name: str) -> None:
+        expr = int_range(end=length).alias(name)
+        result = false_like(expr)
+        assert isinstance(result, Expr)
+        result2 = (
+            int_range(end=length, eager=True)
+            .alias(f"_{name}")
+            .to_frame()
+            .with_columns(result)[name]
+        )
+        expected = pl.repeat(value=False, n=length, dtype=Boolean, eager=True).alias(
+            name
+        )
+        assert_series_equal(result2, expected)
+
+    @given(length=hypothesis.strategies.integers(0, 10), name=text_ascii())
+    def test_false_series(self, *, length: int, name: str) -> None:
+        series = int_range(end=length, eager=True).alias(name)
+        result = false_like(series)
+        assert isinstance(result, Series)
+        expected = pl.repeat(value=False, n=length, dtype=Boolean, eager=True).alias(
+            name
+        )
+        assert_series_equal(result, expected)
 
 
 class TestTryReifyExpr:

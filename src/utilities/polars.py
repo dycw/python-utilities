@@ -70,6 +70,7 @@ from utilities.iterables import (
     check_supermapping,
     is_iterable_not_str,
     one,
+    resolve_include_and_exclude,
 )
 from utilities.json import write_formatted_json
 from utilities.math import (
@@ -1264,6 +1265,111 @@ def ensure_expr_or_series_many(
 def expr_to_series(expr: Expr, /) -> Series:
     """Collect a column expression into a Series."""
     return one_column(DataFrame().with_columns(expr))
+
+
+##
+
+
+@overload
+def filter_date(
+    column: ExprLike = "datetime",
+    /,
+    *,
+    time_zone: ZoneInfo | None = None,
+    include: MaybeIterable[whenever.Date] | None = None,
+    exclude: MaybeIterable[whenever.Date] | None = None,
+) -> Expr: ...
+@overload
+def filter_date(
+    column: Series,
+    /,
+    *,
+    time_zone: ZoneInfo | None = None,
+    include: MaybeIterable[whenever.Date] | None = None,
+    exclude: MaybeIterable[whenever.Date] | None = None,
+) -> Series: ...
+@overload
+def filter_date(
+    column: IntoExprColumn = "datetime",
+    /,
+    *,
+    time_zone: ZoneInfo | None = None,
+    include: MaybeIterable[whenever.Date] | None = None,
+    exclude: MaybeIterable[whenever.Date] | None = None,
+) -> ExprOrSeries: ...
+def filter_date(
+    column: IntoExprColumn = "datetime",
+    /,
+    *,
+    time_zone: ZoneInfo | None = None,
+    include: MaybeIterable[whenever.Date] | None = None,
+    exclude: MaybeIterable[whenever.Date] | None = None,
+) -> ExprOrSeries:
+    """Compute the filter based on a set of dates."""
+    column = ensure_expr_or_series(column)
+    if time_zone is not None:
+        column = column.dt.convert_time_zone(time_zone.key)
+    keep = true_like(column)
+    date = column.dt.date()
+    include, exclude = resolve_include_and_exclude(include=include, exclude=exclude)
+    if include is not None:
+        keep &= date.is_in([d.py_date() for d in include])
+    if exclude is not None:
+        keep &= ~date.is_in([d.py_date() for d in exclude])
+    return try_reify_expr(keep, column)
+
+
+@overload
+def filter_time(
+    column: ExprLike = "datetime",
+    /,
+    *,
+    time_zone: ZoneInfo | None = None,
+    include: MaybeIterable[tuple[whenever.Time, whenever.Time]] | None = None,
+    exclude: MaybeIterable[tuple[whenever.Time, whenever.Time]] | None = None,
+) -> Expr: ...
+@overload
+def filter_time(
+    column: Series,
+    /,
+    *,
+    time_zone: ZoneInfo | None = None,
+    include: MaybeIterable[tuple[whenever.Time, whenever.Time]] | None = None,
+    exclude: MaybeIterable[tuple[whenever.Time, whenever.Time]] | None = None,
+) -> Series: ...
+@overload
+def filter_time(
+    column: IntoExprColumn = "datetime",
+    /,
+    *,
+    time_zone: ZoneInfo | None = None,
+    include: MaybeIterable[tuple[whenever.Time, whenever.Time]] | None = None,
+    exclude: MaybeIterable[tuple[whenever.Time, whenever.Time]] | None = None,
+) -> ExprOrSeries: ...
+def filter_time(
+    column: IntoExprColumn = "datetime",
+    /,
+    *,
+    time_zone: ZoneInfo | None = None,
+    include: MaybeIterable[tuple[whenever.Time, whenever.Time]] | None = None,
+    exclude: MaybeIterable[tuple[whenever.Time, whenever.Time]] | None = None,
+) -> ExprOrSeries:
+    """Compute the filter based on a set of times."""
+    column = ensure_expr_or_series(column)
+    if time_zone is not None:
+        column = column.dt.convert_time_zone(time_zone.key)
+    keep = true_like(column)
+    time = column.dt.time()
+    include, exclude = resolve_include_and_exclude(include=include, exclude=exclude)
+    if include is not None:
+        keep &= any_horizontal(
+            time.is_between(s.py_time(), e.py_time()) for s, e in include
+        )
+    if exclude is not None:
+        keep &= ~any_horizontal(
+            time.is_between(s.py_time(), e.py_time()) for s, e in exclude
+        )
+    return try_reify_expr(keep, column)
 
 
 ##
@@ -2643,6 +2749,33 @@ def to_not_false(column: IntoExprColumn, /) -> ExprOrSeries:
 ##
 
 
+@overload
+def true_like(column: ExprLike, /) -> Expr: ...
+@overload
+def true_like(column: Series, /) -> Series: ...
+@overload
+def true_like(column: IntoExprColumn, /) -> ExprOrSeries: ...
+def true_like(column: IntoExprColumn, /) -> ExprOrSeries:
+    """Compute a column of `True` values."""
+    column = ensure_expr_or_series(column)
+    return column.is_null() | column.is_not_null()
+
+
+@overload
+def false_like(column: ExprLike, /) -> Expr: ...
+@overload
+def false_like(column: Series, /) -> Series: ...
+@overload
+def false_like(column: IntoExprColumn, /) -> ExprOrSeries: ...
+def false_like(column: IntoExprColumn, /) -> ExprOrSeries:
+    """Compute a column of `False` values."""
+    column = ensure_expr_or_series(column)
+    return column.is_null() & column.is_not_null()
+
+
+##
+
+
 def try_reify_expr(
     expr: IntoExprColumn, /, *exprs: IntoExprColumn, **named_exprs: IntoExprColumn
 ) -> ExprOrSeries:
@@ -2798,6 +2931,9 @@ __all__ = [
     "ensure_expr_or_series",
     "ensure_expr_or_series_many",
     "expr_to_series",
+    "false_like",
+    "filter_date",
+    "filter_time",
     "finite_ewm_mean",
     "first_true_horizontal",
     "get_data_type_or_series_time_zone",
@@ -2838,6 +2974,7 @@ __all__ = [
     "to_not_true",
     "to_true",
     "touch",
+    "true_like",
     "try_reify_expr",
     "uniform",
     "unique_element",
