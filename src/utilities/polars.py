@@ -2946,6 +2946,7 @@ __all__ = [
     "to_not_true",
     "to_true",
     "touch",
+    "true_like",
     "try_reify_expr",
     "uniform",
     "unique_element",
