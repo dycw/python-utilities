@@ -13,7 +13,13 @@ from utilities.atomicwrites import writer
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
 from utilities.os import get_env_var
-from utilities.pathlib import ensure_suffix, get_root, get_tail, module_path
+from utilities.pathlib import (
+    _GetTailEmptyError,
+    ensure_suffix,
+    get_root,
+    get_tail,
+    module_path,
+)
 from utilities.platform import (
     IS_LINUX,
     IS_MAC,
@@ -118,10 +124,15 @@ def node_id_path(
     path_file, *parts = node_id.split("::")
     path_file = Path(path_file)
     if path_file.suffix != ".py":
-        raise NodeIdToPathError(node_id=node_id)
+        raise _NodeIdToPathNotPythonFileError(node_id=node_id)
     path = path_file.with_suffix("")
     if root is not None:
-        path = get_tail(path, root)
+        try:
+            path = get_tail(path, root)
+        except _GetTailEmptyError as error:
+            raise _NodeIdToPathNotGetTailError(
+                node_id=node_id, path=error.path, root=error.root
+            ) from None
     path = Path(module_path(path), "__".join(parts))
     if suffix is not None:
         path = ensure_suffix(path, suffix)
@@ -132,9 +143,24 @@ def node_id_path(
 class NodeIdToPathError(Exception):
     node_id: str
 
+
+@dataclass(kw_only=True, slots=True)
+class _NodeIdToPathNotPythonFileError(NodeIdToPathError):
     @override
     def __str__(self) -> str:
         return f"Node ID must be a Python file; got {self.node_id!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _NodeIdToPathNotGetTailError(NodeIdToPathError):
+    path: PathLike
+    root: PathLike
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Unable to get the tail of {str(self.path)!r} with root {str(self.root)!r}"
+        )
 
 
 ##
