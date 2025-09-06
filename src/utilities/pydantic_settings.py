@@ -24,7 +24,8 @@ if TYPE_CHECKING:
     from utilities.types import MaybeSequenceStr, PathLike
 
 
-type PathLikeOrWithSection = PathLike | tuple[PathLike, MaybeSequenceStr]
+type PathLikeWithSection = tuple[PathLike, MaybeSequenceStr]
+type PathLikeOrWithSection = PathLike | PathLikeWithSection
 
 
 class CustomBaseSettings(BaseSettings):
@@ -61,36 +62,18 @@ class CustomBaseSettings(BaseSettings):
         /,
     ) -> Iterator[PydanticBaseSettingsSource]:
         yield env_settings
-        for json in cls.json_files:
-            match json:
-                case Path() | str():
-                    yield JsonConfigSettingsSource(settings_cls, json_file=json)
-                case Path() | str() as file, str() | list() | tuple() as section:
-                    yield JsonConfigSectionSettingsSource(
-                        settings_cls, json_file=file, section=section
-                    )
-                case never:
-                    assert_never(never)
-        for toml in cls.toml_files:
-            match toml:
-                case Path() | str():
-                    yield TomlConfigSettingsSource(settings_cls, toml_file=toml)
-                case Path() | str() as file, str() | list() | tuple() as section:
-                    yield TomlConfigSectionSettingsSource(
-                        settings_cls, toml_file=file, section=section
-                    )
-                case never:
-                    assert_never(never)
-        for yaml in cls.yaml_files:
-            match yaml:
-                case Path() | str():
-                    yield YamlConfigSettingsSource(settings_cls, yaml_file=yaml)
-                case Path() | str() as file, str() | list() | tuple() as section:
-                    yield YamlConfigSectionSettingsSource(
-                        settings_cls, yaml_file=file, section=section
-                    )
-                case never:
-                    assert_never(never)
+        for file, section in map(_ensure_section, cls.json_files):
+            yield JsonConfigSectionSettingsSource(
+                settings_cls, json_file=file, section=section
+            )
+        for file, section in map(_ensure_section, cls.toml_files):
+            yield TomlConfigSectionSettingsSource(
+                settings_cls, toml_file=file, section=section
+            )
+        for file, section in map(_ensure_section, cls.yaml_files):
+            yield YamlConfigSectionSettingsSource(
+                settings_cls, yaml_file=file, section=section
+            )
 
 
 def load_settings[T: BaseSettings](cls: type[T], /) -> T:
@@ -115,11 +98,7 @@ class JsonConfigSectionSettingsSource(JsonConfigSettingsSource):
 
     @override
     def __call__(self) -> dict[str, Any]:
-        return reduce(
-            lambda acc, el: acc.get(el, {}),
-            always_iterable(self.section),
-            super().__call__(),
-        )
+        return _get_section(super().__call__(), self.section)
 
 
 class TomlConfigSectionSettingsSource(TomlConfigSettingsSource):
@@ -136,11 +115,7 @@ class TomlConfigSectionSettingsSource(TomlConfigSettingsSource):
 
     @override
     def __call__(self) -> dict[str, Any]:
-        return reduce(
-            lambda acc, el: acc.get(el, {}),
-            always_iterable(self.section),
-            super().__call__(),
-        )
+        return _get_section(super().__call__(), self.section)
 
 
 class YamlConfigSectionSettingsSource(YamlConfigSettingsSource):
@@ -164,11 +139,23 @@ class YamlConfigSectionSettingsSource(YamlConfigSettingsSource):
 
     @override
     def __call__(self) -> dict[str, Any]:
-        return reduce(
-            lambda acc, el: acc.get(el, {}),
-            always_iterable(self.section),
-            super().__call__(),
-        )
+        return _get_section(super().__call__(), self.section)
+
+
+def _ensure_section(file: PathLikeOrWithSection, /) -> PathLikeWithSection:
+    match file:
+        case Path() | str():
+            return file, []
+        case Path() | str() as path, str() | list() | tuple() as section:
+            return path, section
+        case never:
+            assert_never(never)
+
+
+def _get_section(
+    mapping: dict[str, Any], section: MaybeSequenceStr, /
+) -> dict[str, Any]:
+    return reduce(lambda acc, el: acc.get(el, {}), always_iterable(section), mapping)
 
 
 __all__ = [
