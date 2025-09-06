@@ -14,6 +14,8 @@ from pydantic_settings import (
 )
 from pydantic_settings.sources import DEFAULT_PATH
 
+from utilities.iterables import always_iterable
+
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
@@ -94,14 +96,11 @@ class TomlConfigSectionSettingsSource(TomlConfigSettingsSource):
 
     @override
     def __call__(self) -> dict[str, Any]:
-        result = super().__call__()
-        match self.section:
-            case str():
-                return result.get(self.section, {})
-            case list() | tuple() as path:
-                return reduce(lambda acc, el: acc.get(el, {}), path, result)
-            case never:
-                assert_never(never)
+        return reduce(
+            lambda acc, el: acc.get(el, {}),
+            always_iterable(self.section),
+            super().__call__(),
+        )
 
 
 __all__ = ["CustomBaseSettings", "TomlConfigSectionSettingsSource", "load_settings"]
