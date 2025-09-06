@@ -59,4 +59,4 @@ class SOPSConfigSectionSettingsSource(SOPSConfigSettingsSource):
         return _get_section(super().__call__(), self.section)
 
 
-__all__ = ["SopsBaseSettings"]
+__all__ = ["SOPSConfigSectionSettingsSource", "SopsBaseSettings"]
