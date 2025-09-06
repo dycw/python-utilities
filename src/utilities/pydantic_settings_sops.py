@@ -7,6 +7,7 @@ from pydantic_settings_sops import SOPSConfigSettingsSource
 
 from utilities.pydantic_settings import (
     CustomBaseSettings,
+    PathLikeOrWithSection,
     _ensure_section,
     _get_section,
 )
@@ -17,14 +18,14 @@ if TYPE_CHECKING:
     from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
     from pydantic_settings.sources import PathType
 
-    from utilities.types import MaybeSequenceStr, PathLike
+    from utilities.types import MaybeSequenceStr
 
 
 class SopsBaseSettings(CustomBaseSettings):
     """Base settings for loading secrets using `sops/age`."""
 
     # paths
-    secret_files: ClassVar[Sequence[PathLike]] = ()
+    secret_files: ClassVar[Sequence[PathLikeOrWithSection]] = []
 
     @classmethod
     @override
