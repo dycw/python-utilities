@@ -31,9 +31,9 @@ class CustomBaseSettings(BaseSettings):
     """Base settings for loading JSON files."""
 
     # paths
-    json_files: ClassVar[Sequence[PathLike]] = []
+    json_files: ClassVar[Sequence[PathLikeOrWithSection]] = []
     toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = []
-    yaml_files: ClassVar[Sequence[PathLike]] = []
+    yaml_files: ClassVar[Sequence[PathLikeOrWithSection]] = []
 
     # config
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
@@ -61,25 +61,65 @@ class CustomBaseSettings(BaseSettings):
         /,
     ) -> Iterator[PydanticBaseSettingsSource]:
         yield env_settings
-        for file in cls.json_files:
-            yield JsonConfigSettingsSource(settings_cls, json_file=file)
-        for path_or_pair in cls.toml_files:
-            match path_or_pair:
-                case Path() | str() as file:
-                    yield TomlConfigSettingsSource(settings_cls, toml_file=file)
+        for json in cls.json_files:
+            match json:
+                case Path() | str():
+                    yield JsonConfigSettingsSource(settings_cls, json_file=json)
+                case Path() | str() as file, str() | list() | tuple() as section:
+                    yield JsonConfigSectionSettingsSource(
+                        settings_cls, json_file=file, section=section
+                    )
+                case never:
+                    assert_never(never)
+        for toml in cls.toml_files:
+            match toml:
+                case Path() | str():
+                    yield TomlConfigSettingsSource(settings_cls, toml_file=toml)
                 case Path() | str() as file, str() | list() | tuple() as section:
                     yield TomlConfigSectionSettingsSource(
                         settings_cls, toml_file=file, section=section
                     )
                 case never:
                     assert_never(never)
-        for file in cls.yaml_files:
-            yield YamlConfigSettingsSource(settings_cls, yaml_file=file)
+        for yaml in cls.yaml_files:
+            match yaml:
+                case Path() | str():
+                    yield YamlConfigSettingsSource(settings_cls, yaml_file=yaml)
+                case Path() | str() as file, str() | list() | tuple() as section:
+                    yield YamlConfigSectionSettingsSource(
+                        settings_cls, yaml_file=file, section=section
+                    )
+                case never:
+                    assert_never(never)
 
 
 def load_settings[T: BaseSettings](cls: type[T], /) -> T:
     """Load a set of settings."""
     return cls()
+
+
+class JsonConfigSectionSettingsSource(JsonConfigSettingsSource):
+    @override
+    def __init__(
+        self,
+        settings_cls: type[BaseSettings],
+        json_file: PathType | None = DEFAULT_PATH,
+        json_file_encoding: str | None = None,
+        *,
+        section: MaybeSequenceStr,
+    ) -> None:
+        super().__init__(
+            settings_cls, json_file=json_file, json_file_encoding=json_file_encoding
+        )
+        self.section = section
+
+    @override
+    def __call__(self) -> dict[str, Any]:
+        return reduce(
+            lambda acc, el: acc.get(el, {}),
+            always_iterable(self.section),
+            super().__call__(),
+        )
 
 
 class TomlConfigSectionSettingsSource(TomlConfigSettingsSource):
@@ -103,4 +143,38 @@ class TomlConfigSectionSettingsSource(TomlConfigSettingsSource):
         )
 
 
-__all__ = ["CustomBaseSettings", "TomlConfigSectionSettingsSource", "load_settings"]
+class YamlConfigSectionSettingsSource(YamlConfigSettingsSource):
+    @override
+    def __init__(
+        self,
+        settings_cls: type[BaseSettings],
+        yaml_file: PathType | None = DEFAULT_PATH,
+        yaml_file_encoding: str | None = None,
+        yaml_config_section: str | None = None,
+        *,
+        section: MaybeSequenceStr,
+    ) -> None:
+        super().__init__(
+            settings_cls,
+            yaml_file=yaml_file,
+            yaml_file_encoding=yaml_file_encoding,
+            yaml_config_section=yaml_config_section,
+        )
+        self.section = section
+
+    @override
+    def __call__(self) -> dict[str, Any]:
+        return reduce(
+            lambda acc, el: acc.get(el, {}),
+            always_iterable(self.section),
+            super().__call__(),
+        )
+
+
+__all__ = [
+    "CustomBaseSettings",
+    "JsonConfigSectionSettingsSource",
+    "TomlConfigSectionSettingsSource",
+    "YamlConfigSectionSettingsSource",
+    "load_settings",
+]
