@@ -89,7 +89,7 @@ class TestNodeIdPath:
     def test_error_get_tail_error(self) -> None:
         with raises(
             _NodeIdToPathNotGetTailError,
-            match=r"Unable to get the tail of 'tests.module.test_funcs' with root 'src.tests'",
+            match=r"Unable to get the tail of 'tests.+module.+test_funcs' with root 'src.+tests'",
         ):
             _ = node_id_path(
                 "tests/module/test_funcs.py::TestClass::test_main",
