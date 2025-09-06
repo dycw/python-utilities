@@ -4,22 +4,21 @@ from typing import TYPE_CHECKING, ClassVar, override
 
 from pydantic_settings_sops import SOPSConfigSettingsSource
 
-from utilities.iterables import always_iterable
 from utilities.pydantic_settings import CustomBaseSettings
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Sequence
 
     from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
 
-    from utilities.types import MaybeIterable, PathLike
+    from utilities.types import PathLike
 
 
 class SopsBaseSettings(CustomBaseSettings):
     """Base settings for loading secrets using `sops/age`."""
 
     # paths
-    secret_files: ClassVar[MaybeIterable[PathLike]] = ()
+    secret_files: ClassVar[Sequence[PathLike]] = ()
 
     @classmethod
     @override
@@ -30,7 +29,7 @@ class SopsBaseSettings(CustomBaseSettings):
         /,
     ) -> Iterator[PydanticBaseSettingsSource]:
         yield from super()._yield_base_settings_sources(settings_cls, env_settings)
-        for file in always_iterable(cls.secret_files):
+        for file in cls.secret_files:
             yield SOPSConfigSettingsSource(
                 settings_cls,  # pyright: ignore[reportArgumentType],
                 json_file=file,
