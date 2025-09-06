@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from pytest import fixture, mark, param, raises
 
+from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.iterables import one
 from utilities.os import temp_environ
 from utilities.pytest import (
@@ -86,11 +87,11 @@ class TestNodeIdPath:
         ):
             _ = node_id_path("src/tests/module/test_funcs.csv::TestClass::test_main")
 
+    @SKIPIF_CI_AND_WINDOWS
     def test_error_get_tail_error(self) -> None:
         with raises(
             _NodeIdToPathNotGetTailError,
-            match="Unable to get the tail of 'tests.module.test_funcs' with root 'src.tests'",
-            # note: use . due to / vs \\ difference
+            match="Unable to get the tail of 'tests/module/test_funcs' with root 'src/tests'",
         ):
             _ = node_id_path(
                 "tests/module/test_funcs.py::TestClass::test_main",
