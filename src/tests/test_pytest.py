@@ -51,19 +51,26 @@ class TestNodeIdPath:
         "node_id",
         [
             param("src/tests/module/test_funcs.py::TestClass::test_main"),
+            param("tests/module/test_funcs.py::TestClass::test_main"),
             param(
                 "python/package/src/tests/module/test_funcs.py::TestClass::test_main"
             ),
         ],
     )
     def test_root(self, *, node_id: str) -> None:
-        result = node_id_path(node_id, root="src/tests")
+        result = node_id_path(node_id, root="tests")
         expected = Path("module.test_funcs/TestClass__test_main")
         assert result == expected
 
-    def test_suffix(self) -> None:
-        node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
-        result = node_id_path(node_id, root="src/tests", suffix=".csv")
+    @mark.parametrize(
+        "node_id",
+        [
+            param("src/tests/module/test_funcs.py::TestClass::test_main"),
+            param("tests/module/test_funcs.py::TestClass::test_main"),
+        ],
+    )
+    def test_suffix(self, *, node_id: str) -> None:
+        result = node_id_path(node_id, root="tests", suffix=".csv")
         expected = Path("module.test_funcs/TestClass__test_main.csv")
         assert result == expected
 
