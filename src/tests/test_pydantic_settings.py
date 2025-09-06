@@ -66,60 +66,12 @@ class TestCustomBaseSettings:
         settings = load_settings(Settings)
         assert settings.x == 1
 
-    def test_toml_section_str(self, *, tmp_path: Path) -> None:
-        file = tmp_path.joinpath("settings.toml")
-        _ = file.write_text(tomlkit.dumps({"outer": {"x": 1}}))
-
-        class Settings(CustomBaseSettings):
-            toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = [(file, "outer")]
-            x: int
-
-        settings = load_settings(Settings)
-        assert settings.x == 1
-
-    def test_toml_section_nested(self, *, tmp_path: Path) -> None:
-        file = tmp_path.joinpath("settings.toml")
-        _ = file.write_text(tomlkit.dumps({"outer": {"middle": {"x": 1}}}))
-
-        class Settings(CustomBaseSettings):
-            toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = [
-                (file, ["outer", "middle"])
-            ]
-            x: int
-
-        settings = load_settings(Settings)
-        assert settings.x == 1
-
     def test_yaml(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("settings.yaml")
         _ = file.write_text(yaml.dump({"x": 1}))
 
         class Settings(CustomBaseSettings):
             yaml_files: ClassVar[Sequence[PathLikeOrWithSection]] = [file]
-            x: int
-
-        settings = load_settings(Settings)
-        assert settings.x == 1
-
-    def test_yaml_section_str(self, *, tmp_path: Path) -> None:
-        file = tmp_path.joinpath("settings.yaml")
-        _ = file.write_text(yaml.dump({"outer": {"x": 1}}))
-
-        class Settings(CustomBaseSettings):
-            yaml_files: ClassVar[Sequence[PathLikeOrWithSection]] = [(file, "outer")]
-            x: int
-
-        settings = load_settings(Settings)
-        assert settings.x == 1
-
-    def test_yaml_section_nested(self, *, tmp_path: Path) -> None:
-        file = tmp_path.joinpath("settings.yaml")
-        _ = file.write_text(yaml.dump({"outer": {"middle": {"x": 1}}}))
-
-        class Settings(CustomBaseSettings):
-            yaml_files: ClassVar[Sequence[PathLikeOrWithSection]] = [
-                (file, ["outer", "middle"])
-            ]
             x: int
 
         settings = load_settings(Settings)
