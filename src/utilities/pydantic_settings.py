@@ -14,8 +14,6 @@ from pydantic_settings import (
 )
 from pydantic_settings.sources import DEFAULT_PATH
 
-from utilities.iterables import always_iterable
-
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
@@ -24,7 +22,7 @@ if TYPE_CHECKING:
     from utilities.types import MaybeSequenceStr, PathLike
 
 
-type PathOrPathSection = PathLike | tuple[PathLike, MaybeSequenceStr]
+type PathLikeOrWithSection = PathLike | tuple[PathLike, MaybeSequenceStr]
 
 
 class CustomBaseSettings(BaseSettings):
@@ -32,7 +30,7 @@ class CustomBaseSettings(BaseSettings):
 
     # paths
     json_files: ClassVar[Sequence[PathLike]] = []
-    toml_files: ClassVar[Sequence[PathOrPathSection]] = []
+    toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = []
     yaml_files: ClassVar[Sequence[PathLike]] = []
 
     # config
@@ -61,9 +59,9 @@ class CustomBaseSettings(BaseSettings):
         /,
     ) -> Iterator[PydanticBaseSettingsSource]:
         yield env_settings
-        for file in always_iterable(cls.json_files):
+        for file in cls.json_files:
             yield JsonConfigSettingsSource(settings_cls, json_file=file)
-        for path_or_pair in always_iterable(cls.toml_files):
+        for path_or_pair in cls.toml_files:
             match path_or_pair:
                 case Path() | str() as file:
                     yield TomlConfigSettingsSource(settings_cls, toml_file=file)
@@ -73,7 +71,7 @@ class CustomBaseSettings(BaseSettings):
                     )
                 case never:
                     assert_never(never)
-        for file in always_iterable(cls.yaml_files):
+        for file in cls.yaml_files:
             yield YamlConfigSettingsSource(settings_cls, yaml_file=file)
 
 
