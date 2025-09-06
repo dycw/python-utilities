@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, override
+from functools import reduce
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, ClassVar, assert_never, override
 
 from pydantic_settings import (
     BaseSettings,
@@ -10,22 +12,28 @@ from pydantic_settings import (
     TomlConfigSettingsSource,
     YamlConfigSettingsSource,
 )
+from pydantic_settings.sources import DEFAULT_PATH
 
 from utilities.iterables import always_iterable
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Sequence
 
-    from utilities.types import MaybeIterable, PathLike
+    from pydantic_settings.sources import PathType
+
+    from utilities.types import MaybeSequenceStr, PathLike
+
+
+type PathOrPathSection = PathLike | tuple[PathLike, MaybeSequenceStr]
 
 
 class CustomBaseSettings(BaseSettings):
     """Base settings for loading JSON files."""
 
     # paths
-    json_files: ClassVar[MaybeIterable[PathLike]] = ()
-    toml_files: ClassVar[MaybeIterable[PathLike]] = ()
-    yaml_files: ClassVar[MaybeIterable[PathLike]] = ()
+    json_files: ClassVar[Sequence[PathLike]] = []
+    toml_files: ClassVar[Sequence[PathOrPathSection]] = []
+    yaml_files: ClassVar[Sequence[PathLike]] = []
 
     # config
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
@@ -55,8 +63,16 @@ class CustomBaseSettings(BaseSettings):
         yield env_settings
         for file in always_iterable(cls.json_files):
             yield JsonConfigSettingsSource(settings_cls, json_file=file)
-        for file in always_iterable(cls.toml_files):
-            yield TomlConfigSettingsSource(settings_cls, toml_file=file)
+        for path_or_pair in always_iterable(cls.toml_files):
+            match path_or_pair:
+                case Path() | str() as file:
+                    yield TomlConfigSettingsSource(settings_cls, toml_file=file)
+                case Path() | str() as file, str() | list() | tuple() as section:
+                    yield TomlConfigSectionSettingsSource(
+                        settings_cls, toml_file=file, section=section
+                    )
+                case never:
+                    assert_never(never)
         for file in always_iterable(cls.yaml_files):
             yield YamlConfigSettingsSource(settings_cls, yaml_file=file)
 
@@ -66,4 +82,28 @@ def load_settings[T: BaseSettings](cls: type[T], /) -> T:
     return cls()
 
 
-__all__ = ["CustomBaseSettings", "load_settings"]
+class TomlConfigSectionSettingsSource(TomlConfigSettingsSource):
+    @override
+    def __init__(
+        self,
+        settings_cls: type[BaseSettings],
+        toml_file: PathType | None = DEFAULT_PATH,
+        *,
+        section: MaybeSequenceStr,
+    ) -> None:
+        super().__init__(settings_cls, toml_file=toml_file)
+        self.section = section
+
+    @override
+    def __call__(self) -> dict[str, Any]:
+        result = super().__call__()
+        match self.section:
+            case str():
+                return result.get(self.section, {})
+            case list() | tuple() as path:
+                return reduce(lambda acc, el: acc.get(el, {}), path, result)
+            case never:
+                assert_never(never)
+
+
+__all__ = ["CustomBaseSettings", "TomlConfigSectionSettingsSource", "load_settings"]
