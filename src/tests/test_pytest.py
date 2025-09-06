@@ -9,7 +9,12 @@ from pytest import fixture, mark, param, raises
 
 from utilities.iterables import one
 from utilities.os import temp_environ
-from utilities.pytest import NodeIdToPathError, node_id_path, throttle
+from utilities.pytest import (
+    _NodeIdToPathNotGetTailError,
+    _NodeIdToPathNotPythonFileError,
+    node_id_path,
+    throttle,
+)
 
 if TYPE_CHECKING:
     from _pytest.legacypath import Testdir
@@ -74,9 +79,22 @@ class TestNodeIdPath:
         expected = Path("module.test_funcs/TestClass__test_main.csv")
         assert result == expected
 
-    def test_error_file_suffix(self) -> None:
-        with raises(NodeIdToPathError, match="Node ID must be a Python file; got .*"):
+    def test_error_not_python_file(self) -> None:
+        with raises(
+            _NodeIdToPathNotPythonFileError,
+            match="Node ID must be a Python file; got .*",
+        ):
             _ = node_id_path("src/tests/module/test_funcs.csv::TestClass::test_main")
+
+    def test_error_get_tail_error(self) -> None:
+        with raises(
+            _NodeIdToPathNotGetTailError,
+            match="Unable to get the tail of 'tests/module/test_funcs' with root 'src/tests'",
+        ):
+            _ = node_id_path(
+                "tests/module/test_funcs.py::TestClass::test_main",
+                root=Path("src", "tests"),
+            )
 
 
 class TestPytestOptions:

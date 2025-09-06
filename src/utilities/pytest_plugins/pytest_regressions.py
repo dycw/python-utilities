@@ -41,13 +41,13 @@ else:
 
 def _get_path(request: FixtureRequest, /) -> Path:
     from utilities.pathlib import get_root
-    from utilities.pytest import node_id_path
+    from utilities.pytest import _NodeIdToPathNotGetTailError, node_id_path
 
     path = Path(cast("Any", request).fspath)
     root = Path("src", "tests")
     try:
         tail = node_id_path(request.node.nodeid, root=root)
-    except ValueError:
+    except _NodeIdToPathNotGetTailError:
         root = Path("tests")
         tail = node_id_path(request.node.nodeid, root=root)
     return get_root(path).joinpath(root, "regressions", tail)
