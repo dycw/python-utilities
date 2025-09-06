@@ -13,9 +13,10 @@ from utilities.pydantic_settings_sops import SopsBaseSettings
 from utilities.re import extract_group
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
 
-    from utilities.types import MaybeIterable, PathLike
+    from utilities.types import PathLike
 
 
 class TestSOPSBaseSettings:
@@ -39,7 +40,7 @@ class TestSOPSBaseSettings:
             _ = check_call(["sops", "encrypt", str(unencrypted_file)], stdout=file)
 
         class Settings(SopsBaseSettings):
-            secret_files: ClassVar[MaybeIterable[PathLike]] = encrypted_file
+            secret_files: ClassVar[Sequence[PathLike]] = [encrypted_file]
             x: int
             y: int
 
