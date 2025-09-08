@@ -13,8 +13,6 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           cache: pip
-      - run: pip install bump-my-version
-      - run: git fetch origin master:refs/remotes/origin/master
       - run: curl -fsSL https://raw.githubusercontent.com/dycw/remote-scripts/refs/heads/master/scripts/check-version-bumped | sh -s
 
   ruff:
