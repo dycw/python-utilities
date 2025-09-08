@@ -6,11 +6,22 @@ on:
       - master
 
 jobs:
+  check-version-bumped:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          cache: pip
+      - run: pip install bump-my-version
+      - run: git fetch origin master:refs/remotes/origin/master
+      - run: curl -fsSL https://raw.githubusercontent.com/dycw/remote-scripts/refs/heads/master/scripts/check-version-bumped | sh -s
+
   ruff:
     name: ruff
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: astral-sh/ruff-action@v3
       - run: ruff check --fix
       - run: ruff format
@@ -19,9 +30,7 @@ jobs:
     name: pyright
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -43,9 +52,7 @@ jobs:
         os: [windows-latest, macos-latest]
         version: ["3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -72,7 +79,7 @@ jobs:
       matrix:
         version: ["3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@v6

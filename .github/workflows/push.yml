@@ -9,7 +9,7 @@ jobs:
   tag:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: butlerlogic/action-autotag@1.1.2 # https://github.com/ButlerLogic/action-autotag/issues/45#issuecomment-1825726927
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
@@ -27,7 +27,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
