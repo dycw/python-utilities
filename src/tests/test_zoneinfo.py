@@ -67,7 +67,7 @@ class TestToZoneInfo:
 
     @given(date_time=datetimes())
     def test_error_plain_date_time(self, *, date_time: dt.datetime) -> None:
-        with raises(_ToZoneInfoPlainDateTimeError, match="Plain date-time: .*"):
+        with raises(_ToZoneInfoPlainDateTimeError, match=r"Plain date-time: .*"):
             _ = to_zone_info(date_time)
 
 
@@ -116,12 +116,12 @@ class TestToTimeZoneName:
 
     def test_error_invalid_tz_info(self) -> None:
         time_zone = dt.timezone(dt.timedelta(hours=12))
-        with raises(_ToTimeZoneNameInvalidTZInfoError, match="Invalid time-zone: .*"):
+        with raises(_ToTimeZoneNameInvalidTZInfoError, match=r"Invalid time-zone: .*"):
             _ = to_time_zone_name(time_zone)
 
     @given(date_time=datetimes())
     def test_error_plain_date_time(self, *, date_time: dt.datetime) -> None:
-        with raises(_ToTimeZoneNamePlainDateTimeError, match="Plain date-time: .*"):
+        with raises(_ToTimeZoneNamePlainDateTimeError, match=r"Plain date-time: .*"):
             _ = to_time_zone_name(date_time)
 
 
