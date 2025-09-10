@@ -12,7 +12,7 @@ from redis.asyncio import Redis
 from utilities.asyncio import sleep_td, timeout_td
 from utilities.contextlib import enhanced_async_context_manager
 from utilities.iterables import always_iterable
-from utilities.whenever import MILLISECOND, SECOND, to_seconds
+from utilities.whenever import MILLISECOND, SECOND, to_nanoseconds
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterable
@@ -63,7 +63,7 @@ async def yield_access(
         AIORedlock(
             key=f"{key}_{i}_of_{num}",
             masters=masters,
-            auto_release_time=to_seconds(timeout_release),
+            auto_release_time=to_nanoseconds(timeout_release) / 1e9,
             num_extensions=maxsize if num_extensions is None else num_extensions,
         )
         for i in range(1, num + 1)
