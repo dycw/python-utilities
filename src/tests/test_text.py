@@ -85,7 +85,7 @@ class TestParseBool:
         ],
     )
     def test_error(self, *, text: str) -> None:
-        with raises(ParseBoolError, match="Unable to parse boolean value; got '.*'"):
+        with raises(ParseBoolError, match=r"Unable to parse boolean value; got '.*'"):
             _ = parse_bool(text)
 
 
@@ -99,7 +99,7 @@ class TestParseNone:
 
     @mark.parametrize("text", [param("invalid"), param("nnonee")])
     def test_error(self, *, text: str) -> None:
-        with raises(ParseNoneError, match="Unable to parse null value; got '.*'"):
+        with raises(ParseNoneError, match=r"Unable to parse null value; got '.*'"):
             _ = parse_none(text)
 
 

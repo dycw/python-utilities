@@ -291,7 +291,7 @@ class TestDatePeriod:
     @given(dates=pairs(dates(), unique=True, sorted=True))
     def test_error_period_invalid(self, *, dates: tuple[Date, Date]) -> None:
         start, end = dates
-        with raises(DatePeriodError, match="Invalid period; got .* > .*"):
+        with raises(DatePeriodError, match=r"Invalid period; got .* > .*"):
             _ = DatePeriod(end, start)
 
 
@@ -543,12 +543,12 @@ class TestMinMax:
 
     def test_date_delta_parsable_min(self) -> None:
         self._format_parse_date_delta(DATE_DELTA_PARSABLE_MIN)
-        with raises(ValueError, match="Invalid format: '.*'"):
+        with raises(ValueError, match=r"Invalid format: '.*'"):
             self._format_parse_date_delta(DATE_DELTA_PARSABLE_MIN - DateDelta(days=1))
 
     def test_date_delta_parsable_max(self) -> None:
         self._format_parse_date_delta(DATE_DELTA_PARSABLE_MAX)
-        with raises(ValueError, match="Invalid format: '.*'"):
+        with raises(ValueError, match=r"Invalid format: '.*'"):
             self._format_parse_date_delta(DATE_DELTA_PARSABLE_MAX + DateDelta(days=1))
 
     def test_date_time_delta_min(self) -> None:
@@ -564,13 +564,13 @@ class TestMinMax:
     def test_date_time_delta_parsable_min(self) -> None:
         self._format_parse_date_time_delta(DATE_TIME_DELTA_PARSABLE_MIN)
         nanos = to_nanoseconds(DATE_TIME_DELTA_PARSABLE_MIN)
-        with raises(ValueError, match="Invalid format or out of range: '.*'"):
+        with raises(ValueError, match=r"Invalid format or out of range: '.*'"):
             self._format_parse_date_time_delta(to_date_time_delta(nanos - 1))
 
     def test_date_time_delta_parsable_max(self) -> None:
         self._format_parse_date_time_delta(DATE_TIME_DELTA_PARSABLE_MAX)
         nanos = to_nanoseconds(DATE_TIME_DELTA_PARSABLE_MAX)
-        with raises(ValueError, match="Invalid format or out of range: '.*'"):
+        with raises(ValueError, match=r"Invalid format or out of range: '.*'"):
             _ = self._format_parse_date_time_delta(to_date_time_delta(nanos + 1))
 
     def test_plain_date_time_min(self) -> None:
@@ -648,7 +648,7 @@ class TestMinMaxDate:
     def test_error_period(self, *, dates: tuple[Date, Date]) -> None:
         with raises(
             _MinMaxDatePeriodError,
-            match="Min date must be at most max date; got .* > .*",
+            match=r"Min date must be at most max date; got .* > .*",
         ):
             _ = min_max_date(min_date=dates[1], max_date=dates[0])
 
@@ -820,7 +820,7 @@ class TestRoundDateOrDateTime:
     def test_error_date_with_intraday_delta(self) -> None:
         with raises(
             _RoundDateOrDateTimeDateWithIntradayDeltaError,
-            match="Dates must not be given intraday durations; got .* and PT1S",
+            match=r"Dates must not be given intraday durations; got .* and PT1S",
         ):
             _ = round_date_or_date_time(TODAY_UTC, SECOND)
 
@@ -966,7 +966,7 @@ class TestToDays:
     def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToDaysNanosecondsError,
-            match="Delta must not contain extra nanoseconds; got .*",
+            match=r"Delta must not contain extra nanoseconds; got .*",
         ):
             _ = to_days(delta)
 
@@ -1012,7 +1012,7 @@ class TestToHours:
     def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToHoursNanosecondsError,
-            match="Delta must not contain extra nanoseconds; got .*",
+            match=r"Delta must not contain extra nanoseconds; got .*",
         ):
             _ = to_hours(delta)
 
@@ -1060,7 +1060,7 @@ class TestToMicroseconds:
     def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToMicrosecondsNanosecondsError,
-            match="Delta must not contain extra nanoseconds; got .*",
+            match=r"Delta must not contain extra nanoseconds; got .*",
         ):
             _ = to_microseconds(delta)
 
@@ -1108,7 +1108,7 @@ class TestToMilliseconds:
     def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToMillisecondsNanosecondsError,
-            match="Delta must not contain extra nanoseconds; got .*",
+            match=r"Delta must not contain extra nanoseconds; got .*",
         ):
             _ = to_milliseconds(delta)
 
@@ -1156,7 +1156,7 @@ class TestToMinutes:
     def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToMinutesNanosecondsError,
-            match="Delta must not contain extra nanoseconds; got .*",
+            match=r"Delta must not contain extra nanoseconds; got .*",
         ):
             _ = to_minutes(delta)
 
@@ -1182,7 +1182,7 @@ class TestToMonths:
     def test_error_date_time_delta_time(self) -> None:
         delta = DateTimeDelta(nanoseconds=1)
         with raises(
-            _ToMonthsTimeError, match="Delta must not contain a time part; got .*"
+            _ToMonthsTimeError, match=r"Delta must not contain a time part; got .*"
         ):
             _ = to_months(delta)
 
@@ -1209,7 +1209,7 @@ class TestToMonthsAndDays:
     def test_error_date_time_delta_time(self) -> None:
         delta = DateTimeDelta(nanoseconds=1)
         with raises(
-            ToMonthsAndDaysError, match="Delta must not contain a time part; got .*"
+            ToMonthsAndDaysError, match=r"Delta must not contain a time part; got .*"
         ):
             _ = to_months_and_days(delta)
 
@@ -1329,7 +1329,7 @@ class TestToSeconds:
     def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToSecondsNanosecondsError,
-            match="Delta must not contain extra nanoseconds; got .*",
+            match=r"Delta must not contain extra nanoseconds; got .*",
         ):
             _ = to_seconds(delta)
 
@@ -1432,7 +1432,7 @@ class TestToWeeks:
     def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
         with raises(
             _ToWeeksNanosecondsError,
-            match="Delta must not contain extra nanoseconds; got .*",
+            match=r"Delta must not contain extra nanoseconds; got .*",
         ):
             _ = to_weeks(delta)
 
@@ -1466,7 +1466,7 @@ class TestToYears:
     def test_error_date_time_delta_time(self) -> None:
         delta = DateTimeDelta(nanoseconds=1)
         with raises(
-            _ToYearsTimeError, match="Delta must not contain a time part; got .*"
+            _ToYearsTimeError, match=r"Delta must not contain a time part; got .*"
         ):
             _ = to_years(delta)
 
@@ -1779,7 +1779,7 @@ class TestZonedDateTimePeriod:
     ) -> None:
         start, end = datetimes
         with raises(
-            _ZonedDateTimePeriodInvalidError, match="Invalid period; got .* > .*"
+            _ZonedDateTimePeriodInvalidError, match=r"Invalid period; got .* > .*"
         ):
             _ = ZonedDateTimePeriod(end, start)
 
@@ -1793,7 +1793,7 @@ class TestZonedDateTimePeriod:
             end = (plain_end + DAY).assume_tz(USEastern.key)
         with raises(
             _ZonedDateTimePeriodTimeZoneError,
-            match="Period must contain exactly one time zone; got .* and .*",
+            match=r"Period must contain exactly one time zone; got .* and .*",
         ):
             _ = ZonedDateTimePeriod(start, end)
 
