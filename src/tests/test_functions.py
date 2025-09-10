@@ -265,11 +265,11 @@ class TestEnsureNotNone:
         assert result == 0
 
     def test_error(self) -> None:
-        with raises(EnsureNotNoneError, match="Object must not be None"):
+        with raises(EnsureNotNoneError, match=r"Object must not be None"):
             _ = ensure_not_none(None)
 
     def test_error_with_desc(self) -> None:
-        with raises(EnsureNotNoneError, match="Name must not be None"):
+        with raises(EnsureNotNoneError, match=r"Name must not be None"):
             _ = ensure_not_none(None, desc="Name")
 
 
@@ -654,14 +654,14 @@ class TestMinMaxNullable:
     @given(nones=lists(none()))
     def test_error_min_nullable(self, *, nones: list[None]) -> None:
         with raises(
-            MinNullableError, match="Minimum of an all-None iterable is undefined"
+            MinNullableError, match=r"Minimum of an all-None iterable is undefined"
         ):
             _ = min_nullable(nones)
 
     @given(nones=lists(none()))
     def test_error_max_nullable(self, *, nones: list[None]) -> None:
         with raises(
-            MaxNullableError, match="Maximum of an all-None iterable is undefined"
+            MaxNullableError, match=r"Maximum of an all-None iterable is undefined"
         ):
             max_nullable(nones)
 

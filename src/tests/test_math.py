@@ -112,7 +112,7 @@ class TestCheckInteger:
         check_integer(0, equal=0)
 
     def test_equal_fail(self) -> None:
-        with raises(CheckIntegerError, match="Integer must be equal to .*; got .*"):
+        with raises(CheckIntegerError, match=r"Integer must be equal to .*; got .*"):
             check_integer(0, equal=1)
 
     @given(equal_or_approx=sampled_from([10, (11, 0.1)]))
@@ -141,14 +141,14 @@ class TestCheckInteger:
         check_integer(0, min=0)
 
     def test_min_error(self) -> None:
-        with raises(CheckIntegerError, match="Integer must be at least .*; got .*"):
+        with raises(CheckIntegerError, match=r"Integer must be at least .*; got .*"):
             check_integer(0, min=1)
 
     def test_max_pass(self) -> None:
         check_integer(0, max=1)
 
     def test_max_error(self) -> None:
-        with raises(CheckIntegerError, match="Integer must be at most .*; got .*"):
+        with raises(CheckIntegerError, match=r"Integer must be at most .*; got .*"):
             check_integer(1, max=0)
 
 
@@ -905,7 +905,7 @@ class TestParseNumber:
         assert result == number
 
     def test_error(self) -> None:
-        with raises(ParseNumberError, match="Unable to parse number; got 'invalid'"):
+        with raises(ParseNumberError, match=r"Unable to parse number; got 'invalid'"):
             _ = parse_number("invalid")
 
 

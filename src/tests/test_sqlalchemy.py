@@ -337,35 +337,37 @@ class TestExtractURL:
     def test_username(self, *, url: URL) -> None:
         with raises(
             _ExtractURLUsernameError,
-            match="Expected URL to contain a user name; got .*",
+            match=r"Expected URL to contain a user name; got .*",
         ):
             _ = extract_url(url)
 
     @given(url=urls(username=True, password=False))
     def test_password(self, *, url: URL) -> None:
         with raises(
-            _ExtractURLPasswordError, match="Expected URL to contain a password; got .*"
+            _ExtractURLPasswordError,
+            match=r"Expected URL to contain a password; got .*",
         ):
             _ = extract_url(url)
 
     @given(url=urls(username=True, password=True, host=False))
     def test_host(self, *, url: URL) -> None:
         with raises(
-            _ExtractURLHostError, match="Expected URL to contain a host; got .*"
+            _ExtractURLHostError, match=r"Expected URL to contain a host; got .*"
         ):
             _ = extract_url(url)
 
     @given(url=urls(username=True, password=True, host=True, port=False))
     def test_port(self, *, url: URL) -> None:
         with raises(
-            _ExtractURLPortError, match="Expected URL to contain a port; got .*"
+            _ExtractURLPortError, match=r"Expected URL to contain a port; got .*"
         ):
             _ = extract_url(url)
 
     @given(url=urls(username=True, password=True, host=True, port=True, database=False))
     def test_database(self, *, url: URL) -> None:
         with raises(
-            _ExtractURLDatabaseError, match="Expected URL to contain a database; got .*"
+            _ExtractURLDatabaseError,
+            match=r"Expected URL to contain a database; got .*",
         ):
             _ = extract_url(url)
 
@@ -534,7 +536,7 @@ class TestGetTable:
 
     def test_error(self) -> None:
         with raises(
-            GetTableError, match="Object .* must be a Table or mapped class; got .*"
+            GetTableError, match=r"Object .* must be a Table or mapped class; got .*"
         ):
             _ = get_table(cast("Any", type(None)))
 
@@ -859,7 +861,8 @@ class TestInsertItems:
     ) -> None:
         table = self._make_table()
         with raises(
-            (OperationalError, ProgrammingError), match="(no such table|does not exist)"
+            (OperationalError, ProgrammingError),
+            match=r"(no such table|does not exist)",
         ):
             await insert_items(
                 test_async_engine, ({"id_": id_}, table), assume_tables_exist=True
@@ -1014,7 +1017,7 @@ class TestInsertItems:
         ],
     )
     def test_errors(self, *, item: Any) -> None:
-        with raises(InsertItemsError, match="Item must be valid; got .*"):
+        with raises(InsertItemsError, match=r"Item must be valid; got .*"):
             _ = list(_insert_items_yield_normalized(item))
 
     # private

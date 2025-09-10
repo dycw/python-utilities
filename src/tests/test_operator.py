@@ -121,7 +121,7 @@ class TestIsEqual:
         assert result is expected
 
     def test_extra_but_no_match(self) -> None:
-        with raises(ValueError, match="DataFrame columns do not match"):
+        with raises(ValueError, match=r"DataFrame columns do not match"):
             _ = utilities.operator.is_equal(
                 DataFrame(), DataFrame(schema={"value": Int64}), extra={}
             )

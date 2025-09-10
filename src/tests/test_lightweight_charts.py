@@ -51,7 +51,7 @@ class TestSetDataFrame:
         df = df.drop("date")
         with raises(
             _SetDataFrameEmptyError,
-            match="At least 1 column must be of date/datetime type; got 0",
+            match=r"At least 1 column must be of date/datetime type; got 0",
         ):
             set_dataframe(df, cast("Chart", None))
 

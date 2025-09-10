@@ -208,7 +208,7 @@ class TestParseEnum:
             false2 = auto()
 
         truth: Truth1 = data.draw(sampled_from(Truth1))
-        with raises(_EnsureEnumTypeEnumError, match=".* is not an instance of .*"):
+        with raises(_EnsureEnumTypeEnumError, match=r".* is not an instance of .*"):
             _ = ensure_enum(truth, Truth2)
 
     def test_error_ensure_parse(self) -> None:
@@ -217,6 +217,6 @@ class TestParseEnum:
             false = auto()
 
         with raises(
-            _EnsureEnumParseError, match="Unable to ensure enum; got 'invalid'"
+            _EnsureEnumParseError, match=r"Unable to ensure enum; got 'invalid'"
         ):
             _ = ensure_enum("invalid", Truth)

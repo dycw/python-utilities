@@ -580,7 +580,7 @@ class TestSerializeAndDeserialize:
         ser = serialize(obj)
         with raises(
             _DeserializeNoObjectsError,
-            match="Objects required to deserialize '.*' from .*",
+            match=r"Objects required to deserialize '.*' from .*",
         ):
             _ = deserialize(ser)
 
@@ -601,7 +601,7 @@ class TestSerializeAndDeserialize:
     def test_deserialize_hook(self) -> None:
         obj = DataClassFutureDefaultInInitChild()
         ser = serialize(obj)
-        with raises(TypeError, match="got an unexpected keyword argument 'int_'"):
+        with raises(TypeError, match=r"got an unexpected keyword argument 'int_'"):
             _ = deserialize(ser, objects={DataClassFutureDefaultInInitChild})
 
         def hook(cls: type[Dataclass], mapping: StrMapping, /) -> StrMapping:
@@ -742,7 +742,7 @@ class TestSerialize:
 
     @given(x=sampled_from([MIN_INT64 - 1, MAX_INT64 + 1]))
     def test_pre_process(self, *, x: int) -> None:
-        with raises(_SerializeIntegerError, match="Integer .* is out of range"):
+        with raises(_SerializeIntegerError, match=r"Integer .* is out of range"):
             _ = serialize(x)
 
     def test_zoned_date_time_period(self) -> None:
@@ -755,7 +755,7 @@ class TestSerialize:
 class TestDeserialize:
     def test_error_invalid_json(self) -> None:
         with raises(
-            _DeserializeInvalidJSONError, match="Invalid JSON: b'invalid json'"
+            _DeserializeInvalidJSONError, match=r"Invalid JSON: b'invalid json'"
         ):
             _ = deserialize(b"invalid json")
 
@@ -777,7 +777,7 @@ class TestObjectHookGetObject:
     def test_error_no_objects(self) -> None:
         with raises(
             _DeserializeNoObjectsError,
-            match="Objects required to deserialize 'qualname' from .*",
+            match=r"Objects required to deserialize 'qualname' from .*",
         ):
             _ = _object_hook_get_object("qualname")
 

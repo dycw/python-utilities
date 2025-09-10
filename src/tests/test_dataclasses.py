@@ -412,7 +412,7 @@ class TestMappingToDataClass:
     def test_error_missing_values(self) -> None:
         with raises(
             _MappingToDataClassMissingValuesError,
-            match="Unable to construct 'DataClassFutureInt'; missing values for 'int_'",
+            match=r"Unable to construct 'DataClassFutureInt'; missing values for 'int_'",
         ):
             _ = mapping_to_dataclass(DataClassFutureInt, {})
 
@@ -600,7 +600,7 @@ class TestSerializeAndParseDataClass:
     def test_parser_split_key_value_pairs_split(self) -> None:
         with raises(
             _ParseDataClassSplitKeyValuePairsSplitError,
-            match="Unable to construct 'DataClassFutureInt'; failed to split key-value pair 'bbb'",
+            match=r"Unable to construct 'DataClassFutureInt'; failed to split key-value pair 'bbb'",
         ):
             _ = parse_dataclass("a=1,bbb,c=333", DataClassFutureInt)
 
@@ -614,14 +614,14 @@ class TestSerializeAndParseDataClass:
     def test_error_text_parse(self) -> None:
         with raises(
             _ParseDataClassTextParseError,
-            match="Unable to construct 'DataClassFutureInt' since the field 'int_' of type <class 'int'> could not be parsed; got 'invalid'",
+            match=r"Unable to construct 'DataClassFutureInt' since the field 'int_' of type <class 'int'> could not be parsed; got 'invalid'",
         ):
             _ = parse_dataclass("int_=invalid", DataClassFutureInt)
 
     def test_error_text_extra_non_unique(self) -> None:
         with raises(
             _ParseDataClassTextExtraNonUniqueError,
-            match="Unable to construct 'DataClassFutureInt' since the field 'int_' of type <class 'int'> must contain exactly one parent class in `extra`; got <class 'int'>, <class 'int'> and perhaps more",
+            match=r"Unable to construct 'DataClassFutureInt' since the field 'int_' of type <class 'int'> must contain exactly one parent class in `extra`; got <class 'int'>, <class 'int'> and perhaps more",
         ):
             _ = parse_dataclass(
                 "int_=0",
@@ -699,7 +699,7 @@ class TestSerializeAndParseDataClass:
     def test_error_missing_values(self) -> None:
         with raises(
             _ParseDataClassMissingValuesError,
-            match="Unable to construct 'DataClassFutureInt'; missing values for 'int_'",
+            match=r"Unable to construct 'DataClassFutureInt'; missing values for 'int_'",
         ):
             _ = parse_dataclass("", DataClassFutureInt)
 
@@ -1007,6 +1007,6 @@ class TestYieldFields:
     def test_error(self) -> None:
         with raises(
             YieldFieldsError,
-            match="Object must be a dataclass instance or class; got None",
+            match=r"Object must be a dataclass instance or class; got None",
         ):
             _ = list(yield_fields(cast("Any", None)))

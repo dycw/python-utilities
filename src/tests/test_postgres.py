@@ -110,7 +110,7 @@ class TestResolveDataOnlyAndClean:
     def test_erorr(self) -> None:
         with raises(
             _ResolveDataOnlyAndCleanError,
-            match="Cannot use '--data-only' and '--clean' together",
+            match=r"Cannot use '--data-only' and '--clean' together",
         ):
             _ = _resolve_data_only_and_clean(data_only=True, clean=True)
 

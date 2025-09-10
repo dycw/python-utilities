@@ -238,5 +238,5 @@ class TestSuppressSuperObjectAttributeError:
             def __post_init__(self) -> None:
                 super().__post_init__()
 
-        with raises(AttributeError, match="'Child' object has no attribute 'error'"):
+        with raises(AttributeError, match=r"'Child' object has no attribute 'error'"):
             _ = Child()

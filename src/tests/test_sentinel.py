@@ -36,7 +36,7 @@ class TestParseSentinel:
     @given(text=sampled_from(["invalid", "ssentinell"]))
     def test_error(self, *, text: str) -> None:
         with raises(
-            ParseSentinelError, match="Unable to parse sentinel value; got '.*'"
+            ParseSentinelError, match=r"Unable to parse sentinel value; got '.*'"
         ):
             _ = parse_sentinel(text)
 

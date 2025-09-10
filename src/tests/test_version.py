@@ -31,7 +31,7 @@ class TestParseVersion:
         assert parsed == version
 
     def test_error(self) -> None:
-        with raises(ParseVersionError, match="Invalid version string: 'invalid'"):
+        with raises(ParseVersionError, match=r"Invalid version string: 'invalid'"):
             _ = parse_version("invalid")
 
 
@@ -91,7 +91,7 @@ class TestVersion:
 
     def test_error_zero(self) -> None:
         with raises(
-            _VersionZeroError, match="Version must be greater than zero; got 0.0.0"
+            _VersionZeroError, match=r"Version must be greater than zero; got 0\.0\.0"
         ):
             _ = Version(0, 0, 0)
 
@@ -99,7 +99,7 @@ class TestVersion:
     def test_error_negative_major_version(self, *, major: int) -> None:
         with raises(
             _VersionNegativeMajorVersionError,
-            match="Major version must be non-negative; got .*",
+            match=r"Major version must be non-negative; got .*",
         ):
             _ = Version(major=major)
 
@@ -107,7 +107,7 @@ class TestVersion:
     def test_error_negative_minor_version(self, *, minor: int) -> None:
         with raises(
             _VersionNegativeMinorVersionError,
-            match="Minor version must be non-negative; got .*",
+            match=r"Minor version must be non-negative; got .*",
         ):
             _ = Version(minor=minor)
 
@@ -115,12 +115,14 @@ class TestVersion:
     def test_error_negative_patch_version(self, *, patch: int) -> None:
         with raises(
             _VersionNegativePatchVersionError,
-            match="Patch version must be non-negative; got .*",
+            match=r"Patch version must be non-negative; got .*",
         ):
             _ = Version(patch=patch)
 
     def test_error_empty_suffix(self) -> None:
-        with raises(_VersionEmptySuffixError, match="Suffix must be non-empty; got .*"):
+        with raises(
+            _VersionEmptySuffixError, match=r"Suffix must be non-empty; got .*"
+        ):
             _ = Version(suffix="")
 
 

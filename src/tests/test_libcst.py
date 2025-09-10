@@ -135,7 +135,7 @@ class TestParseImport:
         alias = ImportAlias(name=Name("foo"))
         imp = ImportFrom(module=None, names=[alias], relative=[Dot()])
         with raises(
-            _ParseImportEmptyModuleError, match="Module must not be None; got .*"
+            _ParseImportEmptyModuleError, match=r"Module must not be None; got .*"
         ):
             _ = parse_import(imp)
 

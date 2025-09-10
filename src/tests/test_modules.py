@@ -63,7 +63,7 @@ class TestYieldModules:
         )
 
     def test_error(self) -> None:
-        with raises(ModuleNotFoundError, match="No module named 'missing_package'"):
+        with raises(ModuleNotFoundError, match=r"No module named 'missing_package'"):
             _ = list(yield_modules(package_missing, recursive=True))
 
 

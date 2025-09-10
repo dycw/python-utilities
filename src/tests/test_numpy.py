@@ -324,7 +324,7 @@ class TestBoxCar:
         x = linspace(0, 2 * pi, n)
         with raises(
             _BoxCarLocationsError,
-            match="Location parameters must be consistent; got 1.0 and -1.0",
+            match=r"Location parameters must be consistent; got 1.0 and -1.0",
         ):
             _ = boxcar(x, loc_low=1.0, loc_high=-1.0)
 
@@ -333,7 +333,7 @@ class TestBoxCar:
         x = linspace(0, 2 * pi, n)
         with raises(
             _BoxCarLowerBoundSlopeError,
-            match="Lower-bound slope parameter must be positive; got 0.0",
+            match=r"Lower-bound slope parameter must be positive; got 0.0",
         ):
             _ = boxcar(x, slope_low=0.0)
 
@@ -342,7 +342,7 @@ class TestBoxCar:
         x = linspace(0, 2 * pi, n)
         with raises(
             _BoxCarUpperBoundSlopeError,
-            match="Upper-bound slope parameter must be positive; got 0.0",
+            match=r"Upper-bound slope parameter must be positive; got 0.0",
         ):
             _ = boxcar(x, slope_high=0.0)
 
@@ -1136,7 +1136,7 @@ class TestShift:
 
     def test_error(self) -> None:
         arr = array([], dtype=float)
-        with raises(ShiftError, match="Shift must be non-zero"):
+        with raises(ShiftError, match=r"Shift must be non-zero"):
             _ = shift(arr, n=0)
 
 
@@ -1174,5 +1174,5 @@ class TestSigmoid:
     def test_error(self) -> None:
         n = 1000
         x = linspace(0, 2 * pi, n)
-        with raises(SigmoidError, match="Slope must be non-zero"):
+        with raises(SigmoidError, match=r"Slope must be non-zero"):
             _ = sigmoid(x, slope=0.0)

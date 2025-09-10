@@ -82,7 +82,7 @@ class TestNodeIdPath:
     def test_error_not_python_file(self) -> None:
         with raises(
             _NodeIdToPathNotPythonFileError,
-            match="Node ID must be a Python file; got .*",
+            match=r"Node ID must be a Python file; got .*",
         ):
             _ = node_id_path("src/tests/module/test_funcs.csv::TestClass::test_main")
 

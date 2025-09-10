@@ -423,7 +423,7 @@ class TestAppendRow:
 
     def test_error_predicate(self) -> None:
         row = {"x": 3}
-        with raises(_AppendRowPredicateError, match="Predicate failed; got {'x': 3}"):
+        with raises(_AppendRowPredicateError, match=r"Predicate failed; got {'x': 3}"):
             _ = append_row(self.df, row, predicate=lambda row: "y" in row)
 
     def test_error_disallow_extra(self) -> None:
@@ -549,7 +549,7 @@ class TestBooleanValueCounts:
 
     def test_error(self) -> None:
         with raises(
-            BooleanValueCountsError, match="Column 'z' must be Boolean; got Int64"
+            BooleanValueCountsError, match=r"Column 'z' must be Boolean; got Int64"
         ):
             _ = boolean_value_counts(self.df, col("x").cast(Int64).alias("z"))
 
@@ -567,7 +567,7 @@ class TestCheckPolarsDataFrame:
         df = DataFrame()
         with raises(
             _CheckPolarsDataFrameColumnsError,
-            match="DataFrame must have columns .*; got .*:\n\n.*",
+            match=r"DataFrame must have columns .*; got .*:\n\n.*",
         ):
             check_polars_dataframe(df, columns=["value"])
 
@@ -579,7 +579,7 @@ class TestCheckPolarsDataFrame:
         df = DataFrame()
         with raises(
             _CheckPolarsDataFrameDTypesError,
-            match="DataFrame must have dtypes .*; got .*\n\n.*",
+            match=r"DataFrame must have dtypes .*; got .*\n\n.*",
         ):
             check_polars_dataframe(df, dtypes=[Float64])
 
@@ -591,7 +591,7 @@ class TestCheckPolarsDataFrame:
         df = DataFrame(data={"value": [0.0]})
         with raises(
             _CheckPolarsDataFrameHeightError,
-            match="DataFrame must satisfy the height requirements; got .*:\n\n.*",
+            match=r"DataFrame must satisfy the height requirements; got .*:\n\n.*",
         ):
             check_polars_dataframe(df, height=2)
 
@@ -603,7 +603,7 @@ class TestCheckPolarsDataFrame:
         df = DataFrame()
         with raises(
             _CheckPolarsDataFrameHeightError,
-            match="DataFrame must satisfy the height requirements; got .*:\n\n.*",
+            match=r"DataFrame must satisfy the height requirements; got .*:\n\n.*",
         ):
             check_polars_dataframe(df, min_height=1)
 
@@ -615,7 +615,7 @@ class TestCheckPolarsDataFrame:
         df = DataFrame(data={"value": [0.0, 1.0]})
         with raises(
             _CheckPolarsDataFrameHeightError,
-            match="DataFrame must satisfy the height requirements; got .*:\n\n.*",
+            match=r"DataFrame must satisfy the height requirements; got .*:\n\n.*",
         ):
             check_polars_dataframe(df, max_height=1)
 
@@ -627,7 +627,7 @@ class TestCheckPolarsDataFrame:
         df = DataFrame(data={"a": [0.0, nan], "b": [0.0, nan]})
         with raises(
             _CheckPolarsDataFramePredicatesError,
-            match="DataFrame must satisfy the predicates; missing columns were .* and failed predicates were .*:\n\n.*",
+            match=r"DataFrame must satisfy the predicates; missing columns were .* and failed predicates were .*:\n\n.*",
         ):
             check_polars_dataframe(df, predicates={"a": isfinite, "c": isfinite})
 
@@ -635,7 +635,7 @@ class TestCheckPolarsDataFrame:
         df = DataFrame()
         with raises(
             _CheckPolarsDataFramePredicatesError,
-            match="DataFrame must satisfy the predicates; missing columns were .*:\n\n.*",
+            match=r"DataFrame must satisfy the predicates; missing columns were .*:\n\n.*",
         ):
             check_polars_dataframe(df, predicates={"a": isfinite})
 
@@ -643,7 +643,7 @@ class TestCheckPolarsDataFrame:
         df = DataFrame(data={"a": [0.0, nan]})
         with raises(
             _CheckPolarsDataFramePredicatesError,
-            match="DataFrame must satisfy the predicates; failed predicates were .*:\n\n.*",
+            match=r"DataFrame must satisfy the predicates; failed predicates were .*:\n\n.*",
         ):
             check_polars_dataframe(df, predicates={"a": isfinite})
 
@@ -699,7 +699,7 @@ class TestCheckPolarsDataFrame:
         df = DataFrame()
         with raises(
             _CheckPolarsDataFrameShapeError,
-            match="DataFrame must have shape .*; got .*:\n\n.*",
+            match=r"DataFrame must have shape .*; got .*:\n\n.*",
         ):
             check_polars_dataframe(df, shape=(1, 1))
 
@@ -711,7 +711,7 @@ class TestCheckPolarsDataFrame:
         df = DataFrame(data={"value": [1.0, 0.0]})
         with raises(
             _CheckPolarsDataFrameSortedError,
-            match="DataFrame must be sorted on .*:\n\n.*",
+            match=r"DataFrame must be sorted on .*:\n\n.*",
         ):
             check_polars_dataframe(df, sorted="value")
 
@@ -723,7 +723,7 @@ class TestCheckPolarsDataFrame:
         df = DataFrame(data={"value": [0.0, 0.0]})
         with raises(
             _CheckPolarsDataFrameUniqueError,
-            match="DataFrame must be unique on .*:\n\n.*",
+            match=r"DataFrame must be unique on .*:\n\n.*",
         ):
             check_polars_dataframe(df, unique="value")
 
@@ -735,7 +735,7 @@ class TestCheckPolarsDataFrame:
         df = DataFrame()
         with raises(
             _CheckPolarsDataFrameWidthError,
-            match="DataFrame must have width .*; got .*:\n\n.*",
+            match=r"DataFrame must have width .*; got .*:\n\n.*",
         ):
             check_polars_dataframe(df, width=1)
 
@@ -755,7 +755,7 @@ class TestCheckPolarsDataFramePredicates:
         df = DataFrame(data={"value": [0.0, nan]})
         with raises(
             _CheckPolarsDataFramePredicatesError,
-            match="DataFrame must satisfy the predicates; (missing columns|failed predicates) were .*:\n\n.*",
+            match=r"DataFrame must satisfy the predicates; (missing columns|failed predicates) were .*:\n\n.*",
         ):
             _check_polars_dataframe_predicates(df, predicates)
 
@@ -862,7 +862,9 @@ class TestColumnsToDict:
 
     def test_error(self) -> None:
         df = DataFrame(data=[(1, 1), (1, 2), (1, 3)], schema=self.schema, orient="row")
-        with raises(ColumnsToDictError, match="DataFrame must be unique on 'x':\n\n.*"):
+        with raises(
+            ColumnsToDictError, match=r"DataFrame must be unique on 'x':\n\n.*"
+        ):
             _ = columns_to_dict(df, "x", "y")
 
 
@@ -1163,7 +1165,7 @@ class TestDataClassToDataFrame:
     def test_error_empty(self) -> None:
         with raises(
             _DataClassToDataFrameEmptyError,
-            match="At least 1 dataclass must be given; got 0",
+            match=r"At least 1 dataclass must be given; got 0",
         ):
             _ = dataclass_to_dataframe([])
 
@@ -1178,7 +1180,7 @@ class TestDataClassToDataFrame:
 
         with raises(
             _DataClassToDataFrameNonUniqueError,
-            match="Iterable .* must contain exactly 1 class; got .*, .* and perhaps more",
+            match=r"Iterable .* must contain exactly 1 class; got .*, .* and perhaps more",
         ):
             _ = dataclass_to_dataframe([Example1(), Example2()])
 
@@ -1661,21 +1663,21 @@ class TestGetDataTypeOrSeriesTimeZone:
     def test_error_not_datetime(self) -> None:
         with raises(
             _GetDataTypeOrSeriesTimeZoneNotDateTimeError,
-            match="Data type must be Datetime; got Boolean",
+            match=r"Data type must be Datetime; got Boolean",
         ):
             _ = get_data_type_or_series_time_zone(Boolean)
 
     def test_error_not_zoned(self) -> None:
         with raises(
             _GetDataTypeOrSeriesTimeZoneNotZonedError,
-            match="Data type must be zoned; got .*",
+            match=r"Data type must be zoned; got .*",
         ):
             _ = get_data_type_or_series_time_zone(Datetime)
 
     def test_error_struct_non_unique(self) -> None:
         with raises(
             _GetDataTypeOrSeriesTimeZoneStructNonUniqueError,
-            match="Struct data type must contain exactly one time zone; got .*, .* and perhaps more",
+            match=r"Struct data type must contain exactly one time zone; got .*, .* and perhaps more",
         ):
             _ = get_data_type_or_series_time_zone(
                 struct_dtype(start=DatetimeHongKong, end=DatetimeUTC)
@@ -1786,7 +1788,7 @@ class TestInsertBeforeOrAfter:
         case: tuple[Callable[[DataFrame, str, IntoExprColumn]], type[Exception]],
     ) -> None:
         func, error = case
-        with raises(error, match="DataFrame must have column 'missing'; got .*"):
+        with raises(error, match=r"DataFrame must have column 'missing'; got .*"):
             _ = func(self.df, "missing", lit(None).alias("new"))
 
 
@@ -1808,14 +1810,14 @@ class TestInsertBetween:
     def test_error_missing(self) -> None:
         with raises(
             _InsertBetweenMissingColumnsError,
-            match="DataFrame must have columns 'x' and 'y'; got .*",
+            match=r"DataFrame must have columns 'x' and 'y'; got .*",
         ):
             _ = insert_between(self.df, "x", "y", lit(None).alias("new"))
 
     def test_error_non_consecutive(self) -> None:
         with raises(
             _InsertBetweenNonConsecutiveError,
-            match="DataFrame columns 'a' and 'c' must be consecutive; got indices 0 and 2",
+            match=r"DataFrame columns 'a' and 'c' must be consecutive; got indices 0 and 2",
         ):
             _ = insert_between(self.df, "a", "c", lit(None).alias("new"))
 
@@ -2059,7 +2061,7 @@ class TestJoinIntoPeriods:
     def test_error_arguments(self) -> None:
         with raises(
             _JoinIntoPeriodsArgumentsError,
-            match="Either 'on' must be given or 'left_on' and 'right_on' must be given; got None, 'datetime' and None",
+            match=r"Either 'on' must be given or 'left_on' and 'right_on' must be given; got None, 'datetime' and None",
         ):
             _ = join_into_periods(DataFrame(), DataFrame(), left_on="datetime")
 
@@ -2068,7 +2070,7 @@ class TestJoinIntoPeriods:
         df = self._lift_df(times)
         with raises(
             _JoinIntoPeriodsPeriodError,
-            match="Left DataFrame column 'datetime' must contain valid periods",
+            match=r"Left DataFrame column 'datetime' must contain valid periods",
         ):
             _ = join_into_periods(df, DataFrame())
 
@@ -2077,7 +2079,7 @@ class TestJoinIntoPeriods:
         df = self._lift_df(times)
         with raises(
             _JoinIntoPeriodsSortedError,
-            match="Left DataFrame column 'datetime/start' must be sorted",
+            match=r"Left DataFrame column 'datetime/start' must be sorted",
         ):
             _ = join_into_periods(df, df)
 
@@ -2086,7 +2088,7 @@ class TestJoinIntoPeriods:
         df = self._lift_df(times)
         with raises(
             _JoinIntoPeriodsSortedError,
-            match="Left DataFrame column 'datetime/end' must be sorted",
+            match=r"Left DataFrame column 'datetime/end' must be sorted",
         ):
             _ = join_into_periods(df, df)
 
@@ -2095,7 +2097,7 @@ class TestJoinIntoPeriods:
         df = self._lift_df(times)
         with raises(
             _JoinIntoPeriodsOverlappingError,
-            match="Left DataFrame column 'datetime' must not contain overlaps",
+            match=r"Left DataFrame column 'datetime' must not contain overlaps",
         ):
             _ = join_into_periods(df, DataFrame())
 
@@ -2261,7 +2263,7 @@ class TestNormalPDF:
         series = normal_pdf(x, loc=loc, scale=scale)
         _ = assume(series.is_finite().all())
         with assume_does_not_raise(
-            RuntimeWarning, match="overflow encountered in (subtract|square|divide)"
+            RuntimeWarning, match=r"overflow encountered in (subtract|square|divide)"
         ):
             expected = norm.pdf(xs, loc=loc, scale=scale)
         assert allclose(series, expected)
@@ -2326,7 +2328,7 @@ class TestOneColumn:
         assert_series_equal(result, series)
 
     def test_error_empty(self) -> None:
-        with raises(OneColumnEmptyError, match="DataFrame must not be empty"):
+        with raises(OneColumnEmptyError, match=r"DataFrame must not be empty"):
             _ = one_column(DataFrame())
 
     def test_error_non_unique(self) -> None:
@@ -2334,7 +2336,7 @@ class TestOneColumn:
         df = concat_series(x, y)
         with raises(
             OneColumnNonUniqueError,
-            match="DataFrame must contain exactly one column; got 'x', 'y' and perhaps more",
+            match=r"DataFrame must contain exactly one column; got 'x', 'y' and perhaps more",
         ):
             _ = one_column(df)
 
@@ -2448,7 +2450,8 @@ class TestReifyExprs:
 
     def test_error_empty(self) -> None:
         with raises(
-            _ReifyExprsEmptyError, match="At least 1 Expression or Series must be given"
+            _ReifyExprsEmptyError,
+            match=r"At least 1 Expression or Series must be given",
         ):
             _ = reify_exprs()
 
@@ -2521,7 +2524,7 @@ class TestRoundToFloat:
     def test_error(self, *, x: IntoExprColumn, y: IntoExprColumn) -> None:
         with raises(
             RoundToFloatError,
-            match="At least 1 of the dividend and/or divisor must be a Series; got .* and .*",
+            match=r"At least 1 of the dividend and/or divisor must be a Series; got .* and .*",
         ):
             _ = round_to_float(cast("Any", x), cast("Any", y))
 
@@ -2721,7 +2724,7 @@ class TestSetFirstRowAsColumns:
         df = DataFrame()
         with raises(
             SetFirstRowAsColumnsError,
-            match="DataFrame must have at least 1 row; got .*",
+            match=r"DataFrame must have at least 1 row; got .*",
         ):
             _ = set_first_row_as_columns(df)
 

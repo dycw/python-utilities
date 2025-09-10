@@ -111,7 +111,7 @@ class TestMakeExceptHook:
     def test_non_error(self) -> None:
         hook = make_except_hook()
         exc_type, exc_val, traceback = exc_info()
-        with raises(MakeExceptHookError, match="No exception to log"):
+        with raises(MakeExceptHookError, match=r"No exception to log"):
             hook(exc_type, exc_val, traceback)
 
 

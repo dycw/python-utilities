@@ -18,11 +18,11 @@ class TestGetClient:
 
 class TestSendToSlack:
     def test_sync(self) -> None:
-        with raises(ValueError, match="unknown url type"):
+        with raises(ValueError, match=r"unknown url type"):
             send_to_slack("url", "message")
 
     async def test_async(self) -> None:
-        with raises(InvalidUrlClientError, match="url"):
+        with raises(InvalidUrlClientError, match=r"url"):
             await send_to_slack_async("url", "message")
 
     @mark.skipif(get_env_var("SLACK", nullable=True) is None, reason="'SLACK' not set")
