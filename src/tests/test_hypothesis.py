@@ -179,7 +179,7 @@ class TestAssumeDoesNotRaise:
         if x is True:
             with (
                 raises(ValueError, match=msg),
-                assume_does_not_raise(ValueError, match="wrong"),
+                assume_does_not_raise(ValueError, match=r"wrong"),
             ):
                 raise ValueError(msg)
 
@@ -332,7 +332,7 @@ class TestDraw2:
 
         with raises(
             _Draw2InputResolvedToSentinelError,
-            match="The input resolved to the sentinel value; a default strategy is needed",
+            match=r"The input resolved to the sentinel value; a default strategy is needed",
         ):
             _ = data.draw(strategy())
 
@@ -346,7 +346,7 @@ class TestDraw2:
 
         with raises(
             _Draw2InputResolvedToSentinelError,
-            match="The input resolved to the sentinel value; a default strategy is needed",
+            match=r"The input resolved to the sentinel value; a default strategy is needed",
         ):
             _ = data.draw(strategy())
 
@@ -361,7 +361,7 @@ class TestDraw2:
 
         with raises(
             _Draw2DefaultGeneratedSentinelError,
-            match="The default search strategy generated the sentinel value",
+            match=r"The default search strategy generated the sentinel value",
         ):
             _ = data.draw(strategy())
 
@@ -375,7 +375,7 @@ class TestDraw2:
 
         with raises(
             _Draw2DefaultGeneratedSentinelError,
-            match="The default search strategy generated the sentinel value",
+            match=r"The default search strategy generated the sentinel value",
         ):
             _ = data.draw(strategy())
 

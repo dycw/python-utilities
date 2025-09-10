@@ -102,7 +102,7 @@ class TestGetPackageRoot:
         assert root == expected
 
     def test_error(self, *, tmp_path: Path) -> None:
-        with raises(GetPackageRootError, match="Path is not part of a package: .*"):
+        with raises(GetPackageRootError, match=r"Path is not part of a package: .*"):
             _ = get_package_root(tmp_path)
 
 
@@ -126,7 +126,7 @@ class TestGetRepoRoot:
     def test_error_not_a_repo(self, *, tmp_path: Path) -> None:
         with raises(
             _GetRepoRootNotARepoError,
-            match="Path is not part of a `git` repository: .*",
+            match=r"Path is not part of a `git` repository: .*",
         ):
             _ = get_repo_root(tmp_path)
 
@@ -187,7 +187,7 @@ class TestGetRoot:
             assert root == expected
 
     def test_error(self, *, tmp_path: Path) -> None:
-        with raises(GetRootError, match="Unable to determine root from '.*'"):
+        with raises(GetRootError, match=r"Unable to determine root from '.*'"):
             _ = get_root(tmp_path)
 
 
@@ -215,21 +215,21 @@ class TestGetTail:
     def test_error_length(self) -> None:
         with raises(
             _GetTailLengthError,
-            match="Unable to get the tail of 'foo' with root of length 2",
+            match=r"Unable to get the tail of 'foo' with root of length 2",
         ):
             _ = get_tail("foo", "bar/baz")
 
     def test_error_empty(self) -> None:
         with raises(
             _GetTailEmptyError,
-            match="Unable to get the tail of 'foo/bar' with root 'baz'",
+            match=r"Unable to get the tail of 'foo/bar' with root 'baz'",
         ):
             _ = get_tail("foo/bar", "baz")
 
     def test_error_non_unique(self) -> None:
         with raises(
             _GetTailNonUniqueError,
-            match="Path '.*' must contain exactly one tail with root 'b'; got '.*', '.*' and perhaps more",
+            match=r"Path '.*' must contain exactly one tail with root 'b'; got '.*', '.*' and perhaps more",
         ):
             _ = get_tail("a/b/c/a/b/c", "b")
 

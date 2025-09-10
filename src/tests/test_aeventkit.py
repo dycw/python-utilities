@@ -231,7 +231,7 @@ class TestLiftListener:
 
         with raises(
             LiftListenerError,
-            match="Synchronous listener .* cannot be paired with an asynchronous error handler .*",
+            match=r"Synchronous listener .* cannot be paired with an asynchronous error handler .*",
         ):
             _ = lift_listener(listener, Event(), error=error)
 

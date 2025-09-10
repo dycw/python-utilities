@@ -391,7 +391,7 @@ class TestParseObject:
     def test_error_bool(self) -> None:
         with raises(
             _ParseObjectParseError,
-            match="Unable to parse <class 'bool'>; got 'invalid'",
+            match=r"Unable to parse <class 'bool'>; got 'invalid'",
         ):
             _ = parse_object(bool, "invalid")
 
@@ -433,14 +433,14 @@ class TestParseObject:
     def test_error_enum(self) -> None:
         with raises(
             _ParseObjectParseError,
-            match="Unable to parse <enum 'TruthEnum'>; got 'invalid'",
+            match=r"Unable to parse <enum 'TruthEnum'>; got 'invalid'",
         ):
             _ = parse_object(TruthEnum, "invalid")
 
     def test_error_extra_empty(self) -> None:
         with raises(
             _ParseObjectParseError,
-            match="Unable to parse <class 'tests.test_typing_funcs.with_future.DataClassFutureInt'>; got 'invalid'",
+            match=r"Unable to parse <class 'tests.test_typing_funcs.with_future.DataClassFutureInt'>; got 'invalid'",
         ):
             _ = parse_object(DataClassFutureInt, "invalid", extra={})
 
@@ -456,7 +456,7 @@ class TestParseObject:
                     raise ImpossibleCaseError(case=[f"{text=}"])
 
         with raises(
-            _ParseObjectParseError, match="Unable to parse <class 'bool'>; got '.*'"
+            _ParseObjectParseError, match=r"Unable to parse <class 'bool'>; got '.*'"
         ):
             _ = parse_object(bool, text, extra={int: parser})
 
@@ -464,7 +464,7 @@ class TestParseObject:
     def test_error_extra_non_unique(self, *, int_: int) -> None:
         with raises(
             _ParseObjectExtraNonUniqueError,
-            match="Unable to parse <class 'int'> since `extra` must contain exactly one parent class; got <class 'int'>, <class 'int'> and perhaps more",
+            match=r"Unable to parse <class 'int'> since `extra` must contain exactly one parent class; got <class 'int'>, <class 'int'> and perhaps more",
         ):
             _ = parse_object(int, str(int_), extra={int | bool: int, int | float: int})
 
@@ -478,7 +478,7 @@ class TestParseObject:
     def test_error_float(self) -> None:
         with raises(
             _ParseObjectParseError,
-            match="Unable to parse <class 'float'>; got 'invalid'",
+            match=r"Unable to parse <class 'float'>; got 'invalid'",
         ):
             _ = parse_object(float, "invalid")
 
@@ -498,7 +498,8 @@ class TestParseObject:
 
     def test_error_int(self) -> None:
         with raises(
-            _ParseObjectParseError, match="Unable to parse <class 'int'>; got 'invalid'"
+            _ParseObjectParseError,
+            match=r"Unable to parse <class 'int'>; got 'invalid'",
         ):
             _ = parse_object(int, "invalid")
 
@@ -524,14 +525,14 @@ class TestParseObject:
 
     def test_error_none(self) -> None:
         with raises(
-            _ParseObjectParseError, match="Unable to parse None; got 'invalid'"
+            _ParseObjectParseError, match=r"Unable to parse None; got 'invalid'"
         ):
             _ = parse_object(None, "invalid")
 
     def test_error_none_type(self) -> None:
         with raises(
             _ParseObjectParseError,
-            match="Unable to parse <class 'NoneType'>; got 'invalid'",
+            match=r"Unable to parse <class 'NoneType'>; got 'invalid'",
         ):
             _ = parse_object(NoneType, "invalid")
 

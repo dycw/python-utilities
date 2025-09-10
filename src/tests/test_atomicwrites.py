@@ -89,7 +89,7 @@ class TestMove:
 
     @mark.parametrize("overwrite", [param(True), param(False)])
     def test_error_source_not_found(self, *, tmp_path: Path, overwrite: bool) -> None:
-        with raises(_MoveSourceNotFoundError, match="Source '.*' does not exist"):
+        with raises(_MoveSourceNotFoundError, match=r"Source '.*' does not exist"):
             move(
                 tmp_path.joinpath("source"),
                 tmp_path.joinpath("destination"),
@@ -103,7 +103,7 @@ class TestMove:
         destination.touch()
         with raises(
             _MoveFileExistsError,
-            match="Cannot move file '.*' as destination '.*' already exists",
+            match=r"Cannot move file '.*' as destination '.*' already exists",
         ):
             move(source, destination)
 
@@ -114,7 +114,7 @@ class TestMove:
         destination.touch()
         with raises(
             _MoveDirectoryExistsError,
-            match="Cannot move directory '.*' as destination '.*' already exists",
+            match=r"Cannot move directory '.*' as destination '.*' already exists",
         ):
             move(source, destination)
 
@@ -149,7 +149,7 @@ class TestWriter:
     def test_error_temporary_path_empty(self, *, tmp_path: Path) -> None:
         with (
             raises(
-                _WriterTemporaryPathEmptyError, match="Temporary path '.*' is empty"
+                _WriterTemporaryPathEmptyError, match=r"Temporary path '.*' is empty"
             ),
             writer(tmp_path),
         ):
@@ -161,7 +161,7 @@ class TestWriter:
         with (
             raises(
                 _WriterFileExistsError,
-                match="Cannot write to '.*' as file already exists",
+                match=r"Cannot write to '.*' as file already exists",
             ),
             writer(path) as temp,
         ):
@@ -173,7 +173,7 @@ class TestWriter:
         with (
             raises(
                 _WriterDirectoryExistsError,
-                match="Cannot write to '.*' as directory already exists",
+                match=r"Cannot write to '.*' as directory already exists",
             ),
             writer(path) as temp,
         ):

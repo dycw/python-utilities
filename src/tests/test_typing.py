@@ -215,14 +215,14 @@ class TestGetTypeClasses:
     def test_error_type(self) -> None:
         with raises(
             _GetTypeClassesTypeError,
-            match="Object must be a type, tuple or Union type; got None of type <class 'NoneType'>",
+            match=r"Object must be a type, tuple or Union type; got None of type <class 'NoneType'>",
         ):
             _ = get_type_classes(None)
 
     def test_error_tuple(self) -> None:
         with raises(
             _GetTypeClassesTupleError,
-            match="Tuple must contain types, tuples or Union types only; got None of type <class 'NoneType'>",
+            match=r"Tuple must contain types, tuples or Union types only; got None of type <class 'NoneType'>",
         ):
             _ = get_type_classes((None,))
 
@@ -566,7 +566,7 @@ class TestGetTypeHints:
 
         with raises(
             UserWarning,
-            match="Error getting type hints for <.*>; name 'Inner' is not defined",
+            match=r"Error getting type hints for <.*>; name 'Inner' is not defined",
         ):
             _ = get_type_hints(Outer, warn_name_errors=True)
 
@@ -616,7 +616,7 @@ class TestGetUnionTypeClasses:
     def test_error_union_type(self) -> None:
         with raises(
             _GetUnionTypeClassesUnionTypeError,
-            match="Object must be a Union type; got None of type <class 'NoneType'>",
+            match=r"Object must be a Union type; got None of type <class 'NoneType'>",
         ):
             _ = get_union_type_classes(None)
 
@@ -1109,7 +1109,7 @@ class TestIsSubclassGen:
     def test_error(self) -> None:
         with raises(
             IsSubclassGenError,
-            match="Argument must be a class; got None of type <class 'NoneType'>",
+            match=r"Argument must be a class; got None of type <class 'NoneType'>",
         ):
             _ = is_subclass_gen(None, NoneType)
 

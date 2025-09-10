@@ -33,6 +33,6 @@ class TestGetFernet:
     def test_error(self) -> None:
         with (
             temp_environ({_ENV_VAR: None}),
-            raises(GetFernetError, match="Environment variable 'FERNET_KEY' is None"),
+            raises(GetFernetError, match=r"Environment variable 'FERNET_KEY' is None"),
         ):
             _ = get_fernet()

@@ -1165,7 +1165,7 @@ class TestDataClassToDataFrame:
     def test_error_empty(self) -> None:
         with raises(
             _DataClassToDataFrameEmptyError,
-            match="At least 1 dataclass must be given; got 0",
+            match=r"At least 1 dataclass must be given; got 0",
         ):
             _ = dataclass_to_dataframe([])
 
@@ -1663,7 +1663,7 @@ class TestGetDataTypeOrSeriesTimeZone:
     def test_error_not_datetime(self) -> None:
         with raises(
             _GetDataTypeOrSeriesTimeZoneNotDateTimeError,
-            match="Data type must be Datetime; got Boolean",
+            match=r"Data type must be Datetime; got Boolean",
         ):
             _ = get_data_type_or_series_time_zone(Boolean)
 
@@ -1817,7 +1817,7 @@ class TestInsertBetween:
     def test_error_non_consecutive(self) -> None:
         with raises(
             _InsertBetweenNonConsecutiveError,
-            match="DataFrame columns 'a' and 'c' must be consecutive; got indices 0 and 2",
+            match=r"DataFrame columns 'a' and 'c' must be consecutive; got indices 0 and 2",
         ):
             _ = insert_between(self.df, "a", "c", lit(None).alias("new"))
 
@@ -2061,7 +2061,7 @@ class TestJoinIntoPeriods:
     def test_error_arguments(self) -> None:
         with raises(
             _JoinIntoPeriodsArgumentsError,
-            match="Either 'on' must be given or 'left_on' and 'right_on' must be given; got None, 'datetime' and None",
+            match=r"Either 'on' must be given or 'left_on' and 'right_on' must be given; got None, 'datetime' and None",
         ):
             _ = join_into_periods(DataFrame(), DataFrame(), left_on="datetime")
 
@@ -2070,7 +2070,7 @@ class TestJoinIntoPeriods:
         df = self._lift_df(times)
         with raises(
             _JoinIntoPeriodsPeriodError,
-            match="Left DataFrame column 'datetime' must contain valid periods",
+            match=r"Left DataFrame column 'datetime' must contain valid periods",
         ):
             _ = join_into_periods(df, DataFrame())
 
@@ -2079,7 +2079,7 @@ class TestJoinIntoPeriods:
         df = self._lift_df(times)
         with raises(
             _JoinIntoPeriodsSortedError,
-            match="Left DataFrame column 'datetime/start' must be sorted",
+            match=r"Left DataFrame column 'datetime/start' must be sorted",
         ):
             _ = join_into_periods(df, df)
 
@@ -2088,7 +2088,7 @@ class TestJoinIntoPeriods:
         df = self._lift_df(times)
         with raises(
             _JoinIntoPeriodsSortedError,
-            match="Left DataFrame column 'datetime/end' must be sorted",
+            match=r"Left DataFrame column 'datetime/end' must be sorted",
         ):
             _ = join_into_periods(df, df)
 
@@ -2097,7 +2097,7 @@ class TestJoinIntoPeriods:
         df = self._lift_df(times)
         with raises(
             _JoinIntoPeriodsOverlappingError,
-            match="Left DataFrame column 'datetime' must not contain overlaps",
+            match=r"Left DataFrame column 'datetime' must not contain overlaps",
         ):
             _ = join_into_periods(df, DataFrame())
 
@@ -2263,7 +2263,7 @@ class TestNormalPDF:
         series = normal_pdf(x, loc=loc, scale=scale)
         _ = assume(series.is_finite().all())
         with assume_does_not_raise(
-            RuntimeWarning, match="overflow encountered in (subtract|square|divide)"
+            RuntimeWarning, match=r"overflow encountered in (subtract|square|divide)"
         ):
             expected = norm.pdf(xs, loc=loc, scale=scale)
         assert allclose(series, expected)
@@ -2328,7 +2328,7 @@ class TestOneColumn:
         assert_series_equal(result, series)
 
     def test_error_empty(self) -> None:
-        with raises(OneColumnEmptyError, match="DataFrame must not be empty"):
+        with raises(OneColumnEmptyError, match=r"DataFrame must not be empty"):
             _ = one_column(DataFrame())
 
     def test_error_non_unique(self) -> None:
@@ -2336,7 +2336,7 @@ class TestOneColumn:
         df = concat_series(x, y)
         with raises(
             OneColumnNonUniqueError,
-            match="DataFrame must contain exactly one column; got 'x', 'y' and perhaps more",
+            match=r"DataFrame must contain exactly one column; got 'x', 'y' and perhaps more",
         ):
             _ = one_column(df)
 
@@ -2450,7 +2450,8 @@ class TestReifyExprs:
 
     def test_error_empty(self) -> None:
         with raises(
-            _ReifyExprsEmptyError, match="At least 1 Expression or Series must be given"
+            _ReifyExprsEmptyError,
+            match=r"At least 1 Expression or Series must be given",
         ):
             _ = reify_exprs()
 

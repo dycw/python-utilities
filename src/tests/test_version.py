@@ -31,7 +31,7 @@ class TestParseVersion:
         assert parsed == version
 
     def test_error(self) -> None:
-        with raises(ParseVersionError, match="Invalid version string: 'invalid'"):
+        with raises(ParseVersionError, match=r"Invalid version string: 'invalid'"):
             _ = parse_version("invalid")
 
 

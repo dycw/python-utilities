@@ -197,7 +197,7 @@ def _is_int64(n: int, /) -> bool:
 
 
 def _into_set(elements: list[Any], /) -> set[Any]:
-    with assume_does_not_raise(TypeError, match="unhashable type"):
+    with assume_does_not_raise(TypeError, match=r"unhashable type"):
         return set(elements)
 
 

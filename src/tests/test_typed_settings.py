@@ -317,5 +317,5 @@ class TestLoadSettings:
         @dataclass(frozen=True, kw_only=True, slots=True)
         class Settings: ...
 
-        with raises(LoadSettingsError, match="Invalid app name; got '.+'"):
+        with raises(LoadSettingsError, match=r"Invalid app name; got '.+'"):
             _ = load_settings(Settings, app_name)

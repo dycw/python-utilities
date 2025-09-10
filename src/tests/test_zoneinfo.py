@@ -110,7 +110,7 @@ class TestToTimeZoneName:
 
     def test_error_invalid_key(self) -> None:
         with raises(
-            _ToTimeZoneNameInvalidKeyError, match="Invalid time-zone: 'invalid'"
+            _ToTimeZoneNameInvalidKeyError, match=r"Invalid time-zone: 'invalid'"
         ):
             _ = to_time_zone_name(cast("TimeZoneLike", "invalid"))
 

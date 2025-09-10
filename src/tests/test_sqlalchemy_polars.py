@@ -177,7 +177,8 @@ class TestInsertDataFrame:
         table = self._make_table(sqlalchemy.Boolean)
 
         with raises(
-            (OperationalError, ProgrammingError), match="(no such table|does not exist)"
+            (OperationalError, ProgrammingError),
+            match=r"(no such table|does not exist)",
         ):
             await insert_dataframe(
                 df, table, test_async_engine, assume_tables_exist=True

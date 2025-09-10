@@ -251,7 +251,7 @@ class TestGetLoggingLevelNumber:
 
     def test_error(self) -> None:
         with raises(
-            GetLoggingLevelNumberError, match="Invalid logging level: 'invalid'"
+            GetLoggingLevelNumberError, match=r"Invalid logging level: 'invalid'"
         ):
             _ = get_logging_level_number(cast("Any", "invalid"))
 
