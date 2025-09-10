@@ -15,7 +15,7 @@ from utilities.pottery import (
 )
 from utilities.text import unique_str
 from utilities.timer import Timer
-from utilities.whenever import SECOND
+from utilities.whenever import MILLISECOND, SECOND
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis
@@ -64,6 +64,12 @@ class TestYieldAccess:
         with Timer() as timer:
             await self.func(test_redis, num_tasks, unique_str(), num_locks=num_locks)
         assert (min_multiple * self.delta) <= timer <= (5 * min_multiple * self.delta)
+
+    async def test_sub_second_timeout_release(self, *, test_redis: Redis) -> None:
+        async with yield_access(
+            test_redis, unique_str(), timeout_release=100 * MILLISECOND
+        ):
+            ...
 
     async def test_error_num_locks(self, *, test_redis: Redis) -> None:
         with raises(

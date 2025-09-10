@@ -27,7 +27,7 @@ from utilities.functions import ensure_int, identity
 from utilities.iterables import always_iterable, one
 from utilities.os import is_pytest
 from utilities.typing import is_instance_gen
-from utilities.whenever import MILLISECOND, SECOND, to_milliseconds, to_seconds
+from utilities.whenever import MILLISECOND, SECOND, to_milliseconds, to_nanoseconds
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Awaitable, Collection, Iterable
@@ -765,7 +765,7 @@ async def _subscribe_core[T](
     sleep: Delta = _SUBSCRIBE_SLEEP,
 ) -> None:
     timeout_use = (  # skipif-ci-and-not-linux
-        None if timeout is None else to_seconds(timeout)
+        None if timeout is None else (to_nanoseconds(timeout) / 1e9)
     )
     is_subscribe_message = partial(  # skipif-ci-and-not-linux
         _is_message, channels={c.encode() for c in channels}
