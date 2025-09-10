@@ -87,7 +87,7 @@ jupyter-test = [
   "polars",
 ]
 libcst = [
-  "libcst >=1.8.0, <1.9",
+  "libcst >=1.8.2, <1.9",
 ]
 lightweight-charts = [
   "lightweight-charts >=2.1, <2.2",
@@ -106,7 +106,7 @@ more-itertools = [
   "more-itertools >=10.8.0, <10.9",
 ]
 numpy = [
-  "numpy >=2.3.1, <2.4",
+  "numpy >=2.3.2, <2.4",
 ]
 operator = [
   "polars",

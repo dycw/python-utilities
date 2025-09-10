@@ -883,7 +883,7 @@ jupyter-test = [
     { name = "pandas" },
     { name = "polars" },
 ]
-libcst = [{ name = "libcst", specifier = ">=1.8.0,<1.9" }]
+libcst = [{ name = "libcst", specifier = ">=1.8.2,<1.9" }]
 lightweight-charts = [{ name = "lightweight-charts", specifier = ">=2.1,<2.2" }]
 lightweight-charts-test = [
     { name = "polars" },
@@ -892,7 +892,7 @@ lightweight-charts-test = [
 math-test = [{ name = "numpy" }]
 memory-profiler = [{ name = "memory-profiler", specifier = ">=0.61.0,<0.62" }]
 more-itertools = [{ name = "more-itertools", specifier = ">=10.8.0,<10.9" }]
-numpy = [{ name = "numpy", specifier = ">=2.3.1,<2.4" }]
+numpy = [{ name = "numpy", specifier = ">=2.3.2,<2.4" }]
 operator = [{ name = "polars" }]
 optuna = [{ name = "optuna", specifier = ">=4.5.0,<4.6" }]
 orjson = [{ name = "orjson", specifier = ">=3.11.3,<3.12" }]
