@@ -933,7 +933,7 @@ class MergeStrMappingsError(Exception):
 
 def one[T](*iterables: Iterable[T]) -> T:
     """Return the unique value in a set of iterables."""
-    it = iter(chain(*iterables))
+    it = chain(*iterables)
     try:
         first = next(it)
     except StopIteration:

@@ -885,11 +885,13 @@ class TestMergeStrMappings:
 
 
 class TestOne:
-    @given(args=sampled_from([([None],), ([None], []), ([None], [], [])]))
+    @mark.parametrize(
+        "args", [param(([None],)), param(([None], [])), param(([None], [], []))]
+    )
     def test_main(self, *, args: tuple[Iterable[Any], ...]) -> None:
         assert one(*args) is None
 
-    @given(args=sampled_from([([],), ([], []), ([], [], [])]))
+    @mark.parametrize("args", [param([]), param(([], [])), param(([], [], []))])
     def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
         with raises(OneEmptyError, match=r"Iterable\(s\) .* must not be empty"):
             _ = one(*args)
@@ -907,20 +909,21 @@ class TestOne:
 
 
 class TestOneMaybe:
-    @given(
-        args=sampled_from([
-            (None,),
-            ([None],),
-            (None, []),
-            ([None], []),
-            (None, []),
-            ([None], [], []),
-        ])
+    @mark.parametrize(
+        "args",
+        [
+            param((None,)),
+            param(([None],)),
+            param((None, [])),
+            param(([None], [])),
+            param((None, [], [])),
+            param(([None], [], [])),
+        ],
     )
     def test_main(self, *, args: tuple[MaybeIterable[Any], ...]) -> None:
         assert one_maybe(*args) is None
 
-    @given(args=sampled_from([([],), ([], []), ([], [], [])]))
+    @mark.parametrize("args", [param([]), param(([], [])), param(([], [], []))])
     def test_error_empty(self, *, args: tuple[MaybeIterable[Any], ...]) -> None:
         with raises(OneMaybeEmptyError, match=r"Object\(s\) must not be empty"):
             _ = one_maybe(*args)
