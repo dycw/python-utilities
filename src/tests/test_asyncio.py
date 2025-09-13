@@ -13,6 +13,7 @@ from pytest import RaisesGroup, raises
 from utilities.asyncio import (
     AsyncDict,
     EnhancedTaskGroup,
+    async_chain,
     get_coroutine_name,
     get_items,
     get_items_nowait,
@@ -39,6 +40,15 @@ if TYPE_CHECKING:
 
 
 async_dicts = dictionaries(text_ascii(), integers()).map(AsyncDict)
+
+
+class TestAsyncChain:
+    @given(n=integers(0, 10))
+    async def test_iterator(self, *, n: int) -> None:
+        it = async_chain(range(n))
+        result = [x async for x in it]
+        expected = list(range(n))
+        assert result == expected
 
 
 class TestAsyncDict:

@@ -31,6 +31,7 @@ from typing import (
     Self,
     TextIO,
     assert_never,
+    cast,
     overload,
     override,
 )
@@ -48,6 +49,7 @@ if TYPE_CHECKING:
     from asyncio import _CoroutineLike
     from asyncio.subprocess import Process
     from collections.abc import (
+        AsyncIterable,
         AsyncIterator,
         Callable,
         ItemsView,
@@ -346,6 +348,24 @@ class EnhancedTaskGroup(TaskGroup):
 ##
 
 
+def async_chain[T](*iterables: Iterable[T] | AsyncIterable[T]) -> AsyncIterator[T]:
+    """Asynchronous version of `chain`."""
+
+    async def gen() -> AsyncIterator[T]:
+        for it in iterables:
+            try:
+                async for item in cast("AsyncIterable[T]", it):
+                    yield item
+            except TypeError:
+                for item in cast("Iterable[T]", it):
+                    yield item
+
+    return gen()
+
+
+##
+
+
 def get_coroutine_name(func: Callable[[], Coro[Any]], /) -> str:
     """Get the name of a coroutine, and then dispose of it gracefully."""
     coro = func()
@@ -543,6 +563,7 @@ __all__ = [
     "AsyncDict",
     "EnhancedTaskGroup",
     "StreamCommandOutput",
+    "async_chain",
     "get_coroutine_name",
     "get_items",
     "get_items_nowait",
