@@ -547,7 +547,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.166.26"
+version = "0.166.27"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -918,7 +918,7 @@ pydantic-settings-test = [
 pyinstrument = [{ name = "pyinstrument", specifier = ">=5.1.0,<5.2" }]
 pytest = [
     { name = "pytest", specifier = ">=8.4.2,<8.5" },
-    { name = "pytest-asyncio", specifier = ">=1.1.0,<1.2" },
+    { name = "pytest-asyncio", specifier = ">=1.1.1,<1.2" },
     { name = "pytest-randomly", specifier = ">=4.0.1,<4.1" },
     { name = "pytest-timeout", specifier = ">=2.4.0,<2.5" },
     { name = "pytest-xdist", specifier = ">=3.8.0,<3.9" },
