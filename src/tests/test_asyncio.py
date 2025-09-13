@@ -351,7 +351,10 @@ class TestOneAsync:
 
     @mark.parametrize("args", [param([]), param(([], [])), param(([], [], []))])
     async def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        with raises(OneAsyncEmptyError, match=r"Iterable\(s\) .* must not be empty"):
+        with raises(
+            OneAsyncEmptyError,
+            match=re.compile(r"Iterable\(s\) .* must not be empty", flags=DOTALL),
+        ):
             _ = await one_async(*map(self._lift, args))
 
     @given(iterable=sets(integers(), min_size=2))
