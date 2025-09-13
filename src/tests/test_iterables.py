@@ -891,7 +891,7 @@ class TestOne:
     def test_main(self, *, args: tuple[Iterable[Any], ...]) -> None:
         assert one(*args) is None
 
-    @mark.parametrize("args", [param([]), param([], []), param([], [], [])])
+    @mark.parametrize("args", [param([]), param(([], [])), param(([], [], []))])
     def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
         with raises(OneEmptyError, match=r"Iterable\(s\) .* must not be empty"):
             _ = one(*args)
@@ -923,7 +923,7 @@ class TestOneMaybe:
     def test_main(self, *, args: tuple[MaybeIterable[Any], ...]) -> None:
         assert one_maybe(*args) is None
 
-    @mark.parametrize("args", [param([]), param([], []), param([], [], [])])
+    @mark.parametrize("args", [param([]), param(([], [])), param(([], [], []))])
     def test_error_empty(self, *, args: tuple[MaybeIterable[Any], ...]) -> None:
         with raises(OneMaybeEmptyError, match=r"Object\(s\) must not be empty"):
             _ = one_maybe(*args)
