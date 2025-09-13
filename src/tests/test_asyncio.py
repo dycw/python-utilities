@@ -1,22 +1,26 @@
 from __future__ import annotations
 
+import re
 from asyncio import Queue, run
-from collections.abc import ItemsView, KeysView, ValuesView
+from collections.abc import AsyncIterable, ItemsView, Iterable, KeysView, ValuesView
 from contextlib import asynccontextmanager
-from re import search
-from typing import TYPE_CHECKING, ClassVar
+from re import DOTALL, search
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from hypothesis import HealthCheck, given, settings
-from hypothesis.strategies import booleans, dictionaries, integers, lists, none
-from pytest import RaisesGroup, raises
+from hypothesis.strategies import booleans, dictionaries, integers, lists, none, sets
+from pytest import RaisesGroup, mark, param, raises
 
 from utilities.asyncio import (
     AsyncDict,
     EnhancedTaskGroup,
-    async_chain,
+    OneAsyncEmptyError,
+    OneAsyncNonUniqueError,
+    chain_async,
     get_coroutine_name,
     get_items,
     get_items_nowait,
+    one_async,
     put_items,
     put_items_nowait,
     sleep_max,
@@ -40,15 +44,6 @@ if TYPE_CHECKING:
 
 
 async_dicts = dictionaries(text_ascii(), integers()).map(AsyncDict)
-
-
-class TestAsyncChain:
-    @given(n=integers(0, 10))
-    async def test_iterator(self, *, n: int) -> None:
-        it = async_chain(range(n))
-        result = [x async for x in it]
-        expected = list(range(n))
-        assert result == expected
 
 
 class TestAsyncDict:
@@ -198,6 +193,26 @@ class TestAsyncDict:
             assert isinstance(value, int)
 
 
+class TestChainAsync:
+    @given(n=integers(0, 10))
+    async def test_sync(self, *, n: int) -> None:
+        it = chain_async(range(n))
+        result = [x async for x in it]
+        expected = list(range(n))
+        assert result == expected
+
+    @given(n=integers(0, 10))
+    async def test_async(self, *, n: int) -> None:
+        async def range_async(n: int, /) -> AsyncIterator[int]:
+            for i in range(n):
+                yield i
+
+        it = chain_async(range_async(n))
+        result = [x async for x in it]
+        expected = list(range(n))
+        assert result == expected
+
+
 class TestEnhancedTaskGroup:
     delta: ClassVar[TimeDelta] = 0.05 * SECOND
 
@@ -325,6 +340,37 @@ class TestGetItems:
         else:
             result = get_items_nowait(queue, max_size=max_size)
         assert result == xs[:max_size]
+
+
+class TestOneAsync:
+    @mark.parametrize(
+        "args", [param(([None],)), param(([None], [])), param(([None], [], []))]
+    )
+    async def test_main(self, *, args: tuple[Iterable[Any], ...]) -> None:
+        assert await one_async(*map(self._lift, args)) is None
+
+    @mark.parametrize("args", [param([]), param(([], [])), param(([], [], []))])
+    async def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
+        with raises(OneAsyncEmptyError, match=r"Iterable\(s\) .* must not be empty"):
+            _ = one_async(*map(self._lift, args))
+
+    @given(iterable=sets(integers(), min_size=2))
+    async def test_error_non_unique(self, *, iterable: set[int]) -> None:
+        with raises(
+            OneAsyncNonUniqueError,
+            match=re.compile(
+                r"Iterable\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
+                flags=DOTALL,
+            ),
+        ):
+            _ = await one_async(iterable)
+
+    def _lift[T](self, iterable: Iterable[T], /) -> AsyncIterable[T]:
+        async def lifted() -> AsyncIterator[Any]:
+            for i in iterable:
+                yield i
+
+        return lifted()
 
 
 class TestPutItems:

@@ -39,6 +39,7 @@ from typing import (
 from utilities.functions import ensure_int, ensure_not_none
 from utilities.os import is_pytest
 from utilities.random import SYSTEM_RANDOM
+from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
 from utilities.shelve import yield_shelf
 from utilities.text import to_bool
@@ -348,10 +349,10 @@ class EnhancedTaskGroup(TaskGroup):
 ##
 
 
-def async_chain[T](*iterables: Iterable[T] | AsyncIterable[T]) -> AsyncIterator[T]:
+def chain_async[T](*iterables: Iterable[T] | AsyncIterable[T]) -> AsyncIterator[T]:
     """Asynchronous version of `chain`."""
 
-    async def gen() -> AsyncIterator[T]:
+    async def iterator() -> AsyncIterator[T]:
         for it in iterables:
             try:
                 async for item in cast("AsyncIterable[T]", it):
@@ -360,7 +361,7 @@ def async_chain[T](*iterables: Iterable[T] | AsyncIterable[T]) -> AsyncIterator[
                 for item in cast("Iterable[T]", it):
                     yield item
 
-    return gen()
+    return iterator()
 
 
 ##
@@ -409,6 +410,43 @@ def get_items_nowait[T](queue: Queue[T], /, *, max_size: int | None = None) -> l
             except QueueEmpty:
                 break
     return items
+
+
+##
+
+
+async def one_async[T](*iterables: Iterable[T] | AsyncIterable[T]) -> T:
+    """Asynchronous version of `one`."""
+    result: T | Sentinel = sentinel
+    async for item in chain_async(*iterables):
+        if not isinstance(result, Sentinel):
+            raise OneAsyncNonUniqueError(iterables=iterables, first=result, second=item)
+        result = item
+    if isinstance(result, Sentinel):
+        raise OneAsyncEmptyError(iterables=iterables)
+    return result
+
+
+@dataclass(kw_only=True, slots=True)
+class OneAsyncError[T](Exception):
+    iterables: tuple[Iterable[T] | AsyncIterable[T], ...]
+
+
+@dataclass(kw_only=True, slots=True)
+class OneAsyncEmptyError[T](OneAsyncError[T]):
+    @override
+    def __str__(self) -> str:
+        return f"Iterable(s) {get_repr(self.iterables)} must not be empty"
+
+
+@dataclass(kw_only=True, slots=True)
+class OneAsyncNonUniqueError[T](OneAsyncError):
+    first: T
+    second: T
+
+    @override
+    def __str__(self) -> str:
+        return f"Iterable(s) {get_repr(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
 
 
 ##
@@ -562,11 +600,15 @@ async def yield_locked_shelf(
 __all__ = [
     "AsyncDict",
     "EnhancedTaskGroup",
+    "OneAsyncEmptyError",
+    "OneAsyncError",
+    "OneAsyncNonUniqueError",
     "StreamCommandOutput",
-    "async_chain",
+    "chain_async",
     "get_coroutine_name",
     "get_items",
     "get_items_nowait",
+    "one_async",
     "put_items",
     "put_items_nowait",
     "sleep_max",
