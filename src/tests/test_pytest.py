@@ -303,10 +303,11 @@ class TestRunFrac:
         self._run_test(testdir)
 
     def _run_test(self, testdir: Testdir, /) -> None:
+        result = testdir.runpytest()
         try:
-            testdir.runpytest().assert_outcomes(passed=1)
+            result.assert_outcomes(passed=1)
         except AssertionError:
-            testdir.runpytest().assert_outcomes(skipped=1)
+            result.assert_outcomes(skipped=1)
 
 
 class TestThrottle:
