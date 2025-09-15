@@ -313,7 +313,7 @@ class TestRunFrac:
                 assert True
             """
         )
-        assert testdir.runpytest().assert_outcomes(passed=1)
+        testdir.runpytest().assert_outcomes(passed=1)
 
     def _run_test(self, testdir: Testdir, /) -> None:
         result = testdir.runpytest()
