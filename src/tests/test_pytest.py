@@ -257,6 +257,57 @@ class TestPytestOptions:
         result.stdout.re_match_lines(list(matches))
 
 
+class TestRunFrac:
+    def test_basic(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile(
+            """
+            from utilities.pytest import run_frac
+
+            @run_frac()
+            def test_main() -> None:
+                assert True
+            """
+        )
+        self._run_test(testdir)
+
+    @mark.flaky
+    @mark.parametrize("asyncio_first", [param(True), param(False)])
+    def test_async(self, *, testdir: Testdir, asyncio_first: bool) -> None:
+        if asyncio_first:
+            _ = testdir.makepyfile(
+                """
+                from pytest import mark
+
+                from utilities.pytest import run_frac
+
+                @mark.asyncio
+                @run_frac()
+                async def test_main() -> None:
+                    assert True
+                """
+            )
+        else:
+            _ = testdir.makepyfile(
+                """
+                from pytest import mark
+
+                from utilities.pytest import run_frac
+
+                @run_frac()
+                @mark.asyncio
+                async def test_main() -> None:
+                    assert True
+                """
+            )
+        self._run_test(testdir)
+
+    def _run_test(self, testdir: Testdir, /) -> None:
+        try:
+            testdir.runpytest().assert_outcomes(passed=1)
+        except AssertionError:
+            testdir.runpytest().assert_outcomes(skipped=1)
+
+
 class TestThrottle:
     delta: ClassVar[float] = 0.5
 
