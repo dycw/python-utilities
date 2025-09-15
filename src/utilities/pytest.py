@@ -29,7 +29,8 @@ from utilities.platform import (
     IS_WINDOWS,
 )
 from utilities.random import bernoulli
-from utilities.types import MaybeCoro, Seed
+from utilities.text import to_bool
+from utilities.types import MaybeCallableBoolLike, MaybeCoro, Seed
 from utilities.whenever import SECOND, get_now_local
 
 if TYPE_CHECKING:
@@ -168,21 +169,31 @@ class _NodeIdToPathNotGetTailError(NodeIdToPathError):
 
 
 def run_frac[F: Callable[..., MaybeCoro[None]]](
-    *, frac: float = 0.5, seed: Seed | None = None
+    *,
+    predicate: MaybeCallableBoolLike | None = None,
+    frac: float = 0.5,
+    seed: Seed | None = None,
 ) -> Callable[[F], F]:
     """Run a test only a fraction of the time.."""
-    return cast("Any", partial(_run_frac_inner, frac=frac, seed=seed))
+    return cast(
+        "Any", partial(_run_frac_inner, predicate=predicate, frac=frac, seed=seed)
+    )
 
 
 def _run_frac_inner[F: Callable[..., MaybeCoro[None]]](
-    func: F, /, *, frac: float = 0.5, seed: Seed | None = None
+    func: F,
+    /,
+    *,
+    predicate: MaybeCallableBoolLike | None = None,
+    frac: float = 0.5,
+    seed: Seed | None = None,
 ) -> F:
     match bool(iscoroutinefunction(func)):
         case False:
 
             @wraps(func)
             def run_frac_sync(*args: Any, **kwargs: Any) -> None:
-                _skipif_frac(frac=frac, seed=seed)
+                _skipif_frac(predicate=predicate, frac=frac, seed=seed)
                 cast("Callable[..., None]", func)(*args, **kwargs)
 
             return cast("Any", run_frac_sync)
@@ -191,7 +202,7 @@ def _run_frac_inner[F: Callable[..., MaybeCoro[None]]](
 
             @wraps(func)
             async def run_frac_async(*args: Any, **kwargs: Any) -> None:
-                _skipif_frac(frac=frac, seed=seed)
+                _skipif_frac(predicate=predicate, frac=frac, seed=seed)
                 await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
 
             return cast("Any", run_frac_async)
@@ -200,8 +211,17 @@ def _run_frac_inner[F: Callable[..., MaybeCoro[None]]](
             assert_never(never)
 
 
-def _skipif_frac(*, frac: float = 0.5, seed: Seed | None = None) -> None:
-    if (skip is not None) and bernoulli(true=1 - frac, seed=seed):
+def _skipif_frac(
+    *,
+    predicate: MaybeCallableBoolLike | None = None,
+    frac: float = 0.5,
+    seed: Seed | None = None,
+) -> None:
+    if skip is None:
+        return  # pragma: no cover
+    if ((predicate is None) or to_bool(predicate)) and bernoulli(
+        true=1 - frac, seed=seed
+    ):
         _ = skip(reason=f"{_get_name()} skipped (run {frac:.0%})")
 
 
