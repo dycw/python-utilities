@@ -134,7 +134,7 @@ def is_debug() -> bool:
 
 def is_pytest() -> bool:
     """Check if `pytest` is running."""
-    return get_env_var("PYTEST_VERSION", default=None) is not None
+    return get_env_var("PYTEST_VERSION", nullable=True) is not None
 
 
 ##
