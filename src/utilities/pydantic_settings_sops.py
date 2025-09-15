@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from logging import Filter, LogRecord, getLogger
+from re import search
 from typing import TYPE_CHECKING, Any, ClassVar, override
 
 from pydantic_settings.sources import DEFAULT_PATH
@@ -19,6 +21,17 @@ if TYPE_CHECKING:
     from pydantic_settings.sources import PathType
 
     from utilities.types import MaybeSequenceStr
+
+
+class _SuppressDefaultConfigMessage(Filter):
+    @override
+    def filter(self, record: LogRecord) -> bool:
+        return not search(
+            r"^default config file does not exists '.*'$", record.getMessage()
+        )
+
+
+getLogger("sopsy.utils").addFilter(_SuppressDefaultConfigMessage())
 
 
 class SopsBaseSettings(CustomBaseSettings):
