@@ -258,7 +258,6 @@ class TestPytestOptions:
 
 
 class TestRunFrac:
-    @mark.flaky
     def test_basic(self, *, testdir: Testdir) -> None:
         _ = testdir.makepyfile(
             """
@@ -303,11 +302,10 @@ class TestRunFrac:
         self._run_test(testdir)
 
     def _run_test(self, testdir: Testdir, /) -> None:
-        result = testdir.runpytest()
         try:
-            result.assert_outcomes(passed=1)
+            testdir.runpytest().assert_outcomes(passed=1)
         except AssertionError:
-            result.assert_outcomes(skipped=1)
+            testdir.runpytest().assert_outcomes(skipped=1)
 
 
 class TestThrottle:
