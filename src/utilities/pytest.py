@@ -28,7 +28,8 @@ from utilities.platform import (
     IS_NOT_WINDOWS,
     IS_WINDOWS,
 )
-from utilities.types import MaybeCoro
+from utilities.random import bernoulli
+from utilities.types import MaybeCoro, Seed
 from utilities.whenever import SECOND, get_now_local
 
 if TYPE_CHECKING:
@@ -166,6 +167,47 @@ class _NodeIdToPathNotGetTailError(NodeIdToPathError):
 ##
 
 
+def run_frac[F: Callable[..., MaybeCoro[None]]](
+    *, frac: float = 0.5, seed: Seed | None = None
+) -> Callable[[F], F]:
+    """Run a test only a fraction of the time.."""
+    return cast("Any", partial(_run_frac_inner, frac=frac, seed=seed))
+
+
+def _run_frac_inner[F: Callable[..., MaybeCoro[None]]](
+    func: F, /, *, frac: float = 0.5, seed: Seed | None = None
+) -> F:
+    match bool(iscoroutinefunction(func)):
+        case False:
+
+            @wraps(func)
+            def run_frac_sync(*args: Any, **kwargs: Any) -> None:
+                _skipif_frac(frac=frac, seed=seed)
+                cast("Callable[..., None]", func)(*args, **kwargs)
+
+            return cast("Any", run_frac_sync)
+
+        case True:
+
+            @wraps(func)
+            async def run_frac_async(*args: Any, **kwargs: Any) -> None:
+                _skipif_frac(frac=frac, seed=seed)
+                await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
+
+            return cast("Any", run_frac_async)
+
+        case never:
+            assert_never(never)
+
+
+def _skipif_frac(*, frac: float = 0.5, seed: Seed | None = None) -> None:
+    if (skip is not None) and bernoulli(true=1 - frac, seed=seed):
+        _ = skip(reason=f"{_get_name()} skipped (run {frac:.0%})")
+
+
+##
+
+
 def throttle[F: Callable[..., MaybeCoro[None]]](
     *, root: PathLike | None = None, delta: Delta = SECOND, on_try: bool = False
 ) -> Callable[[F], F]:
@@ -181,7 +223,6 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
     delta: Delta = SECOND,
     on_try: bool = False,
 ) -> F:
-    """Throttle a test function/method."""
     if get_env_var("THROTTLE", nullable=True) is not None:
         return func
     match bool(iscoroutinefunction(func)), on_try:
@@ -276,6 +317,7 @@ __all__ = [
     "add_pytest_collection_modifyitems",
     "add_pytest_configure",
     "node_id_path",
+    "run_frac",
     "skipif_linux",
     "skipif_mac",
     "skipif_not_linux",
