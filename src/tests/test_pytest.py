@@ -302,6 +302,19 @@ class TestRunFrac:
             )
         self._run_test(testdir)
 
+    @mark.flaky
+    def test_predicate(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile(
+            """
+            from utilities.pytest import run_frac
+
+            @run_frac(predicate=False)
+            def test_main() -> None:
+                assert True
+            """
+        )
+        assert testdir.runpytest().assert_outcomes(passed=1)
+
     def _run_test(self, testdir: Testdir, /) -> None:
         result = testdir.runpytest()
         try:
