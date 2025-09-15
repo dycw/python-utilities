@@ -303,17 +303,22 @@ class TestRunFrac:
         self._run_test(testdir)
 
     @mark.flaky
-    def test_predicate(self, *, testdir: Testdir) -> None:
+    @mark.parametrize(
+        ("bool_", "passed", "skipped"), [param(True, 1, 0), param(False, 0, 1)]
+    )
+    def test_predicate(
+        self, *, testdir: Testdir, bool_: bool, passed: int, skipped: int
+    ) -> None:
         _ = testdir.makepyfile(
-            """
+            f"""
             from utilities.pytest import run_frac
 
-            @run_frac(predicate=False)
+            @run_frac(predicate={bool_})
             def test_main() -> None:
                 assert True
             """
         )
-        testdir.runpytest().assert_outcomes(passed=1)
+        testdir.runpytest().assert_outcomes(passed=passed, skipped=skipped)
 
     def _run_test(self, testdir: Testdir, /) -> None:
         result = testdir.runpytest()
