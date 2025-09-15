@@ -270,7 +270,6 @@ class TestRunFrac:
         )
         self._run_test(testdir)
 
-    @mark.flaky
     @mark.parametrize("asyncio_first", [param(True), param(False)])
     def test_async(self, *, testdir: Testdir, asyncio_first: bool) -> None:
         if asyncio_first:
