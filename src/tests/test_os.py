@@ -134,6 +134,10 @@ class TestIsPytest:
     def test_main(self) -> None:
         assert is_pytest()
 
+    def test_off(self) -> None:
+        with temp_environ(PYTEST_VERSION=None):
+            assert not is_pytest()
+
 
 class TestTempEnviron:
     @given(key=text.map(_prefix), value=text)
