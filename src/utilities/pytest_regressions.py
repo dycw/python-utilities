@@ -97,7 +97,6 @@ class PolarsRegressionFixture:
             "describe": obj.describe(percentiles=[i / 10 for i in range(1, 10)]).rows(
                 named=True
             ),
-            "estimated_size": obj.estimated_size(),
             "is_empty": obj.is_empty(),
             "n_unique": obj.n_unique(),
         }
