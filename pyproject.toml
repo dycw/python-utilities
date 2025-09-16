@@ -71,7 +71,7 @@ http-test = [
   "orjson",
 ]
 hypothesis = [
-  "hypothesis >=6.138.16, <6.139",
+  "hypothesis >=6.138.17, <6.139",
 ]
 hypothesis-test = [
   "libcst",
@@ -258,7 +258,7 @@ logging = [
 ]
 test = [
   "dycw-pytest-only >=2.1.1, <2.2",
-  "hypothesis >=6.138.16, <6.139",
+  "hypothesis >=6.138.17, <6.139",
   "pytest >=8.4.2, <8.5",
   "pytest-asyncio >=1.2.0, <1.3",
   "pytest-cov >=7.0.0, <7.1",
