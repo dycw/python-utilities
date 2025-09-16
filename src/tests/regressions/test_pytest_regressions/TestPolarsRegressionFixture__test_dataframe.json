@@ -64,7 +64,6 @@
       "value": 9.0
     }
   ],
-  "estimated_size": 80,
   "glimpse": "Rows: 10\nColumns: 1\n$ value <i64> 0, 1, 2, 3, 4, 5, 6, 7, 8, 9\n",
   "is_empty": false,
   "n_unique": 10,
