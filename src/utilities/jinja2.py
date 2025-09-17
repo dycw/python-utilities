@@ -86,6 +86,7 @@ class EnhancedEnvironment(Environment):
         )
         self.filters["snake"] = snake_case
         self.filters["pascal"] = pascal_case
+        self.filters["pascal"] = pascal_case
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
