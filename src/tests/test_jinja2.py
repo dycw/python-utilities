@@ -26,7 +26,7 @@ class TestEnhancedTemplate:
         result = env.get_template("test.j2").render(text="multi-word string")
         expected = strip_and_dedent("""
             text   = 'multi-word string'
-            kebab  = 'multi-word string'
+            kebab  = 'multi-word-string'
             pascal = 'MultiWordString'
             snake  = 'multi_word_string'
         """)
