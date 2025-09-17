@@ -19,6 +19,7 @@ from jinja2.defaults import (
     VARIABLE_START_STRING,
 )
 
+from utilities.atomicwrites import writer
 from utilities.text import kebab_case, pascal_case, snake_case
 
 if TYPE_CHECKING:
