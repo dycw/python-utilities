@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, override
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Literal, assert_never, override
 
-from jinja2 import BaseLoader, BytecodeCache, Environment, Undefined
+from jinja2 import BaseLoader, BytecodeCache, Environment, FileSystemLoader, Undefined
 from jinja2.defaults import (
     BLOCK_END_STRING,
     BLOCK_START_STRING,
@@ -18,12 +19,16 @@ from jinja2.defaults import (
     VARIABLE_START_STRING,
 )
 
+from utilities.atomicwrites import writer
 from utilities.text import pascal_case, snake_case
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+    from pathlib import Path
 
     from jinja2.ext import Extension
+
+    from utilities.types import StrMapping
 
 
 class EnhancedEnvironment(Environment):
@@ -83,4 +88,32 @@ class EnhancedEnvironment(Environment):
         self.filters["pascal"] = pascal_case
 
 
-__all__ = ["EnhancedEnvironment"]
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
+class TemplateJob:
+    """A template with an associated rendering job."""
+
+    template: Path
+    kwargs: StrMapping
+    target: Path
+    mode: Literal["write", "append"] = "write"
+
+    def run(self) -> None:
+        """Run the job."""
+        match self.mode:
+            case "write":
+                with writer(self.target, overwrite=True) as temp:
+                    _ = temp.write_text(self.rendered)
+            case "append":
+                with self.target.open(mode="a") as fh:
+                    _ = fh.write(self.rendered)
+            case never:
+                assert_never(never)
+
+    @property
+    def rendered(self) -> str:
+        """The template, rendered."""
+        env = EnhancedEnvironment(loader=FileSystemLoader(self.template.parent))
+        return env.get_template(self.template.name).render(self.kwargs)
+
+
+__all__ = ["EnhancedEnvironment", "TemplateJob"]
