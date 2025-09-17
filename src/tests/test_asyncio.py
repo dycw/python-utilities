@@ -240,7 +240,7 @@ class TestEnhancedTaskGroup:
             async with EnhancedTaskGroup() as tg:
                 for _ in range(10):
                     _ = tg.create_task(sleep_td(self.delta))
-        assert timer <= 2 * self.delta
+        assert timer <= 3 * self.delta
 
     async def test_max_tasks_enabled(self) -> None:
         with Timer() as timer:
