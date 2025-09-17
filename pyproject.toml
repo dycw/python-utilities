@@ -147,7 +147,7 @@ pqdm = [
   "pqdm >=0.2.0, <0.3",
 ]
 psutil = [
-  "psutil >=7.0.0, <7.1",
+  "psutil >=7.1.0, <7.2",
 ]
 pydantic-settings = [
   "pydantic-settings",
@@ -242,7 +242,6 @@ whenever-test = [
 authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
 dependencies = [
   "atomicwrites >=1.4.1, <1.5",
-  "jinja2 >=3.1.6",
   "typing-extensions >=4.15.0, <4.16",
   "tzlocal >=5.3.1, <5.4",
   "whenever >=0.8.8, <0.9",
@@ -250,7 +249,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.166.33"
+version = "0.166.34"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -283,7 +282,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.166.33"
+current_version = "0.166.34"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
