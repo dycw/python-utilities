@@ -20,7 +20,7 @@ from jinja2.defaults import (
 )
 
 from utilities.atomicwrites import writer
-from utilities.text import pascal_case, snake_case
+from utilities.text import kebab_case, pascal_case, snake_case
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -84,8 +84,9 @@ class EnhancedEnvironment(Environment):
             bytecode_cache,
             enable_async,
         )
-        self.filters["snake"] = snake_case
+        self.filters["kebab"] = kebab_case
         self.filters["pascal"] = pascal_case
+        self.filters["snake"] = snake_case
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)

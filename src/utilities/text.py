@@ -31,7 +31,15 @@ if TYPE_CHECKING:
     from utilities.types import MaybeCallableBoolLike, MaybeCallableStr, StrStrMapping
 
 
-DEFAULT_SEPARATOR = ","
+_DEFAULT_SEPARATOR = ","
+
+
+##
+
+
+def kebab_case(text: str, /) -> str:
+    """Convert text into kebab case."""
+    return _kebab_snake_case(text, "-")
 
 
 ##
@@ -110,27 +118,13 @@ def repr_encode(obj: Any, /) -> bytes:
 
 def snake_case(text: str, /) -> str:
     """Convert text into snake case."""
-    leading = bool(search(r"^_", text))
-    trailing = bool(search(r"_$", text))
-    parts = _SPLIT_TEXT.findall(text)
-    parts = (p for p in parts if len(p) >= 1)
-    parts = chain([""] if leading else [], parts, [""] if trailing else [])
-    return "_".join(parts).lower()
+    return _kebab_snake_case(text, "_")
 
-
-_SPLIT_TEXT = re.compile(
-    r"""
-    [A-Z]+(?=[A-Z][a-z0-9]) | # all caps followed by Upper+lower or digit (API in APIResponse2)
-    [A-Z]?[a-z]+[0-9]*      | # normal words with optional trailing digits (Text123)
-    [A-Z]+[0-9]*            | # consecutive caps with optional trailing digits (ID2)
-    """,
-    flags=VERBOSE,
-)
 
 ##
 
 
-LIST_SEPARATOR = DEFAULT_SEPARATOR
+LIST_SEPARATOR = _DEFAULT_SEPARATOR
 PAIR_SEPARATOR = "="
 BRACKETS = [("(", ")"), ("[", "]"), ("{", "}")]
 
@@ -140,7 +134,7 @@ def split_key_value_pairs(
     text: str,
     /,
     *,
-    list_separator: str = DEFAULT_SEPARATOR,
+    list_separator: str = _DEFAULT_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     mapping: Literal[True],
@@ -150,7 +144,7 @@ def split_key_value_pairs(
     text: str,
     /,
     *,
-    list_separator: str = DEFAULT_SEPARATOR,
+    list_separator: str = _DEFAULT_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     mapping: Literal[False] = False,
@@ -160,7 +154,7 @@ def split_key_value_pairs(
     text: str,
     /,
     *,
-    list_separator: str = DEFAULT_SEPARATOR,
+    list_separator: str = _DEFAULT_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     mapping: bool = False,
@@ -169,7 +163,7 @@ def split_key_value_pairs(
     text: str,
     /,
     *,
-    list_separator: str = DEFAULT_SEPARATOR,
+    list_separator: str = _DEFAULT_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     mapping: bool = False,
@@ -228,7 +222,7 @@ def split_str(
     text: str,
     /,
     *,
-    separator: str = DEFAULT_SEPARATOR,
+    separator: str = _DEFAULT_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: Literal[1],
 ) -> tuple[str]: ...
@@ -237,7 +231,7 @@ def split_str(
     text: str,
     /,
     *,
-    separator: str = DEFAULT_SEPARATOR,
+    separator: str = _DEFAULT_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: Literal[2],
 ) -> tuple[str, str]: ...
@@ -246,7 +240,7 @@ def split_str(
     text: str,
     /,
     *,
-    separator: str = DEFAULT_SEPARATOR,
+    separator: str = _DEFAULT_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: Literal[3],
 ) -> tuple[str, str, str]: ...
@@ -255,7 +249,7 @@ def split_str(
     text: str,
     /,
     *,
-    separator: str = DEFAULT_SEPARATOR,
+    separator: str = _DEFAULT_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: Literal[4],
 ) -> tuple[str, str, str, str]: ...
@@ -264,7 +258,7 @@ def split_str(
     text: str,
     /,
     *,
-    separator: str = DEFAULT_SEPARATOR,
+    separator: str = _DEFAULT_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: Literal[5],
 ) -> tuple[str, str, str, str, str]: ...
@@ -273,7 +267,7 @@ def split_str(
     text: str,
     /,
     *,
-    separator: str = DEFAULT_SEPARATOR,
+    separator: str = _DEFAULT_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: int | None = None,
 ) -> tuple[str, ...]: ...
@@ -281,7 +275,7 @@ def split_str(
     text: str,
     /,
     *,
-    separator: str = DEFAULT_SEPARATOR,
+    separator: str = _DEFAULT_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: int | None = None,
 ) -> tuple[str, ...]:
@@ -306,7 +300,7 @@ def _split_str_brackets(
     brackets: Iterable[tuple[str, str]],
     /,
     *,
-    separator: str = DEFAULT_SEPARATOR,
+    separator: str = _DEFAULT_SEPARATOR,
 ) -> list[str]:
     brackets = list(brackets)
     opens, closes = transpose(brackets)
@@ -397,7 +391,7 @@ class _SplitStrOpeningBracketUnmatchedError(SplitStrError):
 
 
 def join_strs(
-    texts: Iterable[str], /, *, sort: bool = False, separator: str = DEFAULT_SEPARATOR
+    texts: Iterable[str], /, *, sort: bool = False, separator: str = _DEFAULT_SEPARATOR
 ) -> str:
     """Join a collection of strings, with a special provision for the empty list."""
     texts = list(texts)
@@ -410,7 +404,7 @@ def join_strs(
     return separator.join(texts)
 
 
-def _escape_separator(*, separator: str = DEFAULT_SEPARATOR) -> str:
+def _escape_separator(*, separator: str = _DEFAULT_SEPARATOR) -> str:
     return f"\\{separator}"
 
 
@@ -513,9 +507,30 @@ def unique_str() -> str:
     return f"{now}_{pid}_{ident}_{key}"
 
 
+##
+
+
+def _kebab_snake_case(text: str, separator: str, /) -> str:
+    """Convert text into kebab/snake case."""
+    leading = bool(search(r"^_", text))
+    trailing = bool(search(r"_$", text))
+    parts = _SPLIT_TEXT.findall(text)
+    parts = (p for p in parts if len(p) >= 1)
+    parts = chain([""] if leading else [], parts, [""] if trailing else [])
+    return separator.join(parts).lower()
+
+
+_SPLIT_TEXT = re.compile(
+    r"""
+    [A-Z]+(?=[A-Z][a-z0-9]) | # all caps followed by Upper+lower or digit (API in APIResponse2)
+    [A-Z]?[a-z]+[0-9]*      | # normal words with optional trailing digits (Text123)
+    [A-Z]+[0-9]*            | # consecutive caps with optional trailing digits (ID2)
+    """,
+    flags=VERBOSE,
+)
+
 __all__ = [
     "BRACKETS",
-    "DEFAULT_SEPARATOR",
     "LIST_SEPARATOR",
     "PAIR_SEPARATOR",
     "ParseBoolError",
@@ -523,6 +538,7 @@ __all__ = [
     "SplitKeyValuePairsError",
     "SplitStrError",
     "join_strs",
+    "kebab_case",
     "parse_bool",
     "parse_none",
     "pascal_case",
