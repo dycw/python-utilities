@@ -676,6 +676,9 @@ hypothesis-test = [
 inflect = [
     { name = "inflect" },
 ]
+jinja2 = [
+    { name = "jinja2" },
+]
 jupyter-test = [
     { name = "pandas" },
     { name = "polars" },
@@ -902,6 +905,7 @@ hypothesis-test = [
     { name = "pytest-rerunfailures" },
 ]
 inflect = [{ name = "inflect", specifier = ">=7.5.0,<7.6" }]
+jinja2 = [{ name = "jinja2", specifier = ">=3.1.6,<3.2" }]
 jupyter-test = [
     { name = "pandas" },
     { name = "polars" },
