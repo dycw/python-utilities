@@ -56,7 +56,7 @@ class TestPGDump:
         inserts=booleans(),
         on_conflict_do_nothing=booleans(),
         role=text_ascii(min_size=1) | none(),
-        docker=text_ascii(min_size=1) | none(),
+        docker_container=text_ascii(min_size=1) | none(),
     )
     def test_build(
         self,
@@ -75,7 +75,7 @@ class TestPGDump:
         inserts: bool,
         on_conflict_do_nothing: bool,
         role: str | None,
-        docker: str | None,
+        docker_container: str | None,
     ) -> None:
         _ = _build_pg_dump(
             url,
@@ -92,7 +92,7 @@ class TestPGDump:
             inserts=inserts,
             on_conflict_do_nothing=on_conflict_do_nothing,
             role=role,
-            docker=docker,
+            docker_container=docker_container,
         )
 
     @given(path=temp_paths(), format_=sampled_from(get_literal_elements(_PGDumpFormat)))
@@ -132,7 +132,7 @@ class TestRestore:
         schema_exc=lists(text_ascii(min_size=1)) | none(),
         table=tables() | none(),
         role=text_ascii(min_size=1) | none(),
-        docker=text_ascii(min_size=1) | none(),
+        docker_container=text_ascii(min_size=1) | none(),
     )
     def test_build(
         self,
@@ -146,7 +146,7 @@ class TestRestore:
         schema_exc: list[str] | None,
         table: list[Table | str] | None,
         role: str | None,
-        docker: str | None,
+        docker_container: str | None,
     ) -> None:
         _ = _build_pg_restore_or_psql(
             url,
@@ -158,5 +158,5 @@ class TestRestore:
             schema_exc=schema_exc,
             table=table,
             role=role,
-            docker=docker,
+            docker_container=docker_container,
         )
