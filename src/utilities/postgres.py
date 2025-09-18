@@ -9,6 +9,7 @@ from sqlalchemy import Table
 from sqlalchemy.orm import DeclarativeBase
 
 from utilities.asyncio import stream_command
+from utilities.docker import docker_exec
 from utilities.iterables import always_iterable
 from utilities.logging import to_logger
 from utilities.os import temp_environ
@@ -37,6 +38,7 @@ async def pg_dump(
     path: PathLike,
     /,
     *,
+    docker_container: str | None = None,
     format_: _PGDumpFormat = "plain",
     jobs: int | None = None,
     data_only: bool = False,
@@ -51,7 +53,6 @@ async def pg_dump(
     inserts: bool = False,
     on_conflict_do_nothing: bool = False,
     role: str | None = None,
-    docker: str | None = None,
     dry_run: bool = False,
     logger: LoggerLike | None = None,
 ) -> bool:
@@ -61,6 +62,7 @@ async def pg_dump(
     cmd = _build_pg_dump(
         url,
         path,
+        docker_container=docker_container,
         format_=format_,
         jobs=jobs,
         data_only=data_only,
@@ -75,7 +77,6 @@ async def pg_dump(
         inserts=inserts,
         on_conflict_do_nothing=on_conflict_do_nothing,
         role=role,
-        docker=docker,
     )
     if dry_run:
         if logger is not None:
@@ -111,6 +112,7 @@ def _build_pg_dump(
     path: PathLike,
     /,
     *,
+    docker_container: str | None = None,
     format_: _PGDumpFormat = "plain",
     jobs: int | None = None,
     data_only: bool = False,
@@ -125,12 +127,13 @@ def _build_pg_dump(
     inserts: bool = False,
     on_conflict_do_nothing: bool = False,
     role: str | None = None,
-    docker: str | None = None,
 ) -> str:
     extracted = extract_url(url)
     path = _path_pg_dump(path, format_=format_)
-    parts: list[str] = [
-        "pg_dump",
+    parts: list[str] = ["pg_dump"]
+    if docker_container is not None:
+        parts = docker_exec(docker_container, *parts, PGPASSWORD=extracted.password)
+    parts.extend([
         # general options
         f"--file={str(path)!r}",
         f"--format={format_}",
@@ -146,7 +149,7 @@ def _build_pg_dump(
         f"--port={extracted.port}",
         f"--username={extracted.username}",
         "--no-password",
-    ]
+    ])
     if (format_ == "directory") and (jobs is not None):
         parts.append(f"--jobs={jobs}")
     if create:
@@ -173,8 +176,6 @@ def _build_pg_dump(
         parts.append("--on-conflict-do-nothing")
     if role is not None:
         parts.append(f"--role={role}")
-    if docker is not None:
-        parts = _wrap_docker(parts, docker)
     return " ".join(parts)
 
 
@@ -213,7 +214,7 @@ async def restore(
     schema_exc: MaybeCollectionStr | None = None,
     table: MaybeCollection[TableOrORMInstOrClass | str] | None = None,
     role: str | None = None,
-    docker: str | None = None,
+    docker_container: str | None = None,
     dry_run: bool = False,
     logger: LoggerLike | None = None,
 ) -> bool:
@@ -230,7 +231,7 @@ async def restore(
         schema_exc=schema_exc,
         table=table,
         role=role,
-        docker=docker,
+        docker_container=docker_container,
     )
     if dry_run:
         if logger is not None:
@@ -276,11 +277,11 @@ def _build_pg_restore_or_psql(
     schema_exc: MaybeCollectionStr | None = None,
     table: MaybeCollection[TableOrORMInstOrClass | str] | None = None,
     role: str | None = None,
-    docker: str | None = None,
+    docker_container: str | None = None,
 ) -> str:
     path = Path(path)
     if (path.suffix == ".sql") or psql:
-        return _build_psql(url, path, docker=docker)
+        return _build_psql(url, path, docker_container=docker_container)
     return _build_pg_restore(
         url,
         path,
@@ -292,7 +293,7 @@ def _build_pg_restore_or_psql(
         schemas_exc=schema_exc,
         tables=table,
         role=role,
-        docker=docker,
+        docker_container=docker_container,
     )
 
 
@@ -309,12 +310,14 @@ def _build_pg_restore(
     schemas_exc: MaybeCollectionStr | None = None,
     tables: MaybeCollection[TableOrORMInstOrClass | str] | None = None,
     role: str | None = None,
-    docker: str | None = None,
+    docker_container: str | None = None,
 ) -> str:
     """Run `pg_restore`."""
     extracted = extract_url(url)
-    parts: list[str] = [
-        "pg_restore",
+    parts: list[str] = ["pg_restore"]
+    if docker_container is not None:
+        parts = docker_exec(docker_container, *parts, PGPASSWORD=extracted.password)
+    parts.extend([
         # general options
         "--verbose",
         # restore options
@@ -328,7 +331,7 @@ def _build_pg_restore(
         f"--username={extracted.username}",
         f"--dbname={extracted.database}",
         "--no-password",
-    ]
+    ])
     if create:
         parts.append("--create")
     if jobs is not None:
@@ -341,17 +344,19 @@ def _build_pg_restore(
         parts.extend([f"--table={_get_table_name(t)}" for t in always_iterable(tables)])
     if role is not None:
         parts.append(f"--role={role}")
-    if docker is not None:
-        parts = _wrap_docker(parts, docker)
     parts.append(str(path))
     return " ".join(parts)
 
 
-def _build_psql(url: URL, path: PathLike, /, *, docker: str | None = None) -> str:
+def _build_psql(
+    url: URL, path: PathLike, /, *, docker_container: str | None = None
+) -> str:
     """Run `psql`."""
     extracted = extract_url(url)
-    parts: list[str] = [
-        "psql",
+    parts: list[str] = ["psql"]
+    if docker_container is not None:
+        parts = docker_exec(docker_container, *parts, PGPASSWORD=extracted.password)
+    parts.extend([
         # general options
         f"--dbname={extracted.database}",
         f"--file={str(path)!r}",
@@ -360,9 +365,7 @@ def _build_psql(url: URL, path: PathLike, /, *, docker: str | None = None) -> st
         f"--port={extracted.port}",
         f"--username={extracted.username}",
         "--no-password",
-    ]
-    if docker is not None:
-        parts = _wrap_docker(parts, docker)
+    ])
     return " ".join(parts)
 
 
@@ -400,10 +403,6 @@ class _ResolveDataOnlyAndCleanError(Exception):
     @override
     def __str__(self) -> str:
         return "Cannot use '--data-only' and '--clean' together"
-
-
-def _wrap_docker(parts: list[str], container: str, /) -> list[str]:
-    return ["docker", "exec", "-it", container, *parts]
 
 
 __all__ = ["pg_dump", "restore"]
