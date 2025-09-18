@@ -337,7 +337,7 @@ async def ensure_database_users_disconnected(super_: URL, database: str, /) -> N
     match dialect := _get_dialect(engine):
         case "postgresql":  # skipif-ci-and-not-linux
             query = f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = {database!r} AND pid <> pg_backend_pid()"  # noqa: S608
-        case "mssql" | "mysql" | "oracle" | "sqlite":
+        case "mssql" | "mysql" | "oracle" | "sqlite":  # pragma: no cover
             raise NotImplementedError(dialect)
         case never:
             assert_never(never)
