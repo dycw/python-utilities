@@ -3,8 +3,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from jinja2 import DictLoader
+from pytest import raises
 
-from utilities.jinja2 import EnhancedEnvironment, TemplateJob
+from utilities.jinja2 import (
+    EnhancedEnvironment,
+    TemplateJob,
+    _TemplateJobTargetDoesNotExistError,
+    _TemplateJobTemplateDoesNotExistError,
+)
 from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
@@ -85,3 +91,23 @@ class TestTemplateJob:
             old = 'old text'
             new = 'new text'
         """)
+
+    def test_error_template(self, *, tmp_path: Path) -> None:
+        path_template = tmp_path.joinpath("template.j2")
+        path_target = tmp_path.joinpath("target.txt")
+        with raises(
+            _TemplateJobTemplateDoesNotExistError,
+            match=r"^Template '.*' does not exist$",
+        ):
+            _ = TemplateJob(template=path_template, kwargs={}, target=path_target)
+
+    def test_error_target(self, *, tmp_path: Path) -> None:
+        path_template = tmp_path.joinpath("template.j2")
+        path_template.touch()
+        path_target = tmp_path.joinpath("target.txt")
+        with raises(
+            _TemplateJobTargetDoesNotExistError, match=r"^Target '.*' does not exist$"
+        ):
+            _ = TemplateJob(
+                template=path_template, kwargs={}, target=path_target, mode="append"
+            )

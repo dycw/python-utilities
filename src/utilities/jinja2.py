@@ -98,6 +98,12 @@ class TemplateJob:
     target: Path
     mode: Literal["write", "append"] = "write"
 
+    def __post_init__(self) -> None:
+        if not self.template.exists():
+            raise _TemplateJobTemplateDoesNotExistError(path=self.template)
+        if (self.mode == "append") and not self.target.exists():
+            raise _TemplateJobTargetDoesNotExistError(path=self.template)
+
     def run(self) -> None:
         """Run the job."""
         match self.mode:
@@ -117,4 +123,26 @@ class TemplateJob:
         return env.get_template(self.template.name).render(self.kwargs)
 
 
-__all__ = ["EnhancedEnvironment", "TemplateJob"]
+@dataclass(kw_only=True, slots=True)
+class TemplateJobError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _TemplateJobTemplateDoesNotExistError(TemplateJobError):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Template {str(self.path)!r} does not exist"
+
+
+@dataclass(kw_only=True, slots=True)
+class _TemplateJobTargetDoesNotExistError(TemplateJobError):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Target {str(self.path)!r} does not exist"
+
+
+__all__ = ["EnhancedEnvironment", "TemplateJob", "TemplateJobError"]
