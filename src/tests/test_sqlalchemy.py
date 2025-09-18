@@ -69,6 +69,7 @@ from utilities.sqlalchemy import (
     create_engine,
     ensure_database_created,
     ensure_database_dropped,
+    ensure_database_users_disconnected,
     ensure_tables_created,
     ensure_tables_dropped,
     enum_name,
@@ -247,6 +248,21 @@ class TestEnsureDatabaseCreatedAndDropped:
         sel = select(get_table(table_or_orm))
         async with engine.begin() as conn:
             _ = (await conn.execute(sel)).all()
+
+
+@SKIPIF_CI
+class TestEnsureDatabaseUsersDisconnected:
+    async def test_main(self) -> None:
+        url = URL.create(
+            "postgresql+asyncpg",
+            username=getuser(),
+            password="password",  # noqa: S106
+            host="localhost",
+            port=5432,
+            database="postgres",
+        )
+        database = f"testing_{_table_names()}"
+        await ensure_database_users_disconnected(url, database)
 
 
 class TestEnsureTablesCreated:
