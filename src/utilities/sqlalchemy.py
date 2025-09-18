@@ -331,6 +331,20 @@ async def ensure_database_dropped(super_: URL, database: str, /) -> None:
         _ = await conn.execute(text(f"DROP DATABASE IF EXISTS {database}"))
 
 
+async def ensure_database_users_disconnected(super_: URL, database: str, /) -> None:
+    """Ensure a databases' users are disconnected."""
+    engine = create_async_engine(super_, isolation_level="AUTOCOMMIT")
+    match dialect := _get_dialect(engine):
+        case "postgresql":  # skipif-ci-and-not-linux
+            query = f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = {database!r} AND pid <> pg_backend_pid()"  # noqa: S608
+        case "mssql" | "mysql" | "oracle" | "sqlite":  # pragma: no cover
+            raise NotImplementedError(dialect)
+        case never:
+            assert_never(never)
+    async with engine.begin() as conn:
+        _ = await conn.execute(text(query))
+
+
 ##
 
 
@@ -1166,6 +1180,7 @@ __all__ = [
     "create_engine",
     "ensure_database_created",
     "ensure_database_dropped",
+    "ensure_database_users_disconnected",
     "ensure_tables_created",
     "ensure_tables_dropped",
     "enum_name",
