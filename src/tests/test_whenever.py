@@ -125,6 +125,7 @@ from utilities.whenever import (
     get_time_local,
     get_today,
     get_today_local,
+    is_weekend,
     mean_datetime,
     min_max_date,
     round_date_or_date_time,
@@ -505,6 +506,141 @@ class TestGetTodayLocal:
 
     def test_constant(self) -> None:
         assert isinstance(TODAY_LOCAL, Date)
+
+
+class TestIsWeekend:
+    @mark.parametrize(
+        ("weekday", "time", "expected"),
+        [
+            param(Weekday.SATURDAY, Time(23, 59, 59), False),
+            param(Weekday.SUNDAY, Time(7, 59, 59), False),
+            param(Weekday.SUNDAY, Time(8), True),
+            param(Weekday.SUNDAY, Time(8, 0, 1), True),
+            param(Weekday.SUNDAY, Time(16, 59, 59), True),
+            param(Weekday.SUNDAY, Time(17), True),
+            param(Weekday.SUNDAY, Time(17, 0, 1), False),
+        ],
+    )
+    def test_one_day(self, *, weekday: Weekday, time: Time, expected: bool) -> None:
+        self._run_test(
+            weekday,
+            time,
+            Weekday.SUNDAY,
+            Time(8),
+            Weekday.SUNDAY,
+            Time(17),
+            expected=expected,
+        )
+
+    @mark.parametrize(
+        ("weekday", "time", "expected"),
+        [
+            param(Weekday.FRIDAY, Time(23, 59, 59), False),
+            param(Weekday.SATURDAY, Time(), False),
+            param(Weekday.SATURDAY, Time(0, 0, 1), False),
+            param(Weekday.SATURDAY, Time(7, 59, 59), False),
+            param(Weekday.SATURDAY, Time(8), True),
+            param(Weekday.SATURDAY, Time(8, 0, 1), True),
+            param(Weekday.SATURDAY, Time(23, 59, 59), True),
+            param(Weekday.SUNDAY, Time(), True),
+            param(Weekday.SUNDAY, Time(0, 0, 1), True),
+            param(Weekday.SUNDAY, Time(16, 59, 59), True),
+            param(Weekday.SUNDAY, Time(17), True),
+            param(Weekday.SUNDAY, Time(17, 0, 1), False),
+        ],
+    )
+    def test_two_days(self, *, weekday: Weekday, time: Time, expected: bool) -> None:
+        self._run_test(
+            weekday,
+            time,
+            Weekday.SATURDAY,
+            Time(8),
+            Weekday.SUNDAY,
+            Time(17),
+            expected=expected,
+        )
+
+    @mark.parametrize(
+        ("weekday", "time", "expected"),
+        [
+            param(Weekday.THURSDAY, Time(23, 59, 59), False),
+            param(Weekday.FRIDAY, Time(), False),
+            param(Weekday.FRIDAY, Time(0, 0, 1), False),
+            param(Weekday.FRIDAY, Time(7, 59, 59), False),
+            param(Weekday.FRIDAY, Time(8), True),
+            param(Weekday.FRIDAY, Time(8, 0, 1), True),
+            param(Weekday.FRIDAY, Time(23, 59, 59), True),
+            param(Weekday.SATURDAY, Time(), True),
+            param(Weekday.SATURDAY, Time(0, 0, 1), True),
+            param(Weekday.SATURDAY, Time(23, 59, 59), True),
+            param(Weekday.SUNDAY, Time(), True),
+            param(Weekday.SUNDAY, Time(0, 0, 1), True),
+            param(Weekday.SUNDAY, Time(16, 59, 59), True),
+            param(Weekday.SUNDAY, Time(17), True),
+            param(Weekday.SUNDAY, Time(17, 0, 1), False),
+        ],
+    )
+    def test_three_days(self, *, weekday: Weekday, time: Time, expected: bool) -> None:
+        self._run_test(
+            weekday,
+            time,
+            Weekday.FRIDAY,
+            Time(8),
+            Weekday.SUNDAY,
+            Time(17),
+            expected=expected,
+        )
+
+    @mark.parametrize(
+        ("weekday", "time", "expected"),
+        [
+            param(Weekday.FRIDAY, Time(23, 59, 59), False),
+            param(Weekday.SATURDAY, Time(), False),
+            param(Weekday.SATURDAY, Time(0, 0, 1), False),
+            param(Weekday.SATURDAY, Time(7, 59, 59), False),
+            param(Weekday.SATURDAY, Time(8), True),
+            param(Weekday.SATURDAY, Time(8, 0, 1), True),
+            param(Weekday.SATURDAY, Time(23, 59, 59), True),
+            param(Weekday.SUNDAY, Time(), True),
+            param(Weekday.SUNDAY, Time(0, 0, 1), True),
+            param(Weekday.SUNDAY, Time(23, 59, 59), True),
+            param(Weekday.MONDAY, Time(), True),
+            param(Weekday.MONDAY, Time(0, 0, 1), True),
+            param(Weekday.MONDAY, Time(16, 59, 59), True),
+            param(Weekday.MONDAY, Time(17), True),
+            param(Weekday.MONDAY, Time(17, 0, 1), False),
+        ],
+    )
+    def test_wrap(self, *, weekday: Weekday, time: Time, expected: bool) -> None:
+        self._run_test(
+            weekday,
+            time,
+            Weekday.SATURDAY,
+            Time(8),
+            Weekday.MONDAY,
+            Time(17),
+            expected=expected,
+        )
+
+    def _run_test(
+        self,
+        weekday: Weekday,
+        time: Time,
+        start_weekday: Weekday,
+        start_time: Time,
+        end_weekday: Weekday,
+        end_time: Time,
+        /,
+        *,
+        expected: bool,
+    ) -> None:
+        date_time = get_today().at(time).assume_tz(UTC.key)
+        while date_time.date().day_of_week() is not weekday:
+            date_time += DAY
+        result = is_weekend(
+            date_time, start=(start_weekday, start_time), end=(end_weekday, end_time)
+        )
+        assert result is expected
 
 
 class TestMeanDateTime:

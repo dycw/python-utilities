@@ -433,6 +433,36 @@ TODAY_LOCAL = get_today_local()
 ##
 
 
+def is_weekend(
+    date_time: ZonedDateTime,
+    /,
+    *,
+    start: tuple[Weekday, Time] = (Weekday.SATURDAY, Time.MIN),
+    end: tuple[Weekday, Time] = (Weekday.SUNDAY, Time.MAX),
+) -> bool:
+    """Check if a datetime is in the weekend."""
+    weekday, time = date_time.date().day_of_week(), date_time.time()
+    start_weekday, start_time = start
+    end_weekday, end_time = end
+    if start_weekday.value == end_weekday.value:
+        return start_time <= time <= end_time
+    if start_weekday.value < end_weekday.value:
+        return (
+            ((weekday == start_weekday) and (time >= start_time))
+            or (start_weekday.value < weekday.value < end_weekday.value)
+            or ((weekday == end_weekday) and (time <= end_time))
+        )
+    return (
+        ((weekday == start_weekday) and (time >= start_time))
+        or (weekday.value > start_weekday.value)
+        or (weekday.value < end_weekday.value)
+        or ((weekday == end_weekday) and (time <= end_time))
+    )
+
+
+##
+
+
 def mean_datetime(
     datetimes: Iterable[ZonedDateTime],
     /,
@@ -2033,6 +2063,7 @@ __all__ = [
     "get_time_local",
     "get_today",
     "get_today_local",
+    "is_weekend",
     "mean_datetime",
     "min_max_date",
     "round_date_or_date_time",
