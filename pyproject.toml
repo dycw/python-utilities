@@ -52,7 +52,7 @@ dev = [
   "pytest-timeout >=2.4.0, <2.5",
 ]
 fastapi = [
-  "fastapi >=0.116.2, <0.117",
+  "fastapi >=0.117.1, <0.118",
 ]
 fastapi-test = [
   "httpx",
