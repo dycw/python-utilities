@@ -25,13 +25,13 @@ cachetools = [
   "cachetools >=6.2.0, <6.3",
 ]
 click = [
-  "click >=8.2.1, <8.3",
+  "click >=8.3.0, <8.4",
 ]
 core = [
   "atomicwrites >=1.4.1, <1.5",
   "typing-extensions >=4.15.0, <4.16",
   "tzlocal >=5.3.1, <5.4",
-  "whenever >=0.8.8, <0.9",
+  "whenever >=0.8.9, <0.9",
 ]
 cryptography = [
   "cryptography >=46.0.1, <46.1",
@@ -244,12 +244,12 @@ dependencies = [
   "atomicwrites >=1.4.1, <1.5",
   "typing-extensions >=4.15.0, <4.16",
   "tzlocal >=5.3.1, <5.4",
-  "whenever >=0.8.8, <0.9",
+  "whenever >=0.8.9, <0.9",
 ]
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.167.1"
+version = "0.167.2"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -282,7 +282,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.167.1"
+current_version = "0.167.2"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
