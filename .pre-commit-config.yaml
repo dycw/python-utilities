@@ -1,13 +1,13 @@
 repos:
   # fixers
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.0
+    rev: v0.13.1
     hooks:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.8.17
+    rev: 0.8.22
     hooks:
       - id: uv-lock
         args: [--upgrade]
@@ -37,7 +37,7 @@ repos:
         args: [--write]
   # linters
   - repo: https://github.com/andreoliwa/nitpick
-    rev: v0.35.0
+    rev: v0.36.0
     hooks:
       - id: nitpick-check
   - repo: https://github.com/shellcheck-py/shellcheck-py
