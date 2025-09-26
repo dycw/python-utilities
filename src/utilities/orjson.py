@@ -481,49 +481,49 @@ def _object_hook(
             if match := _NONE_PATTERN.search(text):
                 return None
             if match := _DATE_PATTERN.search(text):
-                return Date.parse_common_iso(match.group(1))
+                return Date.parse_iso(match.group(1))
             if match := _DATE_DELTA_PATTERN.search(text):
-                return DateDelta.parse_common_iso(match.group(1))
+                return DateDelta.parse_iso(match.group(1))
             if match := _DATE_PERIOD_PATTERN.search(text):
-                start, end = map(Date.parse_common_iso, match.group(1).split(","))
+                start, end = map(Date.parse_iso, match.group(1).split(","))
                 return DatePeriod(start, end)
             if match := _DATE_TIME_DELTA_PATTERN.search(text):
-                return DateTimeDelta.parse_common_iso(match.group(1))
+                return DateTimeDelta.parse_iso(match.group(1))
             if match := _FLOAT_PATTERN.search(text):
                 return float(match.group(1))
             if match := _MONTH_DAY_PATTERN.search(text):
-                return MonthDay.parse_common_iso(match.group(1))
+                return MonthDay.parse_iso(match.group(1))
             if match := _PATH_PATTERN.search(text):
                 return Path(match.group(1))
             if match := _PLAIN_DATE_TIME_PATTERN.search(text):
-                return PlainDateTime.parse_common_iso(match.group(1))
+                return PlainDateTime.parse_iso(match.group(1))
             if match := _PY_DATE_PATTERN.search(text):
-                return Date.parse_common_iso(match.group(1)).py_date()
+                return Date.parse_iso(match.group(1)).py_date()
             if match := _PY_PLAIN_DATE_TIME_PATTERN.search(text):
-                return PlainDateTime.parse_common_iso(match.group(1)).py_datetime()
+                return PlainDateTime.parse_iso(match.group(1)).py_datetime()
             if match := _PY_TIME_PATTERN.search(text):
-                return Time.parse_common_iso(match.group(1)).py_time()
+                return Time.parse_iso(match.group(1)).py_time()
             if match := _PY_ZONED_DATE_TIME_PATTERN.search(text):
-                return ZonedDateTime.parse_common_iso(match.group(1)).py_datetime()
+                return ZonedDateTime.parse_iso(match.group(1)).py_datetime()
             if match := _TIME_PATTERN.search(text):
-                return Time.parse_common_iso(match.group(1))
+                return Time.parse_iso(match.group(1))
             if match := _TIME_DELTA_PATTERN.search(text):
-                return TimeDelta.parse_common_iso(match.group(1))
+                return TimeDelta.parse_iso(match.group(1))
             if match := _TIME_PERIOD_PATTERN.search(text):
-                start, end = map(Time.parse_common_iso, match.group(1).split(","))
+                start, end = map(Time.parse_iso, match.group(1).split(","))
                 return TimePeriod(start, end)
             if match := _UUID_PATTERN.search(text):
                 return UUID(match.group(1))
             if match := _VERSION_PATTERN.search(text):
                 return parse_version(match.group(1))
             if match := _YEAR_MONTH_PATTERN.search(text):
-                return YearMonth.parse_common_iso(match.group(1))
+                return YearMonth.parse_iso(match.group(1))
             if match := _ZONED_DATE_TIME_PATTERN.search(text):
-                return ZonedDateTime.parse_common_iso(match.group(1))
+                return ZonedDateTime.parse_iso(match.group(1))
             if match := _ZONED_DATE_TIME_PERIOD_PATTERN.search(text):
                 start, end = match.group(1).split(",")
-                end = ZonedDateTime.parse_common_iso(end)
-                start = PlainDateTime.parse_common_iso(start).assume_tz(end.tz)
+                end = ZonedDateTime.parse_iso(end)
+                start = PlainDateTime.parse_iso(start).assume_tz(end.tz)
                 return ZonedDateTimePeriod(start, end)
             if (
                 exc_class := _object_hook_exception_class(

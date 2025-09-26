@@ -299,7 +299,7 @@ def _skipif_recent(*, root: PathLike | None = None, delta: Delta = SECOND) -> No
     except FileNotFoundError:
         return
     try:
-        last = ZonedDateTime.parse_common_iso(contents)
+        last = ZonedDateTime.parse_iso(contents)
     except ValueError:
         return
     now = get_now_local()
@@ -328,7 +328,7 @@ def _get_name() -> str:
 def _write(root: PathLike | None = None, /) -> None:
     path = _get_path(root)
     with writer(path, overwrite=True) as temp:
-        _ = temp.write_text(get_now_local().format_common_iso())
+        _ = temp.write_text(get_now_local().format_iso())
 
 
 __all__ = [

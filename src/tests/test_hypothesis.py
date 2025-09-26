@@ -209,7 +209,7 @@ class TestDateDeltas:
         if max_value is not None:
             assert days <= to_days(max_value)
         if parsable:
-            assert DateDelta.parse_common_iso(delta.format_common_iso()) == delta
+            assert DateDelta.parse_iso(delta.format_iso()) == delta
 
 
 class TestDatePeriods:
@@ -247,7 +247,7 @@ class TestDateTimeDeltas:
         if max_value is not None:
             assert nanos <= to_nanoseconds(max_value)
         if parsable:
-            assert DateTimeDelta.parse_common_iso(delta.format_common_iso()) == delta
+            assert DateTimeDelta.parse_iso(delta.format_iso()) == delta
         if nativable:
             assert isinstance(to_py_time_delta(delta), dt.timedelta)
 
@@ -262,7 +262,7 @@ class TestDates:
                 dates(min_value=min_value, max_value=max_value, two_digit=two_digit)
             )
         assert isinstance(date, Date)
-        assert Date.parse_common_iso(date.format_common_iso()) == date
+        assert Date.parse_iso(date.format_iso()) == date
         if min_value is not None:
             assert date >= min_value
         if max_value is not None:
@@ -722,7 +722,7 @@ class TestMonthDays:
         with assume_does_not_raise(InvalidArgument):
             month_day = data.draw(month_days(min_value=min_value, max_value=max_value))
         assert isinstance(month_day, MonthDay)
-        assert MonthDay.parse_common_iso(month_day.format_common_iso()) == month_day
+        assert MonthDay.parse_iso(month_day.format_iso()) == month_day
         if min_value is not None:
             assert month_day >= min_value
         if max_value is not None:
@@ -786,7 +786,7 @@ class TestPlainDateTimes:
                 plain_date_times(min_value=min_value, max_value=max_value)
             )
         assert isinstance(datetime, PlainDateTime)
-        assert PlainDateTime.parse_common_iso(datetime.format_common_iso()) == datetime
+        assert PlainDateTime.parse_iso(datetime.format_iso()) == datetime
         if min_value is not None:
             assert datetime >= min_value
         if max_value is not None:
@@ -1037,7 +1037,7 @@ class TestTimeDeltas:
         with assume_does_not_raise(InvalidArgument):
             delta = data.draw(time_deltas(min_value=min_value, max_value=max_value))
         assert isinstance(delta, TimeDelta)
-        assert TimeDelta.parse_common_iso(delta.format_common_iso()) == delta
+        assert TimeDelta.parse_iso(delta.format_iso()) == delta
         assert isinstance(to_py_time_delta(delta), dt.timedelta)
         if min_value is not None:
             assert delta >= min_value
@@ -1067,7 +1067,7 @@ class TestTimes:
         with assume_does_not_raise(InvalidArgument):
             time = data.draw(times(min_value=min_value, max_value=max_value))
         assert isinstance(time, Time)
-        assert Time.parse_common_iso(time.format_common_iso()) == time
+        assert Time.parse_iso(time.format_iso()) == time
         if min_value is not None:
             assert time >= min_value
         if max_value is not None:
@@ -1204,7 +1204,7 @@ class TestYearMonths:
                 )
             )
         assert isinstance(year_month, YearMonth)
-        assert YearMonth.parse_common_iso(year_month.format_common_iso()) == year_month
+        assert YearMonth.parse_iso(year_month.format_iso()) == year_month
         if min_value is not None:
             assert year_month >= min_value
         if max_value is not None:
@@ -1258,7 +1258,7 @@ class TestZonedDateTimes:
             )
         assert isinstance(datetime, ZonedDateTime)
         _ = datetime.py_datetime()
-        assert ZonedDateTime.parse_common_iso(datetime.format_common_iso()) == datetime
+        assert ZonedDateTime.parse_iso(datetime.format_iso()) == datetime
         assert datetime.tz == time_zone.key
         if min_value is not None:
             assert datetime >= min_value

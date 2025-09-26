@@ -56,11 +56,11 @@ class Timer:
 
     @override
     def __repr__(self) -> str:
-        return self.timedelta.format_common_iso()
+        return self.timedelta.format_iso()
 
     @override
     def __str__(self) -> str:
-        return self.timedelta.format_common_iso()
+        return self.timedelta.format_iso()
 
     # comparison
 

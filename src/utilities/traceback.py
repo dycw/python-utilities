@@ -98,7 +98,7 @@ def _yield_header_lines(
     yield f"Date/time  | {format_compact(now)}"
     start_use = to_zoned_date_time(start).to_tz(LOCAL_TIME_ZONE_NAME)
     yield f"Started    | {format_compact(start_use)}"
-    yield f"Duration   | {(now - start_use).format_common_iso()}"
+    yield f"Duration   | {(now - start_use).format_iso()}"
     yield f"User       | {getuser()}"
     yield f"Host       | {gethostname()}"
     yield f"Process ID | {getpid()}"
