@@ -5,14 +5,9 @@ from typing import TYPE_CHECKING, ClassVar
 
 import tomlkit
 import yaml
-from hypothesis import HealthCheck, Phase, given, reproduce_failure, settings
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pytest import RaisesGroup, approx, fixture, mark, param, raises, skip
-from pytest_benchmark.fixture import BenchmarkFixture
-from pytest_lazy_fixtures import lf
-from pytest_regressions.dataframe_regression import DataFrameRegressionFixture
+from pytest import mark, param
 
-from utilities.contextvars import set_global_breakpoint
 from utilities.os import temp_environ
 from utilities.pydantic_settings import (
     CustomBaseSettings,
@@ -122,12 +117,15 @@ class TestCustomBaseSettings:
             settings = load_settings(Settings)
         assert settings.inner.x == 1
 
-    def test_env_var_with_prefix_and_nested(self) -> None:
+    @mark.parametrize("inner_cls", [param(BaseSettings), param(HashableBaseSettings)])
+    def test_env_var_with_prefix_and_nested(
+        self, *, inner_cls: type[BaseSettings]
+    ) -> None:
         class Settings(CustomBaseSettings):
             model_config = SettingsConfigDict(env_prefix="test__")
             inner: Inner
 
-        class Inner(BaseSettings):
+        class Inner(inner_cls):
             x: int
 
         _ = Settings.model_rebuild()
