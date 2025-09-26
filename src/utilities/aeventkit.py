@@ -169,7 +169,8 @@ class LiftedEvent[F: Callable[..., MaybeCoro[None]]]:
     def __await__(self) -> Any:
         return self.event.__await__()  # pragma: no cover
 
-    __aiter__ = aiter
+    def __aiter__(self) -> Any:
+        return self.event.aiter()  # pragma: no cover
 
     def __contains__(self, c: Any, /) -> bool:
         return self.event.__contains__(c)  # pragma: no cover
