@@ -1570,7 +1570,7 @@ def zoned_date_times(
     with (
         assume_does_not_raise(RepeatedTime),
         assume_does_not_raise(SkippedTime),
-        assume_does_not_raise(ValueError, match=r"Resulting datetime is out of range"),
+        assume_does_not_raise(ValueError, match=r"Resulting time is out of range"),
     ):
         zoned = plain.assume_tz(time_zone_.key, disambiguate="raise")
     with assume_does_not_raise(OverflowError, match=r"date value out of range"):
