@@ -38,7 +38,7 @@ class CustomBaseSettings(BaseSettings):
 
     # config
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
-        env_nested_delimiter="__"
+        frozen=True, env_nested_delimiter="__"
     )
 
     @classmethod

@@ -90,7 +90,7 @@ jupyter-test = [
   "polars",
 ]
 libcst = [
-  "libcst >=1.8.2, <1.9",
+  "libcst >=1.8.5, <1.9",
 ]
 lightweight-charts = [
   "lightweight-charts >=2.1, <2.2",
@@ -249,7 +249,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.167.3"
+version = "0.168.0"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -282,7 +282,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.167.3"
+current_version = "0.168.0"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"

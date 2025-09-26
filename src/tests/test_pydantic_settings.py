@@ -20,6 +20,13 @@ if TYPE_CHECKING:
 
 
 class TestCustomBaseSettings:
+    def test_hashable(self) -> None:
+        class Settings(CustomBaseSettings):
+            x: int = 1
+
+        settings = load_settings(Settings)
+        _ = hash(settings)
+
     def test_json(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("settings.json")
         _ = file.write_text(json.dumps({"x": 1}))
