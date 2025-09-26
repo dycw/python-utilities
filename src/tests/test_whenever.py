@@ -736,10 +736,10 @@ class TestMinMax:
             _ = ZONED_DATE_TIME_MAX.add(microseconds=1)
 
     def _format_parse_date_delta(self, delta: DateDelta, /) -> None:
-        _ = DateDelta.parse_iso(delta.format_common_iso())
+        _ = DateDelta.parse_iso(delta.format_iso())
 
     def _format_parse_date_time_delta(self, delta: DateTimeDelta, /) -> None:
-        _ = DateTimeDelta.parse_iso(delta.format_common_iso())
+        _ = DateTimeDelta.parse_iso(delta.format_iso())
 
 
 class TestMinMaxDate:
@@ -1025,7 +1025,7 @@ class TestToDate:
 
     @given(date=dates())
     def test_str(self, *, date: Date) -> None:
-        assert to_date(date.format_common_iso()) == date
+        assert to_date(date.format_iso()) == date
 
     @given(date=dates())
     def test_py_date(self, *, date: Date) -> None:
@@ -1482,7 +1482,7 @@ class TestToTime:
 
     @given(time=times())
     def test_str(self, *, time: Time) -> None:
-        assert to_time(time.format_common_iso()) == time
+        assert to_time(time.format_iso()) == time
 
     @given(time=times())
     def test_py_time(self, *, time: Time) -> None:
@@ -1628,7 +1628,7 @@ class TestToZonedDateTime:
     def test_str(
         self, *, data: DataObject, date_time: ZonedDateTime, time_zone: ZoneInfo
     ) -> None:
-        text = date_time.format_common_iso()
+        text = date_time.format_iso()
         text_use = data.draw(sampled_from([text, text.replace("/", "_")]))
         result = to_zoned_date_time(text_use, time_zone=time_zone)
         expected = date_time.to_tz(time_zone.key)

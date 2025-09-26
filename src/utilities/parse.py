@@ -477,7 +477,7 @@ def serialize_object(
             ZonedDateTime,
         ),
     ):
-        return obj.format_common_iso()
+        return obj.format_iso()
     if isinstance(obj, Enum):
         return obj.name
     if isinstance(obj, dict):

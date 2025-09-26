@@ -328,7 +328,7 @@ def _get_name() -> str:
 def _write(root: PathLike | None = None, /) -> None:
     path = _get_path(root)
     with writer(path, overwrite=True) as temp:
-        _ = temp.write_text(get_now_local().format_common_iso())
+        _ = temp.write_text(get_now_local().format_iso())
 
 
 __all__ = [

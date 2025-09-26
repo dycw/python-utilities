@@ -1797,7 +1797,7 @@ class WheneverLogRecord(LogRecord):
             name, level, pathname, lineno, msg, args, exc_info, func, sinfo
         )
         length = self._get_length()
-        plain = format(get_now_local().to_plain().format_common_iso(), f"{length}s")
+        plain = format(get_now_local().to_plain().format_iso(), f"{length}s")
         self.zoned_datetime = f"{plain}[{LOCAL_TIME_ZONE_NAME}]"
 
     @classmethod
@@ -1805,7 +1805,7 @@ class WheneverLogRecord(LogRecord):
     def _get_length(cls) -> int:
         """Get maximum length of a formatted string."""
         now = get_now_local().replace(nanosecond=1000).to_plain()
-        return len(now.format_common_iso())
+        return len(now.format_iso())
 
 
 ##
