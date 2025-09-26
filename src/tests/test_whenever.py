@@ -345,14 +345,14 @@ class TestFormatCompact:
     def test_date(self, *, date: Date) -> None:
         result = format_compact(date)
         assert isinstance(result, str)
-        parsed = Date.parse_common_iso(result)
+        parsed = Date.parse_iso(result)
         assert parsed == date
 
     @given(time=times())
     def test_time(self, *, time: Time) -> None:
         result = format_compact(time)
         assert isinstance(result, str)
-        parsed = Time.parse_common_iso(result)
+        parsed = Time.parse_iso(result)
         assert parsed.nanosecond == 0
         expected = time.round()
         assert parsed == expected
@@ -361,7 +361,7 @@ class TestFormatCompact:
     def test_plain_date_time(self, *, date_time: PlainDateTime) -> None:
         result = format_compact(date_time)
         assert isinstance(result, str)
-        parsed = PlainDateTime.parse_common_iso(result)
+        parsed = PlainDateTime.parse_iso(result)
         assert parsed.nanosecond == 0
         expected = date_time.round()
         assert parsed == expected
@@ -736,10 +736,10 @@ class TestMinMax:
             _ = ZONED_DATE_TIME_MAX.add(microseconds=1)
 
     def _format_parse_date_delta(self, delta: DateDelta, /) -> None:
-        _ = DateDelta.parse_common_iso(delta.format_common_iso())
+        _ = DateDelta.parse_iso(delta.format_common_iso())
 
     def _format_parse_date_time_delta(self, delta: DateTimeDelta, /) -> None:
-        _ = DateTimeDelta.parse_common_iso(delta.format_common_iso())
+        _ = DateTimeDelta.parse_iso(delta.format_common_iso())
 
 
 class TestMinMaxDate:
@@ -1699,7 +1699,7 @@ class TestToZonedDateTime:
 
 
 class TestTwoDigitYearMonth:
-    def test_parse_common_iso(self) -> None:
+    def test_parse_iso(self) -> None:
         result = two_digit_year_month(0, 1)
         expected = YearMonth(2000, 1)
         assert result == expected

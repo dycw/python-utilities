@@ -57,19 +57,19 @@ class ExtendedTSConverter(TSConverter):
     ) -> None:
         super().__init__(resolve_paths=resolve_paths, strlist_sep=strlist_sep)
         cases: list[_ConverterItem] = [
-            (Date, Date.parse_common_iso),
-            (DateDelta, DateDelta.parse_common_iso),
-            (DateTimeDelta, DateTimeDelta.parse_common_iso),
+            (Date, Date.parse_iso),
+            (DateDelta, DateDelta.parse_iso),
+            (DateTimeDelta, DateTimeDelta.parse_iso),
             (IPv4Address, IPv4Address),
             (IPv6Address, IPv6Address),
-            (MonthDay, MonthDay.parse_common_iso),
+            (MonthDay, MonthDay.parse_iso),
             (Path, partial(_parse_path, resolve=resolve_paths, pwd=Path.cwd())),
-            (PlainDateTime, PlainDateTime.parse_common_iso),
-            (Time, Time.parse_common_iso),
-            (TimeDelta, TimeDelta.parse_common_iso),
+            (PlainDateTime, PlainDateTime.parse_iso),
+            (Time, Time.parse_iso),
+            (TimeDelta, TimeDelta.parse_iso),
             (UUID, UUID),
-            (YearMonth, YearMonth.parse_common_iso),
-            (ZonedDateTime, ZonedDateTime.parse_common_iso),
+            (YearMonth, YearMonth.parse_iso),
+            (ZonedDateTime, ZonedDateTime.parse_iso),
             *extra,
         ]
         extras = {cls: _make_converter(cls, func) for cls, func in cases}

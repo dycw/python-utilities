@@ -176,7 +176,7 @@ def _is_to_drop(table: str, /) -> bool:
         text = extract_group(r"^(\d{8}T\d{2,})_", table)
     except ExtractGroupError:
         return True
-    date_time = PlainDateTime.parse_common_iso(text)
+    date_time = PlainDateTime.parse_iso(text)
     age = now.difference(date_time, ignore_dst=True)
     return age >= MINUTE
 

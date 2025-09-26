@@ -72,7 +72,7 @@ class Date(ParamType):
                 return value
             case str():
                 try:
-                    return whenever.Date.parse_common_iso(value)
+                    return whenever.Date.parse_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
             case never:
@@ -98,7 +98,7 @@ class DateDelta(ParamType):
                 return value
             case str():
                 try:
-                    return whenever.DateDelta.parse_common_iso(value)
+                    return whenever.DateDelta.parse_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
             case never:
@@ -124,7 +124,7 @@ class DateTimeDelta(ParamType):
                 return value
             case str():
                 try:
-                    return whenever.DateTimeDelta.parse_common_iso(value)
+                    return whenever.DateTimeDelta.parse_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
             case never:
@@ -235,7 +235,7 @@ class MonthDay(ParamType):
                 return value
             case str():
                 try:
-                    return whenever.MonthDay.parse_common_iso(value)
+                    return whenever.MonthDay.parse_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
             case never:
@@ -284,7 +284,7 @@ class PlainDateTime(ParamType):
                 return value
             case str():
                 try:
-                    return whenever.PlainDateTime.parse_common_iso(value)
+                    return whenever.PlainDateTime.parse_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
             case never:
@@ -310,7 +310,7 @@ class Time(ParamType):
                 return value
             case str():
                 try:
-                    return whenever.Time.parse_common_iso(value)
+                    return whenever.Time.parse_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
             case never:
@@ -336,7 +336,7 @@ class TimeDelta(ParamType):
                 return value
             case str():
                 try:
-                    return whenever.TimeDelta.parse_common_iso(value)
+                    return whenever.TimeDelta.parse_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
             case never:
@@ -388,7 +388,7 @@ class YearMonth(ParamType):
                 return value
             case str():
                 try:
-                    return whenever.YearMonth.parse_common_iso(value)
+                    return whenever.YearMonth.parse_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
             case never:
@@ -414,7 +414,7 @@ class ZonedDateTime(ParamType):
                 return value
             case str():
                 try:
-                    return whenever.ZonedDateTime.parse_common_iso(value)
+                    return whenever.ZonedDateTime.parse_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
             case never:

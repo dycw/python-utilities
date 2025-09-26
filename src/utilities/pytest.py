@@ -299,7 +299,7 @@ def _skipif_recent(*, root: PathLike | None = None, delta: Delta = SECOND) -> No
     except FileNotFoundError:
         return
     try:
-        last = ZonedDateTime.parse_common_iso(contents)
+        last = ZonedDateTime.parse_iso(contents)
     except ValueError:
         return
     now = get_now_local()

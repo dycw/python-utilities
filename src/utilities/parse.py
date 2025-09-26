@@ -204,7 +204,7 @@ def _parse_object_type(
         ),
     ):
         try:
-            return cls.parse_common_iso(text)
+            return cls.parse_iso(text)
         except ValueError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(cls, Path):
