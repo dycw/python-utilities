@@ -179,7 +179,7 @@ inner options:
             ),
         ],
     )
-    def test_main(self, *, tmp_path: Path, args: list[str], expected: str) -> None:
+    def test_cli(self, *, tmp_path: Path, args: list[str], expected: str) -> None:
         script = tmp_path.joinpath("script.py")
         _ = script.write_text("""\
 #!/usr/bin/env python3
@@ -230,3 +230,23 @@ d = 4
         except CalledProcessError as error:
             raise RuntimeError(error.stdout) from None
         assert result == expected.strip("\n")
+
+    def test_cli_coverage(self, *, tmp_path: Path) -> None:
+        config = tmp_path.joinpath("config.toml")
+        _ = config.write_text("""
+a = 1
+
+[inner]
+b = 2""")
+
+        class Example(CustomBaseSettings):
+            toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = [config]
+
+            a: int
+            inner: _Inner
+
+        class _Inner(BaseSettings):
+            b: int
+
+        _ = Example.model_rebuild()
+        _ = load_settings(Example, cli=True)
