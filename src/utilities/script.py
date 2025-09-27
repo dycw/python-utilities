@@ -28,7 +28,23 @@ class _Settings(CustomBaseSettings):
     toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = [config]
 
     aaa: int
+    inner: _Inner
 
+
+class _Inner(BaseSettings):
+    bbb: int
+
+
+_SETTINGS = load_settings(_Settings)
+_DynamicSettings = create_model(
+    "DynamicSettings",
+    aaa=(int, Field(default=_SETTINGS.aaa)),
+    inner=(type(_SETTINGS.inner), Field(default=_SETTINGS.inner)),
+    __base__=type(_SETTINGS),
+)
+
+
+class _DynamicSettings2(_DynamicSettings):
     @classmethod
     @override
     def settings_customise_sources(
@@ -39,30 +55,18 @@ class _Settings(CustomBaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
-        return (
-            *super().settings_customise_sources(
-                settings_cls,
-                init_settings,
-                env_settings,
-                dotenv_settings,
-                file_secret_settings,
-            ),
-            CliSettingsSource(settings_cls, cli_parse_args=True),
-        )
+        return (CliSettingsSource(settings_cls, cli_parse_args=True),)
 
 
-_SETTINGS = load_settings(_Settings)
-_DynamicSettings = create_model(
-    "DynamicSettings", aaa=(int, Field(default=_SETTINGS.aaa))
-)
+_SETTINGS2 = load_settings(_DynamicSettings2)
 
 
 def main() -> None:
     print("script...")  # noqa: T201
-    settings = load_settings(_Settings)
-    print(settings)  # noqa: T201
-    dyanmic_settings = load_settings(_DynamicSettings)
-    print(dyanmic_settings)  # noqa: T201
+    print(f"these are the settings:\n{_SETTINGS2}")  # noqa: T201
+    print(f"these are the settings:\n{_SETTINGS2.aaa=}")  # noqa: T201
+    print(f"these are the settings:\n{_SETTINGS2.inner=}")  # noqa: T201
+    print(f"these are the settings:\n{_SETTINGS2.inner.bbb=}")  # noqa: T201
 
 
 if __name__ == "__main__":
