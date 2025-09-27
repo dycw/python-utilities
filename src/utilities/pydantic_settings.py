@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, assert_never, override
 
 from pydantic_settings import (
     BaseSettings,
+    CliSettingsSource,
     JsonConfigSettingsSource,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
@@ -35,6 +36,9 @@ class CustomBaseSettings(BaseSettings):
     json_files: ClassVar[Sequence[PathLikeOrWithSection]] = []
     toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = []
     yaml_files: ClassVar[Sequence[PathLikeOrWithSection]] = []
+
+    # CLI
+    parse_cli: ClassVar[bool] = False
 
     # config
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
@@ -73,6 +77,10 @@ class CustomBaseSettings(BaseSettings):
         for file, section in map(_ensure_section, cls.yaml_files):
             yield YamlConfigSectionSettingsSource(
                 settings_cls, yaml_file=file, section=section
+            )
+        if cls.parse_cli:
+            yield CliSettingsSource(
+                settings_cls, cli_parse_args=True, case_sensitive=False
             )
 
 
@@ -166,6 +174,14 @@ class HashableBaseSettings(BaseSettings):
 
     # config
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(frozen=True)
+
+
+##
+
+
+def load_settings_cli[T: BaseSettings](cls: type[T], /) -> T:
+    """Load a set of settings."""
+    return cls()
 
 
 __all__ = [

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+from stat import S_IXUSR
+from subprocess import check_output
 from typing import TYPE_CHECKING, ClassVar
 
 import tomlkit
@@ -15,6 +17,7 @@ from utilities.pydantic_settings import (
     PathLikeOrWithSection,
     load_settings,
 )
+from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -146,3 +149,22 @@ class TestHashableBaseSettings:
 
         settings = load_settings(Settings)
         _ = hash(settings)
+
+
+class TestLoadSettingsCLI:
+    def test_main(self, *, tmp_path: Path) -> None:
+        file = tmp_path.joinpath("script.py")
+        _ = file.write_text(
+            strip_and_dedent("""
+                #!/usr/bin/env python3
+                from utilities.pydantic_settings import python3
+
+                def main() -> None:
+                    print("?")
+
+                if __name__ == "__main__":
+                    main()
+            """)
+        )
+        file.chmod(file.stat().st_mode | S_IXUSR)
+        check_output([str(file)])
