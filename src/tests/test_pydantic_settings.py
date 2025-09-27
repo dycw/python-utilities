@@ -151,7 +151,35 @@ class TestHashableBaseSettings:
 
 
 class TestLoadSettings:
-    def test_main(self, *, tmp_path: Path) -> None:
+    @mark.parametrize(
+        ("args", "expected"),
+        [
+            param([], "settings=_Settings(a=1, b=2, inner=_Inner(c=3, d=4))"),
+            param(["-a", "5"], "settings=_Settings(a=5, b=2, inner=_Inner(c=3, d=4))"),
+            param(
+                ["--inner.c", "5"],
+                "settings=_Settings(a=1, b=2, inner=_Inner(c=5, d=4))",
+            ),
+            param(
+                ["-h"],
+                """
+usage: script.py [-h] [-a int] [-b int] [--inner [JSON]] [--inner.c int]
+                 [--inner.d int]
+
+options:
+  -h, --help      show this help message and exit
+  -a int          (default: 1)
+  -b int          (default: 2)
+
+inner options:
+  --inner [JSON]  set inner from JSON string (default: {})
+  --inner.c int   (default: 3)
+  --inner.d int   (default: 4)
+""",
+            ),
+        ],
+    )
+    def test_main(self, *, tmp_path: Path, args: list[str], expected: str) -> None:
         script = tmp_path.joinpath("script.py")
         _ = script.write_text("""\
 #!/usr/bin/env python3
@@ -198,42 +226,7 @@ d = 4
 """
         )
         try:
-            result = check_output([script, "-h"], stderr=STDOUT, text=True)
+            result = check_output([script, *args], stderr=STDOUT, text=True).strip("\n")
         except CalledProcessError as error:
             raise RuntimeError(error.stdout) from None
-        expected = """\
-usage: script.py [-h] [-a int] [-b int] [--inner [JSON]] [--inner.c int]
-                 [--inner.d int]
-
-options:
-  -h, --help      show this help message and exit
-  -a int          (default: 1)
-  -b int          (default: 2)
-
-inner options:
-  --inner [JSON]  set inner from JSON string (default: {})
-  --inner.c int   (default: 3)
-  --inner.d int   (default: 4)
-"""
-        assert result == expected
-
-        try:
-            result = check_output([script], stderr=STDOUT, text=True)
-        except CalledProcessError as error:
-            raise RuntimeError(error.stdout) from None
-        expected = """settings=_Settings(a=1, b=2, inner=_Inner(c=3, d=4))\n"""
-        assert result == expected
-
-        try:
-            result = check_output([script, "-a", "5"], stderr=STDOUT, text=True)
-        except CalledProcessError as error:
-            raise RuntimeError(error.stdout) from None
-        expected = """settings=_Settings(a=5, b=2, inner=_Inner(c=3, d=4))\n"""
-        assert result == expected
-
-        try:
-            result = check_output([script, "--inner.c", "5"], stderr=STDOUT, text=True)
-        except CalledProcessError as error:
-            raise RuntimeError(error.stdout) from None
-        expected = """settings=_Settings(a=1, b=2, inner=_Inner(c=5, d=4))\n"""
-        assert result == expected
+        assert result == expected.strip("\n")

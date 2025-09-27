@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from functools import reduce
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, assert_never, cast, override
@@ -17,12 +16,12 @@ from pydantic_settings import (
 )
 from pydantic_settings.sources import DEFAULT_PATH
 
+from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
-    from pydantic.fields import FieldInfo
     from pydantic_settings.sources import PathType
 
     from utilities.types import MaybeSequenceStr, PathLike
@@ -78,48 +77,6 @@ class CustomBaseSettings(BaseSettings):
             yield YamlConfigSectionSettingsSource(
                 settings_cls, yaml_file=file, section=section
             )
-
-
-def load_settings[T: BaseSettings](cls: type[T], /, *, cli: bool = False) -> T:
-    """Load a set of settings."""
-    _ = cls.model_rebuild()
-    if cli:
-        cls_with_defaults = _load_settings_cli_create_model(cls)
-
-        @classmethod
-        def settings_customise_sources(
-            cls: type[BaseSettings],
-            settings_cls: type[BaseSettings],
-            init_settings: PydanticBaseSettingsSource,
-            env_settings: PydanticBaseSettingsSource,
-            dotenv_settings: PydanticBaseSettingsSource,
-            file_secret_settings: PydanticBaseSettingsSource,
-        ) -> tuple[PydanticBaseSettingsSource, ...]:
-            parent = cast(
-                "Any", super(cls_with_defaults, cls)
-            ).settings_customise_sources(
-                settings_cls=settings_cls,
-                init_settings=init_settings,
-                env_settings=env_settings,
-                dotenv_settings=dotenv_settings,
-                file_secret_settings=file_secret_settings,
-            )
-            return (
-                CliSettingsSource(
-                    settings_cls, cli_parse_args=True, case_sensitive=False
-                ),
-                *parent,
-            )
-
-        cls_use = type(
-            cls.__name__,
-            (cls_with_defaults,),
-            {"settings_customise_sources": settings_customise_sources},
-        )
-        cls_use = cast("type[T]", cls_use)
-    else:
-        cls_use = cls
-    return cls_use()
 
 
 class JsonConfigSectionSettingsSource(JsonConfigSettingsSource):
@@ -212,29 +169,62 @@ class HashableBaseSettings(BaseSettings):
 ##
 
 
-def _load_settings_cli_create_model[T: BaseSettings](
+def load_settings[T: BaseSettings](cls: type[T], /, *, cli: bool = False) -> T:
+    """Load a set of settings."""
+    _ = cls.model_rebuild()
+    if cli:
+        cls_with_defaults = _load_settings_create_model(cls)
+
+        @classmethod
+        def settings_customise_sources(
+            cls: type[BaseSettings],
+            settings_cls: type[BaseSettings],
+            init_settings: PydanticBaseSettingsSource,
+            env_settings: PydanticBaseSettingsSource,
+            dotenv_settings: PydanticBaseSettingsSource,
+            file_secret_settings: PydanticBaseSettingsSource,
+        ) -> tuple[PydanticBaseSettingsSource, ...]:
+            parent = cast(
+                "Any", super(cls_with_defaults, cls)
+            ).settings_customise_sources(
+                settings_cls=settings_cls,
+                init_settings=init_settings,
+                env_settings=env_settings,
+                dotenv_settings=dotenv_settings,
+                file_secret_settings=file_secret_settings,
+            )
+            return (
+                CliSettingsSource(
+                    settings_cls, cli_parse_args=True, case_sensitive=False
+                ),
+                *parent,
+            )
+
+        cls_use = type(
+            cls.__name__,
+            (cls_with_defaults,),
+            {"settings_customise_sources": settings_customise_sources},
+        )
+        cls_use = cast("type[T]", cls_use)
+    else:
+        cls_use = cls
+    return cls_use()
+
+
+def _load_settings_create_model[T: BaseSettings](
     cls: type[T], /, *, values: T | None = None
 ) -> type[T]:
     values_use = cls() if values is None else values
     kwargs: dict[str, Any] = {}
     for name, field in cls.model_fields.items():
         if (ann := field.annotation) is None:
-            raise LoadSettingsCLIError(field=field)
+            raise ImpossibleCaseError(case=[f"{ann=}"])  # pragma: no cover
         value = getattr(values_use, name)
         if issubclass(ann, BaseSettings):
-            kwargs[name] = _load_settings_cli_create_model(ann, values=value)
+            kwargs[name] = _load_settings_create_model(ann, values=value)
         else:
             kwargs[name] = (field.annotation, Field(default=value))
     return create_model(cls.__name__, __base__=cls, **kwargs)
-
-
-@dataclass(kw_only=True, slots=True)
-class LoadSettingsCLIError(Exception):
-    field: FieldInfo
-
-    @override
-    def __str__(self) -> str:
-        return f"Field {self.field} must have an annotation"
 
 
 __all__ = [
