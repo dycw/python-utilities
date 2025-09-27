@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar, override
+from typing import TYPE_CHECKING, Any, ClassVar, override
 
+from pydantic import Field, create_model, model_validator
 from pydantic_settings import CliSettingsSource
 
 from utilities.pydantic_settings import (
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from pydantic_settings import PydanticBaseSettingsSource
+
 
 config = Path(__file__).parent.joinpath("config.toml")
 print(config)  # noqa: T201
@@ -49,10 +51,18 @@ class _Settings(CustomBaseSettings):
         )
 
 
+_SETTINGS = load_settings(_Settings)
+_DynamicSettings = create_model(
+    "DynamicSettings", aaa=(int, Field(default=_SETTINGS.aaa))
+)
+
+
 def main() -> None:
     print("script...")  # noqa: T201
     settings = load_settings(_Settings)
     print(settings)  # noqa: T201
+    dyanmic_settings = load_settings(_DynamicSettings)
+    print(dyanmic_settings)  # noqa: T201
 
 
 if __name__ == "__main__":
