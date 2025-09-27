@@ -82,6 +82,7 @@ class CustomBaseSettings(BaseSettings):
 
 def load_settings[T: BaseSettings](cls: type[T], /) -> T:
     """Load a set of settings."""
+    _ = cls.model_rebuild()
     return cls()
 
 
@@ -197,8 +198,8 @@ def load_settings_cli[T: BaseSettings](cls: type[T], /) -> T:
             file_secret_settings=file_secret_settings,
         )
         return (
-            *parent,
             CliSettingsSource(settings_cls, cli_parse_args=True, case_sensitive=False),
+            *parent,
         )
 
     new_cls2 = type(

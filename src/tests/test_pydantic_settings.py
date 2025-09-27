@@ -179,8 +179,6 @@ class _Inner(BaseSettings):
     c: int
     d: int
 
-_Settings.model_rebuild()
-
 def main() -> None:
     settings = load_settings_cli(_Settings)
     print(f"{settings=}")
@@ -231,5 +229,12 @@ inner options:
             result = check_output([script, "-a", "5"], stderr=STDOUT, text=True)
         except CalledProcessError as error:
             raise RuntimeError(error.stdout) from None
-        expected = """settings=_Settings(a=1, b=2, inner=_Inner(c=3, d=4))\n"""
+        expected = """settings=_Settings(a=5, b=2, inner=_Inner(c=3, d=4))\n"""
+        assert result == expected
+
+        try:
+            result = check_output([script, "--inner.c", "5"], stderr=STDOUT, text=True)
+        except CalledProcessError as error:
+            raise RuntimeError(error.stdout) from None
+        expected = """settings=_Settings(a=1, b=2, inner=_Inner(c=5, d=4))\n"""
         assert result == expected
