@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from stat import S_IXUSR
-from subprocess import STDOUT, CalledProcessError, check_call, check_output
+from subprocess import STDOUT, CalledProcessError, check_output
 from typing import TYPE_CHECKING, ClassVar
 
 import tomlkit
@@ -17,7 +17,6 @@ from utilities.pydantic_settings import (
     PathLikeOrWithSection,
     load_settings,
 )
-from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -223,6 +222,13 @@ inner options:
 
         try:
             result = check_output([script], stderr=STDOUT, text=True)
+        except CalledProcessError as error:
+            raise RuntimeError(error.stdout) from None
+        expected = """settings=_Settings(a=1, b=2, inner=_Inner(c=3, d=4))\n"""
+        assert result == expected
+
+        try:
+            result = check_output([script, "-a", "5"], stderr=STDOUT, text=True)
         except CalledProcessError as error:
             raise RuntimeError(error.stdout) from None
         expected = """settings=_Settings(a=1, b=2, inner=_Inner(c=3, d=4))\n"""

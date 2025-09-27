@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, override
 
 from pydantic import Field, create_model
 from pydantic_settings import CliSettingsSource
 
+from utilities.pathlib import get_repo_root
 from utilities.pydantic_settings import (
     BaseSettings,
     CustomBaseSettings,
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 class _Settings(CustomBaseSettings):
     toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = [
-        Path(__file__).parent.joinpath("config.toml")
+        get_repo_root().joinpath("config.toml")
     ]
 
     aaa: int

@@ -3,26 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import reduce
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Generic,
-    Literal,
-    NotRequired,
-    Protocol,
-    Required,
-    Self,
-    TypedDict,
-    TypeVar,
-    assert_never,
-    cast,
-    overload,
-    override,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, assert_never, cast, override
 
 from pydantic import Field, create_model
-from pydantic_core import PydanticUndefinedType
 from pydantic_settings import (
     BaseSettings,
     CliSettingsSource,
@@ -197,32 +180,33 @@ def load_settings_cli[T: BaseSettings](cls: type[T], /) -> T:
     _ = cls.model_rebuild()
     new_cls = _load_settings_cli_create_model(cls)
 
-    class NewBaseSettings(new_cls):
-        @classmethod
-        @override
-        def settings_customise_sources(
-            cls,
-            settings_cls: type[BaseSettings],
-            init_settings: PydanticBaseSettingsSource,
-            env_settings: PydanticBaseSettingsSource,
-            dotenv_settings: PydanticBaseSettingsSource,
-            file_secret_settings: PydanticBaseSettingsSource,
-        ) -> tuple[PydanticBaseSettingsSource, ...]:
-            _ = (init_settings, dotenv_settings, file_secret_settings)
-            return (
-                *super().settings_customise_sources(
-                    settings_cls=settings_cls,
-                    init_settings=init_settings,
-                    env_settings=env_settings,
-                    dotenv_settings=dotenv_settings,
-                    file_secret_settings=file_secret_settings,
-                ),
-                CliSettingsSource(
-                    settings_cls, cli_parse_args=True, case_sensitive=False
-                ),
-            )
+    @classmethod
+    def settings_customise_sources(
+        cls: type[BaseSettings],
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        parent = cast("Any", super(new_cls, cls)).settings_customise_sources(
+            settings_cls=settings_cls,
+            init_settings=init_settings,
+            env_settings=env_settings,
+            dotenv_settings=dotenv_settings,
+            file_secret_settings=file_secret_settings,
+        )
+        return (
+            *parent,
+            CliSettingsSource(settings_cls, cli_parse_args=True, case_sensitive=False),
+        )
 
-    return load_settings(cast("type[T]", NewBaseSettings))
+    new_cls2 = type(
+        new_cls.__name__,
+        (new_cls,),
+        {"settings_customise_sources": settings_customise_sources},
+    )
+    return load_settings(cast("type[T]", new_cls2))
 
 
 def _load_settings_cli_create_model[T: BaseSettings](
