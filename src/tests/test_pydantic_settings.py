@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+from stat import S_IXUSR
+from subprocess import STDOUT, CalledProcessError, check_output
 from typing import TYPE_CHECKING, ClassVar
 
 import tomlkit
@@ -8,6 +10,7 @@ import yaml
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pytest import mark, param
 
+from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.os import temp_environ
 from utilities.pydantic_settings import (
     CustomBaseSettings,
@@ -146,3 +149,106 @@ class TestHashableBaseSettings:
 
         settings = load_settings(Settings)
         _ = hash(settings)
+
+
+class TestLoadSettings:
+    @mark.parametrize(
+        ("args", "expected"),
+        [
+            param([], "settings=_Settings(a=1, b=2, inner=_Inner(c=3, d=4))"),
+            param(["-a", "5"], "settings=_Settings(a=5, b=2, inner=_Inner(c=3, d=4))"),
+            param(
+                ["--inner.c", "5"],
+                "settings=_Settings(a=1, b=2, inner=_Inner(c=5, d=4))",
+            ),
+            param(
+                ["-h"],
+                """
+usage: script.py [-h] [-a int] [-b int] [--inner [JSON]] [--inner.c int]
+                 [--inner.d int]
+
+options:
+  -h, --help      show this help message and exit
+  -a int          (default: 1)
+  -b int          (default: 2)
+
+inner options:
+  --inner [JSON]  set inner from JSON string (default: {})
+  --inner.c int   (default: 3)
+  --inner.d int   (default: 4)
+""",
+            ),
+        ],
+    )
+    @SKIPIF_CI_AND_WINDOWS
+    def test_cli(self, *, tmp_path: Path, args: list[str], expected: str) -> None:
+        script = tmp_path.joinpath("script.py")
+        _ = script.write_text("""\
+#!/usr/bin/env python3
+from __future__ import annotations
+
+from collections.abc import Sequence
+from pathlib import Path
+from typing import ClassVar
+
+from pydantic_settings import BaseSettings
+
+from utilities.pydantic_settings import CustomBaseSettings, PathLikeOrWithSection, load_settings
+
+class _Settings(CustomBaseSettings):
+    toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = [
+        Path(__file__).parent.joinpath("config.toml")
+    ]
+
+    a: int
+    b: int
+    inner: _Inner
+
+class _Inner(BaseSettings):
+    c: int
+    d: int
+
+def main() -> None:
+    settings = load_settings(_Settings, cli=True)
+    print(f"{settings=}")
+
+if __name__ == "__main__":
+    main()
+""")
+        script.chmod(script.stat().st_mode | S_IXUSR)
+        config = tmp_path.joinpath("config.toml")
+        _ = config.write_text(
+            """\
+a = 1
+b = 2
+
+[inner]
+c = 3
+d = 4
+"""
+        )
+        try:
+            result = check_output([script, *args], stderr=STDOUT, text=True).strip("\n")
+        except CalledProcessError as error:
+            raise RuntimeError(error.stdout) from None
+        assert result == expected.strip("\n")
+
+    def test_cli_coverage(self, *, tmp_path: Path) -> None:
+        config = tmp_path.joinpath("config.toml")
+        _ = config.write_text("""
+a = 1
+
+[inner]
+b = 2""")
+
+        class Example(CustomBaseSettings):
+            toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = [config]
+
+            a: int
+            inner: _Inner
+
+        class _Inner(BaseSettings):
+            b: int
+
+        _ = Example.model_rebuild()
+        _ = load_settings(Example, cli=True)
