@@ -10,6 +10,7 @@ import yaml
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pytest import mark, param
 
+from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.os import temp_environ
 from utilities.pydantic_settings import (
     CustomBaseSettings,
@@ -179,6 +180,7 @@ inner options:
             ),
         ],
     )
+    @SKIPIF_CI_AND_WINDOWS
     def test_cli(self, *, tmp_path: Path, args: list[str], expected: str) -> None:
         script = tmp_path.joinpath("script.py")
         _ = script.write_text("""\
