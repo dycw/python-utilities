@@ -1,8 +1,25 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import reduce
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, assert_never, overload, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Generic,
+    Literal,
+    NotRequired,
+    Protocol,
+    Required,
+    Self,
+    TypedDict,
+    TypeVar,
+    assert_never,
+    cast,
+    overload,
+    override,
+)
 
 from pydantic import Field, create_model
 from pydantic_core import PydanticUndefinedType
@@ -22,6 +39,7 @@ from utilities.iterables import always_iterable
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
+    from pydantic.fields import FieldInfo
     from pydantic_settings.sources import PathType
 
     from utilities.types import MaybeSequenceStr, PathLike
@@ -177,7 +195,7 @@ class HashableBaseSettings(BaseSettings):
 def load_settings_cli[T: BaseSettings](cls: type[T], /) -> T:
     """Load a set of settings."""
     _ = cls.model_rebuild()
-    new_cls = _create_model(cls)
+    new_cls = _load_settings_cli_create_model(cls)
 
     class NewBaseSettings(new_cls):
         @classmethod
@@ -204,23 +222,32 @@ def load_settings_cli[T: BaseSettings](cls: type[T], /) -> T:
                 ),
             )
 
-    return load_settings(NewBaseSettings)
+    return load_settings(cast("type[T]", NewBaseSettings))
 
 
-def _create_model[T: BaseSettings](
+def _load_settings_cli_create_model[T: BaseSettings](
     cls: type[T], /, *, values: T | None = None
 ) -> type[T]:
     values_use = cls() if values is None else values
-    kwargs: dict[str, tuple[Any, Any] | type[BaseSettings]] = {}
+    kwargs: dict[str, Any] = {}
     for name, field in cls.model_fields.items():
         if (ann := field.annotation) is None:
-            raise _CreateModelError
+            raise LoadSettingsCLIError(field=field)
         value = getattr(values_use, name)
         if issubclass(ann, BaseSettings):
-            kwargs[name] = _create_model(ann, values=value)
+            kwargs[name] = _load_settings_cli_create_model(ann, values=value)
         else:
             kwargs[name] = (field.annotation, Field(default=value))
     return create_model(cls.__name__, __base__=cls, **kwargs)
+
+
+@dataclass(kw_only=True, slots=True)
+class LoadSettingsCLIError(Exception):
+    field: FieldInfo
+
+    @override
+    def __str__(self) -> str:
+        return f"Field {self.field} must have an annotation"
 
 
 __all__ = [

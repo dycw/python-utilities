@@ -186,11 +186,6 @@ def main() -> None:
     settings = load_settings_cli(_Settings)
     print(f"{settings=}")
 
-
-for name, field in _Settings.model_fields.items():
-    print(name, field.annotation, field.default)
-
-
 if __name__ == "__main__":
     main()
 """)
@@ -210,7 +205,20 @@ d = 4
             result = check_output([script, "-h"], stderr=STDOUT, text=True)
         except CalledProcessError as error:
             raise RuntimeError(error.stdout) from None
-        expected = """settings=_Settings(a=1, b=2, inner=_Inner(c=3, d=4))\n"""
+        expected = """\
+usage: script.py [-h] [-a int] [-b int] [--inner [JSON]] [--inner.c int]
+                 [--inner.d int]
+
+options:
+  -h, --help      show this help message and exit
+  -a int          (default: 1)
+  -b int          (default: 2)
+
+inner options:
+  --inner [JSON]  set inner from JSON string (default: {})
+  --inner.c int   (default: 3)
+  --inner.d int   (default: 4)
+"""
         assert result == expected
 
         try:
