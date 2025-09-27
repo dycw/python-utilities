@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, override
+from typing import TYPE_CHECKING, ClassVar, override
 
-from pydantic import Field, create_model, model_validator
+from pydantic import Field, create_model
 from pydantic_settings import CliSettingsSource
 
 from utilities.pydantic_settings import (
@@ -19,13 +19,10 @@ if TYPE_CHECKING:
     from pydantic_settings import PydanticBaseSettingsSource
 
 
-config = Path(__file__).parent.joinpath("config.toml")
-print(config)  # noqa: T201
-assert config.exists()
-
-
 class _Settings(CustomBaseSettings):
-    toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = [config]
+    toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = [
+        Path(__file__).parent.joinpath("config.toml")
+    ]
 
     aaa: int
     inner: _Inner

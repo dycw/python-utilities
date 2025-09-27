@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from functools import reduce
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, assert_never, override
+from typing import TYPE_CHECKING, Any, ClassVar, assert_never, overload, override
 
+from pydantic import Field, create_model
+from pydantic_core import PydanticUndefinedType
 from pydantic_settings import (
     BaseSettings,
     CliSettingsSource,
@@ -36,9 +38,6 @@ class CustomBaseSettings(BaseSettings):
     json_files: ClassVar[Sequence[PathLikeOrWithSection]] = []
     toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = []
     yaml_files: ClassVar[Sequence[PathLikeOrWithSection]] = []
-
-    # CLI
-    parse_cli: ClassVar[bool] = False
 
     # config
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
@@ -77,10 +76,6 @@ class CustomBaseSettings(BaseSettings):
         for file, section in map(_ensure_section, cls.yaml_files):
             yield YamlConfigSectionSettingsSource(
                 settings_cls, yaml_file=file, section=section
-            )
-        if cls.parse_cli:
-            yield CliSettingsSource(
-                settings_cls, cli_parse_args=True, case_sensitive=False
             )
 
 
@@ -181,7 +176,51 @@ class HashableBaseSettings(BaseSettings):
 
 def load_settings_cli[T: BaseSettings](cls: type[T], /) -> T:
     """Load a set of settings."""
-    return cls()
+    _ = cls.model_rebuild()
+    new_cls = _create_model(cls)
+
+    class NewBaseSettings(new_cls):
+        @classmethod
+        @override
+        def settings_customise_sources(
+            cls,
+            settings_cls: type[BaseSettings],
+            init_settings: PydanticBaseSettingsSource,
+            env_settings: PydanticBaseSettingsSource,
+            dotenv_settings: PydanticBaseSettingsSource,
+            file_secret_settings: PydanticBaseSettingsSource,
+        ) -> tuple[PydanticBaseSettingsSource, ...]:
+            _ = (init_settings, dotenv_settings, file_secret_settings)
+            return (
+                *super().settings_customise_sources(
+                    settings_cls=settings_cls,
+                    init_settings=init_settings,
+                    env_settings=env_settings,
+                    dotenv_settings=dotenv_settings,
+                    file_secret_settings=file_secret_settings,
+                ),
+                CliSettingsSource(
+                    settings_cls, cli_parse_args=True, case_sensitive=False
+                ),
+            )
+
+    return load_settings(NewBaseSettings)
+
+
+def _create_model[T: BaseSettings](
+    cls: type[T], /, *, values: T | None = None
+) -> type[T]:
+    values_use = cls() if values is None else values
+    kwargs: dict[str, tuple[Any, Any] | type[BaseSettings]] = {}
+    for name, field in cls.model_fields.items():
+        if (ann := field.annotation) is None:
+            raise _CreateModelError
+        value = getattr(values_use, name)
+        if issubclass(ann, BaseSettings):
+            kwargs[name] = _create_model(ann, values=value)
+        else:
+            kwargs[name] = (field.annotation, Field(default=value))
+    return create_model(cls.__name__, __base__=cls, **kwargs)
 
 
 __all__ = [
@@ -191,4 +230,5 @@ __all__ = [
     "TomlConfigSectionSettingsSource",
     "YamlConfigSectionSettingsSource",
     "load_settings",
+    "load_settings_cli",
 ]

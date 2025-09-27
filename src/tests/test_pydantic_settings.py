@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from stat import S_IXUSR
-from subprocess import check_output
+from subprocess import STDOUT, CalledProcessError, check_call, check_output
 from typing import TYPE_CHECKING, ClassVar
 
 import tomlkit
@@ -153,18 +153,69 @@ class TestHashableBaseSettings:
 
 class TestLoadSettingsCLI:
     def test_main(self, *, tmp_path: Path) -> None:
-        file = tmp_path.joinpath("script.py")
-        _ = file.write_text(
-            strip_and_dedent("""
-                #!/usr/bin/env python3
-                from utilities.pydantic_settings import python3
+        script = tmp_path.joinpath("script.py")
+        _ = script.write_text("""\
+#!/usr/bin/env python3
+from __future__ import annotations
 
-                def main() -> None:
-                    print("?")
+from collections.abc import Sequence
+from pathlib import Path
+from typing import ClassVar
 
-                if __name__ == "__main__":
-                    main()
-            """)
+from pydantic_settings import BaseSettings
+
+from utilities.pydantic_settings import CustomBaseSettings, PathLikeOrWithSection, load_settings_cli
+
+class _Settings(CustomBaseSettings):
+    toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = [
+        Path(__file__).parent.joinpath("config.toml")
+    ]
+    parse_cli: ClassVar[bool] = True
+
+    a: int
+    b: int
+    inner: _Inner
+
+class _Inner(BaseSettings):
+    c: int
+    d: int
+
+_Settings.model_rebuild()
+
+def main() -> None:
+    settings = load_settings_cli(_Settings)
+    print(f"{settings=}")
+
+
+for name, field in _Settings.model_fields.items():
+    print(name, field.annotation, field.default)
+
+
+if __name__ == "__main__":
+    main()
+""")
+        script.chmod(script.stat().st_mode | S_IXUSR)
+        config = tmp_path.joinpath("config.toml")
+        _ = config.write_text(
+            """\
+a = 1
+b = 2
+
+[inner]
+c = 3
+d = 4
+"""
         )
-        file.chmod(file.stat().st_mode | S_IXUSR)
-        check_output([str(file)])
+        try:
+            result = check_output([script, "-h"], stderr=STDOUT, text=True)
+        except CalledProcessError as error:
+            raise RuntimeError(error.stdout) from None
+        expected = """settings=_Settings(a=1, b=2, inner=_Inner(c=3, d=4))\n"""
+        assert result == expected
+
+        try:
+            result = check_output([script], stderr=STDOUT, text=True)
+        except CalledProcessError as error:
+            raise RuntimeError(error.stdout) from None
+        expected = """settings=_Settings(a=1, b=2, inner=_Inner(c=3, d=4))\n"""
+        assert result == expected
