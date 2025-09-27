@@ -80,10 +80,46 @@ class CustomBaseSettings(BaseSettings):
             )
 
 
-def load_settings[T: BaseSettings](cls: type[T], /) -> T:
+def load_settings[T: BaseSettings](cls: type[T], /, *, cli: bool = False) -> T:
     """Load a set of settings."""
     _ = cls.model_rebuild()
-    return cls()
+    if cli:
+        cls_with_defaults = _load_settings_cli_create_model(cls)
+
+        @classmethod
+        def settings_customise_sources(
+            cls: type[BaseSettings],
+            settings_cls: type[BaseSettings],
+            init_settings: PydanticBaseSettingsSource,
+            env_settings: PydanticBaseSettingsSource,
+            dotenv_settings: PydanticBaseSettingsSource,
+            file_secret_settings: PydanticBaseSettingsSource,
+        ) -> tuple[PydanticBaseSettingsSource, ...]:
+            parent = cast(
+                "Any", super(cls_with_defaults, cls)
+            ).settings_customise_sources(
+                settings_cls=settings_cls,
+                init_settings=init_settings,
+                env_settings=env_settings,
+                dotenv_settings=dotenv_settings,
+                file_secret_settings=file_secret_settings,
+            )
+            return (
+                CliSettingsSource(
+                    settings_cls, cli_parse_args=True, case_sensitive=False
+                ),
+                *parent,
+            )
+
+        cls_use = type(
+            cls.__name__,
+            (cls_with_defaults,),
+            {"settings_customise_sources": settings_customise_sources},
+        )
+        cls_use = cast("type[T]", cls_use)
+    else:
+        cls_use = cls
+    return cls_use()
 
 
 class JsonConfigSectionSettingsSource(JsonConfigSettingsSource):
@@ -176,40 +212,6 @@ class HashableBaseSettings(BaseSettings):
 ##
 
 
-def load_settings_cli[T: BaseSettings](cls: type[T], /) -> T:
-    """Load a set of settings."""
-    _ = cls.model_rebuild()
-    new_cls = _load_settings_cli_create_model(cls)
-
-    @classmethod
-    def settings_customise_sources(
-        cls: type[BaseSettings],
-        settings_cls: type[BaseSettings],
-        init_settings: PydanticBaseSettingsSource,
-        env_settings: PydanticBaseSettingsSource,
-        dotenv_settings: PydanticBaseSettingsSource,
-        file_secret_settings: PydanticBaseSettingsSource,
-    ) -> tuple[PydanticBaseSettingsSource, ...]:
-        parent = cast("Any", super(new_cls, cls)).settings_customise_sources(
-            settings_cls=settings_cls,
-            init_settings=init_settings,
-            env_settings=env_settings,
-            dotenv_settings=dotenv_settings,
-            file_secret_settings=file_secret_settings,
-        )
-        return (
-            CliSettingsSource(settings_cls, cli_parse_args=True, case_sensitive=False),
-            *parent,
-        )
-
-    new_cls2 = type(
-        new_cls.__name__,
-        (new_cls,),
-        {"settings_customise_sources": settings_customise_sources},
-    )
-    return load_settings(cast("type[T]", new_cls2))
-
-
 def _load_settings_cli_create_model[T: BaseSettings](
     cls: type[T], /, *, values: T | None = None
 ) -> type[T]:
@@ -242,5 +244,4 @@ __all__ = [
     "TomlConfigSectionSettingsSource",
     "YamlConfigSectionSettingsSource",
     "load_settings",
-    "load_settings_cli",
 ]

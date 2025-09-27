@@ -150,7 +150,7 @@ class TestHashableBaseSettings:
         _ = hash(settings)
 
 
-class TestLoadSettingsCLI:
+class TestLoadSettings:
     def test_main(self, *, tmp_path: Path) -> None:
         script = tmp_path.joinpath("script.py")
         _ = script.write_text("""\
@@ -163,13 +163,12 @@ from typing import ClassVar
 
 from pydantic_settings import BaseSettings
 
-from utilities.pydantic_settings import CustomBaseSettings, PathLikeOrWithSection, load_settings_cli
+from utilities.pydantic_settings import CustomBaseSettings, PathLikeOrWithSection, load_settings
 
 class _Settings(CustomBaseSettings):
     toml_files: ClassVar[Sequence[PathLikeOrWithSection]] = [
         Path(__file__).parent.joinpath("config.toml")
     ]
-    parse_cli: ClassVar[bool] = True
 
     a: int
     b: int
@@ -180,7 +179,7 @@ class _Inner(BaseSettings):
     d: int
 
 def main() -> None:
-    settings = load_settings_cli(_Settings)
+    settings = load_settings(_Settings, cli=True)
     print(f"{settings=}")
 
 if __name__ == "__main__":
