@@ -29,7 +29,7 @@ type PathLikeOrWithSection = PathLike | PathLikeWithSection
 
 
 class CustomBaseSettings(BaseSettings):
-    """Base settings for loading JSON files."""
+    """Base settings for loading JSON/TOML/YAML files."""
 
     # paths
     json_files: ClassVar[Sequence[PathLikeOrWithSection]] = []
@@ -158,8 +158,19 @@ def _get_section(
     return reduce(lambda acc, el: acc.get(el, {}), always_iterable(section), mapping)
 
 
+##
+
+
+class HashableBaseSettings(BaseSettings):
+    """Base settings for loading JSON files."""
+
+    # config
+    model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(frozen=True)
+
+
 __all__ = [
     "CustomBaseSettings",
+    "HashableBaseSettings",
     "JsonConfigSectionSettingsSource",
     "TomlConfigSectionSettingsSource",
     "YamlConfigSectionSettingsSource",

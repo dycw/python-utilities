@@ -6,10 +6,12 @@ from typing import TYPE_CHECKING, ClassVar
 import tomlkit
 import yaml
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pytest import mark, param
 
 from utilities.os import temp_environ
 from utilities.pydantic_settings import (
     CustomBaseSettings,
+    HashableBaseSettings,
     PathLikeOrWithSection,
     load_settings,
 )
@@ -101,11 +103,12 @@ class TestCustomBaseSettings:
             settings = load_settings(Settings)
         assert settings.x == 1
 
-    def test_env_var_with_nested(self) -> None:
+    @mark.parametrize("inner_cls", [param(BaseSettings), param(HashableBaseSettings)])
+    def test_env_var_with_nested(self, *, inner_cls: type[BaseSettings]) -> None:
         class Settings(CustomBaseSettings):
             inner: Inner
 
-        class Inner(BaseSettings):
+        class Inner(inner_cls):
             x: int
 
         _ = Settings.model_rebuild()
@@ -114,12 +117,15 @@ class TestCustomBaseSettings:
             settings = load_settings(Settings)
         assert settings.inner.x == 1
 
-    def test_env_var_with_prefix_and_nested(self) -> None:
+    @mark.parametrize("inner_cls", [param(BaseSettings), param(HashableBaseSettings)])
+    def test_env_var_with_prefix_and_nested(
+        self, *, inner_cls: type[BaseSettings]
+    ) -> None:
         class Settings(CustomBaseSettings):
             model_config = SettingsConfigDict(env_prefix="test__")
             inner: Inner
 
-        class Inner(BaseSettings):
+        class Inner(inner_cls):
             x: int
 
         _ = Settings.model_rebuild()
@@ -131,3 +137,12 @@ class TestCustomBaseSettings:
         class Settings(CustomBaseSettings): ...
 
         _ = load_settings(Settings)
+
+
+class TestHashableBaseSettings:
+    def test_hashable(self) -> None:
+        class Settings(HashableBaseSettings):
+            x: int = 1
+
+        settings = load_settings(Settings)
+        _ = hash(settings)
