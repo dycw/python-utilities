@@ -52,7 +52,7 @@ dev = [
   "pytest-timeout >=2.4.0, <2.5",
 ]
 fastapi = [
-  "fastapi >=0.117.1, <0.118",
+  "fastapi >=0.118.0, <0.119",
 ]
 fastapi-test = [
   "httpx",
@@ -71,7 +71,7 @@ http-test = [
   "orjson",
 ]
 hypothesis = [
-  "hypothesis >=6.140.2, <6.141",
+  "hypothesis >=6.140.3, <6.141",
 ]
 hypothesis-test = [
   "libcst",
@@ -258,12 +258,12 @@ logging = [
 ]
 test = [
   "dycw-pytest-only >=2.1.1, <2.2",
-  "hypothesis >=6.140.2, <6.141",
+  "hypothesis >=6.140.3, <6.141",
   "pytest >=8.4.2, <8.5",
   "pytest-asyncio >=1.2.0, <1.3",
   "pytest-cov >=7.0.0, <7.1",
   "pytest-instafail >=0.5.0, <0.6",
-  "pytest-lazy-fixtures >=1.3.4, <1.4",
+  "pytest-lazy-fixtures >=1.4.0, <1.5",
   "pytest-randomly >=4.0.1, <4.1",
   "pytest-regressions >=2.8.3, <2.9",
   "pytest-repeat >=0.9.4, <0.10",
