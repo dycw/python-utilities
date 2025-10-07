@@ -31,7 +31,7 @@ core = [
   "atomicwrites >=1.4.1, <1.5",
   "typing-extensions >=4.15.0, <4.16",
   "tzlocal >=5.3.1, <5.4",
-  "whenever >=0.9.0, <0.10",
+  "whenever >=0.9.2, <0.10",
 ]
 cryptography = [
   "cryptography >=46.0.2, <46.1",
@@ -198,7 +198,7 @@ sklearn = [
   "scikit-learn >=1.7.2, <1.8",
 ]
 slack-sdk = [
-  "slack-sdk >=3.36.0, <3.37",
+  "slack-sdk >=3.37.0, <3.38",
 ]
 slack-sdk-test = [
   "aiohttp",
@@ -227,9 +227,6 @@ statsmodels = [
 testbook = [
   "testbook >=0.4.2, <0.5",
 ]
-typed-settings = [
-  "typed-settings >=25.0.0, <25.1",
-]
 tzdata = [
   "tzdata >=2025.2, <2025.3",
 ]
@@ -244,12 +241,12 @@ dependencies = [
   "atomicwrites >=1.4.1, <1.5",
   "typing-extensions >=4.15.0, <4.16",
   "tzlocal >=5.3.1, <5.4",
-  "whenever >=0.9.0, <0.10",
+  "whenever >=0.9.2, <0.10",
 ]
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.168.3"
+version = "0.168.4"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -282,7 +279,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.168.3"
+current_version = "0.168.4"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -486,7 +483,6 @@ select = [
   "S101",  # assert
   "SLF001",  # private-member-access
 ]
-"src/tests/test_typed_settings.py" = ["I002"]  # missing-required-import
 "src/tests/test_typing_funcs/no_future.py" = ["I002"]  # missing-required-import
 
 [tool.ruff.lint.flake8-tidy-imports]
