@@ -612,7 +612,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.168.4"
+version = "0.168.5"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -785,6 +785,9 @@ pqdm = [
 ]
 psutil = [
     { name = "psutil" },
+]
+pydantic = [
+    { name = "pydantic" },
 ]
 pydantic-settings = [
     { name = "pydantic-settings" },
@@ -975,6 +978,7 @@ pottery = [{ name = "pottery", specifier = ">=3.0.1,<3.1" }]
 pottery-test = [{ name = "orjson" }]
 pqdm = [{ name = "pqdm", specifier = ">=0.2.0,<0.3" }]
 psutil = [{ name = "psutil", specifier = ">=7.1.0,<7.2" }]
+pydantic = [{ name = "pydantic", specifier = ">=2.11.9,<2.12" }]
 pydantic-settings = [{ name = "pydantic-settings", specifier = ">=2.11.0,<2.12" }]
 pydantic-settings-sops = [{ name = "pydantic-settings-sops" }]
 pydantic-settings-test = [
