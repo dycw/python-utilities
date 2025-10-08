@@ -220,7 +220,10 @@ def _load_settings_create_model[T: BaseSettings](
         if (ann := field.annotation) is None:
             raise ImpossibleCaseError(case=[f"{ann=}"])  # pragma: no cover
         value = getattr(values_use, name)
-        if issubclass(ann, BaseSettings):
+        if (
+            isinstance(cast("Any", ann), type)  # 'ann' is possible not a type
+            and issubclass(ann, BaseSettings)
+        ):
             kwargs[name] = _load_settings_create_model(ann, values=value)
         else:
             kwargs[name] = (field.annotation, Field(default=value))
