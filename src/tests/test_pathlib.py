@@ -82,26 +82,21 @@ class TestExpandPath:
 
 class TestFileOwnerAndGroup:
     def test_owner(self, *, tmp_path: Path) -> None:
-        file = tmp_path.joinpath("file.txt")
-        file.touch()
-        owner = get_file_owner(file)
-        match SYSTEM:
-            case "windows":
-                assert owner is None
-            case "mac" | "linux":
-                assert isinstance(owner, str)
-            case never:
-                assert_never(never)
+        path = tmp_path.joinpath("file.txt")
+        path.touch()
+        self._assert(get_file_owner(path))
 
     def test_group(self, *, tmp_path: Path) -> None:
-        file = tmp_path.joinpath("file.txt")
-        file.touch()
-        group = get_file_group(file)
+        path = tmp_path.joinpath("file.txt")
+        path.touch()
+        self._assert(get_file_group(path))
+
+    def _assert(self, value: str | None, /) -> None:
         match SYSTEM:
             case "windows":
-                assert group is None
+                assert value is None
             case "mac" | "linux":
-                assert isinstance(group, str)
+                assert isinstance(value, str)
             case never:
                 assert_never(never)
 
