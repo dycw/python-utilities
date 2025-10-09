@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from shutil import copytree
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Self, assert_never
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import integers, sets
@@ -22,6 +22,8 @@ from utilities.pathlib import (
     _GetTailNonUniqueError,
     ensure_suffix,
     expand_path,
+    get_file_group,
+    get_file_owner,
     get_package_root,
     get_repo_root,
     get_root,
@@ -32,6 +34,7 @@ from utilities.pathlib import (
     temp_cwd,
     to_path,
 )
+from utilities.platform import SYSTEM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TemporaryDirectory
 
@@ -75,6 +78,27 @@ class TestExpandPath:
     def test_main(self, *, path: Path, expected: Path) -> None:
         result = expand_path(path)
         assert result == expected
+
+
+class TestFileOwnerAndGroup:
+    def test_owner(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("file.txt")
+        path.touch()
+        self._assert(get_file_owner(path))
+
+    def test_group(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("file.txt")
+        path.touch()
+        self._assert(get_file_group(path))
+
+    def _assert(self, value: str | None, /) -> None:
+        match SYSTEM:
+            case "windows":
+                assert value is None
+            case "mac" | "linux":
+                assert isinstance(value, str)
+            case never:
+                assert_never(never)
 
 
 class TestGetPackageRoot:

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.contextlib import enhanced_context_manager
 from utilities.iterables import OneStrEmptyError, one_str
+from utilities.platform import SYSTEM
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
@@ -124,6 +125,39 @@ class GetEnvVarError(Exception):
 ##
 
 
+def get_effective_group_id() -> int | None:
+    """Get the effective group ID."""
+    match SYSTEM:
+        case "windows":  # skipif-not-windows
+            return None
+        case "mac" | "linux":  # skipif-windows
+            from os import getegid
+
+            return getegid()
+        case never:
+            assert_never(never)
+
+
+def get_effective_user_id() -> int | None:
+    """Get the effective user ID."""
+    match SYSTEM:
+        case "windows":  # skipif-not-windows
+            return None
+        case "mac" | "linux":  # skipif-windows
+            from os import geteuid
+
+            return geteuid()
+        case never:
+            assert_never(never)
+
+
+EFFECTIVE_USER_ID = get_effective_user_id()
+EFFECTIVE_GROUP_ID = get_effective_group_id()
+
+
+##
+
+
 def is_debug() -> bool:
     """Check if we are in `DEBUG` mode."""
     return get_env_var("DEBUG", nullable=True) is not None
@@ -165,11 +199,15 @@ def temp_environ(
 
 __all__ = [
     "CPU_COUNT",
+    "EFFECTIVE_GROUP_ID",
+    "EFFECTIVE_USER_ID",
     "GetCPUCountError",
     "GetCPUUseError",
     "IntOrAll",
     "get_cpu_count",
     "get_cpu_use",
+    "get_effective_group_id",
+    "get_effective_user_id",
     "get_env_var",
     "is_debug",
     "is_pytest",
