@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import suppress
 from dataclasses import dataclass
-from os import cpu_count, environ, getenv
+from os import cpu_count, environ, getegid, getenv, geteuid
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.contextlib import enhanced_context_manager
@@ -13,6 +13,13 @@ if TYPE_CHECKING:
 
 
 type IntOrAll = int | Literal["all"]
+
+
+##
+
+
+EFFECTIVE_USER_ID = geteuid()
+EFFECTIVE_GROUP_ID = getegid()
 
 
 ##
@@ -165,6 +172,8 @@ def temp_environ(
 
 __all__ = [
     "CPU_COUNT",
+    "EFFECTIVE_GROUP_ID",
+    "EFFECTIVE_USER_ID",
     "GetCPUCountError",
     "GetCPUUseError",
     "IntOrAll",

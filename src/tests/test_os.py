@@ -16,6 +16,8 @@ from pytest import mark, param, raises
 from utilities.hypothesis import text_ascii
 from utilities.os import (
     CPU_COUNT,
+    EFFECTIVE_GROUP_ID,
+    EFFECTIVE_USER_ID,
     GetCPUUseError,
     GetEnvVarError,
     get_cpu_count,
@@ -162,3 +164,9 @@ class TestTempEnviron:
             with temp_environ({key: None}):
                 assert getenv(key) is None
             assert getenv(key) == value
+
+
+class TestEffectiveIDs:
+    @mark.parametrize("id_", [param(EFFECTIVE_USER_ID), param(EFFECTIVE_GROUP_ID)])
+    def test_main(self, *, id_: int) -> None:
+        assert isinstance(id_, int)
