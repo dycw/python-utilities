@@ -82,10 +82,12 @@ class TestExpandPath:
 class TestFileOwnerAndGroup:
     def test_owner(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("file.txt")
+        file.touch()
         assert isinstance(get_file_owner(file), str)
 
     def test_group(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("file.txt")
+        file.touch()
         assert isinstance(get_file_group(file), str)
 
 
