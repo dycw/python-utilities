@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from shutil import copytree
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Self, assert_never
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import integers, sets
@@ -34,6 +34,7 @@ from utilities.pathlib import (
     temp_cwd,
     to_path,
 )
+from utilities.platform import SYSTEM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TemporaryDirectory
 
@@ -83,12 +84,26 @@ class TestFileOwnerAndGroup:
     def test_owner(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("file.txt")
         file.touch()
-        assert isinstance(get_file_owner(file), str)
+        owner = get_file_owner(file)
+        match SYSTEM:
+            case "windows":
+                assert owner is None
+            case "mac" | "linux":
+                assert isinstance(owner, str)
+            case never:
+                assert_never(never)
 
     def test_group(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("file.txt")
         file.touch()
-        assert isinstance(get_file_group(file), str)
+        group = get_file_group(file)
+        match SYSTEM:
+            case "windows":
+                assert group is None
+            case "mac" | "linux":
+                assert isinstance(group, str)
+            case never:
+                assert_never(never)
 
 
 class TestGetPackageRoot:
