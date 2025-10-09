@@ -54,12 +54,12 @@ def expand_path(path: PathLike, /) -> Path:
 ##
 
 
-def get_file_group(path: PathLike, /) -> str:
+def get_file_group(path: PathLike, /) -> str | None:
     """Get the group of a file."""
     return get_gid_name(to_path(path).stat().st_gid)
 
 
-def get_file_owner(path: PathLike, /) -> str:
+def get_file_owner(path: PathLike, /) -> str | None:
     """Get the owner of a file."""
     return get_uid_name(to_path(path).stat().st_uid)
 
