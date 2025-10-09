@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
+from utilities.grp import get_gid_name
+from utilities.pwd import get_uid_name
 from utilities.sentinel import Sentinel
 
 if TYPE_CHECKING:
@@ -47,6 +49,19 @@ def expand_path(path: PathLike, /) -> Path:
     path = str(path)
     path = expandvars(path)
     return Path(path).expanduser()
+
+
+##
+
+
+def get_file_group(path: PathLike, /) -> str:
+    """Get the group of a file."""
+    return get_gid_name(to_path(path).stat().st_gid)
+
+
+def get_file_owner(path: PathLike, /) -> str:
+    """Get the owner of a file."""
+    return get_uid_name(to_path(path).stat().st_uid)
 
 
 ##
@@ -327,6 +342,8 @@ __all__ = [
     "GetTailError",
     "ensure_suffix",
     "expand_path",
+    "get_file_group",
+    "get_file_owner",
     "get_package_root",
     "get_repo_root",
     "get_tail",

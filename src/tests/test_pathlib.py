@@ -22,6 +22,8 @@ from utilities.pathlib import (
     _GetTailNonUniqueError,
     ensure_suffix,
     expand_path,
+    get_file_group,
+    get_file_owner,
     get_package_root,
     get_repo_root,
     get_root,
@@ -75,6 +77,16 @@ class TestExpandPath:
     def test_main(self, *, path: Path, expected: Path) -> None:
         result = expand_path(path)
         assert result == expected
+
+
+class TestFileOwnerAndGroup:
+    def test_owner(self, *, tmp_path: Path) -> None:
+        file = tmp_path.joinpath("file.txt")
+        assert isinstance(get_file_owner(file), str)
+
+    def test_group(self, *, tmp_path: Path) -> None:
+        file = tmp_path.joinpath("file.txt")
+        assert isinstance(get_file_group(file), str)
 
 
 class TestGetPackageRoot:
