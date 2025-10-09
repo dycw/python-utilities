@@ -4,7 +4,14 @@ from pwd import getpwuid
 
 from utilities.os import EFFECTIVE_USER_ID
 
-EFFECTIVE_USER_NAME = getpwuid(EFFECTIVE_USER_ID).pw_name
+
+def get_uid_name(uid: int, /) -> str:
+    """Get the name of a user ID."""
+    return getpwuid(uid).pw_name
 
 
-__all__ = ["EFFECTIVE_USER_NAME"]
+ROOT_USER_NAME = get_uid_name(0)
+EFFECTIVE_USER_NAME = get_uid_name(EFFECTIVE_USER_ID)
+
+
+__all__ = ["EFFECTIVE_USER_NAME", "ROOT_USER_NAME", "get_uid_name"]

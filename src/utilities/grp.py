@@ -4,7 +4,14 @@ from grp import getgrgid
 
 from utilities.os import EFFECTIVE_GROUP_ID
 
-EFFECTIVE_GROUP_NAME = getgrgid(EFFECTIVE_GROUP_ID).gr_name
+
+def get_gid_name(gid: int, /) -> str:
+    """Get the name of a group."""
+    return getgrgid(gid).gr_name
 
 
-__all__ = ["EFFECTIVE_GROUP_NAME"]
+ROOT_GROUP_NAME = get_gid_name(0)
+EFFECTIVE_GROUP_NAME = get_gid_name(EFFECTIVE_GROUP_ID)
+
+
+__all__ = ["EFFECTIVE_GROUP_NAME", "ROOT_GROUP_NAME", "get_gid_name"]
