@@ -2,8 +2,8 @@
 
 # build-system
 [build-system]
-build-backend = "hatchling.build"
-requires = ["hatchling"]
+build-backend = "uv_build"
+requires = ["uv_build"]
 
 # dependency groups
 [dependency-groups]
@@ -246,10 +246,10 @@ dependencies = [
   "tzlocal >=5.3.1, <5.4",
   "whenever >=0.9.2, <0.10",
 ]
-name = "dycw-utilities"
+name = "utilities"
 readme = "README.md"
 requires-python = ">= 3.13"
-version = "0.169.0"
+version = "0.169.1"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -282,7 +282,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.169.0"
+current_version = "0.169.1"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"
@@ -330,15 +330,6 @@ omit = [
 parallel = true
 plugins = ["coverage_conditional_plugin"]
 source = ["src/utilities"]
-
-# hatch
-[tool.hatch]
-
-[tool.hatch.build.targets.sdist]
-include = ["src"]
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/utilities"]
 
 # nitpick
 [tool.nitpick]

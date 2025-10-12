@@ -455,7 +455,7 @@ class TestSizeAndTimeRotatingFileHandler:
         assert any(p for p in files if search(r"^log\.txt$", p.name))
 
         await sleep(1.1)
-        for i in range(2, 4):
+        for i in range(1, 3):
             logger.warning("message %d", i)
             files = list(tmp_path.iterdir())
             assert len(files) == 2
@@ -463,7 +463,7 @@ class TestSizeAndTimeRotatingFileHandler:
             assert any(p for p in files if search(r"^log\.1__.+?\.txt$", p.name))
 
         await sleep(1.1)
-        for i in range(4, 6):
+        for i in range(3, 5):
             logger.warning("message %d", i)
             files = list(tmp_path.iterdir())
             assert len(files) == 3
@@ -472,7 +472,7 @@ class TestSizeAndTimeRotatingFileHandler:
             assert any(p for p in files if search(r"^log\.2__.+?\.txt$", p.name))
 
         await sleep(1.1)
-        for i in range(6, 8):
+        for i in range(5, 7):
             logger.warning("message %d", i)
             files = list(tmp_path.iterdir())
             assert len(files) == 4
@@ -483,7 +483,7 @@ class TestSizeAndTimeRotatingFileHandler:
 
         for _ in range(2):
             await sleep(1.1)
-            for i in range(8, 10):
+            for i in range(7, 9):
                 logger.warning("message %d", i)
                 files = list(tmp_path.iterdir())
                 assert len(files) == 4
