@@ -246,7 +246,7 @@ dependencies = [
   "tzlocal >=5.3.1, <5.4",
   "whenever >=0.9.2, <0.10",
 ]
-name = "dycw-utilities"
+name = "utilities"
 readme = "README.md"
 requires-python = ">= 3.13"
 version = "0.169.1"
