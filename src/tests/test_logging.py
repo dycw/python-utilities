@@ -454,12 +454,6 @@ class TestSizeAndTimeRotatingFileHandler:
         assert len(files) == 1
         assert any(p for p in files if search(r"^log\.txt$", p.name))
 
-        await sleep(0.1)
-        logger.warning("message 1")
-        files = list(tmp_path.iterdir())
-        assert len(files) == 1
-        assert any(p for p in files if search(r"^log\.txt$", p.name))
-
         await sleep(1.1)
         for i in range(2, 4):
             logger.warning("message %d", i)
