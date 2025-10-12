@@ -59,7 +59,7 @@ fastapi-test = [
   "uvicorn",
 ]
 fpdf2 = [
-  "fpdf2 >=2.8.3, <2.9",
+  "fpdf2 >=2.8.4, <2.9",
 ]
 gitpython = [
   "gitpython >=3.1.45, <3.2",
@@ -109,7 +109,7 @@ more-itertools = [
   "more-itertools >=10.8.0, <10.9",
 ]
 numpy = [
-  "numpy >=2.3.2, <2.4",
+  "numpy >=2.3.3, <2.4",
 ]
 operator = [
   "polars",
@@ -163,7 +163,7 @@ pydantic-settings-test = [
   "tomlkit",
 ]
 pyinstrument = [
-  "pyinstrument >=5.1.0, <5.2",
+  "pyinstrument >=5.1.1, <5.2",
 ]
 pytest = [
   "pytest >=8.4.2, <8.5",
@@ -207,7 +207,7 @@ slack-sdk-test = [
   "aiohttp",
 ]
 sqlalchemy = [
-  "sqlalchemy >=2.0.42, <2.1",
+  "sqlalchemy >=2.0.43, <2.1",
   "psycopg",
 ]
 sqlalchemy-polars = [
@@ -225,7 +225,7 @@ sqlalchemy-test = [
   "greenlet",
 ]
 statsmodels = [
-  "statsmodels >=0.14.4, <0.15",
+  "statsmodels >=0.14.5, <0.15",
 ]
 testbook = [
   "testbook >=0.4.2, <0.5",
@@ -249,7 +249,7 @@ dependencies = [
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.12"
-version = "0.168.8"
+version = "0.168.9"
 
 [project.entry-points.pytest11]
 pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -282,7 +282,7 @@ test = [
 # bump-my-version
 [tool.bumpversion]
 allow_dirty = true
-current_version = "0.168.8"
+current_version = "0.168.9"
 
 [[tool.bumpversion.files]]
 filename = "src/utilities/__init__.py"

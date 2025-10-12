@@ -7,12 +7,12 @@ repos:
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.9.0
+    rev: 0.9.2
     hooks:
       - id: uv-lock
         args: [--upgrade]
   - repo: https://github.com/dycw/pre-commit-hooks
-    rev: 0.13.8
+    rev: 0.13.10
     hooks:
       - id: format-requirements
       - id: replace-sequence-str
@@ -37,7 +37,7 @@ repos:
         args: [--write]
   # linters
   - repo: https://github.com/andreoliwa/nitpick
-    rev: v0.36.0
+    rev: v0.37.0
     hooks:
       - id: nitpick-check
   - repo: https://github.com/shellcheck-py/shellcheck-py
