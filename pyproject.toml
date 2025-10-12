@@ -406,6 +406,7 @@ filterwarnings = [
   "ignore:unclosed <socket.*socket .*>:ResourceWarning",  # redis
   "ignore:unclosed Connection <redis.*asyncio.*connection.*Connection.*>:ResourceWarning",  # redis
   "ignore:unclosed connection <asyncpg.*connection.*Connection.*>:ResourceWarning",  # asyncpg
+  "ignore:unclosed database in <sqlite3.*Connection .*>:ResourceWarning",  # sqlalchemy
   "ignore:unclosed event loop <_UnixSelectorEventLoop .*>:ResourceWarning",  # redis
   "ignore:unclosed file <_io.*TextIOWrapper .*>:ResourceWarning",  # logging
   "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",  # redis
@@ -432,16 +433,8 @@ ignore = [
   "A005",  # stdlib-module-shadowing
   "ASYNC109",  # async-function-with-timeout
   "C901",  # complex-structure
-  "D100",  # undocumented-public-module
-  "D101",  # undocumented-public-class
-  "D102",  # undocumented-public-method
-  "D103",  # undocumented-public-function
-  "D104",  # undocumented-public-package
-  "D105",  # undocumented-magic-method
-  "D106",  # undocumented-public-nested-class
-  "D107",  # undocumented-public-init
-  "D203",  # one-blank-line-before-class
-  "D213",  # multi-line-summary-second-line
+  "CPY",  # flake8-copyright
+  "D",  # pydocstyle
   "DOC",  # pydoclint
   "E501",  # line-too-long
   "PD",  # pandas-vet
@@ -454,7 +447,10 @@ ignore = [
   "PLR2004",  # magic-value-comparison
   "PT012",  # pytest-raises-with-multiple-statements
   "PT013",  # pytest-incorrect-pytest-import
+  "S202",  # tarfile-unsafe-members
+  "S310",  # suspicious-url-open-usage
   "S311",  # suspicious-non-cryptographic-random-usage
+  "S602",  # subprocess-popen-with-shell-equals-true
   "S603",  # subprocess-without-shell-equals-true
   "S607",  # start-process-with-partial-path
   # preview
@@ -464,12 +460,6 @@ ignore = [
   "E111",  # indentation-with-invalid-multiple
   "E114",  # indentation-with-invalid-multiple-comment
   "E117",  # over-indented
-  "D206",  # indent-with-spaces
-  "D300",  # triple-single-quotes
-  "Q000",  # bad-quotes-inline-string
-  "Q001",  # bad-quotes-multiline-string
-  "Q002",  # bad-quotes-docstring
-  "Q003",  # avoidable-escaped-quote
   "COM812",  # missing-trailing-comma
   "COM819",  # prohibited-trailing-comma
   "ISC001",  # single-line-implicit-string-concatenation
