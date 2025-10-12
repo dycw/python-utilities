@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from re import IGNORECASE, search
-from typing import Any, override
-
-from typing_extensions import TypeIs
+from typing import Any, TypeIs, override
 
 
 class _Meta(type):
