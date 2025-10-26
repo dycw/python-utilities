@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Hashable, Iterable, Iterator, MutableSet
 from math import inf
 from time import monotonic
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, Any, cast, override
 
 import cachetools
 from cachetools.func import ttl_cache
@@ -100,11 +100,14 @@ def cache[F: Callable](
     typed_: bool = False,
 ) -> Callable[[F], F]:
     """Decorate a function with `max_size` and/or `ttl` settings."""
-    return ttl_cache(
-        maxsize=inf if max_size is None else max_size,
-        ttl=inf if max_duration is None else max_duration.in_seconds(),
-        timer=timer,
-        typed=typed_,
+    return cast(
+        "F",
+        ttl_cache(
+            maxsize=max_size,
+            ttl=inf if max_duration is None else max_duration.in_seconds(),
+            timer=timer,
+            typed=typed_,
+        ),
     )
 
 
