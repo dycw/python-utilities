@@ -1,13 +1,13 @@
 repos:
   # fixers
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.0
+    rev: v0.14.2
     hooks:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.9.3
+    rev: 0.9.5
     hooks:
       - id: uv-lock
         args: [--upgrade]
@@ -25,7 +25,7 @@ repos:
             reorder_keys=true,
           ]
   - repo: https://github.com/dycw/pre-commit-hooks
-    rev: 0.13.16
+    rev: 0.13.19
     hooks:
       - id: format-requirements
       - id: replace-sequence-str
@@ -36,7 +36,7 @@ repos:
       - id: shfmt
   # linters
   - repo: https://github.com/andreoliwa/nitpick
-    rev: v0.37.0
+    rev: v0.38.0
     hooks:
       - id: nitpick-check
   - repo: https://github.com/shellcheck-py/shellcheck-py

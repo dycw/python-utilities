@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from asyncio import sleep
 from enum import Enum, StrEnum, auto
-from getpass import getuser
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, override
 from uuid import uuid4
 
@@ -226,7 +225,7 @@ class TestEnsureDatabaseCreatedAndDropped:
     async def test_main(self) -> None:
         url = URL.create(
             "postgresql+asyncpg",
-            username=getuser(),
+            username="postgres",
             password="password",  # noqa: S106
             host="localhost",
             port=5432,
@@ -255,7 +254,7 @@ class TestEnsureDatabaseUsersDisconnected:
     async def test_main(self) -> None:
         url = URL.create(
             "postgresql+asyncpg",
-            username=getuser(),
+            username="postgres",
             password="password",  # noqa: S106
             host="localhost",
             port=5432,
