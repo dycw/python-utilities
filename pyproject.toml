@@ -101,7 +101,7 @@
   name = "dycw-utilities"
   readme = "README.md"
   requires-python = ">= 3.13"
-  version = "0.169.4"
+  version = "0.169.3"
 
   [project.entry-points.pytest11]
     pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -129,8 +129,10 @@
 
   [project.scripts]
 
-# tool
-[tool]
+# bump-my-version
+[tool.bumpversion]
+  allow_dirty = true
+  current_version = "0.169.3"
 
   # bump-my-version
   [tool.bumpversion]

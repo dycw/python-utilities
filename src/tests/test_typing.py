@@ -47,6 +47,7 @@ from whenever import (
     ZonedDateTime,
 )
 
+from tests.test_objects.objects import TruthEnum
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureNestedInnerFirstInner,
     DataClassNoFutureNestedInnerFirstOuter,
@@ -1069,6 +1070,10 @@ class TestIsSubclassGen:
             param(Literal[1, "2", 3], int | str, True),
             param(Literal[1, "2", 3], int, False),
             param(Literal[1, "2", 3], str, False),
+            param(Literal[TruthEnum.true], TruthEnum, True, marks=mark.only),
+            param(
+                Literal[TruthEnum.true], Literal[TruthEnum.true], True, marks=mark.only
+            ),
             param(bool, Literal[1, 2, 3], False),
             param(str, Literal["a", "b", "c"], False),
             # tuple types
