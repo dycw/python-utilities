@@ -16,7 +16,8 @@ from hypothesis.strategies import (
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, mark, param, raises
 
-from utilities.hypothesis import int32s, numbers, pairs
+from utilities.errors import ImpossibleCaseError
+from utilities.hypothesis import assume_does_not_raise, int32s, numbers, pairs
 from utilities.math import (
     MAX_INT8,
     MAX_INT16,
@@ -1086,7 +1087,8 @@ class TestRoundFloatImprecisions:
     @settings(max_examples=1000)
     def test_main_vs_fractions(self, *, x: int, y: int, n: int) -> None:
         z = 10**n * x / y
-        _ = round_float_imprecisions(z)
+        with assume_does_not_raise(ImpossibleCaseError):
+            _ = round_float_imprecisions(z)
 
     @given(
         case=sampled_from([

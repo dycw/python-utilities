@@ -150,6 +150,8 @@ async def test_async_postgres_engine() -> AsyncEngine:
         skip(reason="Skipped for CI")
     engine = create_engine(
         "postgresql+asyncpg",
+        username="postgres",
+        password="password",  # noqa: S106
         host="localhost",
         port=5432,
         database="testing",
