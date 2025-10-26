@@ -3246,7 +3246,7 @@ requires-dist = [
     { name = "testbook", marker = "extra == 'test'", specifier = ">=0.4.2,<0.5" },
     { name = "typing-extensions", specifier = ">=4.15.0,<4.16" },
     { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.9.2,<0.10" },
+    { name = "whenever", specifier = ">=0.9.3,<0.10" },
 ]
 provides-extras = ["logging", "test"]
 
@@ -3265,7 +3265,7 @@ core = [
     { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
     { name = "typing-extensions", specifier = ">=4.15.0,<4.16" },
     { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.9.2,<0.10" },
+    { name = "whenever", specifier = ">=0.9.3,<0.10" },
 ]
 cryptography = [{ name = "cryptography", specifier = ">=46.0.3,<46.1" }]
 cvxpy = [{ name = "cvxpy", specifier = ">=1.7.3,<1.8" }]
