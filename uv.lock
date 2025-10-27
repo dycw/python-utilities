@@ -559,6 +559,432 @@ wheels = [
 ]
 
 [[package]]
+name = "dycw-utilities"
+version = "0.169.4"
+source = { editable = "." }
+dependencies = [
+    { name = "atomicwrites" },
+    { name = "typing-extensions" },
+    { name = "tzlocal" },
+    { name = "whenever" },
+]
+
+[package.optional-dependencies]
+logging = [
+    { name = "coloredlogs" },
+]
+test = [
+    { name = "dycw-pytest-only" },
+    { name = "hypothesis" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-instafail" },
+    { name = "pytest-lazy-fixtures" },
+    { name = "pytest-randomly" },
+    { name = "pytest-regressions" },
+    { name = "pytest-repeat" },
+    { name = "pytest-rerunfailures" },
+    { name = "pytest-rng" },
+    { name = "pytest-timeout" },
+    { name = "pytest-xdist" },
+    { name = "testbook" },
+]
+
+[package.dev-dependencies]
+aeventkit = [
+    { name = "aeventkit" },
+]
+altair = [
+    { name = "altair" },
+]
+altair-test = [
+    { name = "img2pdf" },
+    { name = "polars" },
+    { name = "vl-convert-python" },
+]
+atools = [
+    { name = "atools" },
+]
+cachetools = [
+    { name = "cachetools" },
+]
+click = [
+    { name = "click" },
+]
+core = [
+    { name = "atomicwrites" },
+    { name = "typing-extensions" },
+    { name = "tzlocal" },
+    { name = "whenever" },
+]
+cryptography = [
+    { name = "cryptography" },
+]
+cvxpy = [
+    { name = "cvxpy" },
+]
+dataclasses-test = [
+    { name = "orjson" },
+    { name = "polars" },
+]
+dev = [
+    { name = "coloredlogs" },
+    { name = "coverage-conditional-plugin" },
+    { name = "dycw-pytest-only" },
+    { name = "pyright", extra = ["nodejs"] },
+    { name = "pytest-cov" },
+    { name = "pytest-timeout" },
+]
+fastapi = [
+    { name = "fastapi" },
+]
+fastapi-test = [
+    { name = "httpx" },
+    { name = "uvicorn" },
+]
+fpdf2 = [
+    { name = "fpdf2" },
+]
+gitpython = [
+    { name = "gitpython" },
+]
+hashlib-test = [
+    { name = "orjson" },
+]
+http-test = [
+    { name = "orjson" },
+]
+hypothesis = [
+    { name = "hypothesis" },
+]
+hypothesis-test = [
+    { name = "libcst" },
+    { name = "numpy" },
+    { name = "pathvalidate" },
+    { name = "pytest-rerunfailures" },
+]
+inflect = [
+    { name = "inflect" },
+]
+jinja2 = [
+    { name = "jinja2" },
+]
+jupyter-test = [
+    { name = "pandas" },
+    { name = "polars" },
+]
+libcst = [
+    { name = "libcst" },
+]
+lightweight-charts = [
+    { name = "lightweight-charts" },
+]
+lightweight-charts-test = [
+    { name = "polars" },
+    { name = "pyarrow" },
+]
+math-test = [
+    { name = "numpy" },
+]
+memory-profiler = [
+    { name = "memory-profiler" },
+]
+more-itertools = [
+    { name = "more-itertools" },
+]
+numpy = [
+    { name = "numpy" },
+]
+operator = [
+    { name = "polars" },
+]
+optuna = [
+    { name = "optuna" },
+]
+orjson = [
+    { name = "orjson" },
+]
+orjson-test = [
+    { name = "polars" },
+]
+polars = [
+    { name = "polars" },
+]
+polars-ols = [
+    { name = "polars-ols" },
+]
+polars-ols-test = [
+    { name = "scikit-learn" },
+]
+polars-test = [
+    { name = "numpy" },
+    { name = "scipy" },
+    { name = "statsmodels" },
+]
+pottery = [
+    { name = "pottery" },
+]
+pottery-test = [
+    { name = "orjson" },
+]
+pqdm = [
+    { name = "pqdm" },
+]
+psutil = [
+    { name = "psutil" },
+]
+pydantic = [
+    { name = "pydantic" },
+]
+pydantic-settings = [
+    { name = "pydantic-settings" },
+]
+pydantic-settings-sops = [
+    { name = "pydantic-settings-sops" },
+]
+pydantic-settings-test = [
+    { name = "pyyaml" },
+    { name = "tomlkit" },
+]
+pyinstrument = [
+    { name = "pyinstrument" },
+]
+pytest = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-randomly" },
+    { name = "pytest-timeout" },
+    { name = "pytest-xdist" },
+]
+pytest-regressions = [
+    { name = "pytest-regressions" },
+]
+pytest-regressions-test = [
+    { name = "orjson" },
+    { name = "polars" },
+]
+pytest-test = [
+    { name = "orjson" },
+    { name = "pytest-rerunfailures" },
+    { name = "pytest-rng" },
+]
+redis = [
+    { name = "orjson" },
+    { name = "redis" },
+]
+redis-test = [
+    { name = "pytest-rerunfailures" },
+]
+reprlib-test = [
+    { name = "rich" },
+]
+scipy = [
+    { name = "scipy" },
+]
+sklearn = [
+    { name = "scikit-learn" },
+]
+slack-sdk = [
+    { name = "slack-sdk" },
+]
+slack-sdk-test = [
+    { name = "aiohttp" },
+]
+sqlalchemy = [
+    { name = "psycopg" },
+    { name = "sqlalchemy" },
+]
+sqlalchemy-polars = [
+    { name = "polars" },
+    { name = "sqlalchemy" },
+]
+sqlalchemy-polars-test = [
+    { name = "aiosqlite" },
+    { name = "asyncpg" },
+    { name = "greenlet" },
+]
+sqlalchemy-test = [
+    { name = "aiosqlite" },
+    { name = "asyncpg" },
+    { name = "greenlet" },
+]
+statsmodels = [
+    { name = "statsmodels" },
+]
+testbook = [
+    { name = "testbook" },
+]
+tzdata = [
+    { name = "tzdata" },
+]
+whenever-test = [
+    { name = "pathvalidate" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
+    { name = "coloredlogs", marker = "extra == 'logging'", specifier = ">=15.0.1,<15.1" },
+    { name = "dycw-pytest-only", marker = "extra == 'test'", specifier = ">=2.1.1,<2.2" },
+    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.142.0,<6.143" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.4.2,<8.5" },
+    { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=1.2.0,<1.3" },
+    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=7.0.0,<7.1" },
+    { name = "pytest-instafail", marker = "extra == 'test'", specifier = ">=0.5.0,<0.6" },
+    { name = "pytest-lazy-fixtures", marker = "extra == 'test'", specifier = ">=1.4.0,<1.5" },
+    { name = "pytest-randomly", marker = "extra == 'test'", specifier = ">=4.0.1,<4.1" },
+    { name = "pytest-regressions", marker = "extra == 'test'", specifier = ">=2.8.3,<2.9" },
+    { name = "pytest-repeat", marker = "extra == 'test'", specifier = ">=0.9.4,<0.10" },
+    { name = "pytest-rerunfailures", marker = "extra == 'test'", specifier = ">=16.0.1,<16.1" },
+    { name = "pytest-rng", marker = "extra == 'test'", specifier = ">=1.0.0,<1.1" },
+    { name = "pytest-timeout", marker = "extra == 'test'", specifier = ">=2.4.0,<2.5" },
+    { name = "pytest-xdist", marker = "extra == 'test'", specifier = ">=3.8.0,<3.9" },
+    { name = "testbook", marker = "extra == 'test'", specifier = ">=0.4.2,<0.5" },
+    { name = "typing-extensions", specifier = ">=4.15.0,<4.16" },
+    { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
+    { name = "whenever", specifier = ">=0.9.3,<0.10" },
+]
+provides-extras = ["logging", "test"]
+
+[package.metadata.requires-dev]
+aeventkit = [{ name = "aeventkit", specifier = ">=2.1.0,<2.2" }]
+altair = [{ name = "altair", specifier = ">=5.5.0,<5.6" }]
+altair-test = [
+    { name = "img2pdf" },
+    { name = "polars" },
+    { name = "vl-convert-python" },
+]
+atools = [{ name = "atools", specifier = ">=0.14.2,<0.15" }]
+cachetools = [{ name = "cachetools", specifier = ">=6.2.1,<6.3" }]
+click = [{ name = "click", specifier = ">=8.3.0,<8.4" }]
+core = [
+    { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
+    { name = "typing-extensions", specifier = ">=4.15.0,<4.16" },
+    { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
+    { name = "whenever", specifier = ">=0.9.3,<0.10" },
+]
+cryptography = [{ name = "cryptography", specifier = ">=46.0.3,<46.1" }]
+cvxpy = [{ name = "cvxpy", specifier = ">=1.7.3,<1.8" }]
+dataclasses-test = [
+    { name = "orjson" },
+    { name = "polars" },
+]
+dev = [
+    { name = "coloredlogs", specifier = ">=15.0.1,<15.1" },
+    { name = "coverage-conditional-plugin", specifier = ">=0.9.0,<0.10" },
+    { name = "dycw-pytest-only", specifier = ">=2.1.1,<2.2" },
+    { name = "pyright", extras = ["nodejs"], specifier = ">=1.1.407,<1.2" },
+    { name = "pytest-cov", specifier = ">=7.0.0,<7.1" },
+    { name = "pytest-timeout", specifier = ">=2.4.0,<2.5" },
+]
+fastapi = [{ name = "fastapi", specifier = ">=0.120.0,<0.121" }]
+fastapi-test = [
+    { name = "httpx" },
+    { name = "uvicorn" },
+]
+fpdf2 = [{ name = "fpdf2", specifier = ">=2.8.4,<2.9" }]
+gitpython = [{ name = "gitpython", specifier = ">=3.1.45,<3.2" }]
+hashlib-test = [{ name = "orjson" }]
+http-test = [{ name = "orjson" }]
+hypothesis = [{ name = "hypothesis", specifier = ">=6.142.0,<6.143" }]
+hypothesis-test = [
+    { name = "libcst" },
+    { name = "numpy" },
+    { name = "pathvalidate" },
+    { name = "pytest-rerunfailures" },
+]
+inflect = [{ name = "inflect", specifier = ">=7.5.0,<7.6" }]
+jinja2 = [{ name = "jinja2", specifier = ">=3.1.6,<3.2" }]
+jupyter-test = [
+    { name = "pandas" },
+    { name = "polars" },
+]
+libcst = [{ name = "libcst", specifier = ">=1.8.5,<1.9" }]
+lightweight-charts = [{ name = "lightweight-charts", specifier = ">=2.1,<2.2" }]
+lightweight-charts-test = [
+    { name = "polars" },
+    { name = "pyarrow" },
+]
+math-test = [{ name = "numpy" }]
+memory-profiler = [{ name = "memory-profiler", specifier = ">=0.61.0,<0.62" }]
+more-itertools = [{ name = "more-itertools", specifier = ">=10.8.0,<10.9" }]
+numpy = [{ name = "numpy", specifier = ">=2.3.4,<2.4" }]
+operator = [{ name = "polars" }]
+optuna = [{ name = "optuna", specifier = ">=4.5.0,<4.6" }]
+orjson = [{ name = "orjson", specifier = ">=3.11.4,<3.12" }]
+orjson-test = [{ name = "polars" }]
+polars = [{ name = "polars", specifier = ">=1.34.0,<1.35" }]
+polars-ols = [{ name = "polars-ols", specifier = ">=0.3.5,<0.4" }]
+polars-ols-test = [{ name = "scikit-learn" }]
+polars-test = [
+    { name = "numpy" },
+    { name = "scipy" },
+    { name = "statsmodels" },
+]
+pottery = [{ name = "pottery", specifier = ">=3.0.1,<3.1" }]
+pottery-test = [{ name = "orjson" }]
+pqdm = [{ name = "pqdm", specifier = ">=0.2.0,<0.3" }]
+psutil = [{ name = "psutil", specifier = ">=7.1.2,<7.2" }]
+pydantic = [{ name = "pydantic", specifier = ">=2.12.3,<2.13" }]
+pydantic-settings = [{ name = "pydantic-settings", specifier = ">=2.11.0,<2.12" }]
+pydantic-settings-sops = [{ name = "pydantic-settings-sops" }]
+pydantic-settings-test = [
+    { name = "pyyaml" },
+    { name = "tomlkit" },
+]
+pyinstrument = [{ name = "pyinstrument", specifier = ">=5.1.1,<5.2" }]
+pytest = [
+    { name = "pytest", specifier = ">=8.4.2,<8.5" },
+    { name = "pytest-asyncio", specifier = ">=1.2.0,<1.3" },
+    { name = "pytest-randomly", specifier = ">=4.0.1,<4.1" },
+    { name = "pytest-timeout", specifier = ">=2.4.0,<2.5" },
+    { name = "pytest-xdist", specifier = ">=3.8.0,<3.9" },
+]
+pytest-regressions = [{ name = "pytest-regressions", specifier = ">=2.8.3,<2.9" }]
+pytest-regressions-test = [
+    { name = "orjson" },
+    { name = "polars" },
+]
+pytest-test = [
+    { name = "orjson" },
+    { name = "pytest-rerunfailures" },
+    { name = "pytest-rng" },
+]
+redis = [
+    { name = "orjson" },
+    { name = "redis", specifier = ">=7.0.0,<7.1" },
+]
+redis-test = [{ name = "pytest-rerunfailures" }]
+reprlib-test = [{ name = "rich" }]
+scipy = [{ name = "scipy", specifier = ">=1.16.2,<1.17" }]
+sklearn = [{ name = "scikit-learn", specifier = ">=1.7.2,<1.8" }]
+slack-sdk = [{ name = "slack-sdk", specifier = ">=3.37.0,<3.38" }]
+slack-sdk-test = [{ name = "aiohttp" }]
+sqlalchemy = [
+    { name = "psycopg" },
+    { name = "sqlalchemy", specifier = ">=2.0.44,<2.1" },
+]
+sqlalchemy-polars = [
+    { name = "polars" },
+    { name = "sqlalchemy" },
+]
+sqlalchemy-polars-test = [
+    { name = "aiosqlite" },
+    { name = "asyncpg" },
+    { name = "greenlet" },
+]
+sqlalchemy-test = [
+    { name = "aiosqlite" },
+    { name = "asyncpg" },
+    { name = "greenlet" },
+]
+statsmodels = [{ name = "statsmodels", specifier = ">=0.14.5,<0.15" }]
+testbook = [{ name = "testbook", specifier = ">=0.4.2,<0.5" }]
+tzdata = [{ name = "tzdata", specifier = ">=2025.2,<2025.3" }]
+whenever-test = [{ name = "pathvalidate" }]
+
+[[package]]
 name = "execnet"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2960,432 +3386,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/8b/2e/c14812d3d4d9cd177
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c2/14/e2a54fabd4f08cd7af1c07030603c3356b74da07f7cc056e600436edfa17/tzlocal-5.3.1-py3-none-any.whl", hash = "sha256:eb1a66c3ef5847adf7a834f1be0800581b683b5608e74f86ecbcef8ab91bb85d", size = 18026, upload-time = "2025-03-05T21:17:39.857Z" },
 ]
-
-[[package]]
-name = "utilities"
-version = "0.169.3"
-source = { editable = "." }
-dependencies = [
-    { name = "atomicwrites" },
-    { name = "typing-extensions" },
-    { name = "tzlocal" },
-    { name = "whenever" },
-]
-
-[package.optional-dependencies]
-logging = [
-    { name = "coloredlogs" },
-]
-test = [
-    { name = "dycw-pytest-only" },
-    { name = "hypothesis" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-instafail" },
-    { name = "pytest-lazy-fixtures" },
-    { name = "pytest-randomly" },
-    { name = "pytest-regressions" },
-    { name = "pytest-repeat" },
-    { name = "pytest-rerunfailures" },
-    { name = "pytest-rng" },
-    { name = "pytest-timeout" },
-    { name = "pytest-xdist" },
-    { name = "testbook" },
-]
-
-[package.dev-dependencies]
-aeventkit = [
-    { name = "aeventkit" },
-]
-altair = [
-    { name = "altair" },
-]
-altair-test = [
-    { name = "img2pdf" },
-    { name = "polars" },
-    { name = "vl-convert-python" },
-]
-atools = [
-    { name = "atools" },
-]
-cachetools = [
-    { name = "cachetools" },
-]
-click = [
-    { name = "click" },
-]
-core = [
-    { name = "atomicwrites" },
-    { name = "typing-extensions" },
-    { name = "tzlocal" },
-    { name = "whenever" },
-]
-cryptography = [
-    { name = "cryptography" },
-]
-cvxpy = [
-    { name = "cvxpy" },
-]
-dataclasses-test = [
-    { name = "orjson" },
-    { name = "polars" },
-]
-dev = [
-    { name = "coloredlogs" },
-    { name = "coverage-conditional-plugin" },
-    { name = "dycw-pytest-only" },
-    { name = "pyright", extra = ["nodejs"] },
-    { name = "pytest-cov" },
-    { name = "pytest-timeout" },
-]
-fastapi = [
-    { name = "fastapi" },
-]
-fastapi-test = [
-    { name = "httpx" },
-    { name = "uvicorn" },
-]
-fpdf2 = [
-    { name = "fpdf2" },
-]
-gitpython = [
-    { name = "gitpython" },
-]
-hashlib-test = [
-    { name = "orjson" },
-]
-http-test = [
-    { name = "orjson" },
-]
-hypothesis = [
-    { name = "hypothesis" },
-]
-hypothesis-test = [
-    { name = "libcst" },
-    { name = "numpy" },
-    { name = "pathvalidate" },
-    { name = "pytest-rerunfailures" },
-]
-inflect = [
-    { name = "inflect" },
-]
-jinja2 = [
-    { name = "jinja2" },
-]
-jupyter-test = [
-    { name = "pandas" },
-    { name = "polars" },
-]
-libcst = [
-    { name = "libcst" },
-]
-lightweight-charts = [
-    { name = "lightweight-charts" },
-]
-lightweight-charts-test = [
-    { name = "polars" },
-    { name = "pyarrow" },
-]
-math-test = [
-    { name = "numpy" },
-]
-memory-profiler = [
-    { name = "memory-profiler" },
-]
-more-itertools = [
-    { name = "more-itertools" },
-]
-numpy = [
-    { name = "numpy" },
-]
-operator = [
-    { name = "polars" },
-]
-optuna = [
-    { name = "optuna" },
-]
-orjson = [
-    { name = "orjson" },
-]
-orjson-test = [
-    { name = "polars" },
-]
-polars = [
-    { name = "polars" },
-]
-polars-ols = [
-    { name = "polars-ols" },
-]
-polars-ols-test = [
-    { name = "scikit-learn" },
-]
-polars-test = [
-    { name = "numpy" },
-    { name = "scipy" },
-    { name = "statsmodels" },
-]
-pottery = [
-    { name = "pottery" },
-]
-pottery-test = [
-    { name = "orjson" },
-]
-pqdm = [
-    { name = "pqdm" },
-]
-psutil = [
-    { name = "psutil" },
-]
-pydantic = [
-    { name = "pydantic" },
-]
-pydantic-settings = [
-    { name = "pydantic-settings" },
-]
-pydantic-settings-sops = [
-    { name = "pydantic-settings-sops" },
-]
-pydantic-settings-test = [
-    { name = "pyyaml" },
-    { name = "tomlkit" },
-]
-pyinstrument = [
-    { name = "pyinstrument" },
-]
-pytest = [
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-randomly" },
-    { name = "pytest-timeout" },
-    { name = "pytest-xdist" },
-]
-pytest-regressions = [
-    { name = "pytest-regressions" },
-]
-pytest-regressions-test = [
-    { name = "orjson" },
-    { name = "polars" },
-]
-pytest-test = [
-    { name = "orjson" },
-    { name = "pytest-rerunfailures" },
-    { name = "pytest-rng" },
-]
-redis = [
-    { name = "orjson" },
-    { name = "redis" },
-]
-redis-test = [
-    { name = "pytest-rerunfailures" },
-]
-reprlib-test = [
-    { name = "rich" },
-]
-scipy = [
-    { name = "scipy" },
-]
-sklearn = [
-    { name = "scikit-learn" },
-]
-slack-sdk = [
-    { name = "slack-sdk" },
-]
-slack-sdk-test = [
-    { name = "aiohttp" },
-]
-sqlalchemy = [
-    { name = "psycopg" },
-    { name = "sqlalchemy" },
-]
-sqlalchemy-polars = [
-    { name = "polars" },
-    { name = "sqlalchemy" },
-]
-sqlalchemy-polars-test = [
-    { name = "aiosqlite" },
-    { name = "asyncpg" },
-    { name = "greenlet" },
-]
-sqlalchemy-test = [
-    { name = "aiosqlite" },
-    { name = "asyncpg" },
-    { name = "greenlet" },
-]
-statsmodels = [
-    { name = "statsmodels" },
-]
-testbook = [
-    { name = "testbook" },
-]
-tzdata = [
-    { name = "tzdata" },
-]
-whenever-test = [
-    { name = "pathvalidate" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
-    { name = "coloredlogs", marker = "extra == 'logging'", specifier = ">=15.0.1,<15.1" },
-    { name = "dycw-pytest-only", marker = "extra == 'test'", specifier = ">=2.1.1,<2.2" },
-    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.142.0,<6.143" },
-    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.4.2,<8.5" },
-    { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=1.2.0,<1.3" },
-    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=7.0.0,<7.1" },
-    { name = "pytest-instafail", marker = "extra == 'test'", specifier = ">=0.5.0,<0.6" },
-    { name = "pytest-lazy-fixtures", marker = "extra == 'test'", specifier = ">=1.4.0,<1.5" },
-    { name = "pytest-randomly", marker = "extra == 'test'", specifier = ">=4.0.1,<4.1" },
-    { name = "pytest-regressions", marker = "extra == 'test'", specifier = ">=2.8.3,<2.9" },
-    { name = "pytest-repeat", marker = "extra == 'test'", specifier = ">=0.9.4,<0.10" },
-    { name = "pytest-rerunfailures", marker = "extra == 'test'", specifier = ">=16.0.1,<16.1" },
-    { name = "pytest-rng", marker = "extra == 'test'", specifier = ">=1.0.0,<1.1" },
-    { name = "pytest-timeout", marker = "extra == 'test'", specifier = ">=2.4.0,<2.5" },
-    { name = "pytest-xdist", marker = "extra == 'test'", specifier = ">=3.8.0,<3.9" },
-    { name = "testbook", marker = "extra == 'test'", specifier = ">=0.4.2,<0.5" },
-    { name = "typing-extensions", specifier = ">=4.15.0,<4.16" },
-    { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.9.3,<0.10" },
-]
-provides-extras = ["logging", "test"]
-
-[package.metadata.requires-dev]
-aeventkit = [{ name = "aeventkit", specifier = ">=2.1.0,<2.2" }]
-altair = [{ name = "altair", specifier = ">=5.5.0,<5.6" }]
-altair-test = [
-    { name = "img2pdf" },
-    { name = "polars" },
-    { name = "vl-convert-python" },
-]
-atools = [{ name = "atools", specifier = ">=0.14.2,<0.15" }]
-cachetools = [{ name = "cachetools", specifier = ">=6.2.1,<6.3" }]
-click = [{ name = "click", specifier = ">=8.3.0,<8.4" }]
-core = [
-    { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
-    { name = "typing-extensions", specifier = ">=4.15.0,<4.16" },
-    { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.9.3,<0.10" },
-]
-cryptography = [{ name = "cryptography", specifier = ">=46.0.3,<46.1" }]
-cvxpy = [{ name = "cvxpy", specifier = ">=1.7.3,<1.8" }]
-dataclasses-test = [
-    { name = "orjson" },
-    { name = "polars" },
-]
-dev = [
-    { name = "coloredlogs", specifier = ">=15.0.1,<15.1" },
-    { name = "coverage-conditional-plugin", specifier = ">=0.9.0,<0.10" },
-    { name = "dycw-pytest-only", specifier = ">=2.1.1,<2.2" },
-    { name = "pyright", extras = ["nodejs"], specifier = ">=1.1.407,<1.2" },
-    { name = "pytest-cov", specifier = ">=7.0.0,<7.1" },
-    { name = "pytest-timeout", specifier = ">=2.4.0,<2.5" },
-]
-fastapi = [{ name = "fastapi", specifier = ">=0.120.0,<0.121" }]
-fastapi-test = [
-    { name = "httpx" },
-    { name = "uvicorn" },
-]
-fpdf2 = [{ name = "fpdf2", specifier = ">=2.8.4,<2.9" }]
-gitpython = [{ name = "gitpython", specifier = ">=3.1.45,<3.2" }]
-hashlib-test = [{ name = "orjson" }]
-http-test = [{ name = "orjson" }]
-hypothesis = [{ name = "hypothesis", specifier = ">=6.142.0,<6.143" }]
-hypothesis-test = [
-    { name = "libcst" },
-    { name = "numpy" },
-    { name = "pathvalidate" },
-    { name = "pytest-rerunfailures" },
-]
-inflect = [{ name = "inflect", specifier = ">=7.5.0,<7.6" }]
-jinja2 = [{ name = "jinja2", specifier = ">=3.1.6,<3.2" }]
-jupyter-test = [
-    { name = "pandas" },
-    { name = "polars" },
-]
-libcst = [{ name = "libcst", specifier = ">=1.8.5,<1.9" }]
-lightweight-charts = [{ name = "lightweight-charts", specifier = ">=2.1,<2.2" }]
-lightweight-charts-test = [
-    { name = "polars" },
-    { name = "pyarrow" },
-]
-math-test = [{ name = "numpy" }]
-memory-profiler = [{ name = "memory-profiler", specifier = ">=0.61.0,<0.62" }]
-more-itertools = [{ name = "more-itertools", specifier = ">=10.8.0,<10.9" }]
-numpy = [{ name = "numpy", specifier = ">=2.3.4,<2.4" }]
-operator = [{ name = "polars" }]
-optuna = [{ name = "optuna", specifier = ">=4.5.0,<4.6" }]
-orjson = [{ name = "orjson", specifier = ">=3.11.4,<3.12" }]
-orjson-test = [{ name = "polars" }]
-polars = [{ name = "polars", specifier = ">=1.34.0,<1.35" }]
-polars-ols = [{ name = "polars-ols", specifier = ">=0.3.5,<0.4" }]
-polars-ols-test = [{ name = "scikit-learn" }]
-polars-test = [
-    { name = "numpy" },
-    { name = "scipy" },
-    { name = "statsmodels" },
-]
-pottery = [{ name = "pottery", specifier = ">=3.0.1,<3.1" }]
-pottery-test = [{ name = "orjson" }]
-pqdm = [{ name = "pqdm", specifier = ">=0.2.0,<0.3" }]
-psutil = [{ name = "psutil", specifier = ">=7.1.2,<7.2" }]
-pydantic = [{ name = "pydantic", specifier = ">=2.12.3,<2.13" }]
-pydantic-settings = [{ name = "pydantic-settings", specifier = ">=2.11.0,<2.12" }]
-pydantic-settings-sops = [{ name = "pydantic-settings-sops" }]
-pydantic-settings-test = [
-    { name = "pyyaml" },
-    { name = "tomlkit" },
-]
-pyinstrument = [{ name = "pyinstrument", specifier = ">=5.1.1,<5.2" }]
-pytest = [
-    { name = "pytest", specifier = ">=8.4.2,<8.5" },
-    { name = "pytest-asyncio", specifier = ">=1.2.0,<1.3" },
-    { name = "pytest-randomly", specifier = ">=4.0.1,<4.1" },
-    { name = "pytest-timeout", specifier = ">=2.4.0,<2.5" },
-    { name = "pytest-xdist", specifier = ">=3.8.0,<3.9" },
-]
-pytest-regressions = [{ name = "pytest-regressions", specifier = ">=2.8.3,<2.9" }]
-pytest-regressions-test = [
-    { name = "orjson" },
-    { name = "polars" },
-]
-pytest-test = [
-    { name = "orjson" },
-    { name = "pytest-rerunfailures" },
-    { name = "pytest-rng" },
-]
-redis = [
-    { name = "orjson" },
-    { name = "redis", specifier = ">=7.0.0,<7.1" },
-]
-redis-test = [{ name = "pytest-rerunfailures" }]
-reprlib-test = [{ name = "rich" }]
-scipy = [{ name = "scipy", specifier = ">=1.16.2,<1.17" }]
-sklearn = [{ name = "scikit-learn", specifier = ">=1.7.2,<1.8" }]
-slack-sdk = [{ name = "slack-sdk", specifier = ">=3.37.0,<3.38" }]
-slack-sdk-test = [{ name = "aiohttp" }]
-sqlalchemy = [
-    { name = "psycopg" },
-    { name = "sqlalchemy", specifier = ">=2.0.44,<2.1" },
-]
-sqlalchemy-polars = [
-    { name = "polars" },
-    { name = "sqlalchemy" },
-]
-sqlalchemy-polars-test = [
-    { name = "aiosqlite" },
-    { name = "asyncpg" },
-    { name = "greenlet" },
-]
-sqlalchemy-test = [
-    { name = "aiosqlite" },
-    { name = "asyncpg" },
-    { name = "greenlet" },
-]
-statsmodels = [{ name = "statsmodels", specifier = ">=0.14.5,<0.15" }]
-testbook = [{ name = "testbook", specifier = ">=0.4.2,<0.5" }]
-tzdata = [{ name = "tzdata", specifier = ">=2025.2,<2025.3" }]
-whenever-test = [{ name = "pathvalidate" }]
 
 [[package]]
 name = "uvicorn"
