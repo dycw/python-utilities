@@ -14,7 +14,8 @@ from typing import (
     Literal,
     NamedTuple,
     NotRequired,
-    _TypedDictMeta,  # pyright: ignore[reportAttributeAccessIssue]
+    TypedDict,  # pyright: ignore[reportAttributeAccessIssue]
+    _TypedDictMeta,
     assert_never,
 )
 from uuid import UUID
@@ -47,7 +48,7 @@ from whenever import (
     ZonedDateTime,
 )
 
-from tests.test_objects.objects import TruthEnum
+from tests.test_objects.objects import TruthEnum, TruthStrEnum
 from tests.test_typing_funcs.no_future import (
     DataClassNoFutureNestedInnerFirstInner,
     DataClassNoFutureNestedInnerFirstOuter,
@@ -133,6 +134,9 @@ from utilities.whenever import DatePeriod, TimePeriod, ZonedDateTimePeriod
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+
+_NUM_CASES = 10
 
 
 class TestGetArgs:
@@ -730,6 +734,14 @@ class TestIsDataClassInstance:
         assert not is_dataclass_instance(obj)
 
 
+class TruthTypedDict(TypedDict):
+    truth: TruthEnum
+
+
+class TruthTypedDict2(TypedDict):
+    truth: Literal[TruthEnum.true]
+
+
 class TestIsInstanceGen:
     @given(data=data())
     @mark.parametrize(
@@ -738,19 +750,40 @@ class TestIsInstanceGen:
             # types - bool/int
             param(booleans(), bool, None, True),
             param(booleans(), int, 2, False),
-            param(integers(), bool, None, False),
+            param(integers(), bool, _NUM_CASES, False),
             param(integers(), int, None, True),
             param(booleans(), (bool, int), None, True),
             param(integers(), (bool, int), None, True),
             # types - datetime/date
             param(dates(), dt.date, None, True),
-            param(dates(), dt.datetime, None, False),
-            param(datetimes(), dt.date, None, False),
+            param(dates(), dt.datetime, _NUM_CASES, False),
+            param(datetimes(), dt.date, _NUM_CASES, False),
             param(datetimes(), dt.datetime, None, True),
             # parent union
             param(booleans(), Number, 2, False),
             param(integers(), Number, None, True),
             param(floats(), Number, None, True),
+            param(
+                just({"truth": TruthEnum.true}),
+                TruthTypedDict,
+                None,
+                True,
+                marks=mark.only,
+            ),
+            param(
+                just({"truth": TruthEnum.true}),
+                TruthTypedDict2,
+                None,
+                True,
+                marks=mark.only,
+            ),
+            param(
+                just({"truth": TruthEnum.false}),
+                TruthTypedDict2,
+                None,
+                False,
+                marks=mark.only,
+            ),
             # child tuple/union - skip
             # literals
             param(sampled_from([1, 2]), Literal[1, 2, 3], 2, True),
@@ -763,6 +796,22 @@ class TestIsInstanceGen:
             param(sampled_from([1, "2", 3]), int | str, 3, True),
             param(sampled_from([1, "2", 3]), int, 3, False),
             param(sampled_from([1, "2", 3]), str, 3, False),
+            param(just(TruthEnum.true), TruthEnum, None, True, marks=mark.only),
+            param(
+                just(TruthEnum.true),
+                Literal[TruthEnum.true],
+                None,
+                True,
+                marks=mark.only,
+            ),
+            param(just(TruthStrEnum.true), TruthStrEnum, None, True, marks=mark.only),
+            param(
+                just(TruthStrEnum.true),
+                Literal[TruthStrEnum.true],
+                None,
+                True,
+                marks=mark.only,
+            ),
             param(booleans(), Literal[1, 2, 3], 2, False),
             param(text_ascii(), Literal["a", "b", "c"], 4, False),
             # tuple types
@@ -777,7 +826,10 @@ class TestIsInstanceGen:
             param(tuples(just("a"), booleans()), tuple[Literal["a"], bool], None, True),
             param(tuples(just("a"), booleans()), tuple[Literal["a"], int], 2, False),
             param(
-                tuples(just("a"), integers()), tuple[Literal["a"], bool], None, False
+                tuples(just("a"), integers()),
+                tuple[Literal["a"], bool],
+                _NUM_CASES,
+                False,
             ),
             param(tuples(just("a"), integers()), tuple[Literal["a"], int], None, True),
             param(
@@ -800,8 +852,8 @@ class TestIsInstanceGen:
             ),
             param(booleans(), tuple[bool], 2, False),
             param(booleans() | none(), tuple[bool], 3, False),
-            param(text_ascii(), tuple[bool], None, False),
-            param(text_ascii() | none(), tuple[bool], None, False),
+            param(text_ascii(), tuple[bool], _NUM_CASES, False),
+            param(text_ascii() | none(), tuple[bool], _NUM_CASES, False),
         ],
     )
     def test_main(
@@ -813,14 +865,18 @@ class TestIsInstanceGen:
         min_size: int | None,
         expected: bool,
     ) -> None:
-        match expected:
-            case True:
+        match expected, min_size:
+            case True, None:
                 value = data.draw(strategy)
                 assert is_instance_gen(value, type_)
-            case False:
-                values = data.draw(
-                    sets(strategy, min_size=10 if min_size is None else min_size)
-                )
+            case True, int():
+                values = data.draw(sets(strategy, min_size=min_size))
+                assert all(is_instance_gen(v, type_) for v in values)
+            case False, None:
+                value = data.draw(strategy)
+                assert not is_instance_gen(value, type_)
+            case False, int():
+                values = data.draw(sets(strategy, min_size=min_size))
                 assert not all(is_instance_gen(v, type_) for v in values)
             case never:
                 assert_never(never)
@@ -1073,6 +1129,13 @@ class TestIsSubclassGen:
             param(Literal[TruthEnum.true], TruthEnum, True, marks=mark.only),
             param(
                 Literal[TruthEnum.true], Literal[TruthEnum.true], True, marks=mark.only
+            ),
+            param(Literal[TruthStrEnum.true], TruthStrEnum, True, marks=mark.only),
+            param(
+                Literal[TruthStrEnum.true],
+                Literal[TruthStrEnum.true],
+                True,
+                marks=mark.only,
             ),
             param(bool, Literal[1, 2, 3], False),
             param(str, Literal["a", "b", "c"], False),

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from enum import Enum, auto
+from enum import Enum, StrEnum, auto
 from functools import partial
 from typing import Any
 
@@ -221,5 +221,10 @@ class SubTuple(tuple):  # noqa: SLOT001
 
 
 class TruthEnum(Enum):
+    true = auto()
+    false = auto()
+
+
+class TruthStrEnum(StrEnum):
     true = auto()
     false = auto()
