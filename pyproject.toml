@@ -129,15 +129,13 @@
 
   [project.scripts]
 
-# bump-my-version
-[tool.bumpversion]
-  allow_dirty = true
-  current_version = "0.169.3"
+# tool
+[tool]
 
   # bump-my-version
   [tool.bumpversion]
     allow_dirty = true
-    current_version = "0.169.4"
+    current_version = "0.169.5"
 
     [[tool.bumpversion.files]]
       filename = "src/utilities/__init__.py"

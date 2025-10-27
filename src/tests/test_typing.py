@@ -738,8 +738,12 @@ class TruthTypedDict(TypedDict):
     truth: TruthEnum
 
 
-class TruthTypedDict2(TypedDict):
+class TruthTypedDictTrueOnly(TypedDict):
     truth: Literal[TruthEnum.true]
+
+
+class TruthTypedDictFalseOnly(TypedDict):
+    truth: Literal[TruthEnum.false]
 
 
 class TestIsInstanceGen:
@@ -772,14 +776,14 @@ class TestIsInstanceGen:
             ),
             param(
                 just({"truth": TruthEnum.true}),
-                TruthTypedDict2,
+                TruthTypedDictTrueOnly,
                 None,
                 True,
                 marks=mark.only,
             ),
             param(
                 just({"truth": TruthEnum.false}),
-                TruthTypedDict2,
+                TruthTypedDictTrueOnly,
                 None,
                 False,
                 marks=mark.only,
