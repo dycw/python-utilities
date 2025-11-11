@@ -47,6 +47,7 @@ class TestMakeIDs:
         _ = testdir.makepyfile(
             """
             from collections.abc import Callable
+
             from pytest import mark, param
 
             from utilities.pytest import make_ids
@@ -66,6 +67,23 @@ class TestMakeIDs:
             """
         )
         testdir.runpytest("-p", "xdist", "-n", "2").assert_outcomes(passed=3)
+
+    def test_sqlalchemy(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile(
+            """
+            from typing import Any
+
+            from pytest import mark, param
+            from sqlalchemy import INTEGER, Integer
+
+            from utilities.pytest import make_ids
+
+            @mark.parametrize('obj', [param(INTEGER), param(Integer)], ids=make_ids)
+            def test_main(*, obj: Any) -> None:
+                assert isinstance(obj, object)
+            """
+        )
+        testdir.runpytest("-p", "xdist", "-n", "2").assert_outcomes(passed=2)
 
 
 class TestNodeIdPath:

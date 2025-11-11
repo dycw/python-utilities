@@ -87,6 +87,7 @@ from tests.test_sqlalchemy import _table_names
 from utilities.hypothesis import int32s, text_ascii, zoned_date_times
 from utilities.math import is_equal
 from utilities.polars import DatetimeUTC, check_polars_dataframe
+from utilities.pytest import make_ids
 from utilities.sqlalchemy import ensure_tables_created
 from utilities.sqlalchemy_polars import (
     _insert_dataframe_check_df_and_db_types,
@@ -564,8 +565,8 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
             param(Float, Float64),
             param(FLOAT, Float64),
             param(INT, Int64),
-            param(Integer, Int64),
-            param(INTEGER, Int64),
+            param(Integer, Int64, id="Integer/Int64"),
+            param(INTEGER, Int64, id="INTEGER/Int64"),
             param(Interval, Duration),
             param(LargeBinary, Binary),
             param(NCHAR, pl.String),
@@ -587,6 +588,7 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
             param(VARBINARY, Binary),
             param(VARCHAR, pl.String),
         ],
+        ids=make_ids,
     )
     @mark.parametrize("use_inst", [param(True), param(False)])
     def test_main(
