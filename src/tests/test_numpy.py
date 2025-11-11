@@ -1110,7 +1110,7 @@ class TestShift:
                 1,
                 2,
                 [[nan, nan, 0.0, 1.0], [nan, nan, 4.0, 5.0], [nan, nan, 8.0, 9.0]],
-                id="axis=1, n=1",
+                id="axis=1, n=2",
             ),
             param(
                 1,

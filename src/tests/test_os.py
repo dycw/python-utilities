@@ -75,7 +75,10 @@ class TestGetEffectiveIDs:
         id_ = func()
         assert isinstance(id_, int) or (id_ is None)
 
-    @mark.parametrize("id_", [param(EFFECTIVE_USER_ID), param(EFFECTIVE_GROUP_ID)])
+    @mark.parametrize(
+        "id_",
+        [param(EFFECTIVE_USER_ID, id="user"), param(EFFECTIVE_GROUP_ID, id="group")],
+    )
     def test_constant(self, *, id_: int | None) -> None:
         assert isinstance(id_, int) or (id_ is None)
 

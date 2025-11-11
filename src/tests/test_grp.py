@@ -13,7 +13,13 @@ class TestGroupName:
         group = get_gid_name(0)
         assert isinstance(group, str) or (group is None)
 
-    @mark.parametrize("group", [param(ROOT_GROUP_NAME), param(EFFECTIVE_GROUP_NAME)])
+    @mark.parametrize(
+        "group",
+        [
+            param(ROOT_GROUP_NAME, id="root"),
+            param(EFFECTIVE_GROUP_NAME, id="effective"),
+        ],
+    )
     def test_constant(self, *, group: str | None) -> None:
         match SYSTEM:
             case "windows":

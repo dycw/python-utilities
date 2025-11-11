@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from pytest import fixture, mark, param, raises
 
+from tests.conftest import IS_CI
 from utilities.iterables import one
 from utilities.os import temp_environ
 from utilities.pytest import (
@@ -23,9 +24,67 @@ if TYPE_CHECKING:
 @fixture(autouse=True)
 def set_asyncio_default_fixture_loop_scope(*, testdir: Testdir) -> None:
     _ = testdir.makepyprojecttoml("""
-        [tool.pytest.ini_options]
+        [tool.pytest]
         asyncio_default_fixture_loop_scope = "function"
     """)
+
+
+class TestMakeIDs:
+    def test_main(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile(
+            """
+            from pytest import mark, param
+
+            from utilities.pytest import make_ids
+
+            @mark.parametrize('n', [param(1), param(2), param(3)], ids=make_ids)
+            def test_main(*, n: int) -> None:
+                assert isinstance(n, int)
+            """
+        )
+        testdir.runpytest("-p", "xdist", "-n", "2").assert_outcomes(passed=3)
+
+    def test_functions(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile(
+            """
+            from collections.abc import Callable
+
+            from pytest import mark, param
+
+            from utilities.pytest import make_ids
+
+            def f() -> int:
+                return 1
+
+            def g() -> int:
+                return 2
+
+            def h() -> int:
+                return 3
+
+            @mark.parametrize('func', [param(f), param(g), param(h)], ids=make_ids)
+            def test_main(*, func: Callable[[], int]) -> None:
+                assert isinstance(func(), int)
+            """
+        )
+        testdir.runpytest("-p", "xdist", "-n", "2").assert_outcomes(passed=3)
+
+    def test_sqlalchemy(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile(
+            """
+            from typing import Any
+
+            from pytest import mark, param
+            from sqlalchemy import INTEGER, Integer
+
+            from utilities.pytest import make_ids
+
+            @mark.parametrize('obj', [param(INTEGER), param(Integer)], ids=make_ids)
+            def test_main(*, obj: Any) -> None:
+                assert isinstance(obj, object)
+            """
+        )
+        testdir.runpytest("-p", "xdist", "-n", "2").assert_outcomes(passed=2)
 
 
 class TestNodeIdPath:
@@ -324,7 +383,7 @@ class TestRunFrac:
 
 
 class TestThrottle:
-    delta: ClassVar[float] = 0.5
+    delta: ClassVar[float] = 5.0 if IS_CI else 0.5
 
     @mark.flaky
     @mark.parametrize("on_try", [param(True), param(False)])
