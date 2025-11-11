@@ -144,18 +144,19 @@
 
   # coverage
   [tool.coverage]
-    [tool.coverage.coverage_conditional_plugin.rules]
-      skipif-ci = '"CI" in os_environ'
-      skipif-ci-and-mac = '("CI" in os_environ) and (sys_platform == "darwin")'
-      skipif-ci-and-not-linux = '("CI" in os_environ) and (sys_platform != "linux")'
-      skipif-ci-and-not-windows = '("CI" in os_environ) and (sys_platform != "windows")'
-      skipif-ci-and-windows = '("CI" in os_environ) and (sys_platform != "windows")'
-      skipif-linux = 'sys_platform == "linux"'
-      skipif-mac = 'sys_platform == "darwin"'
-      skipif-not-linux = 'sys_platform != "linux"'
-      skipif-not-macos = 'sys_platform != "darwin"'
-      skipif-not-windows = 'sys_platform != "windows"'
-      skipif-windows = 'sys_platform == "windows"'
+    [tool.coverage.coverage_conditional_plugin]
+      [tool.coverage.coverage_conditional_plugin.rules]
+        skipif-ci = '"CI" in os_environ'
+        skipif-ci-and-mac = '("CI" in os_environ) and (sys_platform == "darwin")'
+        skipif-ci-and-not-linux = '("CI" in os_environ) and (sys_platform != "linux")'
+        skipif-ci-and-not-windows = '("CI" in os_environ) and (sys_platform != "windows")'
+        skipif-ci-and-windows = '("CI" in os_environ) and (sys_platform != "windows")'
+        skipif-linux = 'sys_platform == "linux"'
+        skipif-mac = 'sys_platform == "darwin"'
+        skipif-not-linux = 'sys_platform != "linux"'
+        skipif-not-macos = 'sys_platform != "darwin"'
+        skipif-not-windows = 'sys_platform != "windows"'
+        skipif-windows = 'sys_platform == "windows"'
 
     [tool.coverage.html]
       directory = ".coverage/html"
@@ -248,6 +249,7 @@
       "ignore:unclosed event loop <_UnixSelectorEventLoop .*>:ResourceWarning",                                                          # redis
       "ignore:unclosed file <_io.*TextIOWrapper .*>:ResourceWarning",                                                                    # logging
       "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",                                                         # redis
+      "ignore:Do not expect file_or_dir in Namespace:UserWarning",                                                                       # pytest
     ]
     minversion = "9.0"
     strict = true

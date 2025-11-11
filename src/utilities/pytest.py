@@ -5,6 +5,8 @@ from functools import partial, wraps
 from inspect import iscoroutinefunction
 from os import environ
 from pathlib import Path
+from re import sub
+from types import FunctionType
 from typing import TYPE_CHECKING, Any, assert_never, cast, override
 
 from whenever import ZonedDateTime
@@ -114,6 +116,15 @@ def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) 
     """
     for opt, desc in options:
         _ = config.addinivalue_line("markers", f"{opt}: mark test as {desc}")
+
+
+##
+
+
+def make_ids(obj: Any, /) -> str:
+    if isinstance(obj, FunctionType):
+        return sub(r"\s+at +0x[0-9a-fA-F]+", "", repr(obj))
+    return repr(obj)
 
 
 ##
@@ -336,6 +347,7 @@ __all__ = [
     "add_pytest_addoption",
     "add_pytest_collection_modifyitems",
     "add_pytest_configure",
+    "make_ids",
     "node_id_path",
     "run_frac",
     "skipif_linux",

@@ -87,6 +87,7 @@ from tests.test_typing_funcs.with_future import (
     TypedDictFutureIntFloatOptional,
 )
 from utilities.hypothesis import text_ascii
+from utilities.pytest import make_ids
 from utilities.sentinel import Sentinel
 from utilities.types import LogLevel, Number, Parallelism, Seed, StrMapping
 from utilities.typing import (
@@ -694,7 +695,7 @@ class TestIsAnnotationOfType:
             param(is_union_type, int | str, True),
             param(is_union_type, list[int], False),
         ],
-        ids=repr,
+        ids=make_ids,
     )
     def test_main(
         self, *, func: Callable[[Any], bool], obj: Any, expected: bool
@@ -958,7 +959,7 @@ class TestIsNotRequiredAnnotation:
             param(ForwardRef("int"), False),
             param(None, False),
         ],
-        ids=repr,
+        ids=make_ids,
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         result = is_not_required_annotation(obj)
@@ -1095,7 +1096,7 @@ class TestIsSubclassGen:
             param(str, tuple[Literal["a", "b", "c"]], False),
             param(str | None, tuple[Literal["a", "b", "c"]], False),
         ],
-        ids=repr,
+        ids=make_ids,
     )
     def test_main(self, *, child: type[Any], parent: Any, expected: bool) -> None:
         assert is_subclass_gen(child, parent) is expected
@@ -1154,7 +1155,7 @@ class TestMakeIsInstance:
     @mark.parametrize(
         ("obj", "expected"),
         [param(0, True), param("0", True), param(None, False)],
-        ids=repr,
+        ids=make_ids,
     )
     def test_multiple(self, *, obj: bool | None, expected: bool) -> None:
         func = make_isinstance((int, str))

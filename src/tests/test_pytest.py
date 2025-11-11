@@ -23,9 +23,49 @@ if TYPE_CHECKING:
 @fixture(autouse=True)
 def set_asyncio_default_fixture_loop_scope(*, testdir: Testdir) -> None:
     _ = testdir.makepyprojecttoml("""
-        [tool.pytest.ini_options]
+        [tool.pytest]
         asyncio_default_fixture_loop_scope = "function"
     """)
+
+
+class TestMakeIDs:
+    def test_main(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile(
+            """
+            from pytest import mark, param
+
+            from utilities.pytest import make_ids
+
+            @mark.parametrize('n', [param(1), param(2), param(3)], ids=make_ids)
+            def test_main(*, n: int) -> None:
+                assert isinstance(n, int)
+            """
+        )
+        testdir.runpytest("-p", "xdist", "-n", "2").assert_outcomes(passed=3)
+
+    def test_functions(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile(
+            """
+            from collections.abc import Callable
+            from pytest import mark, param
+
+            from utilities.pytest import make_ids
+
+            def f() -> int:
+                return 1
+
+            def g() -> int:
+                return 2
+
+            def h() -> int:
+                return 3
+
+            @mark.parametrize('func', [param(f), param(g), param(h)], ids=make_ids)
+            def test_main(*, func: Callable[[], int]) -> None:
+                assert isinstance(func(), int)
+            """
+        )
+        testdir.runpytest("-p", "xdist", "-n", "2").assert_outcomes(passed=3)
 
 
 class TestNodeIdPath:
