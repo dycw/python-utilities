@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from pytest import fixture, mark, param, raises
 
+from tests.conftest import IS_CI
 from utilities.iterables import one
 from utilities.os import temp_environ
 from utilities.pytest import (
@@ -382,7 +383,7 @@ class TestRunFrac:
 
 
 class TestThrottle:
-    delta: ClassVar[float] = 0.5
+    delta: ClassVar[float] = 5.0 if IS_CI else 0.5
 
     @mark.flaky
     @mark.parametrize("on_try", [param(True), param(False)])

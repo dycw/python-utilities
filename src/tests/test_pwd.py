@@ -13,7 +13,10 @@ class TestUserName:
         user = get_uid_name(0)
         assert isinstance(user, str) or (user is None)
 
-    @mark.parametrize("user", [param(ROOT_USER_NAME), param(EFFECTIVE_USER_NAME)])
+    @mark.parametrize(
+        "user",
+        [param(ROOT_USER_NAME, id="root"), param(EFFECTIVE_USER_NAME, id="effective")],
+    )
     def test_constant(self, *, user: str | None) -> None:
         match SYSTEM:
             case "windows":
