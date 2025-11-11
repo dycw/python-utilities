@@ -662,8 +662,18 @@ class TestIsAnnotationOfType:
             param(is_mapping_type, list[int], False),
             param(is_mapping_type, set[int], False),
             param(is_mapping_type, tuple[int, int], False),
-            param(is_not_required_type, NotRequired, True),
-            param(is_not_required_type, NotRequired[int], True),
+            param(
+                is_not_required_type,
+                NotRequired,
+                True,
+                id="is_not_required_type--NotRequired",
+            ),
+            param(
+                is_not_required_type,
+                NotRequired[int],
+                True,
+                id="is_not_required_type--NotRequired[int]",
+            ),
             param(is_optional_type, Literal["a", "b", "c"] | None, True),
             param(is_optional_type, Literal["a", "b", "c"], False),
             param(is_optional_type, int | None, True),
@@ -957,6 +967,7 @@ class TestIsNotRequiredAnnotation:
             param(ForwardRef("int"), False),
             param(None, False),
         ],
+        ids=repr,
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         result = is_not_required_annotation(obj)
@@ -1093,6 +1104,7 @@ class TestIsSubclassGen:
             param(str, tuple[Literal["a", "b", "c"]], False),
             param(str | None, tuple[Literal["a", "b", "c"]], False),
         ],
+        ids=repr,
     )
     def test_main(self, *, child: type[Any], parent: Any, expected: bool) -> None:
         assert is_subclass_gen(child, parent) is expected
@@ -1149,7 +1161,9 @@ class TestMakeIsInstance:
         assert result is expected
 
     @mark.parametrize(
-        ("obj", "expected"), [param(0, True), param("0", True), param(None, False)]
+        ("obj", "expected"),
+        [param(0, True), param("0", True), param(None, False)],
+        ids=repr,
     )
     def test_multiple(self, *, obj: bool | None, expected: bool) -> None:
         func = make_isinstance((int, str))
