@@ -662,18 +662,8 @@ class TestIsAnnotationOfType:
             param(is_mapping_type, list[int], False),
             param(is_mapping_type, set[int], False),
             param(is_mapping_type, tuple[int, int], False),
-            param(
-                is_not_required_type,
-                NotRequired,
-                True,
-                id="is_not_required_type--NotRequired",
-            ),
-            param(
-                is_not_required_type,
-                NotRequired[int],
-                True,
-                id="is_not_required_type--NotRequired[int]",
-            ),
+            param(is_not_required_type, NotRequired, True),
+            param(is_not_required_type, NotRequired[int], True),
             param(is_optional_type, Literal["a", "b", "c"] | None, True),
             param(is_optional_type, Literal["a", "b", "c"], False),
             param(is_optional_type, int | None, True),
@@ -704,6 +694,7 @@ class TestIsAnnotationOfType:
             param(is_union_type, int | str, True),
             param(is_union_type, list[int], False),
         ],
+        ids=repr,
     )
     def test_main(
         self, *, func: Callable[[Any], bool], obj: Any, expected: bool
