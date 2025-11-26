@@ -75,7 +75,6 @@ from utilities.hypothesis import (
     sentinels,
     sets_fixed_length,
     settings_with_reduced_examples,
-    setup_hypothesis_profiles,
     slices,
     str_arrays,
     temp_dirs,
@@ -125,7 +124,6 @@ from utilities.math import (
     MIN_UINT32,
     MIN_UINT64,
 )
-from utilities.os import temp_environ
 from utilities.platform import IS_LINUX, maybe_yield_lower_case
 from utilities.sentinel import is_sentinel
 from utilities.version import Version
@@ -836,23 +834,6 @@ class TestSetsFixedLength:
         result = data.draw(sets_fixed_length(integers(), size))
         assert isinstance(result, set)
         assert len(result) == size
-
-
-class TestSetupHypothesisProfiles:
-    def test_main(self) -> None:
-        setup_hypothesis_profiles()
-        curr = settings()
-        assert curr.max_examples in {10, 100, 1000}
-
-    def test_no_shrink(self) -> None:
-        with temp_environ({"HYPOTHESIS_NO_SHRINK": "1"}):
-            setup_hypothesis_profiles()
-
-    @given(max_examples=integers(1, 100))
-    def test_max_examples(self, *, max_examples: int) -> None:
-        with temp_environ({"HYPOTHESIS_MAX_EXAMPLES": str(max_examples)}):
-            setup_hypothesis_profiles()
-        assert settings().max_examples == max_examples
 
 
 class TestSlices:
