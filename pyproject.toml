@@ -6,7 +6,7 @@
 # dependency groups
 [dependency-groups]
   aeventkit = ["aeventkit >=2.1.0, <2.2"]
-  altair = ["altair >=6.0.0, <6.1"]
+  altair = ["altair >=5.5.0, <5.6"]
   altair-test = ["polars", "img2pdf", "vl-convert-python"]
   atools = ["atools >=0.14.2, <0.15"]
   cachetools = ["cachetools >=6.2.2, <6.3"]
