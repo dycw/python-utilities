@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from utilities.tempfile import TEMP_DIR, TemporaryDirectory, gettempdir
+from utilities.tempfile import TEMP_DIR, TemporaryDirectory, TemporaryFile, gettempdir
 
 
 class TestGetTempDir:
@@ -29,3 +29,13 @@ class TestTemporaryDirectory:
             assert temp.is_dir()
             assert set(temp.iterdir()) == set()
         assert not temp.is_dir()
+
+
+class TestTemporaryFile:
+    def test_main(self) -> None:
+        with TemporaryFile() as temp:
+            assert isinstance(temp, Path)
+            assert temp.is_file()
+            _ = temp.write_text("text")
+            assert temp.read_text() == "text"
+        assert not temp.is_file()
