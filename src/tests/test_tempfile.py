@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from utilities.tempfile import TEMP_DIR, TemporaryDirectory, gettempdir
+from tests.conftest import SKIPIF_CI_AND_WINDOWS
+from utilities.tempfile import TEMP_DIR, TemporaryDirectory, TemporaryFile, gettempdir
 
 
 class TestGetTempDir:
@@ -29,3 +30,22 @@ class TestTemporaryDirectory:
             assert temp.is_dir()
             assert set(temp.iterdir()) == set()
         assert not temp.is_dir()
+
+
+class TestTemporaryFile:
+    @SKIPIF_CI_AND_WINDOWS
+    def test_main(self) -> None:
+        with TemporaryFile() as temp:
+            assert isinstance(temp, Path)
+            assert temp.is_file()
+            _ = temp.write_text("text")
+            assert temp.read_text() == "text"
+        assert not temp.is_file()
+
+    @SKIPIF_CI_AND_WINDOWS
+    def test_name(self) -> None:
+        with TemporaryFile(name="name") as temp:
+            assert isinstance(temp, Path)
+            assert temp.is_file()
+            assert temp.name == "name"
+        assert not temp.is_file()
