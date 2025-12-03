@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
+from shutil import move
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from tempfile import gettempdir as _gettempdir
 from typing import TYPE_CHECKING, override
@@ -77,6 +78,7 @@ def TemporaryFile(  # noqa: N802
     dir: PathLike | None = None,  # noqa: A002
     ignore_cleanup_errors: bool = False,
     delete: bool = True,
+    name: str | None = None,
 ) -> Iterator[Path]:
     """Yield a temporary file."""
     with TemporaryDirectory(
@@ -87,13 +89,13 @@ def TemporaryFile(  # noqa: N802
         delete=delete,
     ) as temp_dir:
         temp_file = _NamedTemporaryFile(  # noqa: SIM115
-            suffix=suffix,
-            prefix=prefix,
-            dir=temp_dir,
-            delete=delete,
-            delete_on_close=False,
+            dir=temp_dir, delete=delete, delete_on_close=False
         )
-        yield temp_dir / temp_file.name
+        if name is None:
+            yield temp_dir / temp_file.name
+        else:
+            _ = move(temp_dir / temp_file.name, temp_dir / name)
+            yield temp_dir / name
 
 
 ##

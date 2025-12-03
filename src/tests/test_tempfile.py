@@ -39,3 +39,10 @@ class TestTemporaryFile:
             _ = temp.write_text("text")
             assert temp.read_text() == "text"
         assert not temp.is_file()
+
+    def test_name(self) -> None:
+        with TemporaryFile(name="name") as temp:
+            assert isinstance(temp, Path)
+            assert temp.is_file()
+            assert temp.name == "name"
+        assert not temp.is_file()
