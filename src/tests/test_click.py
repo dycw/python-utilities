@@ -103,9 +103,9 @@ class _ExampleEnum(enum.Enum):
 
 @unique
 class _ExampleStrEnum(StrEnum):
-    a_key = "a_value"
-    b_key = "b_value"
-    c_key = "c_value"
+    ak = "av"
+    bk = "bv"
+    ck = "cv"
 
 
 type _ExampleEnumABType = Literal[_ExampleEnum.a, _ExampleEnum.b]
@@ -441,7 +441,7 @@ class TestCLIHelp:
             param(
                 Enum(_ExampleStrEnum),
                 """
-                Usage: cli [OPTIONS] {1,2,3}
+                Usage: cli [OPTIONS] {av,bv,cv}
 
                 Options:
                   --help  Show this message and exit.
