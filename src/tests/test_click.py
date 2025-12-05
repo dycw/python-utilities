@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 import pathlib
 from dataclasses import dataclass
-from enum import auto, unique
+from enum import StrEnum, auto, unique
 from operator import attrgetter
 from re import search
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
@@ -99,6 +99,13 @@ class _ExampleEnum(enum.Enum):
     a = auto()
     b = auto()
     c = auto()
+
+
+@unique
+class _ExampleStrEnum(StrEnum):
+    a_key = "a_value"
+    b_key = "b_value"
+    c_key = "c_value"
 
 
 type _ExampleEnumABType = Literal[_ExampleEnum.a, _ExampleEnum.b]
@@ -424,6 +431,15 @@ class TestCLIHelp:
             ),
             param(
                 Enum(_ExampleEnum, value=True),
+                """
+                Usage: cli [OPTIONS] {1,2,3}
+
+                Options:
+                  --help  Show this message and exit.
+                """,
+            ),
+            param(
+                Enum(_ExampleStrEnum),
                 """
                 Usage: cli [OPTIONS] {1,2,3}
 
