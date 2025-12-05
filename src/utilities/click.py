@@ -11,8 +11,8 @@ from click import Choice, Context, Parameter, ParamType
 from click.types import IntParamType, StringParamType
 
 from utilities.enum import EnsureEnumError, ensure_enum
-from utilities.functions import EnsureStrError, ensure_str, get_class_name
-from utilities.iterables import is_iterable_not_str
+from utilities.functions import EnsureStrError, ensure_str, get_class, get_class_name
+from utilities.iterables import is_iterable_not_str, one_unique
 from utilities.parse import ParseObjectError, parse_object
 from utilities.text import split_str
 
@@ -135,10 +135,13 @@ class Enum[E: enum.Enum](ParamType):
     """An enum-valued parameter."""
 
     @override
-    def __init__(self, enum: type[E], /, *, case_sensitive: bool = False) -> None:
+    def __init__(
+        self, enum: type[E], /, *, value: bool = False, case_sensitive: bool = False
+    ) -> None:
         cls = get_class_name(enum)
         self.name = f"enum[{cls}]"
         self._enum = enum
+        self._value = value
         self._case_sensitive = case_sensitive
         super().__init__()
 
@@ -160,7 +163,53 @@ class Enum[E: enum.Enum](ParamType):
     @override
     def get_metavar(self, param: Parameter, ctx: Context) -> str | None:
         _ = ctx
-        desc = ",".join(e.name for e in self._enum)
+        desc = ",".join(str(e.value) if self._value else e.name for e in self._enum)
+        return _make_metavar(param, desc)
+
+
+class EnumPartial[E: enum.Enum](ParamType):
+    """An enum-valued parameter."""
+
+    @override
+    def __init__(
+        self,
+        members: Iterable[E],
+        /,
+        *,
+        value: bool = False,
+        case_sensitive: bool = False,
+    ) -> None:
+        self._members = list(members)
+        self._enum = one_unique(get_class(e) for e in self._members)
+        cls = get_class_name(self._enum)
+        self.name = f"enum-partial[{cls}]"
+        self._value = value
+        self._case_sensitive = case_sensitive
+        super().__init__()
+
+    @override
+    def __repr__(self) -> str:
+        cls = get_class_name(self._enum)
+        return f"ENUMPARTIAL[{cls}]"
+
+    @override
+    def convert(
+        self, value: EnumLike[E], param: Parameter | None, ctx: Context | None
+    ) -> E:
+        """Convert a value into the `Enum` type."""
+        try:
+            enum = ensure_enum(value, self._enum, case_sensitive=self._case_sensitive)
+        except EnsureEnumError as error:
+            self.fail(str(error), param, ctx)
+        if enum in self._members:
+            return enum
+        self.fail(f"{enum.value!r} is not a selected member")
+        return None
+
+    @override
+    def get_metavar(self, param: Parameter, ctx: Context) -> str | None:
+        _ = ctx
+        desc = ",".join(str(e.value) if self._value else e.name for e in self._members)
         return _make_metavar(param, desc)
 
 
@@ -606,6 +655,7 @@ __all__ = [
     "DateDelta",
     "DateTimeDelta",
     "Enum",
+    "EnumPartial",
     "FrozenSetChoices",
     "FrozenSetEnums",
     "FrozenSetParameter",
