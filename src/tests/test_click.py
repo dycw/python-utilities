@@ -3,10 +3,10 @@ from __future__ import annotations
 import enum
 import pathlib
 from dataclasses import dataclass
-from enum import auto
+from enum import auto, unique
 from operator import attrgetter
 from re import search
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 import whenever
 from click import ParamType, argument, command, echo, option
@@ -32,6 +32,7 @@ from utilities.click import (
     DateDelta,
     DateTimeDelta,
     Enum,
+    EnumPartial,
     FrozenSetChoices,
     FrozenSetEnums,
     FrozenSetInts,
@@ -93,10 +94,15 @@ class TestPath:
         assert result.exit_code == 0
 
 
+@unique
 class _ExampleEnum(enum.Enum):
     a = auto()
     b = auto()
     c = auto()
+
+
+type _ExampleEnumABType = Literal[_ExampleEnum.a, _ExampleEnum.b]
+_ExampleEnumAB: list[_ExampleEnumABType] = [_ExampleEnum.a, _ExampleEnum.b]
 
 
 def _lift_serializer[T](
@@ -146,6 +152,14 @@ class TestParameters:
             name="enum[_ExampleEnum]",
             repr="ENUM[_ExampleEnum]",
             strategy=sampled_from(_ExampleEnum),
+            serialize=attrgetter("name"),
+            failable=True,
+        ),
+        _Case(
+            param=EnumPartial(_ExampleEnumAB),
+            name="enum-partial[_ExampleEnum]",
+            repr="ENUMPARTIAL[_ExampleEnum]",
+            strategy=sampled_from(_ExampleEnumAB),
             serialize=attrgetter("name"),
             failable=True,
         ),
@@ -324,11 +338,11 @@ class TestParameters:
         self, *, param: ParamType, serialize: Callable[[Any], str]
     ) -> None:
         @command()
-        @option("--value", type=param)
+        @argument("value", type=param)
         def cli(*, value: Any) -> None:
             echo(f"value = {serialize(value)}")
 
-        result = CliRunner().invoke(cli, args=["--value=invalid"])
+        result = CliRunner().invoke(cli, args=["invalid"])
         assert result.exit_code == 2
 
     @mark.parametrize(("param", "name"), [param(c.param, c.name) for c in cases])
@@ -341,6 +355,31 @@ class TestParameters:
     def test_repr(self, *, param: ParamType, repr_: str | None, name: str) -> None:
         expected = name.upper() if repr_ is None else repr_
         assert repr(param) == expected
+
+    def test_error_enum_partial_ensure_enum_error(self) -> None:
+        @command()
+        @argument("value", type=EnumPartial(_ExampleEnumAB))
+        def cli(*, value: _ExampleEnumABType) -> None:
+            echo(f"value = {value}")
+
+        result = CliRunner().invoke(cli, "invalid")
+        assert result.exit_code == 2
+        assert search(
+            "Invalid value for '{a,b}': Unable to ensure enum; got 'invalid'",
+            result.stderr,
+        )
+
+    def test_error_enum_partial_member_error(self) -> None:
+        @command()
+        @argument("value", type=EnumPartial(_ExampleEnumAB))
+        def cli(*, value: _ExampleEnumABType) -> None:
+            echo(f"value = {value}")
+
+        result = CliRunner().invoke(cli, "c")
+        assert result.exit_code == 2
+        assert search(
+            "Invalid value for '{a,b}': 3 is not a selected member", result.stderr
+        )
 
     @mark.parametrize(
         "param",
@@ -368,68 +407,89 @@ class TestCLIHelp:
             param(
                 str,
                 """
-    Usage: cli [OPTIONS]
+                Usage: cli [OPTIONS] VALUE
 
-    Options:
-      --value TEXT
-      --help        Show this message and exit.
-""",
+                Options:
+                  --help  Show this message and exit.
+                """,
             ),
             param(
                 Enum(_ExampleEnum),
                 """
-    Usage: cli [OPTIONS]
+                Usage: cli [OPTIONS] {a,b,c}
 
-    Options:
-      --value [a,b,c]
-      --help           Show this message and exit.
-""",
+                Options:
+                  --help  Show this message and exit.
+                """,
+            ),
+            param(
+                Enum(_ExampleEnum, value=True),
+                """
+                Usage: cli [OPTIONS] {1,2,3}
+
+                Options:
+                  --help  Show this message and exit.
+                """,
+            ),
+            param(
+                EnumPartial(_ExampleEnumAB),
+                """
+                Usage: cli [OPTIONS] {a,b}
+
+                Options:
+                  --help  Show this message and exit.
+                """,
+            ),
+            param(
+                EnumPartial(_ExampleEnumAB, value=True),
+                """
+                Usage: cli [OPTIONS] {1,2}
+
+                Options:
+                  --help  Show this message and exit.
+                """,
             ),
             param(
                 FrozenSetEnums(_ExampleEnum),
                 """
-    Usage: cli [OPTIONS]
+                Usage: cli [OPTIONS] {FROZENSET{a,b,c} SEP=,}
 
-    Options:
-      --value [FROZENSET[a,b,c] SEP=,]
-      --help                          Show this message and exit.
-""",
+                Options:
+                  --help  Show this message and exit.
+                """,
             ),
             param(
                 FrozenSetStrs(),
                 """
-    Usage: cli [OPTIONS]
+                Usage: cli [OPTIONS] {FROZENSET[TEXT] SEP=,}
 
-    Options:
-      --value [FROZENSET[TEXT] SEP=,]
-      --help                          Show this message and exit.
-""",
+                Options:
+                  --help  Show this message and exit.
+                """,
             ),
             param(
                 ListEnums(_ExampleEnum),
                 """
-    Usage: cli [OPTIONS]
+                Usage: cli [OPTIONS] {LIST{a,b,c} SEP=,}
 
-    Options:
-      --value [LIST[a,b,c] SEP=,]
-      --help                       Show this message and exit.
-""",
+                Options:
+                  --help  Show this message and exit.
+                """,
             ),
             param(
                 ListStrs(),
                 """
-    Usage: cli [OPTIONS]
+                Usage: cli [OPTIONS] {LIST[TEXT] SEP=,}
 
-    Options:
-      --value [LIST[TEXT] SEP=,]
-      --help                      Show this message and exit.
-""",
+                Options:
+                  --help  Show this message and exit.
+                """,
             ),
         ],
     )
     def test_main(self, *, param: Any, expected: str) -> None:
         @command()
-        @option("--value", type=param)
+        @argument("value", type=param)
         def cli(*, value: Any) -> None:
             echo(f"value = {value}")
 
