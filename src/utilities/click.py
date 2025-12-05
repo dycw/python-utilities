@@ -4,6 +4,7 @@ import enum
 import ipaddress
 import pathlib
 import uuid
+from enum import StrEnum
 from typing import TYPE_CHECKING, TypedDict, assert_never, override
 
 import whenever
@@ -141,7 +142,7 @@ class Enum[E: enum.Enum](ParamType):
         cls = get_class_name(enum)
         self.name = f"enum[{cls}]"
         self._enum = enum
-        self._value = value
+        self._value = issubclass(self._enum, StrEnum) or value
         self._case_sensitive = case_sensitive
         super().__init__()
 
@@ -183,7 +184,7 @@ class EnumPartial[E: enum.Enum](ParamType):
         self._enum = one_unique(get_class(e) for e in self._members)
         cls = get_class_name(self._enum)
         self.name = f"enum-partial[{cls}]"
-        self._value = value
+        self._value = issubclass(self._enum, StrEnum) or value
         self._case_sensitive = case_sensitive
         super().__init__()
 
