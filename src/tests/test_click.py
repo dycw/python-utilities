@@ -26,6 +26,8 @@ from hypothesis.strategies import (
 from pytest import mark, param
 
 from utilities.click import (
+    _CONTEXT_SETTINGS_INNER,
+    _MAX_CONTENT_WIDTH,
     CONTEXT_SETTINGS,
     UUID,
     Date,
@@ -72,7 +74,12 @@ if TYPE_CHECKING:
 
 class TestContextSettings:
     def test_max_content_width(self) -> None:
-        @command(**CONTEXT_SETTINGS)
+        @command(
+            context_settings={
+                "terminal_width": _MAX_CONTENT_WIDTH,
+                **_CONTEXT_SETTINGS_INNER,
+            }
+        )
         @option(
             "--flag",
             help="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
@@ -86,13 +93,11 @@ class TestContextSettings:
 Usage: cli [OPTIONS]
 
 Options:
-  --flag TEXT  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-               eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-               enim ad minim veniam, quis nostrud exercitation ullamco laboris
-               nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
-               reprehenderit in voluptate velit esse cillum dolore eu fugiat
-               nulla pariatur. Excepteur sint occaecat cupidatat non proident,
-               sunt in culpa qui officia deserunt mollit anim id est laborum.
+  --flag TEXT  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
+               dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
+               ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
+               fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
+               mollit anim id est laborum.
   -h, --help   Show this message and exit.
 """
         assert result.stdout == expected

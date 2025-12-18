@@ -48,11 +48,13 @@ class _ContextSettingsInner(TypedDict):
     show_default: bool
 
 
-CONTEXT_SETTINGS = _ContextSettings(
-    context_settings=_ContextSettingsInner(
-        max_content_width=120, help_option_names=["-h", "--help"], show_default=True
-    )
+_MAX_CONTENT_WIDTH = 120
+_CONTEXT_SETTINGS_INNER = _ContextSettingsInner(
+    max_content_width=_MAX_CONTENT_WIDTH,
+    help_option_names=["-h", "--help"],
+    show_default=True,
 )
+CONTEXT_SETTINGS = _ContextSettings(context_settings=_CONTEXT_SETTINGS_INNER)
 
 
 # parameters
