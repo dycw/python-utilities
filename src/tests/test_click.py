@@ -26,7 +26,9 @@ from hypothesis.strategies import (
 from pytest import mark, param
 
 from utilities.click import (
-    CONTEXT_SETTINGS_HELP_OPTION_NAMES,
+    _CONTEXT_SETTINGS_INNER,
+    _MAX_CONTENT_WIDTH,
+    CONTEXT_SETTINGS,
     UUID,
     Date,
     DateDelta,
@@ -70,14 +72,60 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
 
-class TestContextSettingsHelpOptionNames:
+class TestContextSettings:
+    def test_max_content_width(self) -> None:
+        @command(
+            context_settings={
+                "terminal_width": _MAX_CONTENT_WIDTH,
+                **_CONTEXT_SETTINGS_INNER,
+            }
+        )
+        @option(
+            "--flag",
+            help="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+        )
+        def cli(*, flag: bool) -> None:
+            _ = flag
+
+        result = CliRunner().invoke(cli, ["--help"])
+        assert result.exit_code == 0
+        expected = """\
+Usage: cli [OPTIONS]
+
+Options:
+  --flag TEXT  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
+               dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
+               ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
+               fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
+               mollit anim id est laborum.
+  -h, --help   Show this message and exit.
+"""
+        assert result.stdout == expected
+
     @given(help_=sampled_from(["-h", "--help"]))
-    def test_main(self, *, help_: str) -> None:
-        @command(**CONTEXT_SETTINGS_HELP_OPTION_NAMES)
+    def test_help_option_names(self, *, help_: str) -> None:
+        @command(**CONTEXT_SETTINGS)
         def cli() -> None: ...
 
         result = CliRunner().invoke(cli, [help_])
         assert result.exit_code == 0
+
+    def test_show_default(self) -> None:
+        @command(**CONTEXT_SETTINGS)
+        @option("--flag", default=False)
+        def cli(*, flag: bool) -> None:
+            _ = flag
+
+        result = CliRunner().invoke(cli, ["--help"])
+        assert result.exit_code == 0
+        expected = """\
+Usage: cli [OPTIONS]
+
+Options:
+  --flag BOOLEAN  [default: False]
+  -h, --help      Show this message and exit.
+"""
+        assert result.stdout == expected
 
 
 class TestPath:
