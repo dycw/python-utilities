@@ -26,7 +26,7 @@ from hypothesis.strategies import (
 from pytest import mark, param
 
 from utilities.click import (
-    CONTEXT_SETTINGS_HELP_OPTION_NAMES,
+    CONTEXT_SETTINGS,
     UUID,
     Date,
     DateDelta,
@@ -70,10 +70,10 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
 
-class TestContextSettingsHelpOptionNames:
+class TestContextSettings:
     @given(help_=sampled_from(["-h", "--help"]))
     def test_main(self, *, help_: str) -> None:
-        @command(**CONTEXT_SETTINGS_HELP_OPTION_NAMES)
+        @command(**CONTEXT_SETTINGS)
         def cli() -> None: ...
 
         result = CliRunner().invoke(cli, [help_])

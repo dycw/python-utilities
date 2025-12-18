@@ -38,16 +38,20 @@ if TYPE_CHECKING:
     )
 
 
-class _HelpOptionNames(TypedDict):
-    help_option_names: list[str]
-
-
 class _ContextSettings(TypedDict):
-    context_settings: _HelpOptionNames
+    context_settings: _ContextSettingsInner
 
 
-CONTEXT_SETTINGS_HELP_OPTION_NAMES = _ContextSettings(
-    context_settings=_HelpOptionNames(help_option_names=["-h", "--help"])
+class _ContextSettingsInner(TypedDict):
+    max_content_width: int
+    help_option_names: list[str]
+    show_default: bool
+
+
+CONTEXT_SETTINGS = _ContextSettings(
+    context_settings=_ContextSettingsInner(
+        max_content_width=120, help_option_names=["-h", "--help"], show_default=True
+    )
 )
 
 
@@ -650,7 +654,7 @@ def _make_metavar(param: Parameter, desc: str, /) -> str:
 
 
 __all__ = [
-    "CONTEXT_SETTINGS_HELP_OPTION_NAMES",
+    "CONTEXT_SETTINGS",
     "UUID",
     "Date",
     "DateDelta",
