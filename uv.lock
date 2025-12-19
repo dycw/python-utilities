@@ -576,7 +576,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.171.0"
+version = "0.170.1"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -852,14 +852,14 @@ requires-dist = [
     { name = "pytest-randomly", marker = "extra == 'test'", specifier = ">=4.0.1,<4.1" },
     { name = "pytest-regressions", marker = "extra == 'test'", specifier = ">=2.8.3,<2.9" },
     { name = "pytest-repeat", marker = "extra == 'test'", specifier = ">=0.9.4,<0.10" },
-    { name = "pytest-rerunfailures", marker = "extra == 'test'", specifier = ">=16.0.1,<16.1" },
+    { name = "pytest-rerunfailures", marker = "extra == 'test'", specifier = ">=16.1,<16.2" },
     { name = "pytest-rng", marker = "extra == 'test'", specifier = ">=1.0.0,<1.1" },
     { name = "pytest-timeout", marker = "extra == 'test'", specifier = ">=2.4.0,<2.5" },
     { name = "pytest-xdist", marker = "extra == 'test'", specifier = ">=3.8.0,<3.9" },
     { name = "testbook", marker = "extra == 'test'", specifier = ">=0.4.2,<0.5" },
     { name = "typing-extensions", specifier = ">=4.15.0,<4.16" },
     { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.9.3,<0.10" },
+    { name = "whenever", specifier = ">=0.9.4,<0.10" },
 ]
 provides-extras = ["logging", "test"]
 
@@ -878,7 +878,7 @@ core = [
     { name = "atomicwrites", specifier = ">=1.4.1,<1.5" },
     { name = "typing-extensions", specifier = ">=4.15.0,<4.16" },
     { name = "tzlocal", specifier = ">=5.3.1,<5.4" },
-    { name = "whenever", specifier = ">=0.9.3,<0.10" },
+    { name = "whenever", specifier = ">=0.9.4,<0.10" },
 ]
 cryptography = [{ name = "cryptography", specifier = ">=46.0.3,<46.1" }]
 cvxpy = [{ name = "cvxpy", specifier = ">=1.7.5,<1.8" }]
@@ -997,7 +997,7 @@ sqlalchemy-test = [
 ]
 statsmodels = [{ name = "statsmodels", specifier = ">=0.14.6,<0.15" }]
 testbook = [{ name = "testbook", specifier = ">=0.4.2,<0.5" }]
-tzdata = [{ name = "tzdata", specifier = ">=2025.2,<2025.3" }]
+tzdata = [{ name = "tzdata", specifier = ">=2025.3,<2025.4" }]
 whenever-test = [{ name = "pathvalidate" }]
 
 [[package]]
@@ -2735,15 +2735,15 @@ wheels = [
 
 [[package]]
 name = "pytest-rerunfailures"
-version = "16.0.1"
+version = "16.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/26/53/a543a76f922a5337d10df22441af8bf68f1b421cadf9aedf8a77943b81f6/pytest_rerunfailures-16.0.1.tar.gz", hash = "sha256:ed4b3a6e7badb0a720ddd93f9de1e124ba99a0cb13bc88561b3c168c16062559", size = 27612, upload-time = "2025-09-02T06:48:25.193Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/de/04/71e9520551fc8fe2cf5c1a1842e4e600265b0815f2016b7c27ec85688682/pytest_rerunfailures-16.1.tar.gz", hash = "sha256:c38b266db8a808953ebd71ac25c381cb1981a78ff9340a14bcb9f1b9bff1899e", size = 30889, upload-time = "2025-10-10T07:06:01.238Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/38/73/67dc14cda1942914e70fbb117fceaf11e259362c517bdadd76b0dd752524/pytest_rerunfailures-16.0.1-py3-none-any.whl", hash = "sha256:0bccc0e3b0e3388275c25a100f7077081318196569a121217688ed05e58984b9", size = 13610, upload-time = "2025-09-02T06:48:23.615Z" },
+    { url = "https://files.pythonhosted.org/packages/77/54/60eabb34445e3db3d3d874dc1dfa72751bfec3265bd611cb13c8b290adea/pytest_rerunfailures-16.1-py3-none-any.whl", hash = "sha256:5d11b12c0ca9a1665b5054052fcc1084f8deadd9328962745ef6b04e26382e86", size = 14093, upload-time = "2025-10-10T07:06:00.019Z" },
 ]
 
 [[package]]
@@ -3410,11 +3410,11 @@ wheels = [
 
 [[package]]
 name = "tzdata"
-version = "2025.2"
+version = "2025.3"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/95/32/1a225d6164441be760d75c2c42e2780dc0873fe382da3e98a2e1e48361e5/tzdata-2025.2.tar.gz", hash = "sha256:b60a638fcc0daffadf82fe0f57e53d06bdec2f36c4df66280ae79bce6bd6f2b9", size = 196380, upload-time = "2025-03-23T13:54:43.652Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/a7/c202b344c5ca7daf398f3b8a477eeb205cf3b6f32e7ec3a6bac0629ca975/tzdata-2025.3.tar.gz", hash = "sha256:de39c2ca5dc7b0344f2eba86f49d614019d29f060fc4ebc8a417896a620b56a7", size = 196772, upload-time = "2025-12-13T17:45:35.667Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5c/23/c7abc0ca0a1526a0774eca151daeb8de62ec457e77262b66b359c3c7679e/tzdata-2025.2-py2.py3-none-any.whl", hash = "sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8", size = 347839, upload-time = "2025-03-23T13:54:41.845Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/b0/003792df09decd6849a5e39c28b513c06e84436a54440380862b5aeff25d/tzdata-2025.3-py2.py3-none-any.whl", hash = "sha256:06a47e5700f3081aab02b2e513160914ff0694bce9947d6b76ebd6bf57cfc5d1", size = 348521, upload-time = "2025-12-13T17:45:33.889Z" },
 ]
 
 [[package]]
