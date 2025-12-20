@@ -51,8 +51,7 @@ jobs:
         version: ["3.13", "3.14"]
     services:
       redis:
-        if: matrix.os == ubuntu-latest
-        image: redis/redis-stack:latest
+        image: ${{ matrix.os == ubuntu-latest && 'redis/redis-stack:latest' || '' }}
         ports:
           - 6379:6379
     steps:
