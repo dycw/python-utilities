@@ -43,7 +43,8 @@ def invoke_process_popen_poll_live(
         # used to check for empty output in Python2, but seems
         # to work with just poll in 2.7.12 and 3.5.2
         # if output == '' and process.poll() is not None:
-        if process.poll() is not None:
+        if (x := process.poll()) is not None:
+            return x
             break
         if output:
             print(output.strip().decode())

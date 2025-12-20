@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import builtins
 import sys
 from io import StringIO
 from subprocess import PIPE, CalledProcessError, Popen
-from typing import TYPE_CHECKING, Literal, assert_never, overload
+from threading import Thread
+from typing import IO, TYPE_CHECKING, Literal, TextIO, assert_never, overload
 
 from utilities.errors import ImpossibleCaseError
 
@@ -134,43 +136,86 @@ def run(
         user=user,
         group=group,
     ) as proc:
+        threads: list[Thread] = []
         if proc.stdout is None:
             raise ImpossibleCaseError(case=[f"{proc.stdout=}"])
+        threads.append(
+            _run_write_in_thread(
+                proc.stdout,
+                buffer,
+                stdout,
+                *([sys.stdout] if print or print_stdout else []),
+            )
+        )
         if proc.stderr is None:
             raise ImpossibleCaseError(case=[f"{proc.stderr=}"])
-        while True:
-            stdout_i = proc.stdout.readline()
-            stderr_i = proc.stderr.readline()
-            if stdout_i != "":
-                _ = buffer.write(stdout_i)
-                _ = stdout.write(stdout_i)
-                if print or print_stdout:
-                    _ = sys.stdout.write(stdout_i)
-                    _ = sys.stdout.flush()
-            if stderr_i != "":
-                _ = buffer.write(stderr_i)
-                _ = stderr.write(stderr_i)
-                if print or print_stderr:
-                    _ = sys.stderr.write(stderr_i)
-                    _ = sys.stderr.flush()
-            if (stdout_i == "") and (stderr_i == "") and (proc.poll() is not None):
-                break
-    return_code = proc.wait()
-    match return_code, capture, capture_stdout, capture_stderr:
-        case (0, True, _, _) | (0, False, True, True):
-            return buffer.read()
-        case 0, False, True, False:
-            return stdout.read()
-        case 0, False, False, True:
-            return stderr.read()
-        case 0, False, False, False:
-            return None
-        case _, _, _, _:
-            raise CalledProcessError(
-                return_code, cmd, output=stdout.read(), stderr=stderr.read()
+        threads.append(
+            _run_write_in_thread(
+                proc.stderr,
+                buffer,
+                stderr,
+                *([sys.stderr] if print or print_stderr else []),
             )
-        case never:
-            assert_never(never)
+        )
+        return_code = proc.wait()
+        for thread in threads:
+            thread.join()
+        match return_code, capture, capture_stdout, capture_stderr:
+            case (0, True, _, _) | (0, False, True, True):
+                return buffer.read()
+            case 0, False, True, False:
+                return stdout.read()
+            case 0, False, False, True:
+                return stderr.read()
+            case 0, False, False, False:
+                return None
+            case _, _, _, _:
+                raise CalledProcessError(
+                    return_code, cmd, output=stdout.read(), stderr=stderr.read()
+                )
+            case never:
+                assert_never(never)
+
+
+def _run_write_in_thread(input_: IO[str], /, *outputs: IO[str]) -> Thread:
+    """Print `infile` to `files` in a separate thread."""
+
+    def fanout(infile: IO[str], /, *outputs: IO[str]) -> None:
+        with infile:
+            for line in iter(infile.readline, ""):
+                for f in outputs:
+                    _ = f.write(line)
+
+    t = Thread(target=fanout, args=(input_, *outputs))
+    t.daemon = True
+    t.start()
+    return t
+
+
+def teed_call(cmd_args, **kwargs):
+    stdout, stderr = [kwargs.pop(s, None) for s in ["stdout", "stderr"]]
+    p = Popen(
+        cmd_args,
+        stdout=PIPE if stdout is not None else None,
+        stderr=PIPE if stderr is not None else None,
+        **kwargs,
+    )
+    threads = []
+    if stdout is not None:
+        threads.append(
+            _run_write_in_thread(
+                p.stdout, stdout, getattr(sys.stdout, "buffer", sys.stdout)
+            )
+        )
+    if stderr is not None:
+        threads.append(
+            _run_write_in_thread(
+                p.stderr, stderr, getattr(sys.stderr, "buffer", sys.stderr)
+            )
+        )
+    for t in threads:
+        t.join()  # wait for IO completion
+    return p.wait()
 
 
 __all__ = ["run"]
