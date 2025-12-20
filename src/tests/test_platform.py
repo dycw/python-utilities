@@ -4,7 +4,8 @@ from re import search
 from typing import TYPE_CHECKING, assert_never
 
 from hypothesis import assume, given
-from hypothesis.strategies import sampled_from, sets
+from hypothesis.strategies import sets
+from pytest import mark, param
 
 from utilities.hypothesis import text_ascii, text_clean
 from utilities.platform import (
@@ -68,15 +69,16 @@ class TestGetSystem:
     def test_constant(self) -> None:
         assert SYSTEM in get_args(System)
 
-    @given(
-        predicate=sampled_from([
-            IS_WINDOWS,
-            IS_MAC,
-            IS_LINUX,
-            IS_NOT_WINDOWS,
-            IS_NOT_MAC,
-            IS_NOT_LINUX,
-        ])
+    @mark.parametrize(
+        "predicate",
+        [
+            param(IS_WINDOWS),
+            param(IS_MAC),
+            param(IS_LINUX),
+            param(IS_NOT_WINDOWS),
+            param(IS_NOT_MAC),
+            param(IS_NOT_LINUX),
+        ],
     )
     def test_predicates(self, *, predicate: bool) -> None:
         assert isinstance(predicate, bool)
