@@ -13,35 +13,41 @@ if TYPE_CHECKING:
 
 class TestRun:
     def test_main(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo stdout; echo stderr 1>&2", shell=True)  # noqa: S604
+        result = run("echo stdout; sleep 0.5; echo stderr 1>&2", shell=True)  # noqa: S604
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == ""
         assert cap.err == ""
 
     def test_print(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo stdout; echo stderr 1>&2", shell=True, print=True)  # noqa: S604
+        result = run("echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, print=True)  # noqa: S604
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == "stdout\n"
         assert cap.err == "stderr\n"
 
     def test_print_stdout(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo stdout; echo stderr 1>&2", shell=True, print_stdout=True)  # noqa: S604
+        result = run(  # noqa: S604
+            "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, print_stdout=True
+        )
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == "stdout\n"
         assert cap.err == ""
 
     def test_print_stderr(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo stdout; echo stderr 1>&2", shell=True, print_stderr=True)  # noqa: S604
+        result = run(  # noqa: S604
+            "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, print_stderr=True
+        )
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == ""
         assert cap.err == "stderr\n"
 
     def test_return(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo stdout; echo stderr 1>&2", shell=True, return_=True)  # noqa: S604
+        result = run(  # noqa: S604
+            "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, return_=True
+        )
         expected = "stdout\nstderr\n"
         assert result == expected
         cap = capsys.readouterr()
@@ -49,7 +55,9 @@ class TestRun:
         assert cap.err == ""
 
     def test_return_stdout(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo stdout; echo stderr 1>&2", shell=True, return_stdout=True)  # noqa: S604
+        result = run(  # noqa: S604
+            "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, return_stdout=True
+        )
         expected = "stdout\n"
         assert result == expected
         cap = capsys.readouterr()
@@ -57,7 +65,9 @@ class TestRun:
         assert cap.err == ""
 
     def test_return_stderr(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo stdout; echo stderr 1>&2", shell=True, return_stderr=True)  # noqa: S604
+        result = run(  # noqa: S604
+            "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, return_stderr=True
+        )
         expected = "stderr\n"
         assert result == expected
         cap = capsys.readouterr()
