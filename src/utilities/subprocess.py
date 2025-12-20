@@ -157,19 +157,19 @@ def run(
             ),
         ):
             return_code = proc.wait()
-        match return_code, return_, return_stdout, return_stderr:
-            case (0, True, _, _) | (0, False, True, True):
+        match return_code, return_ or return_stdout, return_ or return_stderr:
+            case 0, True, True:
                 _ = buffer.seek(0)
                 return buffer.read()
-            case 0, False, True, False:
+            case 0, True, False:
                 _ = stdout.seek(0)
                 return stdout.read()
-            case 0, False, False, True:
+            case 0, False, True:
                 _ = stderr.seek(0)
                 return stderr.read()
-            case 0, False, False, False:
+            case 0, False, False:
                 return None
-            case _, _, _, _:
+            case _, _, _:
                 _ = stdout.seek(0)
                 _ = stderr.seek(0)
                 raise CalledProcessError(
