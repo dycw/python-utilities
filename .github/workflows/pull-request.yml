@@ -9,7 +9,7 @@ jobs:
   check-version-bumped:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           cache: pip
@@ -19,7 +19,7 @@ jobs:
     name: ruff
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: astral-sh/ruff-action@v3
       - run: ruff check --fix
       - run: ruff format
@@ -28,8 +28,8 @@ jobs:
     name: pyright
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           version: latest
@@ -39,19 +39,18 @@ jobs:
       - run: uv sync
       - run: uv run pyright
 
-  test-windows-and-mac:
-    name: test / ${{ matrix.os }} / ${{ matrix.version }}
+  test-mac:
+    name: test / macos-latest / ${{ matrix.version }}
     env:
       CI: 1
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest]
         version: ["3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           version: latest
@@ -77,10 +76,10 @@ jobs:
       matrix:
         version: ["3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           version: latest

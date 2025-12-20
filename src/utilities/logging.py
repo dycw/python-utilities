@@ -406,7 +406,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
             patterns=self._patterns,
             backup_count=backup_count,
         )
-        actions.do()  # skipif-ci-and-windows
+        actions.do()
 
         if not self.delay:  # pragma: no cover
             self.stream = self._open()
