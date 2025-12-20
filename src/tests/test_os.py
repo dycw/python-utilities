@@ -30,7 +30,6 @@ from utilities.os import (
     is_pytest,
     temp_environ,
 )
-from utilities.pytest import skipif_windows
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -87,7 +86,6 @@ class TestGetEnvVar:
     @given(
         key=text.map(_prefix), value=text, default=text | none(), nullable=booleans()
     )
-    @skipif_windows
     def test_case_sensitive(
         self, *, key: str, value: str, default: str | None, nullable: bool
     ) -> None:

@@ -32,7 +32,6 @@ from utilities.asyncio import (
     yield_locked_shelf,
 )
 from utilities.hypothesis import pairs, text_ascii
-from utilities.pytest import skipif_windows
 from utilities.timer import Timer
 from utilities.whenever import MILLISECOND, SECOND, get_now
 
@@ -431,7 +430,6 @@ class TestSleepUntilRounded:
 class TestStreamCommand:
     delta: ClassVar[TimeDelta] = 0.05 * SECOND
 
-    @skipif_windows
     async def test_main(self) -> None:
         output = await stream_command(
             'echo "stdout message" && sleep 0.1 && echo "stderr message" >&2'
@@ -441,7 +439,6 @@ class TestStreamCommand:
         assert output.stdout == "stdout message\n"
         assert output.stderr == "stderr message\n"
 
-    @skipif_windows
     async def test_error(self) -> None:
         output = await stream_command("this-is-an-error")
         await sleep_td(self.delta)
