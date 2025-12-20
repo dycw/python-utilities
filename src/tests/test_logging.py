@@ -12,7 +12,6 @@ from hypothesis import given
 from hypothesis.strategies import integers
 from pytest import LogCaptureFixture, mark, param, raises
 
-from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.hypothesis import pairs, temp_paths, zoned_date_times
 from utilities.iterables import one
 from utilities.logging import (
@@ -390,7 +389,6 @@ class TestSizeAndTimeRotatingFileHandler:
         logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
         assert filename.exists()
 
-    @SKIPIF_CI_AND_WINDOWS
     async def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(unique_str())
         logger.addHandler(
@@ -498,7 +496,6 @@ class TestSizeAndTimeRotatingFileHandler:
                 )
 
     @mark.parametrize("max_bytes", [param(0), param(1)])
-    @SKIPIF_CI_AND_WINDOWS
     def test_should_rollover_file_not_found(
         self, *, tmp_path: Path, max_bytes: int, caplog: LogCaptureFixture
     ) -> None:
