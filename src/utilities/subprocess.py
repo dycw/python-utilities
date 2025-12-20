@@ -181,8 +181,7 @@ def run(
 
 @contextmanager
 def _yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
-    thread = Thread(target=_run_target, args=(input_, *outputs))
-    thread.daemon = True
+    thread = Thread(target=_run_target, args=(input_, *outputs), daemon=True)
     thread.start()
     try:
         yield
