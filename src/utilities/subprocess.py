@@ -138,9 +138,9 @@ def run(
         user=user,
         group=group,
     ) as proc:
-        if proc.stdout is None:
+        if proc.stdout is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stdout=}"])
-        if proc.stderr is None:
+        if proc.stderr is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stderr=}"])
         with (
             _yield_write(
