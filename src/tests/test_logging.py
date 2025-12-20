@@ -437,7 +437,6 @@ class TestSizeAndTimeRotatingFileHandler:
                     )
                 await sleep(0.1)
 
-    @SKIPIF_CI_AND_WINDOWS
     async def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(unique_str())
         logger.addHandler(
