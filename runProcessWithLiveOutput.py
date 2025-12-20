@@ -52,23 +52,13 @@ def invoke_process_popen_poll_live(
 
 
 def main(argv) -> None:
-    while True:
-        # python2 uses raw_input(), python3 uses input()
-        prompt = "Execute which commmand [./loopWithSleep.sh]: "
-        try:
-            cmd = raw_input(prompt)
-        except NameError:
-            cmd = input(prompt)
-        if cmd == "quit":
-            break
-        if cmd == "":
-            cmd = "./loopWithSleep.sh"
+    cmd = "./loopWithSleep.sh"
 
-        print("== invoke_process_popen_blocking  ==============")
-        invoke_process_popen_blocking(cmd)
+    print("== invoke_process_popen_blocking  ==============")
+    invoke_process_popen_blocking(cmd)
 
-        print("== invoke_process_popen_poll_live  ==============")
-        invoke_process_popen_poll_live(cmd)
+    print("== invoke_process_popen_poll_live  ==============")
+    invoke_process_popen_poll_live(cmd)
 
 
 if __name__ == "__main__":
