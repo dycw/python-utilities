@@ -11,7 +11,7 @@ def get_uid_name(uid: int, /) -> str | None:
     match SYSTEM:
         case "windows":  # skipif-not-windows
             return None
-        case "mac" | "linux":
+        case "mac" | "linux":  # skipif-windows
             from pwd import getpwuid
 
             return getpwuid(uid).pw_name
