@@ -22,14 +22,7 @@ from utilities.pathlib import (
     get_tail,
     module_path,
 )
-from utilities.platform import (
-    IS_LINUX,
-    IS_MAC,
-    IS_NOT_LINUX,
-    IS_NOT_MAC,
-    IS_NOT_WINDOWS,
-    IS_WINDOWS,
-)
+from utilities.platform import IS_LINUX, IS_MAC, IS_NOT_LINUX, IS_NOT_MAC
 from utilities.random import bernoulli
 from utilities.text import to_bool
 from utilities.types import MaybeCallableBoolLike, MaybeCoro, Seed
@@ -50,14 +43,10 @@ except ModuleNotFoundError:  # pragma: no cover
     from typing import Any as Function
     from typing import Any as Parser
 
-    mark = skip = skipif_windows = skipif_mac = skipif_linux = skipif_not_windows = (
-        skipif_not_mac
-    ) = skipif_not_linux = None
+    mark = skip = skipif_mac = skipif_linux = skipif_not_mac = skipif_not_linux = None
 else:
-    skipif_windows = mark.skipif(IS_WINDOWS, reason="Skipped for Windows")
     skipif_mac = mark.skipif(IS_MAC, reason="Skipped for Mac")
     skipif_linux = mark.skipif(IS_LINUX, reason="Skipped for Linux")
-    skipif_not_windows = mark.skipif(IS_NOT_WINDOWS, reason="Skipped for non-Windows")
     skipif_not_mac = mark.skipif(IS_NOT_MAC, reason="Skipped for non-Mac")
     skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
 
@@ -354,7 +343,5 @@ __all__ = [
     "skipif_mac",
     "skipif_not_linux",
     "skipif_not_mac",
-    "skipif_not_windows",
-    "skipif_windows",
     "throttle",
 ]

@@ -513,27 +513,21 @@ class StreamCommandOutput:
 
     @property
     def return_code(self) -> int:
-        return ensure_int(self.process.returncode)  # skipif-not-windows
+        return ensure_int(self.process.returncode)
 
 
 async def stream_command(cmd: str, /) -> StreamCommandOutput:
     """Run a shell command asynchronously and stream its output in real time."""
-    process = await create_subprocess_shell(  # skipif-not-windows
-        cmd, stdout=PIPE, stderr=PIPE
-    )
-    proc_stdout = ensure_not_none(  # skipif-not-windows
-        process.stdout, desc="process.stdout"
-    )
-    proc_stderr = ensure_not_none(  # skipif-not-windows
-        process.stderr, desc="process.stderr"
-    )
-    ret_stdout = StringIO()  # skipif-not-windows
-    ret_stderr = StringIO()  # skipif-not-windows
-    async with TaskGroup() as tg:  # skipif-not-windows
+    process = await create_subprocess_shell(cmd, stdout=PIPE, stderr=PIPE)
+    proc_stdout = ensure_not_none(process.stdout, desc="process.stdout")
+    proc_stderr = ensure_not_none(process.stderr, desc="process.stderr")
+    ret_stdout = StringIO()
+    ret_stderr = StringIO()
+    async with TaskGroup() as tg:
         _ = tg.create_task(_stream_one(proc_stdout, stdout, ret_stdout))
         _ = tg.create_task(_stream_one(proc_stderr, stderr, ret_stderr))
-    _ = await process.wait()  # skipif-not-windows
-    return StreamCommandOutput(  # skipif-not-windows
+    _ = await process.wait()
+    return StreamCommandOutput(
         process=process, stdout=ret_stdout.getvalue(), stderr=ret_stderr.getvalue()
     )
 
@@ -542,7 +536,7 @@ async def _stream_one(
     input_: StreamReader, out_stream: TextIO, ret_stream: StringIO, /
 ) -> None:
     """Asynchronously read from a stream and write to the target output stream."""
-    while True:  # skipif-not-windows
+    while True:
         line = await input_.readline()
         if not line:
             break

@@ -101,7 +101,7 @@
   name = "dycw-utilities"
   readme = "README.md"
   requires-python = ">= 3.13"
-  version = "0.170.0"
+  version = "0.171.0"
 
   [project.entry-points.pytest11]
     pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -135,7 +135,7 @@
   # bump-my-version
   [tool.bumpversion]
     allow_dirty = true
-    current_version = "0.170.0"
+    current_version = "0.171.0"
 
     [[tool.bumpversion.files]]
       filename = "src/utilities/__init__.py"
@@ -149,14 +149,10 @@
         skipif-ci = '"CI" in os_environ'
         skipif-ci-and-mac = '("CI" in os_environ) and (sys_platform == "darwin")'
         skipif-ci-and-not-linux = '("CI" in os_environ) and (sys_platform != "linux")'
-        skipif-ci-and-not-windows = '("CI" in os_environ) and (sys_platform != "windows")'
-        skipif-ci-and-windows = '("CI" in os_environ) and (sys_platform != "windows")'
         skipif-linux = 'sys_platform == "linux"'
         skipif-mac = 'sys_platform == "darwin"'
         skipif-not-linux = 'sys_platform != "linux"'
         skipif-not-macos = 'sys_platform != "darwin"'
-        skipif-not-windows = 'sys_platform != "windows"'
-        skipif-windows = 'sys_platform == "windows"'
 
     [tool.coverage.html]
       directory = ".coverage/html"

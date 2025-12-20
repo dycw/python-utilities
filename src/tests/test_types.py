@@ -47,7 +47,7 @@ class TestTimeZone:
         result = set(TIME_ZONES)
         expected = available_timezones()
         match SYSTEM:
-            case "windows" | "mac":
+            case "windows" | "mac":  # skipif-linux
                 assert result == expected
-            case "linux":
+            case "linux":  # skipif-not-linux
                 assert result | {"localtime"} == expected

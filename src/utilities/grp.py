@@ -11,7 +11,7 @@ def get_gid_name(gid: int, /) -> str | None:
     match SYSTEM:
         case "windows":  # skipif-not-windows
             return None
-        case "mac" | "linux":  # skipif-windows
+        case "mac" | "linux":
             from grp import getgrgid
 
             return getgrgid(gid).gr_name

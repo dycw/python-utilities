@@ -1178,7 +1178,7 @@ def _get_log_records_one(
     path = Path(path)
     try:
         lines = path.read_text().splitlines()
-    except UnicodeDecodeError as error:  # skipif-ci-and-windows
+    except UnicodeDecodeError as error:
         return _GetLogRecordsOneOutput(path=path, file_ok=False, other_errors=[error])
     num_lines_blank, num_lines_error = 0, 0
     missing: set[str] = set()

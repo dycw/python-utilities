@@ -16,7 +16,7 @@ System = Literal["windows", "mac", "linux"]
 def get_system() -> System:
     """Get the system/OS name."""
     sys = system()
-    if sys == "Windows":  # skipif-not-windows
+    if sys == "Windows":
         return "windows"
     if sys == "Darwin":  # skipif-not-macos
         return "mac"
@@ -51,7 +51,7 @@ IS_NOT_LINUX = not IS_LINUX
 def get_max_pid() -> int | None:
     """Get the maximum process ID."""
     match SYSTEM:
-        case "windows":  # pragma: no cover
+        case "windows":  # skipif-not-windows
             return None
         case "mac":  # skipif-not-macos
             return 99999
