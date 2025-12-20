@@ -72,12 +72,12 @@ class TestGetSystem:
     @mark.parametrize(
         "predicate",
         [
-            param(IS_WINDOWS),
-            param(IS_MAC),
-            param(IS_LINUX),
-            param(IS_NOT_WINDOWS),
-            param(IS_NOT_MAC),
-            param(IS_NOT_LINUX),
+            param(IS_WINDOWS, id="IS_WINDOWS"),
+            param(IS_MAC, id="IS_MAC"),
+            param(IS_LINUX, id="IS_LINUX"),
+            param(IS_NOT_WINDOWS, id="IS_NOT_WINDOWS"),
+            param(IS_NOT_MAC, id="IS_NOT_MAC"),
+            param(IS_NOT_LINUX, id="IS_NOT_LINUX"),
         ],
     )
     def test_predicates(self, *, predicate: bool) -> None:
