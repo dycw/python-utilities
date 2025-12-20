@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import builtins
 import sys
+from contextlib import contextmanager
 from io import StringIO
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
@@ -10,6 +11,8 @@ from typing import IO, TYPE_CHECKING, Literal, TextIO, assert_never, overload
 from utilities.errors import ImpossibleCaseError
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from utilities.types import StrStrMapping
 
 
@@ -136,30 +139,25 @@ def run(
         user=user,
         group=group,
     ) as proc:
-        threads: list[Thread] = []
         if proc.stdout is None:
             raise ImpossibleCaseError(case=[f"{proc.stdout=}"])
-        threads.append(
-            _run_write_in_thread(
+        if proc.stderr is None:
+            raise ImpossibleCaseError(case=[f"{proc.stderr=}"])
+        with (
+            _run_write_in_thread_cm(
                 proc.stdout,
                 buffer,
                 stdout,
                 *([sys.stdout] if print or print_stdout else []),
-            )
-        )
-        if proc.stderr is None:
-            raise ImpossibleCaseError(case=[f"{proc.stderr=}"])
-        threads.append(
-            _run_write_in_thread(
+            ),
+            _run_write_in_thread_cm(
                 proc.stderr,
                 buffer,
                 stderr,
                 *([sys.stderr] if print or print_stderr else []),
-            )
-        )
-        return_code = proc.wait()
-        for thread in threads:
-            thread.join()
+            ),
+        ):
+            return_code = proc.wait()
         match return_code, capture, capture_stdout, capture_stderr:
             case (0, True, _, _) | (0, False, True, True):
                 return buffer.read()
@@ -177,14 +175,18 @@ def run(
                 assert_never(never)
 
 
-def _run_write_in_thread(input_: IO[str], /, *outputs: IO[str]) -> Thread:
-    t = Thread(target=fanout, args=(input_, *outputs))
+@contextmanager
+def _run_write_in_thread_cm(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
+    t = Thread(target=_run_target, args=(input_, *outputs))
     t.daemon = True
     t.start()
-    return t
+    try:
+        yield
+    finally:
+        t.join()
 
 
-def fanout(infile: IO[str], /, *outputs: IO[str]) -> None:
+def _run_target(infile: IO[str], /, *outputs: IO[str]) -> None:
     with infile:
         for line in iter(infile.readline, ""):
             for f in outputs:
