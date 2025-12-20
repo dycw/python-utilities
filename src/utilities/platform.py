@@ -16,7 +16,7 @@ System = Literal["windows", "mac", "linux"]
 def get_system() -> System:
     """Get the system/OS name."""
     sys = system()
-    if sys == "Windows":  # skipif-not-windows
+    if sys == "Windows":
         return "windows"
     if sys == "Darwin":  # skipif-not-macos
         return "mac"
@@ -74,7 +74,7 @@ MAX_PID = get_max_pid()
 def get_strftime(text: str, /) -> str:
     """Get a platform-specific format string."""
     match SYSTEM:
-        case "windows":  # skipif-not-windows
+        case "windows":
             return text
         case "mac":  # skipif-not-macos
             return text
@@ -90,7 +90,7 @@ def get_strftime(text: str, /) -> str:
 def maybe_yield_lower_case(text: Iterable[str], /) -> Iterator[str]:
     """Yield lower-cased text if the platform is case-insentive."""
     match SYSTEM:
-        case "windows":  # skipif-not-windows
+        case "windows":
             yield from (t.lower() for t in text)
         case "mac":  # skipif-not-macos
             yield from (t.lower() for t in text)

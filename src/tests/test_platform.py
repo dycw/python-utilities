@@ -33,7 +33,7 @@ class TestGetMaxPID:
     def test_function(self) -> None:
         result = get_max_pid()
         match SYSTEM:
-            case "windows":  # skipif-not-windows
+            case "windows":
                 assert result is None
             case "mac":  # skipif-not-macos
                 assert isinstance(result, int)
@@ -44,7 +44,7 @@ class TestGetMaxPID:
 
     def test_constant(self) -> None:
         match SYSTEM:
-            case "windows":  # skipif-not-windows
+            case "windows":
                 assert MAX_PID is None
             case "mac":  # skipif-not-macos
                 assert isinstance(MAX_PID, int)
@@ -89,7 +89,7 @@ class TestMaybeYieldLowerCase:
     def test_main(self, *, text: AbstractSet[str]) -> None:
         result = set(maybe_yield_lower_case(text))
         match SYSTEM:
-            case "windows":  # skipif-not-windows
+            case "windows":
                 assert all(text == text.lower() for text in result)
             case "mac":  # skipif-not-macos
                 assert all(text == text.lower() for text in result)

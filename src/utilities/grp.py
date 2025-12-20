@@ -9,7 +9,7 @@ from utilities.platform import SYSTEM
 def get_gid_name(gid: int, /) -> str | None:
     """Get the name of a group."""
     match SYSTEM:
-        case "windows":  # skipif-not-windows
+        case "windows":
             return None
         case "mac" | "linux":  # skipif-windows
             from grp import getgrgid
