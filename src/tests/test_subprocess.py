@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from pytest import raises
 
+from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.subprocess import run
 
 if TYPE_CHECKING:
@@ -12,6 +13,7 @@ if TYPE_CHECKING:
 
 
 class TestRun:
+    @SKIPIF_CI_AND_WINDOWS
     def test_main(self, *, capsys: CaptureFixture) -> None:
         result = run("echo stdout; sleep 0.5; echo stderr 1>&2", shell=True)  # noqa: S604
         assert result is None
@@ -19,6 +21,7 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == ""
 
+    @SKIPIF_CI_AND_WINDOWS
     def test_print(self, *, capsys: CaptureFixture) -> None:
         result = run("echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, print=True)  # noqa: S604
         assert result is None
@@ -26,6 +29,7 @@ class TestRun:
         assert cap.out == "stdout\n"
         assert cap.err == "stderr\n"
 
+    @SKIPIF_CI_AND_WINDOWS
     def test_print_stdout(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
             "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, print_stdout=True
@@ -35,6 +39,7 @@ class TestRun:
         assert cap.out == "stdout\n"
         assert cap.err == ""
 
+    @SKIPIF_CI_AND_WINDOWS
     def test_print_stderr(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
             "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, print_stderr=True
@@ -44,6 +49,7 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == "stderr\n"
 
+    @SKIPIF_CI_AND_WINDOWS
     def test_return(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
             "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, return_=True
@@ -54,6 +60,7 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == ""
 
+    @SKIPIF_CI_AND_WINDOWS
     def test_return_stdout(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
             "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, return_stdout=True
@@ -64,6 +71,7 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == ""
 
+    @SKIPIF_CI_AND_WINDOWS
     def test_return_stderr(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
             "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, return_stderr=True
@@ -74,6 +82,7 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == ""
 
+    @SKIPIF_CI_AND_WINDOWS
     def test_error(self, *, capsys: CaptureFixture) -> None:
         with raises(CalledProcessError) as exc_info:
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True)  # noqa: S604
@@ -84,6 +93,7 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == ""
 
+    @SKIPIF_CI_AND_WINDOWS
     def test_error_and_print(self, *, capsys: CaptureFixture) -> None:
         with raises(CalledProcessError) as exc_info:
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, print=True)  # noqa: S604
