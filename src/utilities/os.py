@@ -128,7 +128,7 @@ class GetEnvVarError(Exception):
 def get_effective_group_id() -> int | None:
     """Get the effective group ID."""
     match SYSTEM:
-        case "windows":
+        case "windows":  # skipif-not-windows
             return None
         case "mac" | "linux":  # skipif-windows
             from os import getegid
@@ -141,7 +141,7 @@ def get_effective_group_id() -> int | None:
 def get_effective_user_id() -> int | None:
     """Get the effective user ID."""
     match SYSTEM:
-        case "windows":
+        case "windows":  # skipif-not-windows
             return None
         case "mac" | "linux":  # skipif-windows
             from os import geteuid

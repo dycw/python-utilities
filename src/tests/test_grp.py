@@ -22,9 +22,9 @@ class TestGroupName:
     )
     def test_constant(self, *, group: str | None) -> None:
         match SYSTEM:
-            case "windows":
+            case "windows":  # skipif-not-windows
                 assert group is None
-            case "mac" | "linux":
+            case "mac" | "linux":  # skipif-windows
                 assert isinstance(group, str)
             case never:
                 assert_never(never)

@@ -19,9 +19,9 @@ class TestUserName:
     )
     def test_constant(self, *, user: str | None) -> None:
         match SYSTEM:
-            case "windows":
+            case "windows":  # skipif-not-windows
                 assert user is None
-            case "mac" | "linux":
+            case "mac" | "linux":  # skipif-windows
                 assert isinstance(user, str)
             case never:
                 assert_never(never)

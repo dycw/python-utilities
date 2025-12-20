@@ -9,9 +9,9 @@ from utilities.platform import SYSTEM
 def get_uid_name(uid: int, /) -> str | None:
     """Get the name of a user ID."""
     match SYSTEM:
-        case "windows":
+        case "windows":  # skipif-not-windows
             return None
-        case "mac" | "linux":  # skipif-windows
+        case "mac" | "linux":
             from pwd import getpwuid
 
             return getpwuid(uid).pw_name

@@ -51,7 +51,7 @@ IS_NOT_LINUX = not IS_LINUX
 def get_max_pid() -> int | None:
     """Get the maximum process ID."""
     match SYSTEM:
-        case "windows":  # pragma: no cover
+        case "windows":  # skipif-not-windows
             return None
         case "mac":  # skipif-not-macos
             return 99999
@@ -74,7 +74,7 @@ MAX_PID = get_max_pid()
 def get_strftime(text: str, /) -> str:
     """Get a platform-specific format string."""
     match SYSTEM:
-        case "windows":
+        case "windows":  # skipif-not-windows
             return text
         case "mac":  # skipif-not-macos
             return text
@@ -90,7 +90,7 @@ def get_strftime(text: str, /) -> str:
 def maybe_yield_lower_case(text: Iterable[str], /) -> Iterator[str]:
     """Yield lower-cased text if the platform is case-insentive."""
     match SYSTEM:
-        case "windows":
+        case "windows":  # skipif-not-windows
             yield from (t.lower() for t in text)
         case "mac":  # skipif-not-macos
             yield from (t.lower() for t in text)
