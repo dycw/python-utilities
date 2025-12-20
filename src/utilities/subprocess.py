@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import builtins
 import sys
 from contextlib import contextmanager
 from io import StringIO
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
-from typing import IO, TYPE_CHECKING, Literal, TextIO, assert_never, overload
+from typing import IO, TYPE_CHECKING, Literal, assert_never, overload
 
 from utilities.errors import ImpossibleCaseError
 
@@ -144,13 +143,13 @@ def run(
         if proc.stderr is None:
             raise ImpossibleCaseError(case=[f"{proc.stderr=}"])
         with (
-            _run_write_in_thread_cm(
+            _yield_write(
                 proc.stdout,
                 buffer,
                 stdout,
                 *([sys.stdout] if print or print_stdout else []),
             ),
-            _run_write_in_thread_cm(
+            _yield_write(
                 proc.stderr,
                 buffer,
                 stderr,
@@ -176,7 +175,7 @@ def run(
 
 
 @contextmanager
-def _run_write_in_thread_cm(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
+def _yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
     t = Thread(target=_run_target, args=(input_, *outputs))
     t.daemon = True
     t.start()
