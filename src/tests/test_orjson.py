@@ -24,7 +24,6 @@ from polars import Object, String, UInt64
 from pytest import approx, mark, param, raises
 from whenever import ZonedDateTime
 
-from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from tests.test_objects.objects import (
     CustomError,
     SubFrozenSet,
@@ -389,7 +388,6 @@ class TestGetLogRecords:
         assert result.num_files_error == 0
         assert len(result.other_errors) == 0
 
-    @SKIPIF_CI_AND_WINDOWS
     def test_error_file(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("log")
         _ = file.write_bytes(b"\x80")
