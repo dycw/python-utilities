@@ -178,44 +178,17 @@ def run(
 
 
 def _run_write_in_thread(input_: IO[str], /, *outputs: IO[str]) -> Thread:
-    """Print `infile` to `files` in a separate thread."""
-
-    def fanout(infile: IO[str], /, *outputs: IO[str]) -> None:
-        with infile:
-            for line in iter(infile.readline, ""):
-                for f in outputs:
-                    _ = f.write(line)
-
     t = Thread(target=fanout, args=(input_, *outputs))
     t.daemon = True
     t.start()
     return t
 
 
-def teed_call(cmd_args, **kwargs):
-    stdout, stderr = [kwargs.pop(s, None) for s in ["stdout", "stderr"]]
-    p = Popen(
-        cmd_args,
-        stdout=PIPE if stdout is not None else None,
-        stderr=PIPE if stderr is not None else None,
-        **kwargs,
-    )
-    threads = []
-    if stdout is not None:
-        threads.append(
-            _run_write_in_thread(
-                p.stdout, stdout, getattr(sys.stdout, "buffer", sys.stdout)
-            )
-        )
-    if stderr is not None:
-        threads.append(
-            _run_write_in_thread(
-                p.stderr, stderr, getattr(sys.stderr, "buffer", sys.stderr)
-            )
-        )
-    for t in threads:
-        t.join()  # wait for IO completion
-    return p.wait()
+def fanout(infile: IO[str], /, *outputs: IO[str]) -> None:
+    with infile:
+        for line in iter(infile.readline, ""):
+            for f in outputs:
+                _ = f.write(line)
 
 
 __all__ = ["run"]
