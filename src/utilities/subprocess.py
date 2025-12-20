@@ -141,23 +141,6 @@ def run(
         while True:
             stdout_i = proc.stdout.readline()
             stderr_i = proc.stderr.readline()
-            if (proc.poll() is not None) and (stdout_i == "") and (stderr_i == ""):
-                return_code = proc.wait()
-                match return_code, capture, capture_stdout, capture_stderr:
-                    case (0, True, _, _) | (0, False, True, True):
-                        return buffer.read()
-                    case 0, False, True, False:
-                        return stdout.read()
-                    case 0, False, False, True:
-                        return stderr.read()
-                    case 0, False, False, False:
-                        return None
-                    case _, _, _, _:
-                        raise CalledProcessError(
-                            return_code, cmd, output=stdout.read(), stderr=stderr.read()
-                        )
-                    case never:
-                        assert_never(never)
             if stdout_i != "":
                 _ = buffer.write(stdout_i)
                 _ = stdout.write(stdout_i)
@@ -170,6 +153,24 @@ def run(
                 if print or print_stderr:
                     _ = sys.stderr.write(stderr_i)
                     _ = sys.stderr.flush()
+            if (stdout_i == "") and (stderr_i == "") and (proc.poll() is not None):
+                break
+    return_code = proc.wait()
+    match return_code, capture, capture_stdout, capture_stderr:
+        case (0, True, _, _) | (0, False, True, True):
+            return buffer.read()
+        case 0, False, True, False:
+            return stdout.read()
+        case 0, False, False, True:
+            return stderr.read()
+        case 0, False, False, False:
+            return None
+        case _, _, _, _:
+            raise CalledProcessError(
+                return_code, cmd, output=stdout.read(), stderr=stderr.read()
+            )
+        case never:
+            assert_never(never)
 
 
 __all__ = ["run"]
