@@ -181,20 +181,20 @@ def run(
 
 @contextmanager
 def _yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
-    t = Thread(target=_run_target, args=(input_, *outputs))
-    t.daemon = True
-    t.start()
+    thread = Thread(target=_run_target, args=(input_, *outputs))
+    thread.daemon = True
+    thread.start()
     try:
         yield
     finally:
-        t.join()
+        thread.join()
 
 
-def _run_target(infile: IO[str], /, *outputs: IO[str]) -> None:
-    with infile:
-        for line in iter(infile.readline, ""):
-            for f in outputs:
-                _ = f.write(line)
+def _run_target(input_: IO[str], /, *outputs: IO[str]) -> None:
+    with input_:
+        for line in iter(input_.readline, ""):
+            for output in outputs:
+                _ = output.write(line)
 
 
 __all__ = ["run"]
