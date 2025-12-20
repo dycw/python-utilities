@@ -29,9 +29,9 @@ def run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
-    capture: Literal[True],
-    capture_stdout: bool = False,
-    capture_stderr: bool = False,
+    return_: Literal[True],
+    return_stdout: bool = False,
+    return_stderr: bool = False,
 ) -> str: ...
 @overload
 def run(
@@ -47,9 +47,9 @@ def run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
-    capture: bool = False,
-    capture_stdout: Literal[True],
-    capture_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: Literal[True],
+    return_stderr: bool = False,
 ) -> str: ...
 @overload
 def run(
@@ -65,9 +65,9 @@ def run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
-    capture: bool = False,
-    capture_stdout: bool = False,
-    capture_stderr: Literal[True],
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: Literal[True],
 ) -> str: ...
 @overload
 def run(
@@ -83,9 +83,9 @@ def run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
-    capture: Literal[False] = False,
-    capture_stdout: Literal[False] = False,
-    capture_stderr: Literal[False] = False,
+    return_: Literal[False] = False,
+    return_stdout: Literal[False] = False,
+    return_stderr: Literal[False] = False,
 ) -> None: ...
 @overload
 def run(
@@ -101,9 +101,9 @@ def run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
-    capture: bool = False,
-    capture_stdout: bool = False,
-    capture_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
 ) -> str | None: ...
 def run(
     cmd: str,
@@ -118,9 +118,9 @@ def run(
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
-    capture: bool = False,
-    capture_stdout: bool = False,
-    capture_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
 ) -> str | None:
     buffer = StringIO()
     stdout = StringIO()
@@ -157,16 +157,21 @@ def run(
             ),
         ):
             return_code = proc.wait()
-        match return_code, capture, capture_stdout, capture_stderr:
+        match return_code, return_, return_stdout, return_stderr:
             case (0, True, _, _) | (0, False, True, True):
+                _ = buffer.seek(0)
                 return buffer.read()
             case 0, False, True, False:
+                _ = stdout.seek(0)
                 return stdout.read()
             case 0, False, False, True:
+                _ = stderr.seek(0)
                 return stderr.read()
             case 0, False, False, False:
                 return None
             case _, _, _, _:
+                _ = stdout.seek(0)
+                _ = stderr.seek(0)
                 raise CalledProcessError(
                     return_code, cmd, output=stdout.read(), stderr=stderr.read()
                 )
