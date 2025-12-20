@@ -77,7 +77,7 @@ from utilities.math import (
 )
 from utilities.os import get_env_var
 from utilities.pathlib import module_path, temp_cwd
-from utilities.platform import IS_LINUX, IS_WINDOWS
+from utilities.platform import IS_LINUX
 from utilities.sentinel import Sentinel, is_sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.version import Version
@@ -1128,9 +1128,7 @@ def temp_dirs(draw: DrawFn, /) -> TemporaryDirectory:
     """Search strategy for temporary directories."""
     _TEMP_DIR_HYPOTHESIS.mkdir(exist_ok=True)
     uuid = draw(uuids())
-    return TemporaryDirectory(
-        prefix=f"{uuid}__", dir=_TEMP_DIR_HYPOTHESIS, ignore_cleanup_errors=IS_WINDOWS
-    )
+    return TemporaryDirectory(prefix=f"{uuid}__", dir=_TEMP_DIR_HYPOTHESIS)
 
 
 ##
