@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from shlex import quote
 
 from pytest import mark
 
@@ -13,7 +13,6 @@ from utilities.docker import (
     docker_exec_cmd,
     yield_docker_temp_dir,
 )
-from utilities.tempfile import TemporaryFile
 
 
 class TestDockerCp:
@@ -76,7 +75,17 @@ class TestYieldDockerTempDir:
     @SKIPIF_CI
     def test_main(self) -> None:
         with yield_docker_temp_dir("postgres") as temp_dir:
-            docker_exec("postgres", f"[[ -d {temp_dir} ]] || exit 1", shell=True)
-            temp_dir = temp_dir / "asdf"
-            docker_exec("postgres", f"[[ -d {temp_dir} ]] || exit 1", shell=True)
-        # docker_exec("postgres", f"! [[ -d {temp_dir} ]] || exit 1", shell=True)
+            docker_exec(  # noqa: S604
+                "postgres",
+                "bash",
+                "-c",
+                quote(f"if ! [ -d {temp_dir} ]; then exit 1; fi"),
+                shell=True,
+            )
+        docker_exec(  # noqa: S604
+            "postgres",
+            "bash",
+            "-c",
+            quote(f"if [ -d {temp_dir} ]; then exit 1; fi"),
+            shell=True,
+        )

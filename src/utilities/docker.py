@@ -182,6 +182,17 @@ def docker_exec(
     cmd_use = docker_exec_cmd(  # skipif-ci
         container, cmd, *args, env=env, user=user, workdir=workdir, **env_kwargs
     )
+    if shell:  # skipif-ci
+        return run(
+            " ".join(cmd_use),
+            shell=shell,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            return_=return_,
+            return_stdout=return_stdout,
+            return_stderr=return_stderr,
+        )
     return run(  # skipif-ci
         *cmd_use,
         shell=shell,
