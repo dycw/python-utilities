@@ -1,11 +1,75 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal, overload
 
-from utilities.subprocess import run
+from utilities.errors import ImpossibleCaseError
+from utilities.subprocess import maybe_sudo_cmd, mkdir, mkdir_cmd, rm_cmd, run
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from utilities.types import PathLike, StrStrMapping
+
+
+@overload
+def docker_cp(
+    src: tuple[str, PathLike], dest: PathLike, /, *, sudo: bool = False
+) -> None: ...
+@overload
+def docker_cp(
+    src: PathLike, dest: tuple[str, PathLike], /, *, sudo: bool = False
+) -> None: ...
+def docker_cp(
+    src: PathLike | tuple[str, PathLike],
+    dest: PathLike | tuple[str, PathLike],
+    /,
+    *,
+    sudo: bool = False,
+) -> None:
+    match src, dest:
+        case Path() | str(), (str() as cont, Path() | str() as dest_path):
+            docker_exec(
+                cont, *maybe_sudo_cmd(*mkdir_cmd(dest_path, parent=True), sudo=sudo)
+            )
+            run(*docker_cp_cmd(src, dest, sudo=sudo))
+        case (str(), Path() | str()), Path() | str():
+            mkdir(dest, parent=True, sudo=sudo)
+            run(*docker_cp_cmd(src, dest, sudo=sudo))
+        case _:  # pragma: no cover
+            raise ImpossibleCaseError(case=[f"{src}", f"{dest=}"])
+
+
+@overload
+def docker_cp_cmd(
+    src: tuple[str, PathLike], dest: PathLike, /, *, sudo: bool = False
+) -> list[str]: ...
+@overload
+def docker_cp_cmd(
+    src: PathLike, dest: tuple[str, PathLike], /, *, sudo: bool = False
+) -> list[str]: ...
+def docker_cp_cmd(
+    src: PathLike | tuple[str, PathLike],
+    dest: PathLike | tuple[str, PathLike],
+    /,
+    *,
+    sudo: bool = False,
+) -> list[str]:
+    match src, dest:
+        case (Path() | str()) as src_use, (
+            str() as dest_cont,
+            Path() | str() as dest_path,
+        ):
+            dest_use = f"{dest_cont}:{dest_path}"
+        case (str() as src_cont, (Path() | str()) as src_path), (
+            Path() | str() as dest_use
+        ):
+            src_use = f"{src_cont}:{src_path}"
+        case _:  # pragma: no cover
+            raise ImpossibleCaseError(case=[f"{src}", f"{dest=}"])
+    parts: list[str] = ["docker", "cp", str(src_use), str(dest_use)]
+    return maybe_sudo_cmd(*parts, sudo=sudo)
 
 
 @overload
@@ -17,6 +81,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    shell: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -34,6 +99,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    shell: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -51,6 +117,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    shell: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -68,6 +135,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    shell: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -85,6 +153,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    shell: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -101,6 +170,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    shell: bool = False,
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -112,8 +182,20 @@ def docker_exec(
     cmd_use = docker_exec_cmd(  # skipif-ci
         container, cmd, *args, env=env, user=user, workdir=workdir, **env_kwargs
     )
+    if shell:  # skipif-ci
+        return run(
+            " ".join(cmd_use),
+            shell=shell,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            return_=return_,
+            return_stdout=return_stdout,
+            return_stderr=return_stderr,
+        )
     return run(  # skipif-ci
         *cmd_use,
+        shell=shell,
         print=print,
         print_stdout=print_stdout,
         print_stderr=print_stderr,
@@ -145,4 +227,15 @@ def docker_exec_cmd(
     return [*parts, container, cmd, *args]
 
 
-__all__ = ["docker_exec", "docker_exec_cmd"]
+@contextmanager
+def yield_docker_temp_dir(container: str, /) -> Iterator[Path]:
+    path = Path(  # skipif-ci
+        docker_exec(container, "mktemp", "-d", return_=True).rstrip("\n")
+    )
+    try:  # skipif-ci
+        yield path
+    finally:  # skipif-ci
+        docker_exec(container, *rm_cmd(path))
+
+
+__all__ = ["docker_cp_cmd", "docker_exec", "docker_exec_cmd", "yield_docker_temp_dir"]

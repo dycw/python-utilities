@@ -1,12 +1,58 @@
 from __future__ import annotations
 
+from shlex import quote
 from typing import TYPE_CHECKING
 
 from tests.conftest import SKIPIF_CI
-from utilities.docker import docker_exec, docker_exec_cmd
+from utilities.docker import (
+    docker_cp,
+    docker_cp_cmd,
+    docker_exec,
+    docker_exec_cmd,
+    yield_docker_temp_dir,
+)
+from utilities.subprocess import touch_cmd
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+class TestDockerCp:
+    @SKIPIF_CI
+    def test_into_container(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
+        with yield_docker_temp_dir("postgres") as temp_cont:
+            dest = temp_cont / src.name
+            docker_cp(src, ("postgres", dest))
+            docker_exec(  # noqa: S604
+                "postgres",
+                "bash",
+                "-c",
+                quote(f"if ! [ -f {dest} ]; then exit 1; fi"),
+                shell=True,
+            )
+
+    @SKIPIF_CI
+    def test_from_container(self, *, tmp_path: Path) -> None:
+        with yield_docker_temp_dir("postgres") as temp_cont:
+            src = temp_cont / "file.txt"
+            docker_exec("postgres", *touch_cmd(src))
+            dest = tmp_path / src.name
+            docker_cp(("postgres", src), dest)
+        assert dest.is_file()
+
+
+class TestDockerCpCmd:
+    def test_src(self) -> None:
+        result = docker_cp_cmd(("cont", "src"), "dest")
+        expected = ["docker", "cp", "cont:src", "dest"]
+        assert result == expected
+
+    def test_dest(self) -> None:
+        result = docker_cp_cmd("src", ("cont", "dest"))
+        expected = ["docker", "cp", "src", "cont:dest"]
+        assert result == expected
 
 
 class TestDockerExec:
@@ -41,3 +87,23 @@ class TestDockerExecCmd:
         result = docker_exec_cmd("container", "cmd", workdir=tmp_path)
         expected = ["docker", "exec", "--workdir", str(tmp_path), "container", "cmd"]
         assert result == expected
+
+
+class TestYieldDockerTempDir:
+    @SKIPIF_CI
+    def test_main(self) -> None:
+        with yield_docker_temp_dir("postgres") as temp_dir:
+            docker_exec(  # noqa: S604
+                "postgres",
+                "bash",
+                "-c",
+                quote(f"if ! [ -d {temp_dir} ]; then exit 1; fi"),
+                shell=True,
+            )
+        docker_exec(  # noqa: S604
+            "postgres",
+            "bash",
+            "-c",
+            quote(f"if [ -d {temp_dir} ]; then exit 1; fi"),
+            shell=True,
+        )

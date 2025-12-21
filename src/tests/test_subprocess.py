@@ -1,22 +1,110 @@
 from __future__ import annotations
 
+from pathlib import Path
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
 from pytest import raises
 
-from utilities.subprocess import run
+from utilities.subprocess import (
+    echo_cmd,
+    expand_path,
+    maybe_sudo_cmd,
+    mkdir,
+    mkdir_cmd,
+    rm_cmd,
+    run,
+    touch_cmd,
+)
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
 
 
+class TestEchoCmd:
+    def test_main(self) -> None:
+        result = echo_cmd("'hello world'")
+        expected = ["echo", "'hello world'"]
+        assert result == expected
+
+
+class TestExpandPath:
+    def test_main(self) -> None:
+        result = expand_path("~")
+        expected = Path.home()
+        assert result == expected
+
+    def test_subs(self) -> None:
+        result = expand_path("~/${dir}", subs={"dir": "foo"})
+        expected = Path("~/foo").expanduser()
+        assert result == expected
+
+
+class TestMaybeSudoCmd:
+    def test_main(self) -> None:
+        result = maybe_sudo_cmd("echo", "hi")
+        expected = ["echo", "hi"]
+        assert result == expected
+
+    def test_sudo(self) -> None:
+        result = maybe_sudo_cmd("echo", "hi", sudo=True)
+        expected = ["sudo", "echo", "hi"]
+        assert result == expected
+
+
+class TestMkDir:
+    def test_main(self, *, tmp_path: Path) -> None:
+        path = f"{tmp_path}/foo"
+        mkdir(path)
+        assert Path(path).is_dir()
+
+
+class TestMkDirCmd:
+    def test_main(self) -> None:
+        result = mkdir_cmd("~/foo")
+        expected = ["mkdir", "-p", "~/foo"]
+        assert result == expected
+
+    def test_parent(self) -> None:
+        result = mkdir_cmd("~/foo", parent=True)
+        expected = ["mkdir", "-p", "$(dirname ~/foo)"]
+        assert result == expected
+
+
+class TestRmCmd:
+    def test_main(self) -> None:
+        result = rm_cmd("~/foo")
+        expected = ["rm", "-rf", "~/foo"]
+        assert result == expected
+
+
 class TestRun:
     def test_main(self, *, capsys: CaptureFixture) -> None:
+        result = run("echo", "hi")
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == ""
+        assert cap.err == ""
+
+    def test_shell(self, *, capsys: CaptureFixture) -> None:
         result = run("echo stdout; sleep 0.5; echo stderr 1>&2", shell=True)  # noqa: S604
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == ""
+        assert cap.err == ""
+
+    def test_cwd(self, *, capsys: CaptureFixture, tmp_path: Path) -> None:
+        result = run("pwd", cwd=tmp_path, print=True)
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == f"{tmp_path}\n"
+        assert cap.err == ""
+
+    def test_env(self, *, capsys: CaptureFixture) -> None:
+        result = run("env | grep KEY", env={"KEY": "value"}, shell=True, print=True)  # noqa: S604
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == "KEY=value\n"
         assert cap.err == ""
 
     def test_print(self, *, capsys: CaptureFixture) -> None:
@@ -93,3 +181,10 @@ class TestRun:
         cap = capsys.readouterr()
         assert cap.out == "stdout\n"
         assert cap.err == "stderr\n"
+
+
+class TestTouchCmd:
+    def test_main(self) -> None:
+        result = touch_cmd("~/foo")
+        expected = ["touch", "~/foo"]
+        assert result == expected
