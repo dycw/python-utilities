@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 from shlex import quote
+from typing import TYPE_CHECKING
 
 from pytest import mark
 
@@ -14,15 +14,26 @@ from utilities.docker import (
     yield_docker_temp_dir,
 )
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 
 class TestDockerCp:
     @SKIPIF_CI
     @mark.skip
     def test_main(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
-        result = docker_cp(path, ("postgres", Path("/tmp") / path))
-        assert result is None
+        src = tmp_path / "file.txt"
+        src.touch()
+        with yield_docker_temp_dir("postgres") as temp_cont:
+            dest = temp_cont / src.name
+            docker_cp(src, ("postgres", dest))
+            docker_exec(  # noqa: S604
+                "postgres",
+                "bash",
+                "-c",
+                quote(f"if ! [ -f {dest} ]; then exit 1; fi"),
+                shell=True,
+            )
 
 
 class TestDockerCpCmd:
