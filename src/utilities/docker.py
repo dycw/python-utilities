@@ -66,7 +66,7 @@ def docker_cp_cmd(
             Path() | str() as dest_use
         ):
             src_use = f"{src_cont}:{src_path}"
-        case _:
+        case _:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{src}", f"{dest=}"])
     parts: list[str] = ["docker", "cp", str(src_use), str(dest_use)]
     return maybe_sudo_cmd(*parts, sudo=sudo)
