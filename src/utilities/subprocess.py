@@ -26,7 +26,7 @@ def expand_path(
 ) -> Path:
     if subs is not None:
         path = Template(str(path)).substitute(**subs)
-    if sudo:
+    if sudo:  # pragma: no cover
         return Path(run(*sudo_cmd(*echo_cmd(str(path))), return_=True))
     return Path(path).expanduser()
 
@@ -37,7 +37,7 @@ def maybe_sudo_cmd(cmd: str, /, *args: str, sudo: bool = False) -> list[str]:
 
 
 def mkdir(path: PathLike, /, *, sudo: bool = False, parent: bool = False) -> None:
-    if sudo:
+    if sudo:  # pragma: no cover
         run(*sudo_cmd(*mkdir_cmd(path, parent=parent)))
     else:
         path = expand_path(path)

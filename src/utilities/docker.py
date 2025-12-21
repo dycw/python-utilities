@@ -37,7 +37,7 @@ def docker_cp(
         case (str(), Path() | str()), Path() | str():
             mkdir(dest, parent=True, sudo=sudo)
             run(*docker_cp_cmd(src, dest, sudo=sudo))
-        case _:
+        case _:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{src}", f"{dest=}"])
 
 
