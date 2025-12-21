@@ -95,7 +95,7 @@ def test_engine(*, request: SubRequest, tmp_path: Path) -> Engine:
             engine = create_engine(
                 "postgresql+psycopg",
                 username="postgres",
-                password="postgres",  # noqa: S106
+                password="password",  # noqa: S106
                 host="localhost",
                 port=5432,
                 database="testing",
