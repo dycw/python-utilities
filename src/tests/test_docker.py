@@ -2,10 +2,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from utilities.docker import docker_exec_cmd
+from utilities.docker import docker_exec, docker_exec_cmd
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+class TestDockerExec:
+    def test_main(self) -> None:
+        result = docker_exec("postgres", "true")
+        assert result is None
 
 
 class TestDockerExecCmd:

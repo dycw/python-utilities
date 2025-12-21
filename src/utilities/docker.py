@@ -109,7 +109,7 @@ def docker_exec(
     return_stderr: bool = False,
     **env_kwargs: str,
 ) -> str | None:
-    cmd_use = docker_exec_cmd(
+    cmd_use = docker_exec_cmd(  # skipif-ci
         container, cmd, *args, env=env, user=user, workdir=workdir, **env_kwargs
     )
     return run(
