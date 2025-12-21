@@ -6,7 +6,15 @@ from typing import TYPE_CHECKING
 
 from pytest import raises
 
-from utilities.subprocess import echo_cmd, expand_path, maybe_sudo_cmd, mkdir_cmd, run
+from utilities.subprocess import (
+    echo_cmd,
+    expand_path,
+    maybe_sudo_cmd,
+    mkdir,
+    mkdir_cmd,
+    rm_cmd,
+    run,
+)
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
@@ -43,6 +51,13 @@ class TestMaybeSudoCmd:
         assert result == expected
 
 
+class TestMkDir:
+    def test_main(self, *, tmp_path: Path) -> None:
+        path = f"{tmp_path}/foo"
+        mkdir(path)
+        assert Path(path).is_dir()
+
+
 class TestMkDirCmd:
     def test_main(self) -> None:
         result = mkdir_cmd("~/foo")
@@ -52,6 +67,13 @@ class TestMkDirCmd:
     def test_parent(self) -> None:
         result = mkdir_cmd("~/foo", parent=True)
         expected = ["mkdir", "-p", "$(dirname ~/foo)"]
+        assert result == expected
+
+
+class TestRmCmd:
+    def test_main(self) -> None:
+        result = rm_cmd("~/foo")
+        expected = ["rm", "-rf", "~/foo"]
         assert result == expected
 
 

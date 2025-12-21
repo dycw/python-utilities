@@ -1,13 +1,29 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
-from tests.conftest import SKIPIF_CI
-from utilities.docker import docker_cp_cmd, docker_exec, docker_exec_cmd
-from utilities.subprocess import echo_cmd, maybe_sudo_cmd, mkdir_cmd
+from pytest import mark
 
-if TYPE_CHECKING:
-    from pathlib import Path
+from tests.conftest import SKIPIF_CI
+from utilities.docker import (
+    docker_cp,
+    docker_cp_cmd,
+    docker_exec,
+    docker_exec_cmd,
+    yield_docker_temp_dir,
+)
+from utilities.tempfile import TemporaryFile
+
+
+class TestDockerCp:
+    @SKIPIF_CI
+    @mark.skip
+    def test_main(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        result = docker_cp(path, ("postgres", Path("/tmp") / path))
+        assert result is None
 
 
 class TestDockerCpCmd:
@@ -54,3 +70,13 @@ class TestDockerExecCmd:
         result = docker_exec_cmd("container", "cmd", workdir=tmp_path)
         expected = ["docker", "exec", "--workdir", str(tmp_path), "container", "cmd"]
         assert result == expected
+
+
+class TestYieldDockerTempDir:
+    @SKIPIF_CI
+    def test_main(self) -> None:
+        with yield_docker_temp_dir("postgres") as temp_dir:
+            docker_exec("postgres", f"[[ -d {temp_dir} ]] || exit 1", shell=True)
+            temp_dir = temp_dir / "asdf"
+            docker_exec("postgres", f"[[ -d {temp_dir} ]] || exit 1", shell=True)
+        # docker_exec("postgres", f"! [[ -d {temp_dir} ]] || exit 1", shell=True)

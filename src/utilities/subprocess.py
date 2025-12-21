@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import subprocess
 import sys
 from contextlib import contextmanager
 from io import StringIO
@@ -49,6 +48,10 @@ def mkdir(path: PathLike, /, *, sudo: bool = False, parent: bool = False) -> Non
 def mkdir_cmd(path: PathLike, /, *, parent: bool = False) -> list[str]:
     path_use = f"$(dirname {path})" if parent else path
     return ["mkdir", "-p", str(path_use)]
+
+
+def rm_cmd(path: PathLike, /) -> list[str]:
+    return ["rm", "-rf", str(path)]
 
 
 @overload
@@ -236,4 +239,12 @@ def sudo_cmd(cmd: str, /, *args: str) -> list[str]:
     return ["sudo", cmd, *args]
 
 
-__all__ = ["echo_cmd", "maybe_sudo_cmd", "mkdir", "mkdir_cmd", "run", "sudo_cmd"]
+__all__ = [
+    "echo_cmd",
+    "maybe_sudo_cmd",
+    "mkdir",
+    "mkdir_cmd",
+    "rm_cmd",
+    "run",
+    "sudo_cmd",
+]

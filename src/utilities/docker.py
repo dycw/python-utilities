@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, overload
 
 from utilities.errors import ImpossibleCaseError
-from utilities.subprocess import maybe_sudo_cmd, mkdir_cmd, run
+from utilities.subprocess import maybe_sudo_cmd, mkdir, mkdir_cmd, rm_cmd, run
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from utilities.types import PathLike, StrStrMapping
 
 
@@ -33,7 +36,7 @@ def docker_cp(
             run(*docker_cp_cmd(src, dest, sudo=sudo))
         case (str(), Path() | str()), Path() | str():
             mkdir(dest, parent=True, sudo=sudo)
-            run(docker_cp_cmd(src, dest, sudo=sudo))
+            run(*docker_cp_cmd(src, dest, sudo=sudo))
         case _:
             raise ImpossibleCaseError(case=[f"{src}", f"{dest=}"])
 
@@ -78,6 +81,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    shell: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -95,6 +99,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    shell: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -112,6 +117,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    shell: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -129,6 +135,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    shell: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -146,6 +153,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    shell: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -162,6 +170,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    shell: bool = False,
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -175,6 +184,7 @@ def docker_exec(
     )
     return run(  # skipif-ci
         *cmd_use,
+        shell=shell,
         print=print,
         print_stdout=print_stdout,
         print_stderr=print_stderr,
@@ -206,4 +216,15 @@ def docker_exec_cmd(
     return [*parts, container, cmd, *args]
 
 
-__all__ = ["docker_cp_cmd", "docker_exec", "docker_exec_cmd"]
+@contextmanager
+def yield_docker_temp_dir(container: str, /) -> Iterator[Path]:
+    path = Path(  # skipif-ci
+        docker_exec(container, "mktemp", "-d", return_=True).rstrip("\n")
+    )
+    try:  # skipif-ci
+        yield path
+    finally:  # skipif-ci
+        docker_exec(container, *rm_cmd(path))
+
+
+__all__ = ["docker_cp_cmd", "docker_exec", "docker_exec_cmd", "yield_docker_temp_dir"]
