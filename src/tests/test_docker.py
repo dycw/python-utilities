@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from tests.conftest import SKIPIF_CI
 from utilities.docker import docker_exec, docker_exec_cmd
 
 if TYPE_CHECKING:
@@ -9,6 +10,7 @@ if TYPE_CHECKING:
 
 
 class TestDockerExec:
+    @SKIPIF_CI
     def test_main(self) -> None:
         result = docker_exec("postgres", "true")
         assert result is None
