@@ -97,7 +97,7 @@ class TestRun:
         result = run("pwd", cwd=tmp_path, print=True)
         assert result is None
         cap = capsys.readouterr()
-        assert cap.out == ""
+        assert cap.out == f"{tmp_path}\n"
         assert cap.err == ""
 
     def test_print(self, *, capsys: CaptureFixture) -> None:
