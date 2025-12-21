@@ -18,7 +18,11 @@ def docker_exec(
     user: str | None = None,
     workdir: PathLike | None = None,
     print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
     return_: Literal[True],
+    return_stdout: bool = False,
+    return_stderr: bool = False,
     **env_kwargs: str,
 ) -> str: ...
 @overload
@@ -31,7 +35,45 @@ def docker_exec(
     user: str | None = None,
     workdir: PathLike | None = None,
     print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: Literal[True],
+    return_stderr: bool = False,
+    **env_kwargs: str,
+) -> str: ...
+@overload
+def docker_exec(
+    container: str,
+    cmd: str,
+    /,
+    *args: str,
+    env: StrStrMapping | None = None,
+    user: str | None = None,
+    workdir: PathLike | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: Literal[True],
+    **env_kwargs: str,
+) -> str: ...
+@overload
+def docker_exec(
+    container: str,
+    cmd: str,
+    /,
+    *args: str,
+    env: StrStrMapping | None = None,
+    user: str | None = None,
+    workdir: PathLike | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
     return_: Literal[False] = False,
+    return_stdout: Literal[False] = False,
+    return_stderr: Literal[False] = False,
     **env_kwargs: str,
 ) -> None: ...
 @overload
@@ -44,7 +86,11 @@ def docker_exec(
     user: str | None = None,
     workdir: PathLike | None = None,
     print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
     return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
     **env_kwargs: str,
 ) -> str | None: ...
 def docker_exec(
@@ -56,13 +102,25 @@ def docker_exec(
     user: str | None = None,
     workdir: PathLike | None = None,
     print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
     return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
     **env_kwargs: str,
 ) -> str | None:
     cmd_use = docker_exec_cmd(
         container, cmd, *args, env=env, user=user, workdir=workdir, **env_kwargs
     )
-    return run(*cmd_use, print=print, return_=return_)
+    return run(
+        *cmd_use,
+        print=print,
+        print_stdout=print_stdout,
+        print_stderr=print_stderr,
+        return_=return_,
+        return_stdout=return_stdout,
+        return_stderr=return_stderr,
+    )
 
 
 def docker_exec_cmd(
