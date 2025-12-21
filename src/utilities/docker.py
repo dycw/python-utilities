@@ -3,22 +3,29 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from utilities.types import PathLike, StrStrMapping
 
 
-def docker_exec(
+def docker_exec_cmd(
     container: str,
+    cmd: str,
     /,
-    *cmd: str,
-    env: Mapping[str, str] | None = None,
-    **env_kwargs: str | None,
+    *cmds: str,
+    env: StrStrMapping | None = None,
+    user: str | None = None,
+    workdir: PathLike | None = None,
+    **env_kwargs: str,
 ) -> list[str]:
-    """Run a command through `docker exec`."""
-    full = ["docker", "exec"]
-    mapping: dict[str, str | None] = ({} if env is None else dict(env)) | env_kwargs
+    """Build a command for `docker exec`."""
+    parts: list[str] = ["docker", "exec"]
+    mapping: dict[str, str] = ({} if env is None else dict(env)) | env_kwargs
     for key, value in mapping.items():
-        full.append(f"--env={key}={value}")
-    return [*full, "--interactive", container, *cmd]
+        parts.extend([f"--env={key}", value])
+    if user is not None:
+        parts.extend(["--user", user])
+    if workdir is not None:
+        parts.extend(["--workdir", str(workdir)])
+    return [*parts, container, cmd, *cmds]
 
 
-__all__ = ["docker_exec"]
+__all__ = ["docker_exec_cmd"]

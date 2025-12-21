@@ -42,7 +42,13 @@ from whenever import (
 
 from utilities.iterables import unique_everseen
 from utilities.sentinel import Sentinel
-from utilities.types import Dataclass, StrMapping, TupleOrStrMapping, TypeLike
+from utilities.types import (
+    Dataclass,
+    StrMapping,
+    StrStrMapping,
+    TupleOrStrMapping,
+    TypeLike,
+)
 
 
 def get_args(obj: Any, /, *, optional_drop_none: bool = False) -> tuple[Any, ...]:
@@ -58,7 +64,7 @@ def get_args(obj: Any, /, *, optional_drop_none: bool = False) -> tuple[Any, ...
 ##
 
 
-def get_forward_ref_args(obj: Any, /) -> Mapping[str, str]:
+def get_forward_ref_args(obj: Any, /) -> StrStrMapping:
     """Get the forward args."""
     return {
         k: v.__forward_arg__
