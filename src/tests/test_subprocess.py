@@ -14,6 +14,7 @@ from utilities.subprocess import (
     mkdir_cmd,
     rm_cmd,
     run,
+    touch_cmd,
 )
 
 if TYPE_CHECKING:
@@ -159,3 +160,10 @@ class TestRun:
         cap = capsys.readouterr()
         assert cap.out == "stdout\n"
         assert cap.err == "stderr\n"
+
+
+class TestTouchCmd:
+    def test_main(self) -> None:
+        result = touch_cmd("~/foo")
+        expected = ["touch", "~/foo"]
+        assert result == expected

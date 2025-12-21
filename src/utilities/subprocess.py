@@ -239,6 +239,10 @@ def sudo_cmd(cmd: str, /, *args: str) -> list[str]:
     return ["sudo", cmd, *args]
 
 
+def touch_cmd(path: PathLike, /) -> list[str]:
+    return ["touch", str(path)]
+
+
 __all__ = [
     "echo_cmd",
     "maybe_sudo_cmd",
@@ -247,4 +251,5 @@ __all__ = [
     "rm_cmd",
     "run",
     "sudo_cmd",
+    "touch_cmd",
 ]

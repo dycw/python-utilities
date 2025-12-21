@@ -3,8 +3,6 @@ from __future__ import annotations
 from shlex import quote
 from typing import TYPE_CHECKING
 
-from pytest import mark
-
 from tests.conftest import SKIPIF_CI
 from utilities.docker import (
     docker_cp,
@@ -13,6 +11,7 @@ from utilities.docker import (
     docker_exec_cmd,
     yield_docker_temp_dir,
 )
+from utilities.subprocess import touch_cmd
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -20,8 +19,7 @@ if TYPE_CHECKING:
 
 class TestDockerCp:
     @SKIPIF_CI
-    @mark.skip
-    def test_main(self, *, tmp_path: Path) -> None:
+    def test_into_container(self, *, tmp_path: Path) -> None:
         src = tmp_path / "file.txt"
         src.touch()
         with yield_docker_temp_dir("postgres") as temp_cont:
@@ -34,6 +32,15 @@ class TestDockerCp:
                 quote(f"if ! [ -f {dest} ]; then exit 1; fi"),
                 shell=True,
             )
+
+    @SKIPIF_CI
+    def test_from_container(self, *, tmp_path: Path) -> None:
+        with yield_docker_temp_dir("postgres") as temp_cont:
+            src = temp_cont / "file.txt"
+            docker_exec("postgres", *touch_cmd(src))
+            dest = tmp_path / src.name
+            docker_cp(("postgres", src), dest)
+        assert dest.is_file()
 
 
 class TestDockerCpCmd:
