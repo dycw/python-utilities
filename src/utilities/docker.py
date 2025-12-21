@@ -10,7 +10,7 @@ def docker_exec_cmd(
     container: str,
     cmd: str,
     /,
-    *cmds: str,
+    *args: str,
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
@@ -20,12 +20,12 @@ def docker_exec_cmd(
     parts: list[str] = ["docker", "exec"]
     mapping: dict[str, str] = ({} if env is None else dict(env)) | env_kwargs
     for key, value in mapping.items():
-        parts.extend([f"--env={key}", value])
+        parts.extend(["--env", f"{key}={value}"])
     if user is not None:
         parts.extend(["--user", user])
     if workdir is not None:
         parts.extend(["--workdir", str(workdir)])
-    return [*parts, container, cmd, *cmds]
+    return [*parts, container, cmd, *args]
 
 
 __all__ = ["docker_exec_cmd"]
