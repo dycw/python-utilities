@@ -93,7 +93,12 @@ def test_engine(*, request: SubRequest, tmp_path: Path) -> Engine:
             return create_engine("sqlite", database=str(db_path))
         case "postgresql":
             engine = create_engine(
-                "postgresql+psycopg", host="localhost", port=5432, database="testing"
+                "postgresql+psycopg",
+                username="postgres",
+                password="postgres",  # noqa: S106
+                host="localhost",
+                port=5432,
+                database="testing",
             )
             try:
                 with engine.begin() as conn:
