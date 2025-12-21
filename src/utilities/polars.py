@@ -2571,7 +2571,8 @@ def round_to_float(
             return z.round(decimals=utilities.math.number_of_decimals(y) + 1)
         case Series(), Expr() | Series():
             df = (
-                x.to_frame()
+                x
+                .to_frame()
                 .with_columns(y)
                 .with_columns(number_of_decimals(y).alias("_decimals"))
                 .with_row_index(name="_index")

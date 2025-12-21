@@ -9,7 +9,7 @@ from sqlalchemy import Table
 from sqlalchemy.orm import DeclarativeBase
 
 from utilities.asyncio import stream_command
-from utilities.docker import docker_exec
+from utilities.docker import docker_exec_cmd
 from utilities.iterables import always_iterable
 from utilities.logging import to_logger
 from utilities.os import temp_environ
@@ -132,7 +132,7 @@ def _build_pg_dump(
     path = _path_pg_dump(path, format_=format_)
     parts: list[str] = ["pg_dump"]
     if docker_container is not None:
-        parts = docker_exec(docker_container, *parts, PGPASSWORD=extracted.password)
+        parts = docker_exec_cmd(docker_container, *parts, PGPASSWORD=extracted.password)
     parts.extend([
         # general options
         f"--file={str(path)!r}",
@@ -316,7 +316,7 @@ def _build_pg_restore(
     extracted = extract_url(url)
     parts: list[str] = ["pg_restore"]
     if docker_container is not None:
-        parts = docker_exec(docker_container, *parts, PGPASSWORD=extracted.password)
+        parts = docker_exec_cmd(docker_container, *parts, PGPASSWORD=extracted.password)
     parts.extend([
         # general options
         "--verbose",
@@ -355,7 +355,7 @@ def _build_psql(
     extracted = extract_url(url)
     parts: list[str] = ["psql"]
     if docker_container is not None:
-        parts = docker_exec(docker_container, *parts, PGPASSWORD=extracted.password)
+        parts = docker_exec_cmd(docker_container, *parts, PGPASSWORD=extracted.password)
     parts.extend([
         # general options
         f"--dbname={extracted.database}",
