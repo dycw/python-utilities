@@ -94,7 +94,8 @@ def plot_dataframes(
     # lines
     selection = selection_point(bind="legend", fields=[var_name], nearest=False)
     lines = [
-        chart.mark_line(interpolate=interpolate)
+        chart
+        .mark_line(interpolate=interpolate)
         .encode(
             x=x_use,
             y=Y(value_name).scale(zero=False),
@@ -124,7 +125,8 @@ def plot_dataframes(
     else:
         tooltip_format_use = Undefined
     rules = [
-        chart.transform_pivot(var_name, value=value_name, groupby=[x_use])
+        chart
+        .transform_pivot(var_name, value=value_name, groupby=[x_use])
         .mark_rule(color="gray")
         .encode(
             x=x_use,
@@ -227,7 +229,8 @@ def plot_intraday_dataframe(
     )
 
     data4 = (
-        data3.group_by("_date_index")
+        data3
+        .group_by("_date_index")
         .agg(
             col(f"_{datetime}_index").min().alias(f"{datetime}_index_min"),
             (col(f"_{datetime}_index").max() + 1).alias(f"{datetime}_index_max"),
