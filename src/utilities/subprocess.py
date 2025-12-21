@@ -17,6 +17,9 @@ if TYPE_CHECKING:
     from utilities.types import PathLike, StrMapping, StrStrMapping
 
 
+MKTEMP_DIR_CMD = ["mktemp", "-d"]
+
+
 def echo_cmd(text: str, /) -> list[str]:
     return ["echo", text]
 
@@ -244,6 +247,7 @@ def touch_cmd(path: PathLike, /) -> list[str]:
 
 
 __all__ = [
+    "MKTEMP_DIR_CMD",
     "echo_cmd",
     "maybe_sudo_cmd",
     "mkdir",

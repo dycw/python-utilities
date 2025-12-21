@@ -5,7 +5,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal, overload
 
 from utilities.errors import ImpossibleCaseError
-from utilities.subprocess import maybe_sudo_cmd, mkdir, mkdir_cmd, rm_cmd, run
+from utilities.subprocess import (
+    MKTEMP_DIR_CMD,
+    maybe_sudo_cmd,
+    mkdir,
+    mkdir_cmd,
+    rm_cmd,
+    run,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -228,14 +235,16 @@ def docker_exec_cmd(
 
 
 @contextmanager
-def yield_docker_temp_dir(container: str, /) -> Iterator[Path]:
+def yield_docker_temp_dir(
+    container: str, /, *, user: str | None = None
+) -> Iterator[Path]:
     path = Path(  # skipif-ci
-        docker_exec(container, "mktemp", "-d", return_=True).rstrip("\n")
+        docker_exec(container, *MKTEMP_DIR_CMD, user=user, return_=True).rstrip("\n")
     )
     try:  # skipif-ci
         yield path
     finally:  # skipif-ci
-        docker_exec(container, *rm_cmd(path))
+        docker_exec(container, *rm_cmd(path), user=user)
 
 
 __all__ = ["docker_cp_cmd", "docker_exec", "docker_exec_cmd", "yield_docker_temp_dir"]
