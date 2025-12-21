@@ -1,14 +1,58 @@
 from __future__ import annotations
 
+from pathlib import Path
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
 from pytest import raises
 
-from utilities.subprocess import run
+from utilities.subprocess import echo_cmd, expand_path, maybe_sudo_cmd, mkdir_cmd, run
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
+
+
+class TestEchoCmd:
+    def test_main(self) -> None:
+        result = echo_cmd("'hello world'")
+        expected = ["echo", "'hello world'"]
+        assert result == expected
+
+
+class TestExpandPath:
+    def test_main(self) -> None:
+        result = expand_path("~")
+        expected = Path.home()
+        assert result == expected
+
+    def test_subs(self) -> None:
+        result = expand_path("~/${dir}", subs={"dir": "foo"})
+        expected = Path("~/foo").expanduser()
+        assert result == expected
+
+
+class TestMaybeSudoCmd:
+    def test_main(self) -> None:
+        result = maybe_sudo_cmd("echo", "hi")
+        expected = ["echo", "hi"]
+        assert result == expected
+
+    def test_sudo(self) -> None:
+        result = maybe_sudo_cmd("echo", "hi", sudo=True)
+        expected = ["sudo", "echo", "hi"]
+        assert result == expected
+
+
+class TestMkDirCmd:
+    def test_main(self) -> None:
+        result = mkdir_cmd("~/foo")
+        expected = ["mkdir", "-p", "~/foo"]
+        assert result == expected
+
+    def test_parent(self) -> None:
+        result = mkdir_cmd("~/foo", parent=True)
+        expected = ["mkdir", "-p", "$(dirname ~/foo)"]
+        assert result == expected
 
 
 class TestRun:

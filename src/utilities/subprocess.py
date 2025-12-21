@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import subprocess
 import sys
 from contextlib import contextmanager
 from io import StringIO
+from pathlib import Path
+from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload
@@ -12,7 +15,40 @@ from utilities.errors import ImpossibleCaseError
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import StrStrMapping
+    from utilities.types import PathLike, StrMapping, StrStrMapping
+
+
+def echo_cmd(text: str, /) -> list[str]:
+    return ["echo", text]
+
+
+def expand_path(
+    path: PathLike, /, *, subs: StrMapping | None = None, sudo: bool = False
+) -> Path:
+    if subs is not None:
+        path = Template(str(path)).substitute(**subs)
+    if sudo:
+        return Path(run(*sudo_cmd(*echo_cmd(str(path))), return_=True))
+    return Path(path).expanduser()
+
+
+def maybe_sudo_cmd(cmd: str, /, *args: str, sudo: bool = False) -> list[str]:
+    parts: list[str] = [cmd, *args]
+    return sudo_cmd(*parts) if sudo else parts
+
+
+def mkdir(path: PathLike, /, *, sudo: bool = False, parent: bool = False) -> None:
+    if sudo:
+        run(*sudo_cmd(*mkdir_cmd(path, parent=parent)))
+    else:
+        path = expand_path(path)
+        path_use = path.parent if parent else path
+        path_use.mkdir(parents=True, exist_ok=True)
+
+
+def mkdir_cmd(path: PathLike, /, *, parent: bool = False) -> list[str]:
+    path_use = f"$(dirname {path})" if parent else path
+    return ["mkdir", "-p", str(path_use)]
 
 
 @overload
@@ -196,4 +232,8 @@ def _run_target(input_: IO[str], /, *outputs: IO[str]) -> None:
                 _ = output.write(line)
 
 
-__all__ = ["run"]
+def sudo_cmd(cmd: str, /, *args: str) -> list[str]:
+    return ["sudo", cmd, *args]
+
+
+__all__ = ["echo_cmd", "maybe_sudo_cmd", "mkdir", "mkdir_cmd", "run", "sudo_cmd"]

@@ -3,10 +3,23 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tests.conftest import SKIPIF_CI
-from utilities.docker import docker_exec, docker_exec_cmd
+from utilities.docker import docker_cp_cmd, docker_exec, docker_exec_cmd
+from utilities.subprocess import echo_cmd, maybe_sudo_cmd, mkdir_cmd
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+class TestDockerCpCmd:
+    def test_src(self) -> None:
+        result = docker_cp_cmd(("cont", "src"), "dest")
+        expected = ["docker", "cp", "cont:src", "dest"]
+        assert result == expected
+
+    def test_dest(self) -> None:
+        result = docker_cp_cmd("src", ("cont", "dest"))
+        expected = ["docker", "cp", "src", "cont:dest"]
+        assert result == expected
 
 
 class TestDockerExec:
