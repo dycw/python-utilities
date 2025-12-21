@@ -104,7 +104,7 @@ class TestRun:
         result = run("env | grep KEY", env={"KEY": "value"}, shell=True, print=True)  # noqa: S604
         assert result is None
         cap = capsys.readouterr()
-        assert cap.out == "KEY=value"
+        assert cap.out == "KEY=value\n"
         assert cap.err == ""
 
     def test_print(self, *, capsys: CaptureFixture) -> None:
