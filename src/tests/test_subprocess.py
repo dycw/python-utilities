@@ -136,7 +136,7 @@ class TestRun:
         result = run(  # noqa: S604
             "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, return_=True
         )
-        expected = "stdout\nstderr\n"
+        expected = "stdout\nstderr"
         assert result == expected
         cap = capsys.readouterr()
         assert cap.out == ""
@@ -146,7 +146,7 @@ class TestRun:
         result = run(  # noqa: S604
             "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, return_stdout=True
         )
-        expected = "stdout\n"
+        expected = "stdout"
         assert result == expected
         cap = capsys.readouterr()
         assert cap.out == ""
@@ -156,11 +156,24 @@ class TestRun:
         result = run(  # noqa: S604
             "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, return_stderr=True
         )
-        expected = "stderr\n"
+        expected = "stderr"
         assert result == expected
         cap = capsys.readouterr()
         assert cap.out == ""
         assert cap.err == ""
+
+    def test_print_and_return(self, *, capsys: CaptureFixture) -> None:
+        result = run(  # noqa: S604
+            "echo stdout; sleep 0.5; echo stderr 1>&2",
+            shell=True,
+            print=True,
+            return_=True,
+        )
+        expected = "stdout\nstderr"
+        assert result == expected
+        cap = capsys.readouterr()
+        assert cap.out == "stdout\n"
+        assert cap.err == "stderr\n"
 
     def test_error(self, *, capsys: CaptureFixture) -> None:
         with raises(CalledProcessError) as exc_info:

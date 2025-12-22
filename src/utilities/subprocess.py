@@ -202,13 +202,13 @@ def run(
         match return_code, return_ or return_stdout, return_ or return_stderr:
             case 0, True, True:
                 _ = buffer.seek(0)
-                return buffer.read()
+                return buffer.read().rstrip("\n")
             case 0, True, False:
                 _ = stdout.seek(0)
-                return stdout.read()
+                return stdout.read().rstrip("\n")
             case 0, False, True:
                 _ = stderr.seek(0)
-                return stderr.read()
+                return stderr.read().rstrip("\n")
             case 0, False, False:
                 return None
             case _, _, _:
