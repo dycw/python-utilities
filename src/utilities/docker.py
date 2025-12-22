@@ -239,7 +239,7 @@ def yield_docker_temp_dir(
     container: str, /, *, user: str | None = None
 ) -> Iterator[Path]:
     path = Path(  # skipif-ci
-        docker_exec(container, *MKTEMP_DIR_CMD, user=user, return_=True).rstrip("\n")
+        docker_exec(container, *MKTEMP_DIR_CMD, user=user, return_=True)
     )
     try:  # skipif-ci
         yield path
