@@ -215,10 +215,7 @@ def run(
                 _ = stdout.seek(0)
                 _ = stderr.seek(0)
                 raise CalledProcessError(
-                    return_code,
-                    cmd,
-                    output=stdout.read().rstrip("\n"),
-                    stderr=stderr.read().rstrip("\n"),
+                    return_code, cmd, output=stdout.read(), stderr=stderr.read()
                 )
             case never:
                 assert_never(never)

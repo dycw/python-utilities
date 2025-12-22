@@ -179,8 +179,8 @@ class TestRun:
         with raises(CalledProcessError) as exc_info:
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True)  # noqa: S604
         assert exc_info.value.returncode == 1
-        assert exc_info.value.stdout == "stdout"
-        assert exc_info.value.stderr == "stderr"
+        assert exc_info.value.stdout == "stdout\n"
+        assert exc_info.value.stderr == "stderr\n"
         cap = capsys.readouterr()
         assert cap.out == ""
         assert cap.err == ""
