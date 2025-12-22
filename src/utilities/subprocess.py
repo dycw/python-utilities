@@ -249,6 +249,7 @@ def touch_cmd(path: PathLike, /) -> list[str]:
 __all__ = [
     "MKTEMP_DIR_CMD",
     "echo_cmd",
+    "expand_path",
     "maybe_sudo_cmd",
     "mkdir",
     "mkdir_cmd",
