@@ -17,16 +17,26 @@ from utilities.subprocess import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import PathLike, StrStrMapping
+    from utilities.types import LoggerLike, PathLike, StrStrMapping
 
 
 @overload
 def docker_cp(
-    src: tuple[str, PathLike], dest: PathLike, /, *, sudo: bool = False
+    src: tuple[str, PathLike],
+    dest: PathLike,
+    /,
+    *,
+    sudo: bool = False,
+    logger: LoggerLike | None = None,
 ) -> None: ...
 @overload
 def docker_cp(
-    src: PathLike, dest: tuple[str, PathLike], /, *, sudo: bool = False
+    src: PathLike,
+    dest: tuple[str, PathLike],
+    /,
+    *,
+    sudo: bool = False,
+    logger: LoggerLike | None = None,
 ) -> None: ...
 def docker_cp(
     src: PathLike | tuple[str, PathLike],
@@ -34,16 +44,17 @@ def docker_cp(
     /,
     *,
     sudo: bool = False,
+    logger: LoggerLike | None = None,
 ) -> None:
     match src, dest:
         case Path() | str(), (str() as cont, Path() | str() as dest_path):
             docker_exec(
                 cont, *maybe_sudo_cmd(*mkdir_cmd(dest_path, parent=True), sudo=sudo)
             )
-            run(*docker_cp_cmd(src, dest, sudo=sudo))
+            run(*docker_cp_cmd(src, dest, sudo=sudo), logger=logger)
         case (str(), Path() | str()), Path() | str():
             mkdir(dest, parent=True, sudo=sudo)
-            run(*docker_cp_cmd(src, dest, sudo=sudo))
+            run(*docker_cp_cmd(src, dest, sudo=sudo), logger=logger)
         case _:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{src}", f"{dest=}"])
 
@@ -95,6 +106,7 @@ def docker_exec(
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
+    logger: LoggerLike | None = None,
     **env_kwargs: str,
 ) -> str: ...
 @overload
@@ -113,6 +125,7 @@ def docker_exec(
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
+    logger: LoggerLike | None = None,
     **env_kwargs: str,
 ) -> str: ...
 @overload
@@ -131,6 +144,7 @@ def docker_exec(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
+    logger: LoggerLike | None = None,
     **env_kwargs: str,
 ) -> str: ...
 @overload
@@ -149,6 +163,7 @@ def docker_exec(
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
+    logger: LoggerLike | None = None,
     **env_kwargs: str,
 ) -> None: ...
 @overload
@@ -167,6 +182,7 @@ def docker_exec(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
+    logger: LoggerLike | None = None,
     **env_kwargs: str,
 ) -> str | None: ...
 def docker_exec(
@@ -184,6 +200,7 @@ def docker_exec(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
+    logger: LoggerLike | None = None,
     **env_kwargs: str,
 ) -> str | None:
     cmd_use = docker_exec_cmd(  # skipif-ci
@@ -199,6 +216,7 @@ def docker_exec(
             return_=return_,
             return_stdout=return_stdout,
             return_stderr=return_stderr,
+            logger=logger,
         )
     return run(  # skipif-ci
         *cmd_use,
@@ -209,6 +227,7 @@ def docker_exec(
         return_=return_,
         return_stdout=return_stdout,
         return_stderr=return_stderr,
+        logger=logger,
     )
 
 
@@ -236,15 +255,15 @@ def docker_exec_cmd(
 
 @contextmanager
 def yield_docker_temp_dir(
-    container: str, /, *, user: str | None = None
+    container: str, /, *, user: str | None = None, logger: LoggerLike | None = None
 ) -> Iterator[Path]:
     path = Path(  # skipif-ci
-        docker_exec(container, *MKTEMP_DIR_CMD, user=user, return_=True)
+        docker_exec(container, *MKTEMP_DIR_CMD, user=user, return_=True, logger=logger)
     )
     try:  # skipif-ci
         yield path
     finally:  # skipif-ci
-        docker_exec(container, *rm_cmd(path), user=user)
+        docker_exec(container, *rm_cmd(path), user=user, logger=logger)
 
 
 __all__ = ["docker_cp_cmd", "docker_exec", "docker_exec_cmd", "yield_docker_temp_dir"]

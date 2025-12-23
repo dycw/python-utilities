@@ -4,8 +4,9 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
-from pytest import raises
+from pytest import LogCaptureFixture, raises
 
+from utilities.iterables import one
 from utilities.subprocess import (
     echo_cmd,
     expand_path,
@@ -16,6 +17,7 @@ from utilities.subprocess import (
     run,
     touch_cmd,
 )
+from utilities.text import strip_and_dedent, unique_str
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
@@ -194,6 +196,31 @@ class TestRun:
         cap = capsys.readouterr()
         assert cap.out == "stdout\n"
         assert cap.err == "stderr\n"
+
+    def test_logger(self, *, caplog: LogCaptureFixture) -> None:
+        name = unique_str()
+        with raises(CalledProcessError):
+            _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, logger=name)  # noqa: S604
+        record = one(r for r in caplog.records if r.name == name)
+        expected = strip_and_dedent("""
+'run' failed with:
+ - cmd        = echo stdout; echo stderr 1>&2; exit 1
+ - cmds       = ()
+ - executable = None
+ - shell      = True
+ - cwd        = None
+ - env        = None
+ - user       = None
+ - group      = None
+
+-- stdout ---------------------------------------------------------------------
+stdout
+-------------------------------------------------------------------------------
+-- stderr ---------------------------------------------------------------------
+stderr
+-------------------------------------------------------------------------------
+""")
+        assert record.message == expected
 
 
 class TestTouchCmd:

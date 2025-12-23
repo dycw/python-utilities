@@ -10,11 +10,13 @@ from threading import Thread
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload
 
 from utilities.errors import ImpossibleCaseError
+from utilities.logging import to_logger
+from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import PathLike, StrMapping, StrStrMapping
+    from utilities.types import LoggerLike, PathLike, StrMapping, StrStrMapping
 
 
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
@@ -74,6 +76,7 @@ def run(
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
+    logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
 def run(
@@ -92,6 +95,7 @@ def run(
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
+    logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
 def run(
@@ -110,6 +114,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
+    logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
 def run(
@@ -128,6 +133,7 @@ def run(
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
+    logger: LoggerLike | None = None,
 ) -> None: ...
 @overload
 def run(
@@ -146,6 +152,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
+    logger: LoggerLike | None = None,
 ) -> str | None: ...
 def run(
     cmd: str,
@@ -163,12 +170,14 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
+    logger: LoggerLike | None = None,
 ) -> str | None:
+    all_cmds = [cmd, *cmds]
     buffer = StringIO()
     stdout = StringIO()
     stderr = StringIO()
     with Popen(
-        [cmd, *cmds],
+        all_cmds,
         bufsize=1,
         executable=executable,
         stdout=PIPE,
@@ -213,9 +222,29 @@ def run(
                 return None
             case _, _, _:
                 _ = stdout.seek(0)
+                stdout_text = stdout.read()
                 _ = stderr.seek(0)
+                stderr_text = stderr.read()
+                if logger is not None:
+                    msg = strip_and_dedent(f"""
+'run' failed with:
+ - cmd        = {cmd}
+ - cmds       = {cmds}
+ - executable = {executable}
+ - shell      = {shell}
+ - cwd        = {cwd}
+ - env        = {env}
+ - user       = {user}
+ - group      = {group}
+
+-- stdout ---------------------------------------------------------------------
+{stdout_text}-------------------------------------------------------------------------------
+-- stderr ---------------------------------------------------------------------
+{stderr_text}-------------------------------------------------------------------------------
+""")
+                    to_logger(logger).error(msg)
                 raise CalledProcessError(
-                    return_code, cmd, output=stdout.read(), stderr=stderr.read()
+                    return_code, all_cmds, output=stdout_text, stderr=stderr_text
                 )
             case never:
                 assert_never(never)
