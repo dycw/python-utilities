@@ -111,7 +111,7 @@
     logging = ["coloredlogs >=15.0.1, <15.1"]
     test = [
       "dycw-pytest-only >=2.1.1, <2.2",
-      "hypothesis >=6.148.7, <6.149",
+      "hypothesis >=6.148.8, <6.149",
       "pytest >=9.0.2, <9.1",
       "pytest-asyncio >=1.3.0, <1.4",
       "pytest-cov >=7.0.0, <7.1",
