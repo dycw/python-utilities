@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncEngine
 
 
-FLAKY = mark.flaky(reruns=5, reruns_delay=1)
 IS_CI = "CI" in environ
 SKIPIF_CI = mark.skipif(IS_CI, reason="Skipped for CI")
 IS_CI_AND_NOT_LINUX = IS_CI and IS_NOT_LINUX
