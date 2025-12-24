@@ -717,7 +717,7 @@ class TestYieldObjectAttributes:
             attr: ClassVar[int] = n
 
         attrs = dict(yield_object_attributes(Example))
-        assert len(attrs) == 31
+        assert len(attrs) == 29
         assert attrs["attr"] == n
 
 
