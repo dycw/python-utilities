@@ -3,9 +3,9 @@ from __future__ import annotations
 from re import search
 from typing import TYPE_CHECKING, ClassVar, Literal
 
-from tests.conftest import SKIPIF_CI
 from utilities.asyncio import sleep_td
 from utilities.fastapi import yield_ping_receiver
+from utilities.pytest import skipif_ci
 from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
@@ -16,7 +16,7 @@ class TestPingReceiver:
     delta: ClassVar[TimeDelta] = 0.1 * SECOND
     port: ClassVar[int] = 5465
 
-    @SKIPIF_CI
+    @skipif_ci
     async def test_main(self) -> None:
         assert await self.ping() is False
         await sleep_td(self.delta)

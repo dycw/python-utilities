@@ -40,6 +40,7 @@ if TYPE_CHECKING:
 
 
 IS_CI = "CI" in environ
+IS_CI_AND_NOT_LINUX = IS_CI and IS_NOT_LINUX
 
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
@@ -61,12 +62,18 @@ except ModuleNotFoundError:  # pragma: no cover
     def skipif_not_linux[F: Callable](func: F) -> F:
         return func
 
+    def skipif_ci_and_not_linux[F: Callable](func: F) -> F:
+        return func
+
 else:
     skipif_ci = mark.skipif(IS_CI, reason="Skipped for CI")
     skipif_mac = mark.skipif(IS_MAC, reason="Skipped for Mac")
     skipif_linux = mark.skipif(IS_LINUX, reason="Skipped for Linux")
     skipif_not_mac = mark.skipif(IS_NOT_MAC, reason="Skipped for non-Mac")
     skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
+    skipif_ci_and_not_linux = mark.skipif(
+        IS_CI_AND_NOT_LINUX, reason="Skipped for CI/non-Linux"
+    )
 
 
 def add_pytest_addoption(parser: Parser, options: list[str], /) -> None:
@@ -353,6 +360,7 @@ def _write(root: PathLike | None = None, /) -> None:
 
 __all__ = [
     "IS_CI",
+    "IS_CI_AND_NOT_LINUX",
     "NodeIdToPathError",
     "add_pytest_addoption",
     "add_pytest_collection_modifyitems",
@@ -361,6 +369,7 @@ __all__ = [
     "node_id_path",
     "run_frac",
     "skipif_ci",
+    "skipif_ci_and_not_linux",
     "skipif_linux",
     "skipif_mac",
     "skipif_not_linux",

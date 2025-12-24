@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING, ClassVar
 
 from pytest import fixture, mark, param, raises
 
-from tests.conftest import IS_CI
 from utilities.iterables import one
 from utilities.os import temp_environ
 from utilities.pytest import (
+    IS_CI,
     _NodeIdToPathNotGetTailError,
     _NodeIdToPathNotPythonFileError,
     node_id_path,

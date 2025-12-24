@@ -13,12 +13,12 @@ from hypothesis import given
 from hypothesis.strategies import booleans
 from pytest import mark, param, raises
 
-from tests.conftest import SKIPIF_CI
 from utilities.contextlib import (
     enhanced_async_context_manager,
     enhanced_context_manager,
     suppress_super_object_attribute_error,
 )
+from utilities.pytest import skipif_ci
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Iterator
@@ -168,7 +168,7 @@ class TestEnhancedContextManager:
             param(_test_enhanced_async_context_manager_entry),
         ],
     )
-    @SKIPIF_CI
+    @skipif_ci
     def test_multiprocessing_sigterm(
         self, *, tmp_path: Path, target: Callable[..., None]
     ) -> None:
