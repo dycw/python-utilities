@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial, wraps
 from inspect import iscoroutinefunction
@@ -29,26 +30,50 @@ from utilities.types import MaybeCallableBoolLike, MaybeCoro, Seed
 from utilities.whenever import SECOND, get_now_local
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Iterable
 
-    from utilities.types import Coro, Delta, PathLike
-
-try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
     from _pytest.python import Function
-    from pytest import mark, skip
-except ModuleNotFoundError:  # pragma: no cover
-    from typing import Any as Config
-    from typing import Any as Function
-    from typing import Any as Parser
 
-    mark = skip = skipif_mac = skipif_linux = skipif_not_mac = skipif_not_linux = None
+    from utilities.types import Coro, Delta, PathLike
+
+
+IS_CI = "CI" in environ
+IS_CI_AND_NOT_LINUX = IS_CI and IS_NOT_LINUX
+
+
+try:  # WARNING: this package cannot use unguarded `pytest` imports
+    from pytest import mark
+except ModuleNotFoundError:  # pragma: no cover
+
+    def skipif_ci[F: Callable](func: F) -> F:
+        return func
+
+    def skipif_mac[F: Callable](func: F) -> F:
+        return func
+
+    def skipif_linux[F: Callable](func: F) -> F:
+        return func
+
+    def skipif_not_mac[F: Callable](func: F) -> F:
+        return func
+
+    def skipif_not_linux[F: Callable](func: F) -> F:
+        return func
+
+    def skipif_ci_and_not_linux[F: Callable](func: F) -> F:
+        return func
+
 else:
+    skipif_ci = mark.skipif(IS_CI, reason="Skipped for CI")
     skipif_mac = mark.skipif(IS_MAC, reason="Skipped for Mac")
     skipif_linux = mark.skipif(IS_LINUX, reason="Skipped for Linux")
     skipif_not_mac = mark.skipif(IS_NOT_MAC, reason="Skipped for non-Mac")
     skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
+    skipif_ci_and_not_linux = mark.skipif(
+        IS_CI_AND_NOT_LINUX, reason="Skipped for CI/non-Linux"
+    )
 
 
 def add_pytest_addoption(parser: Parser, options: list[str], /) -> None:
@@ -81,6 +106,8 @@ def add_pytest_collection_modifyitems(
         def pytest_collection_modifyitems(config, items):
             add_pytest_collection_modifyitems(config, items, ["slow"])
     """
+    from pytest import mark
+
     options = list(options)
     missing = {opt for opt in options if not config.getoption(f"--{opt}")}
     for item in items:
@@ -217,12 +244,12 @@ def _skipif_frac(
     frac: float = 0.5,
     seed: Seed | None = None,
 ) -> None:
-    if skip is None:
-        return  # pragma: no cover
+    from pytest import skip
+
     if ((predicate is None) or to_bool(predicate)) and bernoulli(
         true=1 - frac, seed=seed
     ):
-        _ = skip(reason=f"{_get_name()} skipped (run {frac:.0%})")
+        skip(reason=f"{_get_name()} skipped (run {frac:.0%})")
 
 
 ##
@@ -291,8 +318,8 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
 
 
 def _skipif_recent(*, root: PathLike | None = None, delta: Delta = SECOND) -> None:
-    if skip is None:
-        return  # pragma: no cover
+    from pytest import skip
+
     path = _get_path(root)
     try:
         contents = path.read_text()
@@ -332,6 +359,8 @@ def _write(root: PathLike | None = None, /) -> None:
 
 
 __all__ = [
+    "IS_CI",
+    "IS_CI_AND_NOT_LINUX",
     "NodeIdToPathError",
     "add_pytest_addoption",
     "add_pytest_collection_modifyitems",
@@ -339,6 +368,8 @@ __all__ = [
     "make_ids",
     "node_id_path",
     "run_frac",
+    "skipif_ci",
+    "skipif_ci_and_not_linux",
     "skipif_linux",
     "skipif_mac",
     "skipif_not_linux",

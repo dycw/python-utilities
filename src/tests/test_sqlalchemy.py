@@ -29,10 +29,10 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from tests.conftest import SKIPIF_CI
 from utilities.hypothesis import int32s, pairs, quadruples, urls
 from utilities.iterables import one
 from utilities.modules import is_installed
+from utilities.pytest import skipif_ci
 from utilities.sqlalchemy import (
     CheckEngineError,
     Dialect,
@@ -220,7 +220,7 @@ class TestCreateEngine:
         assert isinstance(engine, cls)
 
 
-@SKIPIF_CI
+@skipif_ci
 class TestEnsureDatabaseCreatedAndDropped:
     async def test_main(self) -> None:
         url = URL.create(
@@ -249,7 +249,7 @@ class TestEnsureDatabaseCreatedAndDropped:
             _ = (await conn.execute(sel)).all()
 
 
-@SKIPIF_CI
+@skipif_ci
 class TestEnsureDatabaseUsersDisconnected:
     async def test_main(self) -> None:
         url = URL.create(

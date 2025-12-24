@@ -5,11 +5,11 @@ from json import dumps
 from subprocess import check_call
 from typing import TYPE_CHECKING, ClassVar
 
-from tests.conftest import SKIPIF_CI
 from utilities.iterables import one
 from utilities.os import temp_environ
 from utilities.pydantic_settings import PathLikeOrWithSection, load_settings
 from utilities.pydantic_settings_sops import SopsBaseSettings
+from utilities.pytest import skipif_ci
 from utilities.re import extract_group
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 class TestSOPSBaseSettings:
-    @SKIPIF_CI
+    @skipif_ci
     def test_main(self, *, tmp_path: Path) -> None:
         unencrypted_file = tmp_path.joinpath("unencrypted.json")
         _ = unencrypted_file.write_text(dumps({"x": 1, "y": 2}))

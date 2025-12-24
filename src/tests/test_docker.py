@@ -3,7 +3,6 @@ from __future__ import annotations
 from shlex import quote
 from typing import TYPE_CHECKING
 
-from tests.conftest import SKIPIF_CI
 from utilities.docker import (
     docker_cp,
     docker_cp_cmd,
@@ -11,6 +10,7 @@ from utilities.docker import (
     docker_exec_cmd,
     yield_docker_temp_dir,
 )
+from utilities.pytest import skipif_ci
 from utilities.subprocess import touch_cmd
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 class TestDockerCp:
-    @SKIPIF_CI
+    @skipif_ci
     def test_into_container(self, *, tmp_path: Path) -> None:
         src = tmp_path / "file.txt"
         src.touch()
@@ -33,7 +33,7 @@ class TestDockerCp:
                 shell=True,
             )
 
-    @SKIPIF_CI
+    @skipif_ci
     def test_from_container(self, *, tmp_path: Path) -> None:
         with yield_docker_temp_dir("postgres") as temp_cont:
             src = temp_cont / "file.txt"
@@ -56,7 +56,7 @@ class TestDockerCpCmd:
 
 
 class TestDockerExec:
-    @SKIPIF_CI
+    @skipif_ci
     def test_main(self) -> None:
         result = docker_exec("postgres", "true")
         assert result is None
@@ -90,7 +90,7 @@ class TestDockerExecCmd:
 
 
 class TestYieldDockerTempDir:
-    @SKIPIF_CI
+    @skipif_ci
     def test_main(self) -> None:
         with yield_docker_temp_dir("postgres") as temp_dir:
             docker_exec(  # noqa: S604

@@ -2,15 +2,14 @@ from __future__ import annotations
 
 from contextlib import AbstractContextManager, suppress
 from logging import LogRecord, setLogRecordFactory
-from os import environ
 from typing import TYPE_CHECKING
 
 from hypothesis import HealthCheck
-from pytest import fixture, mark, param, skip
+from pytest import fixture, param, skip
 from whenever import PlainDateTime
 
 from utilities.contextlib import enhanced_context_manager
-from utilities.platform import IS_LINUX, IS_MAC, IS_NOT_LINUX
+from utilities.pytest import IS_CI, IS_CI_AND_NOT_LINUX, skipif_ci
 from utilities.re import ExtractGroupError, extract_group
 from utilities.whenever import MINUTE, get_now_local_plain
 
@@ -22,19 +21,6 @@ if TYPE_CHECKING:
     from redis.asyncio import Redis
     from sqlalchemy import Engine, TextClause
     from sqlalchemy.ext.asyncio import AsyncEngine
-
-
-FLAKY = mark.flaky(reruns=5, reruns_delay=1)
-IS_CI = "CI" in environ
-SKIPIF_CI = mark.skipif(IS_CI, reason="Skipped for CI")
-IS_CI_AND_NOT_LINUX = IS_CI and IS_NOT_LINUX
-IS_CI_AND_MAC = IS_CI and IS_MAC
-IS_CI_AND_LINUX = IS_CI and IS_LINUX
-SKIPIF_CI_AND_NOT_LINUX = mark.skipif(
-    IS_CI_AND_NOT_LINUX, reason="Skipped for CI/non-Linux"
-)
-SKIPIF_CI_AND_MAC = mark.skipif(IS_CI_AND_MAC, reason="Skipped for CI/Mac")
-SKIPIF_CI_AND_LINUX = mark.skipif(IS_CI_AND_LINUX, reason="Skipped for CI/Linux")
 
 
 # hypothesis
@@ -80,7 +66,7 @@ async def test_redis() -> AsyncIterator[Redis]:
 # fixtures - sqlalchemy
 
 
-@fixture(params=[param("sqlite"), param("postgresql", marks=SKIPIF_CI)])
+@fixture(params=[param("sqlite"), param("postgresql", marks=skipif_ci)])
 def test_engine(*, request: SubRequest, tmp_path: Path) -> Engine:
     from sqlalchemy.exc import OperationalError
 
@@ -117,7 +103,7 @@ def test_engine(*, request: SubRequest, tmp_path: Path) -> Engine:
             raise NotImplementedError(msg)
 
 
-@fixture(params=[param("sqlite"), param("postgresql", marks=SKIPIF_CI)])
+@fixture(params=[param("sqlite"), param("postgresql", marks=skipif_ci)])
 async def test_async_engine(
     *,
     request: SubRequest,

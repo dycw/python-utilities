@@ -19,7 +19,6 @@ from libcst import (
 )
 from pytest import raises
 
-from tests.conftest import SKIPIF_CI
 from utilities.iterables import one
 from utilities.libcst import (
     GenerateImportFromError,
@@ -33,6 +32,7 @@ from utilities.libcst import (
     render_module,
     split_dotted_str,
 )
+from utilities.pytest import skipif_ci
 
 
 class TestGenerateFString:
@@ -153,7 +153,7 @@ class TestParseImport:
 
 
 class TestRenderModule:
-    @SKIPIF_CI
+    @skipif_ci
     def test_main(self) -> None:
         module = Module([SimpleStatementLine([generate_import("foo")])])
         result = render_module(module)

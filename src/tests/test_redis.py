@@ -20,7 +20,6 @@ from pytest import LogCaptureFixture, fixture, mark, param, raises
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 
-from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from tests.test_objects.objects import objects
 from utilities.asyncio import get_items_nowait, sleep_td
 from utilities.functions import get_class_name, identity
@@ -28,6 +27,7 @@ from utilities.hypothesis import int64s, pairs, text_ascii
 from utilities.iterables import one
 from utilities.operator import is_equal
 from utilities.orjson import deserialize, serialize
+from utilities.pytest import skipif_ci_and_not_linux
 from utilities.redis import (
     PublishError,
     _decoded_data,
@@ -756,7 +756,7 @@ class TestSubscribe:
 
 
 class TestYieldRedis:
-    @SKIPIF_CI_AND_NOT_LINUX
+    @skipif_ci_and_not_linux
     async def test_main(self) -> None:
         async with yield_redis() as client:
             assert isinstance(client, Redis)
