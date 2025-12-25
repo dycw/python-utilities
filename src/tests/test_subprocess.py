@@ -4,7 +4,7 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
-from pytest import LogCaptureFixture, raises
+from pytest import LogCaptureFixture, mark, param, raises
 
 from utilities.iterables import one
 from utilities.pytest import skipif_ci, skipif_mac
@@ -142,12 +142,20 @@ class TestRun:
         assert cap.out == "root\n/root\n"
         assert cap.err == ""
 
-    def test_shell(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo stdout; sleep 0.5; echo stderr 1>&2", shell=True)  # noqa: S604
+    @mark.parametrize("executable", [param("sh"), param("bash")])
+    def test_executable(self, *, executable: str, capsys: CaptureFixture) -> None:
+        result = run("echo $0", executable=executable, shell=True, print=True)  # noqa: S604
         assert result is None
         cap = capsys.readouterr()
-        assert cap.out == ""
+        assert cap.out == f"{executable}\n"
         assert cap.err == ""
+
+    def test_shell(self, *, capsys: CaptureFixture) -> None:
+        result = run("echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, print=True)  # noqa: S604
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == "stdout\n"
+        assert cap.err == "stderr\n"
 
     def test_cwd(self, *, capsys: CaptureFixture, tmp_path: Path) -> None:
         result = run("pwd", cwd=tmp_path, print=True)
@@ -161,6 +169,22 @@ class TestRun:
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == "KEY=value\n"
+        assert cap.err == ""
+
+    def test_input(self, *, capsys: CaptureFixture) -> None:
+        input_ = "foo\nbar\nbaz"
+        result = run("cat", input=input_, print=True)
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == input_
+        assert cap.err == ""
+
+    def test_input_and_return(self, *, capsys: CaptureFixture) -> None:
+        input_ = "foo\nbar\nbaz"
+        result = run("cat", input=input_, return_=True)
+        assert result == input_
+        cap = capsys.readouterr()
+        assert cap.out == ""
         assert cap.err == ""
 
     def test_print(self, *, capsys: CaptureFixture) -> None:
@@ -258,14 +282,15 @@ class TestRun:
         record = one(r for r in caplog.records if r.name == name)
         expected = strip_and_dedent("""
 'run' failed with:
- - cmd        = echo stdout; echo stderr 1>&2; exit 1
- - cmds       = ()
- - bash       = False
- - user       = None
- - executable = None
- - shell      = True
- - cwd        = None
- - env        = None
+ - cmd          = echo stdout; echo stderr 1>&2; exit 1
+ - cmds_or_args = ()
+ - bash         = False
+ - user         = None
+ - executable   = None
+ - shell        = True
+ - cwd          = None
+ - env          = None
+ - input        = None
 
 -- stdout ---------------------------------------------------------------------
 stdout
