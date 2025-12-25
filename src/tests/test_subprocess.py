@@ -4,7 +4,7 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
-from pytest import LogCaptureFixture, raises
+from pytest import LogCaptureFixture, mark, param, raises
 
 from utilities.iterables import one
 from utilities.pytest import skipif_ci, skipif_mac
@@ -140,6 +140,14 @@ class TestRun:
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == "root\n/root\n"
+        assert cap.err == ""
+
+    @mark.parametrize("executable", [param("sh"), param("bash")])
+    def test_executable(self, *, executable: str, capsys: CaptureFixture) -> None:
+        result = run("echo $0", executable=executable, shell=True, print=True)  # noqa: S604
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == f"{executable}\n"
         assert cap.err == ""
 
     def test_shell(self, *, capsys: CaptureFixture) -> None:

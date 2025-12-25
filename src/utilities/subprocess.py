@@ -75,6 +75,7 @@ def run(
     shell: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -94,6 +95,7 @@ def run(
     shell: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -113,6 +115,7 @@ def run(
     shell: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -132,6 +135,7 @@ def run(
     shell: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -151,6 +155,7 @@ def run(
     shell: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -169,6 +174,7 @@ def run(
     shell: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    input: str | None = None,  # noqa: A002
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -200,6 +206,7 @@ def run(
         args,
         bufsize=1,
         executable=executable,
+        stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
         shell=shell,
@@ -212,6 +219,8 @@ def run(
             raise ImpossibleCaseError(case=[f"{proc.stdout=}"])
         if proc.stderr is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stderr=}"])
+        if input is not None:
+            _ = proc.communicate(input=input)
         with (
             _yield_write(
                 proc.stdout,
