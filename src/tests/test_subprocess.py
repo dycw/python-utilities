@@ -173,11 +173,11 @@ class TestRun:
 
     @mark.only
     def test_input(self, *, capsys: CaptureFixture) -> None:
-        input_ = "foo\nbar\baz"
+        input_ = "foo\nbar\naz"
         result = run("cat", shell=True, input=input_, print=True)  # noqa: S604
         assert result is None
         cap = capsys.readouterr()
-        assert cap.out == ""
+        assert cap.out == input_
         assert cap.err == ""
 
     def test_print(self, *, capsys: CaptureFixture) -> None:
