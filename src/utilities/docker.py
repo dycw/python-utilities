@@ -204,7 +204,14 @@ def docker_exec(
     **env_kwargs: str,
 ) -> str | None:
     cmd_and_args = docker_exec_cmd(  # skipif-ci
-        container, cmd, *cmds_or_args, env=env, user=user, workdir=workdir, **env_kwargs
+        container,
+        cmd,
+        *cmds_or_args,
+        env=env,
+        interactive=input is not None,
+        user=user,
+        workdir=workdir,
+        **env_kwargs,
     )
     return run(  # skipif-ci
         *cmd_and_args,

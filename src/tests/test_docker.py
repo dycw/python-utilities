@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
-from hypothesis import HealthCheck, Phase, given, reproduce_failure, settings
-from pytest import RaisesGroup, approx, fixture, mark, param, raises, skip
+from pytest import mark, raises
 
-from utilities.contextvars import set_global_breakpoint
 from utilities.docker import (
     docker_cp,
     docker_cp_cmd,
@@ -98,9 +97,11 @@ class TestYieldDockerTempDir:
     @mark.only
     def test_main(self) -> None:
         with yield_docker_temp_dir("postgres") as temp_dir:
-            docker_exec(
-                "postgres", *BASH_LS, input=f"if ! [ -d {temp_dir} ]; then exit 1; fi"
-            )
-        docker_exec(
-            "postgres", *BASH_LS, input=f"if [ -d {temp_dir} ]; then exit 1; fi"
-        )
+            raise_if_present = f"if [ -d {temp_dir} ]; then exit 1; fi"
+            raise_if_missing = f"if ! [ -d {temp_dir} ]; then exit 1; fi"
+            docker_exec("postgres", *BASH_LS, input=raise_if_missing)
+            with raises(CalledProcessError):
+                docker_exec("postgres", *BASH_LS, input=raise_if_present)
+        docker_exec("postgres", *BASH_LS, input=raise_if_present)
+        with raises(CalledProcessError):
+            docker_exec("postgres", *BASH_LS, input=raise_if_missing)
