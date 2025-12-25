@@ -4,15 +4,14 @@ import sys
 from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
-from shutil import which
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload
 
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import ensure_str
 from utilities.logging import to_logger
+from utilities.shutil import which
 from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
@@ -181,9 +180,9 @@ def run(
     logger: LoggerLike | None = None,
 ) -> str | None:
     if bash:
-        args = [ensure_str(which("bash")), "-cl", "\n".join([cmd, *cmds_or_args])]
+        args: list[str] = [str(which("bash")), "-cl", "\n".join([cmd, *cmds_or_args])]
     else:
-        args = [cmd, *cmds_or_args]
+        args: list[str] = [cmd, *cmds_or_args]
     buffer = StringIO()
     stdout = StringIO()
     stderr = StringIO()
