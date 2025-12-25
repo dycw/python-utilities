@@ -149,6 +149,7 @@
         skipif-ci = '"CI" in os_environ'
         skipif-ci-and-mac = '("CI" in os_environ) and (sys_platform == "darwin")'
         skipif-ci-and-not-linux = '("CI" in os_environ) and (sys_platform != "linux")'
+        skipif-ci-or-mac = '("CI" in os_environ) or (sys_platform == "darwin")'
         skipif-linux = 'sys_platform == "linux"'
         skipif-mac = 'sys_platform == "darwin"'
         skipif-not-linux = 'sys_platform != "linux"'
