@@ -7,6 +7,7 @@ from pathlib import Path
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
+from time import sleep
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload
 
 from utilities.errors import ImpossibleCaseError
@@ -15,6 +16,8 @@ from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+
+    from whenever import TimeDelta
 
     from utilities.types import LoggerLike, PathLike, StrMapping, StrStrMapping
 
@@ -300,6 +303,7 @@ def ssh(
     return_stdout: bool = False,
     return_stderr: bool = False,
     logger: LoggerLike | None = None,
+    retry: tuple[int, TimeDelta] | None = None,
 ) -> str: ...
 @overload
 def ssh(
@@ -318,6 +322,7 @@ def ssh(
     return_stdout: Literal[True],
     return_stderr: bool = False,
     logger: LoggerLike | None = None,
+    retry: tuple[int, TimeDelta] | None = None,
 ) -> str: ...
 @overload
 def ssh(
@@ -336,6 +341,7 @@ def ssh(
     return_stdout: bool = False,
     return_stderr: Literal[True],
     logger: LoggerLike | None = None,
+    retry: tuple[int, TimeDelta] | None = None,
 ) -> str: ...
 @overload
 def ssh(
@@ -354,7 +360,27 @@ def ssh(
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
     logger: LoggerLike | None = None,
+    retry: tuple[int, TimeDelta] | None = None,
 ) -> None: ...
+@overload
+def ssh(
+    user: str,
+    hostname: str,
+    /,
+    *cmd_and_cmds_or_args: str,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
+    input: str | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    logger: LoggerLike | None = None,
+    retry: tuple[int, TimeDelta] | None = None,
+) -> str | None: ...
 def ssh(
     user: str,
     hostname: str,
@@ -371,6 +397,7 @@ def ssh(
     return_stdout: bool = False,
     return_stderr: bool = False,
     logger: LoggerLike | None = None,
+    retry: tuple[int, TimeDelta] | None = None,
 ) -> str | None:
     cmd_and_args = ssh_cmd(  # skipif-ci
         user,
@@ -380,17 +407,61 @@ def ssh(
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
     )
-    return run(  # skipif-ci
-        *cmd_and_args,
-        input=input,
-        print=print,
-        print_stdout=print_stdout,
-        print_stderr=print_stderr,
-        return_=return_,
-        return_stdout=return_stdout,
-        return_stderr=return_stderr,
-        logger=logger,
-    )
+    try:  # skipif-ci
+        return run(
+            *cmd_and_args,
+            input=input,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            return_=return_,
+            return_stdout=return_stdout,
+            return_stderr=return_stderr,
+            logger=logger,
+        )
+    except CalledProcessError as error:  # skipif-ci
+        if retry is None:
+            raise
+        attempts, delta = retry
+        if attempts <= 0:
+            raise
+        if logger is not None:
+            msg = strip_and_dedent(f"""
+'ssh' failed with:
+ - user                     = {user}
+ - hostname                 = {hostname}
+ - cmd_and_cmds_or_args     = {cmd_and_cmds_or_args}
+ - batch_mode               = {batch_mode}
+ - host_key_algorithms      = {host_key_algorithms}
+ - strict_host_key_checking = {strict_host_key_checking}
+ - input                    = {input}
+
+-- stdout ---------------------------------------------------------------------
+{error.stdout}-------------------------------------------------------------------------------
+-- stderr ---------------------------------------------------------------------
+{error.stderr}-------------------------------------------------------------------------------
+
+Retrying {attempts} more time(s) after {delta}...
+""")
+            to_logger(logger).error(msg)
+        sleep(delta.in_seconds())
+        return ssh(
+            user,
+            hostname,
+            *cmd_and_cmds_or_args,
+            batch_mode=batch_mode,
+            host_key_algorithms=host_key_algorithms,
+            strict_host_key_checking=strict_host_key_checking,
+            input=input,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            return_=return_,
+            return_stdout=return_stdout,
+            return_stderr=return_stderr,
+            logger=logger,
+            retry=(attempts - 1, delta),
+        )
 
 
 def ssh_cmd(
