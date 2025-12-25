@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 from pytest import LogCaptureFixture, mark, raises
 
-from utilities.getpass import USER
 from utilities.iterables import one
 from utilities.subprocess import (
     bash_cmd_and_args,
@@ -112,10 +111,10 @@ class TestRun:
         assert cap.err == ""
 
     def test_user(self, *, capsys: CaptureFixture) -> None:
-        result = run("whoami", user=USER, print=True)
+        result = run("whoami", user="root")
         assert result is None
         cap = capsys.readouterr()
-        assert cap.out == f"{USER}\n"
+        assert cap.out == "root\n"
         assert cap.err == ""
 
     def test_bash_and_user(self, *, capsys: CaptureFixture) -> None:
