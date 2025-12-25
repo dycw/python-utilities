@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import builtins
 import sys
 from contextlib import contextmanager
 from io import StringIO
@@ -284,6 +283,122 @@ def _write_to_streams(text: str, /, *outputs: IO[str]) -> None:
         _ = output.write(text)
 
 
+@overload
+def ssh(
+    user: str,
+    hostname: str,
+    cmd: str,
+    /,
+    *cmds_or_args: str,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
+    input: str | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[True],
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def ssh(
+    user: str,
+    hostname: str,
+    cmd: str,
+    /,
+    *cmds_or_args: str,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
+    input: str | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: Literal[True],
+    return_stderr: bool = False,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def ssh(
+    user: str,
+    hostname: str,
+    cmd: str,
+    /,
+    *cmds_or_args: str,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
+    input: str | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: Literal[True],
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def ssh(
+    user: str,
+    hostname: str,
+    cmd: str,
+    /,
+    *cmds_or_args: str,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
+    input: str | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[False] = False,
+    return_stdout: Literal[False] = False,
+    return_stderr: Literal[False] = False,
+    logger: LoggerLike | None = None,
+) -> None: ...
+def ssh(
+    user: str,
+    hostname: str,
+    cmd: str,
+    /,
+    *cmds_or_args: str,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
+    input: str | None = None,  # noqa: A002
+    print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    logger: LoggerLike | None = None,
+) -> str | None:
+    cmd_and_args = ssh_cmd(  # skipif-ci
+        user,
+        hostname,
+        cmd,
+        *cmds_or_args,
+        batch_mode=batch_mode,
+        host_key_algorithms=host_key_algorithms,
+        strict_host_key_checking=strict_host_key_checking,
+    )
+    return run(  # skipif-ci
+        *cmd_and_args,
+        input=input,
+        print=print,
+        print_stdout=print_stdout,
+        print_stderr=print_stderr,
+        return_=return_,
+        return_stdout=return_stdout,
+        return_stderr=return_stderr,
+        logger=logger,
+    )
+
+
 def ssh_cmd(
     user: str,
     hostname: str,
@@ -322,6 +437,7 @@ __all__ = [
     "mkdir_cmd",
     "rm_cmd",
     "run",
+    "ssh",
     "ssh_cmd",
     "sudo_cmd",
     "touch_cmd",
