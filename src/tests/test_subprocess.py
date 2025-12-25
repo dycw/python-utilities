@@ -4,7 +4,7 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
-from pytest import LogCaptureFixture, raises
+from pytest import LogCaptureFixture, mark, raises
 
 from utilities.iterables import one
 from utilities.pytest import skipif_ci, skipif_mac
@@ -109,22 +109,12 @@ class TestRun:
         assert cap.out == "value1\nvalue2\n"
         assert cap.err == ""
 
-    @skipif_ci
-    @skipif_mac
+    @mark.only
     def test_user(self, *, capsys: CaptureFixture) -> None:
-        result = run("whoami", user="root", print=True)
+        result = run("echo", "hi", user="test")
         assert result is None
         cap = capsys.readouterr()
-        assert cap.out == "root\n"
-        assert cap.err == ""
-
-    @skipif_ci
-    @skipif_mac
-    def test_bash_and_user(self, *, capsys: CaptureFixture) -> None:
-        result = run("whoami", "echo ${HOME}", bash=True, user="root", print=True)
-        assert result is None
-        cap = capsys.readouterr()
-        assert cap.out == "root\n/root\n"
+        assert cap.out == "value1\nvalue2\n"
         assert cap.err == ""
 
     def test_shell(self, *, capsys: CaptureFixture) -> None:

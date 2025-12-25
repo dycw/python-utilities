@@ -180,14 +180,16 @@ def run(
         case False, user_use:
             args: list[str] = [cmd, *cmds_or_args]
         case True, None:
-            args: list[str] = bash_cmd_and_args(cmd, *cmds_or_args)
+            args: list[str] = ["bash", "-cl", "\n".join([cmd, *cmds_or_args])]
             user_use = None
-        case True, str() | int():  # skipif-ci-or-mac
+        case True, str() | int():
             args: list[str] = [
                 "su",
                 "-",
                 str(user),
-                *bash_cmd_and_args(cmd, *cmds_or_args),
+                "bash",
+                "-cl",
+                "\n".join([cmd, *cmds_or_args]),
             ]
             user_use = None
         case never:
