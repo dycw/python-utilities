@@ -10,7 +10,11 @@ from utilities.shutil import WhichError, which
 class TestWhich:
     def test_main(self) -> None:
         result = which("bash")
-        expected = [Path("/bin/bash"), Path("/opt/homebrew/bin/bash")]
+        expected = [
+            Path("/bin/bash"),
+            Path("/usr/bin/bash"),
+            Path("/opt/homebrew/bin/bash"),
+        ]
         assert result in expected
 
     def test_error(self) -> None:
