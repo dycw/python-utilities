@@ -248,7 +248,7 @@ def docker_exec_cmd(
         args.extend(["--workdir", str(workdir)])
     args.append(container)
     if bash:
-        return [*args, "bash", "-l", "-c", "\n".join([cmd, *cmds_or_args])]
+        return [*args, *bash_cmd_and_args(cmd, *cmds_or_args)]
     return [*args, cmd, *cmds_or_args]
 
 
