@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Literal, overload
 from utilities.errors import ImpossibleCaseError
 from utilities.subprocess import (
     MKTEMP_DIR_CMD,
-    bash_cmd_and_args,
     maybe_sudo_cmd,
     mkdir,
     mkdir_cmd,
@@ -100,7 +99,6 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
-    bash: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -119,7 +117,6 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
-    bash: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -138,7 +135,6 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
-    bash: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -157,7 +153,6 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
-    bash: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -176,7 +171,6 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
-    bash: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -194,7 +188,6 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
-    bash: bool = False,
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -205,14 +198,7 @@ def docker_exec(
     **env_kwargs: str,
 ) -> str | None:
     cmd_and_args = docker_exec_cmd(  # skipif-ci
-        container,
-        cmd,
-        *cmds_or_args,
-        env=env,
-        user=user,
-        workdir=workdir,
-        bash=bash,
-        **env_kwargs,
+        container, cmd, *cmds_or_args, env=env, user=user, workdir=workdir, **env_kwargs
     )
     return run(  # skipif-ci
         *cmd_and_args,
@@ -234,7 +220,6 @@ def docker_exec_cmd(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
-    bash: bool = False,
     **env_kwargs: str,
 ) -> list[str]:
     """Build a command for `docker exec`."""
@@ -246,12 +231,7 @@ def docker_exec_cmd(
         args.extend(["--user", user])
     if workdir is not None:
         args.extend(["--workdir", str(workdir)])
-    args.append(container)
-    if bash:
-        args.extend(bash_cmd_and_args(cmd, *cmds_or_args))
-    else:
-        args.extend([cmd, *cmds_or_args])
-    return args
+    return [*args, container, cmd, *cmds_or_args]
 
 
 @contextmanager

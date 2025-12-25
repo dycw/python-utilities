@@ -20,11 +20,8 @@ if TYPE_CHECKING:
 
 
 _HOST_KEY_ALGORITHMS = ["ssh-ed25519"]
+BASH_LC = ["bash", "-lc"]
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
-
-
-def bash_cmd_and_args(cmd: str, /, *cmds: str) -> list[str]:
-    return ["bash", "-lc", "\n".join([cmd, *cmds])]
 
 
 def echo_cmd(text: str, /) -> list[str]:
@@ -294,7 +291,6 @@ def ssh_cmd(
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
-    bash: bool = False,
 ) -> list[str]:
     args: list[str] = ["ssh"]
     if batch_mode:
@@ -302,12 +298,7 @@ def ssh_cmd(
     args.extend(["-o", f"HostKeyAlgorithms={','.join(host_key_algorithms)}"])
     if strict_host_key_checking:
         args.extend(["-o", "StrictHostKeyChecking=yes"])
-    args.extend(["-T", f"{user}@{hostname}"])
-    if bash:
-        args.extend(bash_cmd_and_args(cmd, *cmds_or_args))
-    else:
-        args.extend([cmd, *cmds_or_args])
-    return args
+    return [*args, "-T", f"{user}@{hostname}", cmd, *cmds_or_args]
 
 
 def sudo_cmd(cmd: str, /, *args: str) -> list[str]:
@@ -319,8 +310,8 @@ def touch_cmd(path: PathLike, /) -> list[str]:
 
 
 __all__ = [
+    "BASH_LC",
     "MKTEMP_DIR_CMD",
-    "bash_cmd_and_args",
     "echo_cmd",
     "expand_path",
     "maybe_sudo_cmd",

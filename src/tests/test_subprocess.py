@@ -9,7 +9,7 @@ from pytest import LogCaptureFixture, mark, param, raises
 from utilities.iterables import one
 from utilities.pytest import skipif_ci, skipif_mac
 from utilities.subprocess import (
-    bash_cmd_and_args,
+    BASH_LC,
     echo_cmd,
     expand_path,
     maybe_sudo_cmd,
@@ -24,18 +24,6 @@ from utilities.text import strip_and_dedent, unique_str
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
-
-
-class TestBashCmdAndArgs:
-    def test_single(self) -> None:
-        result = bash_cmd_and_args("cmd")
-        expected = ["bash", "-lc", "cmd"]
-        assert result == expected
-
-    def test_multiple(self) -> None:
-        result = bash_cmd_and_args("cmd1", "cmd2")
-        expected = ["bash", "-lc", "cmd1\ncmd2"]
-        assert result == expected
 
 
 class TestEchoCmd:
@@ -150,7 +138,20 @@ class TestRun:
         assert cap.out == "KEY=value\n"
         assert cap.err == ""
 
-    def test_input(self, *, capsys: CaptureFixture) -> None:
+    def test_input_bash(self, *, capsys: CaptureFixture) -> None:
+        input_ = strip_and_dedent("""
+            key=value
+            echo ${key}@stdout
+            sleep 0.5
+            echo ${key}@stderr 1>&2
+        """)
+        result = run(*BASH_LC, input_, print=True)
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == "value@stdout\n"
+        assert cap.err == "value@stderr\n"
+
+    def test_input_cat(self, *, capsys: CaptureFixture) -> None:
         input_ = strip_and_dedent("""
             foo
             bar
@@ -161,19 +162,6 @@ class TestRun:
         cap = capsys.readouterr()
         assert cap.out == input_
         assert cap.err == ""
-
-    def test_input2(self, *, capsys: CaptureFixture) -> None:
-        input_ = strip_and_dedent("""
-            key=value
-            echo ${key}@stdout
-            sleep 0.5
-            echo ${key}@stderr 1>&2
-        """)
-        result = run("bash", "-lc", input_, print=True)
-        assert result is None
-        cap = capsys.readouterr()
-        assert cap.out == "value@stdout\n"
-        assert cap.err == "value@stderr\n"
 
     def test_input_and_return(self, *, capsys: CaptureFixture) -> None:
         input_ = strip_and_dedent("""
