@@ -95,6 +95,13 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == ""
 
+    def test_bash(self, *, capsys: CaptureFixture) -> None:
+        result = run("key=value", "echo ${key}1", "echo ${key}2", bash=True, print=True)
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == "value1\nvalue2\n"
+        assert cap.err == ""
+
     def test_cwd(self, *, capsys: CaptureFixture, tmp_path: Path) -> None:
         result = run("pwd", cwd=tmp_path, print=True)
         assert result is None

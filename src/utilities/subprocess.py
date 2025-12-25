@@ -4,12 +4,14 @@ import sys
 from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
+from shutil import which
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload
 
 from utilities.errors import ImpossibleCaseError
+from utilities.functions import ensure_str
 from utilities.logging import to_logger
 from utilities.text import strip_and_dedent
 
@@ -63,9 +65,10 @@ def rm_cmd(path: PathLike, /) -> list[str]:
 def run(
     cmd: str,
     /,
-    *cmds: str,
+    *cmds_or_args: str,
     executable: str | None = None,
     shell: bool = False,
+    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -82,9 +85,10 @@ def run(
 def run(
     cmd: str,
     /,
-    *cmds: str,
+    *cmds_or_args: str,
     executable: str | None = None,
     shell: bool = False,
+    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -101,9 +105,10 @@ def run(
 def run(
     cmd: str,
     /,
-    *cmds: str,
+    *cmds_or_args: str,
     executable: str | None = None,
     shell: bool = False,
+    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -120,9 +125,10 @@ def run(
 def run(
     cmd: str,
     /,
-    *cmds: str,
+    *cmds_or_args: str,
     executable: str | None = None,
     shell: bool = False,
+    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -139,9 +145,10 @@ def run(
 def run(
     cmd: str,
     /,
-    *cmds: str,
+    *cmds_or_args: str,
     executable: str | None = None,
     shell: bool = False,
+    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -157,9 +164,10 @@ def run(
 def run(
     cmd: str,
     /,
-    *cmds: str,
+    *cmds_or_args: str,
     executable: str | None = None,
     shell: bool = False,
+    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -172,12 +180,15 @@ def run(
     return_stderr: bool = False,
     logger: LoggerLike | None = None,
 ) -> str | None:
-    all_cmds = [cmd, *cmds]
+    if bash:
+        args = [ensure_str(which("bash")), "-cl", "\n".join([cmd, *cmds_or_args])]
+    else:
+        args = [cmd, *cmds_or_args]
     buffer = StringIO()
     stdout = StringIO()
     stderr = StringIO()
     with Popen(
-        all_cmds,
+        args,
         bufsize=1,
         executable=executable,
         stdout=PIPE,
@@ -229,7 +240,7 @@ def run(
                     msg = strip_and_dedent(f"""
 'run' failed with:
  - cmd        = {cmd}
- - cmds       = {cmds}
+ - cmds       = {cmds_or_args}
  - executable = {executable}
  - shell      = {shell}
  - cwd        = {cwd}
@@ -244,7 +255,7 @@ def run(
 """)
                     to_logger(logger).error(msg)
                 raise CalledProcessError(
-                    return_code, all_cmds, output=stdout_text, stderr=stderr_text
+                    return_code, args, output=stdout_text, stderr=stderr_text
                 )
             case never:
                 assert_never(never)
