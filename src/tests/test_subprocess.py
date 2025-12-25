@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from pytest import LogCaptureFixture, mark, raises
 
+from utilities.getpass import USER
 from utilities.iterables import one
 from utilities.pytest import skipif_mac
 from utilities.subprocess import (
@@ -110,13 +111,19 @@ class TestRun:
         assert cap.out == "stdout\n"
         assert cap.err == ""
 
-    @mark.only
-    @skipif_mac
     def test_user(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo", "hi", user="test")
+        result = run("whoami", user=USER, print=True)
         assert result is None
         cap = capsys.readouterr()
-        assert cap.out == "value1\nvalue2\n"
+        assert cap.out == f"{USER}\n"
+        assert cap.err == ""
+
+    @mark.only
+    def test_bash_and_user(self, *, capsys: CaptureFixture) -> None:
+        result = run("whoami", "echo ${HOME}", bash=True, user=USER, print=True)
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == f"{USER}\n"
         assert cap.err == ""
 
     def test_shell(self, *, capsys: CaptureFixture) -> None:
