@@ -81,19 +81,14 @@ class TestDockerExecCmd:
         expected = ["docker", "exec", "--workdir", str(tmp_path), "container", "cmd"]
         assert result == expected
 
-    def test_bash(self) -> None:
-        result = docker_exec_cmd(
-            "container", "key=value", "echo ${key}1", "echo ${key}2", bash=True
-        )
-        expected = [
-            "docker",
-            "exec",
-            "container",
-            "bash",
-            "-l",
-            "-c",
-            "key=value\necho ${key}1\necho ${key}2",
-        ]
+    def test_bash_no_arguments(self) -> None:
+        result = docker_exec_cmd("container", "cmd", bash=True)
+        expected = ["docker", "exec", "container", "bash", "-lc", "cmd"]
+        assert result == expected
+
+    def test_bash_multline(self) -> None:
+        result = docker_exec_cmd("container", "cmd1", "cmd2", bash=True)
+        expected = ["docker", "exec", "container", "bash", "-lc", "cmd1\ncmd2"]
         assert result == expected
 
 

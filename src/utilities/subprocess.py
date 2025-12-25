@@ -19,11 +19,12 @@ if TYPE_CHECKING:
     from utilities.types import LoggerLike, PathLike, StrMapping, StrStrMapping
 
 
+_HOST_KEY_ALGORITHMS = ["ssh-ed25519"]
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
 
 
 def bash_cmd_and_args(cmd: str, /, *cmds: str) -> list[str]:
-    return ["bash", "-l", "-c", "\n".join([cmd, *cmds])]
+    return ["bash", "-lc", "\n".join([cmd, *cmds])]
 
 
 def echo_cmd(text: str, /) -> list[str]:
@@ -68,12 +69,12 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
+    bash: bool = False,
+    user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
-    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
-    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -87,12 +88,12 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
+    bash: bool = False,
+    user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
-    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
-    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -106,12 +107,12 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
+    bash: bool = False,
+    user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
-    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
-    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -125,12 +126,12 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
+    bash: bool = False,
+    user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
-    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
-    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -144,12 +145,12 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
+    bash: bool = False,
+    user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
-    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
-    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -285,6 +286,31 @@ def _run_target(input_: IO[str], /, *outputs: IO[str]) -> None:
                 _ = output.write(line)
 
 
+def ssh_cmd(
+    user: str,
+    hostname: str,
+    cmd: str,
+    /,
+    *cmds_or_args: str,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
+    bash: bool = False,
+) -> list[str]:
+    args: list[str] = ["ssh"]
+    if batch_mode:
+        args.extend(["-o", "BatchMode=yes"])
+    args.extend(["-o", f"HostKeyAlgorithms={','.join(host_key_algorithms)}"])
+    if strict_host_key_checking:
+        args.extend(["-o", "StrictHostKeyChecking=yes"])
+    args.append(f"{user}@{hostname}")
+    if bash:
+        args.extend(bash_cmd_and_args(cmd, *cmds_or_args))
+    else:
+        args.extend([cmd, *cmds_or_args])
+    return args
+
+
 def sudo_cmd(cmd: str, /, *args: str) -> list[str]:
     return ["sudo", cmd, *args]
 
@@ -303,6 +329,7 @@ __all__ = [
     "mkdir_cmd",
     "rm_cmd",
     "run",
+    "ssh_cmd",
     "sudo_cmd",
     "touch_cmd",
 ]
