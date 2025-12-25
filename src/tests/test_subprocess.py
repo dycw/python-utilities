@@ -171,6 +171,15 @@ class TestRun:
         assert cap.out == "KEY=value\n"
         assert cap.err == ""
 
+    @mark.only
+    def test_input(self, *, capsys: CaptureFixture) -> None:
+        input_ = "foo\nbar\baz"
+        result = run("cat", shell=True, input=input_, print=True, return_=True)  # noqa: S604
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == ""
+        assert cap.err == ""
+
     def test_print(self, *, capsys: CaptureFixture) -> None:
         result = run("echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, print=True)  # noqa: S604
         assert result is None

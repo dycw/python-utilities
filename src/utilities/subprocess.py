@@ -202,11 +202,18 @@ def run(
     buffer = StringIO()
     stdout = StringIO()
     stderr = StringIO()
+    stdout_outputs: list[IO[str]] = []  # [buffer, stdout]
+    if print or print_stdout:
+        stdout_outputs.append(sys.stdout)
+    stderr_outputs: list[IO[str]] = [buffer, stderr]
+    if print or print_stderr:
+        stderr_outputs.append(sys.stderr)
+    inputted = False
     with Popen(
         args,
         bufsize=1,
         executable=executable,
-        stdin=PIPE,
+        stdin=None if input is None else PIPE,
         stdout=PIPE,
         stderr=PIPE,
         shell=shell,
@@ -219,21 +226,14 @@ def run(
             raise ImpossibleCaseError(case=[f"{proc.stdout=}"])
         if proc.stderr is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stderr=}"])
-        if input is not None:
-            _ = proc.communicate(input=input)
+        if (input is not None) and not inputted:
+            inputted = True
+            stdout_i, stderr_i = proc.communicate(input=input)
+            _write_to_streams(stdout_i, *stdout_outputs)
+            _write_to_streams(stderr_i, *stderr_outputs)
         with (
-            _yield_write(
-                proc.stdout,
-                buffer,
-                stdout,
-                *([sys.stdout] if print or print_stdout else []),
-            ),
-            _yield_write(
-                proc.stderr,
-                buffer,
-                stderr,
-                *([sys.stderr] if print or print_stderr else []),
-            ),
+            _yield_write(proc.stdout, *stdout_outputs),
+            _yield_write(proc.stderr, *stderr_outputs),
         ):
             return_code = proc.wait()
         match return_code, return_ or return_stdout, return_ or return_stderr:
@@ -290,9 +290,13 @@ def _yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
 
 def _run_target(input_: IO[str], /, *outputs: IO[str]) -> None:
     with input_:
-        for line in iter(input_.readline, ""):
-            for output in outputs:
-                _ = output.write(line)
+        for text in iter(input_.readline, ""):
+            _write_to_streams(text, *outputs)
+
+
+def _write_to_streams(text: str, /, *outputs: IO[str]) -> None:
+    for output in outputs:
+        _ = output.write(text)
 
 
 def ssh_cmd(
