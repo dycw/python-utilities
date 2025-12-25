@@ -95,11 +95,11 @@ def docker_exec(
     container: str,
     cmd: str,
     /,
-    *args: str,
+    *cmds_or_args: str,
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
-    shell: bool = False,
+    bash: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -114,11 +114,11 @@ def docker_exec(
     container: str,
     cmd: str,
     /,
-    *args: str,
+    *cmds_or_args: str,
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
-    shell: bool = False,
+    bash: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -133,11 +133,11 @@ def docker_exec(
     container: str,
     cmd: str,
     /,
-    *args: str,
+    *cmds_or_args: str,
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
-    shell: bool = False,
+    bash: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -152,11 +152,11 @@ def docker_exec(
     container: str,
     cmd: str,
     /,
-    *args: str,
+    *cmds_or_args: str,
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
-    shell: bool = False,
+    bash: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -171,11 +171,11 @@ def docker_exec(
     container: str,
     cmd: str,
     /,
-    *args: str,
+    *cmds_or_args: str,
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
-    shell: bool = False,
+    bash: bool = False,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -189,11 +189,11 @@ def docker_exec(
     container: str,
     cmd: str,
     /,
-    *args: str,
+    *cmds_or_args: str,
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
-    shell: bool = False,
+    bash: bool = False,
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -203,24 +203,18 @@ def docker_exec(
     logger: LoggerLike | None = None,
     **env_kwargs: str,
 ) -> str | None:
-    cmd_use = docker_exec_cmd(  # skipif-ci
-        container, cmd, *args, env=env, user=user, workdir=workdir, **env_kwargs
+    cmd_and_args = docker_exec_cmd(  # skipif-ci
+        container,
+        cmd,
+        *cmds_or_args,
+        env=env,
+        user=user,
+        workdir=workdir,
+        bash=bash,
+        **env_kwargs,
     )
-    if shell:  # skipif-ci
-        return run(
-            " ".join(cmd_use),
-            shell=shell,
-            print=print,
-            print_stdout=print_stdout,
-            print_stderr=print_stderr,
-            return_=return_,
-            return_stdout=return_stdout,
-            return_stderr=return_stderr,
-            logger=logger,
-        )
     return run(  # skipif-ci
-        *cmd_use,
-        shell=shell,
+        *cmd_and_args,
         print=print,
         print_stdout=print_stdout,
         print_stderr=print_stderr,
@@ -235,22 +229,26 @@ def docker_exec_cmd(
     container: str,
     cmd: str,
     /,
-    *args: str,
+    *cmds_or_args: str,
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    bash: bool = False,
     **env_kwargs: str,
 ) -> list[str]:
     """Build a command for `docker exec`."""
-    parts: list[str] = ["docker", "exec"]
+    args: list[str] = ["docker", "exec"]
     mapping: dict[str, str] = ({} if env is None else dict(env)) | env_kwargs
     for key, value in mapping.items():
-        parts.extend(["--env", f"{key}={value}"])
+        args.extend(["--env", f"{key}={value}"])
     if user is not None:
-        parts.extend(["--user", user])
+        args.extend(["--user", user])
     if workdir is not None:
-        parts.extend(["--workdir", str(workdir)])
-    return [*parts, container, cmd, *args]
+        args.extend(["--workdir", str(workdir)])
+    args.append(container)
+    if bash:
+        return [*args, "bash", "-l", "-c", "\n".join([cmd, *cmds_or_args])]
+    return [*args, cmd, *cmds_or_args]
 
 
 @contextmanager

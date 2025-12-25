@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from shlex import quote
 from typing import TYPE_CHECKING
 
 from utilities.docker import (
@@ -25,13 +24,7 @@ class TestDockerCp:
         with yield_docker_temp_dir("postgres") as temp_cont:
             dest = temp_cont / src.name
             docker_cp(src, ("postgres", dest))
-            docker_exec(  # noqa: S604
-                "postgres",
-                "bash",
-                "-c",
-                quote(f"if ! [ -f {dest} ]; then exit 1; fi"),
-                shell=True,
-            )
+            docker_exec("postgres", f"if ! [ -f {dest} ]; then exit 1; fi", bash=True)
 
     @skipif_ci
     def test_from_container(self, *, tmp_path: Path) -> None:
@@ -93,17 +86,7 @@ class TestYieldDockerTempDir:
     @skipif_ci
     def test_main(self) -> None:
         with yield_docker_temp_dir("postgres") as temp_dir:
-            docker_exec(  # noqa: S604
-                "postgres",
-                "bash",
-                "-c",
-                quote(f"if ! [ -d {temp_dir} ]; then exit 1; fi"),
-                shell=True,
+            docker_exec(
+                "postgres", f"if ! [ -d {temp_dir} ]; then exit 1; fi", bash=True
             )
-        docker_exec(  # noqa: S604
-            "postgres",
-            "bash",
-            "-c",
-            quote(f"if [ -d {temp_dir} ]; then exit 1; fi"),
-            shell=True,
-        )
+        docker_exec("postgres", f"if [ -d {temp_dir} ]; then exit 1; fi", bash=True)
