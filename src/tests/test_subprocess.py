@@ -180,8 +180,9 @@ class TestRun:
         assert cap.err == ""
 
     def test_input_and_return(self, *, capsys: CaptureFixture) -> None:
-        result = run("cat", input="foo\nbar\nbaz", return_=True)
-        assert result == ""
+        input_ = "foo\nbar\nbaz"
+        result = run("cat", input=input_, return_=True)
+        assert result == input_
         cap = capsys.readouterr()
         assert cap.out == ""
         assert cap.err == ""
