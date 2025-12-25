@@ -171,13 +171,19 @@ class TestRun:
         assert cap.out == "KEY=value\n"
         assert cap.err == ""
 
-    @mark.only
     def test_input(self, *, capsys: CaptureFixture) -> None:
         input_ = "foo\nbar\nbaz"
-        result = run("cat", shell=True, input=input_, print=True)  # noqa: S604
+        result = run("cat", input=input_, print=True)
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == input_
+        assert cap.err == ""
+
+    def test_input_and_return(self, *, capsys: CaptureFixture) -> None:
+        result = run("cat", input="foo\nbar\nbaz", return_=True)
+        assert result == ""
+        cap = capsys.readouterr()
+        assert cap.out == ""
         assert cap.err == ""
 
     def test_print(self, *, capsys: CaptureFixture) -> None:
@@ -275,14 +281,15 @@ class TestRun:
         record = one(r for r in caplog.records if r.name == name)
         expected = strip_and_dedent("""
 'run' failed with:
- - cmd        = echo stdout; echo stderr 1>&2; exit 1
- - cmds       = ()
- - bash       = False
- - user       = None
- - executable = None
- - shell      = True
- - cwd        = None
- - env        = None
+ - cmd          = echo stdout; echo stderr 1>&2; exit 1
+ - cmds_or_args = ()
+ - bash         = False
+ - user         = None
+ - executable   = None
+ - shell        = True
+ - cwd          = None
+ - env          = None
+ - input        = None
 
 -- stdout ---------------------------------------------------------------------
 stdout

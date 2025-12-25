@@ -202,7 +202,7 @@ def run(
     buffer = StringIO()
     stdout = StringIO()
     stderr = StringIO()
-    stdout_outputs: list[IO[str]] = []  # [buffer, stdout]
+    stdout_outputs: list[IO[str]] = [buffer, stdout]
     if print or print_stdout:
         stdout_outputs.append(sys.stdout)
     stderr_outputs: list[IO[str]] = [buffer, stderr]
@@ -256,14 +256,15 @@ def run(
                 if logger is not None:
                     msg = strip_and_dedent(f"""
 'run' failed with:
- - cmd        = {cmd}
- - cmds       = {cmds_or_args}
- - bash       = {bash}
- - user       = {user}
- - executable = {executable}
- - shell      = {shell}
- - cwd        = {cwd}
- - env        = {env}
+ - cmd          = {cmd}
+ - cmds_or_args = {cmds_or_args}
+ - bash         = {bash}
+ - user         = {user}
+ - executable   = {executable}
+ - shell        = {shell}
+ - cwd          = {cwd}
+ - env          = {env}
+ - input        = {input}
 
 -- stdout ---------------------------------------------------------------------
 {stdout_text}-------------------------------------------------------------------------------
