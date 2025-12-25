@@ -293,6 +293,55 @@ class TestSSHCmd:
         ]
         assert result == expected
 
+    def test_batch_mode_disabled(self) -> None:
+        result = ssh_cmd("user", "hostname", "true", batch_mode=False)
+        expected = [
+            "ssh",
+            "-o",
+            "HostKeyAlgorithms=ssh-ed25519",
+            "-o",
+            "StrictHostKeyChecking=yes",
+            "user@hostname",
+            "true",
+        ]
+        assert result == expected
+
+    def test_host_key_algorithms(self) -> None:
+        result = ssh_cmd(
+            "user", "hostname", "true", host_key_algorithms=["rsa-sha-256"]
+        )
+        expected = [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "HostKeyAlgorithms=rsa-sha-256",
+            "-o",
+            "StrictHostKeyChecking=yes",
+            "user@hostname",
+            "true",
+        ]
+        assert result == expected
+
+    def test_bash(self) -> None:
+        result = ssh_cmd(
+            "user", "hostname", "key=value", "echo ${key}@stdout", bash=True
+        )
+        expected = [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "HostKeyAlgorithms=ssh-ed25519",
+            "-o",
+            "StrictHostKeyChecking=yes",
+            "user@hostname",
+            "bash",
+            "-lc",
+            "key=value\necho ${key}@stdout",
+        ]
+        assert result == expected
+
 
 class TestTouchCmd:
     def test_main(self) -> None:
