@@ -174,7 +174,7 @@ class TestRun:
     @mark.only
     def test_input(self, *, capsys: CaptureFixture) -> None:
         input_ = "foo\nbar\baz"
-        result = run("cat", shell=True, input=input_, print=True, return_=True)  # noqa: S604
+        result = run("cat", shell=True, input=input_, print=True)  # noqa: S604
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == ""
