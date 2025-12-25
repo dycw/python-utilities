@@ -13,7 +13,7 @@ from utilities.docker import (
     yield_docker_temp_dir,
 )
 from utilities.pytest import skipif_ci
-from utilities.subprocess import BASH_LC, BASH_LS, touch_cmd
+from utilities.subprocess import BASH_LS, touch_cmd
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -28,7 +28,7 @@ class TestDockerCp:
             dest = temp_cont / src.name
             docker_cp(src, ("postgres", dest))
             docker_exec(
-                "postgres", *BASH_LC, input=f"if ! [ -f {dest} ]; then exit 1; fi"
+                "postgres", *BASH_LS, input=f"if ! [ -f {dest} ]; then exit 1; fi"
             )
 
     @skipif_ci
