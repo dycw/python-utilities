@@ -183,7 +183,7 @@ def run(
         case True, None:
             args: list[str] = ["bash", "-l", "-c", "\n".join([cmd, *cmds_or_args])]
             user_use = None
-        case True, str() | int():  # skipif-mac
+        case True, str() | int():  # skipif-ci-or-mac
             args: list[str] = [
                 "su",
                 "-",
