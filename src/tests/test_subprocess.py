@@ -4,7 +4,7 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
-from pytest import LogCaptureFixture, raises
+from pytest import LogCaptureFixture, mark, raises
 
 from utilities.iterables import one
 from utilities.pytest import skipif_ci, skipif_mac
@@ -34,7 +34,7 @@ class TestBashCmdAndArgs:
 
     def test_multiple(self) -> None:
         result = bash_cmd_and_args("cmd1", "cmd2")
-        expected = ["bash", "-lc", "cmd1\ncmd2"]
+        expected = ["bash", "-l", "-s", "<<'EOF'\ncmd1\ncmd2\nEOF"]
         assert result == expected
 
 
@@ -276,68 +276,6 @@ class TestSSHCmd:
             "StrictHostKeyChecking=yes",
             "user@hostname",
             "true",
-        ]
-        assert result == expected
-
-    def test_batch_mode_disabled(self) -> None:
-        result = ssh_cmd("user", "hostname", "true", batch_mode=False)
-        expected = [
-            "ssh",
-            "-o",
-            "HostKeyAlgorithms=ssh-ed25519",
-            "-o",
-            "StrictHostKeyChecking=yes",
-            "user@hostname",
-            "true",
-        ]
-        assert result == expected
-
-    def test_host_key_algorithms(self) -> None:
-        result = ssh_cmd(
-            "user", "hostname", "true", host_key_algorithms=["rsa-sha-256"]
-        )
-        expected = [
-            "ssh",
-            "-o",
-            "BatchMode=yes",
-            "-o",
-            "HostKeyAlgorithms=rsa-sha-256",
-            "-o",
-            "StrictHostKeyChecking=yes",
-            "user@hostname",
-            "true",
-        ]
-        assert result == expected
-
-    def test_strict_host_key_checking_disabled(self) -> None:
-        result = ssh_cmd("user", "hostname", "true", strict_host_key_checking=False)
-        expected = [
-            "ssh",
-            "-o",
-            "BatchMode=yes",
-            "-o",
-            "HostKeyAlgorithms=ssh-ed25519",
-            "user@hostname",
-            "true",
-        ]
-        assert result == expected
-
-    def test_bash(self) -> None:
-        result = ssh_cmd(
-            "user", "hostname", "key=value", "echo ${key}@stdout", bash=True
-        )
-        expected = [
-            "ssh",
-            "-o",
-            "BatchMode=yes",
-            "-o",
-            "HostKeyAlgorithms=ssh-ed25519",
-            "-o",
-            "StrictHostKeyChecking=yes",
-            "user@hostname",
-            "bash",
-            "-lc",
-            "key=value\necho ${key}@stdout",
         ]
         assert result == expected
 

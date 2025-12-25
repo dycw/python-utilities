@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from pytest import mark
+
 from utilities.docker import (
     docker_cp,
     docker_cp_cmd,
@@ -83,12 +85,21 @@ class TestDockerExecCmd:
 
     def test_bash_no_arguments(self) -> None:
         result = docker_exec_cmd("container", "cmd", bash=True)
-        expected = ["docker", "exec", "container", "bash", "-lc", "cmd"]
+        expected = ["docker", "exec", "container", "bash", "-l", "-c", "cmd"]
         assert result == expected
 
+    @mark.only
     def test_bash_multline(self) -> None:
         result = docker_exec_cmd("container", "cmd1", "cmd2", bash=True)
-        expected = ["docker", "exec", "container", "bash", "-lc", "cmd1\ncmd2"]
+        expected = [
+            "docker",
+            "exec",
+            "container",
+            "bash",
+            "-l",
+            "-s",
+            "<<'EOF'\ncmd1\ncmd2\nEOF",
+        ]
         assert result == expected
 
 
