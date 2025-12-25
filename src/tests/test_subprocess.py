@@ -323,6 +323,19 @@ class TestSSHCmd:
         ]
         assert result == expected
 
+    def test_strict_host_key_checking_disabled(self) -> None:
+        result = ssh_cmd("user", "hostname", "true", strict_host_key_checking=False)
+        expected = [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "HostKeyAlgorithms=ssh-ed25519",
+            "user@hostname",
+            "true",
+        ]
+        assert result == expected
+
     def test_bash(self) -> None:
         result = ssh_cmd(
             "user", "hostname", "key=value", "echo ${key}@stdout", bash=True
