@@ -11,7 +11,6 @@ from typing import IO, TYPE_CHECKING, Literal, assert_never, overload
 
 from utilities.errors import ImpossibleCaseError
 from utilities.logging import to_logger
-from utilities.shutil import which
 from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
@@ -71,7 +70,6 @@ def run(
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
-    group: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -91,7 +89,6 @@ def run(
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
-    group: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -111,7 +108,6 @@ def run(
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
-    group: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -131,7 +127,6 @@ def run(
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
-    group: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -151,7 +146,6 @@ def run(
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
-    group: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -164,13 +158,12 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
+    bash: bool = False,
+    user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
-    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
-    user: str | int | None = None,
-    group: str | int | None = None,
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -179,10 +172,24 @@ def run(
     return_stderr: bool = False,
     logger: LoggerLike | None = None,
 ) -> str | None:
-    if bash:
-        args: list[str] = [str(which("bash")), "-cl", "\n".join([cmd, *cmds_or_args])]
-    else:
-        args: list[str] = [cmd, *cmds_or_args]
+    match bash, user:
+        case False, user_use:
+            args: list[str] = [cmd, *cmds_or_args]
+        case True, None:
+            args: list[str] = ["bash", "-cl", "\n".join([cmd, *cmds_or_args])]
+            user_use = None
+        case True, str() | int():
+            args: list[str] = [
+                "su",
+                "-",
+                str(user),
+                "bash",
+                "-cl",
+                "\n".join([cmd, *cmds_or_args]),
+            ]
+            user_use = None
+        case never:
+            assert_never(never)
     buffer = StringIO()
     stdout = StringIO()
     stderr = StringIO()
@@ -196,8 +203,7 @@ def run(
         cwd=cwd,
         env=env,
         text=True,
-        user=user,
-        group=group,
+        user=user_use,
     ) as proc:
         if proc.stdout is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stdout=}"])
@@ -240,12 +246,12 @@ def run(
 'run' failed with:
  - cmd        = {cmd}
  - cmds       = {cmds_or_args}
+ - bash       = {bash}
+ - user       = {user}
  - executable = {executable}
  - shell      = {shell}
  - cwd        = {cwd}
  - env        = {env}
- - user       = {user}
- - group      = {group}
 
 -- stdout ---------------------------------------------------------------------
 {stdout_text}-------------------------------------------------------------------------------

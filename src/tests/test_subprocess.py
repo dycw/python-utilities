@@ -4,7 +4,7 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
-from pytest import LogCaptureFixture, raises
+from pytest import LogCaptureFixture, mark, raises
 
 from utilities.iterables import one
 from utilities.subprocess import (
@@ -88,18 +88,26 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == ""
 
-    def test_shell(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo stdout; sleep 0.5; echo stderr 1>&2", shell=True)  # noqa: S604
-        assert result is None
-        cap = capsys.readouterr()
-        assert cap.out == ""
-        assert cap.err == ""
-
     def test_bash(self, *, capsys: CaptureFixture) -> None:
         result = run("key=value", "echo ${key}1", "echo ${key}2", bash=True, print=True)
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == "value1\nvalue2\n"
+        assert cap.err == ""
+
+    @mark.only
+    def test_user(self, *, capsys: CaptureFixture) -> None:
+        result = run("echo", "hi", user="test")
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == "value1\nvalue2\n"
+        assert cap.err == ""
+
+    def test_shell(self, *, capsys: CaptureFixture) -> None:
+        result = run("echo stdout; sleep 0.5; echo stderr 1>&2", shell=True)  # noqa: S604
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == ""
         assert cap.err == ""
 
     def test_cwd(self, *, capsys: CaptureFixture, tmp_path: Path) -> None:
@@ -213,12 +221,12 @@ class TestRun:
 'run' failed with:
  - cmd        = echo stdout; echo stderr 1>&2; exit 1
  - cmds       = ()
+ - bash       = False
+ - user       = None
  - executable = None
  - shell      = True
  - cwd        = None
  - env        = None
- - user       = None
- - group      = None
 
 -- stdout ---------------------------------------------------------------------
 stdout
