@@ -81,6 +81,21 @@ class TestDockerExecCmd:
         expected = ["docker", "exec", "--workdir", str(tmp_path), "container", "cmd"]
         assert result == expected
 
+    def test_bash(self) -> None:
+        result = docker_exec_cmd(
+            "container", "key=value", "echo ${key}1", "echo ${key}2", bash=True
+        )
+        expected = [
+            "docker",
+            "exec",
+            "container",
+            "bash",
+            "-l",
+            "-c",
+            "key=value\necho ${key}1\necho ${key}2",
+        ]
+        assert result == expected
+
 
 class TestYieldDockerTempDir:
     @skipif_ci

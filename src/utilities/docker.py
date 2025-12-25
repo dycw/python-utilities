@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Literal, overload
 from utilities.errors import ImpossibleCaseError
 from utilities.subprocess import (
     MKTEMP_DIR_CMD,
+    bash_cmd_and_args,
     maybe_sudo_cmd,
     mkdir,
     mkdir_cmd,
@@ -247,7 +248,7 @@ def docker_exec_cmd(
         args.extend(["--workdir", str(workdir)])
     args.append(container)
     if bash:
-        return [*args, "bash", "-l", "-c", "\n".join([cmd, *cmds_or_args])]
+        return [*args, *bash_cmd_and_args(cmd, *cmds_or_args)]
     return [*args, cmd, *cmds_or_args]
 
 
