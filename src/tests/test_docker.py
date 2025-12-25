@@ -10,7 +10,7 @@ from utilities.docker import (
     yield_docker_temp_dir,
 )
 from utilities.pytest import skipif_ci
-from utilities.subprocess import touch_cmd
+from utilities.subprocess import BASH_LC, touch_cmd
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -81,22 +81,14 @@ class TestDockerExecCmd:
         expected = ["docker", "exec", "--workdir", str(tmp_path), "container", "cmd"]
         assert result == expected
 
-    def test_bash_no_arguments(self) -> None:
-        result = docker_exec_cmd("container", "cmd", bash=True)
-        expected = ["docker", "exec", "container", "bash", "-lc", "cmd"]
-        assert result == expected
-
-    def test_bash_multline(self) -> None:
-        result = docker_exec_cmd("container", "cmd1", "cmd2", bash=True)
-        expected = ["docker", "exec", "container", "bash", "-lc", "cmd1\ncmd2"]
-        assert result == expected
-
 
 class TestYieldDockerTempDir:
     @skipif_ci
     def test_main(self) -> None:
         with yield_docker_temp_dir("postgres") as temp_dir:
             docker_exec(
-                "postgres", f"if ! [ -d {temp_dir} ]; then exit 1; fi", bash=True
+                "postgres", *BASH_LC, input=f"if ! [ -d {temp_dir} ]; then exit 1; fi"
             )
-        docker_exec("postgres", f"if [ -d {temp_dir} ]; then exit 1; fi", bash=True)
+        docker_exec(
+            "postgres", *BASH_LC, input=f"if [ -d {temp_dir} ]; then exit 1; fi"
+        )
