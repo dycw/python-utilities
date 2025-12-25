@@ -187,7 +187,9 @@ def run(
         case False, user_use:
             args: list[str] = [cmd, *cmds_or_args]
         case True, None:
-            args: list[str] = bash_cmd_and_args(cmd, *cmds_or_args)
+            args: list[str] = [cmd, *cmds_or_args]
+            # args: list[str] = bash_cmd_and_args(cmd, *cmds_or_args)
+            # assert 0, args
             user_use = None
         case True, str() | int():  # skipif-ci-or-mac
             args: list[str] = [
@@ -208,12 +210,11 @@ def run(
     stderr_outputs: list[IO[str]] = [buffer, stderr]
     if print or print_stderr:
         stderr_outputs.append(sys.stderr)
-    inputted = False
     with Popen(
         args,
         bufsize=1,
         executable=executable,
-        stdin=None if input is None else PIPE,
+        stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
         shell=shell,
@@ -222,19 +223,20 @@ def run(
         text=True,
         user=user_use,
     ) as proc:
+        if proc.stdin is None:  # pragma: no cover
+            raise ImpossibleCaseError(case=[f"{proc.stdin=}"])
         if proc.stdout is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stdout=}"])
         if proc.stderr is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stderr=}"])
-        if (input is not None) and not inputted:
-            inputted = True
-            stdout_i, stderr_i = proc.communicate(input=input)
-            _write_to_streams(stdout_i, *stdout_outputs)
-            _write_to_streams(stderr_i, *stderr_outputs)
         with (
-            _yield_write(proc.stdout, *stdout_outputs),
-            _yield_write(proc.stderr, *stderr_outputs),
+            _yield_write(proc.stdout, *stdout_outputs, desc="proc.stdout"),
+            _yield_write(proc.stderr, *stderr_outputs, desc="proc.stderr"),
         ):
+            if input is not None:
+                _ = proc.stdin.write(input)
+                proc.stdin.flush()
+                proc.stdin.close()
             return_code = proc.wait()
         match return_code, return_ or return_stdout, return_ or return_stderr:
             case 0, True, True:
@@ -280,8 +282,12 @@ def run(
 
 
 @contextmanager
-def _yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
-    thread = Thread(target=_run_target, args=(input_, *outputs), daemon=True)
+def _yield_write(
+    input_: IO[str], /, *outputs: IO[str], desc: str | None = None
+) -> Iterator[None]:
+    thread = Thread(
+        target=_run_target, args=(input_, *outputs), kwargs={"desc": desc}, daemon=True
+    )
     thread.start()
     try:
         yield
@@ -289,10 +295,16 @@ def _yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
         thread.join()
 
 
-def _run_target(input_: IO[str], /, *outputs: IO[str]) -> None:
-    with input_:
-        for text in iter(input_.readline, ""):
-            _write_to_streams(text, *outputs)
+def _run_target(input_: IO[str], /, *outputs: IO[str], desc: str | None = None) -> None:
+    try:
+        with input_:
+            for text in iter(input_.readline, ""):
+                _write_to_streams(text, *outputs)
+    except ValueError:
+        if desc is None:
+            raise
+        _ = sys.stderr.write(f"Failed to write to {desc!r}...")
+        raise
 
 
 def _write_to_streams(text: str, /, *outputs: IO[str]) -> None:
@@ -311,7 +323,7 @@ def ssh_cmd(
     strict_host_key_checking: bool = True,
     bash: bool = False,
 ) -> list[str]:
-    args: list[str] = ["ssh"]
+    args: list[str] = ["ssh", "-T"]
     if batch_mode:
         args.extend(["-o", "BatchMode=yes"])
     args.extend(["-o", f"HostKeyAlgorithms={','.join(host_key_algorithms)}"])
