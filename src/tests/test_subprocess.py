@@ -9,6 +9,7 @@ from pytest import LogCaptureFixture, raises
 from utilities.iterables import one
 from utilities.pytest import skipif_ci, skipif_mac
 from utilities.subprocess import (
+    bash_cmd_and_args,
     echo_cmd,
     expand_path,
     maybe_sudo_cmd,
@@ -22,6 +23,18 @@ from utilities.text import strip_and_dedent, unique_str
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
+
+
+class TestBashCmdAndArgs:
+    def test_main(self) -> None:
+        result = bash_cmd_and_args("cmd")
+        expected = ["bash", "-l", "-c", "cmd"]
+        assert result == expected
+
+    def test_multiline(self) -> None:
+        result = bash_cmd_and_args("cmd1", "cmd2")
+        expected = ["bash", "-l", "-c", "cmd1\ncmd2"]
+        assert result == expected
 
 
 class TestEchoCmd:

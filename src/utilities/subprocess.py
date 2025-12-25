@@ -22,6 +22,10 @@ if TYPE_CHECKING:
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
 
 
+def bash_cmd_and_args(cmd: str, /, *cmds: str) -> list[str]:
+    return ["bash", "-l", "-c", "\n".join([cmd, *cmds])]
+
+
 def echo_cmd(text: str, /) -> list[str]:
     return ["echo", text]
 
@@ -294,6 +298,7 @@ def touch_cmd(path: PathLike, /) -> list[str]:
 
 __all__ = [
     "MKTEMP_DIR_CMD",
+    "bash_cmd_and_args",
     "echo_cmd",
     "expand_path",
     "maybe_sudo_cmd",
