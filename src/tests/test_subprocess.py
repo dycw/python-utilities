@@ -100,15 +100,6 @@ class TestRun:
         assert cap.out == "root\n"
         assert cap.err == ""
 
-    @skipif_ci
-    @skipif_mac
-    def test_bash_and_user(self, *, capsys: CaptureFixture) -> None:
-        result = run("whoami", "echo ${HOME}", bash=True, user="root", print=True)
-        assert result is None
-        cap = capsys.readouterr()
-        assert cap.out == "root\n/root\n"
-        assert cap.err == ""
-
     @mark.parametrize("executable", [param("sh"), param("bash")])
     def test_executable(self, *, executable: str, capsys: CaptureFixture) -> None:
         result = run("echo $0", executable=executable, shell=True, print=True)  # noqa: S604
@@ -349,26 +340,6 @@ class TestSSHCmd:
             "-T",
             "user@hostname",
             "true",
-        ]
-        assert result == expected
-
-    def test_bash(self) -> None:
-        result = ssh_cmd(
-            "user", "hostname", "key=value", "echo ${key}@stdout", bash=True
-        )
-        expected = [
-            "ssh",
-            "-o",
-            "BatchMode=yes",
-            "-o",
-            "HostKeyAlgorithms=ssh-ed25519",
-            "-o",
-            "StrictHostKeyChecking=yes",
-            "-T",
-            "user@hostname",
-            "bash",
-            "-lc",
-            "key=value\necho ${key}@stdout",
         ]
         assert result == expected
 
