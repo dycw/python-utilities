@@ -8,7 +8,6 @@ from pytest import LogCaptureFixture, mark, raises
 
 from utilities.getpass import USER
 from utilities.iterables import one
-from utilities.pytest import skipif_mac
 from utilities.subprocess import (
     bash_cmd_and_args,
     echo_cmd,
@@ -95,6 +94,7 @@ class TestRmCmd:
         assert result == expected
 
 
+@mark.only
 class TestRun:
     def test_main(self, *, capsys: CaptureFixture) -> None:
         result = run("echo", "hi")
@@ -117,12 +117,11 @@ class TestRun:
         assert cap.out == f"{USER}\n"
         assert cap.err == ""
 
-    @mark.only
     def test_bash_and_user(self, *, capsys: CaptureFixture) -> None:
-        result = run("whoami", "echo ${HOME}", bash=True, user=USER, print=True)
+        result = run("whoami", "echo ${HOME}", bash=True, user="root", print=True)
         assert result is None
         cap = capsys.readouterr()
-        assert cap.out == f"{USER}\n"
+        assert cap.out == "root\n/root\n"
         assert cap.err == ""
 
     def test_shell(self, *, capsys: CaptureFixture) -> None:
