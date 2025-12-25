@@ -20,6 +20,7 @@ from utilities.subprocess import (
     ssh,
     ssh_cmd,
     touch_cmd,
+    yield_ssh_temp_dir,
 )
 from utilities.text import strip_and_dedent, unique_str
 from utilities.whenever import MINUTE
@@ -366,3 +367,18 @@ class TestTouchCmd:
         result = touch_cmd("~/foo")
         expected = ["touch", "~/foo"]
         assert result == expected
+
+
+class TestYieldSSHTempDir:
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_main(self) -> None:
+        with yield_ssh_temp_dir("root", "proxmox.main") as temp_dir:
+            raise_if_present = f"if [ -d {temp_dir} ]; then exit 1; fi"
+            raise_if_missing = f"if ! [ -d {temp_dir} ]; then exit 1; fi"
+            ssh("root", "proxmox.main", input=raise_if_missing)
+            with raises(CalledProcessError):
+                ssh("root", "proxmox.main", input=raise_if_present)
+        ssh("root", "proxmox.main", input=raise_if_present)
+        with raises(CalledProcessError):
+            ssh("root", "proxmox.main", input=raise_if_missing)

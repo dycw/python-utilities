@@ -105,6 +105,7 @@ class TestDockerExecCmd:
 
 class TestYieldDockerTempDir:
     @skipif_ci
+    @throttle(delta=5 * MINUTE)
     def test_main(self) -> None:
         with yield_docker_temp_dir("postgres") as temp_dir:
             raise_if_present = f"if [ -d {temp_dir} ]; then exit 1; fi"
