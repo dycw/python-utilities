@@ -82,6 +82,7 @@ def run(
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
+    retry: tuple[int, TimeDelta] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -101,6 +102,7 @@ def run(
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
+    retry: tuple[int, TimeDelta] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -120,6 +122,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
+    retry: tuple[int, TimeDelta] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -139,6 +142,7 @@ def run(
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
+    retry: tuple[int, TimeDelta] | None = None,
     logger: LoggerLike | None = None,
 ) -> None: ...
 @overload
@@ -158,6 +162,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
+    retry: tuple[int, TimeDelta] | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None: ...
 def run(
@@ -176,6 +181,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
+    retry: tuple[int, TimeDelta] | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None:
     args: list[str] = []
@@ -232,6 +238,11 @@ def run(
             case 0, False, False:
                 return None
             case _, _, _:
+                if retry is None:
+                    remaining = delta = None
+                else:
+                    attempts, delta = retry
+                    remaining = attempts - 1
                 _ = stdout.seek(0)
                 stdout_text = stdout.read()
                 _ = stderr.seek(0)
@@ -253,9 +264,38 @@ def run(
 -- stderr ---------------------------------------------------------------------
 {stderr_text}-------------------------------------------------------------------------------
 """)
+                    if (
+                        (remaining is not None)
+                        and (remaining >= 1)
+                        and (delta is not None)
+                    ):
+                        msg = (
+                            f"{msg}\n\nRetrying {remaining} more time(s) after {delta}"
+                        )
                     to_logger(logger).error(msg)
-                raise CalledProcessError(
+                error = CalledProcessError(
                     return_code, args, output=stdout_text, stderr=stderr_text
+                )
+                if (remaining is None) or (remaining <= 0) or (delta is None):
+                    raise error
+                sleep(delta.in_seconds())
+                return run(
+                    cmd,
+                    *cmds_or_args,
+                    user=user,
+                    executable=executable,
+                    shell=shell,
+                    cwd=cwd,
+                    env=env,
+                    input=input,
+                    print=print,
+                    print_stdout=print_stdout,
+                    print_stderr=print_stderr,
+                    return_=return_,
+                    return_stdout=return_stdout,
+                    return_stderr=return_stderr,
+                    retry=(remaining, delta),
+                    logger=logger,
                 )
             case never:
                 assert_never(never)
@@ -441,7 +481,7 @@ def ssh(
 -- stderr ---------------------------------------------------------------------
 {error.stderr}-------------------------------------------------------------------------------
 
-Retrying {attempts} more time(s) after {delta}...
+Retrying {attempts - 1} more time(s) after {delta}...
 """)
             to_logger(logger).error(msg)
         sleep(delta.in_seconds())
