@@ -99,6 +99,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -117,6 +118,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -135,6 +137,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -153,6 +156,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -171,6 +175,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -188,6 +193,7 @@ def docker_exec(
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
+    input: str | None = None,  # noqa: A002
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -202,6 +208,7 @@ def docker_exec(
     )
     return run(  # skipif-ci
         *cmd_and_args,
+        input=input,
         print=print,
         print_stdout=print_stdout,
         print_stderr=print_stderr,
