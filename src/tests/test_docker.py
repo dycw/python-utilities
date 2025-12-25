@@ -3,7 +3,7 @@ from __future__ import annotations
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
-from pytest import mark, raises
+from pytest import raises
 
 from utilities.docker import (
     docker_cp,
@@ -94,7 +94,6 @@ class TestDockerExecCmd:
 
 class TestYieldDockerTempDir:
     @skipif_ci
-    @mark.only
     def test_main(self) -> None:
         with yield_docker_temp_dir("postgres") as temp_dir:
             raise_if_present = f"if [ -d {temp_dir} ]; then exit 1; fi"
