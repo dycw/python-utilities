@@ -287,9 +287,8 @@ def _write_to_streams(text: str, /, *outputs: IO[str]) -> None:
 def ssh(
     user: str,
     hostname: str,
-    cmd: str,
     /,
-    *cmds_or_args: str,
+    *cmd_and_cmds_or_args: str,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
@@ -306,9 +305,8 @@ def ssh(
 def ssh(
     user: str,
     hostname: str,
-    cmd: str,
     /,
-    *cmds_or_args: str,
+    *cmd_and_cmds_or_args: str,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
@@ -325,9 +323,8 @@ def ssh(
 def ssh(
     user: str,
     hostname: str,
-    cmd: str,
     /,
-    *cmds_or_args: str,
+    *cmd_and_cmds_or_args: str,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
@@ -344,9 +341,8 @@ def ssh(
 def ssh(
     user: str,
     hostname: str,
-    cmd: str,
     /,
-    *cmds_or_args: str,
+    *cmd_and_cmds_or_args: str,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
@@ -362,9 +358,8 @@ def ssh(
 def ssh(
     user: str,
     hostname: str,
-    cmd: str,
     /,
-    *cmds_or_args: str,
+    *cmd_and_cmds_or_args: str,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
@@ -380,8 +375,7 @@ def ssh(
     cmd_and_args = ssh_cmd(  # skipif-ci
         user,
         hostname,
-        cmd,
-        *cmds_or_args,
+        *cmd_and_cmds_or_args,
         batch_mode=batch_mode,
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
@@ -402,9 +396,8 @@ def ssh(
 def ssh_cmd(
     user: str,
     hostname: str,
-    cmd: str,
     /,
-    *cmds_or_args: str,
+    *cmd_and_cmds_or_args: str,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
@@ -415,7 +408,7 @@ def ssh_cmd(
     args.extend(["-o", f"HostKeyAlgorithms={','.join(host_key_algorithms)}"])
     if strict_host_key_checking:
         args.extend(["-o", "StrictHostKeyChecking=yes"])
-    return [*args, "-T", f"{user}@{hostname}", cmd, *cmds_or_args]
+    return [*args, "-T", f"{user}@{hostname}", *cmd_and_cmds_or_args]
 
 
 def sudo_cmd(cmd: str, /, *args: str) -> list[str]:

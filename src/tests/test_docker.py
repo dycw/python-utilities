@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from re import search
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
-from pytest import raises
+from pytest import CaptureFixture, raises
 
 from utilities.docker import (
     docker_cp,
@@ -12,8 +13,10 @@ from utilities.docker import (
     docker_exec_cmd,
     yield_docker_temp_dir,
 )
-from utilities.pytest import skipif_ci
+from utilities.pytest import skipif_ci, throttle
 from utilities.subprocess import BASH_LS, touch_cmd
+from utilities.text import strip_and_dedent
+from utilities.whenever import MINUTE
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -55,9 +58,17 @@ class TestDockerCpCmd:
 
 class TestDockerExec:
     @skipif_ci
-    def test_main(self) -> None:
-        result = docker_exec("postgres", "true")
+    @throttle(delta=5 * MINUTE)
+    def test_main(self, *, capsys: CaptureFixture) -> None:
+        input_ = strip_and_dedent("""
+            hostname
+            whoami 1>&2
+        """)
+        result = docker_exec("postgres", *BASH_LS, input=input_, print=True)
         assert result is None
+        cap = capsys.readouterr()
+        assert search("^[0-9a-f]{12}$", cap.out)
+        assert cap.err == "root\n"
 
 
 class TestDockerExecCmd:

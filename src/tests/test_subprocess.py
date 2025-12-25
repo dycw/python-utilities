@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from pytest import LogCaptureFixture, mark, param, raises
 
 from utilities.iterables import one
-from utilities.pytest import skipif_ci, skipif_mac
+from utilities.pytest import skipif_ci, skipif_mac, throttle
 from utilities.subprocess import (
     BASH_LC,
     echo_cmd,
@@ -17,10 +17,12 @@ from utilities.subprocess import (
     mkdir_cmd,
     rm_cmd,
     run,
+    ssh,
     ssh_cmd,
     touch_cmd,
 )
 from utilities.text import strip_and_dedent, unique_str
+from utilities.whenever import MINUTE
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
@@ -278,6 +280,21 @@ stderr
 -------------------------------------------------------------------------------
 """)
         assert record.message == expected
+
+
+class TestSSH:
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_main(self, *, capsys: CaptureFixture) -> None:
+        input_ = strip_and_dedent("""
+            hostname
+            whoami 1>&2
+        """)
+        result = ssh("root", "proxmox.main", input=input_, print=True)
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == "proxmox\n"
+        assert cap.err == "root\n"
 
 
 class TestSSHCmd:
