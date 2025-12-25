@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from pytest import LogCaptureFixture, mark, raises
 
 from utilities.iterables import one
+from utilities.pytest import skipif_mac
 from utilities.subprocess import (
     echo_cmd,
     expand_path,
@@ -96,6 +97,7 @@ class TestRun:
         assert cap.err == ""
 
     @mark.only
+    @skipif_mac
     def test_user(self, *, capsys: CaptureFixture) -> None:
         result = run("echo", "hi", user="test")
         assert result is None
