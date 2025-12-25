@@ -7,7 +7,7 @@ from pathlib import Path
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
-from typing import IO, TYPE_CHECKING, Literal, assert_never, overload
+from typing import IO, TYPE_CHECKING, AbstractSet, Literal, assert_never, overload
 
 from utilities.errors import ImpossibleCaseError
 from utilities.logging import to_logger
@@ -19,11 +19,24 @@ if TYPE_CHECKING:
     from utilities.types import LoggerLike, PathLike, StrMapping, StrStrMapping
 
 
+_HOST_KEY_ALGORITHMS = ["ssh-ed25519"]
+EOF = "EOF"
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
 
 
-def bash_cmd_and_args(cmd: str, /, *cmds: str) -> list[str]:
-    return ["bash", "-l", "-c", "\n".join([cmd, *cmds])]
+def bash_cmd_and_args(cmd: str, /, *cmds: str, eof: str = "EOF") -> list[str]:
+    args: list[str] = ["bash", "-l"]
+    if len(cmds) == 0:
+        args.extend(["-c", cmd])
+    else:
+        args.extend([
+            "-s",
+            f"""\
+<<'{eof}'
+{"\n".join([cmd, *cmds])}
+{eof}""",
+        ])
+    return args
 
 
 def echo_cmd(text: str, /) -> list[str]:
@@ -68,12 +81,13 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
+    bash: bool = False,
+    user: str | int | None = None,
+    eof: str = EOF,
     executable: str | None = None,
     shell: bool = False,
-    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
-    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -87,12 +101,13 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
+    bash: bool = False,
+    user: str | int | None = None,
+    eof: str = EOF,
     executable: str | None = None,
     shell: bool = False,
-    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
-    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -125,12 +140,13 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
+    bash: bool = False,
+    user: str | int | None = None,
+    eof: str = EOF,
     executable: str | None = None,
     shell: bool = False,
-    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
-    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -144,12 +160,13 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
+    bash: bool = False,
+    user: str | int | None = None,
+    eof: str = EOF,
     executable: str | None = None,
     shell: bool = False,
-    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
-    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -164,6 +181,7 @@ def run(
     *cmds_or_args: str,
     bash: bool = False,
     user: str | int | None = None,
+    eof: str = EOF,
     executable: str | None = None,
     shell: bool = False,
     cwd: PathLike | None = None,
@@ -180,14 +198,14 @@ def run(
         case False, user_use:
             args: list[str] = [cmd, *cmds_or_args]
         case True, None:
-            args: list[str] = bash_cmd_and_args(cmd, *cmds_or_args)
+            args: list[str] = bash_cmd_and_args(cmd, *cmds_or_args, eof=eof)
             user_use = None
         case True, str() | int():  # skipif-ci-or-mac
             args: list[str] = [
                 "su",
                 "-",
                 str(user),
-                *bash_cmd_and_args(cmd, *cmds_or_args),
+                *bash_cmd_and_args(cmd, *cmds_or_args, eof=eof),
             ]
             user_use = None
         case never:
@@ -285,6 +303,31 @@ def _run_target(input_: IO[str], /, *outputs: IO[str]) -> None:
                 _ = output.write(line)
 
 
+def ssh_cmd(
+    user: str,
+    hostname: str,
+    cmd: str,
+    /,
+    *cmds_or_args: str,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
+    bash: bool = False,
+) -> list[str]:
+    args: list[str] = ["ssh"]
+    if batch_mode:
+        args.extend(["-o", "BatchMode=yes"])
+    args.extend(["-o", f"HostKeyAlgorithms={','.join(host_key_algorithms)}"])
+    if strict_host_key_checking:
+        args.extend(["-o", "StrictHostKeyChecking=yes"])
+    args.append(f"{user}@{hostname}")
+    if bash:
+        args.extend(bash_cmd_and_args(cmd, *cmds_or_args))
+    else:
+        args.extend([cmd, *cmds_or_args])
+    return args
+
+
 def sudo_cmd(cmd: str, /, *args: str) -> list[str]:
     return ["sudo", cmd, *args]
 
@@ -294,6 +337,7 @@ def touch_cmd(path: PathLike, /) -> list[str]:
 
 
 __all__ = [
+    "EOF",
     "MKTEMP_DIR_CMD",
     "bash_cmd_and_args",
     "echo_cmd",
@@ -303,6 +347,7 @@ __all__ = [
     "mkdir_cmd",
     "rm_cmd",
     "run",
+    "ssh_cmd",
     "sudo_cmd",
     "touch_cmd",
 ]

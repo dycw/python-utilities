@@ -4,7 +4,7 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
-from pytest import LogCaptureFixture, raises
+from pytest import LogCaptureFixture, mark, raises
 
 from utilities.iterables import one
 from utilities.pytest import skipif_ci, skipif_mac
@@ -17,6 +17,7 @@ from utilities.subprocess import (
     mkdir_cmd,
     rm_cmd,
     run,
+    ssh_cmd,
     touch_cmd,
 )
 from utilities.text import strip_and_dedent, unique_str
@@ -33,7 +34,7 @@ class TestBashCmdAndArgs:
 
     def test_multiline(self) -> None:
         result = bash_cmd_and_args("cmd1", "cmd2")
-        expected = ["bash", "-l", "-c", "cmd1\ncmd2"]
+        expected = ["bash", "-l", "-s", "<<'EOF'\ncmd1\ncmd2\nEOF"]
         assert result == expected
 
 
@@ -260,6 +261,23 @@ stderr
 -------------------------------------------------------------------------------
 """)
         assert record.message == expected
+
+
+class TestSSHCmd:
+    def test_main(self) -> None:
+        result = ssh_cmd("user", "hostname", "true")
+        expected = [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "HostKeyAlgorithms=ssh-ed25519",
+            "-o",
+            "StrictHostKeyChecking=yes",
+            "user@hostname",
+            "true",
+        ]
+        assert result == expected
 
 
 class TestTouchCmd:
