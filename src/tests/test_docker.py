@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hypothesis import HealthCheck, Phase, given, reproduce_failure, settings
+from pytest import RaisesGroup, approx, fixture, mark, param, raises, skip
+
+from utilities.contextvars import set_global_breakpoint
 from utilities.docker import (
     docker_cp,
     docker_cp_cmd,
@@ -10,7 +14,7 @@ from utilities.docker import (
     yield_docker_temp_dir,
 )
 from utilities.pytest import skipif_ci
-from utilities.subprocess import BASH_LC, touch_cmd
+from utilities.subprocess import BASH_LC, BASH_LS, touch_cmd
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -24,7 +28,9 @@ class TestDockerCp:
         with yield_docker_temp_dir("postgres") as temp_cont:
             dest = temp_cont / src.name
             docker_cp(src, ("postgres", dest))
-            docker_exec("postgres", f"if ! [ -f {dest} ]; then exit 1; fi", bash=True)
+            docker_exec(
+                "postgres", *BASH_LC, input=f"if ! [ -f {dest} ]; then exit 1; fi"
+            )
 
     @skipif_ci
     def test_from_container(self, *, tmp_path: Path) -> None:
@@ -71,6 +77,11 @@ class TestDockerExecCmd:
         expected = ["docker", "exec", "--env", "KEY=value", "container", "cmd"]
         assert result == expected
 
+    def test_interactive(self) -> None:
+        result = docker_exec_cmd("container", "cmd", interactive=True)
+        expected = ["docker", "exec", "--interactive", "container", "cmd"]
+        assert result == expected
+
     def test_user(self) -> None:
         result = docker_exec_cmd("container", "cmd", user="user")
         expected = ["docker", "exec", "--user", "user", "container", "cmd"]
@@ -84,11 +95,12 @@ class TestDockerExecCmd:
 
 class TestYieldDockerTempDir:
     @skipif_ci
+    @mark.only
     def test_main(self) -> None:
         with yield_docker_temp_dir("postgres") as temp_dir:
             docker_exec(
-                "postgres", *BASH_LC, input=f"if ! [ -d {temp_dir} ]; then exit 1; fi"
+                "postgres", *BASH_LS, input=f"if ! [ -d {temp_dir} ]; then exit 1; fi"
             )
         docker_exec(
-            "postgres", *BASH_LC, input=f"if [ -d {temp_dir} ]; then exit 1; fi"
+            "postgres", *BASH_LS, input=f"if [ -d {temp_dir} ]; then exit 1; fi"
         )

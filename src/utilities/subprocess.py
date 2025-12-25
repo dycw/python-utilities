@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import sys
 from contextlib import contextmanager
 from io import StringIO
@@ -21,6 +22,7 @@ if TYPE_CHECKING:
 
 _HOST_KEY_ALGORITHMS = ["ssh-ed25519"]
 BASH_LC = ["bash", "-lc"]
+BASH_LS = ["bash", "-ls"]
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
 
 
@@ -311,6 +313,7 @@ def touch_cmd(path: PathLike, /) -> list[str]:
 
 __all__ = [
     "BASH_LC",
+    "BASH_LS",
     "MKTEMP_DIR_CMD",
     "echo_cmd",
     "expand_path",

@@ -225,6 +225,7 @@ def docker_exec_cmd(
     /,
     *cmds_or_args: str,
     env: StrStrMapping | None = None,
+    interactive: bool = False,
     user: str | None = None,
     workdir: PathLike | None = None,
     **env_kwargs: str,
@@ -234,6 +235,8 @@ def docker_exec_cmd(
     mapping: dict[str, str] = ({} if env is None else dict(env)) | env_kwargs
     for key, value in mapping.items():
         args.extend(["--env", f"{key}={value}"])
+    if interactive:
+        args.append("--interactive")
     if user is not None:
         args.extend(["--user", user])
     if workdir is not None:
