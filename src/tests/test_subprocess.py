@@ -4,7 +4,7 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
-from pytest import LogCaptureFixture, mark, raises
+from pytest import LogCaptureFixture, raises
 
 from utilities.iterables import one
 from utilities.pytest import skipif_ci, skipif_mac
@@ -27,14 +27,14 @@ if TYPE_CHECKING:
 
 
 class TestBashCmdAndArgs:
-    def test_main(self) -> None:
+    def test_single(self) -> None:
         result = bash_cmd_and_args("cmd")
-        expected = ["bash", "-l", "-c", "cmd"]
+        expected = ["bash", "-lc", "cmd"]
         assert result == expected
 
-    def test_multiline(self) -> None:
+    def test_multiple(self) -> None:
         result = bash_cmd_and_args("cmd1", "cmd2")
-        expected = ["bash", "-l", "-s", "<<'EOF'\ncmd1\ncmd2\nEOF"]
+        expected = ["bash", "-lc", "cmd1\ncmd2"]
         assert result == expected
 
 
@@ -103,12 +103,26 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == ""
 
-    def test_bash(self, *, capsys: CaptureFixture) -> None:
-        result = run("key=value", "echo ${key}1", "echo ${key}2", bash=True, print=True)
+    def test_bash_single(self, *, capsys: CaptureFixture) -> None:
+        result = run("echo stdout", bash=True, print=True)
         assert result is None
         cap = capsys.readouterr()
-        assert cap.out == "value1\nvalue2\n"
+        assert cap.out == "stdout\n"
         assert cap.err == ""
+
+    def test_bash_multiple(self, *, capsys: CaptureFixture) -> None:
+        result = run(
+            "key=value",
+            "echo ${key}@stdout",
+            "sleep 0.5",
+            "echo ${key}@stderr 1>&2",
+            bash=True,
+            print=True,
+        )
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == "value@stdout\n"
+        assert cap.err == "value@stderr\n"
 
     @skipif_ci
     @skipif_mac

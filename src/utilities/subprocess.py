@@ -7,7 +7,7 @@ from pathlib import Path
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
-from typing import IO, TYPE_CHECKING, AbstractSet, Literal, assert_never, overload
+from typing import IO, TYPE_CHECKING, Literal, assert_never, overload
 
 from utilities.errors import ImpossibleCaseError
 from utilities.logging import to_logger
@@ -20,23 +20,11 @@ if TYPE_CHECKING:
 
 
 _HOST_KEY_ALGORITHMS = ["ssh-ed25519"]
-EOF = "EOF"
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
 
 
-def bash_cmd_and_args(cmd: str, /, *cmds: str, eof: str = "EOF") -> list[str]:
-    args: list[str] = ["bash", "-l"]
-    if len(cmds) == 0:
-        args.extend(["-c", cmd])
-    else:
-        args.extend([
-            "-s",
-            f"""\
-<<'{eof}'
-{"\n".join([cmd, *cmds])}
-{eof}""",
-        ])
-    return args
+def bash_cmd_and_args(cmd: str, /, *cmds: str) -> list[str]:
+    return ["bash", "-lc", "\n".join([cmd, *cmds])]
 
 
 def echo_cmd(text: str, /) -> list[str]:
@@ -83,7 +71,6 @@ def run(
     *cmds_or_args: str,
     bash: bool = False,
     user: str | int | None = None,
-    eof: str = EOF,
     executable: str | None = None,
     shell: bool = False,
     cwd: PathLike | None = None,
@@ -103,7 +90,6 @@ def run(
     *cmds_or_args: str,
     bash: bool = False,
     user: str | int | None = None,
-    eof: str = EOF,
     executable: str | None = None,
     shell: bool = False,
     cwd: PathLike | None = None,
@@ -121,12 +107,12 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
+    bash: bool = False,
+    user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
-    bash: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
-    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -142,7 +128,6 @@ def run(
     *cmds_or_args: str,
     bash: bool = False,
     user: str | int | None = None,
-    eof: str = EOF,
     executable: str | None = None,
     shell: bool = False,
     cwd: PathLike | None = None,
@@ -162,7 +147,6 @@ def run(
     *cmds_or_args: str,
     bash: bool = False,
     user: str | int | None = None,
-    eof: str = EOF,
     executable: str | None = None,
     shell: bool = False,
     cwd: PathLike | None = None,
@@ -181,7 +165,6 @@ def run(
     *cmds_or_args: str,
     bash: bool = False,
     user: str | int | None = None,
-    eof: str = EOF,
     executable: str | None = None,
     shell: bool = False,
     cwd: PathLike | None = None,
@@ -198,14 +181,14 @@ def run(
         case False, user_use:
             args: list[str] = [cmd, *cmds_or_args]
         case True, None:
-            args: list[str] = bash_cmd_and_args(cmd, *cmds_or_args, eof=eof)
+            args: list[str] = bash_cmd_and_args(cmd, *cmds_or_args)
             user_use = None
         case True, str() | int():  # skipif-ci-or-mac
             args: list[str] = [
                 "su",
                 "-",
                 str(user),
-                *bash_cmd_and_args(cmd, *cmds_or_args, eof=eof),
+                *bash_cmd_and_args(cmd, *cmds_or_args),
             ]
             user_use = None
         case never:
@@ -337,7 +320,6 @@ def touch_cmd(path: PathLike, /) -> list[str]:
 
 
 __all__ = [
-    "EOF",
     "MKTEMP_DIR_CMD",
     "bash_cmd_and_args",
     "echo_cmd",
