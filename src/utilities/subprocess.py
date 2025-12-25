@@ -342,8 +342,8 @@ def ssh(
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
-    logger: LoggerLike | None = None,
     retry: tuple[int, TimeDelta] | None = None,
+    logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
 def ssh(
@@ -361,8 +361,8 @@ def ssh(
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
-    logger: LoggerLike | None = None,
     retry: tuple[int, TimeDelta] | None = None,
+    logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
 def ssh(
@@ -380,8 +380,8 @@ def ssh(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
-    logger: LoggerLike | None = None,
     retry: tuple[int, TimeDelta] | None = None,
+    logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
 def ssh(
@@ -399,8 +399,8 @@ def ssh(
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
-    logger: LoggerLike | None = None,
     retry: tuple[int, TimeDelta] | None = None,
+    logger: LoggerLike | None = None,
 ) -> None: ...
 @overload
 def ssh(
@@ -418,8 +418,8 @@ def ssh(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
-    logger: LoggerLike | None = None,
     retry: tuple[int, TimeDelta] | None = None,
+    logger: LoggerLike | None = None,
 ) -> str | None: ...
 def ssh(
     user: str,
@@ -436,8 +436,8 @@ def ssh(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
-    logger: LoggerLike | None = None,
     retry: tuple[int, TimeDelta] | None = None,
+    logger: LoggerLike | None = None,
 ) -> str | None:
     cmd_and_args = ssh_cmd(  # skipif-ci
         user,
@@ -447,61 +447,18 @@ def ssh(
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
     )
-    try:  # skipif-ci
-        return run(
-            *cmd_and_args,
-            input=input,
-            print=print,
-            print_stdout=print_stdout,
-            print_stderr=print_stderr,
-            return_=return_,
-            return_stdout=return_stdout,
-            return_stderr=return_stderr,
-            logger=logger,
-        )
-    except CalledProcessError as error:  # skipif-ci
-        if retry is None:
-            raise
-        attempts, delta = retry
-        if attempts <= 0:
-            raise
-        if logger is not None:
-            msg = strip_and_dedent(f"""
-'ssh' failed with:
- - user                     = {user}
- - hostname                 = {hostname}
- - cmd_and_cmds_or_args     = {cmd_and_cmds_or_args}
- - batch_mode               = {batch_mode}
- - host_key_algorithms      = {host_key_algorithms}
- - strict_host_key_checking = {strict_host_key_checking}
- - input                    = {input}
-
--- stdout ---------------------------------------------------------------------
-{error.stdout}-------------------------------------------------------------------------------
--- stderr ---------------------------------------------------------------------
-{error.stderr}-------------------------------------------------------------------------------
-
-Retrying {attempts - 1} more time(s) after {delta}...
-""")
-            to_logger(logger).error(msg)
-        sleep(delta.in_seconds())
-        return ssh(
-            user,
-            hostname,
-            *cmd_and_cmds_or_args,
-            batch_mode=batch_mode,
-            host_key_algorithms=host_key_algorithms,
-            strict_host_key_checking=strict_host_key_checking,
-            input=input,
-            print=print,
-            print_stdout=print_stdout,
-            print_stderr=print_stderr,
-            return_=return_,
-            return_stdout=return_stdout,
-            return_stderr=return_stderr,
-            logger=logger,
-            retry=(attempts - 1, delta),
-        )
+    return run(  # skipif-ci
+        *cmd_and_args,
+        input=input,
+        print=print,
+        print_stdout=print_stdout,
+        print_stderr=print_stderr,
+        return_=return_,
+        return_stdout=return_stdout,
+        return_stderr=return_stderr,
+        retry=retry,
+        logger=logger,
+    )
 
 
 def ssh_cmd(
