@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING
 from pytest import LogCaptureFixture, mark, param, raises
 
 from utilities.iterables import one
-from utilities.pytest import skipif_ci, skipif_mac
+from utilities.pytest import skipif_ci, skipif_mac, throttle
 from utilities.subprocess import (
-    bash_cmd_and_args,
+    BASH_LC,
     echo_cmd,
     expand_path,
     maybe_sudo_cmd,
@@ -17,25 +17,15 @@ from utilities.subprocess import (
     mkdir_cmd,
     rm_cmd,
     run,
+    ssh,
     ssh_cmd,
     touch_cmd,
 )
 from utilities.text import strip_and_dedent, unique_str
+from utilities.whenever import MINUTE
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
-
-
-class TestBashCmdAndArgs:
-    def test_single(self) -> None:
-        result = bash_cmd_and_args("cmd")
-        expected = ["bash", "-lc", "cmd"]
-        assert result == expected
-
-    def test_multiple(self) -> None:
-        result = bash_cmd_and_args("cmd1", "cmd2")
-        expected = ["bash", "-lc", "cmd1\ncmd2"]
-        assert result == expected
 
 
 class TestEchoCmd:
@@ -103,27 +93,6 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == ""
 
-    def test_bash_single(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo stdout", bash=True, print=True)
-        assert result is None
-        cap = capsys.readouterr()
-        assert cap.out == "stdout\n"
-        assert cap.err == ""
-
-    def test_bash_multiple(self, *, capsys: CaptureFixture) -> None:
-        result = run(
-            "key=value",
-            "echo ${key}@stdout",
-            "sleep 0.5",
-            "echo ${key}@stderr 1>&2",
-            bash=True,
-            print=True,
-        )
-        assert result is None
-        cap = capsys.readouterr()
-        assert cap.out == "value@stdout\n"
-        assert cap.err == "value@stderr\n"
-
     @skipif_ci
     @skipif_mac
     def test_user(self, *, capsys: CaptureFixture) -> None:
@@ -131,15 +100,6 @@ class TestRun:
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == "root\n"
-        assert cap.err == ""
-
-    @skipif_ci
-    @skipif_mac
-    def test_bash_and_user(self, *, capsys: CaptureFixture) -> None:
-        result = run("whoami", "echo ${HOME}", bash=True, user="root", print=True)
-        assert result is None
-        cap = capsys.readouterr()
-        assert cap.out == "root\n/root\n"
         assert cap.err == ""
 
     @mark.parametrize("executable", [param("sh"), param("bash")])
@@ -171,8 +131,25 @@ class TestRun:
         assert cap.out == "KEY=value\n"
         assert cap.err == ""
 
-    def test_input(self, *, capsys: CaptureFixture) -> None:
-        input_ = "foo\nbar\nbaz"
+    def test_input_bash(self, *, capsys: CaptureFixture) -> None:
+        input_ = strip_and_dedent("""
+            key=value
+            echo ${key}@stdout
+            sleep 0.5
+            echo ${key}@stderr 1>&2
+        """)
+        result = run(*BASH_LC, input_, print=True)
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == "value@stdout\n"
+        assert cap.err == "value@stderr\n"
+
+    def test_input_cat(self, *, capsys: CaptureFixture) -> None:
+        input_ = strip_and_dedent("""
+            foo
+            bar
+            baz
+        """)
         result = run("cat", input=input_, print=True)
         assert result is None
         cap = capsys.readouterr()
@@ -180,7 +157,11 @@ class TestRun:
         assert cap.err == ""
 
     def test_input_and_return(self, *, capsys: CaptureFixture) -> None:
-        input_ = "foo\nbar\nbaz"
+        input_ = strip_and_dedent("""
+            foo
+            bar
+            baz
+        """)
         result = run("cat", input=input_, return_=True)
         assert result == input_
         cap = capsys.readouterr()
@@ -284,7 +265,6 @@ class TestRun:
 'run' failed with:
  - cmd          = echo stdout; echo stderr 1>&2; exit 1
  - cmds_or_args = ()
- - bash         = False
  - user         = None
  - executable   = None
  - shell        = True
@@ -302,6 +282,21 @@ stderr
         assert record.message == expected
 
 
+class TestSSH:
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_main(self, *, capsys: CaptureFixture) -> None:
+        input_ = strip_and_dedent("""
+            hostname
+            whoami 1>&2
+        """)
+        result = ssh("root", "proxmox.main", input=input_, print=True)
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == "proxmox\n"
+        assert cap.err == "root\n"
+
+
 class TestSSHCmd:
     def test_main(self) -> None:
         result = ssh_cmd("user", "hostname", "true")
@@ -313,6 +308,7 @@ class TestSSHCmd:
             "HostKeyAlgorithms=ssh-ed25519",
             "-o",
             "StrictHostKeyChecking=yes",
+            "-T",
             "user@hostname",
             "true",
         ]
@@ -326,6 +322,7 @@ class TestSSHCmd:
             "HostKeyAlgorithms=ssh-ed25519",
             "-o",
             "StrictHostKeyChecking=yes",
+            "-T",
             "user@hostname",
             "true",
         ]
@@ -343,6 +340,7 @@ class TestSSHCmd:
             "HostKeyAlgorithms=rsa-sha-256",
             "-o",
             "StrictHostKeyChecking=yes",
+            "-T",
             "user@hostname",
             "true",
         ]
@@ -356,27 +354,9 @@ class TestSSHCmd:
             "BatchMode=yes",
             "-o",
             "HostKeyAlgorithms=ssh-ed25519",
+            "-T",
             "user@hostname",
             "true",
-        ]
-        assert result == expected
-
-    def test_bash(self) -> None:
-        result = ssh_cmd(
-            "user", "hostname", "key=value", "echo ${key}@stdout", bash=True
-        )
-        expected = [
-            "ssh",
-            "-o",
-            "BatchMode=yes",
-            "-o",
-            "HostKeyAlgorithms=ssh-ed25519",
-            "-o",
-            "StrictHostKeyChecking=yes",
-            "user@hostname",
-            "bash",
-            "-lc",
-            "key=value\necho ${key}@stdout",
         ]
         assert result == expected
 

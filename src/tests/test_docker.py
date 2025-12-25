@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+from re import search
+from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
+
+from pytest import CaptureFixture, raises
 
 from utilities.docker import (
     docker_cp,
@@ -9,8 +13,10 @@ from utilities.docker import (
     docker_exec_cmd,
     yield_docker_temp_dir,
 )
-from utilities.pytest import skipif_ci
-from utilities.subprocess import touch_cmd
+from utilities.pytest import skipif_ci, throttle
+from utilities.subprocess import BASH_LS, touch_cmd
+from utilities.text import strip_and_dedent
+from utilities.whenever import MINUTE
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -24,7 +30,9 @@ class TestDockerCp:
         with yield_docker_temp_dir("postgres") as temp_cont:
             dest = temp_cont / src.name
             docker_cp(src, ("postgres", dest))
-            docker_exec("postgres", f"if ! [ -f {dest} ]; then exit 1; fi", bash=True)
+            docker_exec(
+                "postgres", *BASH_LS, input=f"if ! [ -f {dest} ]; then exit 1; fi"
+            )
 
     @skipif_ci
     def test_from_container(self, *, tmp_path: Path) -> None:
@@ -50,9 +58,17 @@ class TestDockerCpCmd:
 
 class TestDockerExec:
     @skipif_ci
-    def test_main(self) -> None:
-        result = docker_exec("postgres", "true")
+    @throttle(delta=5 * MINUTE)
+    def test_main(self, *, capsys: CaptureFixture) -> None:
+        input_ = strip_and_dedent("""
+            hostname
+            whoami 1>&2
+        """)
+        result = docker_exec("postgres", *BASH_LS, input=input_, print=True)
         assert result is None
+        cap = capsys.readouterr()
+        assert search("^[0-9a-f]{12}$", cap.out)
+        assert cap.err == "root\n"
 
 
 class TestDockerExecCmd:
@@ -71,6 +87,11 @@ class TestDockerExecCmd:
         expected = ["docker", "exec", "--env", "KEY=value", "container", "cmd"]
         assert result == expected
 
+    def test_interactive(self) -> None:
+        result = docker_exec_cmd("container", "cmd", interactive=True)
+        expected = ["docker", "exec", "--interactive", "container", "cmd"]
+        assert result == expected
+
     def test_user(self) -> None:
         result = docker_exec_cmd("container", "cmd", user="user")
         expected = ["docker", "exec", "--user", "user", "container", "cmd"]
@@ -81,22 +102,16 @@ class TestDockerExecCmd:
         expected = ["docker", "exec", "--workdir", str(tmp_path), "container", "cmd"]
         assert result == expected
 
-    def test_bash_no_arguments(self) -> None:
-        result = docker_exec_cmd("container", "cmd", bash=True)
-        expected = ["docker", "exec", "container", "bash", "-lc", "cmd"]
-        assert result == expected
-
-    def test_bash_multline(self) -> None:
-        result = docker_exec_cmd("container", "cmd1", "cmd2", bash=True)
-        expected = ["docker", "exec", "container", "bash", "-lc", "cmd1\ncmd2"]
-        assert result == expected
-
 
 class TestYieldDockerTempDir:
     @skipif_ci
     def test_main(self) -> None:
         with yield_docker_temp_dir("postgres") as temp_dir:
-            docker_exec(
-                "postgres", f"if ! [ -d {temp_dir} ]; then exit 1; fi", bash=True
-            )
-        docker_exec("postgres", f"if [ -d {temp_dir} ]; then exit 1; fi", bash=True)
+            raise_if_present = f"if [ -d {temp_dir} ]; then exit 1; fi"
+            raise_if_missing = f"if ! [ -d {temp_dir} ]; then exit 1; fi"
+            docker_exec("postgres", *BASH_LS, input=raise_if_missing)
+            with raises(CalledProcessError):
+                docker_exec("postgres", *BASH_LS, input=raise_if_present)
+        docker_exec("postgres", *BASH_LS, input=raise_if_present)
+        with raises(CalledProcessError):
+            docker_exec("postgres", *BASH_LS, input=raise_if_missing)

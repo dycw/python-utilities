@@ -20,11 +20,9 @@ if TYPE_CHECKING:
 
 
 _HOST_KEY_ALGORITHMS = ["ssh-ed25519"]
+BASH_LC = ["bash", "-lc"]
+BASH_LS = ["bash", "-ls"]
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
-
-
-def bash_cmd_and_args(cmd: str, /, *cmds: str) -> list[str]:
-    return ["bash", "-lc", "\n".join([cmd, *cmds])]
 
 
 def echo_cmd(text: str, /) -> list[str]:
@@ -69,7 +67,6 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    bash: bool = False,
     user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
@@ -89,7 +86,6 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    bash: bool = False,
     user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
@@ -109,7 +105,6 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    bash: bool = False,
     user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
@@ -129,7 +124,6 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    bash: bool = False,
     user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
@@ -149,7 +143,6 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    bash: bool = False,
     user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
@@ -168,7 +161,6 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    bash: bool = False,
     user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
@@ -183,22 +175,10 @@ def run(
     return_stderr: bool = False,
     logger: LoggerLike | None = None,
 ) -> str | None:
-    match bash, user:
-        case False, user_use:
-            args: list[str] = [cmd, *cmds_or_args]
-        case True, None:
-            args: list[str] = bash_cmd_and_args(cmd, *cmds_or_args)
-            user_use = None
-        case True, str() | int():  # skipif-ci-or-mac
-            args: list[str] = [
-                "su",
-                "-",
-                str(user),
-                *bash_cmd_and_args(cmd, *cmds_or_args),
-            ]
-            user_use = None
-        case never:
-            assert_never(never)
+    args: list[str] = []
+    if user is not None:
+        args.extend(["su", "-", str(user)])
+    args.extend([cmd, *cmds_or_args])
     buffer = StringIO()
     stdout = StringIO()
     stderr = StringIO()
@@ -208,33 +188,33 @@ def run(
     stderr_outputs: list[IO[str]] = [buffer, stderr]
     if print or print_stderr:
         stderr_outputs.append(sys.stderr)
-    inputted = False
     with Popen(
         args,
         bufsize=1,
         executable=executable,
-        stdin=None if input is None else PIPE,
+        stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
         shell=shell,
         cwd=cwd,
         env=env,
         text=True,
-        user=user_use,
+        user=user,
     ) as proc:
+        if proc.stdin is None:  # pragma: no cover
+            raise ImpossibleCaseError(case=[f"{proc.stdin=}"])
         if proc.stdout is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stdout=}"])
         if proc.stderr is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stderr=}"])
-        if (input is not None) and not inputted:
-            inputted = True
-            stdout_i, stderr_i = proc.communicate(input=input)
-            _write_to_streams(stdout_i, *stdout_outputs)
-            _write_to_streams(stderr_i, *stderr_outputs)
         with (
-            _yield_write(proc.stdout, *stdout_outputs),
-            _yield_write(proc.stderr, *stderr_outputs),
+            _yield_write(proc.stdout, "proc.stdout", *stdout_outputs),
+            _yield_write(proc.stderr, "proc.stderr", *stderr_outputs),
         ):
+            if input is not None:
+                _ = proc.stdin.write(input)
+                proc.stdin.flush()
+                proc.stdin.close()
             return_code = proc.wait()
         match return_code, return_ or return_stdout, return_ or return_stderr:
             case 0, True, True:
@@ -258,7 +238,6 @@ def run(
 'run' failed with:
  - cmd          = {cmd}
  - cmds_or_args = {cmds_or_args}
- - bash         = {bash}
  - user         = {user}
  - executable   = {executable}
  - shell        = {shell}
@@ -280,8 +259,8 @@ def run(
 
 
 @contextmanager
-def _yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
-    thread = Thread(target=_run_target, args=(input_, *outputs), daemon=True)
+def _yield_write(input_: IO[str], desc: str, /, *outputs: IO[str]) -> Iterator[None]:
+    thread = Thread(target=_run_target, args=(input_, desc, *outputs), daemon=True)
     thread.start()
     try:
         yield
@@ -289,10 +268,14 @@ def _yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
         thread.join()
 
 
-def _run_target(input_: IO[str], /, *outputs: IO[str]) -> None:
-    with input_:
-        for text in iter(input_.readline, ""):
-            _write_to_streams(text, *outputs)
+def _run_target(input_: IO[str], desc: str, /, *outputs: IO[str]) -> None:
+    try:
+        with input_:
+            for text in iter(input_.readline, ""):
+                _write_to_streams(text, *outputs)
+    except ValueError:
+        _ = sys.stderr.write(f"Failed to write to {desc!r}...")
+        raise
 
 
 def _write_to_streams(text: str, /, *outputs: IO[str]) -> None:
@@ -300,16 +283,124 @@ def _write_to_streams(text: str, /, *outputs: IO[str]) -> None:
         _ = output.write(text)
 
 
-def ssh_cmd(
+@overload
+def ssh(
     user: str,
     hostname: str,
-    cmd: str,
     /,
-    *cmds_or_args: str,
+    *cmd_and_cmds_or_args: str,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
-    bash: bool = False,
+    input: str | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[True],
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def ssh(
+    user: str,
+    hostname: str,
+    /,
+    *cmd_and_cmds_or_args: str,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
+    input: str | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: Literal[True],
+    return_stderr: bool = False,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def ssh(
+    user: str,
+    hostname: str,
+    /,
+    *cmd_and_cmds_or_args: str,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
+    input: str | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: Literal[True],
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def ssh(
+    user: str,
+    hostname: str,
+    /,
+    *cmd_and_cmds_or_args: str,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
+    input: str | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[False] = False,
+    return_stdout: Literal[False] = False,
+    return_stderr: Literal[False] = False,
+    logger: LoggerLike | None = None,
+) -> None: ...
+def ssh(
+    user: str,
+    hostname: str,
+    /,
+    *cmd_and_cmds_or_args: str,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
+    input: str | None = None,  # noqa: A002
+    print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    logger: LoggerLike | None = None,
+) -> str | None:
+    cmd_and_args = ssh_cmd(  # skipif-ci
+        user,
+        hostname,
+        *cmd_and_cmds_or_args,
+        batch_mode=batch_mode,
+        host_key_algorithms=host_key_algorithms,
+        strict_host_key_checking=strict_host_key_checking,
+    )
+    return run(  # skipif-ci
+        *cmd_and_args,
+        input=input,
+        print=print,
+        print_stdout=print_stdout,
+        print_stderr=print_stderr,
+        return_=return_,
+        return_stdout=return_stdout,
+        return_stderr=return_stderr,
+        logger=logger,
+    )
+
+
+def ssh_cmd(
+    user: str,
+    hostname: str,
+    /,
+    *cmd_and_cmds_or_args: str,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
 ) -> list[str]:
     args: list[str] = ["ssh"]
     if batch_mode:
@@ -317,12 +408,7 @@ def ssh_cmd(
     args.extend(["-o", f"HostKeyAlgorithms={','.join(host_key_algorithms)}"])
     if strict_host_key_checking:
         args.extend(["-o", "StrictHostKeyChecking=yes"])
-    args.append(f"{user}@{hostname}")
-    if bash:
-        args.extend(bash_cmd_and_args(cmd, *cmds_or_args))
-    else:
-        args.extend([cmd, *cmds_or_args])
-    return args
+    return [*args, "-T", f"{user}@{hostname}", *cmd_and_cmds_or_args]
 
 
 def sudo_cmd(cmd: str, /, *args: str) -> list[str]:
@@ -334,8 +420,9 @@ def touch_cmd(path: PathLike, /) -> list[str]:
 
 
 __all__ = [
+    "BASH_LC",
+    "BASH_LS",
     "MKTEMP_DIR_CMD",
-    "bash_cmd_and_args",
     "echo_cmd",
     "expand_path",
     "maybe_sudo_cmd",
@@ -343,6 +430,7 @@ __all__ = [
     "mkdir_cmd",
     "rm_cmd",
     "run",
+    "ssh",
     "ssh_cmd",
     "sudo_cmd",
     "touch_cmd",
