@@ -419,6 +419,21 @@ def touch_cmd(path: PathLike, /) -> list[str]:
     return ["touch", str(path)]
 
 
+@contextmanager
+def yield_ssh_temp_dir(
+    user: str, hostname: str, /, *, keep: bool = False, logger: LoggerLike | None = None
+) -> Iterator[Path]:
+    path = Path(ssh(user, hostname, *MKTEMP_DIR_CMD, return_=True))
+    try:
+        yield path
+    finally:
+        if keep:
+            if logger is not None:
+                to_logger(logger).info("Keeping temporary directory '%s'...", path)
+        else:
+            ssh(user, hostname, *rm_cmd(path))
+
+
 __all__ = [
     "BASH_LC",
     "BASH_LS",
@@ -434,4 +449,5 @@ __all__ = [
     "ssh_cmd",
     "sudo_cmd",
     "touch_cmd",
+    "yield_ssh_temp_dir",
 ]
