@@ -151,11 +151,11 @@ class TestRun:
         assert cap.err == ""
 
     def test_shell(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo stdout; sleep 0.5; echo stderr 1>&2", shell=True)  # noqa: S604
+        result = run("echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, print=True)  # noqa: S604
         assert result is None
         cap = capsys.readouterr()
-        assert cap.out == ""
-        assert cap.err == ""
+        assert cap.out == "stdout\n"
+        assert cap.err == "stderr\n"
 
     def test_cwd(self, *, capsys: CaptureFixture, tmp_path: Path) -> None:
         result = run("pwd", cwd=tmp_path, print=True)
