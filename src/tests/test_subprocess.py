@@ -103,27 +103,6 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == ""
 
-    def test_bash_single(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo stdout", bash=True, print=True)
-        assert result is None
-        cap = capsys.readouterr()
-        assert cap.out == "stdout\n"
-        assert cap.err == ""
-
-    def test_bash_multiple(self, *, capsys: CaptureFixture) -> None:
-        result = run(
-            "key=value",
-            "echo ${key}@stdout",
-            "sleep 0.5",
-            "echo ${key}@stderr 1>&2",
-            bash=True,
-            print=True,
-        )
-        assert result is None
-        cap = capsys.readouterr()
-        assert cap.out == "value@stdout\n"
-        assert cap.err == "value@stderr\n"
-
     @skipif_ci
     @skipif_mac
     def test_user(self, *, capsys: CaptureFixture) -> None:
@@ -172,15 +151,36 @@ class TestRun:
         assert cap.err == ""
 
     def test_input(self, *, capsys: CaptureFixture) -> None:
-        input_ = "foo\nbar\nbaz"
+        input_ = strip_and_dedent("""
+            foo
+            bar
+            baz
+        """)
         result = run("cat", input=input_, print=True)
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == input_
         assert cap.err == ""
 
+    def test_input2(self, *, capsys: CaptureFixture) -> None:
+        input_ = strip_and_dedent("""
+            key=value
+            echo ${key}@stdout
+            sleep 0.5
+            echo ${key}@stderr 1>&2
+        """)
+        result = run("bash", "-lc", input_, print=True)
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == "value@stdout\n"
+        assert cap.err == "value@stderr\n"
+
     def test_input_and_return(self, *, capsys: CaptureFixture) -> None:
-        input_ = "foo\nbar\nbaz"
+        input_ = strip_and_dedent("""
+            foo
+            bar
+            baz
+        """)
         result = run("cat", input=input_, return_=True)
         assert result == input_
         cap = capsys.readouterr()
@@ -284,7 +284,6 @@ class TestRun:
 'run' failed with:
  - cmd          = echo stdout; echo stderr 1>&2; exit 1
  - cmds_or_args = ()
- - bash         = False
  - user         = None
  - executable   = None
  - shell        = True
@@ -313,6 +312,7 @@ class TestSSHCmd:
             "HostKeyAlgorithms=ssh-ed25519",
             "-o",
             "StrictHostKeyChecking=yes",
+            "-T",
             "user@hostname",
             "true",
         ]
@@ -326,6 +326,7 @@ class TestSSHCmd:
             "HostKeyAlgorithms=ssh-ed25519",
             "-o",
             "StrictHostKeyChecking=yes",
+            "-T",
             "user@hostname",
             "true",
         ]
@@ -343,6 +344,7 @@ class TestSSHCmd:
             "HostKeyAlgorithms=rsa-sha-256",
             "-o",
             "StrictHostKeyChecking=yes",
+            "-T",
             "user@hostname",
             "true",
         ]
@@ -356,6 +358,7 @@ class TestSSHCmd:
             "BatchMode=yes",
             "-o",
             "HostKeyAlgorithms=ssh-ed25519",
+            "-T",
             "user@hostname",
             "true",
         ]
@@ -373,6 +376,7 @@ class TestSSHCmd:
             "HostKeyAlgorithms=ssh-ed25519",
             "-o",
             "StrictHostKeyChecking=yes",
+            "-T",
             "user@hostname",
             "bash",
             "-lc",

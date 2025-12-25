@@ -69,7 +69,6 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    bash: bool = False,
     user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
@@ -89,7 +88,6 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    bash: bool = False,
     user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
@@ -109,7 +107,6 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    bash: bool = False,
     user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
@@ -129,7 +126,6 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    bash: bool = False,
     user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
@@ -149,7 +145,6 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    bash: bool = False,
     user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
@@ -168,7 +163,6 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    bash: bool = False,
     user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
@@ -183,24 +177,10 @@ def run(
     return_stderr: bool = False,
     logger: LoggerLike | None = None,
 ) -> str | None:
-    match bash, user:
-        case False, user_use:
-            args: list[str] = [cmd, *cmds_or_args]
-        case True, None:
-            args: list[str] = [cmd, *cmds_or_args]
-            # args: list[str] = bash_cmd_and_args(cmd, *cmds_or_args)
-            # assert 0, args
-            user_use = None
-        case True, str() | int():  # skipif-ci-or-mac
-            args: list[str] = [
-                "su",
-                "-",
-                str(user),
-                *bash_cmd_and_args(cmd, *cmds_or_args),
-            ]
-            user_use = None
-        case never:
-            assert_never(never)
+    args: list[str] = []
+    if user is not None:
+        args.extend(["su", "-", str(user)])
+    args.extend([cmd, *cmds_or_args])
     buffer = StringIO()
     stdout = StringIO()
     stderr = StringIO()
@@ -221,7 +201,7 @@ def run(
         cwd=cwd,
         env=env,
         text=True,
-        user=user_use,
+        user=user,
     ) as proc:
         if proc.stdin is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stdin=}"])
@@ -230,8 +210,8 @@ def run(
         if proc.stderr is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stderr=}"])
         with (
-            _yield_write(proc.stdout, *stdout_outputs, desc="proc.stdout"),
-            _yield_write(proc.stderr, *stderr_outputs, desc="proc.stderr"),
+            _yield_write(proc.stdout, "proc.stdout", *stdout_outputs),
+            _yield_write(proc.stderr, "proc.stderr", *stderr_outputs),
         ):
             if input is not None:
                 _ = proc.stdin.write(input)
@@ -260,7 +240,6 @@ def run(
 'run' failed with:
  - cmd          = {cmd}
  - cmds_or_args = {cmds_or_args}
- - bash         = {bash}
  - user         = {user}
  - executable   = {executable}
  - shell        = {shell}
@@ -282,12 +261,8 @@ def run(
 
 
 @contextmanager
-def _yield_write(
-    input_: IO[str], /, *outputs: IO[str], desc: str | None = None
-) -> Iterator[None]:
-    thread = Thread(
-        target=_run_target, args=(input_, *outputs), kwargs={"desc": desc}, daemon=True
-    )
+def _yield_write(input_: IO[str], desc: str, /, *outputs: IO[str]) -> Iterator[None]:
+    thread = Thread(target=_run_target, args=(input_, desc, *outputs), daemon=True)
     thread.start()
     try:
         yield
@@ -295,14 +270,12 @@ def _yield_write(
         thread.join()
 
 
-def _run_target(input_: IO[str], /, *outputs: IO[str], desc: str | None = None) -> None:
+def _run_target(input_: IO[str], desc: str, /, *outputs: IO[str]) -> None:
     try:
         with input_:
             for text in iter(input_.readline, ""):
                 _write_to_streams(text, *outputs)
     except ValueError:
-        if desc is None:
-            raise
         _ = sys.stderr.write(f"Failed to write to {desc!r}...")
         raise
 
@@ -323,13 +296,13 @@ def ssh_cmd(
     strict_host_key_checking: bool = True,
     bash: bool = False,
 ) -> list[str]:
-    args: list[str] = ["ssh", "-T"]
+    args: list[str] = ["ssh"]
     if batch_mode:
         args.extend(["-o", "BatchMode=yes"])
     args.extend(["-o", f"HostKeyAlgorithms={','.join(host_key_algorithms)}"])
     if strict_host_key_checking:
         args.extend(["-o", "StrictHostKeyChecking=yes"])
-    args.append(f"{user}@{hostname}")
+    args.extend(["-T", f"{user}@{hostname}"])
     if bash:
         args.extend(bash_cmd_and_args(cmd, *cmds_or_args))
     else:
