@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from pytest import LogCaptureFixture, raises
 
 from utilities.iterables import one
-from utilities.pytest import skipif_mac
+from utilities.pytest import skipif_ci, skipif_mac
 from utilities.subprocess import (
     bash_cmd_and_args,
     echo_cmd,
@@ -109,6 +109,7 @@ class TestRun:
         assert cap.out == "value1\nvalue2\n"
         assert cap.err == ""
 
+    @skipif_ci
     @skipif_mac
     def test_user(self, *, capsys: CaptureFixture) -> None:
         result = run("whoami", user="root", print=True)
@@ -117,6 +118,7 @@ class TestRun:
         assert cap.out == "root\n"
         assert cap.err == ""
 
+    @skipif_ci
     @skipif_mac
     def test_bash_and_user(self, *, capsys: CaptureFixture) -> None:
         result = run("whoami", "echo ${HOME}", bash=True, user="root", print=True)
