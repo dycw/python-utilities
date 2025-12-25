@@ -369,7 +369,7 @@ class TestTouchCmd:
         assert result == expected
 
 
-class TestYieldDockerTempDir:
+class TestYieldSSHTempDir:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
     def test_main(self) -> None:
