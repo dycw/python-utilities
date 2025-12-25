@@ -83,7 +83,7 @@ def run(
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: _Retry | None = None,
+    retry: tuple[int, TimeDelta] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -103,7 +103,7 @@ def run(
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
-    retry: _Retry | None = None,
+    retry: tuple[int, TimeDelta] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -123,7 +123,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
-    retry: _Retry | None = None,
+    retry: tuple[int, TimeDelta] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -143,7 +143,7 @@ def run(
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
-    retry: _Retry | None = None,
+    retry: tuple[int, TimeDelta] | None = None,
     logger: LoggerLike | None = None,
 ) -> None: ...
 @overload
@@ -163,7 +163,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: _Retry | None = None,
+    retry: tuple[int, TimeDelta] | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None: ...
 def run(
@@ -182,7 +182,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: _Retry | None = None,
+    retry: tuple[int, TimeDelta] | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None:
     args: list[str] = []
@@ -240,9 +240,10 @@ def run(
                 return None
             case _, _, _:
                 if retry is None:
-                    attempts = delta = None
+                    remaining = delta = None
                 else:
                     attempts, delta = retry
+                    remaining = attempts - 1
                 _ = stdout.seek(0)
                 stdout_text = stdout.read()
                 _ = stderr.seek(0)
@@ -265,19 +266,21 @@ def run(
 -- stderr ---------------------------------------------------------------------
 {stderr_text}-------------------------------------------------------------------------------
 """)
-                    if (attempts is not None) and (attempts >= 1):
-                        if delta is None:
-                            msg = f"{msg}\n\nRetrying {attempts} more time(s)..."
-                        else:
-                            msg = f"{msg}\n\nRetrying {attempts} more time(s) after {delta}..."
+                    if (
+                        (remaining is not None)
+                        and (remaining >= 1)
+                        and (delta is not None)
+                    ):
+                        msg = (
+                            f"{msg}\n\nRetrying {remaining} more time(s) after {delta}"
+                        )
                     to_logger(logger).error(msg)
                 error = CalledProcessError(
                     return_code, args, output=stdout_text, stderr=stderr_text
                 )
-                if (attempts is None) or (attempts <= 0):
+                if (remaining is None) or (remaining <= 0) or (delta is None):
                     raise error
-                if delta is not None:
-                    sleep(to_seconds(delta))
+                sleep(delta.in_seconds())
                 return run(
                     cmd,
                     *cmds_or_args,
@@ -293,7 +296,7 @@ def run(
                     return_=return_,
                     return_stdout=return_stdout,
                     return_stderr=return_stderr,
-                    retry=(attempts - 1, delta),
+                    retry=(remaining, delta),
                     logger=logger,
                 )
             case never:
@@ -442,18 +445,61 @@ def ssh(
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
     )
-    return run(  # skipif-ci
-        *cmd_and_args,
-        input=input,
-        print=print,
-        print_stdout=print_stdout,
-        print_stderr=print_stderr,
-        return_=return_,
-        return_stdout=return_stdout,
-        return_stderr=return_stderr,
-        retry=retry,
-        logger=logger,
-    )
+    try:  # skipif-ci
+        return run(
+            *cmd_and_args,
+            input=input,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            return_=return_,
+            return_stdout=return_stdout,
+            return_stderr=return_stderr,
+            logger=logger,
+        )
+    except CalledProcessError as error:  # skipif-ci
+        if retry is None:
+            raise
+        attempts, delta = retry
+        if attempts <= 0:
+            raise
+        if logger is not None:
+            msg = strip_and_dedent(f"""
+'ssh' failed with:
+ - user                     = {user}
+ - hostname                 = {hostname}
+ - cmd_and_cmds_or_args     = {cmd_and_cmds_or_args}
+ - batch_mode               = {batch_mode}
+ - host_key_algorithms      = {host_key_algorithms}
+ - strict_host_key_checking = {strict_host_key_checking}
+ - input                    = {input}
+
+-- stdout ---------------------------------------------------------------------
+{error.stdout}-------------------------------------------------------------------------------
+-- stderr ---------------------------------------------------------------------
+{error.stderr}-------------------------------------------------------------------------------
+
+Retrying {attempts - 1} more time(s) after {delta}...
+""")
+            to_logger(logger).error(msg)
+        sleep(delta.in_seconds())
+        return ssh(
+            user,
+            hostname,
+            *cmd_and_cmds_or_args,
+            batch_mode=batch_mode,
+            host_key_algorithms=host_key_algorithms,
+            strict_host_key_checking=strict_host_key_checking,
+            input=input,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            return_=return_,
+            return_stdout=return_stdout,
+            return_stderr=return_stderr,
+            logger=logger,
+            retry=(attempts - 1, delta),
+        )
 
 
 def ssh_cmd(
