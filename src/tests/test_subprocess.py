@@ -474,12 +474,23 @@ class TestYieldSSHTempDir:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
     def test_main(self) -> None:
-        with yield_ssh_temp_dir("root", "proxmox.main") as temp_dir:
-            raise_if_present = f"if [ -d {temp_dir} ]; then exit 1; fi"
-            raise_if_missing = f"if ! [ -d {temp_dir} ]; then exit 1; fi"
-            ssh("root", "proxmox.main", input=raise_if_missing)
+        with yield_ssh_temp_dir("root", "proxmox.main") as temp:
+            ssh("root", "proxmox.main", input=self._raise_missing(temp))
             with raises(CalledProcessError):
-                ssh("root", "proxmox.main", input=raise_if_present)
-        ssh("root", "proxmox.main", input=raise_if_present)
+                ssh("root", "proxmox.main", input=self._raise_present(temp))
+        ssh("root", "proxmox.main", input=self._raise_present(temp))
         with raises(CalledProcessError):
-            ssh("root", "proxmox.main", input=raise_if_missing)
+            ssh("root", "proxmox.main", input=self._raise_missing(temp))
+
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_keep(self) -> None:
+        with yield_ssh_temp_dir("root", "proxmox.main", keep=True) as temp:
+            ...
+        ssh("root", "proxmox.main", input=self._raise_missing(temp))
+
+    def _raise_missing(self, path: PathLike, /) -> str:
+        return f"if ! [ -d {path} ]; then exit 1; fi"
+
+    def _raise_present(self, path: PathLike, /) -> str:
+        return f"if [ -d {path} ]; then exit 1; fi"
