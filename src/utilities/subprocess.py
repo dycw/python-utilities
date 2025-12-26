@@ -557,6 +557,21 @@ def touch_cmd(path: PathLike, /) -> list[str]:
     return ["touch", str(path)]
 
 
+def uv_run_cmd(module: str, /, *args: str) -> list[str]:
+    return [
+        "uv",
+        "run",
+        "--no-dev",
+        "--active",
+        "--prerelease=disallow",
+        "--managed-python",
+        "python",
+        "-m",
+        module,
+        *args,
+    ]
+
+
 @contextmanager
 def yield_ssh_temp_dir(
     user: str,
@@ -608,5 +623,6 @@ __all__ = [
     "sudo_nopasswd_cmd",
     "symlink_cmd",
     "touch_cmd",
+    "uv_run_cmd",
     "yield_ssh_temp_dir",
 ]

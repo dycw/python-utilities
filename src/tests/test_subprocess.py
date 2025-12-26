@@ -36,6 +36,7 @@ from utilities.subprocess import (
     sudo_cmd,
     symlink_cmd,
     touch_cmd,
+    uv_run_cmd,
     yield_ssh_temp_dir,
 )
 from utilities.text import strip_and_dedent, unique_str
@@ -596,6 +597,39 @@ class TestTouchCmd:
     def test_main(self) -> None:
         result = touch_cmd("path")
         expected = ["touch", "path"]
+        assert result == expected
+
+
+class TestUvRunCmd:
+    def test_main(self) -> None:
+        result = uv_run_cmd("foo.bar")
+        expected = [
+            "uv",
+            "run",
+            "--no-dev",
+            "--active",
+            "--prerelease=disallow",
+            "--managed-python",
+            "python",
+            "-m",
+            "foo.bar",
+        ]
+        assert result == expected
+
+    def test_args(self) -> None:
+        result = uv_run_cmd("foo.bar", "--arg")
+        expected = [
+            "uv",
+            "run",
+            "--no-dev",
+            "--active",
+            "--prerelease=disallow",
+            "--managed-python",
+            "python",
+            "-m",
+            "foo.bar",
+            "--arg",
+        ]
         assert result == expected
 
 
