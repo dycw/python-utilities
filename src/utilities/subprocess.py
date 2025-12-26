@@ -52,8 +52,7 @@ def chown_cmd(
 ) -> list[str]:
     match user, group:
         case None, None:
-            msg = "At least one of 'user' and/or 'group' must be given"
-            raise ValueError(msg)
+            raise ChownCmdError
         case str(), None:
             ownership = "user"
         case None, str():

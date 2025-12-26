@@ -21,14 +21,20 @@ from utilities.subprocess import (
     cp_cmd,
     echo_cmd,
     expand_path,
+    git_clone_cmd,
+    git_hard_reset_cmd,
     maybe_sudo_cmd,
     mkdir,
     mkdir_cmd,
     mv_cmd,
     rm_cmd,
     run,
+    set_hostname_cmd,
     ssh,
     ssh_cmd,
+    ssh_keygen_cmd,
+    sudo_cmd,
+    symlink_cmd,
     touch_cmd,
     yield_ssh_temp_dir,
 )
@@ -108,7 +114,32 @@ class TestExpandPath:
 
     def test_subs(self) -> None:
         result = expand_path("~/${dir}", subs={"dir": "foo"})
-        expected = Path("foo").expanduser()
+        expected = Path("~/foo").expanduser()
+        assert result == expected
+
+
+class TestGitCloneCmd:
+    def test_main(self) -> None:
+        result = git_clone_cmd("https://github.com/foo/bar", "path")
+        expected = [
+            "git",
+            "clone",
+            "--recurse-submodules",
+            "https://github.com/foo/bar",
+            "path",
+        ]
+        assert result == expected
+
+
+class TestGitHardResetCmd:
+    def test_main(self) -> None:
+        result = git_hard_reset_cmd()
+        expected = ["git", "hard-reset", "master"]
+        assert result == expected
+
+    def test_branch(self) -> None:
+        result = git_hard_reset_cmd(branch="dev")
+        expected = ["git", "hard-reset", "dev"]
         assert result == expected
 
 
@@ -454,6 +485,13 @@ value@stderr
         )
 
 
+class TestSetHostnameCmd:
+    def test_main(self) -> None:
+        result = set_hostname_cmd("hostname")
+        expected = ["hostnamectl", "set-hostname", "hostname"]
+        assert result == expected
+
+
 class TestSSH:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
@@ -530,6 +568,27 @@ class TestSSHCmd:
             "user@hostname",
             "true",
         ]
+        assert result == expected
+
+
+class TestSSHKeyGenCmd:
+    def test_main(self) -> None:
+        result = ssh_keygen_cmd("hostname")
+        expected = ["ssh-keygen", "-f", "~/.ssh/known_hosts", "-R", "hostname"]
+        assert result == expected
+
+
+class TestSudoCmd:
+    def test_main(self) -> None:
+        result = sudo_cmd("echo", "hi")
+        expected = ["sudo", "echo", "hi"]
+        assert result == expected
+
+
+class TestSymLinkCmd:
+    def test_main(self) -> None:
+        result = symlink_cmd("src", "dest")
+        expected = ["ln", "-s", "src", "dest"]
         assert result == expected
 
 
