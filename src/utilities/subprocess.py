@@ -218,8 +218,8 @@ def run(
         if proc.stderr is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stderr=}"])
         with (
-            _yield_write(proc.stdout, "proc.stdout", *stdout_outputs),
-            _yield_write(proc.stderr, "proc.stderr", *stderr_outputs),
+            _yield_write(proc.stdout, *stdout_outputs),
+            _yield_write(proc.stderr, *stderr_outputs),
         ):
             if input is not None:
                 _ = proc.stdin.write(input)
@@ -301,8 +301,8 @@ def run(
 
 
 @contextmanager
-def _yield_write(input_: IO[str], desc: str, /, *outputs: IO[str]) -> Iterator[None]:
-    thread = Thread(target=_run_target, args=(input_, desc, *outputs), daemon=True)
+def _yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
+    thread = Thread(target=_run_target, args=(input_, *outputs), daemon=True)
     thread.start()
     try:
         yield
@@ -310,14 +310,10 @@ def _yield_write(input_: IO[str], desc: str, /, *outputs: IO[str]) -> Iterator[N
         thread.join()
 
 
-def _run_target(input_: IO[str], desc: str, /, *outputs: IO[str]) -> None:
-    try:
-        with input_:
-            for text in iter(input_.readline, ""):
-                _write_to_streams(text, *outputs)
-    except ValueError:
-        _ = sys.stderr.write(f"Failed to write to {desc!r}...")
-        raise
+def _run_target(input_: IO[str], /, *outputs: IO[str]) -> None:
+    with input_:
+        for text in iter(input_.readline, ""):
+            _write_to_streams(text, *outputs)
 
 
 def _write_to_streams(text: str, /, *outputs: IO[str]) -> None:
