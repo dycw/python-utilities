@@ -29,6 +29,7 @@ from utilities.subprocess import (
     mkdir_cmd,
     mv_cmd,
     rm_cmd,
+    rsync_cmd,
     run,
     set_hostname_cmd,
     ssh,
@@ -196,6 +197,145 @@ class TestRmCmd:
     def test_main(self) -> None:
         result = rm_cmd("path")
         expected = ["rm", "-rf", "path"]
+        assert result == expected
+
+
+class TestRsyncCmd:
+    def test_main(self) -> None:
+        result = rsync_cmd("src", "user", "hostname", "dest")
+        expected = [
+            "rsync",
+            "--checksum",
+            "--compress",
+            "--rsh",
+            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
+            "src",
+            "user@hostname:dest",
+        ]
+        assert result == expected
+
+    def test_multiple_sources(self) -> None:
+        result = rsync_cmd(["src1", "src2"], "user", "hostname", "dest")
+        expected = [
+            "rsync",
+            "--checksum",
+            "--compress",
+            "--rsh",
+            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
+            "src1",
+            "src2",
+            "user@hostname:dest",
+        ]
+        assert result == expected
+
+    def test_archive(self) -> None:
+        result = rsync_cmd("src", "user", "hostname", "dest", archive=True)
+        expected = [
+            "rsync",
+            "--archive",
+            "--checksum",
+            "--compress",
+            "--rsh",
+            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
+            "src",
+            "user@hostname:dest",
+        ]
+        assert result == expected
+
+    def test_chown_user(self) -> None:
+        result = rsync_cmd("src", "user", "hostname", "dest", chown_user="user2")
+        expected = [
+            "rsync",
+            "--checksum",
+            "--chown",
+            "user2",
+            "--compress",
+            "--rsh",
+            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
+            "src",
+            "user@hostname:dest",
+        ]
+        assert result == expected
+
+    def test_chown_group(self) -> None:
+        result = rsync_cmd("src", "user", "hostname", "dest", chown_group="group")
+        expected = [
+            "rsync",
+            "--checksum",
+            "--chown",
+            ":group",
+            "--compress",
+            "--rsh",
+            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
+            "src",
+            "user@hostname:dest",
+        ]
+        assert result == expected
+
+    def test_chown_user_and_group(self) -> None:
+        result = rsync_cmd(
+            "src", "user", "hostname", "dest", chown_user="user2", chown_group="group"
+        )
+        expected = [
+            "rsync",
+            "--checksum",
+            "--chown",
+            "user2:group",
+            "--compress",
+            "--rsh",
+            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
+            "src",
+            "user@hostname:dest",
+        ]
+        assert result == expected
+
+    def test_exclude(self) -> None:
+        result = rsync_cmd("src", "user", "hostname", "dest", exclude="exclude")
+        expected = [
+            "rsync",
+            "--checksum",
+            "--compress",
+            "--exclude",
+            "exclude",
+            "--rsh",
+            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
+            "src",
+            "user@hostname:dest",
+        ]
+        assert result == expected
+
+    def test_exclude_multiple(self) -> None:
+        result = rsync_cmd(
+            "src", "user", "hostname", "dest", exclude=["exclude1", "exclude2"]
+        )
+        expected = [
+            "rsync",
+            "--checksum",
+            "--compress",
+            "--exclude",
+            "exclude1",
+            "--exclude",
+            "exclude2",
+            "--rsh",
+            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
+            "src",
+            "user@hostname:dest",
+        ]
+        assert result == expected
+
+    def test_sudo(self) -> None:
+        result = rsync_cmd("src", "user", "hostname", "dest", sudo=True)
+        expected = [
+            "rsync",
+            "--checksum",
+            "--compress",
+            "--rsh",
+            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
+            "--rsync-path",
+            "sudo rsync",
+            "src",
+            "user@hostname:dest",
+        ]
         assert result == expected
 
 
