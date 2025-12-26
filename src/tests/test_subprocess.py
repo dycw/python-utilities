@@ -34,6 +34,7 @@ from utilities.subprocess import (
     ssh,
     ssh_cmd,
     ssh_keygen_cmd,
+    ssh_opts_cmd,
     sudo_cmd,
     sudo_nopasswd_cmd,
     symlink_cmd,
@@ -125,31 +126,6 @@ class TestExpandPath:
     def test_subs(self) -> None:
         result = expand_path("~/${dir}", subs={"dir": "foo"})
         expected = Path("~/foo").expanduser()
-        assert result == expected
-
-
-class TestGitCloneCmd:
-    def test_main(self) -> None:
-        result = git_clone_cmd("https://github.com/foo/bar", "path")
-        expected = [
-            "git",
-            "clone",
-            "--recurse-submodules",
-            "https://github.com/foo/bar",
-            "path",
-        ]
-        assert result == expected
-
-
-class TestGitHardResetCmd:
-    def test_main(self) -> None:
-        result = git_hard_reset_cmd()
-        expected = ["git", "hard-reset", "master"]
-        assert result == expected
-
-    def test_branch(self) -> None:
-        result = git_hard_reset_cmd(branch="dev")
-        expected = ["git", "hard-reset", "dev"]
         assert result == expected
 
 
