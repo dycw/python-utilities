@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
+from shlex import quote
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
@@ -19,7 +20,14 @@ from utilities.whenever import to_seconds
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import LoggerLike, PathLike, Retry, StrMapping, StrStrMapping
+    from utilities.types import (
+        LoggerLike,
+        MaybeIterable,
+        PathLike,
+        Retry,
+        StrMapping,
+        StrStrMapping,
+    )
 
 
 _HOST_KEY_ALGORITHMS = ["ssh-ed25519"]
@@ -113,8 +121,13 @@ def mkdir(path: PathLike, /, *, sudo: bool = False, parent: bool = False) -> Non
 
 
 def mkdir_cmd(path: PathLike, /, *, parent: bool = False) -> list[str]:
-    path_use = f"$(dirname {path})" if parent else path
-    return ["mkdir", "-p", str(path_use)]
+    args: list[str] = ["mkdir", "-p"]
+    quoted = quote(str(path))
+    if parent:
+        args.append(f"$(dirname {quoted})")
+    else:
+        args.append(quoted)
+    return args
 
 
 def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
@@ -123,6 +136,59 @@ def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
 
 def rm_cmd(path: PathLike, /) -> list[str]:
     return ["rm", "-rf", str(path)]
+
+
+def rsync_cmd(
+    src_or_srcs: MaybeIterable[PathLike],
+    user: str,
+    hostname: str,
+    dest: PathLike,
+    /,
+    *,
+    archive: bool = False,
+    exclude: MaybeIterable[str] | None = None,
+    sudo: bool = False,
+    perms: str | None = None,
+    group: str | None = None,
+    root: bool = False,
+) -> str:
+    args: list[str] = ["rsync"]
+    if archive:
+        args.append("--archive")
+    mkdir = maybe_sudo_cmd(*mkdir_cmd(dest, parent=True), sudo=sudo)
+    if perms is not None:
+        args.append(f"--chmod={perms}")
+    match user, group:
+        case None, None:
+            ...
+        case str(), None:
+            args.append(f"--chown={user}")
+        case None, str():
+            args.append(f"--chown=:{group}")
+        case str(), str():
+            args.append(f"--chown={user}:{group}")
+        case never:
+            assert_never(never)
+    if exclude is None:
+        exclude_flag = ""
+    else:
+        exclude_flag = (
+            " ".join(f"--exclude={e}" for e in always_iterable(exclude)) + " "
+        )
+    rsync = maybe_sudo_cmd("rsync", sudo=sudo)
+    match src_or_srcs:
+        case Path() | str() as src:
+            ...
+        case Iterable() as srcs:
+            src = " ".join(map(str, srcs))
+        case never:
+            assert_never(never)
+    ssh = ssh_cmd()
+    user = user(root=root)
+    return f"""\
+rsync {archive_flag}--checksum {chmod_flag}{chown_flag}--compress {exclude_flag}\
+--rsh='{ssh}' --rsync-path='{mkdir} && {rsync}' \
+{src} {user}@{hostname}:{dest}"""
 
 
 @overload
@@ -617,6 +683,7 @@ __all__ = [
     "mkdir_cmd",
     "mv_cmd",
     "rm_cmd",
+    "rsync_cmd",
     "run",
     "set_hostname_cmd",
     "ssh",
