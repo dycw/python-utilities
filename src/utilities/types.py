@@ -231,6 +231,10 @@ type Seed = int | float | str | bytes | bytearray | Random
 type PatternLike = MaybeStr[Pattern[str]]
 
 
+# retry
+type Retry = tuple[int, Delta]
+
+
 # text
 type MaybeCallableStr = MaybeCallable[str]
 
@@ -332,6 +336,7 @@ __all__ = [
     "PathLike",
     "PatternLike",
     "PlainDateTimeLike",
+    "Retry",
     "Seed",
     "SequenceStr",
     "SerializeObjectExtra",

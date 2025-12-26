@@ -17,7 +17,7 @@ from utilities.subprocess import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import LoggerLike, PathLike, StrStrMapping
+    from utilities.types import LoggerLike, PathLike, Retry, StrStrMapping
 
 
 @overload
@@ -106,6 +106,7 @@ def docker_exec(
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
     **env_kwargs: str,
 ) -> str: ...
@@ -125,6 +126,7 @@ def docker_exec(
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
     **env_kwargs: str,
 ) -> str: ...
@@ -144,6 +146,7 @@ def docker_exec(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
     **env_kwargs: str,
 ) -> str: ...
@@ -163,6 +166,7 @@ def docker_exec(
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
     **env_kwargs: str,
 ) -> None: ...
@@ -182,6 +186,7 @@ def docker_exec(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
     **env_kwargs: str,
 ) -> str | None: ...
@@ -200,6 +205,7 @@ def docker_exec(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
     **env_kwargs: str,
 ) -> str | None:
@@ -222,6 +228,7 @@ def docker_exec(
         return_=return_,
         return_stdout=return_stdout,
         return_stderr=return_stderr,
+        retry=retry,
         logger=logger,
     )
 
@@ -253,15 +260,27 @@ def docker_exec_cmd(
 
 @contextmanager
 def yield_docker_temp_dir(
-    container: str, /, *, user: str | None = None, logger: LoggerLike | None = None
+    container: str,
+    /,
+    *,
+    user: str | None = None,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
 ) -> Iterator[Path]:
     path = Path(  # skipif-ci
-        docker_exec(container, *MKTEMP_DIR_CMD, user=user, return_=True, logger=logger)
+        docker_exec(
+            container,
+            *MKTEMP_DIR_CMD,
+            user=user,
+            return_=True,
+            retry=retry,
+            logger=logger,
+        )
     )
     try:  # skipif-ci
         yield path
     finally:  # skipif-ci
-        docker_exec(container, *rm_cmd(path), user=user, logger=logger)
+        docker_exec(container, *rm_cmd(path), user=user, retry=retry, logger=logger)
 
 
 __all__ = ["docker_cp_cmd", "docker_exec", "docker_exec_cmd", "yield_docker_temp_dir"]
