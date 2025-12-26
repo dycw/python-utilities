@@ -107,6 +107,12 @@ def git_hard_reset_cmd(*, branch: str | None = None) -> list[str]:
     return ["git", "hard-reset", branch_use]
 
 
+def maybe_parent_cmd(path: PathLike, /, *, parent: bool = False) -> str:
+    if parent:
+        return f"$(dirname {quote(str(path))})"
+    return str(path)
+
+
 def maybe_sudo_cmd(cmd: str, /, *args: str, sudo: bool = False) -> list[str]:
     parts: list[str] = [cmd, *args]
     return sudo_cmd(*parts) if sudo else parts
@@ -122,13 +128,7 @@ def mkdir(path: PathLike, /, *, sudo: bool = False, parent: bool = False) -> Non
 
 
 def mkdir_cmd(path: PathLike, /, *, parent: bool = False) -> list[str]:
-    args: list[str] = ["mkdir", "-p"]
-    quoted = quote(str(path))
-    if parent:
-        args.append(f"$(dirname {quoted})")
-    else:
-        args.append(quoted)
-    return args
+    return ["mkdir", "-p", maybe_parent_cmd(path, parent=parent)]
 
 
 def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
@@ -153,7 +153,6 @@ def rsync(
     print: bool = False,  # noqa: A002
     retry: Retry | None = None,
     logger: LoggerLike | None = None,
-    archive: bool = False,
     chown_user: str | None = None,
     chown_group: str | None = None,
     exclude: MaybeIterable[str] | None = None,
@@ -176,7 +175,7 @@ def rsync(
         user,
         hostname,
         dest,
-        archive=archive,
+        archive=any(Path(s).is_dir() for s in always_iterable(src_or_srcs)),
         chown_user=chown_user,
         chown_group=chown_group,
         exclude=exclude,
@@ -216,6 +215,7 @@ def rsync_cmd(
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     sudo: bool = False,
+    parent: bool = False,
 ) -> list[str]:
     args: list[str] = ["rsync"]
     if archive:
@@ -244,7 +244,12 @@ def rsync_cmd(
     args.extend(["--rsh", join(rsh_args)])
     if sudo:
         args.extend(["--rsync-path", join(sudo_cmd("rsync"))])
-    return [*args, *map(str, always_iterable(src_or_srcs)), f"{user}@{hostname}:{dest}"]
+    dest_use = maybe_parent_cmd(dest, parent=parent)
+    return [
+        *args,
+        *map(str, always_iterable(src_or_srcs)),
+        f"{user}@{hostname}:{dest_use}",
+    ]
 
 
 @overload
@@ -748,6 +753,7 @@ __all__ = [
     "expand_path",
     "git_clone_cmd",
     "git_hard_reset_cmd",
+    "maybe_parent_cmd",
     "maybe_sudo_cmd",
     "mkdir",
     "mkdir_cmd",

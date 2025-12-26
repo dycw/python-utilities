@@ -24,11 +24,13 @@ from utilities.subprocess import (
     expand_path,
     git_clone_cmd,
     git_hard_reset_cmd,
+    maybe_parent_cmd,
     maybe_sudo_cmd,
     mkdir,
     mkdir_cmd,
     mv_cmd,
     rm_cmd,
+    rsync,
     rsync_cmd,
     run,
     set_hostname_cmd,
@@ -43,6 +45,7 @@ from utilities.subprocess import (
     uv_run_cmd,
     yield_ssh_temp_dir,
 )
+from utilities.tempfile import TemporaryFile
 from utilities.text import strip_and_dedent, unique_str
 from utilities.whenever import MINUTE, SECOND
 
@@ -155,6 +158,18 @@ class TestGitHardResetCmd:
         assert result == expected
 
 
+class TestMaybeParentCmd:
+    def test_main(self) -> None:
+        result = maybe_parent_cmd("path")
+        expected = "path"
+        assert result == expected
+
+    def test_parent(self) -> None:
+        result = maybe_parent_cmd("path", parent=True)
+        expected = "$(dirname path)"
+        assert result == expected
+
+
 class TestMaybeSudoCmd:
     def test_main(self) -> None:
         result = maybe_sudo_cmd("echo", "hi")
@@ -198,6 +213,15 @@ class TestRmCmd:
         result = rm_cmd("path")
         expected = ["rm", "-rf", "path"]
         assert result == expected
+
+
+class TestRsync:
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_main(self) -> None:
+        with TemporaryFile() as src, yield_ssh_temp_dir("root", "proxmox.main") as temp:
+            dest = temp / src.name
+            rsync("README.md", "user", "hostname", dest)
 
 
 class TestRsyncCmd:
@@ -335,6 +359,19 @@ class TestRsyncCmd:
             "sudo rsync",
             "src",
             "user@hostname:dest",
+        ]
+        assert result == expected
+
+    def test_parent(self) -> None:
+        result = rsync_cmd("src", "user", "hostname", "dest", parent=True)
+        expected = [
+            "rsync",
+            "--checksum",
+            "--compress",
+            "--rsh",
+            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
+            "src",
+            "user@hostname:$(dirname dest)",
         ]
         assert result == expected
 
