@@ -83,7 +83,7 @@ def run(
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: tuple[int, TimeDelta] | None = None,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -103,7 +103,7 @@ def run(
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
-    retry: tuple[int, TimeDelta] | None = None,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -123,7 +123,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
-    retry: tuple[int, TimeDelta] | None = None,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -143,7 +143,7 @@ def run(
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
-    retry: tuple[int, TimeDelta] | None = None,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> None: ...
 @overload
@@ -163,7 +163,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: tuple[int, TimeDelta] | None = None,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None: ...
 def run(
@@ -182,7 +182,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: tuple[int, TimeDelta] | None = None,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None:
     args: list[str] = []
@@ -240,10 +240,9 @@ def run(
                 return None
             case _, _, _:
                 if retry is None:
-                    remaining = delta = None
+                    attempts = delta = None
                 else:
                     attempts, delta = retry
-                    remaining = attempts - 1
                 _ = stdout.seek(0)
                 stdout_text = stdout.read()
                 _ = stderr.seek(0)
@@ -266,21 +265,19 @@ def run(
 -- stderr ---------------------------------------------------------------------
 {stderr_text}-------------------------------------------------------------------------------
 """)
-                    if (
-                        (remaining is not None)
-                        and (remaining >= 1)
-                        and (delta is not None)
-                    ):
-                        msg = (
-                            f"{msg}\n\nRetrying {remaining} more time(s) after {delta}"
-                        )
+                    if (attempts is not None) and (attempts >= 1):
+                        if delta is None:
+                            msg = f"{msg}\n\nRetrying {attempts} more time(s)..."
+                        else:
+                            msg = f"{msg}\n\nRetrying {attempts} more time(s) after {delta}..."
                     to_logger(logger).error(msg)
                 error = CalledProcessError(
                     return_code, args, output=stdout_text, stderr=stderr_text
                 )
-                if (remaining is None) or (remaining <= 0) or (delta is None):
+                if (attempts is None) or (attempts <= 0):
                     raise error
-                sleep(delta.in_seconds())
+                if delta is not None:
+                    sleep(to_seconds(delta))
                 return run(
                     cmd,
                     *cmds_or_args,
@@ -296,7 +293,7 @@ def run(
                     return_=return_,
                     return_stdout=return_stdout,
                     return_stderr=return_stderr,
-                    retry=(remaining, delta),
+                    retry=(attempts - 1, delta),
                     logger=logger,
                 )
             case never:
@@ -340,7 +337,7 @@ def ssh(
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: tuple[int, TimeDelta] | None = None,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -359,7 +356,7 @@ def ssh(
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
-    retry: tuple[int, TimeDelta] | None = None,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -378,7 +375,7 @@ def ssh(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
-    retry: tuple[int, TimeDelta] | None = None,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -397,7 +394,7 @@ def ssh(
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
-    retry: tuple[int, TimeDelta] | None = None,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> None: ...
 @overload
@@ -416,7 +413,7 @@ def ssh(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: tuple[int, TimeDelta] | None = None,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None: ...
 def ssh(
@@ -434,7 +431,7 @@ def ssh(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: tuple[int, TimeDelta] | None = None,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None:
     cmd_and_args = ssh_cmd(  # skipif-ci
