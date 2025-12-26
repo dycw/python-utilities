@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from logging import INFO, getLogger
 from pathlib import Path
+from re import MULTILINE, search
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
@@ -10,6 +12,7 @@ from utilities.iterables import one
 from utilities.pytest import skipif_ci, skipif_mac, throttle
 from utilities.subprocess import (
     BASH_LC,
+    BASH_LS,
     echo_cmd,
     expand_path,
     maybe_sudo_cmd,
@@ -23,10 +26,12 @@ from utilities.subprocess import (
     yield_ssh_temp_dir,
 )
 from utilities.text import strip_and_dedent, unique_str
-from utilities.whenever import MINUTE
+from utilities.whenever import MINUTE, SECOND
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
+
+    from utilities.types import PathLike
 
 
 class TestEchoCmd:
@@ -112,7 +117,7 @@ class TestRun:
         assert cap.err == ""
 
     def test_shell(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, print=True)  # noqa: S604
+        result = run("echo stdout; echo stderr 1>&2", shell=True, print=True)  # noqa: S604
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == "stdout\n"
@@ -136,7 +141,6 @@ class TestRun:
         input_ = strip_and_dedent("""
             key=value
             echo ${key}@stdout
-            sleep 0.5
             echo ${key}@stderr 1>&2
         """)
         result = run(*BASH_LC, input_, print=True)
@@ -170,7 +174,7 @@ class TestRun:
         assert cap.err == ""
 
     def test_print(self, *, capsys: CaptureFixture) -> None:
-        result = run("echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, print=True)  # noqa: S604
+        result = run("echo stdout; echo stderr 1>&2", shell=True, print=True)  # noqa: S604
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == "stdout\n"
@@ -178,7 +182,7 @@ class TestRun:
 
     def test_print_stdout(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
-            "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, print_stdout=True
+            "echo stdout; echo stderr 1>&2", shell=True, print_stdout=True
         )
         assert result is None
         cap = capsys.readouterr()
@@ -187,7 +191,7 @@ class TestRun:
 
     def test_print_stderr(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
-            "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, print_stderr=True
+            "echo stdout; echo stderr 1>&2", shell=True, print_stderr=True
         )
         assert result is None
         cap = capsys.readouterr()
@@ -196,7 +200,7 @@ class TestRun:
 
     def test_return(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
-            "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, return_=True
+            "echo stdout; echo stderr 1>&2", shell=True, return_=True
         )
         expected = "stdout\nstderr"
         assert result == expected
@@ -206,7 +210,7 @@ class TestRun:
 
     def test_return_stdout(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
-            "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, return_stdout=True
+            "echo stdout; echo stderr 1>&2", shell=True, return_stdout=True
         )
         expected = "stdout"
         assert result == expected
@@ -216,7 +220,7 @@ class TestRun:
 
     def test_return_stderr(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
-            "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, return_stderr=True
+            "echo stdout; echo stderr 1>&2", shell=True, return_stderr=True
         )
         expected = "stderr"
         assert result == expected
@@ -226,10 +230,7 @@ class TestRun:
 
     def test_print_and_return(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
-            "echo stdout; sleep 0.5; echo stderr 1>&2",
-            shell=True,
-            print=True,
-            return_=True,
+            "echo stdout; echo stderr 1>&2", shell=True, print=True, return_=True
         )
         expected = "stdout\nstderr"
         assert result == expected
@@ -257,6 +258,55 @@ class TestRun:
         assert cap.out == "stdout\n"
         assert cap.err == "stderr\n"
 
+    def test_retry_1_attempt(
+        self, *, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
+        name = unique_str()
+        result = run(
+            *BASH_LS,
+            input=self._test_retry_cmd(tmp_path, 1),
+            retry=(1, None),
+            logger=name,
+        )
+        assert result is None
+        record = one(r for r in caplog.records if r.name == name)
+        assert search(
+            r"^Retrying 1 more time\(s\)...$", record.message, flags=MULTILINE
+        )
+
+    def test_retry_2_attempts(
+        self, *, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
+        name = unique_str()
+        result = run(
+            *BASH_LS,
+            input=self._test_retry_cmd(tmp_path, 2),
+            retry=(2, None),
+            logger=name,
+        )
+        assert result is None
+        first, second = [r for r in caplog.records if r.name == name]
+        assert search(r"^Retrying 2 more time\(s\)...$", first.message, flags=MULTILINE)
+        assert search(
+            r"^Retrying 1 more time\(s\)...$", second.message, flags=MULTILINE
+        )
+
+    def test_retry_and_leep(self, *, tmp_path: Path, caplog: LogCaptureFixture) -> None:
+        name = unique_str()
+        result = run(
+            *BASH_LS,
+            input=self._test_retry_cmd(tmp_path, 1),
+            retry=(1, SECOND),
+            logger=name,
+        )
+        assert result is None
+        record = one(r for r in caplog.records if r.name == name)
+        assert search(
+            r"^Retrying 1 more time\(s\) after PT1S...$",
+            record.message,
+            flags=MULTILINE,
+        )
+
     def test_logger(self, *, caplog: LogCaptureFixture) -> None:
         name = unique_str()
         with raises(CalledProcessError):
@@ -271,8 +321,9 @@ class TestRun:
  - shell        = True
  - cwd          = None
  - env          = None
- - input        = None
 
+-- stdin ----------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- stdout ---------------------------------------------------------------------
 stdout
 -------------------------------------------------------------------------------
@@ -281,6 +332,57 @@ stderr
 -------------------------------------------------------------------------------
 """)
         assert record.message == expected
+
+    def test_logger_and_input(self, *, caplog: LogCaptureFixture) -> None:
+        name = unique_str()
+        input_ = strip_and_dedent(
+            """
+            key=value
+            echo ${key}@stdout
+            echo ${key}@stderr 1>&2
+            exit 1
+        """,
+            trailing=True,
+        )
+        with raises(CalledProcessError):
+            _ = run(*BASH_LS, input=input_, logger=name)
+        record = one(r for r in caplog.records if r.name == name)
+        expected = strip_and_dedent("""
+'run' failed with:
+ - cmd          = bash
+ - cmds_or_args = ('-ls',)
+ - user         = None
+ - executable   = None
+ - shell        = False
+ - cwd          = None
+ - env          = None
+
+-- stdin ----------------------------------------------------------------------
+key=value
+echo ${key}@stdout
+echo ${key}@stderr 1>&2
+exit 1
+-------------------------------------------------------------------------------
+-- stdout ---------------------------------------------------------------------
+value@stdout
+-------------------------------------------------------------------------------
+-- stderr ---------------------------------------------------------------------
+value@stderr
+-------------------------------------------------------------------------------
+""")
+        assert record.message == expected
+
+    def _test_retry_cmd(self, path: PathLike, attempts: int, /) -> str:
+        return strip_and_dedent(
+            f"""
+            count=$(ls -1A "{path}" 2>/dev/null | wc -l)
+            if [ "${{count}}" -lt {attempts} ]; then
+                mktemp "{path}/XXX"
+                exit 1
+            fi
+        """,
+            trailing=True,
+        )
 
 
 class TestSSH:
@@ -373,12 +475,38 @@ class TestYieldSSHTempDir:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
     def test_main(self) -> None:
-        with yield_ssh_temp_dir("root", "proxmox.main") as temp_dir:
-            raise_if_present = f"if [ -d {temp_dir} ]; then exit 1; fi"
-            raise_if_missing = f"if ! [ -d {temp_dir} ]; then exit 1; fi"
-            ssh("root", "proxmox.main", input=raise_if_missing)
+        with yield_ssh_temp_dir("root", "proxmox.main") as temp:
+            ssh("root", "proxmox.main", input=self._raise_missing(temp))
             with raises(CalledProcessError):
-                ssh("root", "proxmox.main", input=raise_if_present)
-        ssh("root", "proxmox.main", input=raise_if_present)
+                ssh("root", "proxmox.main", input=self._raise_present(temp))
+        ssh("root", "proxmox.main", input=self._raise_present(temp))
         with raises(CalledProcessError):
-            ssh("root", "proxmox.main", input=raise_if_missing)
+            ssh("root", "proxmox.main", input=self._raise_missing(temp))
+
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_keep(self) -> None:
+        with yield_ssh_temp_dir("root", "proxmox.main", keep=True) as temp:
+            ...
+        ssh("root", "proxmox.main", input=self._raise_missing(temp))
+
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_keep_and_logger(self, *, caplog: LogCaptureFixture) -> None:
+        name = unique_str()
+        logger = getLogger(name=name)
+        logger.setLevel(INFO)
+        with yield_ssh_temp_dir("root", "proxmox.main", keep=True, logger=name):
+            ...
+        record = one(r for r in caplog.records if r.name == name)
+        assert search(
+            r"^Keeping temporary directory '[/\.\w]+'...$",
+            record.message,
+            flags=MULTILINE,
+        )
+
+    def _raise_missing(self, path: PathLike, /) -> str:
+        return f"if ! [ -d {path} ]; then exit 1; fi"
+
+    def _raise_present(self, path: PathLike, /) -> str:
+        return f"if [ -d {path} ]; then exit 1; fi"

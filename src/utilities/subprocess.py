@@ -13,15 +13,16 @@ from typing import IO, TYPE_CHECKING, Literal, assert_never, overload
 from utilities.errors import ImpossibleCaseError
 from utilities.logging import to_logger
 from utilities.text import strip_and_dedent
+from utilities.types import Delta
+from utilities.whenever import to_seconds
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from whenever import TimeDelta
-
     from utilities.types import LoggerLike, PathLike, StrMapping, StrStrMapping
 
 
+type _Retry = tuple[int, Delta | None]
 _HOST_KEY_ALGORITHMS = ["ssh-ed25519"]
 BASH_LC = ["bash", "-lc"]
 BASH_LS = ["bash", "-ls"]
@@ -82,6 +83,7 @@ def run(
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -101,6 +103,7 @@ def run(
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -120,6 +123,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -139,6 +143,7 @@ def run(
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> None: ...
 @overload
@@ -158,6 +163,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None: ...
 def run(
@@ -176,10 +182,11 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None:
     args: list[str] = []
-    if user is not None:
+    if user is not None:  # pragma: no cover
         args.extend(["su", "-", str(user)])
     args.extend([cmd, *cmds_or_args])
     buffer = StringIO()
@@ -211,8 +218,8 @@ def run(
         if proc.stderr is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stderr=}"])
         with (
-            _yield_write(proc.stdout, "proc.stdout", *stdout_outputs),
-            _yield_write(proc.stderr, "proc.stderr", *stderr_outputs),
+            _yield_write(proc.stdout, *stdout_outputs),
+            _yield_write(proc.stderr, *stderr_outputs),
         ):
             if input is not None:
                 _ = proc.stdin.write(input)
@@ -232,6 +239,10 @@ def run(
             case 0, False, False:
                 return None
             case _, _, _:
+                if retry is None:
+                    attempts = delta = None
+                else:
+                    attempts, delta = retry
                 _ = stdout.seek(0)
                 stdout_text = stdout.read()
                 _ = stderr.seek(0)
@@ -246,24 +257,52 @@ def run(
  - shell        = {shell}
  - cwd          = {cwd}
  - env          = {env}
- - input        = {input}
 
+-- stdin ----------------------------------------------------------------------
+{"" if input is None else input}-------------------------------------------------------------------------------
 -- stdout ---------------------------------------------------------------------
 {stdout_text}-------------------------------------------------------------------------------
 -- stderr ---------------------------------------------------------------------
 {stderr_text}-------------------------------------------------------------------------------
 """)
+                    if (attempts is not None) and (attempts >= 1):
+                        if delta is None:
+                            msg = f"{msg}\n\nRetrying {attempts} more time(s)..."
+                        else:
+                            msg = f"{msg}\n\nRetrying {attempts} more time(s) after {delta}..."
                     to_logger(logger).error(msg)
-                raise CalledProcessError(
+                error = CalledProcessError(
                     return_code, args, output=stdout_text, stderr=stderr_text
+                )
+                if (attempts is None) or (attempts <= 0):
+                    raise error
+                if delta is not None:
+                    sleep(to_seconds(delta))
+                return run(
+                    cmd,
+                    *cmds_or_args,
+                    user=user,
+                    executable=executable,
+                    shell=shell,
+                    cwd=cwd,
+                    env=env,
+                    input=input,
+                    print=print,
+                    print_stdout=print_stdout,
+                    print_stderr=print_stderr,
+                    return_=return_,
+                    return_stdout=return_stdout,
+                    return_stderr=return_stderr,
+                    retry=(attempts - 1, delta),
+                    logger=logger,
                 )
             case never:
                 assert_never(never)
 
 
 @contextmanager
-def _yield_write(input_: IO[str], desc: str, /, *outputs: IO[str]) -> Iterator[None]:
-    thread = Thread(target=_run_target, args=(input_, desc, *outputs), daemon=True)
+def _yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
+    thread = Thread(target=_run_target, args=(input_, *outputs), daemon=True)
     thread.start()
     try:
         yield
@@ -271,14 +310,10 @@ def _yield_write(input_: IO[str], desc: str, /, *outputs: IO[str]) -> Iterator[N
         thread.join()
 
 
-def _run_target(input_: IO[str], desc: str, /, *outputs: IO[str]) -> None:
-    try:
-        with input_:
-            for text in iter(input_.readline, ""):
-                _write_to_streams(text, *outputs)
-    except ValueError:
-        _ = sys.stderr.write(f"Failed to write to {desc!r}...")
-        raise
+def _run_target(input_: IO[str], /, *outputs: IO[str]) -> None:
+    with input_:
+        for text in iter(input_.readline, ""):
+            _write_to_streams(text, *outputs)
 
 
 def _write_to_streams(text: str, /, *outputs: IO[str]) -> None:
@@ -302,8 +337,8 @@ def ssh(
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
-    retry: tuple[int, TimeDelta] | None = None,
 ) -> str: ...
 @overload
 def ssh(
@@ -321,8 +356,8 @@ def ssh(
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
-    retry: tuple[int, TimeDelta] | None = None,
 ) -> str: ...
 @overload
 def ssh(
@@ -340,8 +375,8 @@ def ssh(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
-    retry: tuple[int, TimeDelta] | None = None,
 ) -> str: ...
 @overload
 def ssh(
@@ -359,8 +394,8 @@ def ssh(
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
-    retry: tuple[int, TimeDelta] | None = None,
 ) -> None: ...
 @overload
 def ssh(
@@ -378,8 +413,8 @@ def ssh(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
-    retry: tuple[int, TimeDelta] | None = None,
 ) -> str | None: ...
 def ssh(
     user: str,
@@ -396,8 +431,8 @@ def ssh(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
+    retry: _Retry | None = None,
     logger: LoggerLike | None = None,
-    retry: tuple[int, TimeDelta] | None = None,
 ) -> str | None:
     cmd_and_args = ssh_cmd(  # skipif-ci
         user,
@@ -407,61 +442,18 @@ def ssh(
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
     )
-    try:  # skipif-ci
-        return run(
-            *cmd_and_args,
-            input=input,
-            print=print,
-            print_stdout=print_stdout,
-            print_stderr=print_stderr,
-            return_=return_,
-            return_stdout=return_stdout,
-            return_stderr=return_stderr,
-            logger=logger,
-        )
-    except CalledProcessError as error:  # skipif-ci
-        if retry is None:
-            raise
-        attempts, delta = retry
-        if attempts <= 0:
-            raise
-        if logger is not None:
-            msg = strip_and_dedent(f"""
-'ssh' failed with:
- - user                     = {user}
- - hostname                 = {hostname}
- - cmd_and_cmds_or_args     = {cmd_and_cmds_or_args}
- - batch_mode               = {batch_mode}
- - host_key_algorithms      = {host_key_algorithms}
- - strict_host_key_checking = {strict_host_key_checking}
- - input                    = {input}
-
--- stdout ---------------------------------------------------------------------
-{error.stdout}-------------------------------------------------------------------------------
--- stderr ---------------------------------------------------------------------
-{error.stderr}-------------------------------------------------------------------------------
-
-Retrying {attempts} more time(s) after {delta}...
-""")
-            to_logger(logger).error(msg)
-        sleep(delta.in_seconds())
-        return ssh(
-            user,
-            hostname,
-            *cmd_and_cmds_or_args,
-            batch_mode=batch_mode,
-            host_key_algorithms=host_key_algorithms,
-            strict_host_key_checking=strict_host_key_checking,
-            input=input,
-            print=print,
-            print_stdout=print_stdout,
-            print_stderr=print_stderr,
-            return_=return_,
-            return_stdout=return_stdout,
-            return_stderr=return_stderr,
-            logger=logger,
-            retry=(attempts - 1, delta),
-        )
+    return run(  # skipif-ci
+        *cmd_and_args,
+        input=input,
+        print=print,
+        print_stdout=print_stdout,
+        print_stderr=print_stderr,
+        return_=return_,
+        return_stdout=return_stdout,
+        return_stderr=return_stderr,
+        retry=retry,
+        logger=logger,
+    )
 
 
 def ssh_cmd(
