@@ -139,6 +139,43 @@ def rm_cmd(path: PathLike, /) -> list[str]:
     return ["rm", "-rf", str(path)]
 
 
+def rsync(
+    src_or_srcs: MaybeIterable[PathLike],
+    user: str,
+    hostname: str,
+    dest: PathLike,
+    /,
+    *,
+    archive: bool = False,
+    chmod: str | None = None,
+    chown_user: str | None = None,
+    chown_group: str | None = None,
+    exclude: MaybeIterable[str] | None = None,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
+    sudo: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> None:
+    args = rsync_cmd(  # skipif-ci
+        src_or_srcs,
+        user,
+        hostname,
+        dest,
+        archive=archive,
+        chmod=chmod,
+        chown_user=chown_user,
+        chown_group=chown_group,
+        exclude=exclude,
+        batch_mode=batch_mode,
+        host_key_algorithms=host_key_algorithms,
+        strict_host_key_checking=strict_host_key_checking,
+        sudo=sudo,
+    )
+    run(*args, retry=retry, logger=logger)  # skipif-ci
+
+
 def rsync_cmd(
     src_or_srcs: MaybeIterable[PathLike],
     user: str,
@@ -176,21 +213,19 @@ def rsync_cmd(
     args.append("--compress")
     if exclude is not None:
         args.extend(f"--exclude={e}" for e in always_iterable(exclude))
-    rsh_args: list[str] = ssh_cmd(
-        user,
-        hostname,
+    rsh_args: list[str] = ssh_opts_cmd(
         batch_mode=batch_mode,
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
     )
-    args.append(f"--rsh={join(rsh_args)}")
+    args.append(f"--rsh={quote(join(rsh_args))}")
     rsync_path_args: list[str] = [
-        *maybe_sudo_cmd(*mkdir_cmd(dest, parent=True), sudo=sudo),
+        join(maybe_sudo_cmd(*mkdir_cmd(dest, parent=True), sudo=sudo)),
         "&&",
-        *maybe_sudo_cmd("rsync", sudo=sudo),
+        join(maybe_sudo_cmd("rsync", sudo=sudo)),
     ]
     args.extend([
-        f"--rsync-path={join(rsync_path_args)}",
+        f"--rsync-path={quote(' '.join(rsync_path_args))}",
         *map(str, always_iterable(src_or_srcs)),
         f"{user}@{hostname}:{dest}",
     ])
@@ -703,6 +738,7 @@ __all__ = [
     "mkdir_cmd",
     "mv_cmd",
     "rm_cmd",
+    "rsync",
     "rsync_cmd",
     "run",
     "set_hostname_cmd",
