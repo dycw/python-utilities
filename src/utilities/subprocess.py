@@ -155,6 +155,7 @@ def rsync(
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     sudo: bool = False,
+    print: bool = False,  # noqa: A002
     retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> None:
@@ -173,7 +174,8 @@ def rsync(
         strict_host_key_checking=strict_host_key_checking,
         sudo=sudo,
     )
-    run(*args, retry=retry, logger=logger)  # skipif-ci
+
+    run(*args, print=print, retry=retry, logger=logger)  # skipif-ci
 
 
 def rsync_cmd(
@@ -184,48 +186,40 @@ def rsync_cmd(
     /,
     *,
     archive: bool = False,
-    chmod: str | None = None,
     chown_user: str | None = None,
     chown_group: str | None = None,
     exclude: MaybeIterable[str] | None = None,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
-    sudo: bool = False,
 ) -> list[str]:
     args: list[str] = ["rsync"]
     if archive:
         args.append("--archive")
     args.append("--checksum")
-    if chmod is not None:
-        args.append(f"--chmod={chmod}")
     match chown_user, chown_group:
         case None, None:
             ...
         case str(), None:
-            args.append(f"--chown={chown_user}")
+            args.extend(["--chown", chown_user])
         case None, str():
-            args.append(f"--chown=:{chown_group}")
+            args.extend(["--chown", f":{chown_group}"])
         case str(), str():
-            args.append(f"--chown={chown_user}:{chown_group}")
+            args.extend(["--chown", f"{chown_user}:{chown_group}"])
         case never:
             assert_never(never)
     args.append("--compress")
     if exclude is not None:
-        args.extend(f"--exclude={e}" for e in always_iterable(exclude))
+        for exclude_i in always_iterable(exclude):
+            args.extend(["--exclude", exclude_i])
     rsh_args: list[str] = ssh_opts_cmd(
         batch_mode=batch_mode,
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
     )
-    args.append(f"--rsh={quote(join(rsh_args))}")
-    rsync_path_args: list[str] = [
-        join(maybe_sudo_cmd(*mkdir_cmd(dest, parent=True), sudo=sudo)),
-        "&&",
-        join(maybe_sudo_cmd("rsync", sudo=sudo)),
-    ]
     args.extend([
-        f"--rsync-path={quote(' '.join(rsync_path_args))}",
+        "--rsh",
+        join(rsh_args),
         *map(str, always_iterable(src_or_srcs)),
         f"{user}@{hostname}:{dest}",
     ])
