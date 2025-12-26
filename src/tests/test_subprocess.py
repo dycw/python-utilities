@@ -29,14 +29,12 @@ from utilities.subprocess import (
     mkdir_cmd,
     mv_cmd,
     rm_cmd,
+    rsync_cmd,
     run,
     set_hostname_cmd,
     ssh,
     ssh_cmd,
-    ssh_keygen_cmd,
-    sudo_cmd,
-    sudo_nopasswd_cmd,
-    symlink_cmd,
+    ssh_opts_cmd,
     touch_cmd,
     uv_run_cmd,
     yield_ssh_temp_dir,
@@ -205,6 +203,78 @@ class TestRmCmd:
     def test_main(self) -> None:
         result = rm_cmd("path")
         expected = ["rm", "-rf", "path"]
+        assert result == expected
+
+
+class TestRsyncCmd:
+    @mark.only
+    def test_main(self) -> None:
+        result = rsync_cmd("src", "user", "hostname", "dest")
+        expected = """\
+rsync --checksum --compress --rsh='ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes' --rsync-path='mkdir -p $(dirname dest) && rsync' src nonroot@hostname:dest"""
+        expected = [
+            "rsync",
+            "--checksum",
+            "--compress",
+            "--rsh='ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T'",
+            r"--rsync-path=\'mkdir -p '$(dirname dest)' && rsync\'",
+            "src",
+            "user@hostname:dest",
+        ]
+        assert result == expected
+
+    def test_multiple_sources(self) -> None:
+        result = rsync_cmd(["src1", "src2"], "hostname", "dest")
+        expected = """\
+rsync --checksum --compress --rsh='ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes' --rsync-path='mkdir -p $(dirname dest) && rsync' src1 src2 nonroot@hostname:dest"""
+        assert result == expected
+
+    def test_archive(self) -> None:
+        result = rsync_cmd("src", "hostname", "dest", archive=True)
+        expected = """\
+rsync --archive --checksum --compress --rsh='ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes' --rsync-path='mkdir -p $(dirname dest) && rsync' src nonroot@hostname:dest"""
+        assert result == expected
+
+    def test_exclude(self) -> None:
+        result = rsync_cmd("src", "hostname", "dest", exclude="exclude")
+        expected = """\
+rsync --checksum --compress --exclude=exclude --rsh='ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes' --rsync-path='mkdir -p $(dirname dest) && rsync' src nonroot@hostname:dest"""
+        assert result == expected
+
+    def test_exclude_multiple(self) -> None:
+        result = rsync_cmd("src", "hostname", "dest", exclude=["exclude1", "exclude2"])
+        expected = """\
+rsync --checksum --compress --exclude=exclude1 --exclude=exclude2 --rsh='ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes' --rsync-path='mkdir -p $(dirname dest) && rsync' src nonroot@hostname:dest"""
+        assert result == expected
+
+    def test_group(self) -> None:
+        result = rsync_cmd("src", "hostname", "dest", group="group")
+        expected = """\
+rsync --checksum --chown=:group --compress --rsh='ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes' --rsync-path='mkdir -p $(dirname dest) && rsync' src nonroot@hostname:dest"""
+        assert result == expected
+
+    def test_owner(self) -> None:
+        result = rsync_cmd("src", "hostname", "dest", user="owner")
+        expected = """\
+rsync --checksum --chown=owner --compress --rsh='ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes' --rsync-path='mkdir -p $(dirname dest) && rsync' src nonroot@hostname:dest"""
+        assert result == expected
+
+    def test_perms(self) -> None:
+        result = rsync_cmd("src", "hostname", "dest", perms="u=rw,g=r,o=r")
+        expected = """\
+rsync --checksum --chmod=u=rw,g=r,o=r --compress --rsh='ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes' --rsync-path='mkdir -p $(dirname dest) && rsync' src nonroot@hostname:dest"""
+        assert result == expected
+
+    def test_sudo(self) -> None:
+        result = rsync_cmd("src", "hostname", "dest", sudo=True)
+        expected = """\
+rsync --checksum --compress --rsh='ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes' --rsync-path='sudo mkdir -p $(dirname dest) && sudo rsync' src nonroot@hostname:dest"""
+        assert result == expected
+
+    def test_root(self) -> None:
+        result = rsync_cmd("src", "hostname", "dest", root=True)
+        expected = """\
+rsync --checksum --compress --rsh='ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes' --rsync-path='mkdir -p $(dirname dest) && rsync' src root@hostname:dest"""
         assert result == expected
 
 
@@ -544,8 +614,24 @@ class TestSSHCmd:
         ]
         assert result == expected
 
+
+class TestSSHOptsCmd:
+    def test_main(self) -> None:
+        result = ssh_opts_cmd()
+        expected = [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "HostKeyAlgorithms=ssh-ed25519",
+            "-o",
+            "StrictHostKeyChecking=yes",
+            "-T",
+        ]
+        assert result == expected
+
     def test_batch_mode_disabled(self) -> None:
-        result = ssh_cmd("user", "hostname", "true", batch_mode=False)
+        result = ssh_opts_cmd(batch_mode=False)
         expected = [
             "ssh",
             "-o",
@@ -553,15 +639,11 @@ class TestSSHCmd:
             "-o",
             "StrictHostKeyChecking=yes",
             "-T",
-            "user@hostname",
-            "true",
         ]
         assert result == expected
 
     def test_host_key_algorithms(self) -> None:
-        result = ssh_cmd(
-            "user", "hostname", "true", host_key_algorithms=["rsa-sha-256"]
-        )
+        result = ssh_opts_cmd(host_key_algorithms=["rsa-sha-256"])
         expected = [
             "ssh",
             "-o",
@@ -571,13 +653,11 @@ class TestSSHCmd:
             "-o",
             "StrictHostKeyChecking=yes",
             "-T",
-            "user@hostname",
-            "true",
         ]
         assert result == expected
 
     def test_strict_host_key_checking_disabled(self) -> None:
-        result = ssh_cmd("user", "hostname", "true", strict_host_key_checking=False)
+        result = ssh_opts_cmd(strict_host_key_checking=False)
         expected = [
             "ssh",
             "-o",
@@ -585,8 +665,6 @@ class TestSSHCmd:
             "-o",
             "HostKeyAlgorithms=ssh-ed25519",
             "-T",
-            "user@hostname",
-            "true",
         ]
         assert result == expected
 
