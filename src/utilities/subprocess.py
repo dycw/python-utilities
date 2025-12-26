@@ -185,11 +185,20 @@ def rsync(
         strict_host_key_checking=strict_host_key_checking,
         sudo=sudo,
     )
-    if chmod is not None:
-        maybe_sudo_cmd(chmod)
-        a
-
     run(*rsync_args, print=print, retry=retry, logger=logger)  # skipif-ci
+    if chmod is not None:  # skipif-ci
+        chmod_args = maybe_sudo_cmd(*chmod_cmd(dest, chmod), sudo=sudo)
+        ssh(
+            user,
+            hostname,
+            *chmod_args,
+            batch_mode=batch_mode,
+            host_key_algorithms=host_key_algorithms,
+            strict_host_key_checking=strict_host_key_checking,
+            print=print,
+            retry=retry,
+            logger=logger,
+        )
 
 
 def rsync_cmd(
@@ -662,10 +671,6 @@ def ssh_opts_cmd(
     if strict_host_key_checking:
         args.extend(["-o", "StrictHostKeyChecking=yes"])
     return [*args, "-T"]
-
-
-def ssh_keygen_cmd(hostname: str, /) -> list[str]:
-    return ["ssh-keygen", "-f", "~/.ssh/known_hosts", "-R", hostname]
 
 
 def ssh_keygen_cmd(hostname: str, /) -> list[str]:
