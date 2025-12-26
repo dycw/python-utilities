@@ -13,16 +13,14 @@ from typing import IO, TYPE_CHECKING, Literal, assert_never, overload
 from utilities.errors import ImpossibleCaseError
 from utilities.logging import to_logger
 from utilities.text import strip_and_dedent
-from utilities.types import Delta
 from utilities.whenever import to_seconds
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import LoggerLike, PathLike, StrMapping, StrStrMapping
+    from utilities.types import LoggerLike, PathLike, Retry, StrMapping, StrStrMapping
 
 
-type _Retry = tuple[int, Delta | None]
 _HOST_KEY_ALGORITHMS = ["ssh-ed25519"]
 BASH_LC = ["bash", "-lc"]
 BASH_LS = ["bash", "-ls"]
@@ -83,7 +81,7 @@ def run(
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: _Retry | None = None,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -103,7 +101,7 @@ def run(
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
-    retry: _Retry | None = None,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -123,7 +121,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
-    retry: _Retry | None = None,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -143,7 +141,7 @@ def run(
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
-    retry: _Retry | None = None,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> None: ...
 @overload
@@ -163,7 +161,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: _Retry | None = None,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None: ...
 def run(
@@ -182,7 +180,7 @@ def run(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: _Retry | None = None,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None:
     args: list[str] = []
@@ -337,7 +335,7 @@ def ssh(
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: _Retry | None = None,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -356,7 +354,7 @@ def ssh(
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
-    retry: _Retry | None = None,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -375,7 +373,7 @@ def ssh(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
-    retry: _Retry | None = None,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -394,7 +392,7 @@ def ssh(
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
-    retry: _Retry | None = None,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> None: ...
 @overload
@@ -413,7 +411,7 @@ def ssh(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: _Retry | None = None,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None: ...
 def ssh(
@@ -431,7 +429,7 @@ def ssh(
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
-    retry: _Retry | None = None,
+    retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None:
     cmd_and_args = ssh_cmd(  # skipif-ci
@@ -484,9 +482,17 @@ def touch_cmd(path: PathLike, /) -> list[str]:
 
 @contextmanager
 def yield_ssh_temp_dir(
-    user: str, hostname: str, /, *, keep: bool = False, logger: LoggerLike | None = None
+    user: str,
+    hostname: str,
+    /,
+    *,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+    keep: bool = False,
 ) -> Iterator[Path]:
-    path = Path(ssh(user, hostname, *MKTEMP_DIR_CMD, return_=True))
+    path = Path(
+        ssh(user, hostname, *MKTEMP_DIR_CMD, return_=True, retry=retry, logger=logger)
+    )
     try:
         yield path
     finally:
@@ -494,7 +500,7 @@ def yield_ssh_temp_dir(
             if logger is not None:
                 to_logger(logger).info("Keeping temporary directory '%s'...", path)
         else:
-            ssh(user, hostname, *rm_cmd(path))
+            ssh(user, hostname, *rm_cmd(path), retry=retry, logger=logger)
 
 
 __all__ = [

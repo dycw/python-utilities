@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from re import search
+from logging import INFO, getLogger
+from re import MULTILINE, search
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
-from pytest import CaptureFixture, raises
+from pytest import CaptureFixture, LogCaptureFixture, raises
 
 from utilities.docker import (
     docker_cp,
@@ -13,17 +14,21 @@ from utilities.docker import (
     docker_exec_cmd,
     yield_docker_temp_dir,
 )
+from utilities.iterables import one
 from utilities.pytest import skipif_ci, throttle
 from utilities.subprocess import BASH_LS, touch_cmd
-from utilities.text import strip_and_dedent
+from utilities.text import strip_and_dedent, unique_str
 from utilities.whenever import MINUTE
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from utilities.types import PathLike
+
 
 class TestDockerCp:
     @skipif_ci
+    @throttle(delta=5 * MINUTE)
     def test_into_container(self, *, tmp_path: Path) -> None:
         src = tmp_path / "file.txt"
         src.touch()
@@ -35,6 +40,7 @@ class TestDockerCp:
             )
 
     @skipif_ci
+    @throttle(delta=5 * MINUTE)
     def test_from_container(self, *, tmp_path: Path) -> None:
         with yield_docker_temp_dir("postgres") as temp_cont:
             src = temp_cont / "file.txt"
@@ -105,13 +111,40 @@ class TestDockerExecCmd:
 
 class TestYieldDockerTempDir:
     @skipif_ci
+    @throttle(delta=5 * MINUTE)
     def test_main(self) -> None:
-        with yield_docker_temp_dir("postgres") as temp_dir:
-            raise_if_present = f"if [ -d {temp_dir} ]; then exit 1; fi"
-            raise_if_missing = f"if ! [ -d {temp_dir} ]; then exit 1; fi"
-            docker_exec("postgres", *BASH_LS, input=raise_if_missing)
+        with yield_docker_temp_dir("postgres") as temp:
+            docker_exec("postgres", *BASH_LS, input=self._raise_missing(temp))
             with raises(CalledProcessError):
-                docker_exec("postgres", *BASH_LS, input=raise_if_present)
-        docker_exec("postgres", *BASH_LS, input=raise_if_present)
+                docker_exec("postgres", *BASH_LS, input=self._raise_present(temp))
+        docker_exec("postgres", *BASH_LS, input=self._raise_present(temp))
         with raises(CalledProcessError):
-            docker_exec("postgres", *BASH_LS, input=raise_if_missing)
+            docker_exec("postgres", *BASH_LS, input=self._raise_missing(temp))
+
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_keep(self) -> None:
+        with yield_docker_temp_dir("postgres", keep=True) as temp:
+            ...
+        docker_exec("postgres", *BASH_LS, input=self._raise_missing(temp))
+
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_keep_and_logger(self, *, caplog: LogCaptureFixture) -> None:
+        name = unique_str()
+        logger = getLogger(name=name)
+        logger.setLevel(INFO)
+        with yield_docker_temp_dir("postgres", keep=True, logger=name):
+            ...
+        record = one(r for r in caplog.records if r.name == name)
+        assert search(
+            r"^Keeping temporary directory '[/\.\w]+'...$",
+            record.message,
+            flags=MULTILINE,
+        )
+
+    def _raise_missing(self, path: PathLike, /) -> str:
+        return f"if ! [ -d {path} ]; then exit 1; fi"
+
+    def _raise_present(self, path: PathLike, /) -> str:
+        return f"if [ -d {path} ]; then exit 1; fi"

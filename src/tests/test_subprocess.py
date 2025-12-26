@@ -200,7 +200,7 @@ class TestRun:
 
     def test_return(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
-            "echo stdout; echo stderr 1>&2", shell=True, return_=True
+            "echo stdout; sleep 0.5; echo stderr 1>&2", shell=True, return_=True
         )
         expected = "stdout\nstderr"
         assert result == expected
@@ -230,7 +230,10 @@ class TestRun:
 
     def test_print_and_return(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
-            "echo stdout; echo stderr 1>&2", shell=True, print=True, return_=True
+            "echo stdout; sleep 0.5; echo stderr 1>&2",
+            shell=True,
+            print=True,
+            return_=True,
         )
         expected = "stdout\nstderr"
         assert result == expected
