@@ -27,6 +27,10 @@ BASH_LS = ["bash", "-ls"]
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
 
 
+def cp_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
+    return ["cp", "-r", str(src), str(dest)]
+
+
 def echo_cmd(text: str, /) -> list[str]:
     return ["echo", text]
 
@@ -58,6 +62,10 @@ def mkdir(path: PathLike, /, *, sudo: bool = False, parent: bool = False) -> Non
 def mkdir_cmd(path: PathLike, /, *, parent: bool = False) -> list[str]:
     path_use = f"$(dirname {path})" if parent else path
     return ["mkdir", "-p", str(path_use)]
+
+
+def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
+    return ["mv", str(src), str(dest)]
 
 
 def rm_cmd(path: PathLike, /) -> list[str]:
@@ -507,11 +515,13 @@ __all__ = [
     "BASH_LC",
     "BASH_LS",
     "MKTEMP_DIR_CMD",
+    "cp_cmd",
     "echo_cmd",
     "expand_path",
     "maybe_sudo_cmd",
     "mkdir",
     "mkdir_cmd",
+    "mv_cmd",
     "rm_cmd",
     "run",
     "ssh",

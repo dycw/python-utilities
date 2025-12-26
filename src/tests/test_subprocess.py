@@ -13,11 +13,13 @@ from utilities.pytest import skipif_ci, skipif_mac, throttle
 from utilities.subprocess import (
     BASH_LC,
     BASH_LS,
+    cp_cmd,
     echo_cmd,
     expand_path,
     maybe_sudo_cmd,
     mkdir,
     mkdir_cmd,
+    mv_cmd,
     rm_cmd,
     run,
     ssh,
@@ -32,6 +34,13 @@ if TYPE_CHECKING:
     from pytest import CaptureFixture
 
     from utilities.types import PathLike
+
+
+class TestCpCmd:
+    def test_main(self) -> None:
+        result = cp_cmd("src", "dest")
+        expected = ["cp", "-r", "src", "dest"]
+        assert result == expected
 
 
 class TestEchoCmd:
@@ -81,6 +90,13 @@ class TestMkDirCmd:
     def test_parent(self) -> None:
         result = mkdir_cmd("~/foo", parent=True)
         expected = ["mkdir", "-p", "$(dirname ~/foo)"]
+        assert result == expected
+
+
+class TestMvCmd:
+    def test_main(self) -> None:
+        result = mv_cmd("src", "dest")
+        expected = ["mv", "src", "dest"]
         assert result == expected
 
 
