@@ -718,12 +718,12 @@ def yield_ssh_temp_dir(
     logger: LoggerLike | None = None,
     keep: bool = False,
 ) -> Iterator[Path]:
-    path = Path(
+    path = Path(  # skipif-ci
         ssh(user, hostname, *MKTEMP_DIR_CMD, return_=True, retry=retry, logger=logger)
     )
-    try:
+    try:  # skipif-ci
         yield path
-    finally:
+    finally:  # skipif-ci
         if keep:
             if logger is not None:
                 to_logger(logger).info("Keeping temporary directory '%s'...", path)
