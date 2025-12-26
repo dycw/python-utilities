@@ -146,26 +146,37 @@ def rsync(
     dest: PathLike,
     /,
     *,
+    sudo: bool = False,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
+    print: bool = False,  # noqa: A002
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
     archive: bool = False,
     chmod: str | None = None,
     chown_user: str | None = None,
     chown_group: str | None = None,
     exclude: MaybeIterable[str] | None = None,
-    batch_mode: bool = True,
-    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
-    strict_host_key_checking: bool = True,
-    sudo: bool = False,
-    print: bool = False,  # noqa: A002
-    retry: Retry | None = None,
-    logger: LoggerLike | None = None,
 ) -> None:
-    args = rsync_cmd(  # skipif-ci
+    mkdir_args = maybe_sudo_cmd(*mkdir_cmd(dest, parent=True), sudo=sudo)  # skipif-ci
+    ssh(  # skipif-ci
+        user,
+        hostname,
+        *mkdir_args,
+        batch_mode=batch_mode,
+        host_key_algorithms=host_key_algorithms,
+        strict_host_key_checking=strict_host_key_checking,
+        print=print,
+        retry=retry,
+        logger=logger,
+    )
+    rsync_args = rsync_cmd(  # skipif-ci
         src_or_srcs,
         user,
         hostname,
         dest,
         archive=archive,
-        chmod=chmod,
         chown_user=chown_user,
         chown_group=chown_group,
         exclude=exclude,
@@ -174,8 +185,11 @@ def rsync(
         strict_host_key_checking=strict_host_key_checking,
         sudo=sudo,
     )
+    if chmod is not None:
+        chmod_args = maybe_sudo_cmd(chmod)
+        a
 
-    run(*args, print=print, retry=retry, logger=logger)  # skipif-ci
+    run(*rsync_args, print=print, retry=retry, logger=logger)  # skipif-ci
 
 
 def rsync_cmd(
@@ -192,6 +206,7 @@ def rsync_cmd(
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
+    sudo: bool = False,
 ) -> list[str]:
     args: list[str] = ["rsync"]
     if archive:
@@ -217,13 +232,10 @@ def rsync_cmd(
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
     )
-    args.extend([
-        "--rsh",
-        join(rsh_args),
-        *map(str, always_iterable(src_or_srcs)),
-        f"{user}@{hostname}:{dest}",
-    ])
-    return args
+    args.extend(["--rsh", join(rsh_args)])
+    if sudo:
+        args.extend(["--rsync-path", join(sudo_cmd("rsync"))])
+    return [*args, *map(str, always_iterable(src_or_srcs)), f"{user}@{hostname}:{dest}"]
 
 
 @overload
