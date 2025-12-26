@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
-from shlex import join, quote
+from shlex import quote
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
@@ -139,68 +139,6 @@ def rm_cmd(path: PathLike, /) -> list[str]:
     return ["rm", "-rf", str(path)]
 
 
-def rsync(
-    src_or_srcs: MaybeIterable[PathLike],
-    user: str,
-    hostname: str,
-    dest: PathLike,
-    /,
-    *,
-    sudo: bool = False,
-    batch_mode: bool = True,
-    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
-    strict_host_key_checking: bool = True,
-    print: bool = False,  # noqa: A002
-    retry: Retry | None = None,
-    logger: LoggerLike | None = None,
-    archive: bool = False,
-    chown_user: str | None = None,
-    chown_group: str | None = None,
-    exclude: MaybeIterable[str] | None = None,
-    chmod: str | None = None,
-) -> None:
-    mkdir_args = maybe_sudo_cmd(*mkdir_cmd(dest, parent=True), sudo=sudo)  # skipif-ci
-    ssh(  # skipif-ci
-        user,
-        hostname,
-        *mkdir_args,
-        batch_mode=batch_mode,
-        host_key_algorithms=host_key_algorithms,
-        strict_host_key_checking=strict_host_key_checking,
-        print=print,
-        retry=retry,
-        logger=logger,
-    )
-    rsync_args = rsync_cmd(  # skipif-ci
-        src_or_srcs,
-        user,
-        hostname,
-        dest,
-        archive=archive,
-        chown_user=chown_user,
-        chown_group=chown_group,
-        exclude=exclude,
-        batch_mode=batch_mode,
-        host_key_algorithms=host_key_algorithms,
-        strict_host_key_checking=strict_host_key_checking,
-        sudo=sudo,
-    )
-    run(*rsync_args, print=print, retry=retry, logger=logger)  # skipif-ci
-    if chmod is not None:  # skipif-ci
-        chmod_args = maybe_sudo_cmd(*chmod_cmd(dest, chmod), sudo=sudo)
-        ssh(
-            user,
-            hostname,
-            *chmod_args,
-            batch_mode=batch_mode,
-            host_key_algorithms=host_key_algorithms,
-            strict_host_key_checking=strict_host_key_checking,
-            print=print,
-            retry=retry,
-            logger=logger,
-        )
-
-
 def rsync_cmd(
     src_or_srcs: MaybeIterable[PathLike],
     user: str,
@@ -209,42 +147,49 @@ def rsync_cmd(
     /,
     *,
     archive: bool = False,
-    chown_user: str | None = None,
-    chown_group: str | None = None,
     exclude: MaybeIterable[str] | None = None,
-    batch_mode: bool = True,
-    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
-    strict_host_key_checking: bool = True,
     sudo: bool = False,
-) -> list[str]:
+    perms: str | None = None,
+    group: str | None = None,
+    root: bool = False,
+) -> str:
     args: list[str] = ["rsync"]
     if archive:
         args.append("--archive")
-    args.append("--checksum")
-    match chown_user, chown_group:
+    mkdir = maybe_sudo_cmd(*mkdir_cmd(dest, parent=True), sudo=sudo)
+    if perms is not None:
+        args.append(f"--chmod={perms}")
+    match user, group:
         case None, None:
             ...
         case str(), None:
-            args.extend(["--chown", chown_user])
+            args.append(f"--chown={user}")
         case None, str():
-            args.extend(["--chown", f":{chown_group}"])
+            args.append(f"--chown=:{group}")
         case str(), str():
-            args.extend(["--chown", f"{chown_user}:{chown_group}"])
+            args.append(f"--chown={user}:{group}")
         case never:
             assert_never(never)
-    args.append("--compress")
-    if exclude is not None:
-        for exclude_i in always_iterable(exclude):
-            args.extend(["--exclude", exclude_i])
-    rsh_args: list[str] = ssh_opts_cmd(
-        batch_mode=batch_mode,
-        host_key_algorithms=host_key_algorithms,
-        strict_host_key_checking=strict_host_key_checking,
-    )
-    args.extend(["--rsh", join(rsh_args)])
-    if sudo:
-        args.extend(["--rsync-path", join(sudo_cmd("rsync"))])
-    return [*args, *map(str, always_iterable(src_or_srcs)), f"{user}@{hostname}:{dest}"]
+    if exclude is None:
+        exclude_flag = ""
+    else:
+        exclude_flag = (
+            " ".join(f"--exclude={e}" for e in always_iterable(exclude)) + " "
+        )
+    rsync = maybe_sudo_cmd("rsync", sudo=sudo)
+    match src_or_srcs:
+        case Path() | str() as src:
+            ...
+        case Iterable() as srcs:
+            src = " ".join(map(str, srcs))
+        case never:
+            assert_never(never)
+    ssh = ssh_cmd()
+    user = user(root=root)
+    return f"""\
+rsync {archive_flag}--checksum {chmod_flag}{chown_flag}--compress {exclude_flag}\
+--rsh='{ssh}' --rsync-path='{mkdir} && {rsync}' \
+{src} {user}@{hostname}:{dest}"""
 
 
 @overload
@@ -753,7 +698,6 @@ __all__ = [
     "mkdir_cmd",
     "mv_cmd",
     "rm_cmd",
-    "rsync",
     "rsync_cmd",
     "run",
     "set_hostname_cmd",

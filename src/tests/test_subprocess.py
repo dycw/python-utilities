@@ -176,13 +176,23 @@ class TestMkDir:
 
 class TestMkDirCmd:
     def test_main(self) -> None:
-        result = mkdir_cmd("path")
-        expected = ["mkdir", "-p", "path"]
+        result = mkdir_cmd("~/foo")
+        expected = ["mkdir", "-p", "'~/foo'"]
+        assert result == expected
+
+    def test_space(self) -> None:
+        result = mkdir_cmd("~/foo bar baz")
+        expected = ["mkdir", "-p", "'~/foo bar baz'"]
         assert result == expected
 
     def test_parent(self) -> None:
-        result = mkdir_cmd("path", parent=True)
-        expected = ["mkdir", "-p", "$(dirname path)"]
+        result = mkdir_cmd("~/foo", parent=True)
+        expected = ["mkdir", "-p", "$(dirname '~/foo')"]
+        assert result == expected
+
+    def test_parent_and_space(self) -> None:
+        result = mkdir_cmd("~/foo bar baz", parent=True)
+        expected = ["mkdir", "-p", "$(dirname '~/foo bar baz')"]
         assert result == expected
 
 
