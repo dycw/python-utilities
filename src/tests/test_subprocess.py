@@ -329,6 +329,21 @@ class TestRsyncCmd:
         ]
         assert result == expected
 
+    def test_sudo(self) -> None:
+        result = rsync_cmd("src", "user", "hostname", "dest", sudo=True)
+        expected = [
+            "rsync",
+            "--checksum",
+            "--compress",
+            "--rsh",
+            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
+            "--rsync-path",
+            "sudo rsync",
+            "src",
+            "user@hostname:dest",
+        ]
+        assert result == expected
+
 
 class TestRun:
     def test_main(self, *, capsys: CaptureFixture) -> None:
