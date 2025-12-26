@@ -13,18 +13,32 @@ from utilities.pytest import skipif_ci, skipif_mac, throttle
 from utilities.subprocess import (
     BASH_LC,
     BASH_LS,
+    ChownCmdError,
+    apt_install_cmd,
+    cat_cmd,
+    cd_cmd,
+    chmod_cmd,
+    chown_cmd,
     cp_cmd,
     echo_cmd,
     expand_path,
+    git_clone_cmd,
+    git_hard_reset_cmd,
     maybe_sudo_cmd,
     mkdir,
     mkdir_cmd,
     mv_cmd,
     rm_cmd,
     run,
+    set_hostname_cmd,
     ssh,
     ssh_cmd,
+    ssh_keygen_cmd,
+    sudo_cmd,
+    sudo_nopasswd_cmd,
+    symlink_cmd,
     touch_cmd,
+    uv_run_cmd,
     yield_ssh_temp_dir,
 )
 from utilities.text import strip_and_dedent, unique_str
@@ -34,6 +48,58 @@ if TYPE_CHECKING:
     from pytest import CaptureFixture
 
     from utilities.types import PathLike
+
+
+class TestAptInstallCmd:
+    def test_main(self) -> None:
+        result = apt_install_cmd("package")
+        expected = ["apt", "install", "-y", "package"]
+        assert result == expected
+
+
+class TestCatCmd:
+    def test_main(self) -> None:
+        result = cat_cmd("path")
+        expected = ["cat", "path"]
+        assert result == expected
+
+
+class TestCDCmd:
+    def test_main(self) -> None:
+        result = cd_cmd("path")
+        expected = ["cd", "path"]
+        assert result == expected
+
+
+class TestChModCmd:
+    def test_main(self) -> None:
+        result = chmod_cmd("path", "u=rw,g=r,o=r")
+        expected = ["chmod", "u=rw,g=r,o=r", "path"]
+        assert result == expected
+
+
+class TestChOwnCmd:
+    def test_user(self) -> None:
+        result = chown_cmd("path", user="user")
+        expected = ["chown", "user", "path"]
+        assert result == expected
+
+    def test_group(self) -> None:
+        result = chown_cmd("path", group="group")
+        expected = ["chown", ":group", "path"]
+        assert result == expected
+
+    def test_user_and_group(self) -> None:
+        result = chown_cmd("path", user="user", group="group")
+        expected = ["chown", "user:group", "path"]
+        assert result == expected
+
+    def test_error(self) -> None:
+        with raises(
+            ChownCmdError,
+            match=r"At least one of 'user' and/or 'group' must be given; got None",
+        ):
+            _ = chown_cmd("path")
 
 
 class TestCpCmd:
@@ -62,6 +128,31 @@ class TestExpandPath:
         assert result == expected
 
 
+class TestGitCloneCmd:
+    def test_main(self) -> None:
+        result = git_clone_cmd("https://github.com/foo/bar", "path")
+        expected = [
+            "git",
+            "clone",
+            "--recurse-submodules",
+            "https://github.com/foo/bar",
+            "path",
+        ]
+        assert result == expected
+
+
+class TestGitHardResetCmd:
+    def test_main(self) -> None:
+        result = git_hard_reset_cmd()
+        expected = ["git", "hard-reset", "master"]
+        assert result == expected
+
+    def test_branch(self) -> None:
+        result = git_hard_reset_cmd(branch="dev")
+        expected = ["git", "hard-reset", "dev"]
+        assert result == expected
+
+
 class TestMaybeSudoCmd:
     def test_main(self) -> None:
         result = maybe_sudo_cmd("echo", "hi")
@@ -83,13 +174,13 @@ class TestMkDir:
 
 class TestMkDirCmd:
     def test_main(self) -> None:
-        result = mkdir_cmd("~/foo")
-        expected = ["mkdir", "-p", "~/foo"]
+        result = mkdir_cmd("path")
+        expected = ["mkdir", "-p", "path"]
         assert result == expected
 
     def test_parent(self) -> None:
-        result = mkdir_cmd("~/foo", parent=True)
-        expected = ["mkdir", "-p", "$(dirname ~/foo)"]
+        result = mkdir_cmd("path", parent=True)
+        expected = ["mkdir", "-p", "$(dirname path)"]
         assert result == expected
 
 
@@ -102,8 +193,8 @@ class TestMvCmd:
 
 class TestRmCmd:
     def test_main(self) -> None:
-        result = rm_cmd("~/foo")
-        expected = ["rm", "-rf", "~/foo"]
+        result = rm_cmd("path")
+        expected = ["rm", "-rf", "path"]
         assert result == expected
 
 
@@ -404,6 +495,13 @@ value@stderr
         )
 
 
+class TestSetHostnameCmd:
+    def test_main(self) -> None:
+        result = set_hostname_cmd("hostname")
+        expected = ["hostnamectl", "set-hostname", "hostname"]
+        assert result == expected
+
+
 class TestSSH:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
@@ -483,10 +581,71 @@ class TestSSHCmd:
         assert result == expected
 
 
+class TestSSHKeyGenCmd:
+    def test_main(self) -> None:
+        result = ssh_keygen_cmd("hostname")
+        expected = ["ssh-keygen", "-f", "~/.ssh/known_hosts", "-R", "hostname"]
+        assert result == expected
+
+
+class TestSudoCmd:
+    def test_main(self) -> None:
+        result = sudo_cmd("echo", "hi")
+        expected = ["sudo", "echo", "hi"]
+        assert result == expected
+
+
+class TestSudoNoPasswdCmd:
+    def test_main(self) -> None:
+        result = sudo_nopasswd_cmd("user")
+        expected = "user ALL=(ALL) NOPASSWD: ALL"
+        assert result == expected
+
+
+class TestSymLinkCmd:
+    def test_main(self) -> None:
+        result = symlink_cmd("src", "dest")
+        expected = ["ln", "-s", "src", "dest"]
+        assert result == expected
+
+
 class TestTouchCmd:
     def test_main(self) -> None:
-        result = touch_cmd("~/foo")
-        expected = ["touch", "~/foo"]
+        result = touch_cmd("path")
+        expected = ["touch", "path"]
+        assert result == expected
+
+
+class TestUvRunCmd:
+    def test_main(self) -> None:
+        result = uv_run_cmd("foo.bar")
+        expected = [
+            "uv",
+            "run",
+            "--no-dev",
+            "--active",
+            "--prerelease=disallow",
+            "--managed-python",
+            "python",
+            "-m",
+            "foo.bar",
+        ]
+        assert result == expected
+
+    def test_args(self) -> None:
+        result = uv_run_cmd("foo.bar", "--arg")
+        expected = [
+            "uv",
+            "run",
+            "--no-dev",
+            "--active",
+            "--prerelease=disallow",
+            "--managed-python",
+            "python",
+            "-m",
+            "foo.bar",
+            "--arg",
+        ]
         assert result == expected
 
 

@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import sys
 from contextlib import contextmanager
+from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
 from time import sleep
-from typing import IO, TYPE_CHECKING, Literal, assert_never, overload
+from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.logging import to_logger
@@ -22,9 +23,52 @@ if TYPE_CHECKING:
 
 
 _HOST_KEY_ALGORITHMS = ["ssh-ed25519"]
+APT_UPDATE = ["apt", "update", "-y"]
 BASH_LC = ["bash", "-lc"]
 BASH_LS = ["bash", "-ls"]
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
+RESTART_SSHD = ["systemctl", "restart", "sshd"]
+UPDATE_CA_CERTIFICATES: str = "update-ca-certificates"
+
+
+def apt_install_cmd(package: str, /) -> list[str]:
+    return ["apt", "install", "-y", package]
+
+
+def cat_cmd(path: PathLike, /) -> list[str]:
+    return ["cat", str(path)]
+
+
+def cd_cmd(path: PathLike, /) -> list[str]:
+    return ["cd", str(path)]
+
+
+def chmod_cmd(path: PathLike, mode: str, /) -> list[str]:
+    return ["chmod", mode, str(path)]
+
+
+def chown_cmd(
+    path: PathLike, /, *, user: str | None = None, group: str | None = None
+) -> list[str]:
+    match user, group:
+        case None, None:
+            raise ChownCmdError
+        case str(), None:
+            ownership = "user"
+        case None, str():
+            ownership = f":{group}"
+        case str(), str():
+            ownership = f"{user}:{group}"
+        case never:
+            assert_never(never)
+    return ["chown", ownership, str(path)]
+
+
+@dataclass(kw_only=True, slots=True)
+class ChownCmdError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "At least one of 'user' and/or 'group' must be given; got None"
 
 
 def cp_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
@@ -43,6 +87,15 @@ def expand_path(
     if sudo:  # pragma: no cover
         return Path(run(*sudo_cmd(*echo_cmd(str(path))), return_=True))
     return Path(path).expanduser()
+
+
+def git_clone_cmd(url: str, path: PathLike, /) -> list[str]:
+    return ["git", "clone", "--recurse-submodules", url, str(path)]
+
+
+def git_hard_reset_cmd(*, branch: str | None = None) -> list[str]:
+    branch_use = "master" if branch is None else branch
+    return ["git", "hard-reset", branch_use]
 
 
 def maybe_sudo_cmd(cmd: str, /, *args: str, sudo: bool = False) -> list[str]:
@@ -224,8 +277,8 @@ def run(
         if proc.stderr is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stderr=}"])
         with (
-            _yield_write(proc.stdout, *stdout_outputs),
-            _yield_write(proc.stderr, *stderr_outputs),
+            _run_yield_write(proc.stdout, *stdout_outputs),
+            _run_yield_write(proc.stderr, *stderr_outputs),
         ):
             if input is not None:
                 _ = proc.stdin.write(input)
@@ -307,8 +360,8 @@ def run(
 
 
 @contextmanager
-def _yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
-    thread = Thread(target=_run_target, args=(input_, *outputs), daemon=True)
+def _run_yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
+    thread = Thread(target=_run_daemon_target, args=(input_, *outputs), daemon=True)
     thread.start()
     try:
         yield
@@ -316,15 +369,19 @@ def _yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
         thread.join()
 
 
-def _run_target(input_: IO[str], /, *outputs: IO[str]) -> None:
+def _run_daemon_target(input_: IO[str], /, *outputs: IO[str]) -> None:
     with input_:
         for text in iter(input_.readline, ""):
-            _write_to_streams(text, *outputs)
+            _run_write_to_streams(text, *outputs)
 
 
-def _write_to_streams(text: str, /, *outputs: IO[str]) -> None:
+def _run_write_to_streams(text: str, /, *outputs: IO[str]) -> None:
     for output in outputs:
         _ = output.write(text)
+
+
+def set_hostname_cmd(hostname: str, /) -> list[str]:
+    return ["hostnamectl", "set-hostname", hostname]
 
 
 @overload
@@ -480,12 +537,39 @@ def ssh_cmd(
     return [*args, "-T", f"{user}@{hostname}", *cmd_and_cmds_or_args]
 
 
+def ssh_keygen_cmd(hostname: str, /) -> list[str]:
+    return ["ssh-keygen", "-f", "~/.ssh/known_hosts", "-R", hostname]
+
+
 def sudo_cmd(cmd: str, /, *args: str) -> list[str]:
     return ["sudo", cmd, *args]
 
 
+def sudo_nopasswd_cmd(user: str, /) -> str:
+    return f"{user} ALL=(ALL) NOPASSWD: ALL"
+
+
+def symlink_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
+    return ["ln", "-s", str(src), str(dest)]
+
+
 def touch_cmd(path: PathLike, /) -> list[str]:
     return ["touch", str(path)]
+
+
+def uv_run_cmd(module: str, /, *args: str) -> list[str]:
+    return [
+        "uv",
+        "run",
+        "--no-dev",
+        "--active",
+        "--prerelease=disallow",
+        "--managed-python",
+        "python",
+        "-m",
+        module,
+        *args,
+    ]
 
 
 @contextmanager
@@ -512,21 +596,35 @@ def yield_ssh_temp_dir(
 
 
 __all__ = [
+    "APT_UPDATE",
     "BASH_LC",
     "BASH_LS",
     "MKTEMP_DIR_CMD",
+    "RESTART_SSHD",
+    "UPDATE_CA_CERTIFICATES",
+    "ChownCmdError",
+    "apt_install_cmd",
+    "cd_cmd",
+    "chmod_cmd",
+    "chown_cmd",
     "cp_cmd",
     "echo_cmd",
     "expand_path",
+    "git_clone_cmd",
+    "git_hard_reset_cmd",
     "maybe_sudo_cmd",
     "mkdir",
     "mkdir_cmd",
     "mv_cmd",
     "rm_cmd",
     "run",
+    "set_hostname_cmd",
     "ssh",
     "ssh_cmd",
     "sudo_cmd",
+    "sudo_nopasswd_cmd",
+    "symlink_cmd",
     "touch_cmd",
+    "uv_run_cmd",
     "yield_ssh_temp_dir",
 ]
