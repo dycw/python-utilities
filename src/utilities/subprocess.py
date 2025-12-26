@@ -61,7 +61,8 @@ def chown_cmd(
 ) -> list[str]:
     match user, group:
         case None, None:
-            raise ChownCmdError
+            msg = "At least one of 'user' and/or 'group' must be given"
+            raise ValueError(msg)
         case str(), None:
             ownership = "user"
         case None, str():
@@ -668,6 +669,10 @@ def ssh_keygen_cmd(hostname: str, /) -> list[str]:
     return ["ssh-keygen", "-f", "~/.ssh/known_hosts", "-R", hostname]
 
 
+def ssh_keygen_cmd(hostname: str, /) -> list[str]:
+    return ["ssh-keygen", "-f", "~/.ssh/known_hosts", "-R", hostname]
+
+
 def sudo_cmd(cmd: str, /, *args: str) -> list[str]:
     return ["sudo", cmd, *args]
 
@@ -730,8 +735,6 @@ __all__ = [
     "RESTART_SSHD",
     "UPDATE_CA_CERTIFICATES",
     "ChownCmdError",
-    "apt_install_cmd",
-    "cd_cmd",
     "chmod_cmd",
     "chown_cmd",
     "cp_cmd",

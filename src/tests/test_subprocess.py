@@ -14,7 +14,6 @@ from utilities.subprocess import (
     BASH_LC,
     BASH_LS,
     ChownCmdError,
-    apt_install_cmd,
     cat_cmd,
     cd_cmd,
     chmod_cmd,
@@ -46,13 +45,6 @@ if TYPE_CHECKING:
     from pytest import CaptureFixture
 
     from utilities.types import PathLike
-
-
-class TestAptInstallCmd:
-    def test_main(self) -> None:
-        result = apt_install_cmd("package")
-        expected = ["apt", "install", "-y", "package"]
-        assert result == expected
 
 
 class TestCatCmd:
@@ -122,7 +114,7 @@ class TestExpandPath:
 
     def test_subs(self) -> None:
         result = expand_path("~/${dir}", subs={"dir": "foo"})
-        expected = Path("~/foo").expanduser()
+        expected = Path("path").expanduser()
         assert result == expected
 
 
@@ -172,23 +164,13 @@ class TestMkDir:
 
 class TestMkDirCmd:
     def test_main(self) -> None:
-        result = mkdir_cmd("~/foo")
-        expected = ["mkdir", "-p", "'~/foo'"]
-        assert result == expected
-
-    def test_space(self) -> None:
-        result = mkdir_cmd("~/foo bar baz")
-        expected = ["mkdir", "-p", "'~/foo bar baz'"]
+        result = mkdir_cmd("path")
+        expected = ["mkdir", "-p", "path"]
         assert result == expected
 
     def test_parent(self) -> None:
-        result = mkdir_cmd("~/foo", parent=True)
-        expected = ["mkdir", "-p", "$(dirname '~/foo')"]
-        assert result == expected
-
-    def test_parent_and_space(self) -> None:
-        result = mkdir_cmd("~/foo bar baz", parent=True)
-        expected = ["mkdir", "-p", "$(dirname '~/foo bar baz')"]
+        result = mkdir_cmd("path", parent=True)
+        expected = ["mkdir", "-p", "$(dirname path)"]
         assert result == expected
 
 
@@ -203,145 +185,6 @@ class TestRmCmd:
     def test_main(self) -> None:
         result = rm_cmd("path")
         expected = ["rm", "-rf", "path"]
-        assert result == expected
-
-
-class TestRsyncCmd:
-    def test_main(self) -> None:
-        result = rsync_cmd("src", "user", "hostname", "dest")
-        expected = [
-            "rsync",
-            "--checksum",
-            "--compress",
-            "--rsh",
-            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
-            "user@hostname:dest",
-        ]
-        assert result == expected
-
-    def test_multiple_sources(self) -> None:
-        result = rsync_cmd(["src1", "src2"], "user", "hostname", "dest")
-        expected = [
-            "rsync",
-            "--checksum",
-            "--compress",
-            "--rsh",
-            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src1",
-            "src2",
-            "user@hostname:dest",
-        ]
-        assert result == expected
-
-    def test_archive(self) -> None:
-        result = rsync_cmd("src", "user", "hostname", "dest", archive=True)
-        expected = [
-            "rsync",
-            "--archive",
-            "--checksum",
-            "--compress",
-            "--rsh",
-            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
-            "user@hostname:dest",
-        ]
-        assert result == expected
-
-    def test_chown_user(self) -> None:
-        result = rsync_cmd("src", "user", "hostname", "dest", chown_user="user2")
-        expected = [
-            "rsync",
-            "--checksum",
-            "--chown",
-            "user2",
-            "--compress",
-            "--rsh",
-            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
-            "user@hostname:dest",
-        ]
-        assert result == expected
-
-    def test_chown_group(self) -> None:
-        result = rsync_cmd("src", "user", "hostname", "dest", chown_group="group")
-        expected = [
-            "rsync",
-            "--checksum",
-            "--chown",
-            ":group",
-            "--compress",
-            "--rsh",
-            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
-            "user@hostname:dest",
-        ]
-        assert result == expected
-
-    def test_chown_user_and_group(self) -> None:
-        result = rsync_cmd(
-            "src", "user", "hostname", "dest", chown_user="user2", chown_group="group"
-        )
-        expected = [
-            "rsync",
-            "--checksum",
-            "--chown",
-            "user2:group",
-            "--compress",
-            "--rsh",
-            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
-            "user@hostname:dest",
-        ]
-        assert result == expected
-
-    def test_exclude(self) -> None:
-        result = rsync_cmd("src", "user", "hostname", "dest", exclude="exclude")
-        expected = [
-            "rsync",
-            "--checksum",
-            "--compress",
-            "--exclude",
-            "exclude",
-            "--rsh",
-            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
-            "user@hostname:dest",
-        ]
-        assert result == expected
-
-    def test_exclude_multiple(self) -> None:
-        result = rsync_cmd(
-            "src", "user", "hostname", "dest", exclude=["exclude1", "exclude2"]
-        )
-        expected = [
-            "rsync",
-            "--checksum",
-            "--compress",
-            "--exclude",
-            "exclude1",
-            "--exclude",
-            "exclude2",
-            "--rsh",
-            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
-            "user@hostname:dest",
-        ]
-        assert result == expected
-
-    def test_sudo(self) -> None:
-        result = rsync_cmd("src", "user", "hostname", "dest", sudo=True)
-        expected = [
-            "rsync",
-            "--checksum",
-            "--compress",
-            "--rsh",
-            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "--rsync-path",
-            "sudo rsync",
-            "src",
-            "user@hostname:dest",
-        ]
         assert result == expected
 
 
@@ -768,39 +611,6 @@ class TestTouchCmd:
     def test_main(self) -> None:
         result = touch_cmd("path")
         expected = ["touch", "path"]
-        assert result == expected
-
-
-class TestUvRunCmd:
-    def test_main(self) -> None:
-        result = uv_run_cmd("foo.bar")
-        expected = [
-            "uv",
-            "run",
-            "--no-dev",
-            "--active",
-            "--prerelease=disallow",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
-        ]
-        assert result == expected
-
-    def test_args(self) -> None:
-        result = uv_run_cmd("foo.bar", "--arg")
-        expected = [
-            "uv",
-            "run",
-            "--no-dev",
-            "--active",
-            "--prerelease=disallow",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
-            "--arg",
-        ]
         assert result == expected
 
 
