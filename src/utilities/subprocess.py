@@ -186,7 +186,7 @@ def run(
     logger: LoggerLike | None = None,
 ) -> str | None:
     args: list[str] = []
-    if user is not None:
+    if user is not None:  # pragma: no cover
         args.extend(["su", "-", str(user)])
     args.extend([cmd, *cmds_or_args])
     buffer = StringIO()
