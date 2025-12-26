@@ -186,7 +186,7 @@ def rsync(
         sudo=sudo,
     )
     if chmod is not None:
-        chmod_args = maybe_sudo_cmd(chmod)
+        maybe_sudo_cmd(chmod)
         a
 
     run(*rsync_args, print=print, retry=retry, logger=logger)  # skipif-ci

@@ -29,7 +29,6 @@ from utilities.subprocess import (
     mkdir_cmd,
     mv_cmd,
     rm_cmd,
-    rsync_cmd,
     run,
     set_hostname_cmd,
     ssh,
