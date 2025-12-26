@@ -634,6 +634,39 @@ class TestTouchCmd:
         assert result == expected
 
 
+class TestUvRunCmd:
+    def test_main(self) -> None:
+        result = uv_run_cmd("foo.bar")
+        expected = [
+            "uv",
+            "run",
+            "--no-dev",
+            "--active",
+            "--prerelease=disallow",
+            "--managed-python",
+            "python",
+            "-m",
+            "foo.bar",
+        ]
+        assert result == expected
+
+    def test_args(self) -> None:
+        result = uv_run_cmd("foo.bar", "--arg")
+        expected = [
+            "uv",
+            "run",
+            "--no-dev",
+            "--active",
+            "--prerelease=disallow",
+            "--managed-python",
+            "python",
+            "-m",
+            "foo.bar",
+            "--arg",
+        ]
+        assert result == expected
+
+
 class TestYieldSSHTempDir:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
