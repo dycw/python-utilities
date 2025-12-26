@@ -734,6 +734,8 @@ __all__ = [
     "RESTART_SSHD",
     "UPDATE_CA_CERTIFICATES",
     "ChownCmdError",
+    "apt_install_cmd",
+    "cd_cmd",
     "chmod_cmd",
     "chown_cmd",
     "cp_cmd",
