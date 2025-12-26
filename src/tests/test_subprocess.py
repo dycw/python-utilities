@@ -35,6 +35,7 @@ from utilities.subprocess import (
     ssh_cmd,
     ssh_keygen_cmd,
     sudo_cmd,
+    sudo_nopasswd_cmd,
     symlink_cmd,
     touch_cmd,
     uv_run_cmd,
@@ -591,6 +592,13 @@ class TestSudoCmd:
     def test_main(self) -> None:
         result = sudo_cmd("echo", "hi")
         expected = ["sudo", "echo", "hi"]
+        assert result == expected
+
+
+class TestSudoNoPasswdCmd:
+    def test_main(self) -> None:
+        result = sudo_nopasswd_cmd("user")
+        expected = "user ALL=(ALL) NOPASSWD: ALL"
         assert result == expected
 
 
