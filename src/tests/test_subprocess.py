@@ -13,6 +13,11 @@ from utilities.pytest import skipif_ci, skipif_mac, throttle
 from utilities.subprocess import (
     BASH_LC,
     BASH_LS,
+    ChownCmdError,
+    cat_cmd,
+    cd_cmd,
+    chmod_cmd,
+    chown_cmd,
     cp_cmd,
     echo_cmd,
     expand_path,
@@ -34,6 +39,51 @@ if TYPE_CHECKING:
     from pytest import CaptureFixture
 
     from utilities.types import PathLike
+
+
+class TestCatCmd:
+    def test_main(self) -> None:
+        result = cat_cmd("path")
+        expected = ["cat", "path"]
+        assert result == expected
+
+
+class TestCDCmd:
+    def test_main(self) -> None:
+        result = cd_cmd("path")
+        expected = ["cd", "path"]
+        assert result == expected
+
+
+class TestChModCmd:
+    def test_main(self) -> None:
+        result = chmod_cmd("path", "u=rw,g=r,o=r")
+        expected = ["chmod", "u=rw,g=r,o=r", "path"]
+        assert result == expected
+
+
+class TestChOwnCmd:
+    def test_user(self) -> None:
+        result = chown_cmd("path", user="user")
+        expected = ["chown", "user", "path"]
+        assert result == expected
+
+    def test_group(self) -> None:
+        result = chown_cmd("path", group="group")
+        expected = ["chown", ":group", "path"]
+        assert result == expected
+
+    def test_user_and_group(self) -> None:
+        result = chown_cmd("path", user="user", group="group")
+        expected = ["chown", "user:group", "path"]
+        assert result == expected
+
+    def test_error(self) -> None:
+        with raises(
+            ChownCmdError,
+            match=r"At least one of 'user' and/or 'group' must be given; got None",
+        ):
+            _ = chown_cmd("path")
 
 
 class TestCpCmd:
@@ -58,7 +108,7 @@ class TestExpandPath:
 
     def test_subs(self) -> None:
         result = expand_path("~/${dir}", subs={"dir": "foo"})
-        expected = Path("~/foo").expanduser()
+        expected = Path("path").expanduser()
         assert result == expected
 
 
@@ -83,13 +133,13 @@ class TestMkDir:
 
 class TestMkDirCmd:
     def test_main(self) -> None:
-        result = mkdir_cmd("~/foo")
-        expected = ["mkdir", "-p", "~/foo"]
+        result = mkdir_cmd("path")
+        expected = ["mkdir", "-p", "path"]
         assert result == expected
 
     def test_parent(self) -> None:
-        result = mkdir_cmd("~/foo", parent=True)
-        expected = ["mkdir", "-p", "$(dirname ~/foo)"]
+        result = mkdir_cmd("path", parent=True)
+        expected = ["mkdir", "-p", "$(dirname path)"]
         assert result == expected
 
 
@@ -102,8 +152,8 @@ class TestMvCmd:
 
 class TestRmCmd:
     def test_main(self) -> None:
-        result = rm_cmd("~/foo")
-        expected = ["rm", "-rf", "~/foo"]
+        result = rm_cmd("path")
+        expected = ["rm", "-rf", "path"]
         assert result == expected
 
 
@@ -485,8 +535,8 @@ class TestSSHCmd:
 
 class TestTouchCmd:
     def test_main(self) -> None:
-        result = touch_cmd("~/foo")
-        expected = ["touch", "~/foo"]
+        result = touch_cmd("path")
+        expected = ["touch", "path"]
         assert result == expected
 
 
