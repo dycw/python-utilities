@@ -551,7 +551,7 @@ class TestSSHOptsCmd:
         ]
         assert result == expected
 
-    def test_batch_mode_disabled(self) -> None:
+    def test_batch_mode(self) -> None:
         result = ssh_opts_cmd(batch_mode=False)
         expected = [
             "ssh",
@@ -577,7 +577,7 @@ class TestSSHOptsCmd:
         ]
         assert result == expected
 
-    def test_strict_host_key_checking_disabled(self) -> None:
+    def test_strict_host_key_checking(self) -> None:
         result = ssh_opts_cmd(strict_host_key_checking=False)
         expected = [
             "ssh",
