@@ -14,6 +14,7 @@ from utilities.subprocess import (
     BASH_LC,
     BASH_LS,
     ChownCmdError,
+    apt_install_cmd,
     cat_cmd,
     cd_cmd,
     chmod_cmd,
@@ -47,6 +48,13 @@ if TYPE_CHECKING:
     from pytest import CaptureFixture
 
     from utilities.types import PathLike
+
+
+class TestAptInstallCmd:
+    def test_main(self) -> None:
+        result = apt_install_cmd("package")
+        expected = ["apt", "install", "-y", "package"]
+        assert result == expected
 
 
 class TestCatCmd:
