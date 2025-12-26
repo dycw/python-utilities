@@ -232,7 +232,7 @@ type PatternLike = MaybeStr[Pattern[str]]
 
 
 # retry
-type Retry = tuple[int, Delta]
+type Retry = tuple[int, Delta | None]
 
 
 # text
