@@ -154,10 +154,10 @@ def rsync(
     retry: Retry | None = None,
     logger: LoggerLike | None = None,
     archive: bool = False,
-    chmod: str | None = None,
     chown_user: str | None = None,
     chown_group: str | None = None,
     exclude: MaybeIterable[str] | None = None,
+    chmod: str | None = None,
 ) -> None:
     mkdir_args = maybe_sudo_cmd(*mkdir_cmd(dest, parent=True), sudo=sudo)  # skipif-ci
     ssh(  # skipif-ci
