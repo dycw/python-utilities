@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import INFO, getLogger
 from pathlib import Path
 from re import MULTILINE, search
 from subprocess import CalledProcessError
@@ -488,6 +489,21 @@ class TestYieldSSHTempDir:
         with yield_ssh_temp_dir("root", "proxmox.main", keep=True) as temp:
             ...
         ssh("root", "proxmox.main", input=self._raise_missing(temp))
+
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_keep_and_logger(self, *, caplog: LogCaptureFixture) -> None:
+        name = unique_str()
+        logger = getLogger(name=name)
+        logger.setLevel(INFO)
+        with yield_ssh_temp_dir("root", "proxmox.main", keep=True, logger=name):
+            ...
+        record = one(r for r in caplog.records if r.name == name)
+        assert search(
+            r"^Keeping temporary directory '[/\.\w]+'...$",
+            record.message,
+            flags=MULTILINE,
+        )
 
     def _raise_missing(self, path: PathLike, /) -> str:
         return f"if ! [ -d {path} ]; then exit 1; fi"
