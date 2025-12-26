@@ -108,7 +108,7 @@ class TestExpandPath:
 
     def test_subs(self) -> None:
         result = expand_path("~/${dir}", subs={"dir": "foo"})
-        expected = Path("path").expanduser()
+        expected = Path("foo").expanduser()
         assert result == expected
 
 
