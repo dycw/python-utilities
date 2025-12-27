@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from hypothesis import given
-from hypothesis.strategies import booleans
+from hypothesis.strategies import DataObject, booleans, data
 from pytest import mark, param, raises
 
 from utilities.hypothesis import permissions, sentinels, temp_paths
@@ -74,16 +74,46 @@ class TestEnsurePermissions:
 
 
 class TestPermissions:
-    @given(root=temp_paths(), perms=permissions())
-    def test_from_path(self, *, root: Path, perms: Permissions) -> None:
+    @given(
+        data=data(),
+        root=temp_paths(),
+        group_read=booleans(),
+        group_write=booleans(),
+        group_execute=booleans(),
+        others_read=booleans(),
+        others_write=booleans(),
+        others_execute=booleans(),
+    )
+    def test_from_path(
+        self,
+        *,
+        data: DataObject,
+        root: Path,
+        group_read: bool,
+        group_write: bool,
+        group_execute: bool,
+        others_read: bool,
+        others_write: bool,
+        others_execute: bool,
+    ) -> None:
         path = root / "file.txt"
-        path.touch()
-        path.chmod(int(perms))
+        perms = data.draw(
+            permissions(
+                group_read=group_read,
+                group_write=group_write,
+                group_execute=group_execute,
+                others_read=others_read,
+                others_write=others_write,
+                others_execute=others_execute,
+            )
+        )
+        path.touch(mode=int(perms))
         assert Permissions.from_path(path) == perms
 
     @given(perms=permissions())
     def test_human_int(self, *, perms: Permissions) -> None:
-        assert Permissions.from_human_int(perms.human_int) == perms
+        result = Permissions.from_human_int(perms.human_int)
+        assert result == perms
 
     @mark.parametrize(
         ("perms", "expected"), [param(case.perms, case.human_int) for case in _CASES]
