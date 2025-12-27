@@ -3,10 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from hypothesis import given
-from pytest import mark, param
+from pytest import mark, param, raises
 
 from utilities.hypothesis import permissions
-from utilities.permissions import Permissions
+from utilities.permissions import (
+    Permissions,
+    PermissionsFromIntError,
+    PermissionsFromTextError,
+)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -82,3 +86,22 @@ class TestPermissions:
         result = str(perms)
         assert result == expected
         assert Permissions.from_text(result) == perms
+
+    def test_error_from_int(self) -> None:
+        with raises(
+            PermissionsFromIntError, match="Invalid integer for permissions; got 8"
+        ):
+            _ = Permissions.from_int(8)
+
+    def test_error_from_octal(self) -> None:
+        with raises(
+            PermissionsFromTextError, match="Invalid octal for permissions; got 0o7777"
+        ):
+            _ = Permissions.from_octal(0o7777)
+
+    def test_error_from_text(self) -> None:
+        with raises(
+            PermissionsFromTextError,
+            match="Invalid string for permissions; got 'u=xwr,g=,o='",
+        ):
+            _ = Permissions.from_text("u=xwr,g=,o=")

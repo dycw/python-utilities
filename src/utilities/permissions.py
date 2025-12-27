@@ -28,6 +28,8 @@ from utilities.re import (
 from utilities.sentinel import Sentinel, sentinel
 from utilities.typing import get_args
 
+_MIN_INT = 0o0
+_MAX_INT = 0o777
 type _ZeroToSeven = Literal[0, 1, 2, 3, 4, 5, 6, 7]
 _ZERO_TO_SEVEN: list[_ZeroToSeven] = list(get_args(_ZeroToSeven.__value__))
 
@@ -161,7 +163,9 @@ class Permissions:
                 others_write=others_write,
                 others_execute=others_execute,
             )
-        return cls()
+        if n == 0:
+            return cls()
+        raise PermissionsFromIntError(n=n)
 
     @classmethod
     def _from_int(cls, n: _ZeroToSeven, /) -> tuple[bool, bool, bool]:
@@ -169,17 +173,19 @@ class Permissions:
 
     @classmethod
     def from_octal(cls, n: int, /) -> Self:
-        return cls(
-            user_read=bool(n & S_IRUSR),
-            user_write=bool(n & S_IWUSR),
-            user_execute=bool(n & S_IXUSR),
-            group_read=bool(n & S_IRGRP),
-            group_write=bool(n & S_IWGRP),
-            group_execute=bool(n & S_IXGRP),
-            others_read=bool(n & S_IROTH),
-            others_write=bool(n & S_IWOTH),
-            others_execute=bool(n & S_IXOTH),
-        )
+        if _MIN_INT <= n <= _MAX_INT:
+            return cls(
+                user_read=bool(n & S_IRUSR),
+                user_write=bool(n & S_IWUSR),
+                user_execute=bool(n & S_IXUSR),
+                group_read=bool(n & S_IRGRP),
+                group_write=bool(n & S_IWGRP),
+                group_execute=bool(n & S_IXGRP),
+                others_read=bool(n & S_IROTH),
+                others_write=bool(n & S_IWOTH),
+                others_execute=bool(n & S_IXOTH),
+            )
+        raise PermissionsFromOctalError(n=n)
 
     @classmethod
     def from_text(cls, text: str, /) -> Self:
@@ -188,7 +194,7 @@ class Permissions:
                 r"^u=(r?w?x?),g=(r?w?x?),o=(r?w?x?)$", text
             )
         except ExtractGroupsError:
-            raise PermissionsFromStrError(text=text) from None
+            raise PermissionsFromTextError(text=text) from None
         user_read, user_write, user_execute = cls._from_text_part(user)
         group_read, group_write, group_execute = cls._from_text_part(group)
         others_read, others_write, others_execute = cls._from_text_part(others)
@@ -265,7 +271,16 @@ class PermissionsFromIntError(PermissionsError):
 
 
 @dataclass(kw_only=True, slots=True)
-class PermissionsFromStrError(PermissionsError):
+class PermissionsFromOctalError(PermissionsError):
+    n: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid octal for permissions; got {oct(self.n)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromTextError(PermissionsError):
     text: str
 
     @override
@@ -277,5 +292,6 @@ __all__ = [
     "Permissions",
     "PermissionsError",
     "PermissionsFromIntError",
-    "PermissionsFromStrError",
+    "PermissionsFromOctalError",
+    "PermissionsFromTextError",
 ]
