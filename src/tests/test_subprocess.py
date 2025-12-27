@@ -45,7 +45,7 @@ from utilities.subprocess import (
     uv_run_cmd,
     yield_ssh_temp_dir,
 )
-from utilities.tempfile import TemporaryFile
+from utilities.tempfile import TemporaryDirectory, TemporaryFile
 from utilities.text import strip_and_dedent, unique_str
 from utilities.whenever import MINUTE, SECOND
 
@@ -221,7 +221,33 @@ class TestRsync:
     def test_main(self, *, ssh_user: str, ssh_hostname: str) -> None:
         with TemporaryFile() as src, yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp:
             dest = temp / src.name
-            rsync("README.md", ssh_user, ssh_hostname, dest)
+            rsync(src, ssh_user, ssh_hostname, dest)
+            ssh(
+                ssh_user,
+                ssh_hostname,
+                *BASH_LS,
+                input=f"if ! [ -f {dest} ]; then exit 1; fi",
+            )
+
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_dir(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        with (
+            TemporaryDirectory() as src,
+            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp,
+        ):
+            (src / "file.txt").touch()
+            dest = temp / src.name
+            rsync(src, ssh_user, ssh_hostname, dest)
+            ssh(
+                ssh_user,
+                ssh_hostname,
+                *BASH_LS,
+                input=strip_and_dedent(f"""
+                    if ! [ -d {dest} ]; then exit 1; fi
+                    if ! [ -f {dest}/file.txt ]; then exit 1; fi
+                """),
+            )
 
 
 class TestRsyncCmd:
@@ -629,7 +655,7 @@ stderr
             echo ${key}@stdout
             echo ${key}@stderr 1>&2
             exit 1
-        """,
+            """,
             trailing=True,
         )
         with raises(CalledProcessError):
