@@ -13,6 +13,7 @@ from utilities.permissions import (
     PermissionsFromHumanIntRangeError,
     PermissionsFromIntError,
     PermissionsFromTextError,
+    ensure_perms,
 )
 from utilities.sentinel import Sentinel
 
@@ -52,6 +53,20 @@ _CASES: list[_Case] = [
         text="u=r,g=x,o=",
     ),
 ]
+
+
+class TestEnsurePermissions:
+    @given(perms=permissions())
+    def test_octal(self, *, perms: Permissions) -> None:
+        assert ensure_perms(perms.octal) == perms
+
+    @given(perms=permissions())
+    def test_perms(self, *, perms: Permissions) -> None:
+        assert ensure_perms(perms) == perms
+
+    @given(perms=permissions())
+    def test_text(self, *, perms: Permissions) -> None:
+        assert ensure_perms(str(perms)) == perms
 
 
 class TestPermissions:

@@ -14,15 +14,38 @@ from stat import (
     S_IXOTH,
     S_IXUSR,
 )
-from typing import Literal, Self, override
+from typing import Literal, Self, assert_never, override
 
 from utilities.dataclasses import replace_non_sentinel
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
 
+type PermissionsLike = Permissions | int | str
+
+
+##
+
+
+def ensure_perms(perms: PermissionsLike, /) -> Permissions:
+    """Ensure a set of file permissions."""
+    match perms:
+        case Permissions():
+            return perms
+        case int():
+            return Permissions.from_int(perms)
+        case str():
+            return Permissions.from_text(perms)
+        case never:
+            assert_never(never)
+
+
+##
+
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
 class Permissions:
+    """A set of file permissions."""
+
     user_read: bool = False
     user_write: bool = False
     user_execute: bool = False
@@ -261,4 +284,5 @@ __all__ = [
     "PermissionsFromHumanIntError",
     "PermissionsFromIntError",
     "PermissionsFromTextError",
+    "ensure_perms",
 ]
