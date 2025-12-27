@@ -195,9 +195,11 @@ def _drop_table(table: str, /) -> TextClause:
 # fixtures - subprocess
 
 
+@fixture
 def ssh_user() -> str:
     return "root"
 
 
+@fixture
 def ssh_hostname() -> str:
     return "proxmox.main"
