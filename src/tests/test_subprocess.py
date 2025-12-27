@@ -218,10 +218,10 @@ class TestRmCmd:
 class TestRsync:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_main(self) -> None:
-        with TemporaryFile() as src, yield_ssh_temp_dir("root", "proxmox.main") as temp:
+    def test_main(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        with TemporaryFile() as src, yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp:
             dest = temp / src.name
-            rsync("README.md", "user", "hostname", dest)
+            rsync("README.md", ssh_user, ssh_hostname, dest)
 
 
 class TestRsyncCmd:
@@ -683,16 +683,18 @@ class TestSetHostnameCmd:
 class TestSSH:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_main(self, *, capsys: CaptureFixture) -> None:
+    def test_main(
+        self, *, capsys: CaptureFixture, ssh_user: str, ssh_hostname: str
+    ) -> None:
         input_ = strip_and_dedent("""
-            hostname
-            whoami 1>&2
+            whoami
+            hostname 1>&2
         """)
-        result = ssh("root", "proxmox.main", input=input_, print=True)
+        result = ssh(ssh_user, ssh_hostname, input=input_, print=True)
         assert result is None
         cap = capsys.readouterr()
-        assert cap.out == "proxmox\n"
-        assert cap.err == "root\n"
+        assert cap.out == f"{ssh_user}\n"
+        assert cap.err == f"{ssh_hostname}\n"
 
 
 class TestSSHCmd:
@@ -838,29 +840,31 @@ class TestUvRunCmd:
 class TestYieldSSHTempDir:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_main(self) -> None:
-        with yield_ssh_temp_dir("root", "proxmox.main") as temp:
-            ssh("root", "proxmox.main", input=self._raise_missing(temp))
+    def test_main(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp:
+            ssh(ssh_user, ssh_hostname, input=self._raise_missing(temp))
             with raises(CalledProcessError):
-                ssh("root", "proxmox.main", input=self._raise_present(temp))
-        ssh("root", "proxmox.main", input=self._raise_present(temp))
+                ssh(ssh_user, ssh_hostname, input=self._raise_present(temp))
+        ssh(ssh_user, ssh_hostname, input=self._raise_present(temp))
         with raises(CalledProcessError):
-            ssh("root", "proxmox.main", input=self._raise_missing(temp))
+            ssh(ssh_user, ssh_hostname, input=self._raise_missing(temp))
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_keep(self) -> None:
-        with yield_ssh_temp_dir("root", "proxmox.main", keep=True) as temp:
+    def test_keep(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname, keep=True) as temp:
             ...
-        ssh("root", "proxmox.main", input=self._raise_missing(temp))
+        ssh(ssh_user, ssh_hostname, input=self._raise_missing(temp))
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_keep_and_logger(self, *, caplog: LogCaptureFixture) -> None:
+    def test_keep_and_logger(
+        self, *, caplog: LogCaptureFixture, ssh_user: str, ssh_hostname: str
+    ) -> None:
         name = unique_str()
         logger = getLogger(name=name)
         logger.setLevel(INFO)
-        with yield_ssh_temp_dir("root", "proxmox.main", keep=True, logger=name):
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname, keep=True, logger=name):
             ...
         record = one(r for r in caplog.records if r.name == name)
         assert search(
