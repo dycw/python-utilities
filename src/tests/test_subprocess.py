@@ -16,6 +16,7 @@ from utilities.subprocess import (
     BASH_LC,
     BASH_LS,
     ChownCmdError,
+    CopyFileError,
     apt_install_cmd,
     cat_cmd,
     cd_cmd,
@@ -23,6 +24,7 @@ from utilities.subprocess import (
     chmod_cmd,
     chown,
     chown_cmd,
+    copy_file,
     cp_cmd,
     echo_cmd,
     expand_path,
@@ -33,6 +35,7 @@ from utilities.subprocess import (
     mkdir,
     mkdir_cmd,
     mv_cmd,
+    remove,
     rm_cmd,
     rsync,
     rsync_cmd,
@@ -140,6 +143,32 @@ class TestChOwnCmd:
             _ = chown_cmd("path")
 
 
+class TestCopyFile:
+    def test_file(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
+        dest = tmp_path / "file2.txt"
+        copy_file(src, dest)
+        assert src.is_file()
+        assert dest.is_file()
+
+    def test_dir(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "dir"
+        src.mkdir()
+        dest = tmp_path / "dir2"
+        copy_file(src, dest)
+        assert src.is_dir()
+        assert dest.is_dir()
+
+    def test_error(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "dir"
+        dest = tmp_path / "dir2"
+        with raises(
+            CopyFileError, match=r"Unable to copy '.+' to '.+'; source does not exist"
+        ):
+            copy_file(src, dest)
+
+
 class TestCpCmd:
     def test_main(self) -> None:
         result = cp_cmd("src", "dest")
@@ -217,7 +246,7 @@ class TestMaybeSudoCmd:
 
 class TestMkDir:
     def test_main(self, *, tmp_path: Path) -> None:
-        path = f"{tmp_path}/foo"
+        path = tmp_path / "dir"
         mkdir(path)
         assert Path(path).is_dir()
 
@@ -239,6 +268,22 @@ class TestMvCmd:
         result = mv_cmd("src", "dest")
         expected = ["mv", "src", "dest"]
         assert result == expected
+
+
+class TestRemove:
+    def test_file(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        assert path.is_file()
+        remove(path)
+        assert not path.is_file()
+
+    def test_dir(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "dir"
+        path.mkdir()
+        assert path.is_dir()
+        remove(path)
+        assert not path.is_dir()
 
 
 class TestRmCmd:

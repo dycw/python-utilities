@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
 from shlex import join
+from shutil import copyfile, copytree, rmtree
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
@@ -89,20 +90,26 @@ def chown(
     /,
     *,
     sudo: bool = False,
-    user: str | None = None,
-    group: str | None = None,
+    user: str | int | None = None,
+    group: str | int | None = None,
 ) -> None:
     if sudo:  # pragma: no cover
-        run(*sudo_cmd(*chown_cmd(path, user=user, group=group)))
+        match user, group:
+            case None, None:
+                ...
+            case str() | int() | None, str() | int() | None:
+                run(*sudo_cmd(*chown_cmd(path, user=user, group=group)))
+            case never:
+                assert_never(never)
     else:
         match user, group:
             case None, None:
                 ...
-            case str(), None:
+            case str() | int(), None:
                 shutil.chown(path, user, group)
-            case None, str():
+            case None, str() | int():
                 shutil.chown(path, user, group)
-            case str(), str():
+            case str() | int(), str() | int():
                 shutil.chown(path, user, group)
             case never:
                 assert_never(never)
@@ -112,16 +119,16 @@ def chown(
 
 
 def chown_cmd(
-    path: PathLike, /, *, user: str | None = None, group: str | None = None
+    path: PathLike, /, *, user: str | int | None = None, group: str | int | None = None
 ) -> list[str]:
     match user, group:
         case None, None:
             raise ChownCmdError
-        case str(), None:
+        case str() | int(), None:
             ownership = "user"
-        case None, str():
+        case None, str() | int():
             ownership = f":{group}"
-        case str(), str():
+        case str() | int(), str() | int():
             ownership = f"{user}:{group}"
         case never:
             assert_never(never)
@@ -133,6 +140,47 @@ class ChownCmdError(Exception):
     @override
     def __str__(self) -> str:
         return "At least one of 'user' and/or 'group' must be given; got None"
+
+
+##
+
+
+def copy_file(
+    src: PathLike,
+    dest: PathLike,
+    /,
+    *,
+    sudo: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
+) -> None:
+    remove(dest, sudo=sudo)
+    mkdir(dest, sudo=sudo, parent=True)
+    if sudo:
+        run(*sudo_cmd(*cp_cmd(src, dest)))
+    else:
+        src, dest = map(Path, [src, dest])
+        if src.is_file():
+            _ = copyfile(src, dest)
+        elif src.is_dir():
+            _ = copytree(src, dest, dirs_exist_ok=True)
+        else:
+            raise CopyFileError(src=src, dest=dest)
+    if perms is not None:
+        chmod(dest, perms, sudo=sudo)
+    if (owner is not None) or (group is not None):
+        chown(dest, sudo=sudo, user=owner, group=group)
+
+
+@dataclass(kw_only=True, slots=True)
+class CopyFileError(Exception):
+    src: Path
+    dest: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to copy {str(self.src)!r} to {str(self.dest)!r}; source does not exist"
 
 
 ##
@@ -215,6 +263,20 @@ def mkdir_cmd(path: PathLike, /, *, parent: bool = False) -> list[str]:
 
 def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
     return ["mv", str(src), str(dest)]
+
+
+##
+
+
+def remove(path: PathLike, /, *, sudo: bool = False) -> None:
+    if sudo:  # pragma: no cover
+        run(*sudo_cmd(*rm_cmd(path)))
+    else:
+        path = Path(path)
+        if path.is_file():
+            path.unlink(missing_ok=True)
+        elif path.is_dir():
+            rmtree(path, ignore_errors=True)
 
 
 ##
@@ -873,10 +935,12 @@ __all__ = [
     "RESTART_SSHD",
     "UPDATE_CA_CERTIFICATES",
     "ChownCmdError",
+    "CopyFileError",
     "apt_install_cmd",
     "cd_cmd",
     "chmod_cmd",
     "chown_cmd",
+    "copy_file",
     "cp_cmd",
     "echo_cmd",
     "expand_path",
@@ -887,6 +951,7 @@ __all__ = [
     "mkdir",
     "mkdir_cmd",
     "mv_cmd",
+    "remove",
     "rm_cmd",
     "rsync",
     "rsync_cmd",
