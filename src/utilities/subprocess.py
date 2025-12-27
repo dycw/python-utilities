@@ -48,6 +48,7 @@ UPDATE_CA_CERTIFICATES: str = "update-ca-certificates"
 
 
 def apt_install_cmd(package: str, /) -> list[str]:
+    """Command to use 'apt' to install a package."""
     return ["apt", "install", "-y", package]
 
 
@@ -55,6 +56,7 @@ def apt_install_cmd(package: str, /) -> list[str]:
 
 
 def cat_cmd(path: PathLike, /) -> list[str]:
+    """Command to use 'cat' to concatenate and print files."""
     return ["cat", str(path)]
 
 
@@ -62,6 +64,7 @@ def cat_cmd(path: PathLike, /) -> list[str]:
 
 
 def cd_cmd(path: PathLike, /) -> list[str]:
+    """Command to use 'cd' to change working directory."""
     return ["cd", str(path)]
 
 
@@ -69,6 +72,7 @@ def cd_cmd(path: PathLike, /) -> list[str]:
 
 
 def chmod(path: PathLike, perms: PermissionsLike, /, *, sudo: bool = False) -> None:
+    """Change file mode."""
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*chmod_cmd(path, perms)))
     else:
@@ -79,6 +83,7 @@ def chmod(path: PathLike, perms: PermissionsLike, /, *, sudo: bool = False) -> N
 
 
 def chmod_cmd(path: PathLike, perms: PermissionsLike, /) -> list[str]:
+    """Command to use 'chmod' to change file mode."""
     return ["chmod", str(ensure_perms(perms)), str(path)]
 
 
@@ -93,6 +98,7 @@ def chown(
     user: str | int | None = None,
     group: str | int | None = None,
 ) -> None:
+    """Change file owner and/or group."""
     if sudo:  # pragma: no cover
         match user, group:
             case None, None:
@@ -121,6 +127,7 @@ def chown(
 def chown_cmd(
     path: PathLike, /, *, user: str | int | None = None, group: str | int | None = None
 ) -> list[str]:
+    """Command to use 'chown' to change file owner and/or group."""
     match user, group:
         case None, None:
             raise ChownCmdError
@@ -145,7 +152,7 @@ class ChownCmdError(Exception):
 ##
 
 
-def copy_file(
+def cp(
     src: PathLike,
     dest: PathLike,
     /,
@@ -155,7 +162,7 @@ def copy_file(
     owner: str | int | None = None,
     group: str | int | None = None,
 ) -> None:
-    """Copy a file/directory from one location to another."""
+    """Copy a file/directory."""
     mkdir(dest, sudo=sudo, parent=True)
     if sudo:
         run(*sudo_cmd(*cp_cmd(src, dest)))
@@ -166,7 +173,7 @@ def copy_file(
         elif src.is_dir():
             _ = copytree(src, dest, dirs_exist_ok=True)
         else:
-            raise CopyFileError(src=src, dest=dest)
+            raise CpError(src=src, dest=dest)
     if perms is not None:
         chmod(dest, perms, sudo=sudo)
     if (owner is not None) or (group is not None):
@@ -174,7 +181,7 @@ def copy_file(
 
 
 @dataclass(kw_only=True, slots=True)
-class CopyFileError(Exception):
+class CpError(Exception):
     src: Path
     dest: Path
 
@@ -183,10 +190,8 @@ class CopyFileError(Exception):
         return f"Unable to copy {str(self.src)!r} to {str(self.dest)!r}; source does not exist"
 
 
-##
-
-
 def cp_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
+    """Command to use 'cp' to copy a file/directory."""
     return ["cp", "-r", str(src), str(dest)]
 
 
@@ -194,6 +199,7 @@ def cp_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
 
 
 def echo_cmd(text: str, /) -> list[str]:
+    """Command to use 'echo' to write arguments to the standard output."""
     return ["echo", text]
 
 
@@ -203,6 +209,7 @@ def echo_cmd(text: str, /) -> list[str]:
 def expand_path(
     path: PathLike, /, *, subs: StrMapping | None = None, sudo: bool = False
 ) -> Path:
+    """Expand a path using `subprocess`."""
     if subs is not None:
         path = Template(str(path)).substitute(**subs)
     if sudo:  # pragma: no cover
@@ -214,6 +221,7 @@ def expand_path(
 
 
 def git_clone_cmd(url: str, path: PathLike, /) -> list[str]:
+    """Command to use 'git clone' to clone a repository."""
     return ["git", "clone", "--recurse-submodules", url, str(path)]
 
 
@@ -221,6 +229,7 @@ def git_clone_cmd(url: str, path: PathLike, /) -> list[str]:
 
 
 def git_hard_reset_cmd(*, branch: str | None = None) -> list[str]:
+    """Command to use 'git hard-reset' to hard reset a repository."""
     branch_use = "master" if branch is None else branch
     return ["git", "hard-reset", branch_use]
 
@@ -229,6 +238,7 @@ def git_hard_reset_cmd(*, branch: str | None = None) -> list[str]:
 
 
 def maybe_parent(path: PathLike, /, *, parent: bool = False) -> Path:
+    """Get the parent of a path, if required."""
     path = Path(path)
     return path.parent if parent else path
 
@@ -236,15 +246,8 @@ def maybe_parent(path: PathLike, /, *, parent: bool = False) -> Path:
 ##
 
 
-def maybe_sudo_cmd(cmd: str, /, *args: str, sudo: bool = False) -> list[str]:
-    parts: list[str] = [cmd, *args]
-    return sudo_cmd(*parts) if sudo else parts
-
-
-##
-
-
 def mkdir(path: PathLike, /, *, sudo: bool = False, parent: bool = False) -> None:
+    """Make a directory."""
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*mkdir_cmd(path, parent=parent)))
     else:
@@ -255,13 +258,14 @@ def mkdir(path: PathLike, /, *, sudo: bool = False, parent: bool = False) -> Non
 
 
 def mkdir_cmd(path: PathLike, /, *, parent: bool = False) -> list[str]:
+    """Command to use 'mv' to make a directory."""
     return ["mkdir", "-p", str(maybe_parent(path, parent=parent))]
 
 
 ##
 
 
-def move_file(
+def mv(
     src: PathLike,
     dest: PathLike,
     /,
@@ -271,7 +275,7 @@ def move_file(
     owner: str | int | None = None,
     group: str | int | None = None,
 ) -> None:
-    """Move a file/directory from one location to another."""
+    """Move a file/directory."""
     mkdir(dest, sudo=sudo, parent=True)
     if sudo:
         run(*sudo_cmd(*cp_cmd(src, dest)))
@@ -280,7 +284,7 @@ def move_file(
         if src.exists():
             _ = move(src, dest)
         else:
-            raise MoveFileError(src=src, dest=dest)
+            raise MvFileError(src=src, dest=dest)
     if perms is not None:
         chmod(dest, perms, sudo=sudo)
     if (owner is not None) or (group is not None):
@@ -288,7 +292,7 @@ def move_file(
 
 
 @dataclass(kw_only=True, slots=True)
-class MoveFileError(Exception):
+class MvFileError(Exception):
     src: Path
     dest: Path
 
@@ -297,17 +301,16 @@ class MoveFileError(Exception):
         return f"Unable to move {str(self.src)!r} to {str(self.dest)!r}; source does not exist"
 
 
-##
-
-
 def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
+    """Command to use 'mv' to move a file/directory."""
     return ["mv", str(src), str(dest)]
 
 
 ##
 
 
-def remove(path: PathLike, /, *, sudo: bool = False) -> None:
+def rm(path: PathLike, /, *, sudo: bool = False) -> None:
+    """Remove a file/directory."""
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*rm_cmd(path)))
     else:
@@ -318,10 +321,8 @@ def remove(path: PathLike, /, *, sudo: bool = False) -> None:
             rmtree(path, ignore_errors=True)
 
 
-##
-
-
 def rm_cmd(path: PathLike, /) -> list[str]:
+    """Command to use 'rm' to remove a file/directory."""
     return ["rm", "-rf", str(path)]
 
 
@@ -347,6 +348,7 @@ def rsync(
     exclude: MaybeIterable[str] | None = None,
     chmod: str | None = None,
 ) -> None:
+    """Remote & local file copying."""
     mkdir_args = maybe_sudo_cmd(*mkdir_cmd(dest, parent=True), sudo=sudo)  # skipif-ci
     ssh(  # skipif-ci
         user,
@@ -391,9 +393,6 @@ def rsync(
         )
 
 
-##
-
-
 def rsync_cmd(
     src_or_srcs: MaybeIterable[PathLike],
     user: str,
@@ -411,6 +410,7 @@ def rsync_cmd(
     sudo: bool = False,
     parent: bool = False,
 ) -> list[str]:
+    """Command to use 'rsync' to do remote & local file copying."""
     args: list[str] = ["rsync"]
     if archive:
         args.append("--archive")
@@ -568,6 +568,7 @@ def run(
     retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None:
+    """Run a command in a subprocess."""
     args: list[str] = []
     if user is not None:  # pragma: no cover
         args.extend(["su", "-", str(user)])
@@ -708,6 +709,7 @@ def _run_write_to_streams(text: str, /, *outputs: IO[str]) -> None:
 
 
 def set_hostname_cmd(hostname: str, /) -> list[str]:
+    """Command to set the system hostname."""
     return ["hostnamectl", "set-hostname", hostname]
 
 
@@ -827,6 +829,7 @@ def ssh(
     retry: Retry | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None:
+    """Execute a command on a remote machine."""
     cmd_and_args = ssh_cmd(  # skipif-ci
         user,
         hostname,
@@ -849,9 +852,6 @@ def ssh(
     )
 
 
-##
-
-
 def ssh_cmd(
     user: str,
     hostname: str,
@@ -861,6 +861,7 @@ def ssh_cmd(
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
 ) -> list[str]:
+    """Command to use 'ssh' to execute a command on a remote machine."""
     args: list[str] = ssh_opts_cmd(
         batch_mode=batch_mode,
         host_key_algorithms=host_key_algorithms,
@@ -869,15 +870,13 @@ def ssh_cmd(
     return [*args, f"{user}@{hostname}", *cmd_and_cmds_or_args]
 
 
-##
-
-
 def ssh_opts_cmd(
     *,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
 ) -> list[str]:
+    """Command to use prepare 'ssh' to execute a command on a remote machine."""
     args: list[str] = ["ssh"]
     if batch_mode:
         args.extend(["-o", "BatchMode=yes"])
@@ -891,6 +890,7 @@ def ssh_opts_cmd(
 
 
 def ssh_keygen_cmd(hostname: str, /) -> list[str]:
+    """Command to use 'ssh-keygen' to add a known host."""
     return ["ssh-keygen", "-f", "~/.ssh/known_hosts", "-R", hostname]
 
 
@@ -898,21 +898,52 @@ def ssh_keygen_cmd(hostname: str, /) -> list[str]:
 
 
 def sudo_cmd(cmd: str, /, *args: str) -> list[str]:
+    """Command to use 'sudo' to execute a command as another user."""
     return ["sudo", cmd, *args]
+
+
+def maybe_sudo_cmd(cmd: str, /, *args: str, sudo: bool = False) -> list[str]:
+    """Command to use 'sudo' to execute a command as another user, if required."""
+    parts: list[str] = [cmd, *args]
+    return sudo_cmd(*parts) if sudo else parts
 
 
 ##
 
 
 def sudo_nopasswd_cmd(user: str, /) -> str:
+    """Command to allow a user to use password-free `sudo`."""
     return f"{user} ALL=(ALL) NOPASSWD: ALL"
 
 
 ##
 
 
-def symlink_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
-    return ["ln", "-s", str(src), str(dest)]
+def symlink(targret: PathLike, link: PathLike, /, *, sudo: bool = False) -> None:
+    """Make a symbolic link."""
+    rm(link, sudo=sudo)
+    mkdir(link, sudo=sudo, parent=True)
+    if sudo:  # pragma: no cover
+        run(*sudo_cmd(*symlink_cmd(targret, link)))
+    else:
+        targret, link = map(Path, [targret, link])
+        link.symlink_to(targret)
+
+
+def symlink_cmd(target: PathLike, link: PathLike, /) -> list[str]:
+    """Command to use 'symlink' to make a symbolic link."""
+    return ["ln", "-s", str(target), str(link)]
+
+
+##
+
+
+def tee_cmd(*, append: bool = False) -> list[str]:
+    """Command to use 'tee' to duplicate standard input."""
+    args: list[str] = ["tee"]
+    if append:
+        args.append("-a")
+    return args
 
 
 ##
@@ -974,15 +1005,15 @@ __all__ = [
     "RESTART_SSHD",
     "UPDATE_CA_CERTIFICATES",
     "ChownCmdError",
-    "CopyFileError",
-    "MoveFileError",
+    "CpError",
+    "MvFileError",
     "apt_install_cmd",
     "cd_cmd",
     "chmod",
     "chmod_cmd",
     "chown",
     "chown_cmd",
-    "copy_file",
+    "cp",
     "cp_cmd",
     "echo_cmd",
     "expand_path",
@@ -992,9 +1023,9 @@ __all__ = [
     "maybe_sudo_cmd",
     "mkdir",
     "mkdir_cmd",
-    "move_file",
+    "mv",
     "mv_cmd",
-    "remove",
+    "rm",
     "rm_cmd",
     "rsync",
     "rsync_cmd",
@@ -1005,7 +1036,9 @@ __all__ = [
     "ssh_opts_cmd",
     "sudo_cmd",
     "sudo_nopasswd_cmd",
+    "symlink",
     "symlink_cmd",
+    "tee_cmd",
     "touch_cmd",
     "uv_run_cmd",
     "yield_ssh_temp_dir",
