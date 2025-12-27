@@ -24,11 +24,13 @@ from utilities.subprocess import (
     expand_path,
     git_clone_cmd,
     git_hard_reset_cmd,
+    maybe_parent,
     maybe_sudo_cmd,
     mkdir,
     mkdir_cmd,
     mv_cmd,
     rm_cmd,
+    rsync,
     rsync_cmd,
     run,
     set_hostname_cmd,
@@ -43,6 +45,7 @@ from utilities.subprocess import (
     uv_run_cmd,
     yield_ssh_temp_dir,
 )
+from utilities.tempfile import TemporaryDirectory, TemporaryFile
 from utilities.text import strip_and_dedent, unique_str
 from utilities.whenever import MINUTE, SECOND
 
@@ -155,6 +158,18 @@ class TestGitHardResetCmd:
         assert result == expected
 
 
+class TestMaybeParent:
+    def test_main(self) -> None:
+        result = maybe_parent("~/path")
+        expected = Path("~/path")
+        assert result == expected
+
+    def test_parent(self) -> None:
+        result = maybe_parent("~/path", parent=True)
+        expected = Path("~")
+        assert result == expected
+
+
 class TestMaybeSudoCmd:
     def test_main(self) -> None:
         result = maybe_sudo_cmd("echo", "hi")
@@ -176,13 +191,13 @@ class TestMkDir:
 
 class TestMkDirCmd:
     def test_main(self) -> None:
-        result = mkdir_cmd("path")
-        expected = ["mkdir", "-p", "path"]
+        result = mkdir_cmd("~/path")
+        expected = ["mkdir", "-p", "~/path"]
         assert result == expected
 
     def test_parent(self) -> None:
-        result = mkdir_cmd("path", parent=True)
-        expected = ["mkdir", "-p", "$(dirname path)"]
+        result = mkdir_cmd("~/path", parent=True)
+        expected = ["mkdir", "-p", "~"]
         assert result == expected
 
 
@@ -198,6 +213,41 @@ class TestRmCmd:
         result = rm_cmd("path")
         expected = ["rm", "-rf", "path"]
         assert result == expected
+
+
+class TestRsync:
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_main(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        with TemporaryFile() as src, yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp:
+            dest = temp / src.name
+            rsync(src, ssh_user, ssh_hostname, dest)
+            ssh(
+                ssh_user,
+                ssh_hostname,
+                *BASH_LS,
+                input=f"if ! [ -f {dest} ]; then exit 1; fi",
+            )
+
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_dir(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        with (
+            TemporaryDirectory() as src,
+            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp,
+        ):
+            (src / "file.txt").touch()
+            dest = temp / src.name
+            rsync(src, ssh_user, ssh_hostname, dest)
+            ssh(
+                ssh_user,
+                ssh_hostname,
+                *BASH_LS,
+                input=strip_and_dedent(f"""
+                    if ! [ -d {dest} ]; then exit 1; fi
+                    if ! [ -f {dest}/file.txt ]; then exit 1; fi
+                """),
+            )
 
 
 class TestRsyncCmd:
@@ -335,6 +385,19 @@ class TestRsyncCmd:
             "sudo rsync",
             "src",
             "user@hostname:dest",
+        ]
+        assert result == expected
+
+    def test_parent(self) -> None:
+        result = rsync_cmd("src", "user", "hostname", "~/dest", parent=True)
+        expected = [
+            "rsync",
+            "--checksum",
+            "--compress",
+            "--rsh",
+            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
+            "src",
+            "user@hostname:~",
         ]
         assert result == expected
 
@@ -592,7 +655,7 @@ stderr
             echo ${key}@stdout
             echo ${key}@stderr 1>&2
             exit 1
-        """,
+            """,
             trailing=True,
         )
         with raises(CalledProcessError):
@@ -646,16 +709,23 @@ class TestSetHostnameCmd:
 class TestSSH:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_main(self, *, capsys: CaptureFixture) -> None:
+    def test_main(
+        self,
+        *,
+        capsys: CaptureFixture,
+        ssh_user: str,
+        ssh_hostname: str,
+        ssh_hostname_internal: str,
+    ) -> None:
         input_ = strip_and_dedent("""
-            hostname
-            whoami 1>&2
+            whoami
+            hostname 1>&2
         """)
-        result = ssh("root", "proxmox.main", input=input_, print=True)
+        result = ssh(ssh_user, ssh_hostname, input=input_, print=True)
         assert result is None
         cap = capsys.readouterr()
-        assert cap.out == "proxmox\n"
-        assert cap.err == "root\n"
+        assert cap.out == f"{ssh_user}\n"
+        assert cap.err == f"{ssh_hostname_internal}\n"
 
 
 class TestSSHCmd:
@@ -801,29 +871,31 @@ class TestUvRunCmd:
 class TestYieldSSHTempDir:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_main(self) -> None:
-        with yield_ssh_temp_dir("root", "proxmox.main") as temp:
-            ssh("root", "proxmox.main", input=self._raise_missing(temp))
+    def test_main(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp:
+            ssh(ssh_user, ssh_hostname, input=self._raise_missing(temp))
             with raises(CalledProcessError):
-                ssh("root", "proxmox.main", input=self._raise_present(temp))
-        ssh("root", "proxmox.main", input=self._raise_present(temp))
+                ssh(ssh_user, ssh_hostname, input=self._raise_present(temp))
+        ssh(ssh_user, ssh_hostname, input=self._raise_present(temp))
         with raises(CalledProcessError):
-            ssh("root", "proxmox.main", input=self._raise_missing(temp))
+            ssh(ssh_user, ssh_hostname, input=self._raise_missing(temp))
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_keep(self) -> None:
-        with yield_ssh_temp_dir("root", "proxmox.main", keep=True) as temp:
+    def test_keep(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname, keep=True) as temp:
             ...
-        ssh("root", "proxmox.main", input=self._raise_missing(temp))
+        ssh(ssh_user, ssh_hostname, input=self._raise_missing(temp))
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_keep_and_logger(self, *, caplog: LogCaptureFixture) -> None:
+    def test_keep_and_logger(
+        self, *, caplog: LogCaptureFixture, ssh_user: str, ssh_hostname: str
+    ) -> None:
         name = unique_str()
         logger = getLogger(name=name)
         logger.setLevel(INFO)
-        with yield_ssh_temp_dir("root", "proxmox.main", keep=True, logger=name):
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname, keep=True, logger=name):
             ...
         record = one(r for r in caplog.records if r.name == name)
         assert search(

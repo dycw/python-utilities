@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
-from shlex import join, quote
+from shlex import join
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
@@ -40,20 +40,35 @@ RESTART_SSHD = ["systemctl", "restart", "sshd"]
 UPDATE_CA_CERTIFICATES: str = "update-ca-certificates"
 
 
+##
+
+
 def apt_install_cmd(package: str, /) -> list[str]:
     return ["apt", "install", "-y", package]
+
+
+##
 
 
 def cat_cmd(path: PathLike, /) -> list[str]:
     return ["cat", str(path)]
 
 
+##
+
+
 def cd_cmd(path: PathLike, /) -> list[str]:
     return ["cd", str(path)]
 
 
+##
+
+
 def chmod_cmd(path: PathLike, mode: str, /) -> list[str]:
     return ["chmod", mode, str(path)]
+
+
+##
 
 
 def chown_cmd(
@@ -80,12 +95,21 @@ class ChownCmdError(Exception):
         return "At least one of 'user' and/or 'group' must be given; got None"
 
 
+##
+
+
 def cp_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
     return ["cp", "-r", str(src), str(dest)]
 
 
+##
+
+
 def echo_cmd(text: str, /) -> list[str]:
     return ["echo", text]
+
+
+##
 
 
 def expand_path(
@@ -98,8 +122,14 @@ def expand_path(
     return Path(path).expanduser()
 
 
+##
+
+
 def git_clone_cmd(url: str, path: PathLike, /) -> list[str]:
     return ["git", "clone", "--recurse-submodules", url, str(path)]
+
+
+##
 
 
 def git_hard_reset_cmd(*, branch: str | None = None) -> list[str]:
@@ -107,36 +137,54 @@ def git_hard_reset_cmd(*, branch: str | None = None) -> list[str]:
     return ["git", "hard-reset", branch_use]
 
 
+##
+
+
+def maybe_parent(path: PathLike, /, *, parent: bool = False) -> Path:
+    path = Path(path)
+    return path.parent if parent else path
+
+
+##
+
+
 def maybe_sudo_cmd(cmd: str, /, *args: str, sudo: bool = False) -> list[str]:
     parts: list[str] = [cmd, *args]
     return sudo_cmd(*parts) if sudo else parts
+
+
+##
 
 
 def mkdir(path: PathLike, /, *, sudo: bool = False, parent: bool = False) -> None:
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*mkdir_cmd(path, parent=parent)))
     else:
-        path = expand_path(path)
-        path_use = path.parent if parent else path
-        path_use.mkdir(parents=True, exist_ok=True)
+        maybe_parent(path, parent=parent).mkdir(parents=True, exist_ok=True)
+
+
+##
 
 
 def mkdir_cmd(path: PathLike, /, *, parent: bool = False) -> list[str]:
-    args: list[str] = ["mkdir", "-p"]
-    quoted = quote(str(path))
-    if parent:
-        args.append(f"$(dirname {quoted})")
-    else:
-        args.append(quoted)
-    return args
+    return ["mkdir", "-p", str(maybe_parent(path, parent=parent))]
+
+
+##
 
 
 def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
     return ["mv", str(src), str(dest)]
 
 
+##
+
+
 def rm_cmd(path: PathLike, /) -> list[str]:
     return ["rm", "-rf", str(path)]
+
+
+##
 
 
 def rsync(
@@ -153,7 +201,6 @@ def rsync(
     print: bool = False,  # noqa: A002
     retry: Retry | None = None,
     logger: LoggerLike | None = None,
-    archive: bool = False,
     chown_user: str | None = None,
     chown_group: str | None = None,
     exclude: MaybeIterable[str] | None = None,
@@ -171,12 +218,13 @@ def rsync(
         retry=retry,
         logger=logger,
     )
+    is_dir = any(Path(s).is_dir() for s in always_iterable(src_or_srcs))  # skipif-ci
     rsync_args = rsync_cmd(  # skipif-ci
         src_or_srcs,
         user,
         hostname,
         dest,
-        archive=archive,
+        archive=is_dir,
         chown_user=chown_user,
         chown_group=chown_group,
         exclude=exclude,
@@ -184,6 +232,7 @@ def rsync(
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
         sudo=sudo,
+        parent=is_dir,
     )
     run(*rsync_args, print=print, retry=retry, logger=logger)  # skipif-ci
     if chmod is not None:  # skipif-ci
@@ -201,6 +250,9 @@ def rsync(
         )
 
 
+##
+
+
 def rsync_cmd(
     src_or_srcs: MaybeIterable[PathLike],
     user: str,
@@ -216,6 +268,7 @@ def rsync_cmd(
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     sudo: bool = False,
+    parent: bool = False,
 ) -> list[str]:
     args: list[str] = ["rsync"]
     if archive:
@@ -244,7 +297,15 @@ def rsync_cmd(
     args.extend(["--rsh", join(rsh_args)])
     if sudo:
         args.extend(["--rsync-path", join(sudo_cmd("rsync"))])
-    return [*args, *map(str, always_iterable(src_or_srcs)), f"{user}@{hostname}:{dest}"]
+    dest_use = maybe_parent(dest, parent=parent)
+    return [
+        *args,
+        *map(str, always_iterable(src_or_srcs)),
+        f"{user}@{hostname}:{dest_use}",
+    ]
+
+
+##
 
 
 @overload
@@ -502,8 +563,14 @@ def _run_write_to_streams(text: str, /, *outputs: IO[str]) -> None:
         _ = output.write(text)
 
 
+##
+
+
 def set_hostname_cmd(hostname: str, /) -> list[str]:
     return ["hostnamectl", "set-hostname", hostname]
+
+
+##
 
 
 @overload
@@ -641,6 +708,9 @@ def ssh(
     )
 
 
+##
+
+
 def ssh_cmd(
     user: str,
     hostname: str,
@@ -658,6 +728,9 @@ def ssh_cmd(
     return [*args, f"{user}@{hostname}", *cmd_and_cmds_or_args]
 
 
+##
+
+
 def ssh_opts_cmd(
     *,
     batch_mode: bool = True,
@@ -673,24 +746,42 @@ def ssh_opts_cmd(
     return [*args, "-T"]
 
 
+##
+
+
 def ssh_keygen_cmd(hostname: str, /) -> list[str]:
     return ["ssh-keygen", "-f", "~/.ssh/known_hosts", "-R", hostname]
+
+
+##
 
 
 def sudo_cmd(cmd: str, /, *args: str) -> list[str]:
     return ["sudo", cmd, *args]
 
 
+##
+
+
 def sudo_nopasswd_cmd(user: str, /) -> str:
     return f"{user} ALL=(ALL) NOPASSWD: ALL"
+
+
+##
 
 
 def symlink_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
     return ["ln", "-s", str(src), str(dest)]
 
 
+##
+
+
 def touch_cmd(path: PathLike, /) -> list[str]:
     return ["touch", str(path)]
+
+
+##
 
 
 def uv_run_cmd(module: str, /, *args: str) -> list[str]:
@@ -706,6 +797,9 @@ def uv_run_cmd(module: str, /, *args: str) -> list[str]:
         module,
         *args,
     ]
+
+
+##
 
 
 @contextmanager
@@ -748,6 +842,7 @@ __all__ = [
     "expand_path",
     "git_clone_cmd",
     "git_hard_reset_cmd",
+    "maybe_parent",
     "maybe_sudo_cmd",
     "mkdir",
     "mkdir_cmd",

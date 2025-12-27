@@ -29,24 +29,24 @@ if TYPE_CHECKING:
 class TestDockerCp:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_into_container(self, *, tmp_path: Path) -> None:
+    def test_into_container(self, *, container: str, tmp_path: Path) -> None:
         src = tmp_path / "file.txt"
         src.touch()
-        with yield_docker_temp_dir("postgres") as temp_cont:
+        with yield_docker_temp_dir(container) as temp_cont:
             dest = temp_cont / src.name
-            docker_cp(src, ("postgres", dest))
+            docker_cp(src, (container, dest))
             docker_exec(
-                "postgres", *BASH_LS, input=f"if ! [ -f {dest} ]; then exit 1; fi"
+                container, *BASH_LS, input=f"if ! [ -f {dest} ]; then exit 1; fi"
             )
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_from_container(self, *, tmp_path: Path) -> None:
-        with yield_docker_temp_dir("postgres") as temp_cont:
+    def test_from_container(self, *, container: str, tmp_path: Path) -> None:
+        with yield_docker_temp_dir(container) as temp_cont:
             src = temp_cont / "file.txt"
-            docker_exec("postgres", *touch_cmd(src))
+            docker_exec(container, *touch_cmd(src))
             dest = tmp_path / src.name
-            docker_cp(("postgres", src), dest)
+            docker_cp((container, src), dest)
         assert dest.is_file()
 
 
@@ -65,12 +65,12 @@ class TestDockerCpCmd:
 class TestDockerExec:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_main(self, *, capsys: CaptureFixture) -> None:
+    def test_main(self, *, capsys: CaptureFixture, container: str) -> None:
         input_ = strip_and_dedent("""
             hostname
             whoami 1>&2
         """)
-        result = docker_exec("postgres", *BASH_LS, input=input_, print=True)
+        result = docker_exec(container, *BASH_LS, input=input_, print=True)
         assert result is None
         cap = capsys.readouterr()
         assert search("^[0-9a-f]{12}$", cap.out)
@@ -112,29 +112,31 @@ class TestDockerExecCmd:
 class TestYieldDockerTempDir:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_main(self) -> None:
-        with yield_docker_temp_dir("postgres") as temp:
-            docker_exec("postgres", *BASH_LS, input=self._raise_missing(temp))
+    def test_main(self, *, container: str) -> None:
+        with yield_docker_temp_dir(container) as temp:
+            docker_exec(container, *BASH_LS, input=self._raise_missing(temp))
             with raises(CalledProcessError):
-                docker_exec("postgres", *BASH_LS, input=self._raise_present(temp))
-        docker_exec("postgres", *BASH_LS, input=self._raise_present(temp))
+                docker_exec(container, *BASH_LS, input=self._raise_present(temp))
+        docker_exec(container, *BASH_LS, input=self._raise_present(temp))
         with raises(CalledProcessError):
-            docker_exec("postgres", *BASH_LS, input=self._raise_missing(temp))
+            docker_exec(container, *BASH_LS, input=self._raise_missing(temp))
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_keep(self) -> None:
-        with yield_docker_temp_dir("postgres", keep=True) as temp:
+    def test_keep(self, *, container: str) -> None:
+        with yield_docker_temp_dir(container, keep=True) as temp:
             ...
-        docker_exec("postgres", *BASH_LS, input=self._raise_missing(temp))
+        docker_exec(container, *BASH_LS, input=self._raise_missing(temp))
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_keep_and_logger(self, *, caplog: LogCaptureFixture) -> None:
+    def test_keep_and_logger(
+        self, *, caplog: LogCaptureFixture, container: str
+    ) -> None:
         name = unique_str()
         logger = getLogger(name=name)
         logger.setLevel(INFO)
-        with yield_docker_temp_dir("postgres", keep=True, logger=name):
+        with yield_docker_temp_dir(container, keep=True, logger=name):
             ...
         record = one(r for r in caplog.records if r.name == name)
         assert search(

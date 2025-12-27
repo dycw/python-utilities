@@ -34,7 +34,15 @@ else:
     setup_hypothesis_profiles(suppress_health_check={HealthCheck.differing_executors})
 
 
-# fixture - logging
+# fixtures - docker
+
+
+@fixture
+def container() -> str:
+    return "postgres"
+
+
+# fixtures - logging
 
 
 @fixture
@@ -182,3 +190,21 @@ def _drop_table(table: str, /) -> TextClause:
     from sqlalchemy import text
 
     return text(f'DROP TABLE IF EXISTS "{table}" CASCADE')
+
+
+# fixtures - subprocess
+
+
+@fixture
+def ssh_user() -> str:
+    return "root"
+
+
+@fixture
+def ssh_hostname() -> str:
+    return "proxmox.main"
+
+
+@fixture
+def ssh_hostname_internal() -> str:
+    return "proxmox"
