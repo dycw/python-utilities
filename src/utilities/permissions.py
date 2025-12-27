@@ -161,7 +161,7 @@ class Permissions:
 
     @classmethod
     def from_path(cls, path: PathLike, /) -> Self:
-        return cls.from_int(Path(path).stat().st_mode)
+        return cls.from_int(S_IMODE(Path(path).stat().st_mode))
 
     @classmethod
     def from_text(cls, text: str, /) -> Self:
