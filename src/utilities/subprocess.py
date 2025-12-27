@@ -504,7 +504,7 @@ def rsync_many(
 
 def _rsync_many_prepare(src: PathLike, dest: PathLike, temp: PathLike, /) -> list[str]:
     dest, temp = map(Path, [dest, temp])
-    i = len(list(temp.iterdir()))
+    len(list(temp.iterdir()))
     copyf
 
 
