@@ -15,6 +15,7 @@ from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
 from utilities.logging import to_logger
+from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
 from utilities.whenever import to_seconds
 
@@ -40,20 +41,35 @@ RESTART_SSHD = ["systemctl", "restart", "sshd"]
 UPDATE_CA_CERTIFICATES: str = "update-ca-certificates"
 
 
+##
+
+
 def apt_install_cmd(package: str, /) -> list[str]:
     return ["apt", "install", "-y", package]
+
+
+##
 
 
 def cat_cmd(path: PathLike, /) -> list[str]:
     return ["cat", str(path)]
 
 
+##
+
+
 def cd_cmd(path: PathLike, /) -> list[str]:
     return ["cd", str(path)]
 
 
+##
+
+
 def chmod_cmd(path: PathLike, mode: str, /) -> list[str]:
     return ["chmod", mode, str(path)]
+
+
+##
 
 
 def chown_cmd(
@@ -80,12 +96,21 @@ class ChownCmdError(Exception):
         return "At least one of 'user' and/or 'group' must be given; got None"
 
 
+##
+
+
 def cp_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
     return ["cp", "-r", str(src), str(dest)]
 
 
+##
+
+
 def echo_cmd(text: str, /) -> list[str]:
     return ["echo", text]
+
+
+##
 
 
 def expand_path(
@@ -98,8 +123,14 @@ def expand_path(
     return Path(path).expanduser()
 
 
+##
+
+
 def git_clone_cmd(url: str, path: PathLike, /) -> list[str]:
     return ["git", "clone", "--recurse-submodules", url, str(path)]
+
+
+##
 
 
 def git_hard_reset_cmd(*, branch: str | None = None) -> list[str]:
@@ -107,14 +138,23 @@ def git_hard_reset_cmd(*, branch: str | None = None) -> list[str]:
     return ["git", "hard-reset", branch_use]
 
 
+##
+
+
 def maybe_parent(path: PathLike, /, *, parent: bool = False) -> Path:
     path = Path(path)
     return path.parent if parent else path
 
 
+##
+
+
 def maybe_sudo_cmd(cmd: str, /, *args: str, sudo: bool = False) -> list[str]:
     parts: list[str] = [cmd, *args]
     return sudo_cmd(*parts) if sudo else parts
+
+
+##
 
 
 def mkdir(path: PathLike, /, *, sudo: bool = False, parent: bool = False) -> None:
@@ -124,16 +164,28 @@ def mkdir(path: PathLike, /, *, sudo: bool = False, parent: bool = False) -> Non
         maybe_parent(path, parent=parent).mkdir(parents=True, exist_ok=True)
 
 
+##
+
+
 def mkdir_cmd(path: PathLike, /, *, parent: bool = False) -> list[str]:
     return ["mkdir", "-p", str(maybe_parent(path, parent=parent))]
+
+
+##
 
 
 def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
     return ["mv", str(src), str(dest)]
 
 
+##
+
+
 def rm_cmd(path: PathLike, /) -> list[str]:
     return ["rm", "-rf", str(path)]
+
+
+##
 
 
 def rsync(
@@ -199,6 +251,9 @@ def rsync(
         )
 
 
+##
+
+
 def rsync_cmd(
     src_or_srcs: MaybeIterable[PathLike],
     user: str,
@@ -249,6 +304,65 @@ def rsync_cmd(
         *map(str, always_iterable(src_or_srcs)),
         f"{user}@{hostname}:{dest_use}",
     ]
+
+
+##
+
+
+def rsync_many(
+    user: str,
+    hostname: str,
+    /,
+    *items: tuple[PathLike, PathLike],
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+    keep: bool = False,
+    sudo: tuple[PathLike, PathLike] | list[tuple[PathLike, PathLike]] | None = None,
+    print: bool = False,  # noqa: A002
+) -> None:
+    i = 0
+    cmds: list[str] = []
+    with (
+        TemporaryDirectory() as temp_src,
+        yield_ssh_temp_dir(
+            user, hostname, retry=retry, logger=logger, keep=keep
+        ) as temp_dest,
+    ):
+        for src, dest in items:
+            copy_file(src, temp_src / str(i))
+            cmds.extend([mkdir_cmd(dest, parent=True), cp_cmd(str(i), dest)])
+            i += 1
+        for dest, txt in text:
+            write_text(temp_src / str(i), txt)
+            cmds.extend([mkdir_cmd(dest, parent=True), cp_cmd(str(i), dest)])
+            i += 1
+        for src, dest in sudo_files:
+            copy_file(src, temp_src / str(i))
+            cmds.extend([
+                maybe_sudo_cmd(mkdir_cmd(dest, parent=True), sudo=not root),
+                maybe_sudo_cmd(cp_cmd(str(i), dest), sudo=not root),
+            ])
+            i += 1
+        for dest, txt in sudo_text:
+            write_text(temp_src / str(i), txt)
+            cmds.extend([
+                maybe_sudo_cmd(mkdir_cmd(dest, parent=True), sudo=not root),
+                maybe_sudo_cmd(cp_cmd(str(i), dest), sudo=not root),
+            ])
+            i += 1
+        rsync(
+            f"{temp_src}/*",
+            hostname,
+            temp_dest,
+            root=root,
+            retry=retry,
+            archive=True,
+            exclude=exclude,
+        )
+        ssh(hostname, *cmds, root=root, cd=temp_dest, retry=retry)
+
+
+##
 
 
 @overload
@@ -506,8 +620,14 @@ def _run_write_to_streams(text: str, /, *outputs: IO[str]) -> None:
         _ = output.write(text)
 
 
+##
+
+
 def set_hostname_cmd(hostname: str, /) -> list[str]:
     return ["hostnamectl", "set-hostname", hostname]
+
+
+##
 
 
 @overload
@@ -645,6 +765,9 @@ def ssh(
     )
 
 
+##
+
+
 def ssh_cmd(
     user: str,
     hostname: str,
@@ -662,6 +785,9 @@ def ssh_cmd(
     return [*args, f"{user}@{hostname}", *cmd_and_cmds_or_args]
 
 
+##
+
+
 def ssh_opts_cmd(
     *,
     batch_mode: bool = True,
@@ -677,24 +803,42 @@ def ssh_opts_cmd(
     return [*args, "-T"]
 
 
+##
+
+
 def ssh_keygen_cmd(hostname: str, /) -> list[str]:
     return ["ssh-keygen", "-f", "~/.ssh/known_hosts", "-R", hostname]
+
+
+##
 
 
 def sudo_cmd(cmd: str, /, *args: str) -> list[str]:
     return ["sudo", cmd, *args]
 
 
+##
+
+
 def sudo_nopasswd_cmd(user: str, /) -> str:
     return f"{user} ALL=(ALL) NOPASSWD: ALL"
+
+
+##
 
 
 def symlink_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
     return ["ln", "-s", str(src), str(dest)]
 
 
+##
+
+
 def touch_cmd(path: PathLike, /) -> list[str]:
     return ["touch", str(path)]
+
+
+##
 
 
 def uv_run_cmd(module: str, /, *args: str) -> list[str]:
@@ -710,6 +854,9 @@ def uv_run_cmd(module: str, /, *args: str) -> list[str]:
         module,
         *args,
     ]
+
+
+##
 
 
 @contextmanager
