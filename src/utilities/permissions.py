@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from contextlib import suppress
 from dataclasses import dataclass
 from functools import reduce
 from operator import or_
@@ -18,20 +17,8 @@ from stat import (
 from typing import Literal, Self, override
 
 from utilities.dataclasses import replace_non_sentinel
-from utilities.functions import ensure_member
-from utilities.re import (
-    ExtractGroupError,
-    ExtractGroupsError,
-    extract_group,
-    extract_groups,
-)
+from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
-from utilities.typing import get_args
-
-_MIN_INT = 0o0
-_MAX_INT = 0o777
-type _ZeroToSeven = Literal[0, 1, 2, 3, 4, 5, 6, 7]
-_ZERO_TO_SEVEN: list[_ZeroToSeven] = list(get_args(_ZeroToSeven.__value__))
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
@@ -65,7 +52,7 @@ class Permissions:
 
     def _int(
         self, *, read: bool = False, write: bool = False, execute: bool = False
-    ) -> _ZeroToSeven:
+    ) -> int:
         return (4 if read else 0) + (2 if write else 0) + (1 if execute else 0)
 
     @override
@@ -115,65 +102,32 @@ class Permissions:
 
     @classmethod
     def from_int(cls, n: int, /) -> Self:
-        with suppress(ExtractGroupsError):
-            user, group, others = extract_groups(r"^([0-7])([0-7])([0-7])$", str(n))
-            user_read, user_write, user_execute = cls._from_int(
-                ensure_member(int(user), _ZERO_TO_SEVEN)
-            )
-            group_read, group_write, group_execute = cls._from_int(
-                ensure_member(int(group), _ZERO_TO_SEVEN)
-            )
-            others_read, others_write, others_execute = cls._from_int(
-                ensure_member(int(others), _ZERO_TO_SEVEN)
-            )
-            return cls(
-                user_read=user_read,
-                user_write=user_write,
-                user_execute=user_execute,
-                group_read=group_read,
-                group_write=group_write,
-                group_execute=group_execute,
-                others_read=others_read,
-                others_write=others_write,
-                others_execute=others_execute,
-            )
-        with suppress(ExtractGroupsError):
-            group, others = extract_groups(r"^([0-7])([0-7])$", str(n))
-            group_read, group_write, group_execute = cls._from_int(
-                ensure_member(int(group), _ZERO_TO_SEVEN)
-            )
-            others_read, others_write, others_execute = cls._from_int(
-                ensure_member(int(others), _ZERO_TO_SEVEN)
-            )
-            return cls(
-                group_read=group_read,
-                group_write=group_write,
-                group_execute=group_execute,
-                others_read=others_read,
-                others_write=others_write,
-                others_execute=others_execute,
-            )
-        with suppress(ExtractGroupError):
-            others = extract_group(r"^([0-7])$", str(n))
-            others_read, others_write, others_execute = cls._from_int(
-                ensure_member(int(others), _ZERO_TO_SEVEN)
-            )
-            return cls(
-                others_read=others_read,
-                others_write=others_write,
-                others_execute=others_execute,
-            )
-        if n == 0:
-            return cls()
-        raise PermissionsFromIntError(n=n)
+        if not (0 <= n <= 777):
+            raise PermissionsFromIntRangeError(n=n)
+        user_read, user_write, user_execute = cls._from_int(n, (n // 100) % 10)
+        group_read, group_write, group_execute = cls._from_int(n, (n // 10) % 10)
+        others_read, others_write, others_execute = cls._from_int(n, n % 10)
+        return cls(
+            user_read=user_read,
+            user_write=user_write,
+            user_execute=user_execute,
+            group_read=group_read,
+            group_write=group_write,
+            group_execute=group_execute,
+            others_read=others_read,
+            others_write=others_write,
+            others_execute=others_execute,
+        )
 
     @classmethod
-    def _from_int(cls, n: _ZeroToSeven, /) -> tuple[bool, bool, bool]:
-        return bool(4 & n), bool(2 & n), bool(1 & n)
+    def _from_int(cls, n: int, digit: int, /) -> tuple[bool, bool, bool]:
+        if not (0 <= digit <= 7):
+            raise PermissionsFromIntDigitError(n=n, digit=digit)
+        return bool(4 & digit), bool(2 & digit), bool(1 & digit)
 
     @classmethod
     def from_octal(cls, n: int, /) -> Self:
-        if _MIN_INT <= n <= _MAX_INT:
+        if 0o0 <= n <= 0o777:
             return cls(
                 user_read=bool(n & S_IRUSR),
                 user_write=bool(n & S_IWUSR),
@@ -265,9 +219,21 @@ class PermissionsError(Exception): ...
 class PermissionsFromIntError(PermissionsError):
     n: int
 
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromIntRangeError(PermissionsFromIntError):
     @override
     def __str__(self) -> str:
         return f"Invalid integer for permissions; got {self.n}"
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromIntDigitError(PermissionsFromIntError):
+    digit: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid integer for permissions; got digit {self.digit} in {self.n}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -291,6 +257,7 @@ class PermissionsFromTextError(PermissionsError):
 __all__ = [
     "Permissions",
     "PermissionsError",
+    "PermissionsFromIntDigitError",
     "PermissionsFromIntError",
     "PermissionsFromOctalError",
     "PermissionsFromTextError",
