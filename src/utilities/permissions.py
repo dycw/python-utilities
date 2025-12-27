@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from dataclasses import dataclass
 from re import search
 from typing import Literal, Self, override
 
 from utilities.dataclasses import replace_non_sentinel
 from utilities.functions import ensure_member
-from utilities.re import ExtractGroupsError, extract_groups
+from utilities.re import (
+    ExtractGroupError,
+    ExtractGroupsError,
+    extract_group,
+    extract_groups,
+)
 from utilities.sentinel import Sentinel, sentinel
 from utilities.typing import get_args
 
@@ -95,30 +101,55 @@ class Permissions:
 
     @classmethod
     def from_int(cls, n: int, /) -> Self:
-        try:
+        with suppress(ExtractGroupsError):
             user, group, others = extract_groups(r"^([0-7])([0-7])([0-7])$", str(n))
-        except ExtractGroupsError:
-            raise PermissionsFromIntError(n=n) from None
-        user_read, user_write, user_execute = cls._from_int(
-            ensure_member(int(user), _ZERO_TO_SEVEN)
-        )
-        group_read, group_write, group_execute = cls._from_int(
-            ensure_member(int(group), _ZERO_TO_SEVEN)
-        )
-        others_read, others_write, others_execute = cls._from_int(
-            ensure_member(int(others), _ZERO_TO_SEVEN)
-        )
-        return cls(
-            user_read=user_read,
-            user_write=user_write,
-            user_execute=user_execute,
-            group_read=group_read,
-            group_write=group_write,
-            group_execute=group_execute,
-            others_read=others_read,
-            others_write=others_write,
-            others_execute=others_execute,
-        )
+            user_read, user_write, user_execute = cls._from_int(
+                ensure_member(int(user), _ZERO_TO_SEVEN)
+            )
+            group_read, group_write, group_execute = cls._from_int(
+                ensure_member(int(group), _ZERO_TO_SEVEN)
+            )
+            others_read, others_write, others_execute = cls._from_int(
+                ensure_member(int(others), _ZERO_TO_SEVEN)
+            )
+            return cls(
+                user_read=user_read,
+                user_write=user_write,
+                user_execute=user_execute,
+                group_read=group_read,
+                group_write=group_write,
+                group_execute=group_execute,
+                others_read=others_read,
+                others_write=others_write,
+                others_execute=others_execute,
+            )
+        with suppress(ExtractGroupsError):
+            group, others = extract_groups(r"^([0-7])([0-7])$", str(n))
+            group_read, group_write, group_execute = cls._from_int(
+                ensure_member(int(group), _ZERO_TO_SEVEN)
+            )
+            others_read, others_write, others_execute = cls._from_int(
+                ensure_member(int(others), _ZERO_TO_SEVEN)
+            )
+            return cls(
+                group_read=group_read,
+                group_write=group_write,
+                group_execute=group_execute,
+                others_read=others_read,
+                others_write=others_write,
+                others_execute=others_execute,
+            )
+        with suppress(ExtractGroupError):
+            others = extract_group(r"^([0-7])$", str(n))
+            others_read, others_write, others_execute = cls._from_int(
+                ensure_member(int(others), _ZERO_TO_SEVEN)
+            )
+            return cls(
+                others_read=others_read,
+                others_write=others_write,
+                others_execute=others_execute,
+            )
+        return cls()
 
     @classmethod
     def _from_int(cls, n: _ZeroToSeven, /) -> tuple[bool, bool, bool]:
@@ -128,7 +159,7 @@ class Permissions:
     def from_str(cls, text: str, /) -> Self:
         try:
             user, group, others = extract_groups(
-                r"^u=([r?w?x?]),g=([r?w?x?]),o=([r?w?x?])$", text
+                r"^u=(r?w?x?),g=(r?w?x?),o=(r?w?x?)$", text
             )
         except ExtractGroupsError:
             raise PermissionsFromStrError(text=text) from None
@@ -198,7 +229,7 @@ class PermissionsFromStrError(PermissionsError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid string for permissions; got {self.text}"
+        return f"Invalid string for permissions; got {self.text!r}"
 
 
 __all__ = [
