@@ -8,17 +8,24 @@ from typing import TYPE_CHECKING
 
 from pytest import LogCaptureFixture, mark, param, raises
 
+from utilities.grp import EFFECTIVE_GROUP_NAME
 from utilities.iterables import one
+from utilities.pwd import EFFECTIVE_USER_NAME
 from utilities.pytest import skipif_ci, skipif_mac, throttle
 from utilities.subprocess import (
     BASH_LC,
     BASH_LS,
     ChownCmdError,
+    CopyFileError,
+    MoveFileError,
     apt_install_cmd,
     cat_cmd,
     cd_cmd,
+    chmod,
     chmod_cmd,
+    chown,
     chown_cmd,
+    copy_file,
     cp_cmd,
     echo_cmd,
     expand_path,
@@ -28,7 +35,9 @@ from utilities.subprocess import (
     maybe_sudo_cmd,
     mkdir,
     mkdir_cmd,
+    move_file,
     mv_cmd,
+    remove,
     rm_cmd,
     rsync,
     rsync_cmd,
@@ -76,11 +85,40 @@ class TestCDCmd:
         assert result == expected
 
 
+class TestChMod:
+    def test_main(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        _ = chmod(path, "u=rw,g=r,o=r")
+
+
 class TestChModCmd:
     def test_main(self) -> None:
         result = chmod_cmd("path", "u=rw,g=r,o=r")
         expected = ["chmod", "u=rw,g=r,o=r", "path"]
         assert result == expected
+
+
+class TestChOwn:
+    def test_none(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        chown(path)
+
+    def test_user(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        chown(path, user=EFFECTIVE_USER_NAME)
+
+    def test_group(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        chown(path, group=EFFECTIVE_GROUP_NAME)
+
+    def test_user_and_group(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        chown(path, user=EFFECTIVE_USER_NAME, group=EFFECTIVE_GROUP_NAME)
 
 
 class TestChOwnCmd:
@@ -105,6 +143,32 @@ class TestChOwnCmd:
             match=r"At least one of 'user' and/or 'group' must be given; got None",
         ):
             _ = chown_cmd("path")
+
+
+class TestCopyFile:
+    def test_file(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
+        dest = tmp_path / "file2.txt"
+        copy_file(src, dest)
+        assert src.is_file()
+        assert dest.is_file()
+
+    def test_dir(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "dir"
+        src.mkdir()
+        dest = tmp_path / "dir2"
+        copy_file(src, dest)
+        assert src.is_dir()
+        assert dest.is_dir()
+
+    def test_error(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "dir"
+        dest = tmp_path / "dir2"
+        with raises(
+            CopyFileError, match=r"Unable to copy '.+' to '.+'; source does not exist"
+        ):
+            copy_file(src, dest)
 
 
 class TestCpCmd:
@@ -184,7 +248,7 @@ class TestMaybeSudoCmd:
 
 class TestMkDir:
     def test_main(self, *, tmp_path: Path) -> None:
-        path = f"{tmp_path}/foo"
+        path = tmp_path / "dir"
         mkdir(path)
         assert Path(path).is_dir()
 
@@ -201,11 +265,53 @@ class TestMkDirCmd:
         assert result == expected
 
 
+class TestMoveFile:
+    def test_file(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
+        dest = tmp_path / "file2.txt"
+        move_file(src, dest)
+        assert not src.is_file()
+        assert dest.is_file()
+
+    def test_dir(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "dir"
+        src.mkdir()
+        dest = tmp_path / "dir2"
+        move_file(src, dest)
+        assert not src.is_dir()
+        assert dest.is_dir()
+
+    def test_error(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "dir"
+        dest = tmp_path / "dir2"
+        with raises(
+            MoveFileError, match=r"Unable to move '.+' to '.+'; source does not exist"
+        ):
+            move_file(src, dest)
+
+
 class TestMvCmd:
     def test_main(self) -> None:
         result = mv_cmd("src", "dest")
         expected = ["mv", "src", "dest"]
         assert result == expected
+
+
+class TestRemove:
+    def test_file(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        assert path.is_file()
+        remove(path)
+        assert not path.is_file()
+
+    def test_dir(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "dir"
+        path.mkdir()
+        assert path.is_dir()
+        remove(path)
+        assert not path.is_dir()
 
 
 class TestRmCmd:

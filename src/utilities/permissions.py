@@ -25,6 +25,7 @@ from utilities.sentinel import Sentinel, sentinel
 if TYPE_CHECKING:
     from utilities.types import PathLike
 
+
 type PermissionsLike = Permissions | int | str
 
 
