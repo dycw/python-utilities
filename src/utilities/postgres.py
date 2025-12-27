@@ -348,9 +348,7 @@ def _build_pg_restore(
     return " ".join(parts)
 
 
-def _build_psql(
-    url: URL, path: PathLike, /, *, container: str | None = None
-) -> str:
+def _build_psql(url: URL, path: PathLike, /, *, container: str | None = None) -> str:
     """Run `psql`."""
     extracted = extract_url(url)
     parts: list[str] = ["psql"]

@@ -684,7 +684,12 @@ class TestSSH:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
     def test_main(
-        self, *, capsys: CaptureFixture, ssh_user: str, ssh_hostname: str
+        self,
+        *,
+        capsys: CaptureFixture,
+        ssh_user: str,
+        ssh_hostname: str,
+        ssh_hostname_internal: str,
     ) -> None:
         input_ = strip_and_dedent("""
             whoami
@@ -694,7 +699,7 @@ class TestSSH:
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == f"{ssh_user}\n"
-        assert cap.err == f"{ssh_hostname}\n"
+        assert cap.err == f"{ssh_hostname_internal}\n"
 
 
 class TestSSHCmd:

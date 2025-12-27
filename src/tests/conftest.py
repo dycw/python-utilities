@@ -203,3 +203,8 @@ def ssh_user() -> str:
 @fixture
 def ssh_hostname() -> str:
     return "proxmox.main"
+
+
+@fixture
+def ssh_hostname_internal() -> str:
+    return "proxmox"
