@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
 from shlex import join
-from shutil import copyfile, copytree, rmtree
+from shutil import copyfile, copytree, move, rmtree
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
@@ -155,7 +155,7 @@ def copy_file(
     owner: str | int | None = None,
     group: str | int | None = None,
 ) -> None:
-    remove(dest, sudo=sudo)
+    """Copy a file/directory from one location to another."""
     mkdir(dest, sudo=sudo, parent=True)
     if sudo:
         run(*sudo_cmd(*cp_cmd(src, dest)))
@@ -256,6 +256,45 @@ def mkdir(path: PathLike, /, *, sudo: bool = False, parent: bool = False) -> Non
 
 def mkdir_cmd(path: PathLike, /, *, parent: bool = False) -> list[str]:
     return ["mkdir", "-p", str(maybe_parent(path, parent=parent))]
+
+
+##
+
+
+def move_file(
+    src: PathLike,
+    dest: PathLike,
+    /,
+    *,
+    sudo: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
+) -> None:
+    """Move a file/directory from one location to another."""
+    mkdir(dest, sudo=sudo, parent=True)
+    if sudo:
+        run(*sudo_cmd(*cp_cmd(src, dest)))
+    else:
+        src, dest = map(Path, [src, dest])
+        if src.exists():
+            _ = move(src, dest)
+        else:
+            raise MoveFileError(src=src, dest=dest)
+    if perms is not None:
+        chmod(dest, perms, sudo=sudo)
+    if (owner is not None) or (group is not None):
+        chown(dest, sudo=sudo, user=owner, group=group)
+
+
+@dataclass(kw_only=True, slots=True)
+class MoveFileError(Exception):
+    src: Path
+    dest: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to move {str(self.src)!r} to {str(self.dest)!r}; source does not exist"
 
 
 ##
@@ -936,6 +975,7 @@ __all__ = [
     "UPDATE_CA_CERTIFICATES",
     "ChownCmdError",
     "CopyFileError",
+    "MoveFileError",
     "apt_install_cmd",
     "cd_cmd",
     "chmod_cmd",
@@ -950,6 +990,7 @@ __all__ = [
     "maybe_sudo_cmd",
     "mkdir",
     "mkdir_cmd",
+    "move_file",
     "mv_cmd",
     "remove",
     "rm_cmd",
