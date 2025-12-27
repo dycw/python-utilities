@@ -17,6 +17,7 @@ from utilities.subprocess import (
     BASH_LS,
     ChownCmdError,
     CopyFileError,
+    MoveFileError,
     apt_install_cmd,
     cat_cmd,
     cd_cmd,
@@ -34,6 +35,7 @@ from utilities.subprocess import (
     maybe_sudo_cmd,
     mkdir,
     mkdir_cmd,
+    move_file,
     mv_cmd,
     remove,
     rm_cmd,
@@ -261,6 +263,32 @@ class TestMkDirCmd:
         result = mkdir_cmd("~/path", parent=True)
         expected = ["mkdir", "-p", "~"]
         assert result == expected
+
+
+class TestMoveFile:
+    def test_file(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
+        dest = tmp_path / "file2.txt"
+        move_file(src, dest)
+        assert not src.is_file()
+        assert dest.is_file()
+
+    def test_dir(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "dir"
+        src.mkdir()
+        dest = tmp_path / "dir2"
+        move_file(src, dest)
+        assert not src.is_dir()
+        assert dest.is_dir()
+
+    def test_error(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "dir"
+        dest = tmp_path / "dir2"
+        with raises(
+            MoveFileError, match=r"Unable to move '.+' to '.+'; source does not exist"
+        ):
+            move_file(src, dest)
 
 
 class TestMvCmd:
