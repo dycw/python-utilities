@@ -25,6 +25,7 @@ from utilities.sentinel import Sentinel, sentinel
 if TYPE_CHECKING:
     from utilities.types import PathLike
 
+
 type PermissionsLike = Permissions | int | str
 
 
@@ -44,7 +45,9 @@ def ensure_perms(perms: PermissionsLike, /) -> Permissions:
             assert_never(never)
 
 
+
 ##
+
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
@@ -272,9 +275,45 @@ class PermissionsFromHumanIntDigitError(PermissionsFromHumanIntError):
 class PermissionsFromIntError(PermissionsError):
     n: int
 
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromIntRangeError(PermissionsFromIntError):
     @override
     def __str__(self) -> str:
+<<<<<<< HEAD
         return f"Invalid integer for permissions; got {self.n} = {oct(self.n)}"
+||||||| parent of b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
+        return f"Invalid integer for permissions; got {self.n}"
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromOctalError(PermissionsError):
+    n: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid octal for permissions; got {oct(self.n)}"
+=======
+        return f"Invalid integer for permissions; got {self.n}"
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromIntDigitError(PermissionsFromIntError):
+    digit: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid integer for permissions; got digit {self.digit} in {self.n}"
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromOctalError(PermissionsError):
+    n: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid octal for permissions; got {oct(self.n)}"
+>>>>>>> b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -289,9 +328,20 @@ class PermissionsFromTextError(PermissionsError):
 __all__ = [
     "Permissions",
     "PermissionsError",
+<<<<<<< HEAD
     "PermissionsFromHumanIntDigitError",
     "PermissionsFromHumanIntError",
+||||||| parent of b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
+=======
+    "PermissionsFromIntDigitError",
+>>>>>>> b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
     "PermissionsFromIntError",
     "PermissionsFromTextError",
+<<<<<<< HEAD
     "ensure_perms",
+||||||| parent of b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
+=======
+    "PermissionsLike",
+    "ensure_perms",
+>>>>>>> b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
 ]

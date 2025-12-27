@@ -10,9 +10,18 @@ from pytest import mark, param, raises
 from utilities.hypothesis import permissions, sentinels, temp_paths
 from utilities.permissions import (
     Permissions,
+<<<<<<< HEAD
     PermissionsFromHumanIntDigitError,
     PermissionsFromHumanIntRangeError,
     PermissionsFromIntError,
+||||||| parent of b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
+    PermissionsFromIntError,
+    PermissionsFromOctalError,
+=======
+    PermissionsFromIntDigitError,
+    PermissionsFromIntRangeError,
+    PermissionsFromOctalError,
+>>>>>>> b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
     PermissionsFromTextError,
     ensure_perms,
 )
@@ -59,6 +68,7 @@ _CASES: list[_Case] = [
 ]
 
 
+<<<<<<< HEAD
 class TestEnsurePermissions:
     @given(perms=permissions())
     def test_int(self, *, perms: Permissions) -> None:
@@ -73,6 +83,23 @@ class TestEnsurePermissions:
         assert ensure_perms(str(perms)) == perms
 
 
+||||||| parent of b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
+=======
+class TestEnsurePermissions:
+    @given(perms=permissions())
+    def test_octal(self, *, perms: Permissions) -> None:
+        assert ensure_perms(perms.octal) == perms
+
+    @given(perms=permissions())
+    def test_perms(self, *, perms: Permissions) -> None:
+        assert ensure_perms(perms) == perms
+
+    @given(perms=permissions())
+    def test_text(self, *, perms: Permissions) -> None:
+        assert ensure_perms(str(perms)) == perms
+
+
+>>>>>>> b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
 class TestPermissions:
     @given(root=temp_paths(), perms=permissions())
     def test_from_path(self, *, root: Path, perms: Permissions) -> None:
@@ -173,6 +200,7 @@ class TestPermissions:
         assert result == expected
         assert Permissions.from_text(result) == perms
 
+<<<<<<< HEAD
     def test_error_from_human_int_digit(self) -> None:
         with raises(
             PermissionsFromHumanIntDigitError,
@@ -188,11 +216,48 @@ class TestPermissions:
             _ = Permissions.from_human_int(7777)
 
     def test_error_from_int(self) -> None:
+||||||| parent of b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
+    def test_error_from_int(self) -> None:
+=======
+    def test_error_from_int_digit(self) -> None:
+>>>>>>> b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
         with raises(
+<<<<<<< HEAD
             PermissionsFromIntError,
             match="Invalid integer for permissions; got 4095 = 0o7777",
+||||||| parent of b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
+            PermissionsFromIntError, match="Invalid integer for permissions; got 8"
+=======
+            PermissionsFromIntDigitError,
+            match="Invalid integer for permissions; got digit 8 in 8",
+>>>>>>> b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
         ):
+<<<<<<< HEAD
             _ = Permissions.from_int(0o7777)
+||||||| parent of b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
+            _ = Permissions.from_int(8)
+
+    def test_error_from_octal(self) -> None:
+        with raises(
+            PermissionsFromOctalError, match="Invalid octal for permissions; got 0o7777"
+        ):
+            _ = Permissions.from_octal(0o7777)
+=======
+            _ = Permissions.from_int(8)
+
+    def test_error_from_int_range(self) -> None:
+        with raises(
+            PermissionsFromIntRangeError,
+            match="Invalid integer for permissions; got 7777",
+        ):
+            _ = Permissions.from_int(7777)
+
+    def test_error_from_octal(self) -> None:
+        with raises(
+            PermissionsFromOctalError, match="Invalid octal for permissions; got 0o7777"
+        ):
+            _ = Permissions.from_octal(0o7777)
+>>>>>>> b8f6c85d (2025-12-27 17:21:37 (Sat)  > DW-Mac  > derekwan)
 
     def test_error_from_text(self) -> None:
         with raises(

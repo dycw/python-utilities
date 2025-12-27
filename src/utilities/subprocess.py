@@ -15,12 +15,14 @@ from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
 from utilities.logging import to_logger
+from utilities.permissions import ensure_perms
 from utilities.text import strip_and_dedent
 from utilities.whenever import to_seconds
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
+    from utilities.permissions import PermissionsLike
     from utilities.types import (
         LoggerLike,
         MaybeIterable,
@@ -64,8 +66,18 @@ def cd_cmd(path: PathLike, /) -> list[str]:
 ##
 
 
-def chmod_cmd(path: PathLike, mode: str, /) -> list[str]:
-    return ["chmod", mode, str(path)]
+def chmod(path: PathLike, perms: PermissionsLike, /, *, sudo: bool = False) -> None:
+    if sudo:
+        run(*sudo_cmd(*chmod_cmd(path, perms)))
+    else:
+        Path(path).chmod(int(ensure_perms(perms)))
+
+
+##
+
+
+def chmod_cmd(path: PathLike, perms: PermissionsLike, /) -> list[str]:
+    return ["chmod", str(ensure_perms(perms)), str(path)]
 
 
 ##
