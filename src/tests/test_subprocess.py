@@ -51,6 +51,7 @@ from utilities.subprocess import (
     sudo_nopasswd_cmd,
     symlink,
     symlink_cmd,
+    tee,
     tee_cmd,
     touch_cmd,
     uv_run_cmd,
@@ -930,7 +931,6 @@ class TestSudoNoPasswdCmd:
 
 
 class TestSymLink:
-    @mark.only
     def test_main(self, *, tmp_path: Path) -> None:
         target = tmp_path / "file.txt"
         target.touch()
@@ -947,15 +947,24 @@ class TestSymLinkCmd:
         assert result == expected
 
 
+class TestTee:
+    def test_main(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        text = "text"
+        tee(path, text)
+        result = path.read_text()
+        assert result == text
+
+
 class TestTeeCmd:
     def test_main(self) -> None:
-        result = tee_cmd()
-        expected = ["tee"]
+        result = tee_cmd("path")
+        expected = ["tee", "path"]
         assert result == expected
 
     def test_append(self) -> None:
-        result = tee_cmd(append=True)
-        expected = ["tee", "-a"]
+        result = tee_cmd("path", append=True)
+        expected = ["tee", "-a", "path"]
         assert result == expected
 
 

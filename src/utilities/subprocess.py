@@ -938,12 +938,24 @@ def symlink_cmd(target: PathLike, link: PathLike, /) -> list[str]:
 ##
 
 
-def tee_cmd(*, append: bool = False) -> list[str]:
+def tee(
+    path: PathLike, text: str, /, *, sudo: bool = False, append: bool = False
+) -> None:
+    """Use 'tee' to duplicate standard input."""
+    if sudo:  # pragma: no cover
+        run(*sudo_cmd(*tee_cmd(path, append=append)), input=text)
+    else:
+        path = Path(path)
+        with path.open(mode="a" if append else "w") as fh:
+            _ = fh.write(text)
+
+
+def tee_cmd(path: PathLike, /, *, append: bool = False) -> list[str]:
     """Command to use 'tee' to duplicate standard input."""
     args: list[str] = ["tee"]
     if append:
         args.append("-a")
-    return args
+    return [*args, str(path)]
 
 
 ##
