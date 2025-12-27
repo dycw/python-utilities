@@ -172,7 +172,7 @@ class TestPermissions:
     def test_error_from_human_int_range(self) -> None:
         with raises(
             PermissionsFromHumanIntRangeError,
-            match="Invalid integer for permissions; got 7777",
+            match="Invalid human integer for permissions; got 7777",
         ):
             _ = Permissions.from_human_int(7777)
 
