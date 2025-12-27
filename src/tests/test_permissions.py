@@ -9,7 +9,8 @@ from pytest import mark, param, raises
 from utilities.hypothesis import permissions, sentinels
 from utilities.permissions import (
     Permissions,
-    PermissionsFromIntError,
+    PermissionsFromIntDigitError,
+    PermissionsFromIntRangeError,
     PermissionsFromOctalError,
     PermissionsFromTextError,
 )
@@ -146,11 +147,19 @@ class TestPermissions:
         assert result == expected
         assert Permissions.from_text(result) == perms
 
-    def test_error_from_int(self) -> None:
+    def test_error_from_int_digit(self) -> None:
         with raises(
-            PermissionsFromIntError, match="Invalid integer for permissions; got 8"
+            PermissionsFromIntDigitError,
+            match="Invalid integer for permissions; got digit 8 in 8",
         ):
             _ = Permissions.from_int(8)
+
+    def test_error_from_int_range(self) -> None:
+        with raises(
+            PermissionsFromIntRangeError,
+            match="Invalid integer for permissions; got 7777",
+        ):
+            _ = Permissions.from_int(7777)
 
     def test_error_from_octal(self) -> None:
         with raises(
