@@ -8,7 +8,9 @@ from typing import TYPE_CHECKING
 
 from pytest import LogCaptureFixture, mark, param, raises
 
+from utilities.grp import EFFECTIVE_GROUP_NAME
 from utilities.iterables import one
+from utilities.pwd import EFFECTIVE_USER_NAME
 from utilities.pytest import skipif_ci, skipif_mac, throttle
 from utilities.subprocess import (
     BASH_LC,
@@ -17,7 +19,9 @@ from utilities.subprocess import (
     apt_install_cmd,
     cat_cmd,
     cd_cmd,
+    chmod,
     chmod_cmd,
+    chown,
     chown_cmd,
     cp_cmd,
     echo_cmd,
@@ -76,11 +80,40 @@ class TestCDCmd:
         assert result == expected
 
 
+class TestChMod:
+    def test_main(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        _ = chmod(path, "u=rw,g=r,o=r")
+
+
 class TestChModCmd:
     def test_main(self) -> None:
         result = chmod_cmd("path", "u=rw,g=r,o=r")
         expected = ["chmod", "u=rw,g=r,o=r", "path"]
         assert result == expected
+
+
+class TestChOwn:
+    def test_none(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        chown(path)
+
+    def test_user(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        chown(path, user=EFFECTIVE_USER_NAME)
+
+    def test_group(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        chown(path, group=EFFECTIVE_GROUP_NAME)
+
+    def test_user_and_group(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        chown(path, user=EFFECTIVE_USER_NAME, group=EFFECTIVE_GROUP_NAME)
 
 
 class TestChOwnCmd:

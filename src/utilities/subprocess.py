@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import sys
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -67,7 +68,7 @@ def cd_cmd(path: PathLike, /) -> list[str]:
 
 
 def chmod(path: PathLike, perms: PermissionsLike, /, *, sudo: bool = False) -> None:
-    if sudo:
+    if sudo:  # pragma: no cover
         run(*sudo_cmd(*chmod_cmd(path, perms)))
     else:
         Path(path).chmod(int(ensure_perms(perms)))
@@ -78,6 +79,33 @@ def chmod(path: PathLike, perms: PermissionsLike, /, *, sudo: bool = False) -> N
 
 def chmod_cmd(path: PathLike, perms: PermissionsLike, /) -> list[str]:
     return ["chmod", str(ensure_perms(perms)), str(path)]
+
+
+##
+
+
+def chown(
+    path: PathLike,
+    /,
+    *,
+    sudo: bool = False,
+    user: str | None = None,
+    group: str | None = None,
+) -> None:
+    if sudo:  # pragma: no cover
+        run(*sudo_cmd(*chown_cmd(path, user=user, group=group)))
+    else:
+        match user, group:
+            case None, None:
+                ...
+            case str(), None:
+                shutil.chown(path, user, group)
+            case None, str():
+                shutil.chown(path, user, group)
+            case str(), str():
+                shutil.chown(path, user, group)
+            case never:
+                assert_never(never)
 
 
 ##
