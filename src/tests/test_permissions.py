@@ -9,6 +9,7 @@ from utilities.hypothesis import permissions
 from utilities.permissions import (
     Permissions,
     PermissionsFromIntError,
+    PermissionsFromOctalError,
     PermissionsFromTextError,
 )
 
@@ -95,7 +96,7 @@ class TestPermissions:
 
     def test_error_from_octal(self) -> None:
         with raises(
-            PermissionsFromTextError, match="Invalid octal for permissions; got 0o7777"
+            PermissionsFromOctalError, match="Invalid octal for permissions; got 0o7777"
         ):
             _ = Permissions.from_octal(0o7777)
 
