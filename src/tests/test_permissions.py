@@ -9,10 +9,11 @@ from pytest import mark, param, raises
 from utilities.hypothesis import permissions, sentinels
 from utilities.permissions import (
     Permissions,
-    PermissionsFromIntDigitError,
-    PermissionsFromIntRangeError,
-    PermissionsFromOctalError,
+    PermissionsFromHumanIntDigitError,
+    PermissionsFromHumanIntRangeError,
+    PermissionsFromIntError,
     PermissionsFromTextError,
+    ensure_perms,
 )
 from utilities.sentinel import Sentinel
 
@@ -21,63 +22,77 @@ from utilities.sentinel import Sentinel
 class _Case:
     perms: Permissions
     human_int: int
-    octal: int
+    int_: int
     text: str
 
 
 _CASES: list[_Case] = [
-    _Case(perms=Permissions(), human_int=0, octal=0o0, text="u=,g=,o="),
+    _Case(perms=Permissions(), human_int=0, int_=0o0, text="u=,g=,o="),
     _Case(
-        perms=Permissions(user_read=True), human_int=400, octal=0o400, text="u=r,g=,o="
+        perms=Permissions(user_read=True), human_int=400, int_=0o400, text="u=r,g=,o="
     ),
     _Case(
-        perms=Permissions(group_write=True), human_int=20, octal=0o020, text="u=,g=w,o="
+        perms=Permissions(group_write=True), human_int=20, int_=0o020, text="u=,g=w,o="
     ),
     _Case(
         perms=Permissions(others_execute=True),
         human_int=1,
-        octal=0o001,
+        int_=0o001,
         text="u=,g=,o=x",
     ),
     _Case(
         perms=Permissions(user_read=True, user_write=True),
         human_int=600,
-        octal=0o600,
+        int_=0o600,
         text="u=rw,g=,o=",
     ),
     _Case(
         perms=Permissions(user_read=True, group_execute=True),
         human_int=410,
-        octal=0o410,
+        int_=0o410,
         text="u=r,g=x,o=",
     ),
 ]
 
 
+class TestEnsurePermissions:
+    @given(perms=permissions())
+    def test_int(self, *, perms: Permissions) -> None:
+        assert ensure_perms(int(perms)) == perms
+
+    @given(perms=permissions())
+    def test_perms(self, *, perms: Permissions) -> None:
+        assert ensure_perms(perms) == perms
+
+    @given(perms=permissions())
+    def test_text(self, *, perms: Permissions) -> None:
+        assert ensure_perms(str(perms)) == perms
+
+
 class TestPermissions:
+    @given(perms=permissions())
+    def test_human_int(self, *, perms: Permissions) -> None:
+        assert Permissions.from_human_int(perms.human_int) == perms
+
+    @mark.parametrize(
+        ("perms", "expected"), [param(case.perms, case.human_int) for case in _CASES]
+    )
+    def test_human_int_examples(self, *, perms: Permissions, expected: str) -> None:
+        result = perms.human_int
+        assert result == expected
+        assert Permissions.from_human_int(result) == perms
+
     @given(perms=permissions())
     def test_int(self, *, perms: Permissions) -> None:
         assert Permissions.from_int(int(perms)) == perms
 
     @mark.parametrize(
-        ("perms", "expected"), [param(case.perms, case.human_int) for case in _CASES]
+        ("perms", "expected"), [param(case.perms, case.int_) for case in _CASES]
     )
     def test_int_examples(self, *, perms: Permissions, expected: str) -> None:
         result = int(perms)
         assert result == expected
         assert Permissions.from_int(result) == perms
-
-    @given(perms=permissions())
-    def test_octal(self, *, perms: Permissions) -> None:
-        assert Permissions.from_octal(perms.octal) == perms
-
-    @mark.parametrize(
-        ("perms", "expected"), [param(case.perms, case.octal) for case in _CASES]
-    )
-    def test_octal_examples(self, *, perms: Permissions, expected: str) -> None:
-        result = perms.octal
-        assert result == expected
-        assert Permissions.from_octal(result) == perms
 
     @given(
         perms=permissions(),
@@ -91,7 +106,7 @@ class TestPermissions:
         others_write=booleans() | sentinels(),
         others_execute=booleans() | sentinels(),
     )
-    def test_main(
+    def test_replace(
         self,
         *,
         perms: Permissions,
@@ -147,25 +162,26 @@ class TestPermissions:
         assert result == expected
         assert Permissions.from_text(result) == perms
 
-    def test_error_from_int_digit(self) -> None:
+    def test_error_from_human_int_digit(self) -> None:
         with raises(
-            PermissionsFromIntDigitError,
-            match="Invalid integer for permissions; got digit 8 in 8",
+            PermissionsFromHumanIntDigitError,
+            match="Invalid human integer for permissions; got digit 8 in 8",
         ):
-            _ = Permissions.from_int(8)
+            _ = Permissions.from_human_int(8)
 
-    def test_error_from_int_range(self) -> None:
+    def test_error_from_human_int_range(self) -> None:
         with raises(
-            PermissionsFromIntRangeError,
-            match="Invalid integer for permissions; got 7777",
+            PermissionsFromHumanIntRangeError,
+            match="Invalid human integer for permissions; got 7777",
         ):
-            _ = Permissions.from_int(7777)
+            _ = Permissions.from_human_int(7777)
 
-    def test_error_from_octal(self) -> None:
+    def test_error_from_int(self) -> None:
         with raises(
-            PermissionsFromOctalError, match="Invalid octal for permissions; got 0o7777"
+            PermissionsFromIntError,
+            match="Invalid integer for permissions; got 4095 = 0o7777",
         ):
-            _ = Permissions.from_octal(0o7777)
+            _ = Permissions.from_int(0o7777)
 
     def test_error_from_text(self) -> None:
         with raises(
