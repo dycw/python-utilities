@@ -57,8 +57,8 @@ _CASES: list[_Case] = [
 
 class TestEnsurePermissions:
     @given(perms=permissions())
-    def test_octal(self, *, perms: Permissions) -> None:
-        assert ensure_perms(perms.octal) == perms
+    def test_int(self, *, perms: Permissions) -> None:
+        assert ensure_perms(int(perms)) == perms
 
     @given(perms=permissions())
     def test_perms(self, *, perms: Permissions) -> None:
