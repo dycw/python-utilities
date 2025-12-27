@@ -38,7 +38,7 @@ async def pg_dump(
     path: PathLike,
     /,
     *,
-    docker_container: str | None = None,
+    container: str | None = None,
     format_: _PGDumpFormat = "plain",
     jobs: int | None = None,
     data_only: bool = False,
@@ -62,7 +62,7 @@ async def pg_dump(
     cmd = _build_pg_dump(
         url,
         path,
-        docker_container=docker_container,
+        container=container,
         format_=format_,
         jobs=jobs,
         data_only=data_only,
@@ -112,7 +112,7 @@ def _build_pg_dump(
     path: PathLike,
     /,
     *,
-    docker_container: str | None = None,
+    container: str | None = None,
     format_: _PGDumpFormat = "plain",
     jobs: int | None = None,
     data_only: bool = False,
@@ -131,8 +131,8 @@ def _build_pg_dump(
     extracted = extract_url(url)
     path = _path_pg_dump(path, format_=format_)
     parts: list[str] = ["pg_dump"]
-    if docker_container is not None:
-        parts = docker_exec_cmd(docker_container, *parts, PGPASSWORD=extracted.password)
+    if container is not None:
+        parts = docker_exec_cmd(container, *parts, PGPASSWORD=extracted.password)
     parts.extend([
         # general options
         f"--file={str(path)!r}",
@@ -214,7 +214,7 @@ async def restore(
     schema_exc: MaybeCollectionStr | None = None,
     table: MaybeCollection[TableOrORMInstOrClass | str] | None = None,
     role: str | None = None,
-    docker_container: str | None = None,
+    container: str | None = None,
     dry_run: bool = False,
     logger: LoggerLike | None = None,
 ) -> bool:
@@ -231,7 +231,7 @@ async def restore(
         schema_exc=schema_exc,
         table=table,
         role=role,
-        docker_container=docker_container,
+        container=container,
     )
     if dry_run:
         if logger is not None:
@@ -277,11 +277,11 @@ def _build_pg_restore_or_psql(
     schema_exc: MaybeCollectionStr | None = None,
     table: MaybeCollection[TableOrORMInstOrClass | str] | None = None,
     role: str | None = None,
-    docker_container: str | None = None,
+    container: str | None = None,
 ) -> str:
     path = Path(path)
     if (path.suffix == ".sql") or psql:
-        return _build_psql(url, path, docker_container=docker_container)
+        return _build_psql(url, path, container=container)
     return _build_pg_restore(
         url,
         path,
@@ -293,7 +293,7 @@ def _build_pg_restore_or_psql(
         schemas_exc=schema_exc,
         tables=table,
         role=role,
-        docker_container=docker_container,
+        container=container,
     )
 
 
@@ -310,13 +310,13 @@ def _build_pg_restore(
     schemas_exc: MaybeCollectionStr | None = None,
     tables: MaybeCollection[TableOrORMInstOrClass | str] | None = None,
     role: str | None = None,
-    docker_container: str | None = None,
+    container: str | None = None,
 ) -> str:
     """Run `pg_restore`."""
     extracted = extract_url(url)
     parts: list[str] = ["pg_restore"]
-    if docker_container is not None:
-        parts = docker_exec_cmd(docker_container, *parts, PGPASSWORD=extracted.password)
+    if container is not None:
+        parts = docker_exec_cmd(container, *parts, PGPASSWORD=extracted.password)
     parts.extend([
         # general options
         "--verbose",
@@ -349,13 +349,13 @@ def _build_pg_restore(
 
 
 def _build_psql(
-    url: URL, path: PathLike, /, *, docker_container: str | None = None
+    url: URL, path: PathLike, /, *, container: str | None = None
 ) -> str:
     """Run `psql`."""
     extracted = extract_url(url)
     parts: list[str] = ["psql"]
-    if docker_container is not None:
-        parts = docker_exec_cmd(docker_container, *parts, PGPASSWORD=extracted.password)
+    if container is not None:
+        parts = docker_exec_cmd(container, *parts, PGPASSWORD=extracted.password)
     parts.extend([
         # general options
         f"--dbname={extracted.database}",

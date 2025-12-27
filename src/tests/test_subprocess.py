@@ -24,7 +24,7 @@ from utilities.subprocess import (
     expand_path,
     git_clone_cmd,
     git_hard_reset_cmd,
-    maybe_parent_cmd,
+    maybe_parent,
     maybe_sudo_cmd,
     mkdir,
     mkdir_cmd,
@@ -158,15 +158,15 @@ class TestGitHardResetCmd:
         assert result == expected
 
 
-class TestMaybeParentCmd:
+class TestMaybeParent:
     def test_main(self) -> None:
-        result = maybe_parent_cmd("path")
-        expected = "path"
+        result = maybe_parent("~/path")
+        expected = Path("~/path")
         assert result == expected
 
     def test_parent(self) -> None:
-        result = maybe_parent_cmd("path", parent=True)
-        expected = "$(dirname path)"
+        result = maybe_parent("~/path", parent=True)
+        expected = Path("~")
         assert result == expected
 
 
@@ -191,13 +191,13 @@ class TestMkDir:
 
 class TestMkDirCmd:
     def test_main(self) -> None:
-        result = mkdir_cmd("path")
-        expected = ["mkdir", "-p", "path"]
+        result = mkdir_cmd("~/path")
+        expected = ["mkdir", "-p", "~/path"]
         assert result == expected
 
     def test_parent(self) -> None:
-        result = mkdir_cmd("path", parent=True)
-        expected = ["mkdir", "-p", "$(dirname path)"]
+        result = mkdir_cmd("~/path", parent=True)
+        expected = ["mkdir", "-p", "~"]
         assert result == expected
 
 
@@ -363,7 +363,7 @@ class TestRsyncCmd:
         assert result == expected
 
     def test_parent(self) -> None:
-        result = rsync_cmd("src", "user", "hostname", "dest", parent=True)
+        result = rsync_cmd("src", "user", "hostname", "~/dest", parent=True)
         expected = [
             "rsync",
             "--checksum",
@@ -371,7 +371,7 @@ class TestRsyncCmd:
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
             "src",
-            "user@hostname:$(dirname dest)",
+            "user@hostname:~",
         ]
         assert result == expected
 

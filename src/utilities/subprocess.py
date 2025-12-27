@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
-from shlex import join, quote
+from shlex import join
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
@@ -107,10 +107,9 @@ def git_hard_reset_cmd(*, branch: str | None = None) -> list[str]:
     return ["git", "hard-reset", branch_use]
 
 
-def maybe_parent_cmd(path: PathLike, /, *, parent: bool = False) -> str:
-    if parent:
-        return f"$(dirname {quote(str(path))})"
-    return str(path)
+def maybe_parent(path: PathLike, /, *, parent: bool = False) -> Path:
+    path = Path(path)
+    return path.parent if parent else path
 
 
 def maybe_sudo_cmd(cmd: str, /, *args: str, sudo: bool = False) -> list[str]:
@@ -122,13 +121,11 @@ def mkdir(path: PathLike, /, *, sudo: bool = False, parent: bool = False) -> Non
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*mkdir_cmd(path, parent=parent)))
     else:
-        path = expand_path(path)
-        path_use = path.parent if parent else path
-        path_use.mkdir(parents=True, exist_ok=True)
+        maybe_parent(path, parent=parent).mkdir(parents=True, exist_ok=True)
 
 
 def mkdir_cmd(path: PathLike, /, *, parent: bool = False) -> list[str]:
-    return ["mkdir", "-p", maybe_parent_cmd(path, parent=parent)]
+    return ["mkdir", "-p", str(maybe_parent(path, parent=parent))]
 
 
 def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
@@ -170,12 +167,13 @@ def rsync(
         retry=retry,
         logger=logger,
     )
+    is_dir = any(Path(s).is_dir() for s in always_iterable(src_or_srcs))  # skipif-ci
     rsync_args = rsync_cmd(  # skipif-ci
         src_or_srcs,
         user,
         hostname,
         dest,
-        archive=any(Path(s).is_dir() for s in always_iterable(src_or_srcs)),
+        archive=is_dir,
         chown_user=chown_user,
         chown_group=chown_group,
         exclude=exclude,
@@ -183,6 +181,7 @@ def rsync(
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
         sudo=sudo,
+        parent=is_dir,
     )
     run(*rsync_args, print=print, retry=retry, logger=logger)  # skipif-ci
     if chmod is not None:  # skipif-ci
@@ -244,7 +243,7 @@ def rsync_cmd(
     args.extend(["--rsh", join(rsh_args)])
     if sudo:
         args.extend(["--rsync-path", join(sudo_cmd("rsync"))])
-    dest_use = maybe_parent_cmd(dest, parent=parent)
+    dest_use = maybe_parent(dest, parent=parent)
     return [
         *args,
         *map(str, always_iterable(src_or_srcs)),
@@ -753,7 +752,7 @@ __all__ = [
     "expand_path",
     "git_clone_cmd",
     "git_hard_reset_cmd",
-    "maybe_parent_cmd",
+    "maybe_parent",
     "maybe_sudo_cmd",
     "mkdir",
     "mkdir_cmd",
