@@ -44,6 +44,28 @@ class Permissions:
     others_write: bool = False
     others_execute: bool = False
 
+    def __int__(self) -> int:
+        return (
+            100
+            * self._int(
+                read=self.user_read, write=self.user_write, execute=self.user_execute
+            )
+            + 10
+            * self._int(
+                read=self.group_read, write=self.group_write, execute=self.group_execute
+            )
+            + self._int(
+                read=self.others_read,
+                write=self.others_write,
+                execute=self.others_execute,
+            )
+        )
+
+    def _int(
+        self, *, read: bool = False, write: bool = False, execute: bool = False
+    ) -> _ZeroToSeven:
+        return (4 if read else 0) + (2 if write else 0) + (1 if execute else 0)
+
     @override
     def __repr__(self) -> str:
         return ",".join([
@@ -90,16 +112,16 @@ class Permissions:
         return repr(self)
 
     @classmethod
-    def from_human_int(cls, n: int, /) -> Self:
+    def from_int(cls, n: int, /) -> Self:
         with suppress(ExtractGroupsError):
             user, group, others = extract_groups(r"^([0-7])([0-7])([0-7])$", str(n))
-            user_read, user_write, user_execute = cls._from_human_int(
+            user_read, user_write, user_execute = cls._from_int(
                 ensure_member(int(user), _ZERO_TO_SEVEN)
             )
-            group_read, group_write, group_execute = cls._from_human_int(
+            group_read, group_write, group_execute = cls._from_int(
                 ensure_member(int(group), _ZERO_TO_SEVEN)
             )
-            others_read, others_write, others_execute = cls._from_human_int(
+            others_read, others_write, others_execute = cls._from_int(
                 ensure_member(int(others), _ZERO_TO_SEVEN)
             )
             return cls(
@@ -115,10 +137,10 @@ class Permissions:
             )
         with suppress(ExtractGroupsError):
             group, others = extract_groups(r"^([0-7])([0-7])$", str(n))
-            group_read, group_write, group_execute = cls._from_human_int(
+            group_read, group_write, group_execute = cls._from_int(
                 ensure_member(int(group), _ZERO_TO_SEVEN)
             )
-            others_read, others_write, others_execute = cls._from_human_int(
+            others_read, others_write, others_execute = cls._from_int(
                 ensure_member(int(others), _ZERO_TO_SEVEN)
             )
             return cls(
@@ -131,7 +153,7 @@ class Permissions:
             )
         with suppress(ExtractGroupError):
             others = extract_group(r"^([0-7])$", str(n))
-            others_read, others_write, others_execute = cls._from_human_int(
+            others_read, others_write, others_execute = cls._from_int(
                 ensure_member(int(others), _ZERO_TO_SEVEN)
             )
             return cls(
@@ -142,7 +164,7 @@ class Permissions:
         return cls()
 
     @classmethod
-    def _from_human_int(cls, n: _ZeroToSeven, /) -> tuple[bool, bool, bool]:
+    def _from_int(cls, n: _ZeroToSeven, /) -> tuple[bool, bool, bool]:
         return bool(4 & n), bool(2 & n), bool(1 & n)
 
     @classmethod
@@ -186,29 +208,6 @@ class Permissions:
     def _from_text_part(cls, text: str, /) -> tuple[bool, bool, bool]:
         read, write, execute = extract_groups("^(r?)(w?)(x?)$", text)
         return read != "", write != "", execute != ""
-
-    @property
-    def human_int(self) -> int:
-        return (
-            100
-            * self._human_int_part(
-                read=self.user_read, write=self.user_write, execute=self.user_execute
-            )
-            + 10
-            * self._human_int_part(
-                read=self.group_read, write=self.group_write, execute=self.group_execute
-            )
-            + self._human_int_part(
-                read=self.others_read,
-                write=self.others_write,
-                execute=self.others_execute,
-            )
-        )
-
-    def _human_int_part(
-        self, *, read: bool = False, write: bool = False, execute: bool = False
-    ) -> _ZeroToSeven:
-        return (4 if read else 0) + (2 if write else 0) + (1 if execute else 0)
 
     @property
     def octal(self) -> int:

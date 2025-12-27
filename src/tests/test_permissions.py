@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from hypothesis import given
 from pytest import mark, param
 
+from utilities.hypothesis import permissions
 from utilities.permissions import Permissions
 
 
 @dataclass(kw_only=True, slots=True)
-class _Case[T]:
+class _Case:
     perms: Permissions
     human_int: int
     octal: int
@@ -45,26 +47,38 @@ _CASES: list[_Case] = [
 
 
 class TestPermissions:
+    @given(perms=permissions())
+    def test_int(self, *, perms: Permissions) -> None:
+        assert Permissions.from_int(int(perms)) == perms
+
     @mark.parametrize(
         ("perms", "expected"), [param(case.perms, case.human_int) for case in _CASES]
     )
-    def test_human_int(self, *, perms: Permissions, expected: str) -> None:
-        result = perms.human_int
+    def test_int_examples(self, *, perms: Permissions, expected: str) -> None:
+        result = int(perms)
         assert result == expected
-        assert Permissions.from_human_int(result) == perms
+        assert Permissions.from_int(result) == perms
+
+    @given(perms=permissions())
+    def test_octal(self, *, perms: Permissions) -> None:
+        assert Permissions.from_octal(perms.octal) == perms
 
     @mark.parametrize(
         ("perms", "expected"), [param(case.perms, case.octal) for case in _CASES]
     )
-    def test_octal(self, *, perms: Permissions, expected: str) -> None:
+    def test_octal_examples(self, *, perms: Permissions, expected: str) -> None:
         result = perms.octal
         assert result == expected
         assert Permissions.from_octal(result) == perms
 
+    @given(perms=permissions())
+    def test_text(self, *, perms: Permissions) -> None:
+        assert Permissions.from_text(str(perms)) == perms
+
     @mark.parametrize(
         ("perms", "expected"), [param(case.perms, case.text) for case in _CASES]
     )
-    def test_text(self, *, perms: Permissions, expected: str) -> None:
+    def test_text_examples(self, *, perms: Permissions, expected: str) -> None:
         result = str(perms)
         assert result == expected
         assert Permissions.from_text(result) == perms
