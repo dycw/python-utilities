@@ -17,7 +17,7 @@ from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
 from utilities.logging import to_logger
-from utilities.permissions import ensure_perms
+from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
 from utilities.whenever import to_seconds
 
@@ -446,6 +446,69 @@ def rsync_cmd(
     ]
 
 
+##
+
+
+def rsync_many(
+    user: str,
+    hostname: str,
+    /,
+    *items: tuple[PathLike, PathLike],
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+    keep: bool = False,
+    sudo: tuple[PathLike, PathLike] | list[tuple[PathLike, PathLike]] | None = None,
+    print: bool = False,  # noqa: A002
+) -> None:
+    i = 0
+    cmds: list[str] = []
+    with (
+        TemporaryDirectory() as temp_src,
+        yield_ssh_temp_dir(
+            user, hostname, retry=retry, logger=logger, keep=keep
+        ) as temp_dest,
+    ):
+        for src, dest in items:
+            copy_file(src, temp_src / str(i))
+            cmds.extend([mkdir_cmd(dest, parent=True), cp_cmd(str(i), dest)])
+            i += 1
+        for dest, txt in text:
+            write_text(temp_src / str(i), txt)
+            cmds.extend([mkdir_cmd(dest, parent=True), cp_cmd(str(i), dest)])
+            i += 1
+        for src, dest in sudo_files:
+            copy_file(src, temp_src / str(i))
+            cmds.extend([
+                maybe_sudo_cmd(mkdir_cmd(dest, parent=True), sudo=not root),
+                maybe_sudo_cmd(cp_cmd(str(i), dest), sudo=not root),
+            ])
+            i += 1
+        for dest, txt in sudo_text:
+            write_text(temp_src / str(i), txt)
+            cmds.extend([
+                maybe_sudo_cmd(mkdir_cmd(dest, parent=True), sudo=not root),
+                maybe_sudo_cmd(cp_cmd(str(i), dest), sudo=not root),
+            ])
+            i += 1
+        rsync(
+            f"{temp_src}/*",
+            hostname,
+            temp_dest,
+            root=root,
+            retry=retry,
+            archive=True,
+            exclude=exclude,
+        )
+        ssh(hostname, *cmds, root=root, cd=temp_dest, retry=retry)
+
+
+def _rsync_many_prepare(src: PathLike, dest: PathLike, temp: PathLike, /) -> list[str]:
+    dest, temp = map(Path, [dest, temp])
+    i = len(list(temp.iterdir()))
+    copyf
+
+
+##
 ##
 
 
@@ -1041,6 +1104,7 @@ __all__ = [
     "rm_cmd",
     "rsync",
     "rsync_cmd",
+    "rsync_many",
     "run",
     "set_hostname_cmd",
     "ssh",
