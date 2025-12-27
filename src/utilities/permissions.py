@@ -3,7 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import reduce
 from operator import or_
+from pathlib import Path
 from stat import (
+    S_IMODE,
     S_IRGRP,
     S_IROTH,
     S_IRUSR,
@@ -14,11 +16,14 @@ from stat import (
     S_IXOTH,
     S_IXUSR,
 )
-from typing import Literal, Self, assert_never, override
+from typing import TYPE_CHECKING, Literal, Self, assert_never, override
 
 from utilities.dataclasses import replace_non_sentinel
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
+
+if TYPE_CHECKING:
+    from utilities.types import PathLike
 
 type PermissionsLike = Permissions | int | str
 
@@ -153,6 +158,10 @@ class Permissions:
                 others_execute=bool(n & S_IXOTH),
             )
         raise PermissionsFromIntError(n=n)
+
+    @classmethod
+    def from_path(cls, path: PathLike, /) -> Self:
+        return cls.from_int(S_IMODE(Path(path).stat().st_mode))
 
     @classmethod
     def from_text(cls, text: str, /) -> Self:

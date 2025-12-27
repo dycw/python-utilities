@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import booleans
 from pytest import mark, param, raises
 
-from utilities.hypothesis import permissions, sentinels
+from utilities.hypothesis import permissions, sentinels, temp_paths
 from utilities.permissions import (
     Permissions,
     PermissionsFromHumanIntDigitError,
@@ -16,6 +17,9 @@ from utilities.permissions import (
     ensure_perms,
 )
 from utilities.sentinel import Sentinel
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @dataclass(kw_only=True, slots=True)
@@ -70,6 +74,13 @@ class TestEnsurePermissions:
 
 
 class TestPermissions:
+    @given(root=temp_paths(), perms=permissions())
+    def test_from_path(self, *, root: Path, perms: Permissions) -> None:
+        path = root / "file.txt"
+        path.touch()
+        path.chmod(int(perms))
+        assert Permissions.from_path(path) == perms
+
     @given(perms=permissions())
     def test_human_int(self, *, perms: Permissions) -> None:
         assert Permissions.from_human_int(perms.human_int) == perms
