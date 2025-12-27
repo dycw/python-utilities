@@ -104,7 +104,7 @@ class TestPermissions:
         others_write: bool | Sentinel,
         others_execute: bool | Sentinel,
     ) -> None:
-        perms.replace(
+        result = perms.replace(
             user_read=user_read,
             user_write=user_write,
             user_execute=user_execute,
@@ -116,23 +116,23 @@ class TestPermissions:
             others_execute=others_execute,
         )
         if not isinstance(user_read, Sentinel):
-            assert perms.user_read is user_read
+            assert result.user_read is user_read
         if not isinstance(user_write, Sentinel):
-            assert perms.user_write is user_write
+            assert result.user_write is user_write
         if not isinstance(user_execute, Sentinel):
-            assert perms.user_execute is user_execute
+            assert result.user_execute is user_execute
         if not isinstance(group_read, Sentinel):
-            assert perms.group_read is group_read
+            assert result.group_read is group_read
         if not isinstance(group_write, Sentinel):
-            assert perms.group_write is group_write
+            assert result.group_write is group_write
         if not isinstance(group_execute, Sentinel):
-            assert perms.group_execute is group_execute
+            assert result.group_execute is group_execute
         if not isinstance(others_read, Sentinel):
-            assert perms.others_read is others_read
+            assert result.others_read is others_read
         if not isinstance(others_write, Sentinel):
-            assert perms.others_write is others_write
+            assert result.others_write is others_write
         if not isinstance(others_execute, Sentinel):
-            assert perms.others_execute is others_execute
+            assert result.others_execute is others_execute
 
     @given(perms=permissions())
     def test_text(self, *, perms: Permissions) -> None:
