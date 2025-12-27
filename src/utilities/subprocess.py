@@ -17,6 +17,7 @@ from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
 from utilities.logging import to_logger
+from utilities.permissions import ensure_perms
 from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
 from utilities.whenever import to_seconds
@@ -504,11 +505,10 @@ def rsync_many(
 
 def _rsync_many_prepare(src: PathLike, dest: PathLike, temp: PathLike, /) -> list[str]:
     dest, temp = map(Path, [dest, temp])
-    len(list(temp.iterdir()))
-    copyf
+    n = len(list(temp.iterdir()))
+    copy_file()
 
 
-##
 ##
 
 
