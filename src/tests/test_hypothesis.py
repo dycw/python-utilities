@@ -69,6 +69,7 @@ from utilities.hypothesis import (
     numbers,
     pairs,
     paths,
+    permissions,
     plain_date_times,
     quadruples,
     random_states,
@@ -772,6 +773,66 @@ class TestPaths:
             assert len(path.parts) >= min_depth
         if max_depth is not None:
             assert len(path.parts) <= max_depth
+
+
+class TestPermissions:
+    @given(
+        data=data(),
+        user_read=booleans() | none(),
+        user_write=booleans() | none(),
+        user_execute=booleans() | none(),
+        group_read=booleans() | none(),
+        group_write=booleans() | none(),
+        group_execute=booleans() | none(),
+        others_read=booleans() | none(),
+        others_write=booleans() | none(),
+        others_execute=booleans() | none(),
+    )
+    def test_main(
+        self,
+        *,
+        data: DataObject,
+        user_read: bool | None,
+        user_write: bool | None,
+        user_execute: bool | None,
+        group_read: bool | None,
+        group_write: bool | None,
+        group_execute: bool | None,
+        others_read: bool | None,
+        others_write: bool | None,
+        others_execute: bool | None,
+    ) -> None:
+        perms = data.draw(
+            permissions(
+                user_read=user_read,
+                user_write=user_write,
+                user_execute=user_execute,
+                group_read=group_read,
+                group_write=group_write,
+                group_execute=group_execute,
+                others_read=others_read,
+                others_write=others_write,
+                others_execute=others_execute,
+            )
+        )
+        if user_read is not None:
+            assert perms.user_read is user_read
+        if user_write is not None:
+            assert perms.user_write is user_write
+        if user_execute is not None:
+            assert perms.user_execute is user_execute
+        if group_read is not None:
+            assert perms.group_read is group_read
+        if group_write is not None:
+            assert perms.group_write is group_write
+        if group_execute is not None:
+            assert perms.group_execute is group_execute
+        if others_read is not None:
+            assert perms.others_read is others_read
+        if others_write is not None:
+            assert perms.others_write is others_write
+        if others_execute is not None:
+            assert perms.others_execute is others_execute
 
 
 class TestPlainDateTimes:
