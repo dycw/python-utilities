@@ -19,12 +19,6 @@ from typing import Literal, Self, override
 from utilities.dataclasses import replace_non_sentinel
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.sentinel import Sentinel, sentinel
-from utilities.typing import get_args
-
-_MIN_OCTAL = 0o0
-_MAX_INT = 0o777
-type _ZeroToSeven = Literal[0, 1, 2, 3, 4, 5, 6, 7]
-_ZERO_TO_SEVEN: list[_ZeroToSeven] = list(get_args(_ZeroToSeven.__value__))
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
@@ -58,7 +52,7 @@ class Permissions:
 
     def _int(
         self, *, read: bool = False, write: bool = False, execute: bool = False
-    ) -> _ZeroToSeven:
+    ) -> int:
         return (4 if read else 0) + (2 if write else 0) + (1 if execute else 0)
 
     @override
