@@ -3,15 +3,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from hypothesis import given
+from hypothesis.strategies import booleans
 from pytest import mark, param, raises
 
-from utilities.hypothesis import permissions
+from utilities.hypothesis import permissions, sentinels
 from utilities.permissions import (
     Permissions,
     PermissionsFromIntError,
     PermissionsFromOctalError,
     PermissionsFromTextError,
 )
+from utilities.sentinel import Sentinel
 
 
 @dataclass(kw_only=True, slots=True)
@@ -75,6 +77,62 @@ class TestPermissions:
         result = perms.octal
         assert result == expected
         assert Permissions.from_octal(result) == perms
+
+    @given(
+        perms=permissions(),
+        user_read=booleans() | sentinels(),
+        user_write=booleans() | sentinels(),
+        user_execute=booleans() | sentinels(),
+        group_read=booleans() | sentinels(),
+        group_write=booleans() | sentinels(),
+        group_execute=booleans() | sentinels(),
+        others_read=booleans() | sentinels(),
+        others_write=booleans() | sentinels(),
+        others_execute=booleans() | sentinels(),
+    )
+    def test_main(
+        self,
+        *,
+        perms: Permissions,
+        user_read: bool | Sentinel,
+        user_write: bool | Sentinel,
+        user_execute: bool | Sentinel,
+        group_read: bool | Sentinel,
+        group_write: bool | Sentinel,
+        group_execute: bool | Sentinel,
+        others_read: bool | Sentinel,
+        others_write: bool | Sentinel,
+        others_execute: bool | Sentinel,
+    ) -> None:
+        perms.replace(
+            user_read=user_read,
+            user_write=user_write,
+            user_execute=user_execute,
+            group_read=group_read,
+            group_write=group_write,
+            group_execute=group_execute,
+            others_read=others_read,
+            others_write=others_write,
+            others_execute=others_execute,
+        )
+        if not isinstance(user_read, Sentinel):
+            assert perms.user_read is user_read
+        if not isinstance(user_write, Sentinel):
+            assert perms.user_write is user_write
+        if not isinstance(user_execute, Sentinel):
+            assert perms.user_execute is user_execute
+        if not isinstance(group_read, Sentinel):
+            assert perms.group_read is group_read
+        if not isinstance(group_write, Sentinel):
+            assert perms.group_write is group_write
+        if not isinstance(group_execute, Sentinel):
+            assert perms.group_execute is group_execute
+        if not isinstance(others_read, Sentinel):
+            assert perms.others_read is others_read
+        if not isinstance(others_write, Sentinel):
+            assert perms.others_write is others_write
+        if not isinstance(others_execute, Sentinel):
+            assert perms.others_execute is others_execute
 
     @given(perms=permissions())
     def test_text(self, *, perms: Permissions) -> None:
