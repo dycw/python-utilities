@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from contextlib import suppress
 from dataclasses import dataclass
-from re import search
 from typing import Literal, Self, override
 
 from utilities.dataclasses import replace_non_sentinel
@@ -72,28 +71,6 @@ class Permissions:
         if execute:
             parts.append("x")
         return f"{prefix}={''.join(parts)}"
-
-    def __int__(self) -> int:
-        return (
-            100
-            * self._to_int_part(
-                read=self.user_read, write=self.user_write, execute=self.user_execute
-            )
-            + 10
-            * self._to_int_part(
-                read=self.group_read, write=self.group_write, execute=self.group_execute
-            )
-            + self._to_int_part(
-                read=self.others_read,
-                write=self.others_write,
-                execute=self.others_execute,
-            )
-        )
-
-    def _to_int_part(
-        self, *, read: bool = False, write: bool = False, execute: bool = False
-    ) -> _ZeroToSeven:
-        return (4 if read else 0) + (2 if write else 0) + (1 if execute else 0)
 
     @override
     def __str__(self) -> str:
@@ -182,6 +159,29 @@ class Permissions:
     def _from_str(cls, text: str, /) -> tuple[bool, bool, bool]:
         read, write, execute = extract_groups("^(r?)(w?)(x?)$", text)
         return read != "", write != "", execute != ""
+
+    @property
+    def human_int(self) -> int:
+        return (
+            100
+            * self._human_int_part(
+                read=self.user_read, write=self.user_write, execute=self.user_execute
+            )
+            + 10
+            * self._human_int_part(
+                read=self.group_read, write=self.group_write, execute=self.group_execute
+            )
+            + self._human_int_part(
+                read=self.others_read,
+                write=self.others_write,
+                execute=self.others_execute,
+            )
+        )
+
+    def _human_int_part(
+        self, *, read: bool = False, write: bool = False, execute: bool = False
+    ) -> _ZeroToSeven:
+        return (4 if read else 0) + (2 if write else 0) + (1 if execute else 0)
 
     def replace(
         self,
