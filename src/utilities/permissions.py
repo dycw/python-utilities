@@ -46,6 +46,20 @@ class Permissions:
     others_write: bool = False
     others_execute: bool = False
 
+    def __index__(self) -> int:
+        flags: list[int] = [
+            S_IRUSR if self.user_read else 0,
+            S_IWUSR if self.user_write else 0,
+            S_IXUSR if self.user_execute else 0,
+            S_IRGRP if self.group_read else 0,
+            S_IWGRP if self.group_write else 0,
+            S_IXGRP if self.group_execute else 0,
+            S_IROTH if self.others_read else 0,
+            S_IWOTH if self.others_write else 0,
+            S_IXOTH if self.others_execute else 0,
+        ]
+        return reduce(or_, flags)
+
     def __int__(self) -> int:
         return (
             100
@@ -214,21 +228,6 @@ class Permissions:
     def _from_text_part(cls, text: str, /) -> tuple[bool, bool, bool]:
         read, write, execute = extract_groups("^(r?)(w?)(x?)$", text)
         return read != "", write != "", execute != ""
-
-    @property
-    def octal(self) -> int:
-        flags: list[int] = [
-            S_IRUSR if self.user_read else 0,
-            S_IWUSR if self.user_write else 0,
-            S_IXUSR if self.user_execute else 0,
-            S_IRGRP if self.group_read else 0,
-            S_IWGRP if self.group_write else 0,
-            S_IXGRP if self.group_execute else 0,
-            S_IROTH if self.others_read else 0,
-            S_IWOTH if self.others_write else 0,
-            S_IXOTH if self.others_execute else 0,
-        ]
-        return reduce(or_, flags)
 
     def replace(
         self,

@@ -68,13 +68,13 @@ class TestPermissions:
 
     @given(perms=permissions())
     def test_octal(self, *, perms: Permissions) -> None:
-        assert Permissions.from_octal(perms.octal) == perms
+        assert Permissions.from_octal(oct(perms)) == perms
 
     @mark.parametrize(
         ("perms", "expected"), [param(case.perms, case.octal) for case in _CASES]
     )
     def test_octal_examples(self, *, perms: Permissions, expected: str) -> None:
-        result = perms.octal
+        result = oct(perms)
         assert result == expected
         assert Permissions.from_octal(result) == perms
 
