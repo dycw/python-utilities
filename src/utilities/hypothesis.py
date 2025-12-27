@@ -77,6 +77,7 @@ from utilities.math import (
 )
 from utilities.os import get_env_var
 from utilities.pathlib import module_path, temp_cwd
+from utilities.permissions import Permissions
 from utilities.platform import IS_LINUX
 from utilities.sentinel import Sentinel, is_sentinel, sentinel
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
@@ -865,6 +866,38 @@ def _path_parts(draw: DrawFn, /) -> str:
 
 
 @composite
+def permissions(
+    draw: DrawFn,
+    /,
+    *,
+    user_read: MaybeSearchStrategy[bool | None] = None,
+    user_write: MaybeSearchStrategy[bool | None] = None,
+    user_execute: MaybeSearchStrategy[bool | None] = None,
+    group_read: MaybeSearchStrategy[bool | None] = None,
+    group_write: MaybeSearchStrategy[bool | None] = None,
+    group_execute: MaybeSearchStrategy[bool | None] = None,
+    others_read: MaybeSearchStrategy[bool | None] = None,
+    others_write: MaybeSearchStrategy[bool | None] = None,
+    others_execute: MaybeSearchStrategy[bool | None] = None,
+) -> Permissions:
+    """Strategy for generating `Permissions`."""
+    return Permissions(
+        user_read=draw2(draw, user_read, booleans()),
+        user_write=draw2(draw, user_write, booleans()),
+        user_execute=draw2(draw, user_execute, booleans()),
+        group_read=draw2(draw, group_read, booleans()),
+        group_write=draw2(draw, group_write, booleans()),
+        group_execute=draw2(draw, group_execute, booleans()),
+        others_read=draw2(draw, others_read, booleans()),
+        others_write=draw2(draw, others_write, booleans()),
+        others_execute=draw2(draw, others_execute, booleans()),
+    )
+
+
+##
+
+
+@composite
 def plain_date_times(
     draw: DrawFn,
     /,
@@ -1611,6 +1644,7 @@ __all__ = [
     "numbers",
     "pairs",
     "paths",
+    "permissions",
     "plain_date_times",
     "py_datetimes",
     "quadruples",
