@@ -34,26 +34,18 @@ class Permissions:
     others_execute: bool = False
 
     def __int__(self) -> int:
-        return (
-            100
-            * self._int(
-                read=self.user_read, write=self.user_write, execute=self.user_execute
-            )
-            + 10
-            * self._int(
-                read=self.group_read, write=self.group_write, execute=self.group_execute
-            )
-            + self._int(
-                read=self.others_read,
-                write=self.others_write,
-                execute=self.others_execute,
-            )
-        )
-
-    def _int(
-        self, *, read: bool = False, write: bool = False, execute: bool = False
-    ) -> int:
-        return (4 if read else 0) + (2 if write else 0) + (1 if execute else 0)
+        flags: list[int] = [
+            S_IRUSR if self.user_read else 0,
+            S_IWUSR if self.user_write else 0,
+            S_IXUSR if self.user_execute else 0,
+            S_IRGRP if self.group_read else 0,
+            S_IWGRP if self.group_write else 0,
+            S_IXGRP if self.group_execute else 0,
+            S_IROTH if self.others_read else 0,
+            S_IWOTH if self.others_write else 0,
+            S_IXOTH if self.others_execute else 0,
+        ]
+        return reduce(or_, flags)
 
     @override
     def __repr__(self) -> str:
@@ -87,13 +79,11 @@ class Permissions:
         write: bool = False,
         execute: bool = False,
     ) -> str:
-        parts: list[str] = []
-        if read:
-            parts.append("r")
-        if write:
-            parts.append("w")
-        if execute:
-            parts.append("x")
+        parts: list[str] = [
+            "r" if read else "",
+            "w" if write else "",
+            "x" if execute else "",
+        ]
         return f"{prefix}={''.join(parts)}"
 
     @override
@@ -101,12 +91,12 @@ class Permissions:
         return repr(self)
 
     @classmethod
-    def from_int(cls, n: int, /) -> Self:
+    def from_human_int(cls, n: int, /) -> Self:
         if not (0 <= n <= 777):
-            raise PermissionsFromIntRangeError(n=n)
-        user_read, user_write, user_execute = cls._from_int(n, (n // 100) % 10)
-        group_read, group_write, group_execute = cls._from_int(n, (n // 10) % 10)
-        others_read, others_write, others_execute = cls._from_int(n, n % 10)
+            raise PermissionsFromHumanIntRangeError(n=n)
+        user_read, user_write, user_execute = cls._from_human_int(n, (n // 100) % 10)
+        group_read, group_write, group_execute = cls._from_human_int(n, (n // 10) % 10)
+        others_read, others_write, others_execute = cls._from_human_int(n, n % 10)
         return cls(
             user_read=user_read,
             user_write=user_write,
@@ -120,13 +110,13 @@ class Permissions:
         )
 
     @classmethod
-    def _from_int(cls, n: int, digit: int, /) -> tuple[bool, bool, bool]:
+    def _from_human_int(cls, n: int, digit: int, /) -> tuple[bool, bool, bool]:
         if not (0 <= digit <= 7):
-            raise PermissionsFromIntDigitError(n=n, digit=digit)
+            raise PermissionsFromHumanIntDigitError(n=n, digit=digit)
         return bool(4 & digit), bool(2 & digit), bool(1 & digit)
 
     @classmethod
-    def from_octal(cls, n: int, /) -> Self:
+    def from_int(cls, n: int, /) -> Self:
         if 0o0 <= n <= 0o777:
             return cls(
                 user_read=bool(n & S_IRUSR),
@@ -139,7 +129,7 @@ class Permissions:
                 others_write=bool(n & S_IWOTH),
                 others_execute=bool(n & S_IXOTH),
             )
-        raise PermissionsFromOctalError(n=n)
+        raise PermissionsFromIntError(n=n)
 
     @classmethod
     def from_text(cls, text: str, /) -> Self:
@@ -170,19 +160,27 @@ class Permissions:
         return read != "", write != "", execute != ""
 
     @property
-    def octal(self) -> int:
-        flags: list[int] = [
-            S_IRUSR if self.user_read else 0,
-            S_IWUSR if self.user_write else 0,
-            S_IXUSR if self.user_execute else 0,
-            S_IRGRP if self.group_read else 0,
-            S_IWGRP if self.group_write else 0,
-            S_IXGRP if self.group_execute else 0,
-            S_IROTH if self.others_read else 0,
-            S_IWOTH if self.others_write else 0,
-            S_IXOTH if self.others_execute else 0,
-        ]
-        return reduce(or_, flags)
+    def human_int(self) -> int:
+        return (
+            100
+            * self._human_int(
+                read=self.user_read, write=self.user_write, execute=self.user_execute
+            )
+            + 10
+            * self._human_int(
+                read=self.group_read, write=self.group_write, execute=self.group_execute
+            )
+            + self._human_int(
+                read=self.others_read,
+                write=self.others_write,
+                execute=self.others_execute,
+            )
+        )
+
+    def _human_int(
+        self, *, read: bool = False, write: bool = False, execute: bool = False
+    ) -> int:
+        return (4 if read else 0) + (2 if write else 0) + (1 if execute else 0)
 
     def replace(
         self,
@@ -216,33 +214,35 @@ class PermissionsError(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
-class PermissionsFromIntError(PermissionsError):
+class PermissionsFromHumanIntError(PermissionsError):
     n: int
 
 
 @dataclass(kw_only=True, slots=True)
-class PermissionsFromIntRangeError(PermissionsFromIntError):
+class PermissionsFromHumanIntRangeError(PermissionsFromHumanIntError):
     @override
     def __str__(self) -> str:
-        return f"Invalid integer for permissions; got {self.n}"
+        return f"Invalid human integer for permissions; got {self.n}"
 
 
 @dataclass(kw_only=True, slots=True)
-class PermissionsFromIntDigitError(PermissionsFromIntError):
+class PermissionsFromHumanIntDigitError(PermissionsFromHumanIntError):
     digit: int
 
     @override
     def __str__(self) -> str:
-        return f"Invalid integer for permissions; got digit {self.digit} in {self.n}"
+        return (
+            f"Invalid human integer for permissions; got digit {self.digit} in {self.n}"
+        )
 
 
 @dataclass(kw_only=True, slots=True)
-class PermissionsFromOctalError(PermissionsError):
+class PermissionsFromIntError(PermissionsError):
     n: int
 
     @override
     def __str__(self) -> str:
-        return f"Invalid octal for permissions; got {oct(self.n)}"
+        return f"Invalid integer for permissions; got {self.n} = {oct(self.n)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -257,8 +257,8 @@ class PermissionsFromTextError(PermissionsError):
 __all__ = [
     "Permissions",
     "PermissionsError",
-    "PermissionsFromIntDigitError",
+    "PermissionsFromHumanIntDigitError",
+    "PermissionsFromHumanIntError",
     "PermissionsFromIntError",
-    "PermissionsFromOctalError",
     "PermissionsFromTextError",
 ]
