@@ -83,8 +83,7 @@ class TestPermissions:
 
     @given(perms=permissions())
     def test_human_int(self, *, perms: Permissions) -> None:
-        result = Permissions.from_human_int(perms.human_int)
-        assert result == perms
+        assert Permissions.from_human_int(perms.human_int) == perms
 
     @mark.parametrize(
         ("perms", "expected"), [param(case.perms, case.human_int) for case in _CASES]
