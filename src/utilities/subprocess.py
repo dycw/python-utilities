@@ -16,7 +16,7 @@ from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
-from utilities.logging import add_adapter, to_logger
+from utilities.logging import to_logger
 from utilities.permissions import Permissions, ensure_perms
 from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
