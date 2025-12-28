@@ -47,7 +47,7 @@ def docker_cp(
     sudo: bool = False,
     logger: LoggerLike | None = None,
 ) -> None:
-    match src, dest:
+    match src, dest:  # skipif-ci
         case Path() | str(), (str() as cont, Path() | str() as dest_path):
             docker_exec(
                 cont, *maybe_sudo_cmd(*mkdir_cmd(dest_path, parent=True), sudo=sudo)

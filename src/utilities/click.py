@@ -210,8 +210,7 @@ class EnumPartial[E: enum.Enum](ParamType):
             self.fail(str(error), param, ctx)
         if enum in self._members:
             return enum
-        self.fail(f"{enum.value!r} is not a selected member")
-        return None
+        return self.fail(f"{enum.value!r} is not a selected member")
 
     @override
     def get_metavar(self, param: Parameter, ctx: Context) -> str | None:

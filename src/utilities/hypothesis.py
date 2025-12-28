@@ -1040,7 +1040,7 @@ def setup_hypothesis_profiles(
                     assert_never(never)
 
     phases = {Phase.explicit, Phase.reuse, Phase.generate, Phase.target}
-    if "HYPOTHESIS_NO_SHRINK" not in environ:
+    if "HYPOTHESIS_NO_SHRINK" not in environ:  # pragma: no cover
         phases.add(Phase.shrink)
     for profile in Profile:
         try:
