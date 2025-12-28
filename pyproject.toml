@@ -154,6 +154,8 @@
         skipif-mac = 'sys_platform == "darwin"'
         skipif-not-linux = 'sys_platform != "linux"'
         skipif-not-macos = 'sys_platform != "darwin"'
+        skipif-not-windows = 'sys_platform != "windows"'
+        skipif-windows = 'sys_platform == "darwin"'
 
     [tool.coverage.html]
       directory = ".coverage/html"
