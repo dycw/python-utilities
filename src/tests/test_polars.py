@@ -6,7 +6,7 @@ import itertools
 import math
 from dataclasses import dataclass, field
 from enum import auto
-from itertools import chain
+from itertools import chain, repeat
 from math import isfinite, nan
 from random import Random
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, assert_never, cast
@@ -1493,8 +1493,33 @@ class TestExprToSeries:
         assert_series_equal(series, expected)
 
 
-class TestComputeDateFilter:
-    def test_main(self) -> None:
+class TestFilterDate:
+    @mark.parametrize("time_zone", [param(UTC), param(None)])
+    def test_main(self, *, time_zone: ZoneInfo | None) -> None:
+        result = filter_date(self._series, time_zone=time_zone)
+        expected = Series(
+            name="datetime", values=list(repeat(object=True, times=8)), dtype=Boolean
+        )
+        assert_series_equal(result, expected)
+
+    def test_include(self) -> None:
+        result = filter_date(self._series, include=[Date(2024, 1, 2), Date(2024, 1, 3)])
+        expected = Series(
+            name="datetime", values=[False, False, True, True, True, True, False, False]
+        )
+        assert_series_equal(result, expected)
+
+    def test_exclude(self) -> None:
+        result = filter_date(self._series, exclude=[Date(2024, 1, 2), Date(2024, 1, 3)])
+        expected = Series(
+            name="datetime",
+            values=[True, True, False, False, False, False, True, True],
+            dtype=Boolean,
+        )
+        assert_series_equal(result, expected)
+
+    @property
+    def _series(self) -> Series:
         series = datetime_range(
             start=ZonedDateTime(2024, 1, 1, tz=UTC.key).py_datetime(),
             end=ZonedDateTime(2024, 1, 4, 12, tz=UTC.key).py_datetime(),
@@ -1502,17 +1527,42 @@ class TestComputeDateFilter:
             eager=True,
         ).alias("datetime")
         assert len(series) == 8
-        result = filter_date(series, include=[Date(2024, 1, 2), Date(2024, 1, 3)])
+        return series
+
+
+class TestFilterTime:
+    @mark.parametrize("time_zone", [param(UTC), param(None)])
+    def test_main(self, *, time_zone: ZoneInfo | None) -> None:
+        result = filter_time(self._series, time_zone=time_zone)
+        expected = Series(
+            name="datetime", values=list(repeat(object=True, times=9)), dtype=Boolean
+        )
+        assert_series_equal(result, expected)
+
+    def test_include(self) -> None:
+        result = filter_time(
+            self._series, include=[(whenever.Time(6), whenever.Time(12))]
+        )
         expected = Series(
             name="datetime",
-            values=[False, False, True, True, True, True, False, False],
+            values=[False, True, True, False, False, True, True, False, False],
             dtype=Boolean,
         )
         assert_series_equal(result, expected)
 
+    def test_exclude(self) -> None:
+        result = filter_time(
+            self._series, exclude=[(whenever.Time(6), whenever.Time(12))]
+        )
+        expected = Series(
+            name="datetime",
+            values=[True, False, False, True, True, False, False, True, True],
+            dtype=Boolean,
+        )
+        assert_series_equal(result, expected)
 
-class TestComputeTimeFilter:
-    def test_main(self) -> None:
+    @property
+    def _series(self) -> Series:
         series = datetime_range(
             start=ZonedDateTime(2024, 1, 1, tz=UTC.key).py_datetime(),
             end=ZonedDateTime(2024, 1, 3, 0, tz=UTC.key).py_datetime(),
@@ -1520,13 +1570,7 @@ class TestComputeTimeFilter:
             eager=True,
         ).alias("datetime")
         assert len(series) == 9
-        result = filter_time(series, include=[(whenever.Time(6), whenever.Time(12))])
-        expected = Series(
-            name="datetime",
-            values=[False, True, True, False, False, True, True, False, False],
-            dtype=Boolean,
-        )
-        assert_series_equal(result, expected)
+        return series
 
 
 class TestFiniteEWMMean:

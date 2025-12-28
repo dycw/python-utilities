@@ -164,7 +164,7 @@ def cp(
 ) -> None:
     """Copy a file/directory."""
     mkdir(dest, sudo=sudo, parent=True)
-    if sudo:
+    if sudo:  # pragma: no cover
         run(*sudo_cmd(*cp_cmd(src, dest)))
     else:
         src, dest = map(Path, [src, dest])
@@ -277,7 +277,7 @@ def mv(
 ) -> None:
     """Move a file/directory."""
     mkdir(dest, sudo=sudo, parent=True)
-    if sudo:
+    if sudo:  # pragma: no cover
         run(*sudo_cmd(*cp_cmd(src, dest)))
     else:
         src, dest = map(Path, [src, dest])

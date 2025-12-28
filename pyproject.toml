@@ -28,7 +28,7 @@
     "pytest-cov >=7.0.0, <7.1",
     "pytest-timeout >=2.4.0, <2.5",
   ]
-  fastapi = ["fastapi >=0.127.1, <0.128"]
+  fastapi = ["fastapi >=0.128.0, <0.129"]
   fastapi-test = ["httpx", "uvicorn"]
   fpdf2 = ["fpdf2 >=2.8.5, <2.9"]
   gitpython = ["gitpython >=3.1.45, <3.2"]
@@ -101,7 +101,7 @@
   name = "dycw-utilities"
   readme = "README.md"
   requires-python = ">= 3.12"
-  version = "0.174.15"
+  version = "0.174.16"
 
   [project.entry-points.pytest11]
     pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -135,7 +135,7 @@
   # bump-my-version
   [tool.bumpversion]
     allow_dirty = true
-    current_version = "0.174.15"
+    current_version = "0.174.16"
 
     [[tool.bumpversion.files]]
       filename = "src/utilities/__init__.py"
@@ -154,6 +154,8 @@
         skipif-mac = 'sys_platform == "darwin"'
         skipif-not-linux = 'sys_platform != "linux"'
         skipif-not-macos = 'sys_platform != "darwin"'
+        skipif-not-windows = 'sys_platform != "windows"'
+        skipif-windows = 'sys_platform == "darwin"'
 
     [tool.coverage.html]
       directory = ".coverage/html"

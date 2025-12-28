@@ -16,7 +16,7 @@ System = Literal["windows", "mac", "linux"]
 def get_system() -> System:
     """Get the system/OS name."""
     sys = system()
-    if sys == "Windows":
+    if sys == "Windows":  # skipif-ci
         return "windows"
     if sys == "Darwin":  # skipif-not-macos
         return "mac"

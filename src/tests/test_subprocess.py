@@ -10,6 +10,8 @@ from pytest import LogCaptureFixture, mark, param, raises
 
 from utilities.grp import EFFECTIVE_GROUP_NAME
 from utilities.iterables import one
+from utilities.pathlib import get_file_group, get_file_owner
+from utilities.permissions import Permissions
 from utilities.pwd import EFFECTIVE_USER_NAME
 from utilities.pytest import skipif_ci, skipif_mac, throttle
 from utilities.subprocess import (
@@ -92,7 +94,10 @@ class TestChMod:
     def test_main(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file.txt"
         path.touch()
-        _ = chmod(path, "u=rw,g=r,o=r")
+        perms = Permissions.from_text("u=rw,g=r,o=r")
+        _ = chmod(path, perms)
+        current = Permissions.from_path(path)
+        assert current == perms
 
 
 class TestChModCmd:
@@ -112,16 +117,24 @@ class TestChOwn:
         path = tmp_path / "file.txt"
         path.touch()
         chown(path, user=EFFECTIVE_USER_NAME)
+        current = get_file_owner(path)
+        assert current == EFFECTIVE_USER_NAME
 
     def test_group(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file.txt"
         path.touch()
         chown(path, group=EFFECTIVE_GROUP_NAME)
+        current_group = get_file_group(path)
+        assert current_group == EFFECTIVE_GROUP_NAME
 
     def test_user_and_group(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file.txt"
         path.touch()
         chown(path, user=EFFECTIVE_USER_NAME, group=EFFECTIVE_GROUP_NAME)
+        current_owner = get_file_owner(path)
+        assert current_owner == EFFECTIVE_USER_NAME
+        current_group = get_file_group(path)
+        assert current_group == EFFECTIVE_GROUP_NAME
 
 
 class TestChOwnCmd:
@@ -164,6 +177,23 @@ class TestCp:
         cp(src, dest)
         assert src.is_dir()
         assert dest.is_dir()
+
+    def test_perms(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
+        dest = tmp_path / "file2.txt"
+        perms = Permissions.from_text("u=rwx,g=,o=")
+        cp(src, dest, perms=perms)
+        current = Permissions.from_path(dest)
+        assert current == perms
+
+    def test_owner(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
+        dest = tmp_path / "file2.txt"
+        cp(src, dest, owner=EFFECTIVE_USER_NAME)
+        current = get_file_owner(dest)
+        assert current == EFFECTIVE_USER_NAME
 
     def test_error(self, *, tmp_path: Path) -> None:
         src = tmp_path / "dir"
@@ -284,6 +314,23 @@ class TestMv:
         mv(src, dest)
         assert not src.is_dir()
         assert dest.is_dir()
+
+    def test_perms(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
+        dest = tmp_path / "file2.txt"
+        perms = Permissions.from_text("u=rwx,g=,o=")
+        mv(src, dest, perms=perms)
+        current = Permissions.from_path(dest)
+        assert current == perms
+
+    def test_owner(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
+        dest = tmp_path / "file2.txt"
+        mv(src, dest, owner=EFFECTIVE_USER_NAME)
+        current = get_file_owner(dest)
+        assert current == EFFECTIVE_USER_NAME
 
     def test_error(self, *, tmp_path: Path) -> None:
         src = tmp_path / "dir"

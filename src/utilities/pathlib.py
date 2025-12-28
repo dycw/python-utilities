@@ -127,7 +127,7 @@ class GetRepoRootError(Exception): ...
 class _GetRepoRootGitNotFoundError(GetRepoRootError):
     @override
     def __str__(self) -> str:
-        return "'git' not found"
+        return "'git' not found"  # pragma: no cover
 
 
 @dataclass(kw_only=True, slots=True)

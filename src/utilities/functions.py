@@ -693,7 +693,7 @@ def second[U](pair: tuple[Any, U], /) -> U:
 
 def skip_if_optimize[**P](func: Callable[P, None], /) -> Callable[P, None]:
     """Skip a function if we are in the optimized mode."""
-    if __debug__:
+    if __debug__:  # pragma: no cover
         return func
 
     @wraps(func)
