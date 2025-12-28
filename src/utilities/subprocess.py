@@ -16,8 +16,8 @@ from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
-from utilities.logging import to_logger
-from utilities.permissions import ensure_perms
+from utilities.logging import add_adapter, to_logger
+from utilities.permissions import Permissions, ensure_perms
 from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
 from utilities.whenever import to_seconds
@@ -347,7 +347,7 @@ def rsync(
     chown_user: str | None = None,
     chown_group: str | None = None,
     exclude: MaybeIterable[str] | None = None,
-    chmod: str | None = None,
+    chmod: PermissionsLike | None = None,
 ) -> None:
     """Remote & local file copying."""
     mkdir_args = maybe_sudo_cmd(*mkdir_cmd(dest, parent=True), sudo=sudo)  # skipif-ci
@@ -454,59 +454,88 @@ def rsync_many(
     user: str,
     hostname: str,
     /,
-    *items: tuple[PathLike, PathLike],
+    *items: tuple[PathLike, PathLike]
+    | tuple[Literal["sudo"], PathLike, PathLike]
+    | tuple[PathLike, PathLike, PermissionsLike],
     retry: Retry | None = None,
     logger: LoggerLike | None = None,
     keep: bool = False,
-    sudo: tuple[PathLike, PathLike] | list[tuple[PathLike, PathLike]] | None = None,
+    batch_mode: bool = True,
+    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    strict_host_key_checking: bool = True,
     print: bool = False,  # noqa: A002
 ) -> None:
-    i = 0
-    cmds: list[str] = []
-    with (
+    cmds: list[list[str]] = []  # skipif-ci
+    with (  # skipif-ci
         TemporaryDirectory() as temp_src,
         yield_ssh_temp_dir(
             user, hostname, retry=retry, logger=logger, keep=keep
         ) as temp_dest,
     ):
-        for src, dest in items:
-            copy_file(src, temp_src / str(i))
-            cmds.extend([mkdir_cmd(dest, parent=True), cp_cmd(str(i), dest)])
-            i += 1
-        for dest, txt in text:
-            write_text(temp_src / str(i), txt)
-            cmds.extend([mkdir_cmd(dest, parent=True), cp_cmd(str(i), dest)])
-            i += 1
-        for src, dest in sudo_files:
-            copy_file(src, temp_src / str(i))
-            cmds.extend([
-                maybe_sudo_cmd(mkdir_cmd(dest, parent=True), sudo=not root),
-                maybe_sudo_cmd(cp_cmd(str(i), dest), sudo=not root),
-            ])
-            i += 1
-        for dest, txt in sudo_text:
-            write_text(temp_src / str(i), txt)
-            cmds.extend([
-                maybe_sudo_cmd(mkdir_cmd(dest, parent=True), sudo=not root),
-                maybe_sudo_cmd(cp_cmd(str(i), dest), sudo=not root),
-            ])
-            i += 1
+        for item in items:
+            match item:
+                case Path() | str() as src, Path() | str() as dest:
+                    cmds.extend(_rsync_many_prepare(src, dest, temp_src, temp_dest))
+                case "sudo", Path() | str() as src, Path() | str() as dest:
+                    cmds.extend(
+                        _rsync_many_prepare(src, dest, temp_src, temp_dest, sudo=True)
+                    )
+                case (
+                    Path() | str() as src,
+                    Path() | str() as dest,
+                    Permissions() | int() | str() as perms,
+                ):
+                    cmds.extend(
+                        _rsync_many_prepare(src, dest, temp_src, temp_dest, perms=perms)
+                    )
+                case never:
+                    assert_never(never)
         rsync(
-            f"{temp_src}/*",
+            temp_src,
+            user,
             hostname,
             temp_dest,
-            root=root,
+            batch_mode=batch_mode,
+            host_key_algorithms=host_key_algorithms,
+            strict_host_key_checking=strict_host_key_checking,
+            print=print,
             retry=retry,
-            archive=True,
-            exclude=exclude,
+            logger=logger,
         )
         ssh(hostname, *cmds, root=root, cd=temp_dest, retry=retry)
 
 
-def _rsync_many_prepare(src: PathLike, dest: PathLike, temp: PathLike, /) -> list[str]:
-    dest, temp = map(Path, [dest, temp])
-    len(list(temp.iterdir()))
-    copy_file()
+def _rsync_many_prepare(
+    src: PathLike,
+    dest: PathLike,
+    temp_src: PathLike,
+    temp_dest: PathLike,
+    /,
+    *,
+    sudo: bool = False,
+    perms: PermissionsLike | None = None,
+) -> list[list[str]]:
+    dest, temp_src, temp_dest = map(Path, [dest, temp_src, temp_dest])
+    n = len(list(temp_src.iterdir()))
+    name = str(n)
+    dest = temp_src / name
+    match src:
+        case Path():
+            cp(src, dest)
+        case str():
+            if Path(src).exists():
+                cp(src, dest)
+            else:
+                tee(dest, src)
+        case never:
+            assert_never(never)
+    cmds: list[list[str]] = [
+        maybe_sudo_cmd(*mkdir_cmd(dest, parent=True), sudo=sudo),
+        maybe_sudo_cmd(*cp_cmd(temp_dest / name, dest), sudo=sudo),
+    ]
+    if perms is not None:
+        cmds.append(maybe_sudo_cmd(*chmod_cmd(dest, perms), sudo=sudo))
+    return cmds
 
 
 ##
