@@ -43,6 +43,7 @@ from utilities.subprocess import (
     rm_cmd,
     rsync,
     rsync_cmd,
+    rsync_many,
     run,
     set_hostname_cmd,
     ssh,
@@ -556,6 +557,29 @@ class TestRsyncCmd:
             "user@hostname:~",
         ]
         assert result == expected
+
+
+class TestRsyncMany:
+    @mark.only
+    def test_multiple_files(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        with (
+            TemporaryDirectory() as src,
+            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp,
+        ):
+            src1, src2 = [src / f"file{i}.txt" for i in [1, 2]]
+            src1.touch()
+            src2.touch()
+            dest1, dest2 = [temp / src.name for src in [src1, src2]]
+            rsync_many(ssh_user, ssh_hostname, (src1, dest1), (src2, dest2))
+            ssh(
+                ssh_user,
+                ssh_hostname,
+                *BASH_LS,
+                input=strip_and_dedent(f"""
+                    if ! [ -d {dest1} ]; then exit 1; fi
+                    if ! [ -f {dest1}/file.txt ]; then exit 1; fi
+                """),
+            )
 
 
 class TestRun:

@@ -502,7 +502,15 @@ def rsync_many(
             retry=retry,
             logger=logger,
         )
-        ssh(hostname, *cmds, root=root, cd=temp_dest, retry=retry)
+        ssh(
+            user,
+            hostname,
+            *BASH_LS,
+            input="\n".join(map(join, cmds)),
+            print=print,
+            retry=retry,
+            logger=logger,
+        )
 
 
 def _rsync_many_prepare(
