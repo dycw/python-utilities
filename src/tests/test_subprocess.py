@@ -10,6 +10,7 @@ from pytest import LogCaptureFixture, mark, param, raises
 
 from utilities.grp import EFFECTIVE_GROUP_NAME
 from utilities.iterables import one
+from utilities.logging import basic_config
 from utilities.pathlib import get_file_group, get_file_owner
 from utilities.permissions import Permissions
 from utilities.pwd import EFFECTIVE_USER_NAME
@@ -20,6 +21,9 @@ from utilities.subprocess import (
     ChownCmdError,
     CpError,
     MvFileError,
+    RsyncCmdError,
+    RsyncCmdNoSourcesError,
+    RsyncCmdSourcesNotFoundError,
     apt_install_cmd,
     cat_cmd,
     cd_cmd,
@@ -558,9 +562,27 @@ class TestRsyncCmd:
         ]
         assert result == expected
 
+    def test_error_no_sources(self) -> None:
+        with raises(
+            RsyncCmdNoSourcesError,
+            match=r"No sources selected to send to user@hostname:dest",
+        ):
+            _ = rsync_cmd([], "user", "hostname", "dest")
+
+    def test_error_sources_not_found(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        with raises(
+            RsyncCmdSourcesNotFoundError,
+            match=r"No sources selected to send to user@hostname:dest",
+        ):
+            _ = rsync_cmd(src, "user", "hostname", "dest")
+
+    # TODO: add test preservation of trailing slash
+
 
 class TestRsyncMany:
     @mark.only
+    @throttle(delta=5 * MINUTE)
     def test_multiple_files(self, *, ssh_user: str, ssh_hostname: str) -> None:
         with (
             TemporaryDirectory() as src,
@@ -571,13 +593,15 @@ class TestRsyncMany:
             src2.touch()
             dest1, dest2 = [temp / src.name for src in [src1, src2]]
             rsync_many(ssh_user, ssh_hostname, (src1, dest1), (src2, dest2))
+            breakpoint()
+
             ssh(
                 ssh_user,
                 ssh_hostname,
                 *BASH_LS,
                 input=strip_and_dedent(f"""
-                    if ! [ -d {dest1} ]; then exit 1; fi
-                    if ! [ -f {dest1}/file.txt ]; then exit 1; fi
+                    if ! [ -f {dest1} ]; then exit 1; fi
+                    if ! [ -f {dest2} ]; then exit 1; fi
                 """),
             )
 

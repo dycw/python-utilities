@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import shutil
 import sys
 from contextlib import contextmanager
@@ -362,13 +363,13 @@ def rsync(
         retry=retry,
         logger=logger,
     )
-    is_dir = any(Path(s).is_dir() for s in always_iterable(src_or_srcs))  # skipif-ci
+    srcs = list(always_iterable(src_or_srcs))  # skipif-ci
     rsync_args = rsync_cmd(  # skipif-ci
-        src_or_srcs,
+        srcs,
         user,
         hostname,
         dest,
-        archive=is_dir,
+        archive=any(Path(s).is_dir() for s in srcs),
         chown_user=chown_user,
         chown_group=chown_group,
         exclude=exclude,
@@ -376,7 +377,6 @@ def rsync(
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
         sudo=sudo,
-        parent=is_dir,
     )
     run(*rsync_args, print=print, retry=retry, logger=logger)  # skipif-ci
     if chmod is not None:  # skipif-ci
@@ -409,7 +409,6 @@ def rsync_cmd(
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     sudo: bool = False,
-    parent: bool = False,
 ) -> list[str]:
     """Command to use 'rsync' to do remote & local file copying."""
     args: list[str] = ["rsync"]
@@ -439,12 +438,43 @@ def rsync_cmd(
     args.extend(["--rsh", join(rsh_args)])
     if sudo:
         args.extend(["--rsync-path", join(sudo_cmd("rsync"))])
-    dest_use = maybe_parent(dest, parent=parent)
-    return [
-        *args,
-        *map(str, always_iterable(src_or_srcs)),
-        f"{user}@{hostname}:{dest_use}",
-    ]
+    srcs = list(always_iterable(src_or_srcs))  # do not Path()
+    if len(srcs) == 0:
+        raise RsyncCmdNoSourcesError(user=user, hostname=hostname, dest=dest)
+    missing = [s for s in srcs if not (p := Path(s)).exists()]
+    if len(missing) >= 1:
+        raise RsyncCmdSourcesNotFoundError(
+            sources=missing, user=user, hostname=hostname, dest=dest
+        )
+    return [*args, *map(str, srcs), f"{user}@{hostname}:{dest}"]
+
+
+@dataclass(kw_only=True, slots=True)
+class RsyncCmdError(Exception):
+    user: str
+    hostname: str
+    dest: PathLike
+
+    @override
+    def __str__(self) -> str:
+        return f"No sources selected to send to {self.user}@{self.hostname}:{self.dest}"
+
+
+@dataclass(kw_only=True, slots=True)
+class RsyncCmdNoSourcesError(RsyncCmdError):
+    @override
+    def __str__(self) -> str:
+        return f"No sources selected to send to {self.user}@{self.hostname}:{self.dest}"
+
+
+@dataclass(kw_only=True, slots=True)
+class RsyncCmdSourcesNotFoundError(RsyncCmdError):
+    sources: list[PathLike]
+
+    @override
+    def __str__(self) -> str:
+        desc = ", ".join(map(repr, map(str, self.sources)))
+        return f"The following sources were not found to send to {self.user}@{self.hostname}:{self.dest}: {desc}"
 
 
 ##
@@ -491,7 +521,7 @@ def rsync_many(
                 case never:
                     assert_never(never)
         rsync(
-            temp_src,
+            f"{temp_src}/",
             user,
             hostname,
             temp_dest,
@@ -502,6 +532,9 @@ def rsync_many(
             retry=retry,
             logger=logger,
         )
+        from time import sleep
+
+        sleep(1)
         ssh(
             user,
             hostname,
@@ -511,6 +544,10 @@ def rsync_many(
             retry=retry,
             logger=logger,
         )
+        joined = "\n".join(map(join, cmds))
+        if False:
+            builtins.print(f"Just ran {joined}")
+            breakpoint()
 
 
 def _rsync_many_prepare(
@@ -1119,6 +1156,9 @@ __all__ = [
     "ChownCmdError",
     "CpError",
     "MvFileError",
+    "RsyncCmdError",
+    "RsyncCmdNoSourcesError",
+    "RsyncCmdSourcesNotFoundError",
     "apt_install_cmd",
     "cd_cmd",
     "chmod",
