@@ -532,9 +532,6 @@ def rsync_many(
             retry=retry,
             logger=logger,
         )
-        from time import sleep
-
-        sleep(1)
         ssh(
             user,
             hostname,
@@ -544,10 +541,6 @@ def rsync_many(
             retry=retry,
             logger=logger,
         )
-        joined = "\n".join(map(join, cmds))
-        if False:
-            builtins.print(f"Just ran {joined}")
-            breakpoint()
 
 
 def _rsync_many_prepare(
@@ -563,15 +556,14 @@ def _rsync_many_prepare(
     dest, temp_src, temp_dest = map(Path, [dest, temp_src, temp_dest])
     n = len(list(temp_src.iterdir()))
     name = str(n)
-    dest = temp_src / name
     match src:
         case Path():
-            cp(src, dest)
+            cp(src, temp_src / name)
         case str():
             if Path(src).exists():
-                cp(src, dest)
+                cp(src, temp_src / name)
             else:
-                tee(dest, src)
+                tee(temp_src / name, src)
         case never:
             assert_never(never)
     cmds: list[list[str]] = [
