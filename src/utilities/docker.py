@@ -269,6 +269,7 @@ def yield_docker_temp_dir(
     logger: LoggerLike | None = None,
     keep: bool = False,
 ) -> Iterator[Path]:
+    """Yield a temporary directory in a Docker container."""
     path = Path(  # skipif-ci
         docker_exec(
             container,

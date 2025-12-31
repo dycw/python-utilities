@@ -33,6 +33,7 @@ from utilities.subprocess import (
     cp_cmd,
     echo_cmd,
     expand_path,
+    git_clone,
     git_clone_cmd,
     git_hard_reset_cmd,
     maybe_parent,
@@ -60,6 +61,7 @@ from utilities.subprocess import (
     tee_cmd,
     touch_cmd,
     uv_run_cmd,
+    yield_git_repo,
     yield_ssh_temp_dir,
 )
 from utilities.tempfile import TemporaryDirectory, TemporaryFile
@@ -233,14 +235,21 @@ class TestExpandPath:
         assert result == expected
 
 
+class TestGitClone:
+    @throttle(delta=5 * MINUTE)
+    def test_main(self, *, tmp_path: Path) -> None:
+        git_clone("https://github.com/dycw/template-generic", tmp_path)
+        assert (tmp_path / ".bumpversion.toml").is_file()
+
+
 class TestGitCloneCmd:
     def test_main(self) -> None:
-        result = git_clone_cmd("https://github.com/foo/bar", "path")
+        result = git_clone_cmd("https://github.com/dycw/template-generic", "path")
         expected = [
             "git",
             "clone",
             "--recurse-submodules",
-            "https://github.com/foo/bar",
+            "https://github.com/dycw/template-generic",
             "path",
         ]
         assert result == expected
@@ -1185,6 +1194,13 @@ class TestUvRunCmd:
             "--arg",
         ]
         assert result == expected
+
+
+class TestYieldGitRepo:
+    @throttle(delta=5 * MINUTE)
+    def test_main(self) -> None:
+        with yield_git_repo("https://github.com/dycw/template-generic") as temp:
+            assert (temp / ".bumpversion.toml").is_file()
 
 
 class TestYieldSSHTempDir:
