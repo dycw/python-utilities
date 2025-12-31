@@ -38,7 +38,6 @@ from utilities.subprocess import (
     git_checkout_cmd,
     git_clone,
     git_clone_cmd,
-    git_hard_reset_cmd,
     maybe_parent,
     maybe_sudo_cmd,
     mkdir,
@@ -240,7 +239,6 @@ class TestExpandPath:
 
 class TestGitBranchCurrent:
     @throttle(delta=5 * MINUTE)
-    @mark.only
     def test_main(self, *, git_repo_url: str, tmp_path: Path) -> None:
         git_clone(git_repo_url, tmp_path)
         result = git_branch_current(tmp_path)
@@ -249,7 +247,6 @@ class TestGitBranchCurrent:
 
 class TestGitCheckout:
     @throttle(delta=5 * MINUTE)
-    @mark.only
     def test_main(self, *, git_repo_url: str, tmp_path: Path) -> None:
         git_clone(git_repo_url, tmp_path)
         git_checkout("branch", tmp_path)
@@ -281,18 +278,6 @@ class TestGitCloneCmd:
     def test_main(self, *, git_repo_url: str) -> None:
         result = git_clone_cmd(git_repo_url, "path")
         expected = ["git", "clone", "--recurse-submodules", git_repo_url, "path"]
-        assert result == expected
-
-
-class TestGitHardResetCmd:
-    def test_main(self) -> None:
-        result = git_hard_reset_cmd()
-        expected = ["git", "hard-reset", "master"]
-        assert result == expected
-
-    def test_branch(self) -> None:
-        result = git_hard_reset_cmd(branch="dev")
-        expected = ["git", "hard-reset", "dev"]
         assert result == expected
 
 

@@ -49,6 +49,13 @@ UPDATE_CA_CERTIFICATES: str = "update-ca-certificates"
 ##
 
 
+def apt_install(package: str, /, *, update: bool = False, sudo: bool = False) -> None:
+    """Install a package."""
+    if update:  # pragma: no cover
+        run(*maybe_sudo_cmd(*APT_UPDATE, sudo=sudo))
+    run(*maybe_sudo_cmd(*apt_install_cmd(package), sudo=sudo))
+
+
 def apt_install_cmd(package: str, /) -> list[str]:
     """Command to use 'apt' to install a package."""
     return ["apt", "install", "-y", package]
@@ -250,21 +257,12 @@ def git_clone(
     rm(path, sudo=sudo)
     run(*maybe_sudo_cmd(*git_clone_cmd(url, path), sudo=sudo))
     if branch is not None:
-        run(*maybe_sudo_cmd(*git_hard_reset_cmd(branch=branch), sudo=sudo), cwd=path)
+        git_checkout(branch, path)
 
 
 def git_clone_cmd(url: str, path: PathLike, /) -> list[str]:
     """Command to use 'git clone' to clone a repository."""
     return ["git", "clone", "--recurse-submodules", url, str(path)]
-
-
-##
-
-
-def git_hard_reset_cmd(*, branch: str | None = None) -> list[str]:
-    """Command to use 'git hard-reset' to hard reset a repository."""
-    branch_use = "master" if branch is None else branch
-    return ["git", "hard-reset", branch_use]
 
 
 ##
@@ -1207,6 +1205,7 @@ __all__ = [
     "RsyncCmdError",
     "RsyncCmdNoSourcesError",
     "RsyncCmdSourcesNotFoundError",
+    "apt_install",
     "apt_install_cmd",
     "cd_cmd",
     "chmod",
@@ -1222,7 +1221,6 @@ __all__ = [
     "git_checkout_cmd",
     "git_clone",
     "git_clone_cmd",
-    "git_hard_reset_cmd",
     "maybe_parent",
     "maybe_sudo_cmd",
     "mkdir",
