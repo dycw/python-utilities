@@ -27,7 +27,6 @@ from utilities.atomicwrites import writer
 from utilities.functions import ensure_bytes, ensure_number
 from utilities.iterables import always_iterable
 from utilities.tempfile import TemporaryDirectory
-from utilities.warnings import suppress_warnings
 
 if TYPE_CHECKING:
     from polars import DataFrame
@@ -300,9 +299,7 @@ def vconcat_charts(*charts: _ChartLike, width: int = _WIDTH) -> VConcatChart:
     charts_use = (c.properties(width=width) for c in charts)
     resize = selection_interval(bind="scales", encodings=["x"])
     charts_use = (c.add_params(resize) for c in charts_use)
-    with suppress_warnings(category=UserWarning):
-        chart = vconcat(*charts_use)
-    return chart.resolve_scale(color="independent", x="shared")
+    return vconcat(*charts_use).resolve_scale(color="independent", x="shared")
 
 
 __all__ = [

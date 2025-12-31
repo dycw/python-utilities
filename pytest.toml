@@ -16,6 +16,7 @@
   filterwarnings = [
     "error",
     "ignore:<aiosqlite.*core.*Connection .*> was delete before being closed:ResourceWarning",                                          # sqlalchemy
+    "ignore:Automatically deduplicated selection parameter with identical configuration:UserWarning",                                  # altair
     "ignore:Exception ignored in.* <coroutine object .* at .*>:pytest.PytestUnraisableExceptionWarning",
     "ignore:Exception in thread Thread-.*:pytest.PytestUnhandledThreadExceptionWarning",
     "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",                                           # jupyter
