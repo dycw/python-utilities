@@ -1,13 +1,38 @@
+[coverage_conditional_plugin]
+  [coverage_conditional_plugin.rules]
+    skipif-ci = '"CI" in os_environ'
+    skipif-ci-and-mac = '("CI" in os_environ) and (sys_platform == "darwin")'
+    skipif-ci-and-not-linux = '("CI" in os_environ) and (sys_platform != "linux")'
+    skipif-ci-or-mac = '("CI" in os_environ) or (sys_platform == "darwin")'
+    skipif-linux = 'sys_platform == "linux"'
+    skipif-mac = 'sys_platform == "darwin"'
+    skipif-not-linux = 'sys_platform != "linux"'
+    skipif-not-macos = 'sys_platform != "darwin"'
+    skipif-not-windows = 'sys_platform != "windows"'
+    skipif-windows = 'sys_platform == "darwin"'
+
 [html]
-directory = ".coverage/html"
+  directory = ".coverage/html"
 
 [report]
-exclude_also = ["@overload", "if TYPE_CHECKING:"]
-fail_under = 100.0
-skip_covered = true
-skip_empty = true
+  exclude_also = [
+    "@overload",
+    "assert_never",
+    "case never:",
+    "if TYPE_CHECKING:",
+  ]
+  fail_under = 100.0
+  skip_covered = true
+  skip_empty = true
 
 [run]
-branch = true
-data_file = ".coverage/data"
-parallel = true
+  branch = true
+  data_file = ".coverage/data"
+  omit = [
+    "src/utilities/__init__.py",
+    "src/utilities/pytest_plugins/*.py",
+    "src/utilities/streamlit.py",
+  ]
+  parallel = true
+  plugins = ["coverage_conditional_plugin"]
+  source = ["src/utilities"]
