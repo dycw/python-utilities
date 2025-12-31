@@ -1052,9 +1052,9 @@ def ssh_keyscan(
     hostname: str, /, *, path: PathLike = KNOWN_HOSTS, port: int | None = None
 ) -> None:
     """Add a known host."""
-    ssh_keygen_remove(hostname, path=path)
-    mkdir(path, parent=True)
-    with Path(path).open(mode="a") as fh:
+    ssh_keygen_remove(hostname, path=path)  # skipif-ci
+    mkdir(path, parent=True)  # skipif-ci
+    with Path(path).open(mode="a") as fh:  # skipif-ci
         _ = fh.write(run(*ssh_keyscan_cmd(hostname, port=port), return_=True))
 
 
