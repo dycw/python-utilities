@@ -44,12 +44,12 @@ class TestAddListener:
                 async def listener_async() -> None:
                     nonlocal called
                     called |= True
-                    await sleep(0.01)
+                    await sleep(0.0)
 
                 _ = add_listener(event, listener_async)
 
         event.emit()
-        await sleep(0.01)
+        await sleep(0.0)
         assert called
 
     @given(root=temp_paths(), sync_or_async=sampled_from(["sync", "async"]))
@@ -69,12 +69,12 @@ class TestAddListener:
             case "async":
 
                 async def listener_async() -> None:
-                    await sleep(0.01)
+                    await sleep(0.0)
 
                 _ = add_listener(event, listener_async, logger=str(root))
 
         event.emit(None)
-        await sleep(0.01)
+        await sleep(0.0)
         pattern = r"listener_a?sync\(\) takes 0 positional arguments but 1 was given"
         contents = buffer.getvalue()
         assert search(pattern, contents)
@@ -105,14 +105,14 @@ class TestAddListener:
             if is_success:
                 nonlocal called
                 called |= True
-                await sleep(0.01)
+                await sleep(0.0)
             else:
                 raise ValueError
 
         async def error_async(event: Event, exception: BaseException, /) -> None:
             nonlocal log
             log.add((event.name(), type(exception)))
-            await sleep(0.01)
+            await sleep(0.0)
 
         match case:
             case "sync":
@@ -122,11 +122,11 @@ class TestAddListener:
             case "async":
                 _ = add_listener(event, listener_async, error=error_async)
         event.emit(True)  # noqa: FBT003
-        await sleep(0.01)
+        await sleep(0.0)
         assert called
         assert log == set()
         event.emit(False)  # noqa: FBT003
-        await sleep(0.01)
+        await sleep(0.0)
         assert log == {(name, ValueError)}
 
     @given(
@@ -164,14 +164,14 @@ class TestAddListener:
             if is_success:
                 nonlocal called
                 called |= True
-                await sleep(0.01)
+                await sleep(0.0)
             else:
                 raise ValueError
 
         async def error_async(event: Event, exception: BaseException, /) -> None:
             nonlocal log
             log.add((event.name(), type(exception)))
-            await sleep(0.01)
+            await sleep(0.0)
 
         match case:
             case "no/sync":
@@ -191,11 +191,11 @@ class TestAddListener:
                     event, listener_async, error=error_async, ignore=ValueError
                 )
         event.emit(True)  # noqa: FBT003
-        await sleep(0.01)
+        await sleep(0.0)
         assert called
         assert log == set()
         event.emit(False)  # noqa: FBT003
-        await sleep(0.01)
+        await sleep(0.0)
         assert log == set()
 
     def test_decorators(self) -> None:
@@ -227,7 +227,7 @@ class TestLiftListener:
 
         async def error(event: Event, exception: BaseException, /) -> None:
             _ = (event, exception)
-            await sleep(0.01)
+            await sleep(0.0)
 
         with raises(
             LiftListenerError,
