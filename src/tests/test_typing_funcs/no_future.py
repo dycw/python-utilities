@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Literal, NotRequired, TypedDict
 
@@ -27,7 +29,7 @@ class DataClassNoFutureNestedInnerFirstOuter:
 
 @dataclass(kw_only=True)
 class DataClassNoFutureNestedOuterFirstOuter:
-    inner: "DataClassNoFutureNestedOuterFirstInner"
+    inner: DataClassNoFutureNestedOuterFirstInner
 
 
 @dataclass(kw_only=True)

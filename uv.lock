@@ -634,7 +634,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.174.20"
+version = "0.174.21"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -706,9 +706,11 @@ dev = [
     { name = "coloredlogs" },
     { name = "coverage-conditional-plugin" },
     { name = "dycw-pytest-only" },
+    { name = "dycw-utilities", extra = ["test"] },
     { name = "pyright", extra = ["nodejs"] },
     { name = "pytest-cov" },
     { name = "pytest-timeout" },
+    { name = "rich" },
 ]
 fastapi = [
     { name = "fastapi" },
@@ -948,9 +950,11 @@ dev = [
     { name = "coloredlogs", specifier = ">=15.0.1,<15.1" },
     { name = "coverage-conditional-plugin", specifier = ">=0.9.0,<0.10" },
     { name = "dycw-pytest-only", specifier = ">=2.1.1,<2.2" },
+    { name = "dycw-utilities", extras = ["test"] },
     { name = "pyright", extras = ["nodejs"], specifier = ">=1.1.407,<1.2" },
     { name = "pytest-cov", specifier = ">=7.0.0,<7.1" },
     { name = "pytest-timeout", specifier = ">=2.4.0,<2.5" },
+    { name = "rich" },
 ]
 fastapi = [{ name = "fastapi", specifier = ">=0.128.0,<0.129" }]
 fastapi-test = [
