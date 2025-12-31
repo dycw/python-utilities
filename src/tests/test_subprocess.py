@@ -887,7 +887,7 @@ class TestRun:
         assert cap.out == "stdout\n"
         assert cap.err == "stderr\n"
 
-    def test_retry_1_attempt(
+    def test_retry_1_attempt_success(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
         name = unique_str()
@@ -903,7 +903,22 @@ class TestRun:
             r"^Retrying 1 more time\(s\)...$", record.message, flags=MULTILINE
         )
 
-    def test_retry_2_attempts(
+    def test_retry_1_attempt_failure(
+        self, *, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
+        name = unique_str()
+        with raises(CalledProcessError):
+            _ = run(
+                *BASH_LS,
+                input=self._test_retry_cmd(tmp_path, 2),
+                retry=(1, None),
+                logger=name,
+            )
+        first, second = (r for r in caplog.records if r.name == name)
+        assert search(r"^Retrying 1 more time\(s\)...$", first.message, flags=MULTILINE)
+        assert not search("Retrying", second.message, flags=MULTILINE)
+
+    def test_retry_2_attempts_success(
         self, *, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
         name = unique_str()
@@ -920,7 +935,27 @@ class TestRun:
             r"^Retrying 1 more time\(s\)...$", second.message, flags=MULTILINE
         )
 
-    def test_retry_and_leep(self, *, tmp_path: Path, caplog: LogCaptureFixture) -> None:
+    def test_retry_2_attempts_failure(
+        self, *, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
+        name = unique_str()
+        with raises(CalledProcessError):
+            _ = run(
+                *BASH_LS,
+                input=self._test_retry_cmd(tmp_path, 3),
+                retry=(2, None),
+                logger=name,
+            )
+        first, second, third = (r for r in caplog.records if r.name == name)
+        assert search(r"^Retrying 2 more time\(s\)...$", first.message, flags=MULTILINE)
+        assert search(
+            r"^Retrying 1 more time\(s\)...$", second.message, flags=MULTILINE
+        )
+        assert not search("Retrying", third.message, flags=MULTILINE)
+
+    def test_retry_and_sleep(
+        self, *, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
         name = unique_str()
         result = run(
             *BASH_LS,
@@ -935,6 +970,19 @@ class TestRun:
             record.message,
             flags=MULTILINE,
         )
+
+    def test_retry_skip(self, *, tmp_path: Path) -> None:
+        def retry_skip(return_code: int, stdout: str, stderr: str, /) -> bool:
+            _ = (return_code, stdout, stderr)
+            return True
+
+        with raises(CalledProcessError):
+            _ = run(
+                *BASH_LS,
+                input=self._test_retry_cmd(tmp_path, 1),
+                retry=(1, SECOND),
+                retry_skip=retry_skip,
+            )
 
     def test_logger(self, *, caplog: LogCaptureFixture) -> None:
         name = unique_str()
@@ -1155,6 +1203,22 @@ class TestSSHOptsCmd:
             "BatchMode=yes",
             "-o",
             "HostKeyAlgorithms=ssh-ed25519",
+            "-T",
+        ]
+        assert result == expected
+
+    def test_port(self) -> None:
+        result = ssh_opts_cmd(port=22)
+        expected = [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "HostKeyAlgorithms=ssh-ed25519",
+            "-o",
+            "StrictHostKeyChecking=yes",
+            "-p",
+            "22",
             "-T",
         ]
         assert result == expected
