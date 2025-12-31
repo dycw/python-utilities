@@ -1,85 +1,11 @@
 name: pull-request
-
 on:
   pull_request:
     branches:
       - master
-
   schedule:
     - cron: 0 0 * * *
 jobs:
-  check-version-bumped:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          cache: pip
-      - run: curl -fsSL
-          https://raw.githubusercontent.com/dycw/remote-scripts/refs/heads/master/scripts/check-version-bumped
-          | sh -s
-
-  ruff:
-    name: ruff
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: astral-sh/ruff-action@v3
-      - run: ruff check --fix
-      - run: ruff format
-
-      - name: Run 'ruff'
-        uses: dycw/action-ruff@latest
-        with:
-          token: ${{secrets.GITHUB_TOKEN}}
-  pyright:
-    name: pyright
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          version: latest
-      - uses: actions/setup-python@v6
-        with:
-          python-version-file: .python-version
-      - run: uv sync
-      - run: uv run pyright
-
-      - name: Run 'pyright'
-        uses: dycw/action-pyright@latest
-        with:
-          token: ${{secrets.GITHUB_TOKEN}}
-          python-version: "3.14"
-  test:
-    name: test / ${{ matrix.os }} / ${{ matrix.version }}
-    env:
-      CI: 1
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, ubuntu-latest]
-        version: ["3.12", "3.13", "3.14"]
-    services:
-      redis:
-        image: ${{ matrix.os == 'ubuntu-latest' && 'redis/redis-stack:latest' ||
-          '' }}
-        ports:
-          - 6379:6379
-    steps:
-      - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          version: latest
-      - uses: actions/setup-python@v6
-        with:
-          python-version: ${{ matrix.version }}
-      - run: uv sync --locked
-      - run: uv run pytest --cov-report=term-missing:skip-covered -n=auto
-    timeout-minutes: 60
   pre-commit:
     runs-on: ubuntu-latest
     steps:
@@ -90,12 +16,26 @@ jobs:
           repos: |-
             dycw/pre-commit-hook-nitpick
             pre-commit/pre-commit-hooks
+  pyright:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run 'pyright'
+        uses: dycw/action-pyright@latest
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+          python-version: "3.12"
   pytest:
     env:
       CI: "1"
     name: pytest (${{matrix.os}}, ${{matrix.python-version}},
       ${{matrix.resolution}})
     runs-on: ${{matrix.os}}
+    services:
+      redis:
+        image: ${{ matrix.os == 'ubuntu-latest' && 'redis/redis-stack:latest' ||
+          '' }}
+        ports:
+          - 6379:6379
     steps:
       - name: Run 'pytest'
         uses: dycw/action-pytest@latest
@@ -116,3 +56,10 @@ jobs:
         resolution:
           - highest
     timeout-minutes: 10
+  ruff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run 'ruff'
+        uses: dycw/action-ruff@latest
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
