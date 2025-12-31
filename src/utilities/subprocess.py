@@ -363,7 +363,6 @@ def rsync(
         logger=logger,
     )
     srcs = list(always_iterable(src_or_srcs))  # skipif-ci
-    any(Path(s).is_dir() for s in srcs)
     rsync_args = rsync_cmd(  # skipif-ci
         srcs,
         user,
@@ -441,7 +440,7 @@ def rsync_cmd(
     srcs = list(always_iterable(src_or_srcs))  # do not Path()
     if len(srcs) == 0:
         raise RsyncCmdNoSourcesError(user=user, hostname=hostname, dest=dest)
-    missing = [s for s in srcs if not (_p := Path(s)).exists()]
+    missing = [s for s in srcs if not Path(s).exists()]
     if len(missing) >= 1:
         raise RsyncCmdSourcesNotFoundError(
             sources=missing, user=user, hostname=hostname, dest=dest
