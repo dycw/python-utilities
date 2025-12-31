@@ -1217,6 +1217,7 @@ __all__ = [
     "cp_cmd",
     "echo_cmd",
     "expand_path",
+    "git_branch_current",
     "git_checkout",
     "git_checkout_cmd",
     "git_clone",
