@@ -1,0 +1,13 @@
+[html]
+directory = ".coverage/html"
+
+[report]
+exclude_also = ["@overload", "if TYPE_CHECKING:"]
+fail_under = 100.0
+skip_covered = true
+skip_empty = true
+
+[run]
+branch = true
+data_file = ".coverage/data"
+parallel = true

@@ -5,6 +5,9 @@
     "--color=auto",
     "--durations=10",
     "--durations-min=10",
+    "--cov=utilities",
+    "--cov-config=.coveragerc.toml",
+    "--cov-report=html",
   ]
   asyncio_default_fixture_loop_scope = "function"
   asyncio_mode = "auto"
@@ -30,7 +33,6 @@
     "ignore:unclosed file <_io.*TextIOWrapper .*>:ResourceWarning",                                                                    # logging
     "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",                                                         # redis
     "ignore:Do not expect file_or_dir in Namespace:UserWarning",                                                                       # pytest
-
   ]
   minversion = "9.0"
   strict = true

@@ -3,6 +3,7 @@ repos:
     rev: 0.7.9
     hooks:
       - args:
+          # - --coverage
           - --description=Miscellaneous Python utilities
           - --github--pull-request--pre-commit
           - --github--pull-request--pyright

@@ -183,62 +183,6 @@
       plugins = ["coverage_conditional_plugin"]
       source = ["src/utilities"]
 
-  # pyright
-  [tool.pyright]
-    deprecateTypingAliases = true
-    enableReachabilityAnalysis = false
-    ignore = ["**/_typeshed/**"]
-    pythonVersion = "3.12"
-    reportCallInDefaultInitializer = true
-    reportImplicitOverride = true
-    reportImplicitStringConcatenation = true
-    reportImportCycles = true
-    reportMissingSuperCall = true
-    reportMissingTypeArgument = false
-    reportMissingTypeStubs = false
-    reportPrivateUsage = false
-    reportPropertyTypeMismatch = true
-    reportUninitializedInstanceVariable = true
-    reportUnknownArgumentType = false
-    reportUnknownMemberType = false
-    reportUnknownParameterType = false
-    reportUnknownVariableType = false
-    reportUnnecessaryComparison = false
-    reportUnnecessaryTypeIgnoreComment = true
-    reportUnusedCallResult = true
-    reportUnusedImport = false
-    reportUnusedVariable = false
-    typeCheckingMode = "strict"
-
-  # pytest
-  [tool.pytest]
-    filterwarnings = [
-      "error",
-      "ignore:<aiosqlite.*core.*Connection .*> was delete before being closed:ResourceWarning",                                          # sqlalchemy
-      "ignore:Exception ignored in.* <coroutine object .* at .*>:pytest.PytestUnraisableExceptionWarning",
-      "ignore:Exception in thread Thread-.*:pytest.PytestUnhandledThreadExceptionWarning",
-      "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",                                           # jupyter
-      "ignore:ResourceTracker called reentrantly for resource cleanup, which is unsupported:UserWarning",
-      "ignore:The garbage collector is trying to clean up non-checked-in connection <AdaptedConnection <Connection(.*)>:RuntimeWarning", # sqlalchemy
-      "ignore:Using fork.* can cause Polars to deadlock in the child process:RuntimeWarning",                                            # polars/pqdm
-      "ignore:coroutine 'AsyncConnection.close' was never awaited:RuntimeWarning",
-      "ignore:loop is closed:ResourceWarning",                                                                                           # redis
-      "ignore:unclosed <StreamWriter .*>:ResourceWarning",                                                                               # redis
-      "ignore:unclosed <socket.*socket .*>:ResourceWarning",                                                                             # redis
-      "ignore:unclosed Connection <redis.*asyncio.*connection.*Connection.*>:ResourceWarning",                                           # redis
-      "ignore:unclosed connection <asyncpg.*connection.*Connection.*>:ResourceWarning",                                                  # asyncpg
-      "ignore:unclosed database in <sqlite3.*Connection .*>:ResourceWarning",                                                            # sqlalchemy
-      "ignore:unclosed event loop <_UnixSelectorEventLoop .*>:ResourceWarning",                                                          # redis
-      "ignore:unclosed file <_io.*TextIOWrapper .*>:ResourceWarning",                                                                    # logging
-      "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",                                                         # redis
-      "ignore:Do not expect file_or_dir in Namespace:UserWarning",                                                                       # pytest
-    ]
-    minversion = "9.0"
-    strict = true
-    testpaths = ["src/tests"]
-    timeout = "600"
-    xfail_strict = true
-
   [tool.uv]
     default-groups = "all"
 
