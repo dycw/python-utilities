@@ -40,6 +40,7 @@ _HOST_KEY_ALGORITHMS = ["ssh-ed25519"]
 APT_UPDATE = ["apt", "update", "-y"]
 BASH_LC = ["bash", "-lc"]
 BASH_LS = ["bash", "-ls"]
+GIT_BRANCH_SHOW_CURRENT = ["git", "branch", "--show-current"]
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
 RESTART_SSHD = ["systemctl", "restart", "sshd"]
 UPDATE_CA_CERTIFICATES: str = "update-ca-certificates"
@@ -216,6 +217,27 @@ def expand_path(
     if sudo:  # pragma: no cover
         return Path(run(*sudo_cmd(*echo_cmd(str(path))), return_=True))
     return Path(path).expanduser()
+
+
+##
+
+
+def git_branch_current(path: PathLike, /) -> str:
+    """Show the current a branch."""
+    return run(*GIT_BRANCH_SHOW_CURRENT, cwd=path, return_=True)
+
+
+##
+
+
+def git_checkout(branch: str, path: PathLike, /) -> None:
+    """Switch a branch."""
+    run(*git_checkout_cmd(branch), cwd=path)
+
+
+def git_checkout_cmd(branch: str, /) -> list[str]:
+    """Command to use 'git checkout' to switch a branch."""
+    return ["git", "checkout", branch]
 
 
 ##
@@ -1175,6 +1197,7 @@ __all__ = [
     "APT_UPDATE",
     "BASH_LC",
     "BASH_LS",
+    "GIT_BRANCH_SHOW_CURRENT",
     "MKTEMP_DIR_CMD",
     "RESTART_SSHD",
     "UPDATE_CA_CERTIFICATES",
@@ -1194,6 +1217,8 @@ __all__ = [
     "cp_cmd",
     "echo_cmd",
     "expand_path",
+    "git_checkout",
+    "git_checkout_cmd",
     "git_clone",
     "git_clone_cmd",
     "git_hard_reset_cmd",

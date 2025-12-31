@@ -33,6 +33,9 @@ from utilities.subprocess import (
     cp_cmd,
     echo_cmd,
     expand_path,
+    git_branch_current,
+    git_checkout,
+    git_checkout_cmd,
     git_clone,
     git_clone_cmd,
     git_hard_reset_cmd,
@@ -235,30 +238,49 @@ class TestExpandPath:
         assert result == expected
 
 
+class TestGitBranchCurrent:
+    @throttle(delta=5 * MINUTE)
+    @mark.only
+    def test_main(self, *, git_repo_url: str, tmp_path: Path) -> None:
+        git_clone(git_repo_url, tmp_path)
+        result = git_branch_current(tmp_path)
+        assert result == "master"
+
+
+class TestGitCheckout:
+    @throttle(delta=5 * MINUTE)
+    @mark.only
+    def test_main(self, *, git_repo_url: str, tmp_path: Path) -> None:
+        git_clone(git_repo_url, tmp_path)
+        git_checkout("branch", tmp_path)
+        result = git_branch_current(tmp_path)
+        assert result == "branch"
+
+
+class TestGitCheckoutCmd:
+    def test_main(self) -> None:
+        result = git_checkout_cmd("branch")
+        expected = ["git", "checkout", "branch"]
+        assert result == expected
+
+
 class TestGitClone:
     @throttle(delta=5 * MINUTE)
-    def test_main(self, *, tmp_path: Path) -> None:
-        git_clone("https://github.com/CogWorksBWSI/GitPracticeRepo", tmp_path)
+    def test_main(self, *, git_repo_url: str, tmp_path: Path) -> None:
+        git_clone(git_repo_url, tmp_path)
         assert (tmp_path / ".git").is_dir()
 
     @throttle(delta=5 * MINUTE)
-    def test_branch(self, *, tmp_path: Path) -> None:
-        git_clone(
-            "https://github.com/CogWorksBWSI/GitPracticeRepo", tmp_path, branch="branch"
-        )
-        assert (tmp_path / ".git").is_dir()
+    def test_branch(self, *, git_repo_url: str, tmp_path: Path) -> None:
+        git_clone(git_repo_url, tmp_path, branch="branch")
+        result = git_branch_current(tmp_path)
+        assert result == "branch"
 
 
 class TestGitCloneCmd:
-    def test_main(self) -> None:
-        result = git_clone_cmd("https://github.com/dycw/template-generic", "path")
-        expected = [
-            "git",
-            "clone",
-            "--recurse-submodules",
-            "https://github.com/dycw/template-generic",
-            "path",
-        ]
+    def test_main(self, *, git_repo_url: str) -> None:
+        result = git_clone_cmd(git_repo_url, "path")
+        expected = ["git", "clone", "--recurse-submodules", git_repo_url, "path"]
         assert result == expected
 
 
@@ -1205,8 +1227,8 @@ class TestUvRunCmd:
 
 class TestYieldGitRepo:
     @throttle(delta=5 * MINUTE)
-    def test_main(self) -> None:
-        with yield_git_repo("https://github.com/CogWorksBWSI/GitPracticeRepo") as temp:
+    def test_main(self, *, git_repo_url: str) -> None:
+        with yield_git_repo(git_repo_url) as temp:
             assert (temp / "README.md").is_file()
 
 
