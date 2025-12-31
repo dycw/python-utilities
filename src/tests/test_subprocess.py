@@ -281,18 +281,6 @@ class TestGitCloneCmd:
         assert result == expected
 
 
-class TestGitHardResetCmd:
-    def test_main(self) -> None:
-        result = git_hard_reset_cmd()
-        expected = ["git", "hard-reset", "master"]
-        assert result == expected
-
-    def test_branch(self) -> None:
-        result = git_hard_reset_cmd(branch="dev")
-        expected = ["git", "hard-reset", "dev"]
-        assert result == expected
-
-
 class TestMaybeParent:
     def test_main(self) -> None:
         result = maybe_parent("~/path")
