@@ -25,8 +25,8 @@ repos:
           - --pytest
           - --pytest--asyncio
           - --pytest--timeout=600
-          - --python-version=3.12
           - --python-package-name=utilities
+          - --python-version=3.12
           - --readme
           - --repo-name=python-utilities
           - --ruff
