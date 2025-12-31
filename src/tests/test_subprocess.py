@@ -17,6 +17,7 @@ from utilities.pytest import skipif_ci, skipif_mac, throttle
 from utilities.subprocess import (
     BASH_LC,
     BASH_LS,
+    KNOWN_HOSTS,
     ChownCmdError,
     CpError,
     MvFileError,
@@ -53,7 +54,10 @@ from utilities.subprocess import (
     set_hostname_cmd,
     ssh,
     ssh_cmd,
-    ssh_keygen_cmd,
+    ssh_keygen_remove,
+    ssh_keygen_remove_cmd,
+    ssh_keyscan,
+    ssh_keyscan_cmd,
     ssh_opts_cmd,
     sudo_cmd,
     sudo_nopasswd_cmd,
@@ -1057,6 +1061,51 @@ class TestSSHCmd:
         assert result == expected
 
 
+class TestSSHKeyScan:
+    @mark.parametrize("touch", [param(True), param(False)])
+    @skipif_ci
+    def test_main(self, *, tmp_path: Path, touch: bool, github_public_key: str) -> None:
+        path = tmp_path / "file.txt"
+        if touch:
+            path.touch()
+        ssh_keyscan("github.com", path=path)
+        result = path.read_text()
+        assert result == github_public_key
+
+
+class TestSSHKeyScanCmd:
+    def test_main(self) -> None:
+        result = ssh_keyscan_cmd("hostname")
+        expected = ["ssh-keyscan", "-q", "-t", "ed25519", "hostname"]
+        assert result == expected
+
+    def test_port(self) -> None:
+        result = ssh_keyscan_cmd("hostname", port=22)
+        expected = ["ssh-keyscan", "-p", "22", "-q", "-t", "ed25519", "hostname"]
+        assert result == expected
+
+
+class TestSSHKeyGenRemove:
+    @mark.parametrize("write", [param(True), param(False)])
+    def test_main(self, *, tmp_path: Path, write: bool, github_public_key: str) -> None:
+        path = tmp_path / "file.txt"
+        if write:
+            _ = path.write_text(github_public_key)
+        ssh_keygen_remove("github.com", path=path)
+        if write:
+            result = path.read_text()
+            assert result == ""
+        else:
+            assert not path.exists()
+
+
+class TestSSHKeyGenRemoveCmd:
+    def test_main(self) -> None:
+        result = ssh_keygen_remove_cmd("hostname")
+        expected = ["ssh-keygen", "-f", str(KNOWN_HOSTS), "-R", "hostname"]
+        assert result == expected
+
+
 class TestSSHOptsCmd:
     def test_main(self) -> None:
         result = ssh_opts_cmd()
@@ -1108,13 +1157,6 @@ class TestSSHOptsCmd:
             "HostKeyAlgorithms=ssh-ed25519",
             "-T",
         ]
-        assert result == expected
-
-
-class TestSSHKeyGenCmd:
-    def test_main(self) -> None:
-        result = ssh_keygen_cmd("hostname")
-        expected = ["ssh-keygen", "-f", "~/.ssh/known_hosts", "-R", "hostname"]
         assert result == expected
 
 
