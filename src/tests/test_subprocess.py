@@ -10,7 +10,6 @@ from pytest import LogCaptureFixture, mark, param, raises
 
 from utilities.grp import EFFECTIVE_GROUP_NAME
 from utilities.iterables import one
-from utilities.logging import basic_config
 from utilities.pathlib import get_file_group, get_file_owner
 from utilities.permissions import Permissions
 from utilities.pwd import EFFECTIVE_USER_NAME
@@ -21,7 +20,6 @@ from utilities.subprocess import (
     ChownCmdError,
     CpError,
     MvFileError,
-    RsyncCmdError,
     RsyncCmdNoSourcesError,
     RsyncCmdSourcesNotFoundError,
     apt_install_cmd,
@@ -412,50 +410,74 @@ class TestRsync:
 
 
 class TestRsyncCmd:
-    def test_main(self) -> None:
-        result = rsync_cmd("src", "user", "hostname", "dest")
-        expected = [
+    def test_main(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
+        result = rsync_cmd(src, "user", "hostname", "dest")
+        expected: list[str] = [
             "rsync",
             "--checksum",
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
+            str(src),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_multiple_sources(self) -> None:
-        result = rsync_cmd(["src1", "src2"], "user", "hostname", "dest")
-        expected = [
+    def test_multiple_sources(self, *, tmp_path: Path) -> None:
+        src1, src2 = [tmp_path / f"file{i}.txt" for i in [1, 2]]
+        src1.touch()
+        src2.touch()
+        result = rsync_cmd([src1, src2], "user", "hostname", "dest")
+        expected: list[str] = [
             "rsync",
             "--checksum",
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src1",
-            "src2",
+            str(src1),
+            str(src2),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_archive(self) -> None:
-        result = rsync_cmd("src", "user", "hostname", "dest", archive=True)
-        expected = [
+    def test_source_with_trailing_slash(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "src"
+        src.mkdir()
+        result = rsync_cmd(f"{src}/", "user", "hostname", "dest")
+        expected: list[str] = [
+            "rsync",
+            "--checksum",
+            "--compress",
+            "--rsh",
+            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
+            f"{src}/",
+            "user@hostname:dest",
+        ]
+        assert result == expected
+
+    def test_archive(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "src"
+        src.mkdir()
+        result = rsync_cmd(src, "user", "hostname", "dest", archive=True)
+        expected: list[str] = [
             "rsync",
             "--archive",
             "--checksum",
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
+            str(src),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_chown_user(self) -> None:
-        result = rsync_cmd("src", "user", "hostname", "dest", chown_user="user2")
-        expected = [
+    def test_chown_user(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
+        result = rsync_cmd(src, "user", "hostname", "dest", chown_user="user2")
+        expected: list[str] = [
             "rsync",
             "--checksum",
             "--chown",
@@ -463,14 +485,16 @@ class TestRsyncCmd:
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
+            str(src),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_chown_group(self) -> None:
-        result = rsync_cmd("src", "user", "hostname", "dest", chown_group="group")
-        expected = [
+    def test_chown_group(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
+        result = rsync_cmd(src, "user", "hostname", "dest", chown_group="group")
+        expected: list[str] = [
             "rsync",
             "--checksum",
             "--chown",
@@ -478,16 +502,18 @@ class TestRsyncCmd:
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
+            str(src),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_chown_user_and_group(self) -> None:
+    def test_chown_user_and_group(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
         result = rsync_cmd(
-            "src", "user", "hostname", "dest", chown_user="user2", chown_group="group"
+            src, "user", "hostname", "dest", chown_user="user2", chown_group="group"
         )
-        expected = [
+        expected: list[str] = [
             "rsync",
             "--checksum",
             "--chown",
@@ -495,14 +521,16 @@ class TestRsyncCmd:
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
+            str(src),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_exclude(self) -> None:
-        result = rsync_cmd("src", "user", "hostname", "dest", exclude="exclude")
-        expected = [
+    def test_exclude(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
+        result = rsync_cmd(src, "user", "hostname", "dest", exclude="exclude")
+        expected: list[str] = [
             "rsync",
             "--checksum",
             "--compress",
@@ -510,16 +538,18 @@ class TestRsyncCmd:
             "exclude",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
+            str(src),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_exclude_multiple(self) -> None:
+    def test_exclude_multiple(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
         result = rsync_cmd(
-            "src", "user", "hostname", "dest", exclude=["exclude1", "exclude2"]
+            src, "user", "hostname", "dest", exclude=["exclude1", "exclude2"]
         )
-        expected = [
+        expected: list[str] = [
             "rsync",
             "--checksum",
             "--compress",
@@ -529,14 +559,16 @@ class TestRsyncCmd:
             "exclude2",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
+            str(src),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_sudo(self) -> None:
-        result = rsync_cmd("src", "user", "hostname", "dest", sudo=True)
-        expected = [
+    def test_sudo(self, *, tmp_path: Path) -> None:
+        src = tmp_path / "file.txt"
+        src.touch()
+        result = rsync_cmd(src, "user", "hostname", "dest", sudo=True)
+        expected: list[str] = [
             "rsync",
             "--checksum",
             "--compress",
@@ -544,21 +576,8 @@ class TestRsyncCmd:
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
             "--rsync-path",
             "sudo rsync",
-            "src",
+            str(src),
             "user@hostname:dest",
-        ]
-        assert result == expected
-
-    def test_parent(self) -> None:
-        result = rsync_cmd("src", "user", "hostname", "~/dest", parent=True)
-        expected = [
-            "rsync",
-            "--checksum",
-            "--compress",
-            "--rsh",
-            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "src",
-            "user@hostname:~",
         ]
         assert result == expected
 
@@ -573,28 +592,40 @@ class TestRsyncCmd:
         src = tmp_path / "file.txt"
         with raises(
             RsyncCmdSourcesNotFoundError,
-            match=r"No sources selected to send to user@hostname:dest",
+            match=r"Sources selected to send to user@hostname:dest but not found: '.*/file\.txt'",
         ):
             _ = rsync_cmd(src, "user", "hostname", "dest")
 
-    # TODO: add test preservation of trailing slash
-
 
 class TestRsyncMany:
-    @mark.only
+    @throttle(delta=5 * MINUTE)
+    def test_single_file(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        with (
+            TemporaryDirectory() as temp_src,
+            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
+        ):
+            src = temp_src / "file.txt"
+            src.touch()
+            dest = temp_dest / src.name
+            rsync_many(ssh_user, ssh_hostname, (src, dest))
+            ssh(
+                ssh_user,
+                ssh_hostname,
+                *BASH_LS,
+                input=f"if ! [ -f {dest} ]; then exit 1; fi",
+            )
+
     @throttle(delta=5 * MINUTE)
     def test_multiple_files(self, *, ssh_user: str, ssh_hostname: str) -> None:
         with (
-            TemporaryDirectory() as src,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp,
+            TemporaryDirectory() as temp_src,
+            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
         ):
-            src1, src2 = [src / f"file{i}.txt" for i in [1, 2]]
+            src1, src2 = [temp_src / f"file{i}.txt" for i in [1, 2]]
             src1.touch()
             src2.touch()
-            dest1, dest2 = [temp / src.name for src in [src1, src2]]
+            dest1, dest2 = [temp_dest / src.name for src in [src1, src2]]
             rsync_many(ssh_user, ssh_hostname, (src1, dest1), (src2, dest2))
-            breakpoint()
-
             ssh(
                 ssh_user,
                 ssh_hostname,
@@ -603,6 +634,29 @@ class TestRsyncMany:
                     if ! [ -f {dest1} ]; then exit 1; fi
                     if ! [ -f {dest2} ]; then exit 1; fi
                 """),
+            )
+
+    @throttle(delta=5 * MINUTE)
+    def test_single_directory(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        with (
+            TemporaryDirectory() as temp_src,
+            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
+        ):
+            src = temp_src / "dir"
+            src.mkdir()
+            (src / "file.txt").touch()
+            dest = temp_dest / src.name
+            rsync_many(ssh_user, ssh_hostname, (src, dest))
+            ssh(
+                ssh_user,
+                ssh_hostname,
+                *BASH_LS,
+                input=(
+                    f"""
+                    if ! [ -d {dest} ]; then exit 1; fi
+                    if ! [ -f {dest}/file.txt ]; then exit 1; fi
+                """
+                ),
             )
 
 

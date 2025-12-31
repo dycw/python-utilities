@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import builtins
 import shutil
 import sys
 from contextlib import contextmanager
@@ -441,7 +440,7 @@ def rsync_cmd(
     srcs = list(always_iterable(src_or_srcs))  # do not Path()
     if len(srcs) == 0:
         raise RsyncCmdNoSourcesError(user=user, hostname=hostname, dest=dest)
-    missing = [s for s in srcs if not (p := Path(s)).exists()]
+    missing = [s for s in srcs if not (_p := Path(s)).exists()]
     if len(missing) >= 1:
         raise RsyncCmdSourcesNotFoundError(
             sources=missing, user=user, hostname=hostname, dest=dest
@@ -474,7 +473,7 @@ class RsyncCmdSourcesNotFoundError(RsyncCmdError):
     @override
     def __str__(self) -> str:
         desc = ", ".join(map(repr, map(str, self.sources)))
-        return f"The following sources were not found to send to {self.user}@{self.hostname}:{self.dest}: {desc}"
+        return f"Sources selected to send to {self.user}@{self.hostname}:{self.dest} but not found: {desc}"
 
 
 ##
