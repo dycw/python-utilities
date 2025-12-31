@@ -8,18 +8,6 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "aeventkit"
-version = "2.1.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5c/8c/c08db1a1910f8d04ec6a524de522edd0bac181bdf94dbb01183f7685cd77/aeventkit-2.1.0.tar.gz", hash = "sha256:4e7d81bb0a67227121da50a23e19e5bbf13eded541a9f4857eeb6b7b857b738a", size = 24703, upload-time = "2025-06-22T15:54:03.961Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/8d/8c/2a4b912b1afa201b25bdd0f5bccf96d5a8b5dccb6131316a8dd2d9cabcc1/aeventkit-2.1.0-py3-none-any.whl", hash = "sha256:962d43f79e731ac43527f2d0defeed118e6dbaa85f1487f5667540ebb8f00729", size = 26678, upload-time = "2025-06-22T15:54:02.141Z" },
-]
-
-[[package]]
 name = "aiohappyeyeballs"
 version = "2.6.1"
 source = { registry = "https://pypi.org/simple" }
@@ -666,9 +654,6 @@ test = [
 ]
 
 [package.dev-dependencies]
-aeventkit = [
-    { name = "aeventkit" },
-]
 altair = [
     { name = "altair" },
 ]
@@ -924,7 +909,6 @@ requires-dist = [
 provides-extras = ["logging", "test"]
 
 [package.metadata.requires-dev]
-aeventkit = [{ name = "aeventkit", specifier = ">=2.1.0,<2.2" }]
 altair = [{ name = "altair", specifier = ">=6.0.0,<6.1" }]
 altair-test = [
     { name = "img2pdf" },

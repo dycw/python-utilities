@@ -3,7 +3,6 @@
   requires = ["uv_build"]
 
 [dependency-groups]
-  aeventkit = ["aeventkit >=2.1.0, <2.2"]
   altair = ["altair >=6.0.0, <6.1"]
   altair-test = ["polars", "img2pdf", "vl-convert-python"]
   atools = ["atools >=0.14.2, <0.15"]
