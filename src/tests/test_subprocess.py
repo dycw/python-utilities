@@ -625,6 +625,7 @@ class TestRsyncCmd:
 
 
 class TestRsyncMany:
+    @skipif_ci
     @throttle(delta=5 * MINUTE)
     def test_single_file(self, *, ssh_user: str, ssh_hostname: str) -> None:
         with (
@@ -642,6 +643,7 @@ class TestRsyncMany:
                 input=f"if ! [ -f {dest} ]; then exit 1; fi",
             )
 
+    @skipif_ci
     @throttle(delta=5 * MINUTE)
     def test_multiple_files(self, *, ssh_user: str, ssh_hostname: str) -> None:
         with (
@@ -663,6 +665,7 @@ class TestRsyncMany:
                 """),
             )
 
+    @skipif_ci
     @throttle(delta=5 * MINUTE)
     def test_single_directory(self, *, ssh_user: str, ssh_hostname: str) -> None:
         with (
