@@ -238,8 +238,15 @@ class TestExpandPath:
 class TestGitClone:
     @throttle(delta=5 * MINUTE)
     def test_main(self, *, tmp_path: Path) -> None:
-        git_clone("https://github.com/dycw/template-generic", tmp_path)
-        assert (tmp_path / ".bumpversion.toml").is_file()
+        git_clone("https://github.com/CogWorksBWSI/GitPracticeRepo", tmp_path)
+        assert (tmp_path / ".git").is_dir()
+
+    @throttle(delta=5 * MINUTE)
+    def test_branch(self, *, tmp_path: Path) -> None:
+        git_clone(
+            "https://github.com/CogWorksBWSI/GitPracticeRepo", tmp_path, branch="branch"
+        )
+        assert (tmp_path / ".git").is_dir()
 
 
 class TestGitCloneCmd:
@@ -1199,8 +1206,8 @@ class TestUvRunCmd:
 class TestYieldGitRepo:
     @throttle(delta=5 * MINUTE)
     def test_main(self) -> None:
-        with yield_git_repo("https://github.com/dycw/template-generic") as temp:
-            assert (temp / ".bumpversion.toml").is_file()
+        with yield_git_repo("https://github.com/CogWorksBWSI/GitPracticeRepo") as temp:
+            assert (temp / "README.md").is_file()
 
 
 class TestYieldSSHTempDir:

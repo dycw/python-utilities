@@ -2639,6 +2639,8 @@ def search_period(
                 return None
             item: dt.datetime = series[index]["start"]
             return index if py_date_time > item else None
+        case never:
+            assert_never(never)
 
 
 ##
