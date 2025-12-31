@@ -971,18 +971,22 @@ class TestRun:
             flags=MULTILINE,
         )
 
-    def test_retry_skip(self, *, tmp_path: Path) -> None:
+    def test_retry_skip(self, *, tmp_path: Path, caplog: LogCaptureFixture) -> None:
         def retry_skip(return_code: int, stdout: str, stderr: str, /) -> bool:
             _ = (return_code, stdout, stderr)
             return True
 
+        name = unique_str()
         with raises(CalledProcessError):
             _ = run(
                 *BASH_LS,
                 input=self._test_retry_cmd(tmp_path, 1),
                 retry=(1, SECOND),
                 retry_skip=retry_skip,
+                logger=name,
             )
+        record = one(r for r in caplog.records if r.name == name)
+        assert not search("Retrying", record.message, flags=MULTILINE)
 
     def test_logger(self, *, caplog: LogCaptureFixture) -> None:
         name = unique_str()
