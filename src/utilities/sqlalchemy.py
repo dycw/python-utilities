@@ -119,7 +119,7 @@ def check_connect(engine: Engine, /) -> bool:
     try:
         with engine.connect() as conn:
             return bool(conn.execute(_SELECT).scalar_one())
-    except gaierror, ConnectionRefusedError, DatabaseError:  # pragma: no cover
+    except (gaierror, ConnectionRefusedError, DatabaseError):  # pragma: no cover
         return False
 
 
@@ -134,7 +134,7 @@ async def check_connect_async(
     try:
         async with timeout_td(timeout, error=error), engine.connect() as conn:
             return bool((await conn.execute(_SELECT)).scalar_one())
-    except gaierror, ConnectionRefusedError, DatabaseError, TimeoutError:
+    except (gaierror, ConnectionRefusedError, DatabaseError, TimeoutError):
         return False
 
 
@@ -834,7 +834,7 @@ def is_orm(obj: Any, /) -> TypeGuard[ORMInstOrClass]:
     if isinstance(obj, type):
         try:
             _ = class_mapper(cast("Any", obj))
-        except ArgumentError, UnmappedClassError:
+        except (ArgumentError, UnmappedClassError):
             return False
         return True
     return is_orm(type(obj))
