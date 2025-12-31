@@ -1114,7 +1114,7 @@ def touch_cmd(path: PathLike, /) -> list[str]:
 
 def uv_run(module: str, /, *args: str) -> None:
     """Run a command or script."""
-    run(*uv_run_cmd(module, *args))
+    run(*uv_run_cmd(module, *args))  # pragma: no cover
 
 
 def uv_run_cmd(module: str, /, *args: str) -> list[str]:
