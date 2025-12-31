@@ -49,6 +49,13 @@ UPDATE_CA_CERTIFICATES: str = "update-ca-certificates"
 ##
 
 
+def apt_install(package: str, /, *, update: bool = False, sudo: bool = False) -> None:
+    """Install a package."""
+    if update:  # pragma: no cover
+        run(*maybe_sudo_cmd(*APT_UPDATE, sudo=sudo))
+    run(*maybe_sudo_cmd(*apt_install_cmd(package), sudo=sudo))
+
+
 def apt_install_cmd(package: str, /) -> list[str]:
     """Command to use 'apt' to install a package."""
     return ["apt", "install", "-y", package]
@@ -1207,6 +1214,7 @@ __all__ = [
     "RsyncCmdError",
     "RsyncCmdNoSourcesError",
     "RsyncCmdSourcesNotFoundError",
+    "apt_install",
     "apt_install_cmd",
     "cd_cmd",
     "chmod",

@@ -240,7 +240,6 @@ class TestExpandPath:
 
 class TestGitBranchCurrent:
     @throttle(delta=5 * MINUTE)
-    @mark.only
     def test_main(self, *, git_repo_url: str, tmp_path: Path) -> None:
         git_clone(git_repo_url, tmp_path)
         result = git_branch_current(tmp_path)
@@ -249,7 +248,6 @@ class TestGitBranchCurrent:
 
 class TestGitCheckout:
     @throttle(delta=5 * MINUTE)
-    @mark.only
     def test_main(self, *, git_repo_url: str, tmp_path: Path) -> None:
         git_clone(git_repo_url, tmp_path)
         git_checkout("branch", tmp_path)
