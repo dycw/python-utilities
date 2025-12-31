@@ -363,6 +363,7 @@ def rsync(
         logger=logger,
     )
     srcs = list(always_iterable(src_or_srcs))  # skipif-ci
+    any(Path(s).is_dir() for s in srcs)
     rsync_args = rsync_cmd(  # skipif-ci
         srcs,
         user,

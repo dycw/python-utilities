@@ -377,9 +377,12 @@ class TestRmCmd:
 class TestRsync:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_main(self, *, ssh_user: str, ssh_hostname: str) -> None:
-        with TemporaryFile() as src, yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp:
-            dest = temp / src.name
+    def test_file(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        with (
+            TemporaryFile() as src,
+            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
+        ):
+            dest = temp_dest / src.name
             rsync(src, ssh_user, ssh_hostname, dest)
             ssh(
                 ssh_user,
@@ -390,14 +393,38 @@ class TestRsync:
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_dir(self, *, ssh_user: str, ssh_hostname: str) -> None:
+    def test_dir_without_trailing_slash(
+        self, *, ssh_user: str, ssh_hostname: str
+    ) -> None:
         with (
             TemporaryDirectory() as src,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp,
+            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
         ):
             (src / "file.txt").touch()
-            dest = temp / src.name
+            name = src.name
+            dest = temp_dest / name
             rsync(src, ssh_user, ssh_hostname, dest)
+            ssh(
+                ssh_user,
+                ssh_hostname,
+                *BASH_LS,
+                input=strip_and_dedent(f"""
+                    if ! [ -d {dest} ]; then exit 1; fi
+                    if ! [ -d {dest}/{name} ]; then exit 1; fi
+                    if ! [ -f {dest}/{name}/file.txt ]; then exit 1; fi
+                """),
+            )
+
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_dir_with_trailing_slash(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        with (
+            TemporaryDirectory() as src,
+            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
+        ):
+            (src / "file.txt").touch()
+            dest = temp_dest / src.name
+            rsync(f"{src}/", ssh_user, ssh_hostname, dest)
             ssh(
                 ssh_user,
                 ssh_hostname,
