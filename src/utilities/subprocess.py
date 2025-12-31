@@ -221,6 +221,16 @@ def expand_path(
 ##
 
 
+def git_clone(
+    url: str, path: PathLike, /, *, sudo: bool = False, branch: str | None = None
+) -> None:
+    """Clone a repository."""
+    rm(path, sudo=sudo)
+    run(*maybe_sudo_cmd(*git_clone_cmd(url, path), sudo=sudo))
+    if branch is not None:
+        run(*maybe_sudo_cmd(*git_hard_reset_cmd(branch=branch), sudo=sudo), cwd=path)
+
+
 def git_clone_cmd(url: str, path: PathLike, /) -> list[str]:
     """Command to use 'git clone' to clone a repository."""
     return ["git", "clone", "--recurse-submodules", url, str(path)]
@@ -1089,14 +1099,26 @@ def tee_cmd(path: PathLike, /, *, append: bool = False) -> list[str]:
 ##
 
 
+def touch(path: PathLike, /, *, sudo: bool = False) -> None:
+    """Change file access and modification times."""
+    run(*maybe_sudo_cmd(*touch_cmd(path), sudo=sudo))
+
+
 def touch_cmd(path: PathLike, /) -> list[str]:
+    """Command to use 'touch' to change file access and modification times."""
     return ["touch", str(path)]
 
 
 ##
 
 
+def uv_run(module: str, /, *args: str) -> None:
+    """Run a command or script."""
+    run(*uv_run_cmd(module, *args))
+
+
 def uv_run_cmd(module: str, /, *args: str) -> list[str]:
+    """Command to use 'uv' to run a command or script."""
     return [
         "uv",
         "run",
@@ -1115,6 +1137,17 @@ def uv_run_cmd(module: str, /, *args: str) -> list[str]:
 
 
 @contextmanager
+def yield_git_repo(url: str, /, *, branch: str | None = None) -> Iterator[Path]:
+    """Yield a temporary git repository."""
+    with TemporaryDirectory() as temp_dir:
+        git_clone(url, temp_dir, branch=branch)
+        yield temp_dir
+
+
+##
+
+
+@contextmanager
 def yield_ssh_temp_dir(
     user: str,
     hostname: str,
@@ -1124,6 +1157,7 @@ def yield_ssh_temp_dir(
     logger: LoggerLike | None = None,
     keep: bool = False,
 ) -> Iterator[Path]:
+    """Yield a temporary directory on a remote machine."""
     path = Path(  # skipif-ci
         ssh(user, hostname, *MKTEMP_DIR_CMD, return_=True, retry=retry, logger=logger)
     )
@@ -1160,6 +1194,7 @@ __all__ = [
     "cp_cmd",
     "echo_cmd",
     "expand_path",
+    "git_clone",
     "git_clone_cmd",
     "git_hard_reset_cmd",
     "maybe_parent",
@@ -1183,7 +1218,10 @@ __all__ = [
     "symlink",
     "symlink_cmd",
     "tee_cmd",
+    "touch",
     "touch_cmd",
+    "uv_run",
     "uv_run_cmd",
+    "yield_git_repo",
     "yield_ssh_temp_dir",
 ]
