@@ -196,6 +196,11 @@ def _drop_table(table: str, /) -> TextClause:
 
 
 @fixture
+def git_repo_url() -> str:
+    return "https://github.com/CogWorksBWSI/GitPracticeRepo"
+
+
+@fixture
 def ssh_user() -> str:
     return "root"
 

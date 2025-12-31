@@ -95,6 +95,17 @@ class TestPGDump:
             docker_container=docker_container,
         )
 
+    @given(
+        url=urls(all_=True),
+        path=temp_paths(),
+        format_=sampled_from(get_literal_elements(_PGDumpFormat)),
+        jobs=integers(min_value=0),
+    )
+    def test_jobs(
+        self, *, url: URL, path: Path, format_: _PGDumpFormat, jobs: int
+    ) -> None:
+        _ = _build_pg_dump(url, path, format_=format_, jobs=jobs)
+
     @given(path=temp_paths(), format_=sampled_from(get_literal_elements(_PGDumpFormat)))
     def test_path(self, *, path: Path, format_: _PGDumpFormat) -> None:
         path = _path_pg_dump(path, format_=format_)
