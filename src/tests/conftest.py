@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from asyncio import sleep
 from contextlib import AbstractContextManager, suppress
 from logging import LogRecord, setLogRecordFactory
 from typing import TYPE_CHECKING
@@ -118,6 +119,7 @@ async def test_async_engine(
     test_async_sqlite_engine: AsyncEngine,
     test_async_postgres_engine: AsyncEngine,
 ) -> AsyncEngine:
+    await sleep(0.0)
     dialect = request.param
     match dialect:
         case "sqlite":
@@ -133,6 +135,7 @@ async def test_async_engine(
 async def test_async_sqlite_engine(*, tmp_path: Path) -> AsyncEngine:
     from utilities.sqlalchemy import create_engine
 
+    await sleep(0.0)
     db_path = tmp_path / "db.sqlite"
     return create_engine("sqlite+aiosqlite", database=str(db_path), async_=True)
 

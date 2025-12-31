@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 from contextlib import suppress
+from dataclasses import dataclass
 from json import loads
 from pathlib import Path
 from shutil import copytree
-from typing import TYPE_CHECKING, Any, assert_never
+from typing import TYPE_CHECKING, Any, assert_never, override
 
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from utilities.functions import ensure_str
 from utilities.operator import is_equal
+from utilities.reprlib import get_repr
 
 if TYPE_CHECKING:
     from polars import DataFrame, Series
@@ -73,7 +75,18 @@ class OrjsonRegressionFixture:
     def _check_fn(self, path1: Path, path2: Path, /) -> None:
         left = loads(path1.read_text())
         right = loads(path2.read_text())
-        assert is_equal(left, right), f"{left=}, {right=}"
+        if not is_equal(left, right):
+            raise OrjsonRegressionError(left=left, right=right)
+
+
+@dataclass(kw_only=True, slots=True)
+class OrjsonRegressionError(Exception):
+    left: Any
+    right: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Left must equal right; got {get_repr(self.left)} and {get_repr(self.right)}"
 
 
 ##
