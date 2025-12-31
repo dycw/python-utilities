@@ -1,12 +1,9 @@
-# build-system
 [build-system]
   build-backend = "uv_build"
   requires = ["uv_build"]
 
-# dependency groups
 [dependency-groups]
-  aeventkit = ["aeventkit >=2.1.0, <2.2"]
-  altair = ["altair >=5.5.0, <5.6"]
+  altair = ["altair >=6.0.0, <6.1"]
   altair-test = ["polars", "img2pdf", "vl-convert-python"]
   atools = ["atools >=0.14.2, <0.15"]
   cachetools = ["cachetools >=6.2.4, <6.3"]
@@ -27,6 +24,8 @@
     "pyright[nodejs] >=1.1.407, <1.2",
     "pytest-cov >=7.0.0, <7.1",
     "pytest-timeout >=2.4.0, <2.5",
+    "dycw-utilities[test]",
+    "rich",
   ]
   fastapi = ["fastapi >=0.128.0, <0.129"]
   fastapi-test = ["httpx", "uvicorn"]
@@ -89,7 +88,6 @@
   tzdata = ["tzdata >=2025.3, <2025.4"]
   whenever-test = ["pathvalidate"]
 
-# project
 [project]
   authors = [{ email = "d.wan@icloud.com", name = "Derek Wan" }]
   dependencies = [
@@ -98,10 +96,11 @@
     "tzlocal >=5.3.1, <5.4",
     "whenever >=0.9.4, <0.10",
   ]
+  description = "Miscellaneous Python utilities"
   name = "dycw-utilities"
   readme = "README.md"
   requires-python = ">= 3.12"
-  version = "0.174.20"
+  version = "0.175.0"
 
   [project.entry-points.pytest11]
     pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -127,203 +126,7 @@
       "testbook >=0.4.2, <0.5",
     ]
 
-  [project.scripts]
-
-# tool
 [tool]
-
-  # bump-my-version
-  [tool.bumpversion]
-    allow_dirty = true
-    current_version = "0.174.20"
-
-    [[tool.bumpversion.files]]
-      filename = "src/utilities/__init__.py"
-      replace = "__version__ = \"{new_version}\""
-      search = "__version__ = \"{current_version}\""
-
-  # coverage
-  [tool.coverage]
-    [tool.coverage.coverage_conditional_plugin]
-      [tool.coverage.coverage_conditional_plugin.rules]
-        skipif-ci = '"CI" in os_environ'
-        skipif-ci-and-mac = '("CI" in os_environ) and (sys_platform == "darwin")'
-        skipif-ci-and-not-linux = '("CI" in os_environ) and (sys_platform != "linux")'
-        skipif-ci-or-mac = '("CI" in os_environ) or (sys_platform == "darwin")'
-        skipif-linux = 'sys_platform == "linux"'
-        skipif-mac = 'sys_platform == "darwin"'
-        skipif-not-linux = 'sys_platform != "linux"'
-        skipif-not-macos = 'sys_platform != "darwin"'
-        skipif-not-windows = 'sys_platform != "windows"'
-        skipif-windows = 'sys_platform == "darwin"'
-
-    [tool.coverage.html]
-      directory = ".coverage/html"
-
-    [tool.coverage.report]
-      exclude_also = [
-        "@overload",
-        "assert_never",
-        "case never:",
-        "if TYPE_CHECKING:",
-      ]
-      fail_under = 100.0
-      skip_covered = true
-      skip_empty = true
-
-    [tool.coverage.run]
-      branch = true
-      data_file = ".coverage/data"
-      omit = [
-        "src/utilities/__init__.py",
-        "src/utilities/pytest_plugins/*.py",
-        "src/utilities/streamlit.py",
-      ]
-      parallel = true
-      plugins = ["coverage_conditional_plugin"]
-      source = ["src/utilities"]
-
-  # pyright
-  [tool.pyright]
-    deprecateTypingAliases = true
-    enableReachabilityAnalysis = false
-    ignore = ["**/_typeshed/**"]
-    pythonVersion = "3.12"
-    reportCallInDefaultInitializer = true
-    reportImplicitOverride = true
-    reportImplicitStringConcatenation = true
-    reportImportCycles = true
-    reportMissingSuperCall = true
-    reportMissingTypeArgument = false
-    reportMissingTypeStubs = false
-    reportPrivateUsage = false
-    reportPropertyTypeMismatch = true
-    reportUninitializedInstanceVariable = true
-    reportUnknownArgumentType = false
-    reportUnknownMemberType = false
-    reportUnknownParameterType = false
-    reportUnknownVariableType = false
-    reportUnnecessaryComparison = false
-    reportUnnecessaryTypeIgnoreComment = true
-    reportUnusedCallResult = true
-    reportUnusedImport = false
-    reportUnusedVariable = false
-    typeCheckingMode = "strict"
-
-  # pytest
-  [tool.pytest]
-    addopts = [
-      "-ra",
-      "-vv",
-      "--color=auto",
-      "--durations=10",
-      "--durations-min=10",
-      "--timeout=600",
-    ]
-    asyncio_default_fixture_loop_scope = "function"
-    asyncio_mode = "auto"
-    collect_imported_tests = false
-    empty_parameter_set_mark = "fail_at_collect"
-    filterwarnings = [
-      "error",
-      "ignore:<aiosqlite.*core.*Connection .*> was delete before being closed:ResourceWarning",                                          # sqlalchemy
-      "ignore:Exception ignored in.* <coroutine object .* at .*>:pytest.PytestUnraisableExceptionWarning",
-      "ignore:Exception in thread Thread-.*:pytest.PytestUnhandledThreadExceptionWarning",
-      "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",                                           # jupyter
-      "ignore:ResourceTracker called reentrantly for resource cleanup, which is unsupported:UserWarning",
-      "ignore:The garbage collector is trying to clean up non-checked-in connection <AdaptedConnection <Connection(.*)>:RuntimeWarning", # sqlalchemy
-      "ignore:Using fork.* can cause Polars to deadlock in the child process:RuntimeWarning",                                            # polars/pqdm
-      "ignore:coroutine 'AsyncConnection.close' was never awaited:RuntimeWarning",
-      "ignore:loop is closed:ResourceWarning",                                                                                           # redis
-      "ignore:unclosed <StreamWriter .*>:ResourceWarning",                                                                               # redis
-      "ignore:unclosed <socket.*socket .*>:ResourceWarning",                                                                             # redis
-      "ignore:unclosed Connection <redis.*asyncio.*connection.*Connection.*>:ResourceWarning",                                           # redis
-      "ignore:unclosed connection <asyncpg.*connection.*Connection.*>:ResourceWarning",                                                  # asyncpg
-      "ignore:unclosed database in <sqlite3.*Connection .*>:ResourceWarning",                                                            # sqlalchemy
-      "ignore:unclosed event loop <_UnixSelectorEventLoop .*>:ResourceWarning",                                                          # redis
-      "ignore:unclosed file <_io.*TextIOWrapper .*>:ResourceWarning",                                                                    # logging
-      "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",                                                         # redis
-      "ignore:Do not expect file_or_dir in Namespace:UserWarning",                                                                       # pytest
-    ]
-    minversion = "9.0"
-    strict = true
-    testpaths = ["src/tests"]
-    timeout = "600"
-    xfail_strict = true
-
-  # ruff
-  [tool.ruff]
-    src = ["src"]
-    target-version = "py312"
-    unsafe-fixes = true
-
-    [tool.ruff.format]
-      preview = true
-      skip-magic-trailing-comma = true
-
-    [tool.ruff.lint]
-      explicit-preview-rules = true
-      fixable = ["ALL"]
-      ignore = [
-        "ANN401",   # any-type
-        "A005",     # stdlib-module-shadowing
-        "ASYNC109", # async-function-with-timeout
-        "C901",     # complex-structure
-        "CPY",      # flake8-copyright
-        "D",        # pydocstyle
-        "DOC",      # pydoclint
-        "E501",     # line-too-long
-        "PD",       # pandas-vet
-        "PERF203",  # try-except-in-loop
-        "PLC0415",  # import-outside-top-level
-        "PLR0911",  # too-many-return-statements
-        "PLR0912",  # too-many-branches
-        "PLR0913",  # too-many-arguments
-        "PLR0915",  # too-many-statements
-        "PLR2004",  # magic-value-comparison
-        "PT012",    # pytest-raises-with-multiple-statements
-        "PT013",    # pytest-incorrect-pytest-import
-        "S202",     # tarfile-unsafe-members
-        "S310",     # suspicious-url-open-usage
-        "S311",     # suspicious-non-cryptographic-random-usage
-        "S602",     # subprocess-popen-with-shell-equals-true
-        "S603",     # subprocess-without-shell-equals-true
-        "S607",     # start-process-with-partial-path
-        # preview
-        "S101", # assert
-        # formatter
-        "W191",   # tab-indentation
-        "E111",   # indentation-with-invalid-multiple
-        "E114",   # indentation-with-invalid-multiple-comment
-        "E117",   # over-indented
-        "COM812", # missing-trailing-comma
-        "COM819", # prohibited-trailing-comma
-        "ISC001", # single-line-implicit-string-concatenation
-        "ISC002", # multi-line-implicit-string-concatenation
-      ]
-      preview = true
-      select = [
-        "ALL",
-        "RUF022", # unsorted-dunder-all
-      ]
-
-      [tool.ruff.lint.extend-per-file-ignores]
-        "src/tests/**/*.py" = [
-          "S101",   # assert
-          "SLF001", # private-member-access
-        ]
-        "src/tests/test_typing_funcs/no_future.py" = [
-          "I002",
-        ] # missing-required-import
-
-      [tool.ruff.lint.flake8-tidy-imports]
-        ban-relative-imports = "all"
-
-      [tool.ruff.lint.isort]
-        required-imports = ["from __future__ import annotations"]
-        split-on-trailing-comma = false
-
-  # uv
   [tool.uv]
     default-groups = "all"
 

@@ -145,7 +145,9 @@ def plot_dataframes(
     ]
     zoom = selection_interval(bind="scales", encodings=["x"])
     chart = (
-        vconcat(*layers).add_params(zoom).resolve_scale(color="independent", x="shared")
+        vconcat_charts(*layers)
+        .add_params(zoom)
+        .resolve_scale(color="independent", x="shared")
     )
     if title is not None:
         chart = chart.properties(title=title)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from asyncio import Queue, run
+from asyncio import Queue, run, sleep
 from collections.abc import AsyncIterable, ItemsView, Iterable, KeysView, ValuesView
 from contextlib import asynccontextmanager
 from re import DOTALL, search
@@ -203,6 +203,7 @@ class TestChainAsync:
     @given(n=integers(0, 10))
     async def test_async(self, *, n: int) -> None:
         async def range_async(n: int, /) -> AsyncIterator[int]:
+            await sleep(0.0)
             for i in range(n):
                 yield i
 
@@ -220,6 +221,7 @@ class TestEnhancedTaskGroup:
 
         @asynccontextmanager
         async def yield_true() -> AsyncIterator[None]:
+            await sleep(0.0)
             nonlocal flag
             try:
                 flag = True
@@ -316,7 +318,7 @@ class TestEnhancedTaskGroup:
 class TestGetCoroutineName:
     def test_main(self) -> None:
         async def func() -> None:
-            return None
+            await sleep(0.0)
 
         result = get_coroutine_name(func)
         expected = "func"
@@ -369,6 +371,7 @@ class TestOneAsync:
 
     def _lift[T](self, iterable: Iterable[T], /) -> AsyncIterable[T]:
         async def lifted() -> AsyncIterator[Any]:
+            await sleep(0.0)
             for i in iterable:
                 yield i
 

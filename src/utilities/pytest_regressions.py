@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 from contextlib import suppress
+from dataclasses import dataclass
 from json import loads
 from pathlib import Path
 from shutil import copytree
-from typing import TYPE_CHECKING, Any, assert_never
+from typing import TYPE_CHECKING, Any, assert_never, override
 
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from utilities.functions import ensure_str
 from utilities.operator import is_equal
+from utilities.reprlib import get_repr
 
 if TYPE_CHECKING:
     from polars import DataFrame, Series
@@ -70,10 +72,28 @@ class OrjsonRegressionFixture:
             check_fn=self._check_fn,
         )
 
-    def _check_fn(self, path1: Path, path2: Path, /) -> None:
-        left = loads(path1.read_text())
-        right = loads(path2.read_text())
-        assert is_equal(left, right), f"{left=}, {right=}"
+    def _check_fn(self, path_obtained: Path, path_existing: Path, /) -> None:
+        obtained = loads(path_obtained.read_text())
+        existing = loads(path_existing.read_text())
+        if not is_equal(obtained, existing):
+            raise OrjsonRegressionError(
+                path_obtained=path_obtained,
+                path_existing=path_existing,
+                obtained=obtained,
+                existing=existing,
+            )
+
+
+@dataclass(kw_only=True, slots=True)
+class OrjsonRegressionError(Exception):
+    path_obtained: Path
+    path_existing: Path
+    obtained: Any
+    existing: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Obtained object (at {str(self.path_obtained)!r}) and existing object (at {str(self.path_existing)!r}) differ; got {get_repr(self.obtained)} and {get_repr(self.existing)}"
 
 
 ##

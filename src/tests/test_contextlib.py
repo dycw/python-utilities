@@ -55,6 +55,7 @@ async def _test_enhanced_async_context_manager_core(
 
     @enhanced_async_context_manager
     async def yield_marker() -> AsyncIterator[None]:
+        await asyncio.sleep(0.0)
         try:
             yield
         finally:
@@ -142,6 +143,7 @@ class TestEnhancedContextManager:
             sigterm=sigterm,
         )
         async def yield_marker() -> AsyncIterator[None]:
+            await asyncio.sleep(0.0)
             try:
                 yield
             finally:
@@ -155,6 +157,7 @@ class TestEnhancedContextManager:
     def test_async_signature(self) -> None:
         @enhanced_async_context_manager
         async def yield_marker(x: int, y: int, /) -> AsyncIterator[int]:
+            await asyncio.sleep(0.0)
             yield x + y
 
         sig = set(signature(yield_marker).parameters)
