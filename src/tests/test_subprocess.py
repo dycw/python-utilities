@@ -1063,6 +1063,7 @@ class TestSSHCmd:
 
 class TestSSHKeyScan:
     @mark.parametrize("touch", [param(True), param(False)])
+    @skipif_ci
     def test_main(self, *, tmp_path: Path, touch: bool, github_public_key: str) -> None:
         path = tmp_path / "file.txt"
         if touch:
