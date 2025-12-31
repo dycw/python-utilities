@@ -38,7 +38,6 @@ from utilities.subprocess import (
     git_checkout_cmd,
     git_clone,
     git_clone_cmd,
-    git_hard_reset_cmd,
     maybe_parent,
     maybe_sudo_cmd,
     mkdir,
