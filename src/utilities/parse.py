@@ -284,7 +284,7 @@ def _parse_object_extra(cls: Any, text: str, extra: ParseObjectExtra, /) -> Any:
     except KeyError:
         try:
             parser = one(p for c, p in extra.items() if is_subclass_gen(cls, c))
-        except OneEmptyError, TypeError:
+        except (OneEmptyError, TypeError):
             raise _ParseObjectParseError(type_=cls, text=text) from None
         except OneNonUniqueError as error:
             raise _ParseObjectExtraNonUniqueError(

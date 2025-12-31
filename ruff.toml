@@ -1,5 +1,5 @@
-target-version = "py314"
-unsafe-fixes = false
+target-version = "py312"
+unsafe-fixes = true
 
 [format]
   preview = true
