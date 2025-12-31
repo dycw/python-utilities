@@ -41,12 +41,10 @@ APT_UPDATE = ["apt", "update", "-y"]
 BASH_LC = ["bash", "-lc"]
 BASH_LS = ["bash", "-ls"]
 GIT_BRANCH_SHOW_CURRENT = ["git", "branch", "--show-current"]
+KNOWN_HOSTS = Path.home() / ".ssh/known_hosts"
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
 RESTART_SSHD = ["systemctl", "restart", "sshd"]
 UPDATE_CA_CERTIFICATES: str = "update-ca-certificates"
-
-
-##
 
 
 ##
@@ -1050,9 +1048,38 @@ def ssh_opts_cmd(
 ##
 
 
-def ssh_keygen_cmd(hostname: str, /) -> list[str]:
-    """Command to use 'ssh-keygen' to add a known host."""
-    return ["ssh-keygen", "-f", "~/.ssh/known_hosts", "-R", hostname]
+def ssh_keyscan(hostname: str, /, *, path: PathLike, port: int | None = None) -> None:
+    """Add a known host."""
+    path = Path(path)
+    if path.is_file():
+        ssh_keygen_remove(hostname, path=path)
+    else:
+        mkdir(KNOWN_HOSTS, parent=True)
+    with KNOWN_HOSTS.open(mode="a") as fh:
+        _ = fh.write(run(*ssh_keyscan_cmd(hostname, port=port), return_=True))
+
+
+def ssh_keyscan_cmd(hostname: str, /, *, port: int | None = None) -> list[str]:
+    """Command to use 'ssh-keyscan' to add a known host."""
+    args: list[str] = ["ssh-keyscan"]
+    if port is not None:
+        args.extend(["-p", str(port)])
+    return [*args, "-q", "-t", "ed25519", hostname]
+
+
+##
+
+
+def ssh_keygen_remove(hostname: str, /, *, path: PathLike = KNOWN_HOSTS) -> None:
+    """Remove a known host."""
+    run(*ssh_keygen_remove_cmd(hostname, path=path))
+
+
+def ssh_keygen_remove_cmd(
+    hostname: str, /, *, path: PathLike = KNOWN_HOSTS
+) -> list[str]:
+    """Command to use 'ssh-keygen' to remove a known host."""
+    return ["ssh-keygen", "-f", str(path), "-R", hostname]
 
 
 ##
@@ -1338,6 +1365,9 @@ __all__ = [
     "set_hostname_cmd",
     "ssh",
     "ssh_cmd",
+    "ssh_keygen_remove",
+    "ssh_keygen_remove",
+    "ssh_keyscan_cmd",
     "ssh_opts_cmd",
     "sudo_cmd",
     "sudo_nopasswd_cmd",

@@ -17,6 +17,7 @@ from utilities.pytest import skipif_ci, skipif_mac, throttle
 from utilities.subprocess import (
     BASH_LC,
     BASH_LS,
+    KNOWN_HOSTS,
     ChownCmdError,
     CpError,
     MvFileError,
@@ -53,7 +54,9 @@ from utilities.subprocess import (
     set_hostname_cmd,
     ssh,
     ssh_cmd,
-    ssh_keygen_cmd,
+    ssh_keygen_remove,
+    ssh_keygen_remove_cmd,
+    ssh_keyscan_cmd,
     ssh_opts_cmd,
     sudo_cmd,
     sudo_nopasswd_cmd,
@@ -1111,10 +1114,27 @@ class TestSSHOptsCmd:
         assert result == expected
 
 
-class TestSSHKeyGenCmd:
+class TestSSHKeyScanCmd:
     def test_main(self) -> None:
-        result = ssh_keygen_cmd("hostname")
-        expected = ["ssh-keygen", "-f", "~/.ssh/known_hosts", "-R", "hostname"]
+        result = ssh_keyscan_cmd("hostname")
+        expected = ["ssh-keyscan", "-q", "-t", "ed25519", "hostname"]
+        assert result == expected
+
+    def test_port(self) -> None:
+        result = ssh_keyscan_cmd("hostname", port=22)
+        expected = ["ssh-keyscan", "-p", "22", "-q", "-t", "ed25519", "hostname"]
+        assert result == expected
+
+
+class TestSSHKeyGenRemove:
+    def test_main(self) -> None:
+        ssh_keygen_remove("hostname")
+
+
+class TestSSHKeyGenRemoveCmd:
+    def test_main(self) -> None:
+        result = ssh_keygen_remove_cmd("hostname")
+        expected = ["ssh-keygen", "-f", str(KNOWN_HOSTS), "-R", "hostname"]
         assert result == expected
 
 
