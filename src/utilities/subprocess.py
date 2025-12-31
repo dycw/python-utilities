@@ -1054,8 +1054,8 @@ def ssh_keyscan(hostname: str, /, *, path: PathLike, port: int | None = None) ->
     if path.is_file():
         ssh_keygen_remove(hostname, path=path)
     else:
-        mkdir(KNOWN_HOSTS, parent=True)
-    with KNOWN_HOSTS.open(mode="a") as fh:
+        mkdir(path, parent=True)
+    with path.open(mode="a") as fh:
         _ = fh.write(run(*ssh_keyscan_cmd(hostname, port=port), return_=True))
 
 
@@ -1072,7 +1072,9 @@ def ssh_keyscan_cmd(hostname: str, /, *, port: int | None = None) -> list[str]:
 
 def ssh_keygen_remove(hostname: str, /, *, path: PathLike = KNOWN_HOSTS) -> None:
     """Remove a known host."""
-    run(*ssh_keygen_remove_cmd(hostname, path=path))
+    path = Path(path)
+    if path.exists():
+        run(*ssh_keygen_remove_cmd(hostname, path=path))
 
 
 def ssh_keygen_remove_cmd(
