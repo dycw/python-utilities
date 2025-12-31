@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Literal
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import sampled_from
 from polars import int_range
+from pytest import raises
 
 from tests.test_typing_funcs.with_future import (
     DataClassFutureInt,
@@ -12,6 +13,7 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureNestedOuterFirstInner,
     DataClassFutureNestedOuterFirstOuter,
 )
+from utilities.pytest_regressions import OrjsonRegressionError
 
 if TYPE_CHECKING:
     from utilities.pytest_regressions import (
@@ -44,14 +46,6 @@ class TestPolarsRegressionFixture:
 
 
 class TestOrjsonRegressionFixture:
-    def test_dataclass_nested(
-        self, *, orjson_regression: OrjsonRegressionFixture
-    ) -> None:
-        obj = DataClassFutureNestedOuterFirstOuter(
-            inner=DataClassFutureNestedOuterFirstInner(int_=0)
-        )
-        orjson_regression.check(obj)
-
     def test_dataclass_int(self, *, orjson_regression: OrjsonRegressionFixture) -> None:
         obj = DataClassFutureInt(int_=0)
         orjson_regression.check(obj)
@@ -66,3 +60,19 @@ class TestOrjsonRegressionFixture:
     ) -> None:
         obj = DataClassFutureLiteral(truth=truth)
         orjson_regression.check(obj, suffix=truth)
+
+    def test_dataclass_nested(
+        self, *, orjson_regression: OrjsonRegressionFixture
+    ) -> None:
+        obj = DataClassFutureNestedOuterFirstOuter(
+            inner=DataClassFutureNestedOuterFirstInner(int_=0)
+        )
+        orjson_regression.check(obj)
+
+    def test_error(self, *, orjson_regression: OrjsonRegressionFixture) -> None:
+        orjson_regression.check(False)  # noqa: FBT003
+        with raises(
+            OrjsonRegressionError,
+            match=r"Obtained object \(at '.+'\) and existing object \(at '.+'\) differ; got True and False",
+        ):
+            orjson_regression.check(True)  # noqa: FBT003

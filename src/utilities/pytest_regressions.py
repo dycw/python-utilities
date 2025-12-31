@@ -72,21 +72,28 @@ class OrjsonRegressionFixture:
             check_fn=self._check_fn,
         )
 
-    def _check_fn(self, path1: Path, path2: Path, /) -> None:
-        left = loads(path1.read_text())
-        right = loads(path2.read_text())
-        if not is_equal(left, right):
-            raise OrjsonRegressionError(left=left, right=right)
+    def _check_fn(self, path_obtained: Path, path_existing: Path, /) -> None:
+        obtained = loads(path_obtained.read_text())
+        existing = loads(path_existing.read_text())
+        if not is_equal(obtained, existing):
+            raise OrjsonRegressionError(
+                path_obtained=path_obtained,
+                path_existing=path_existing,
+                obtained=obtained,
+                existing=existing,
+            )
 
 
 @dataclass(kw_only=True, slots=True)
 class OrjsonRegressionError(Exception):
-    left: Any
-    right: Any
+    path_obtained: Path
+    path_existing: Path
+    obtained: Any
+    existing: Any
 
     @override
     def __str__(self) -> str:
-        return f"Left must equal right; got {get_repr(self.left)} and {get_repr(self.right)}"
+        return f"Obtained object (at {str(self.path_obtained)!r}) and existing object (at {str(self.path_existing)!r}) differ; got {get_repr(self.obtained)} and {get_repr(self.existing)}"
 
 
 ##
