@@ -1050,12 +1050,9 @@ def ssh_opts_cmd(
 
 def ssh_keyscan(hostname: str, /, *, path: PathLike, port: int | None = None) -> None:
     """Add a known host."""
-    path = Path(path)
-    if path.is_file():
-        ssh_keygen_remove(hostname, path=path)
-    else:
-        mkdir(path, parent=True)
-    with path.open(mode="a") as fh:
+    ssh_keygen_remove(hostname, path=path)
+    mkdir(path, parent=True)
+    with Path(path).open(mode="a") as fh:
         _ = fh.write(run(*ssh_keyscan_cmd(hostname, port=port), return_=True))
 
 
@@ -1368,7 +1365,8 @@ __all__ = [
     "ssh",
     "ssh_cmd",
     "ssh_keygen_remove",
-    "ssh_keygen_remove",
+    "ssh_keygen_remove_cmd",
+    "ssh_keyscan",
     "ssh_keyscan_cmd",
     "ssh_opts_cmd",
     "sudo_cmd",
