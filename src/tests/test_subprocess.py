@@ -239,7 +239,7 @@ class TestGitClone:
     @throttle(delta=5 * MINUTE)
     def test_main(self, *, tmp_path: Path) -> None:
         git_clone("https://github.com/dycw/template-generic", tmp_path)
-        assert (tmp_path / "pyproject.toml").is_file()
+        assert (tmp_path / ".bumpversion.toml").is_file()
 
 
 class TestGitCloneCmd:
@@ -1200,7 +1200,7 @@ class TestYieldGitRepo:
     @throttle(delta=5 * MINUTE)
     def test_main(self) -> None:
         with yield_git_repo("https://github.com/dycw/template-generic") as temp:
-            assert (temp / "pyproject.toml").is_file()
+            assert (temp / ".bumpversion.toml").is_file()
 
 
 class TestYieldSSHTempDir:
