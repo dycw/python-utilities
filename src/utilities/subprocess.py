@@ -1048,7 +1048,9 @@ def ssh_opts_cmd(
 ##
 
 
-def ssh_keyscan(hostname: str, /, *, path: PathLike, port: int | None = None) -> None:
+def ssh_keyscan(
+    hostname: str, /, *, path: PathLike = KNOWN_HOSTS, port: int | None = None
+) -> None:
     """Add a known host."""
     ssh_keygen_remove(hostname, path=path)
     mkdir(path, parent=True)
