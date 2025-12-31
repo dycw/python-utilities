@@ -592,7 +592,7 @@ def _is_namedtuple_core(obj: Any, /) -> bool:
     """Check if an object is an instance of a dataclass."""
     try:
         (base,) = obj.__orig_bases__
-    except AttributeError, ValueError:
+    except (AttributeError, ValueError):
         return False
     return base is NamedTuple
 
