@@ -56,7 +56,6 @@ from utilities.subprocess import (
     ssh_cmd,
     ssh_keygen_remove,
     ssh_keygen_remove_cmd,
-    ssh_keyscan,
     ssh_keyscan_cmd,
     ssh_opts_cmd,
     sudo_cmd,
@@ -1157,6 +1156,30 @@ class TestSSHOptsCmd:
             "HostKeyAlgorithms=ssh-ed25519",
             "-T",
         ]
+        assert result == expected
+
+
+class TestSSHKeyScanCmd:
+    def test_main(self) -> None:
+        result = ssh_keyscan_cmd("hostname")
+        expected = ["ssh-keyscan", "-q", "-t", "ed25519", "hostname"]
+        assert result == expected
+
+    def test_port(self) -> None:
+        result = ssh_keyscan_cmd("hostname", port=22)
+        expected = ["ssh-keyscan", "-p", "22", "-q", "-t", "ed25519", "hostname"]
+        assert result == expected
+
+
+class TestSSHKeyGenRemove:
+    def test_main(self) -> None:
+        ssh_keygen_remove("hostname")
+
+
+class TestSSHKeyGenRemoveCmd:
+    def test_main(self) -> None:
+        result = ssh_keygen_remove_cmd("hostname")
+        expected = ["ssh-keygen", "-f", str(KNOWN_HOSTS), "-R", "hostname"]
         assert result == expected
 
 

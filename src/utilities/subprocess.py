@@ -50,9 +50,6 @@ UPDATE_CA_CERTIFICATES: str = "update-ca-certificates"
 ##
 
 
-##
-
-
 def apt_install(package: str, /, *, update: bool = False, sudo: bool = False) -> None:
     """Install a package."""
     if update:  # pragma: no cover
@@ -1051,13 +1048,14 @@ def ssh_opts_cmd(
 ##
 
 
-def ssh_keyscan(
-    hostname: str, /, *, path: PathLike = KNOWN_HOSTS, port: int | None = None
-) -> None:
+def ssh_keyscan(hostname: str, /, *, path: PathLike, port: int | None = None) -> None:
     """Add a known host."""
-    ssh_keygen_remove(hostname, path=path)  # skipif-ci
-    mkdir(path, parent=True)  # skipif-ci
-    with Path(path).open(mode="a") as fh:  # skipif-ci
+    path = Path(path)
+    if path.is_file():
+        ssh_keygen_remove(hostname, path=path)
+    else:
+        mkdir(KNOWN_HOSTS, parent=True)
+    with KNOWN_HOSTS.open(mode="a") as fh:
         _ = fh.write(run(*ssh_keyscan_cmd(hostname, port=port), return_=True))
 
 
@@ -1074,9 +1072,7 @@ def ssh_keyscan_cmd(hostname: str, /, *, port: int | None = None) -> list[str]:
 
 def ssh_keygen_remove(hostname: str, /, *, path: PathLike = KNOWN_HOSTS) -> None:
     """Remove a known host."""
-    path = Path(path)
-    if path.exists():
-        run(*ssh_keygen_remove_cmd(hostname, path=path))
+    run(*ssh_keygen_remove_cmd(hostname, path=path))
 
 
 def ssh_keygen_remove_cmd(
@@ -1370,8 +1366,7 @@ __all__ = [
     "ssh",
     "ssh_cmd",
     "ssh_keygen_remove",
-    "ssh_keygen_remove_cmd",
-    "ssh_keyscan",
+    "ssh_keygen_remove",
     "ssh_keyscan_cmd",
     "ssh_opts_cmd",
     "sudo_cmd",
