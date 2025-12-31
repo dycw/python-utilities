@@ -1132,9 +1132,108 @@ def touch_cmd(path: PathLike, /) -> list[str]:
 ##
 
 
-def uv_run(module: str, /, *args: str) -> None:
+@overload
+def uv_run(
+    module: str,
+    /,
+    *args: str,
+    cwd: PathLike | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[True],
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def uv_run(
+    module: str,
+    /,
+    *args: str,
+    cwd: PathLike | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: Literal[True],
+    return_stderr: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def uv_run(
+    module: str,
+    /,
+    *args: str,
+    cwd: PathLike | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: Literal[True],
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def uv_run(
+    module: str,
+    /,
+    *args: str,
+    cwd: PathLike | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[False] = False,
+    return_stdout: Literal[False] = False,
+    return_stderr: Literal[False] = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> None: ...
+@overload
+def uv_run(
+    module: str,
+    /,
+    *args: str,
+    cwd: PathLike | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str | None: ...
+def uv_run(
+    module: str,
+    /,
+    *args: str,
+    cwd: PathLike | None = None,
+    print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str | None:
     """Run a command or script."""
-    run(*uv_run_cmd(module, *args))  # pragma: no cover
+    return run(  # pragma: no cover
+        *uv_run_cmd(module, *args),
+        cwd=cwd,
+        print=print,
+        print_stdout=print_stdout,
+        print_stderr=print_stderr,
+        return_=return_,
+        return_stdout=return_stdout,
+        return_stderr=return_stderr,
+        retry=retry,
+        logger=logger,
+    )
 
 
 def uv_run_cmd(module: str, /, *args: str) -> list[str]:
