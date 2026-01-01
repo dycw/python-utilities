@@ -946,7 +946,7 @@ fastapi-test = [
     { name = "uvicorn" },
 ]
 fpdf2 = [{ name = "fpdf2", specifier = ">=2.8.5,<2.9" }]
-gitpython = [{ name = "gitpython", specifier = ">=3.1.45,<3.2" }]
+gitpython = [{ name = "gitpython", specifier = ">=3.1.46,<3.2" }]
 hashlib-test = [{ name = "orjson" }]
 http-test = [{ name = "orjson" }]
 hypothesis = [{ name = "hypothesis", specifier = ">=6.148.8,<6.149" }]
