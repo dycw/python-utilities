@@ -361,9 +361,9 @@ def rm(path: PathLike, /, *, sudo: bool = False) -> None:
             rmtree(path, ignore_errors=True)
 
 
-def rm_cmd(path: PathLike, /) -> list[str]:
+def rm_cmd(path: PathLike, /, *paths: PathLike) -> list[str]:
     """Command to use 'rm' to remove a file/directory."""
-    return ["rm", "-rf", str(path)]
+    return ["rm", "-rf", str(path), *map(str, paths)]
 
 
 ##

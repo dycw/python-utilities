@@ -405,9 +405,14 @@ class TestRemove:
 
 
 class TestRmCmd:
-    def test_main(self) -> None:
+    def test_single(self) -> None:
         result = rm_cmd("path")
         expected = ["rm", "-rf", "path"]
+        assert result == expected
+
+    def test_multiple(self) -> None:
+        result = rm_cmd("path1", "path2")
+        expected = ["rm", "-rf", "path1", "path2"]
         assert result == expected
 
 
