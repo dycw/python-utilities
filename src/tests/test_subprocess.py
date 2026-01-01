@@ -261,16 +261,18 @@ class TestCopyText:
 
 
 class TestCp:
-    def test_file(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
-        dest = temp_path_not_exist / temp_file.name
+    def test_file(self, *, temp_file: Path, temp_path_nested_not_exist: Path) -> None:
+        dest = temp_path_nested_not_exist / temp_file.name
         cp(temp_file, dest)
         assert temp_file.is_file()
         assert dest.is_file()
 
-    def test_directory(self, *, tmp_path: Path, temp_path_not_exist: Path) -> None:
+    def test_directory(
+        self, *, tmp_path: Path, temp_path_nested_not_exist: Path
+    ) -> None:
         src = tmp_path / tmp_path.name
         src.mkdir()
-        dest = temp_path_not_exist / tmp_path.name
+        dest = temp_path_nested_not_exist / tmp_path.name
         cp(src, dest)
         assert src.is_dir()
         assert dest.is_dir()
@@ -1572,9 +1574,9 @@ class TestSymLinkCmd:
 
 
 class TestTee:
-    def test_non_existing(self, *, temp_path_not_exist: Path) -> None:
-        tee(temp_path_not_exist, "text")
-        result = temp_path_not_exist.read_text()
+    def test_non_existing(self, *, temp_path_nested_not_exist: Path) -> None:
+        tee(temp_path_nested_not_exist, "text")
+        result = temp_path_nested_not_exist.read_text()
         assert result == "text"
 
     def test_existing(self, *, temp_file: Path) -> None:
