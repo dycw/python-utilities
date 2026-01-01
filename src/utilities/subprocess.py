@@ -73,7 +73,7 @@ def append_text(
         return
     if skip_if_present and (search(text, existing, flags=flags) is not None):
         return
-    full = "\n".join([existing, *repeat("\n", times=blank_lines), text])
+    full = "".join([*repeat("\n", times=blank_lines), text])
     tee(path, full, sudo=sudo, append=True)
 
 
