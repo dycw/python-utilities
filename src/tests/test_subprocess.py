@@ -704,7 +704,7 @@ class TestRsyncMany:
                     f"""
                     if ! [ -d {dest} ]; then exit 1; fi
                     if ! [ -f {dest}/{temp_file.name} ]; then exit 1; fi
-                """
+                    """
                 ),
             )
 
@@ -734,7 +734,7 @@ class TestRsyncMany:
                     if ! [ -d {dest} ]; then exit 1; fi
                     if ! [ -f {dest}/{src_file.name} ]; then exit 1; fi
                     if ! [ -d {dest}/{src_dir.name} ]; then exit 1; fi
-                """
+                    """
                 ),
             )
 
