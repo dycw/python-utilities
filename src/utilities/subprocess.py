@@ -296,6 +296,8 @@ def cp_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
 
 
 def curl(
+    url: str,
+    /,
     *,
     fail: bool = True,
     location: bool = True,
@@ -305,17 +307,20 @@ def curl(
     sudo: bool = False,
 ) -> None:
     """Transfer a URL."""
-    cmd = curl_cmd(
+    curl_args = curl_cmd(  # skipif-ci
+        url,
         fail=fail,
         location=location,
         output=output,
         show_error=show_error,
         silent=silent,
     )
-    return run(*maybe_sudo_cmd(*cmd, sudo=sudo))
+    return run(*maybe_sudo_cmd(*curl_args, sudo=sudo))  # skipif-ci
 
 
 def curl_cmd(
+    url: str,
+    /,
     *,
     fail: bool = True,
     location: bool = True,
@@ -330,12 +335,12 @@ def curl_cmd(
     if location:
         args.append("--location")
     if output is not None:
-        args.extend(["--output", str(output)])
+        args.extend(["--create-dirs", "--output", str(output)])
     if show_error:
         args.append("--show-error")
     if silent:
         args.append("--silent")
-    return args
+    return [*args, url]
 
 
 ##

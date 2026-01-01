@@ -40,6 +40,8 @@ from utilities.subprocess import (
     copy_text,
     cp,
     cp_cmd,
+    curl,
+    curl_cmd,
     echo_cmd,
     env_cmds,
     expand_path,
@@ -296,6 +298,55 @@ class TestCpCmd:
     def test_main(self) -> None:
         result = cp_cmd("src", "dest")
         expected = ["cp", "-r", "src", "dest"]
+        assert result == expected
+
+
+class TestCurl:
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_main(self) -> None:
+        curl("https://example.com")
+
+
+class TestCurlCmd:
+    def test_main(self) -> None:
+        result = curl_cmd("url")
+        expected = ["curl", "--fail", "--location", "--show-error", "--silent", "url"]
+        assert result == expected
+
+    def test_fail(self) -> None:
+        result = curl_cmd("url", fail=False)
+        expected = ["curl", "--location", "--show-error", "--silent", "url"]
+        assert result == expected
+
+    def test_location(self) -> None:
+        result = curl_cmd("url", location=False)
+        expected = ["curl", "--fail", "--show-error", "--silent", "url"]
+        assert result == expected
+
+    def test_output(self, *, tmp_path: Path) -> None:
+        result = curl_cmd("url", output=tmp_path)
+        expected = [
+            "curl",
+            "--fail",
+            "--location",
+            "--create-dirs",
+            "--output",
+            str(tmp_path),
+            "--show-error",
+            "--silent",
+            "url",
+        ]
+        assert result == expected
+
+    def test_show_error(self) -> None:
+        result = curl_cmd("url", show_error=False)
+        expected = ["curl", "--fail", "--location", "--silent", "url"]
+        assert result == expected
+
+    def test_silent(self) -> None:
+        result = curl_cmd("url", silent=False)
+        expected = ["curl", "--fail", "--location", "--show-error", "url"]
         assert result == expected
 
 
