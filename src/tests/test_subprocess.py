@@ -108,26 +108,23 @@ class TestAppendText:
         assert result == expected
 
     def test_skip_if_present_with_effect(self, *, temp_file: Path) -> None:
-        text = "text"
-        _ = temp_file.write_text(text)
-        append_text(temp_file, text, skip_if_present=True)
+        _ = temp_file.write_text("text")
+        append_text(temp_file, "text", skip_if_present=True)
         result = temp_file.read_text()
-        assert result == text
+        assert result == "text"
 
     def test_skip_if_present_without_effect(self, *, temp_file: Path) -> None:
-        init, post = "init", "post"
-        _ = temp_file.write_text(init)
-        append_text(temp_file, post, skip_if_present=True)
+        _ = temp_file.write_text("init")
+        append_text(temp_file, "post", skip_if_present=True)
         result = temp_file.read_text()
-        expected = f"{init}\n{post}"
+        expected = "init\npost"
         assert result == expected
 
     def test_blank_lines(self, *, temp_file: Path) -> None:
-        init, post = "init", "post"
-        _ = temp_file.write_text(init)
-        append_text(temp_file, post, blank_lines=2)
+        _ = temp_file.write_text("init")
+        append_text(temp_file, "post", blank_lines=2)
         result = temp_file.read_text()
-        expected = f"{init}\n\n{post}"
+        expected = "init\n\npost"
         assert result == expected
 
 
@@ -463,11 +460,10 @@ class TestMvCmd:
 
 class TestReplaceText:
     def test_main(self, *, temp_file: Path) -> None:
-        init, post = "init", "post"
-        _ = temp_file.write_text(init)
-        replace_text(temp_file, (init, post))
+        _ = temp_file.write_text("init")
+        replace_text(temp_file, ("init", "post"))
         result = temp_file.read_text()
-        assert result == post
+        assert result == "post"
 
 
 class TestRipGrep:
