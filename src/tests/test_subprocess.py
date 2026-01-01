@@ -1372,7 +1372,7 @@ class TestSymLinkCmd:
 
 class TestTee:
     def test_main(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
+        path = tmp_path / "dir/file.txt"
         text = "text"
         tee(path, text)
         result = path.read_text()

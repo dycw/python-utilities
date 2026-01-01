@@ -1260,6 +1260,7 @@ def tee(
     path: PathLike, text: str, /, *, sudo: bool = False, append: bool = False
 ) -> None:
     """Use 'tee' to duplicate standard input."""
+    mkdir(path, sudo=sudo, parent=True)
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*tee_cmd(path, append=append)), input=text)
     else:
