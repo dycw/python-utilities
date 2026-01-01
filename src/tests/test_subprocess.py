@@ -191,24 +191,21 @@ class TestCp:
         dest = temp_path_not_exist / temp_file.name
         perms = Permissions.from_text("u=rwx,g=,o=")
         cp(temp_file, dest, perms=perms)
-        current = Permissions.from_path(dest)
-        assert current == perms
+        result = Permissions.from_path(dest)
+        assert result == perms
 
-    def test_owner(self, *, temp_path_not_exist: Path) -> None:
-        src = temp_path_not_exist / "file.txt"
-        src.touch()
-        dest = temp_path_not_exist / "file2.txt"
-        cp(src, dest, owner=EFFECTIVE_USER_NAME)
-        current = get_file_owner(dest)
-        assert current == EFFECTIVE_USER_NAME
+    def test_owner(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        dest = temp_path_not_exist / temp_file.name
+        cp(temp_file, dest, owner=EFFECTIVE_USER_NAME)
+        result = get_file_owner(dest)
+        assert result == EFFECTIVE_USER_NAME
 
-    def test_error(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "dir"
-        dest = tmp_path / "dir2"
+    def test_error(self, *, temp_path_not_exist: Path, tmp_path: Path) -> None:
+        dest = tmp_path / temp_path_not_exist.name
         with raises(
             CpError, match=r"Unable to copy '.+' to '.+'; source does not exist"
         ):
-            cp(src, dest)
+            cp(temp_path_not_exist, dest)
 
 
 class TestCpCmd:
@@ -335,46 +332,37 @@ class TestMkDirCmd:
 
 
 class TestMv:
-    def test_file(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        dest = tmp_path / "file2.txt"
-        mv(src, dest)
-        assert not src.exists()
+    def test_file(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        dest = temp_path_not_exist / temp_file.name
+        mv(temp_file, dest)
+        assert not temp_file.exists()
         assert dest.is_file()
 
-    def test_dir(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "dir"
-        src.mkdir()
-        dest = tmp_path / "dir2"
-        mv(src, dest)
-        assert not src.exists()
+    def test_dir(self, *, tmp_path: Path, temp_path_not_exist: Path) -> None:
+        dest = temp_path_not_exist / tmp_path.name
+        mv(tmp_path, dest)
+        assert not tmp_path.exists()
         assert dest.is_dir()
 
-    def test_perms(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        dest = tmp_path / "file2.txt"
+    def test_perms(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        dest = temp_path_not_exist / temp_file.name
         perms = Permissions.from_text("u=rwx,g=,o=")
-        mv(src, dest, perms=perms)
-        current = Permissions.from_path(dest)
-        assert current == perms
+        mv(temp_file, dest, perms=perms)
+        result = Permissions.from_path(dest)
+        assert result == perms
 
-    def test_owner(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        dest = tmp_path / "file2.txt"
-        mv(src, dest, owner=EFFECTIVE_USER_NAME)
-        current = get_file_owner(dest)
-        assert current == EFFECTIVE_USER_NAME
+    def test_owner(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        dest = temp_path_not_exist / temp_file.name
+        mv(temp_file, dest, owner=EFFECTIVE_USER_NAME)
+        result = get_file_owner(dest)
+        assert result == EFFECTIVE_USER_NAME
 
-    def test_error(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "dir"
-        dest = tmp_path / "dir2"
+    def test_error(self, *, temp_path_not_exist: Path, tmp_path: Path) -> None:
+        dest = tmp_path / temp_path_not_exist.name
         with raises(
             MvFileError, match=r"Unable to move '.+' to '.+'; source does not exist"
         ):
-            mv(src, dest)
+            mv(temp_path_not_exist, dest)
 
 
 class TestMvCmd:
