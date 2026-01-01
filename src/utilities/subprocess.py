@@ -95,11 +95,12 @@ def apt_install_cmd(package: str, /) -> list[str]:
 ##
 
 
-def cat(path: PathLike, /, *, sudo: bool = False) -> str:
+def cat(path: PathLike, /, *paths: PathLike, sudo: bool = False) -> str:
     """Concatenate and print files."""
     if sudo:  # pragma: no cover
-        return run(*sudo_cmd(*cat_cmd(path)), return_=True)
-    return Path(path).read_text()
+        return run(*sudo_cmd(*cat_cmd(path, *paths)), return_=True)
+    all_paths = list(map(Path, [path, *paths]))
+    return "\n".join(p.read_text() for p in all_paths)
 
 
 def cat_cmd(path: PathLike, /, *paths: PathLike) -> list[str]:
@@ -444,7 +445,8 @@ def rm(path: PathLike, /, *paths: PathLike, sudo: bool = False) -> None:
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*rm_cmd(path, *paths)))
     else:
-        for p in map(Path, [path, *paths]):
+        all_paths = list(map(Path, [path, *paths]))
+        for p in all_paths:
             if p.is_file():
                 p.unlink(missing_ok=True)
             elif p.is_dir():

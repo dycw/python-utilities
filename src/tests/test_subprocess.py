@@ -139,11 +139,20 @@ class TestAptInstallCmd:
 
 
 class TestCat:
-    def test_main(self, *, temp_file: Path) -> None:
+    def test_single(self, *, temp_file: Path) -> None:
         text = "text"
         _ = temp_file.write_text(text)
         result = cat(temp_file)
         assert result == text
+
+    def test_multiple(self, *, temp_files: tuple[Path, Path]) -> None:
+        path1, path2 = temp_files
+        text1, text2 = [f"text{i}" for i in [1, 2]]
+        _ = path1.write_text(text1)
+        _ = path2.write_text(text2)
+        result = cat(path1, path2)
+        expected = f"{text1}\n{text2}"
+        assert result == expected
 
 
 class TestCatCmd:
@@ -485,12 +494,9 @@ class TestRm:
         assert not path1.exists()
         assert not path2.exists()
 
-    def test_single_dir(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "dir"
-        path.mkdir()
-        assert path.is_dir()
-        rm(path)
-        assert not path.exists()
+    def test_single_directory(self, *, tmp_path: Path) -> None:
+        rm(tmp_path)
+        assert not tmp_path.exists()
 
 
 class TestRmCmd:
