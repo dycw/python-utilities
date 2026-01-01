@@ -295,6 +295,185 @@ def cp_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
 ##
 
 
+@overload
+def curl(
+    url: str,
+    /,
+    *,
+    fail: bool = True,
+    location: bool = True,
+    output: PathLike | None = None,
+    show_error: bool = True,
+    silent: bool = True,
+    sudo: bool = False,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[True],
+    return_stdout: Literal[False] = False,
+    return_stderr: Literal[False] = False,
+    retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def curl(
+    url: str,
+    /,
+    *,
+    fail: bool = True,
+    location: bool = True,
+    output: PathLike | None = None,
+    show_error: bool = True,
+    silent: bool = True,
+    sudo: bool = False,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[False] = False,
+    return_stdout: Literal[True],
+    return_stderr: Literal[False] = False,
+    retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def curl(
+    url: str,
+    /,
+    *,
+    fail: bool = True,
+    location: bool = True,
+    output: PathLike | None = None,
+    show_error: bool = True,
+    silent: bool = True,
+    sudo: bool = False,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[False] = False,
+    return_stdout: Literal[False] = False,
+    return_stderr: Literal[True],
+    retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def curl(
+    url: str,
+    /,
+    *,
+    fail: bool = True,
+    location: bool = True,
+    output: PathLike | None = None,
+    show_error: bool = True,
+    silent: bool = True,
+    sudo: bool = False,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[False] = False,
+    return_stdout: Literal[False] = False,
+    return_stderr: Literal[False] = False,
+    retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
+    logger: LoggerLike | None = None,
+) -> None: ...
+@overload
+def curl(
+    url: str,
+    /,
+    *,
+    fail: bool = True,
+    location: bool = True,
+    output: PathLike | None = None,
+    show_error: bool = True,
+    silent: bool = True,
+    sudo: bool = False,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
+    logger: LoggerLike | None = None,
+) -> str | None: ...
+def curl(
+    url: str,
+    /,
+    *,
+    fail: bool = True,
+    location: bool = True,
+    output: PathLike | None = None,
+    show_error: bool = True,
+    silent: bool = True,
+    sudo: bool = False,
+    print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
+    logger: LoggerLike | None = None,
+) -> str | None:
+    """Transfer a URL."""
+    args = maybe_sudo_cmd(
+        *curl_cmd(  # skipif-ci
+            url,
+            fail=fail,
+            location=location,
+            output=output,
+            show_error=show_error,
+            silent=silent,
+        ),
+        sudo=sudo,
+    )
+    return run(  # skipif-ci
+        *args,
+        print=print,
+        print_stdout=print_stdout,
+        print_stderr=print_stderr,
+        return_=return_,
+        return_stdout=return_stdout,
+        return_stderr=return_stderr,
+        retry=retry,
+        retry_skip=retry_skip,
+        logger=logger,
+    )
+
+
+def curl_cmd(
+    url: str,
+    /,
+    *,
+    fail: bool = True,
+    location: bool = True,
+    output: PathLike | None = None,
+    show_error: bool = True,
+    silent: bool = True,
+) -> list[str]:
+    """Command to use 'curl' to transfer a URL."""
+    args: list[str] = ["curl"]
+    if fail:
+        args.append("--fail")
+    if location:
+        args.append("--location")
+    if output is not None:
+        args.extend(["--create-dirs", "--output", str(output)])
+    if show_error:
+        args.append("--show-error")
+    if silent:
+        args.append("--silent")
+    return [*args, url]
+
+
+##
+
+
 def echo_cmd(text: str, /) -> list[str]:
     """Command to use 'echo' to write arguments to the standard output."""
     return ["echo", text]
@@ -1642,6 +1821,8 @@ __all__ = [
     "copy_text",
     "cp",
     "cp_cmd",
+    "curl",
+    "curl_cmd",
     "echo_cmd",
     "env_cmds",
     "expand_path",
