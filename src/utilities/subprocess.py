@@ -1246,13 +1246,19 @@ def ssh_await(
 
 
 def ssh_keyscan(
-    hostname: str, /, *, path: PathLike = KNOWN_HOSTS, port: int | None = None
+    hostname: str,
+    /,
+    *,
+    path: PathLike = KNOWN_HOSTS,
+    retry: Retry | None = None,
+    port: int | None = None,
 ) -> None:
     """Add a known host."""
-    ssh_keygen_remove(hostname, path=path)  # skipif-ci
-    mkdir(path, parent=True)  # skipif-ci
-    with Path(path).open(mode="a") as fh:  # skipif-ci
-        _ = fh.write(run(*ssh_keyscan_cmd(hostname, port=port), return_=True))
+    ssh_keygen_remove(hostname, path=path, retry=retry)  # skipif-ci
+    result = run(  # skipif-ci
+        *ssh_keyscan_cmd(hostname, port=port), return_=True, retry=retry
+    )
+    tee(path, result, append=True)  # skipif-ci
 
 
 def ssh_keyscan_cmd(hostname: str, /, *, port: int | None = None) -> list[str]:
@@ -1266,11 +1272,13 @@ def ssh_keyscan_cmd(hostname: str, /, *, port: int | None = None) -> list[str]:
 ##
 
 
-def ssh_keygen_remove(hostname: str, /, *, path: PathLike = KNOWN_HOSTS) -> None:
+def ssh_keygen_remove(
+    hostname: str, /, *, path: PathLike = KNOWN_HOSTS, retry: Retry | None = None
+) -> None:
     """Remove a known host."""
     path = Path(path)
     if path.exists():
-        run(*ssh_keygen_remove_cmd(hostname, path=path))
+        run(*ssh_keygen_remove_cmd(hostname, path=path), retry=retry)
 
 
 def ssh_keygen_remove_cmd(
