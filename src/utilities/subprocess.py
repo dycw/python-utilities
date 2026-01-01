@@ -1307,11 +1307,16 @@ def useradd(
     create_home: bool = True,
     groups: MaybeIterable[str] | None = None,
     shell: PathLike | None = None,
+    sudo: bool = False,
+    password: str | None = None,
 ) -> None:
     """Create a new user."""
-    run(  # pragma: no cover
-        *useradd_cmd(login, create_home=create_home, groups=groups, shell=shell)
+    args = useradd_cmd(  # pragma: no cover
+        login, create_home=create_home, groups=groups, shell=shell
     )
+    run(*maybe_sudo_cmd(*args))  # pragma: no cover
+    if password is not None:  # pragma: no cover
+        chpasswd(login, password, sudo=sudo)
 
 
 def useradd_cmd(
