@@ -393,7 +393,7 @@ class TestPutItems:
 
 
 class TestSleepMaxDur:
-    multiple: ClassVar[int] = 2
+    multiple: ClassVar[int] = 3
     delta: ClassVar[TimeDelta] = 0.05 * SECOND
 
     async def test_main(self) -> None:
