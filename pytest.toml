@@ -17,14 +17,6 @@
     "error",
     "ignore::ResourceWarning",
     "ignore:Automatically deduplicated selection parameter with identical configuration:UserWarning", # altair
-    # "ignore:Do not expect file_or_dir in Namespace:UserWarning",                                                                       # pytest
-    # "ignore:Exception ignored in.* <coroutine object .* at .*>:pytest.PytestUnraisableExceptionWarning",
-    # "ignore:Exception in thread Thread-.*:pytest.PytestUnhandledThreadExceptionWarning",
-    # "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",                                           # jupyter
-    # "ignore:ResourceTracker called reentrantly for resource cleanup, which is unsupported:UserWarning",
-    # "ignore:The garbage collector is trying to clean up non-checked-in connection <AdaptedConnection <Connection(.*)>:RuntimeWarning", # sqlalchemy
-    # "ignore:Using fork.* can cause Polars to deadlock in the child process:RuntimeWarning",                                            # polars/pqdm
-    # "ignore:coroutine 'AsyncConnection.close' was never awaited:RuntimeWarning",
   ]
   minversion = "9.0"
   strict = true
