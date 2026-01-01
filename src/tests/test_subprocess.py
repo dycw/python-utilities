@@ -7,7 +7,7 @@ from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from pytest import LogCaptureFixture, TempPathFactory, mark, param, raises
+from pytest import LogCaptureFixture, mark, param, raises
 from pytest_lazy_fixtures import lf
 
 from utilities.grp import EFFECTIVE_GROUP_NAME
@@ -51,6 +51,7 @@ from utilities.subprocess import (
     mkdir_cmd,
     mv,
     mv_cmd,
+    replace_text,
     ripgrep,
     ripgrep_cmd,
     rm,
@@ -125,7 +126,7 @@ class TestAptInstallCmd:
 
 class TestCat:
     def test_main(self, *, temp_file: Path) -> None:
-        text = "foo"
+        text = "text"
         _ = temp_file.write_text(text)
         result = cat(temp_file)
         assert result == text
@@ -406,6 +407,15 @@ class TestMvCmd:
         result = mv_cmd("src", "dest")
         expected = ["mv", "src", "dest"]
         assert result == expected
+
+
+class TestReplaceText:
+    def test_main(self, *, temp_file: Path) -> None:
+        init, post = "init", "post"
+        _ = temp_file.write_text(init)
+        replace_text(temp_file, (init, post))
+        result = temp_file.read_text()
+        assert result == post
 
 
 class TestRipGrep:

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from io import StringIO
 from itertools import repeat
 from pathlib import Path
-from re import MULTILINE, search
+from re import search
 from shlex import join
 from shutil import copyfile, copytree, move, rmtree
 from string import Template
@@ -383,6 +383,19 @@ class MvFileError(Exception):
 def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
     """Command to use 'mv' to move a file/directory."""
     return ["mv", str(src), str(dest)]
+
+
+##
+
+
+def replace_text(
+    path: PathLike, /, *replacements: tuple[str, str], sudo: bool = False
+) -> None:
+    path = Path(path)
+    text = cat(path, sudo=sudo)
+    for old, new in replacements:
+        text = text.replace(old, new)
+    tee(path, text, sudo=sudo)
 
 
 ##
@@ -1573,6 +1586,7 @@ __all__ = [
     "mkdir_cmd",
     "mv",
     "mv_cmd",
+    "replace_text",
     "ripgrep",
     "ripgrep_cmd",
     "rm",
