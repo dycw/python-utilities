@@ -161,7 +161,7 @@ class TestCat:
     def test_multiple(self, *, temp_files: tuple[Path, Path]) -> None:
         path1, path2 = temp_files
         _ = path1.write_text("text1")
-        _ = path2.write_text("text")
+        _ = path2.write_text("text2")
         result = cat(path1, path2)
         expected = "text1\ntext2"
         assert result == expected
