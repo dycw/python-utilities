@@ -528,16 +528,16 @@ class TestMkDirCmd:
 
 
 class TestMv:
-    def test_file(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
-        dest = temp_path_not_exist / temp_file.name
+    def test_file(self, *, temp_file: Path, temp_path_nested_not_exist: Path) -> None:
+        dest = temp_path_nested_not_exist / temp_file.name
         mv(temp_file, dest)
         assert not temp_file.exists()
         assert dest.is_file()
 
-    def test_dir(self, *, tmp_path: Path, temp_path_not_exist: Path) -> None:
+    def test_dir(self, *, tmp_path: Path, temp_path_nested_not_exist: Path) -> None:
         src = tmp_path / tmp_path.name
         src.mkdir()
-        dest = temp_path_not_exist / tmp_path.name
+        dest = temp_path_nested_not_exist / tmp_path.name
         mv(src, dest)
         assert not src.exists()
         assert dest.is_dir()
@@ -1560,10 +1560,10 @@ class TestSudoNoPasswdCmd:
 
 
 class TestSymLink:
-    def test_main(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
-        symlink(temp_file, temp_path_not_exist)
-        assert temp_path_not_exist.is_symlink()
-        assert temp_path_not_exist.resolve() == temp_file
+    def test_main(self, *, temp_file: Path, temp_path_nested_not_exist: Path) -> None:
+        symlink(temp_file, temp_path_nested_not_exist)
+        assert temp_path_nested_not_exist.is_symlink()
+        assert temp_path_nested_not_exist.resolve() == temp_file
 
 
 class TestSymLinkCmd:
