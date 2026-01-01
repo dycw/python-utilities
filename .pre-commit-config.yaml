@@ -14,6 +14,7 @@ repos:
           - --github--pull-request--pytest--python-version--3-14
           - --github--pull-request--pytest--resolution--highest
           - --github--pull-request--ruff
+          - --github--push--publish
           - --github--push--tag
           - --package-name=dycw-utilities
           - --pre-commit--prettier
