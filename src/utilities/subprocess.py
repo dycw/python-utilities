@@ -18,6 +18,7 @@ from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
 from utilities.logging import to_logger
+from utilities.pathlib import PWD
 from utilities.permissions import Permissions, ensure_perms
 from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
@@ -344,6 +345,24 @@ class MvFileError(Exception):
 def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
     """Command to use 'mv' to move a file/directory."""
     return ["mv", str(src), str(dest)]
+
+
+##
+
+
+def ripgrep(*args: str, path: PathLike = PWD) -> str | None:
+    """Search for lines."""
+    try:  # skipif-ci
+        return run(*ripgrep_cmd(*args, path=path), return_=True)
+    except CalledProcessError as error:  # skipif-ci
+        if error.returncode == 1:
+            return None
+        raise
+
+
+def ripgrep_cmd(*args: str, path: PathLike = PWD) -> list[str]:
+    """Command to use 'ripgrep' to search for lines."""
+    return ["rg", *args, str(path)]
 
 
 ##
@@ -1445,6 +1464,8 @@ __all__ = [
     "mkdir_cmd",
     "mv",
     "mv_cmd",
+    "ripgrep",
+    "ripgrep_cmd",
     "rm",
     "rm_cmd",
     "rsync",

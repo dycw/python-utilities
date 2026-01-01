@@ -48,6 +48,8 @@ from utilities.subprocess import (
     mkdir_cmd,
     mv,
     mv_cmd,
+    ripgrep,
+    ripgrep_cmd,
     rm,
     rm_cmd,
     rsync,
@@ -385,6 +387,35 @@ class TestMvCmd:
     def test_main(self) -> None:
         result = mv_cmd("src", "dest")
         expected = ["mv", "src", "dest"]
+        assert result == expected
+
+
+class TestRipGrep:
+    @skipif_ci
+    def test_main(self, *, tmp_path: Path) -> None:
+        path1, path2 = [tmp_path / f"file{i}.txt" for i in [1, 2]]
+        _ = path1.write_text("foo")
+        path2.touch()
+        result = ripgrep("--files-with-matches", "foo", path=tmp_path)
+        expected = str(path1)
+        assert result == expected
+
+    @skipif_ci
+    def test_no_files(self, *, tmp_path: Path) -> None:
+        result = ripgrep("pattern", path=tmp_path)
+        assert result is None
+
+    @skipif_ci
+    def test_error(self, *, tmp_path: Path) -> None:
+        with raises(CalledProcessError) as exc_info:
+            _ = ripgrep("--invalid", path=tmp_path)
+        assert exc_info.value.returncode == 2
+
+
+class TestRipGrepCmd:
+    def test_main(self) -> None:
+        result = ripgrep_cmd("pattern")
+        expected = ["rg", "pattern", str(Path.cwd())]
         assert result == expected
 
 
