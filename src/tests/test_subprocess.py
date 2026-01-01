@@ -102,6 +102,12 @@ class TestAppendText:
         expected = f"{init}\n{post}"
         assert result == expected
 
+    def test_missing(self, *, temp_path_not_exist: Path) -> None:
+        text = "text"
+        append_text(temp_path_not_exist, text)
+        result = temp_path_not_exist.read_text()
+        assert result == text
+
     def test_skip_if_present(self, *, temp_file: Path) -> None:
         text = "text"
         _ = temp_file.write_text(text)
