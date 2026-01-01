@@ -660,27 +660,23 @@ class TestRsyncCmd:
         ):
             _ = rsync_cmd([], "user", "hostname", "dest")
 
-    def test_error_sources_not_found(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
+    def test_error_sources_not_found(self, *, temp_path_not_exist: Path) -> None:
         with raises(
             RsyncCmdSourcesNotFoundError,
-            match=r"Sources selected to send to user@hostname:dest but not found: '.*/file\.txt'",
+            match=r"Sources selected to send to user@hostname:dest but not found: '.*'",
         ):
-            _ = rsync_cmd(src, "user", "hostname", "dest")
+            _ = rsync_cmd(temp_path_not_exist, "user", "hostname", "dest")
 
 
 class TestRsyncMany:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_single_file(self, *, ssh_user: str, ssh_hostname: str) -> None:
-        with (
-            TemporaryDirectory() as temp_src,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
-        ):
-            src = temp_src / "file.txt"
-            src.touch()
-            dest = temp_dest / src.name
-            rsync_many(ssh_user, ssh_hostname, (src, dest))
+    def test_single_file(
+        self, *, temp_file: Path, ssh_user: str, ssh_hostname: str
+    ) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
+            dest = temp_dest / temp_file.name
+            rsync_many(ssh_user, ssh_hostname, (temp_file, dest))
             ssh(
                 ssh_user,
                 ssh_hostname,
@@ -690,14 +686,11 @@ class TestRsyncMany:
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_multiple_files(self, *, ssh_user: str, ssh_hostname: str) -> None:
-        with (
-            TemporaryDirectory() as temp_src,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
-        ):
-            src1, src2 = [temp_src / f"file{i}.txt" for i in [1, 2]]
-            src1.touch()
-            src2.touch()
+    def test_multiple_files(
+        self, *, temp_files: tuple[Path, Path], ssh_user: str, ssh_hostname: str
+    ) -> None:
+        src1, src2 = temp_files
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
             dest1, dest2 = [temp_dest / src.name for src in [src1, src2]]
             rsync_many(ssh_user, ssh_hostname, (src1, dest1), (src2, dest2))
             ssh(
