@@ -1205,7 +1205,7 @@ class TestSSH:
     def test_env(
         self, *, capsys: CaptureFixture, ssh_user: str, ssh_hostname: str
     ) -> None:
-        name = str(uuid4()).replace("-", "")
+        name = f"ENV_{uuid4()}".replace("-", "")
         result = ssh(
             ssh_user, ssh_hostname, "printenv", name, env={name: "1234"}, print=True
         )
