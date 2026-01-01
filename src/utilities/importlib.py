@@ -1,7 +1,23 @@
 from __future__ import annotations
 
+import importlib.resources
 from importlib import import_module
 from importlib.util import find_spec
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from utilities.errors import ImpossibleCaseError
+
+if TYPE_CHECKING:
+    from importlib.resources import Anchor
+
+
+def files(*, anchor: Anchor | None = None) -> Path:
+    """"""
+    path = importlib.resources.files(anchor)
+    if isinstance(path, Path):
+        return path
+    raise ImpossibleCaseError(case=[f"{path=}"])  # pragma: no cover
 
 
 def is_valid_import(module: str, /, *, name: str | None = None) -> bool:
@@ -15,4 +31,4 @@ def is_valid_import(module: str, /, *, name: str | None = None) -> bool:
     return hasattr(mod, name)
 
 
-__all__ = ["is_valid_import"]
+__all__ = ["files", "is_valid_import"]
