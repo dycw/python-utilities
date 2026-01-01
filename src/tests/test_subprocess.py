@@ -189,19 +189,18 @@ class TestCp:
         assert src.is_file()
         assert dest.is_file()
 
-    def test_dir(self, *, tmp_path: Path) -> None:
-        tmp_path / "dir"
-        src = tmp_path / "dir"
+    def test_dir(self, *, tmp_path_sub_path: Path) -> None:
+        src = tmp_path_sub_path / "dir"
         src.mkdir()
-        dest = tmp_path / "dir2"
+        dest = tmp_path_sub_path / "dir2"
         cp(src, dest)
         assert src.is_dir()
         assert dest.is_dir()
 
-    def test_perms(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
+    def test_perms(self, *, tmp_path_sub_path: Path) -> None:
+        src = tmp_path_sub_path / "file.txt"
         src.touch()
-        dest = tmp_path / "file2.txt"
+        dest = tmp_path_sub_path / "file2.txt"
         perms = Permissions.from_text("u=rwx,g=,o=")
         cp(src, dest, perms=perms)
         current = Permissions.from_path(dest)

@@ -12,6 +12,7 @@ from whenever import PlainDateTime
 from utilities.contextlib import enhanced_context_manager
 from utilities.pytest import IS_CI, IS_CI_AND_NOT_LINUX, skipif_ci
 from utilities.re import ExtractGroupError, extract_group
+from utilities.tempfile import TemporaryFile
 from utilities.whenever import MINUTE, get_now_local_plain
 
 if TYPE_CHECKING:
@@ -59,6 +60,13 @@ def set_log_factory() -> AbstractContextManager[None]:
 
 
 # fixtures - pathlib
+
+
+@fixture
+def tmp_file(*, tmp_path: Path) -> Iterator[Path]:
+    with TemporaryFile(dir=tmp_path) as path:
+        path.touch()
+        yield path
 
 
 @fixture
