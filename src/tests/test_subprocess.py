@@ -48,6 +48,8 @@ from utilities.subprocess import (
     mkdir_cmd,
     mv,
     mv_cmd,
+    ripgrep,
+    ripgrep_cmd,
     rm,
     rm_cmd,
     rsync,
@@ -385,6 +387,29 @@ class TestMvCmd:
     def test_main(self) -> None:
         result = mv_cmd("src", "dest")
         expected = ["mv", "src", "dest"]
+        assert result == expected
+
+
+class TestRipGrep:
+    @skipif_ci
+    def test_main(self, *, tmp_path: Path) -> None:
+        path1, path2 = [tmp_path / f"file{i}.txt" for i in [1, 2]]
+        _ = path1.write_text("foo")
+        path2.touch()
+        result = ripgrep("--files-with-matches", "foo", path=tmp_path)
+        expected = str(path1)
+        assert result == expected
+
+    @skipif_ci
+    def test_no_files(self, *, tmp_path: Path) -> None:
+        result = ripgrep("pattern", path=tmp_path)
+        assert result is None
+
+
+class TestRipGrepCmd:
+    def test_main(self) -> None:
+        result = ripgrep_cmd("pattern")
+        expected = ["rg", "pattern", str(Path.cwd())]
         assert result == expected
 
 
@@ -1074,19 +1099,6 @@ value@stderr
 -------------------------------------------------------------------------------
 """)
         assert record.message == expected
-
-    @mark.only
-    def test_ripgrep(self) -> None:
-        version = "3.14"
-        files = run(
-            "rg",
-            "--files-with-matches",
-            # "--glob=!.venv/**",
-            "--pcre2",
-            "--type=py",
-            rf'# requires-python = ">=(?!{version})\d+\.\d+"',
-            return_=True,
-        ).splitlines()
 
     def _test_retry_cmd(self, path: PathLike, attempts: int, /) -> str:
         return strip_and_dedent(
