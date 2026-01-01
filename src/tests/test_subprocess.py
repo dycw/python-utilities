@@ -405,6 +405,12 @@ class TestRipGrep:
         result = ripgrep("pattern", path=tmp_path)
         assert result is None
 
+    @skipif_ci
+    def test_error(self, *, tmp_path: Path) -> None:
+        with raises(CalledProcessError) as exc_info:
+            _ = ripgrep("--invalid", path=tmp_path)
+        assert exc_info.value.returncode == 2
+
 
 class TestRipGrepCmd:
     def test_main(self) -> None:
