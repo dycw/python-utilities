@@ -127,33 +127,25 @@ class TestChModCmd:
 
 
 class TestChOwn:
-    def test_none(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
-        chown(path)
+    def test_none(self, *, tmp_file: Path) -> None:
+        chown(tmp_file)
 
-    def test_user(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
-        chown(path, user=EFFECTIVE_USER_NAME)
-        current = get_file_owner(path)
-        assert current == EFFECTIVE_USER_NAME
+    def test_user(self, *, tmp_file: Path) -> None:
+        chown(tmp_file, user=EFFECTIVE_USER_NAME)
+        result = get_file_owner(tmp_file)
+        assert result == EFFECTIVE_USER_NAME
 
-    def test_group(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
-        chown(path, group=EFFECTIVE_GROUP_NAME)
-        current_group = get_file_group(path)
-        assert current_group == EFFECTIVE_GROUP_NAME
+    def test_group(self, *, tmp_file: Path) -> None:
+        chown(tmp_file, group=EFFECTIVE_GROUP_NAME)
+        result = get_file_group(tmp_file)
+        assert result == EFFECTIVE_GROUP_NAME
 
-    def test_user_and_group(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
-        chown(path, user=EFFECTIVE_USER_NAME, group=EFFECTIVE_GROUP_NAME)
-        current_owner = get_file_owner(path)
-        assert current_owner == EFFECTIVE_USER_NAME
-        current_group = get_file_group(path)
-        assert current_group == EFFECTIVE_GROUP_NAME
+    def test_user_and_group(self, *, tmp_file: Path) -> None:
+        chown(tmp_file, user=EFFECTIVE_USER_NAME, group=EFFECTIVE_GROUP_NAME)
+        owner = get_file_owner(tmp_file)
+        assert owner == EFFECTIVE_USER_NAME
+        group = get_file_group(tmp_file)
+        assert group == EFFECTIVE_GROUP_NAME
 
 
 class TestChOwnCmd:
