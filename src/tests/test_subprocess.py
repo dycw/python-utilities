@@ -344,7 +344,7 @@ class TestMv:
         src.touch()
         dest = tmp_path / "file2.txt"
         mv(src, dest)
-        assert not src.is_file()
+        assert not src.exists()
         assert dest.is_file()
 
     def test_dir(self, *, tmp_path: Path) -> None:
@@ -352,7 +352,7 @@ class TestMv:
         src.mkdir()
         dest = tmp_path / "dir2"
         mv(src, dest)
-        assert not src.is_dir()
+        assert not src.exists()
         assert dest.is_dir()
 
     def test_perms(self, *, tmp_path: Path) -> None:
@@ -388,26 +388,38 @@ class TestMvCmd:
         assert result == expected
 
 
-class TestRemove:
-    def test_file(self, *, tmp_path: Path) -> None:
+class TestRm:
+    def test_single_file(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file.txt"
         path.touch()
-        assert path.is_file()
         rm(path)
-        assert not path.is_file()
+        assert not path.exists()
 
-    def test_dir(self, *, tmp_path: Path) -> None:
+    def test_multiple_files(self, *, tmp_path: Path) -> None:
+        path1, path2 = [tmp_path / f"file{i}.txt" for i in [1, 2]]
+        path1.touch()
+        path2.touch()
+        rm(path1, path2)
+        assert not path1.exists()
+        assert not path2.exists()
+
+    def test_single_dir(self, *, tmp_path: Path) -> None:
         path = tmp_path / "dir"
         path.mkdir()
         assert path.is_dir()
         rm(path)
-        assert not path.is_dir()
+        assert not path.exists()
 
 
 class TestRmCmd:
-    def test_main(self) -> None:
+    def test_single(self) -> None:
         result = rm_cmd("path")
         expected = ["rm", "-rf", "path"]
+        assert result == expected
+
+    def test_multiple(self) -> None:
+        result = rm_cmd("path1", "path2")
+        expected = ["rm", "-rf", "path1", "path2"]
         assert result == expected
 
 

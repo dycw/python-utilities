@@ -181,14 +181,14 @@ class TestEnhancedContextManager:
         proc.start()
         assert proc.pid is not None
         assert proc.is_alive()
-        assert not marker.is_file()
+        assert not marker.exists()
         time.sleep(sleep)
         assert proc.is_alive()
         assert marker.is_file()
         proc.terminate()
         time.sleep(sleep)
         assert proc.is_alive()
-        assert not marker.is_file()
+        assert not marker.exists()
 
 
 class TestSuppressSuperObjectAttributeError:

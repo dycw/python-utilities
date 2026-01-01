@@ -349,21 +349,21 @@ def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
 ##
 
 
-def rm(path: PathLike, /, *, sudo: bool = False) -> None:
+def rm(path: PathLike, /, *paths: PathLike, sudo: bool = False) -> None:
     """Remove a file/directory."""
     if sudo:  # pragma: no cover
-        run(*sudo_cmd(*rm_cmd(path)))
+        run(*sudo_cmd(*rm_cmd(path, *paths)))
     else:
-        path = Path(path)
-        if path.is_file():
-            path.unlink(missing_ok=True)
-        elif path.is_dir():
-            rmtree(path, ignore_errors=True)
+        for p in map(Path, [path, *paths]):
+            if p.is_file():
+                p.unlink(missing_ok=True)
+            elif p.is_dir():
+                rmtree(p, ignore_errors=True)
 
 
-def rm_cmd(path: PathLike, /) -> list[str]:
+def rm_cmd(path: PathLike, /, *paths: PathLike) -> list[str]:
     """Command to use 'rm' to remove a file/directory."""
-    return ["rm", "-rf", str(path)]
+    return ["rm", "-rf", str(path), *map(str, paths)]
 
 
 ##
