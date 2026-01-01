@@ -1243,6 +1243,13 @@ def touch_cmd(path: PathLike, /) -> list[str]:
 ##
 
 
+def update_ca_certificates(*, sudo: bool = False) -> None:
+    run(*maybe_sudo_cmd(UPDATE_CA_CERTIFICATES, sudo=sudo))  # pragma: no cover
+
+
+##
+
+
 @overload
 def uv_run(
     module: str,
@@ -1459,6 +1466,7 @@ __all__ = [
     "tee_cmd",
     "touch",
     "touch_cmd",
+    "update_ca_certificates",
     "uv_run",
     "uv_run_cmd",
     "yield_git_repo",
