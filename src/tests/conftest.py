@@ -70,9 +70,10 @@ def temp_file(*, tmp_path: Path) -> Iterator[Path]:
 
 
 @fixture
-def temp_path_not_exist(*, tmp_path: Path) -> Iterator[Path]:
+def temp_path_not_exist(*, tmp_path: Path) -> Path:
     with TemporaryFile(dir=tmp_path) as temp:
-        yield temp
+        ...
+    return temp
 
 
 # fixtures - redis

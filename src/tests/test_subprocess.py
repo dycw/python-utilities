@@ -313,10 +313,13 @@ class TestMaybeSudoCmd:
 
 
 class TestMkDir:
-    def test_main(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "dir"
-        mkdir(path)
-        assert Path(path).is_dir()
+    def test_main(self, *, temp_path_not_exist: Path) -> None:
+        assert not temp_path_not_exist.exists()
+        mkdir(temp_path_not_exist)
+        assert temp_path_not_exist.is_dir()
+
+    def test_idempotent(self, *, tmp_path: Path) -> None:
+        mkdir(tmp_path)
 
 
 class TestMkDirCmd:
