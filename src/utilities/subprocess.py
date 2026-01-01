@@ -1232,15 +1232,15 @@ def sudo_nopasswd_cmd(user: str, /) -> str:
 ##
 
 
-def symlink(targret: PathLike, link: PathLike, /, *, sudo: bool = False) -> None:
+def symlink(target: PathLike, link: PathLike, /, *, sudo: bool = False) -> None:
     """Make a symbolic link."""
     rm(link, sudo=sudo)
     mkdir(link, sudo=sudo, parent=True)
     if sudo:  # pragma: no cover
-        run(*sudo_cmd(*symlink_cmd(targret, link)))
+        run(*sudo_cmd(*symlink_cmd(target, link)))
     else:
-        targret, link = map(Path, [targret, link])
-        link.symlink_to(targret)
+        target, link = map(Path, [target, link])
+        link.symlink_to(target)
 
 
 def symlink_cmd(target: PathLike, link: PathLike, /) -> list[str]:
