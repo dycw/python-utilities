@@ -376,10 +376,9 @@ class TestMvCmd:
 
 class TestRipGrep:
     @skipif_ci
-    def test_main(self, *, tmp_path: Path) -> None:
-        path1, path2 = [tmp_path / f"file{i}.txt" for i in [1, 2]]
+    def test_main(self, *, tmp_path: Path, temp_files: tuple[Path, Path]) -> None:
+        path1, _ = temp_files
         _ = path1.write_text("foo")
-        path2.touch()
         result = ripgrep("--files-with-matches", "foo", path=tmp_path)
         expected = str(path1)
         assert result == expected
@@ -404,16 +403,12 @@ class TestRipGrepCmd:
 
 
 class TestRm:
-    def test_single_file(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
-        rm(path)
-        assert not path.exists()
+    def test_single_file(self, *, temp_file: Path) -> None:
+        rm(temp_file)
+        assert not temp_file.exists()
 
-    def test_multiple_files(self, *, tmp_path: Path) -> None:
-        path1, path2 = [tmp_path / f"file{i}.txt" for i in [1, 2]]
-        path1.touch()
-        path2.touch()
+    def test_multiple_files(self, *, temp_files: tuple[Path, Path]) -> None:
+        path1, path2 = temp_files
         rm(path1, path2)
         assert not path1.exists()
         assert not path2.exists()
@@ -501,25 +496,21 @@ class TestRsync:
 
 
 class TestRsyncCmd:
-    def test_main(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        result = rsync_cmd(src, "user", "hostname", "dest")
+    def test_main(self, *, temp_file: Path) -> None:
+        result = rsync_cmd(temp_file, "user", "hostname", "dest")
         expected: list[str] = [
             "rsync",
             "--checksum",
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            str(src),
+            str(temp_file),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_multiple_sources(self, *, tmp_path: Path) -> None:
-        src1, src2 = [tmp_path / f"file{i}.txt" for i in [1, 2]]
-        src1.touch()
-        src2.touch()
+    def test_multiple_sources(self, *, temp_files: tuple[Path, Path]) -> None:
+        src1, src2 = temp_files
         result = rsync_cmd([src1, src2], "user", "hostname", "dest")
         expected: list[str] = [
             "rsync",

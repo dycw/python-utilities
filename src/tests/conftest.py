@@ -70,6 +70,14 @@ def temp_file(*, tmp_path: Path) -> Iterator[Path]:
 
 
 @fixture
+def temp_files(*, tmp_path: Path) -> Iterator[tuple[Path, Path]]:
+    with TemporaryFile(dir=tmp_path) as temp1, TemporaryFile(dir=tmp_path) as temp2:
+        temp1.touch()
+        temp2.touch()
+        yield temp1, temp2
+
+
+@fixture
 def temp_path_not_exist(*, tmp_path: Path) -> Path:
     with TemporaryFile(dir=tmp_path) as temp:
         ...
