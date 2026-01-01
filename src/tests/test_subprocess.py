@@ -3,6 +3,7 @@ from __future__ import annotations
 from logging import INFO, getLogger
 from pathlib import Path
 from re import MULTILINE, search
+from shutil import rmtree
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 from uuid import uuid4
@@ -690,10 +691,22 @@ class TestRsyncMany:
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
+    @mark.only
     def test_single_directory(
         self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
     ) -> None:
+        # !!!!!
+        tmp_path = Path("/tmp/src")
+        rmtree(tmp_path, ignore_errors=True)  # TODO
+        tmp_path.mkdir()
+        (tmp_path / temp_file.name).touch()
+        # !!!!!
         with yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest:
+            # !!!!!
+            dest = Path("/tmp/dest")
+            ssh(ssh_user, ssh_hostname, *rm_cmd(dest))
+            ssh(ssh_user, ssh_hostname, *mkdir_cmd(dest))
+            # !!!!!
             rsync_many(ssh_user, ssh_hostname, (tmp_path, dest))
             ssh(
                 ssh_user,
