@@ -100,7 +100,7 @@
   name = "dycw-utilities"
   readme = "README.md"
   requires-python = ">= 3.12"
-  version = "0.175.7"
+  version = "0.175.8"
 
   [project.entry-points.pytest11]
     pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
