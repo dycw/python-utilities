@@ -79,8 +79,32 @@ def TemporaryFile(  # noqa: N802
     ignore_cleanup_errors: bool = False,
     delete: bool = True,
     name: str | None = None,
+    text: str | None = None,
 ) -> Iterator[Path]:
     """Yield a temporary file."""
+    with _temporary_file_inner(
+        suffix=suffix,
+        prefix=prefix,
+        dir=dir,
+        ignore_cleanup_errors=ignore_cleanup_errors,
+        delete=delete,
+        name=name,
+    ) as temp:
+        if text is not None:
+            _ = temp.write_text(text)
+        yield temp
+
+
+@contextmanager
+def _temporary_file_inner(
+    *,
+    suffix: str | None = None,
+    prefix: str | None = None,
+    dir: PathLike | None = None,  # noqa: A002
+    ignore_cleanup_errors: bool = False,
+    delete: bool = True,
+    name: str | None = None,
+) -> Iterator[Path]:
     with TemporaryDirectory(
         suffix=suffix,
         prefix=prefix,
