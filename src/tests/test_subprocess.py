@@ -388,20 +388,30 @@ class TestMvCmd:
         assert result == expected
 
 
-class TestRemove:
-    def test_file(self, *, tmp_path: Path) -> None:
+class TestRm:
+    def test_single_file(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file.txt"
         path.touch()
         assert path.is_file()
         rm(path)
-        assert not path.is_file()
+        assert not path.exists()
 
-    def test_dir(self, *, tmp_path: Path) -> None:
+    def test_multiple_files(self, *, tmp_path: Path) -> None:
+        path1, path2 = [tmp_path / f"file{i}.txt" for i in [1, 2]]
+        path1.touch()
+        path2.touch()
+        assert path1.is_file()
+        assert path2.is_file()
+        rm(path1, path2)
+        assert not path1.exists()
+        assert not path2.exists()
+
+    def test_single_dir(self, *, tmp_path: Path) -> None:
         path = tmp_path / "dir"
         path.mkdir()
         assert path.is_dir()
         rm(path)
-        assert not path.is_dir()
+        assert not path.exists()
 
 
 class TestRmCmd:
