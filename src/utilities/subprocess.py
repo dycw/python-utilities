@@ -1169,7 +1169,7 @@ def _ssh_retry_skip(return_code: int, stdout: str, stderr: str, /) -> bool:
 
 def _ssh_is_strict_checking_error(text: str, /) -> bool:
     match = search(
-        "No ED25519 host key is known for .* and you have requested strict checking",
+        "(Host key for .* has changed|No ED25519 host key is known for .* and you have requested strict checking",
         text,
     )
     return match is not None
