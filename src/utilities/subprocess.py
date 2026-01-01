@@ -525,6 +525,7 @@ def rsync_many(
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     print: bool = False,  # noqa: A002
+    exclude: MaybeIterable[str] | None = None,
 ) -> None:
     cmds: list[list[str]] = []  # skipif-ci
     with (  # skipif-ci
@@ -562,6 +563,7 @@ def rsync_many(
             print=print,
             retry=retry,
             logger=logger,
+            exclude=exclude,
         )
         ssh(
             user,
