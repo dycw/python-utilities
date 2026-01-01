@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from io import StringIO
 from itertools import repeat
 from pathlib import Path
-from re import MULTILINE, search
+from re import search
 from shlex import join
 from shutil import copyfile, copytree, move, rmtree
 from string import Template
@@ -409,7 +409,6 @@ def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
 def replace_text(
     path: PathLike, /, *replacements: tuple[str, str], sudo: bool = False
 ) -> None:
-    """Replace the text in a file."""
     path = Path(path)
     text = cat(path, sudo=sudo)
     for old, new in replacements:
