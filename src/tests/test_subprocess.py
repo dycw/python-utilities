@@ -78,7 +78,6 @@ from utilities.subprocess import (
     yield_git_repo,
     yield_ssh_temp_dir,
 )
-from utilities.tempfile import TemporaryDirectory, TemporaryFile
 from utilities.text import strip_and_dedent, unique_str
 from utilities.whenever import MINUTE, SECOND
 
@@ -434,13 +433,10 @@ class TestRmCmd:
 class TestRsync:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_file(self, *, ssh_user: str, ssh_hostname: str) -> None:
-        with (
-            TemporaryFile() as src,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
-        ):
-            dest = temp_dest / src.name
-            rsync(src, ssh_user, ssh_hostname, dest)
+    def test_file(self, *, temp_file: Path, ssh_user: str, ssh_hostname: str) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
+            dest = temp_dest / temp_file.name
+            rsync(temp_file, ssh_user, ssh_hostname, dest)
             ssh(
                 ssh_user,
                 ssh_hostname,
@@ -451,44 +447,37 @@ class TestRsync:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
     def test_dir_without_trailing_slash(
-        self, *, ssh_user: str, ssh_hostname: str
+        self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
     ) -> None:
-        with (
-            TemporaryDirectory() as src,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
-        ):
-            (src / "file.txt").touch()
-            name = src.name
-            dest = temp_dest / name
-            rsync(src, ssh_user, ssh_hostname, dest)
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
+            dest = temp_dest / tmp_path.name
+            rsync(tmp_path, ssh_user, ssh_hostname, dest)
             ssh(
                 ssh_user,
                 ssh_hostname,
                 *BASH_LS,
                 input=strip_and_dedent(f"""
                     if ! [ -d {dest} ]; then exit 1; fi
-                    if ! [ -d {dest}/{name} ]; then exit 1; fi
-                    if ! [ -f {dest}/{name}/file.txt ]; then exit 1; fi
+                    if ! [ -d {dest}/{tmp_path.name} ]; then exit 1; fi
+                    if ! [ -f {dest}/{tmp_path.name}/{temp_file.name} ]; then exit 1; fi
                 """),
             )
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_dir_with_trailing_slash(self, *, ssh_user: str, ssh_hostname: str) -> None:
-        with (
-            TemporaryDirectory() as src,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
-        ):
-            (src / "file.txt").touch()
-            dest = temp_dest / src.name
-            rsync(f"{src}/", ssh_user, ssh_hostname, dest)
+    def test_dir_with_trailing_slash(
+        self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
+    ) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
+            dest = temp_dest / tmp_path.name
+            rsync(f"{tmp_path}/", ssh_user, ssh_hostname, dest)
             ssh(
                 ssh_user,
                 ssh_hostname,
                 *BASH_LS,
                 input=strip_and_dedent(f"""
                     if ! [ -d {dest} ]; then exit 1; fi
-                    if ! [ -f {dest}/file.txt ]; then exit 1; fi
+                    if ! [ -f {dest}/{temp_file.name} ]; then exit 1; fi
                 """),
             )
 
