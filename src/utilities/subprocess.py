@@ -43,6 +43,7 @@ _HOST_KEY_ALGORITHMS = ["ssh-ed25519"]
 APT_UPDATE = ["apt", "update", "-y"]
 BASH_LC = ["bash", "-lc"]
 BASH_LS = ["bash", "-ls"]
+CHPASSWD = "chpasswd"
 GIT_BRANCH_SHOW_CURRENT = ["git", "branch", "--show-current"]
 KNOWN_HOSTS = Path.home() / ".ssh/known_hosts"
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
@@ -92,9 +93,6 @@ def chmod(path: PathLike, perms: PermissionsLike, /, *, sudo: bool = False) -> N
         Path(path).chmod(int(ensure_perms(perms)))
 
 
-##
-
-
 def chmod_cmd(path: PathLike, perms: PermissionsLike, /) -> list[str]:
     """Command to use 'chmod' to change file mode."""
     return ["chmod", str(ensure_perms(perms)), str(path)]
@@ -134,9 +132,6 @@ def chown(
                 assert_never(never)
 
 
-##
-
-
 def chown_cmd(
     path: PathLike, /, *, user: str | int | None = None, group: str | int | None = None
 ) -> list[str]:
@@ -160,6 +155,16 @@ class ChownCmdError(Exception):
     @override
     def __str__(self) -> str:
         return "At least one of 'user' and/or 'group' must be given; got None"
+
+
+##
+
+
+def chpasswd(user_name: str, password: str, /, *, sudo: bool = False) -> None:
+    """Update passwords."""
+    run(  # pragma: no cover
+        *maybe_sudo_cmd(CHPASSWD, sudo=sudo), input=f"{user_name}:{password}"
+    )
 
 
 ##
@@ -1288,7 +1293,44 @@ def touch_cmd(path: PathLike, /) -> list[str]:
 
 
 def update_ca_certificates(*, sudo: bool = False) -> None:
+    """Update the system CA certificates."""
     run(*maybe_sudo_cmd(UPDATE_CA_CERTIFICATES, sudo=sudo))  # pragma: no cover
+
+
+##
+
+
+def useradd(
+    login: str,
+    /,
+    *,
+    create_home: bool = True,
+    groups: MaybeIterable[str] | None = None,
+    shell: PathLike | None = None,
+) -> None:
+    """Create a new user."""
+    run(  # pragma: no cover
+        *useradd_cmd(login, create_home=create_home, groups=groups, shell=shell)
+    )
+
+
+def useradd_cmd(
+    login: str,
+    /,
+    *,
+    create_home: bool = True,
+    groups: MaybeIterable[str] | None = None,
+    shell: PathLike | None = None,
+) -> list[str]:
+    """Command to use 'useradd' to create a new user."""
+    args: list[str] = ["useradd"]
+    if create_home:
+        args.append("--create-home")
+    if groups is not None:
+        args.extend(["--groups", *always_iterable(groups)])
+    if shell is not None:
+        args.extend(["--shell", str(shell)])
+    return [*args, login]
 
 
 ##
@@ -1456,6 +1498,7 @@ __all__ = [
     "APT_UPDATE",
     "BASH_LC",
     "BASH_LS",
+    "CHPASSWD",
     "GIT_BRANCH_SHOW_CURRENT",
     "MKTEMP_DIR_CMD",
     "RESTART_SSHD",
@@ -1473,6 +1516,7 @@ __all__ = [
     "chmod_cmd",
     "chown",
     "chown_cmd",
+    "chpasswd",
     "cp",
     "cp_cmd",
     "echo_cmd",
@@ -1514,6 +1558,8 @@ __all__ = [
     "touch",
     "touch_cmd",
     "update_ca_certificates",
+    "useradd",
+    "useradd_cmd",
     "uv_run",
     "uv_run_cmd",
     "yield_git_repo",

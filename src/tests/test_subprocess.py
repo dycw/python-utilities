@@ -16,6 +16,7 @@ from utilities.pathlib import get_file_group, get_file_owner
 from utilities.permissions import Permissions
 from utilities.pwd import EFFECTIVE_USER_NAME
 from utilities.pytest import skipif_ci, skipif_mac, throttle
+from utilities.shutil import which
 from utilities.subprocess import (
     BASH_LC,
     BASH_LS,
@@ -72,6 +73,7 @@ from utilities.subprocess import (
     tee,
     tee_cmd,
     touch_cmd,
+    useradd_cmd,
     uv_run_cmd,
     yield_git_repo,
     yield_ssh_temp_dir,
@@ -1393,6 +1395,29 @@ class TestTouchCmd:
     def test_main(self) -> None:
         result = touch_cmd("path")
         expected = ["touch", "path"]
+        assert result == expected
+
+
+class TestUserAddCmd:
+    def test_main(self) -> None:
+        result = useradd_cmd("login")
+        expected = ["useradd", "--create-home", "login"]
+        assert result == expected
+
+    def test_create_home(self) -> None:
+        result = useradd_cmd("login", create_home=False)
+        expected = ["useradd", "login"]
+        assert result == expected
+
+    def test_groups(self) -> None:
+        result = useradd_cmd("login", groups=["group"])
+        expected = ["useradd", "--create-home", "--groups", "group", "login"]
+        assert result == expected
+
+    def test_shell(self) -> None:
+        path = which("bash")
+        result = useradd_cmd("login", shell=path)
+        expected = ["useradd", "--create-home", "--shell", str(path), "login"]
         assert result == expected
 
 
