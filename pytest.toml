@@ -6,9 +6,8 @@
     "--durations=10",
     "--durations-min=10",
     "--cov=utilities",
-    "--cov-config=pyproject.toml",
+    "--cov-config=.coveragerc.toml",
     "--cov-report=html",
-    "--cov-report=term-missing:skip-covered",
   ]
   asyncio_default_fixture_loop_scope = "function"
   asyncio_mode = "auto"

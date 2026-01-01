@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
+from re import search
 from shlex import join
 from shutil import copyfile, copytree, move, rmtree
 from string import Template
@@ -23,7 +24,7 @@ from utilities.text import strip_and_dedent
 from utilities.whenever import to_seconds
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
 
     from utilities.permissions import PermissionsLike
     from utilities.types import (
@@ -626,6 +627,7 @@ def run(
     return_stdout: bool = False,
     return_stderr: bool = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -646,6 +648,7 @@ def run(
     return_stdout: Literal[True],
     return_stderr: bool = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -666,6 +669,7 @@ def run(
     return_stdout: bool = False,
     return_stderr: Literal[True],
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -686,6 +690,7 @@ def run(
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> None: ...
 @overload
@@ -706,6 +711,7 @@ def run(
     return_stdout: bool = False,
     return_stderr: bool = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None: ...
 def run(
@@ -725,6 +731,7 @@ def run(
     return_stdout: bool = False,
     return_stderr: bool = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None:
     """Run a command in a subprocess."""
@@ -782,14 +789,18 @@ def run(
             case 0, False, False:
                 return None
             case _, _, _:
-                if retry is None:
-                    attempts = delta = None
-                else:
-                    attempts, delta = retry
                 _ = stdout.seek(0)
                 stdout_text = stdout.read()
                 _ = stderr.seek(0)
                 stderr_text = stderr.read()
+                if (retry is None) or (
+                    (retry is not None)
+                    and (retry_skip is not None)
+                    and retry_skip(return_code, stdout_text, stderr_text)
+                ):
+                    attempts = delta = None
+                else:
+                    attempts, delta = retry
                 if logger is not None:
                     msg = strip_and_dedent(f"""
 'run' failed with:
@@ -884,6 +895,7 @@ def ssh(
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
+    port: int | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -903,6 +915,7 @@ def ssh(
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
+    port: int | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -922,6 +935,7 @@ def ssh(
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
+    port: int | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -941,6 +955,7 @@ def ssh(
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
+    port: int | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -960,6 +975,7 @@ def ssh(
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
+    port: int | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -978,6 +994,7 @@ def ssh(
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
+    port: int | None = None,
     input: str | None = None,  # noqa: A002
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
@@ -996,19 +1013,57 @@ def ssh(
         batch_mode=batch_mode,
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
+        port=port,
     )
-    return run(  # skipif-ci
-        *cmd_and_args,
-        input=input,
-        print=print,
-        print_stdout=print_stdout,
-        print_stderr=print_stderr,
-        return_=return_,
-        return_stdout=return_stdout,
-        return_stderr=return_stderr,
-        retry=retry,
-        logger=logger,
+    try:  # skipif-ci
+        return run(
+            *cmd_and_args,
+            input=input,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            return_=return_,
+            return_stdout=return_stdout,
+            return_stderr=return_stderr,
+            retry=retry,
+            retry_skip=_ssh_retry_skip,
+            logger=logger,
+        )
+    except CalledProcessError as error:  # skipif-ci
+        if not _ssh_is_strict_checking_error(error.stderr):
+            raise
+        ssh_keyscan(hostname, port=port)
+        return ssh(
+            user,
+            hostname,
+            *cmd_and_cmds_or_args,
+            batch_mode=batch_mode,
+            host_key_algorithms=host_key_algorithms,
+            strict_host_key_checking=strict_host_key_checking,
+            port=port,
+            input=input,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            return_=return_,
+            return_stdout=return_stdout,
+            return_stderr=return_stderr,
+            retry=retry,
+            logger=logger,
+        )
+
+
+def _ssh_retry_skip(return_code: int, stdout: str, stderr: str, /) -> bool:
+    _ = (return_code, stdout)
+    return _ssh_is_strict_checking_error(stderr)
+
+
+def _ssh_is_strict_checking_error(text: str, /) -> bool:
+    match = search(
+        "No ED25519 host key is known for .* and you have requested strict checking",
+        text,
     )
+    return match is not None
 
 
 def ssh_cmd(
@@ -1019,12 +1074,14 @@ def ssh_cmd(
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
+    port: int | None = None,
 ) -> list[str]:
     """Command to use 'ssh' to execute a command on a remote machine."""
     args: list[str] = ssh_opts_cmd(
         batch_mode=batch_mode,
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
+        port=port,
     )
     return [*args, f"{user}@{hostname}", *cmd_and_cmds_or_args]
 
@@ -1034,6 +1091,7 @@ def ssh_opts_cmd(
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
+    port: int | None = None,
 ) -> list[str]:
     """Command to use prepare 'ssh' to execute a command on a remote machine."""
     args: list[str] = ["ssh"]
@@ -1042,6 +1100,8 @@ def ssh_opts_cmd(
     args.extend(["-o", f"HostKeyAlgorithms={','.join(host_key_algorithms)}"])
     if strict_host_key_checking:
         args.extend(["-o", "StrictHostKeyChecking=yes"])
+    if port is not None:
+        args.extend(["-p", str(port)])
     return [*args, "-T"]
 
 

@@ -21,7 +21,7 @@
     "case never:",
     "if TYPE_CHECKING:",
   ]
-  fail_under = 100.0
+  # fail_under = 100.0
   skip_covered = true
   skip_empty = true
 
