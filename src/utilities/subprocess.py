@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from io import StringIO
 from itertools import repeat
 from pathlib import Path
-from re import search
+from re import MULTILINE, search
 from shlex import join
 from shutil import copyfile, copytree, move, rmtree
 from string import Template
@@ -1169,8 +1169,9 @@ def _ssh_retry_skip(return_code: int, stdout: str, stderr: str, /) -> bool:
 
 def _ssh_is_strict_checking_error(text: str, /) -> bool:
     match = search(
-        "No ED25519 host key is known for .* and you have requested strict checking",
+        "(Host key for .* has changed|No ED25519 host key is known for .*) and you have requested strict checking",
         text,
+        flags=MULTILINE,
     )
     return match is not None
 

@@ -26,6 +26,7 @@ from utilities.subprocess import (
     MvFileError,
     RsyncCmdNoSourcesError,
     RsyncCmdSourcesNotFoundError,
+    _ssh_is_strict_checking_error,
     append_text,
     apt_install_cmd,
     cat,
@@ -1268,6 +1269,39 @@ class TestSSHCmd:
             "true",
         ]
         assert result == expected
+
+
+class TestSSHIsStrictCheckingError:
+    @mark.parametrize(
+        "text",
+        [
+            param(
+                strip_and_dedent("""
+No ED25519 host key is known for XXX and you have requested strict checking.
+Host key verification failed.
+""")
+            ),
+            param(
+                strip_and_dedent("""
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that a host key has just been changed.
+The fingerprint for the ED25519 key sent by the remote host is
+SHA256:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.
+Please contact your system administrator.
+Add correct host key in /Users/XXX/.ssh/known_hosts to get rid of this message.
+Offending ED25519 key in /Users/XXX/.ssh/known_hosts:38
+Host key for XXX has changed and you have requested strict checking.
+Host key verification failed.
+""")
+            ),
+        ],
+    )
+    def test_main(self, *, text: str) -> None:
+        assert _ssh_is_strict_checking_error(text)
 
 
 class TestSSHKeyScan:
