@@ -1400,7 +1400,7 @@ class TestTee:
         result = temp_path_not_exist.read_text()
         assert result == text
 
-    def test_append2(self, *, temp_path: Path) -> None:
+    def test_append(self, *, temp_path: Path) -> None:
         init, post = "init", "post"
         _ = temp_path.write_text(init)
         tee(temp_path, post, append=True)
