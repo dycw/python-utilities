@@ -93,27 +93,34 @@ if TYPE_CHECKING:
 
 
 class TestAppendText:
-    @mark.parametrize("skip_if_present", [param(False), param(True)])
-    def test_main(self, *, temp_file: Path, skip_if_present: bool) -> None:
-        init, post = "init", "post"
-        _ = temp_file.write_text(init)
-        append_text(temp_file, post, skip_if_present=skip_if_present)
-        result = temp_file.read_text()
-        expected = f"{init}\n{post}"
-        assert result == expected
-
-    def test_missing(self, *, temp_path_not_exist: Path) -> None:
+    def test_non_existing(self, *, temp_path_not_exist: Path) -> None:
         text = "text"
         append_text(temp_path_not_exist, text)
         result = temp_path_not_exist.read_text()
         assert result == text
 
-    def test_skip_if_present(self, *, temp_file: Path) -> None:
+    def test_existing(self, *, temp_file: Path) -> None:
+        init, post = "init", "post"
+        _ = temp_file.write_text(init)
+        append_text(temp_file, post)
+        result = temp_file.read_text()
+        expected = f"{init}\n{post}"
+        assert result == expected
+
+    def test_skip_if_present_with_effect(self, *, temp_file: Path) -> None:
         text = "text"
         _ = temp_file.write_text(text)
         append_text(temp_file, text, skip_if_present=True)
         result = temp_file.read_text()
         assert result == text
+
+    def test_skip_if_present_without_effect(self, *, temp_file: Path) -> None:
+        init, post = "init", "post"
+        _ = temp_file.write_text(init)
+        append_text(temp_file, post, skip_if_present=True)
+        result = temp_file.read_text()
+        expected = f"{init}\n{post}"
+        assert result == expected
 
     def test_blank_lines(self, *, temp_file: Path) -> None:
         init, post = "init", "post"
@@ -215,8 +222,8 @@ class TestChOwnCmd:
 
 
 class TestCopyText:
-    def test_main(self, *, temp_paths: tuple[Path, Path]) -> None:
-        src, dest = temp_paths
+    def test_main(self, *, temp_files: tuple[Path, Path]) -> None:
+        src, dest = temp_files
         _ = src.write_text("${KEY}")
         copy_text(src, dest, substitutions={"KEY": "value"})
         result = dest.read_text()
@@ -1406,11 +1413,18 @@ class TestTee:
         result = temp_path_not_exist.read_text()
         assert result == text
 
-    def test_append(self, *, temp_path: Path) -> None:
+    def test_existing(self, *, temp_file: Path) -> None:
+        post = "post"
+        _ = temp_file.write_text("init")
+        tee(temp_file, post)
+        result = temp_file.read_text()
+        assert result == post
+
+    def test_append(self, *, temp_file: Path) -> None:
         init, post = "init", "post"
-        _ = temp_path.write_text(init)
-        tee(temp_path, post, append=True)
-        result = temp_path.read_text()
+        _ = temp_file.write_text(init)
+        tee(temp_file, post, append=True)
+        result = temp_file.read_text()
         expected = f"{init}{post}"
         assert result == expected
 
