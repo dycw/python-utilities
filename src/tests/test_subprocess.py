@@ -446,20 +446,19 @@ class TestRsync:
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    @mark.only
     def test_dir_without_trailing_slash(
         self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
     ) -> None:
-        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
-            rsync(tmp_path, ssh_user, ssh_hostname, temp_dest)
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest:
+            rsync(tmp_path, ssh_user, ssh_hostname, dest)
             ssh(
                 ssh_user,
                 ssh_hostname,
                 *BASH_LS,
                 input=strip_and_dedent(f"""
-                    if ! [ -d {temp_dest} ]; then exit 1; fi
-                    if ! [ -d {temp_dest}/{tmp_path.name} ]; then exit 1; fi
-                    if ! [ -f {temp_dest}/{tmp_path.name}/{temp_file.name} ]; then exit 1; fi
+                    if ! [ -d {dest} ]; then exit 1; fi
+                    if ! [ -d {dest}/{tmp_path.name} ]; then exit 1; fi
+                    if ! [ -f {dest}/{tmp_path.name}/{temp_file.name} ]; then exit 1; fi
                 """),
             )
 
@@ -468,8 +467,7 @@ class TestRsync:
     def test_dir_with_trailing_slash(
         self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
     ) -> None:
-        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
-            dest = temp_dest / tmp_path.name
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest:
             rsync(f"{tmp_path}/", ssh_user, ssh_hostname, dest)
             ssh(
                 ssh_user,
@@ -695,8 +693,7 @@ class TestRsyncMany:
     def test_single_directory(
         self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
     ) -> None:
-        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
-            dest = temp_dest / tmp_path.name
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest:
             rsync_many(ssh_user, ssh_hostname, (tmp_path, dest))
             ssh(
                 ssh_user,
