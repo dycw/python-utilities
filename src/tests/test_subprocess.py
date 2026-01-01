@@ -35,6 +35,7 @@ from utilities.subprocess import (
     chmod_cmd,
     chown,
     chown_cmd,
+    copy_text,
     cp,
     cp_cmd,
     echo_cmd,
@@ -205,6 +206,15 @@ class TestChOwnCmd:
             match=r"At least one of 'user' and/or 'group' must be given; got None",
         ):
             _ = chown_cmd("path")
+
+
+class TestCopyText:
+    def test_main(self, *, temp_paths: tuple[Path, Path]) -> None:
+        src, dest = temp_paths
+        _ = src.write_text("${KEY}")
+        copy_text(src, dest, substitutions={"KEY": "value"})
+        result = dest.read_text()
+        assert result == "value"
 
 
 class TestCp:

@@ -202,6 +202,23 @@ def chpasswd(user_name: str, password: str, /, *, sudo: bool = False) -> None:
 ##
 
 
+def copy_text(
+    src: PathLike,
+    dest: PathLike,
+    /,
+    *,
+    sudo: bool = False,
+    substitutions: StrMapping | None = None,
+) -> None:
+    text = cat(src, sudo=sudo)
+    if substitutions is not None:
+        text = Template(text).substitute(**substitutions)
+    tee(dest, text, sudo=sudo)
+
+
+##
+
+
 def cp(
     src: PathLike,
     dest: PathLike,
@@ -1570,6 +1587,7 @@ __all__ = [
     "chown",
     "chown_cmd",
     "chpasswd",
+    "copy_text",
     "cp",
     "cp_cmd",
     "echo_cmd",
