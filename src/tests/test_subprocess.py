@@ -1168,13 +1168,11 @@ class TestSSH:
 
 
 class TestSSHAwait:
-    @mark.only
     @skipif_ci
     @throttle(delta=5 * MINUTE)
     def test_main(self, *, ssh_user: str, ssh_hostname: str) -> None:
         ssh_await(ssh_user, ssh_hostname)
 
-    @mark.only
     @skipif_ci
     @throttle(delta=5 * MINUTE)
     def test_logger(
