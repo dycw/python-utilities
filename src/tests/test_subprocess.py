@@ -176,7 +176,7 @@ class TestCp:
         assert temp_file.is_file()
         assert dest.is_file()
 
-    def test_dir(self, *, tmp_path: Path, temp_path_not_exist: Path) -> None:
+    def test_directory(self, *, tmp_path: Path, temp_path_not_exist: Path) -> None:
         src = tmp_path / tmp_path.name
         src.mkdir()
         dest = temp_path_not_exist / tmp_path.name
