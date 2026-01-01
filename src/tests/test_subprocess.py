@@ -140,7 +140,7 @@ class TestAptInstallCmd:
 
 class TestCat:
     def test_main(self, *, temp_file: Path) -> None:
-        text = "text"
+        text = "foo"
         _ = temp_file.write_text(text)
         result = cat(temp_file)
         assert result == text

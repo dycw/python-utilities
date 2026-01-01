@@ -62,18 +62,16 @@ def append_text(
     *,
     sudo: bool = False,
     skip_if_present: bool = False,
-    flags: int = 0,
-    blank_lines: int = 1,
+    newlines: int = 1,
 ) -> None:
-    """Append text to a file."""
     try:
         existing = cat(path, sudo=sudo)
     except (CalledProcessError, FileNotFoundError):
         tee(path, text, sudo=sudo, append=True)
         return
-    if skip_if_present and (search(text, existing, flags=flags) is not None):
+    if skip_if_present and (search(text, existing) is not None):
         return
-    full = "".join([*repeat("\n", times=blank_lines), text])
+    full = "\n".join([existing, *repeat("\n", times=newlines), text])
     tee(path, full, sudo=sudo, append=True)
 
 
@@ -1326,7 +1324,6 @@ def tee(
     path: PathLike, text: str, /, *, sudo: bool = False, append: bool = False
 ) -> None:
     """Duplicate standard input."""
-    mkdir(path, sudo=sudo, parent=True)
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*tee_cmd(path, append=append)), input=text)
     else:
