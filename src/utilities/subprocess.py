@@ -5,6 +5,7 @@ import sys
 from contextlib import contextmanager
 from dataclasses import dataclass
 from io import StringIO
+from itertools import repeat
 from pathlib import Path
 from re import search
 from shlex import join
@@ -54,6 +55,29 @@ UPDATE_CA_CERTIFICATES: str = "update-ca-certificates"
 ##
 
 
+def append_text(
+    path: PathLike,
+    text: str,
+    /,
+    *,
+    sudo: bool = False,
+    skip_if_present: bool = False,
+    newlines: int = 1,
+) -> None:
+    try:
+        existing = cat(path, sudo=sudo)
+    except (CalledProcessError, FileNotFoundError):
+        tee(path, text, sudo=sudo, append=True)
+        return
+    if skip_if_present and (search(text, existing) is not None):
+        return
+    full = "\n".join([existing, *repeat("\n", times=newlines), text])
+    tee(path, full, sudo=sudo, append=True)
+
+
+##
+
+
 def apt_install(package: str, /, *, update: bool = False, sudo: bool = False) -> None:
     """Install a package."""
     if update:  # pragma: no cover
@@ -67,6 +91,13 @@ def apt_install_cmd(package: str, /) -> list[str]:
 
 
 ##
+
+
+def cat(path: PathLike, /, *, sudo: bool = False) -> str:
+    """Concatenate a file."""
+    if sudo:  # pragma: no cover
+        return run(*sudo_cmd(*cat_cmd(path)), return_=True)
+    return Path(path).read_text()
 
 
 def cat_cmd(path: PathLike, /) -> list[str]:
@@ -1260,8 +1291,7 @@ def symlink_cmd(target: PathLike, link: PathLike, /) -> list[str]:
 def tee(
     path: PathLike, text: str, /, *, sudo: bool = False, append: bool = False
 ) -> None:
-    """Use 'tee' to duplicate standard input."""
-    mkdir(path, sudo=sudo, parent=True)
+    """Duplicate standard input."""
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*tee_cmd(path, append=append)), input=text)
     else:
@@ -1516,8 +1546,10 @@ __all__ = [
     "RsyncCmdError",
     "RsyncCmdNoSourcesError",
     "RsyncCmdSourcesNotFoundError",
+    "append_text",
     "apt_install",
     "apt_install_cmd",
+    "cat",
     "cd_cmd",
     "chmod",
     "chmod_cmd",

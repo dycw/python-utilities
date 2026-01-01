@@ -27,6 +27,7 @@ from utilities.subprocess import (
     RsyncCmdNoSourcesError,
     RsyncCmdSourcesNotFoundError,
     apt_install_cmd,
+    cat,
     cat_cmd,
     cd_cmd,
     chmod,
@@ -93,6 +94,14 @@ class TestAptInstallCmd:
         result = apt_install_cmd("package")
         expected = ["apt", "install", "-y", "package"]
         assert result == expected
+
+
+class TestCat:
+    def test_main(self, *, temp_file: Path) -> None:
+        text = "foo"
+        _ = temp_file.write_text(text)
+        result = cat(temp_file)
+        assert result == text
 
 
 class TestCatCmd:
