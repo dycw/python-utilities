@@ -339,9 +339,11 @@ class TestMv:
         assert dest.is_file()
 
     def test_dir(self, *, tmp_path: Path, temp_path_not_exist: Path) -> None:
+        src = tmp_path / tmp_path.name
+        src.mkdir()
         dest = temp_path_not_exist / tmp_path.name
-        mv(tmp_path, dest)
-        assert not tmp_path.exists()
+        mv(src, dest)
+        assert not src.exists()
         assert dest.is_dir()
 
     def test_perms(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
