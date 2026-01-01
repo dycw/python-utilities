@@ -12,6 +12,7 @@ from whenever import PlainDateTime
 from utilities.contextlib import enhanced_context_manager
 from utilities.pytest import IS_CI, IS_CI_AND_NOT_LINUX, skipif_ci
 from utilities.re import ExtractGroupError, extract_group
+from utilities.tempfile import TemporaryFile
 from utilities.whenever import MINUTE, get_now_local_plain
 
 if TYPE_CHECKING:
@@ -56,6 +57,31 @@ def set_log_factory() -> AbstractContextManager[None]:
             setLogRecordFactory(LogRecord)
 
     return cm()
+
+
+# fixtures - pathlib
+
+
+@fixture
+def temp_file(*, tmp_path: Path) -> Iterator[Path]:
+    with TemporaryFile(dir=tmp_path) as temp:
+        temp.touch()
+        yield temp
+
+
+@fixture
+def temp_files(*, tmp_path: Path) -> Iterator[tuple[Path, Path]]:
+    with TemporaryFile(dir=tmp_path) as temp1, TemporaryFile(dir=tmp_path) as temp2:
+        temp1.touch()
+        temp2.touch()
+        yield temp1, temp2
+
+
+@fixture
+def temp_path_not_exist(*, tmp_path: Path) -> Path:
+    with TemporaryFile(dir=tmp_path) as temp:
+        ...
+    return temp
 
 
 # fixtures - redis

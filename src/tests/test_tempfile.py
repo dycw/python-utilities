@@ -40,6 +40,11 @@ class TestTemporaryFile:
             assert temp.read_text() == "text"
         assert not temp.is_file()
 
+    def test_dir(self, *, tmp_path: Path) -> None:
+        with TemporaryFile(dir=tmp_path) as temp:
+            relative = temp.relative_to(tmp_path)
+        assert len(relative.parts) == 1
+
     def test_name(self) -> None:
         with TemporaryFile(name="name") as temp:
             assert temp.name == "name"

@@ -110,13 +110,11 @@ class TestCDCmd:
 
 
 class TestChMod:
-    def test_main(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
+    def test_main(self, *, temp_file: Path) -> None:
         perms = Permissions.from_text("u=rw,g=r,o=r")
-        _ = chmod(path, perms)
-        current = Permissions.from_path(path)
-        assert current == perms
+        _ = chmod(temp_file, perms)
+        result = Permissions.from_path(temp_file)
+        assert result == perms
 
 
 class TestChModCmd:
@@ -127,33 +125,25 @@ class TestChModCmd:
 
 
 class TestChOwn:
-    def test_none(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
-        chown(path)
+    def test_none(self, *, temp_file: Path) -> None:
+        chown(temp_file)
 
-    def test_user(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
-        chown(path, user=EFFECTIVE_USER_NAME)
-        current = get_file_owner(path)
-        assert current == EFFECTIVE_USER_NAME
+    def test_user(self, *, temp_file: Path) -> None:
+        chown(temp_file, user=EFFECTIVE_USER_NAME)
+        result = get_file_owner(temp_file)
+        assert result == EFFECTIVE_USER_NAME
 
-    def test_group(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
-        chown(path, group=EFFECTIVE_GROUP_NAME)
-        current_group = get_file_group(path)
-        assert current_group == EFFECTIVE_GROUP_NAME
+    def test_group(self, *, temp_file: Path) -> None:
+        chown(temp_file, group=EFFECTIVE_GROUP_NAME)
+        result = get_file_group(temp_file)
+        assert result == EFFECTIVE_GROUP_NAME
 
-    def test_user_and_group(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
-        chown(path, user=EFFECTIVE_USER_NAME, group=EFFECTIVE_GROUP_NAME)
-        current_owner = get_file_owner(path)
-        assert current_owner == EFFECTIVE_USER_NAME
-        current_group = get_file_group(path)
-        assert current_group == EFFECTIVE_GROUP_NAME
+    def test_user_and_group(self, *, temp_file: Path) -> None:
+        chown(temp_file, user=EFFECTIVE_USER_NAME, group=EFFECTIVE_GROUP_NAME)
+        owner = get_file_owner(temp_file)
+        assert owner == EFFECTIVE_USER_NAME
+        group = get_file_group(temp_file)
+        assert group == EFFECTIVE_GROUP_NAME
 
 
 class TestChOwnCmd:
@@ -181,46 +171,39 @@ class TestChOwnCmd:
 
 
 class TestCp:
-    def test_file(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        dest = tmp_path / "file2.txt"
-        cp(src, dest)
-        assert src.is_file()
+    def test_file(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        dest = temp_path_not_exist / temp_file.name
+        cp(temp_file, dest)
+        assert temp_file.is_file()
         assert dest.is_file()
 
-    def test_dir(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "dir"
+    def test_directory(self, *, tmp_path: Path, temp_path_not_exist: Path) -> None:
+        src = tmp_path / tmp_path.name
         src.mkdir()
-        dest = tmp_path / "dir2"
+        dest = temp_path_not_exist / tmp_path.name
         cp(src, dest)
         assert src.is_dir()
         assert dest.is_dir()
 
-    def test_perms(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        dest = tmp_path / "file2.txt"
+    def test_perms(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        dest = temp_path_not_exist / temp_file.name
         perms = Permissions.from_text("u=rwx,g=,o=")
-        cp(src, dest, perms=perms)
-        current = Permissions.from_path(dest)
-        assert current == perms
+        cp(temp_file, dest, perms=perms)
+        result = Permissions.from_path(dest)
+        assert result == perms
 
-    def test_owner(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        dest = tmp_path / "file2.txt"
-        cp(src, dest, owner=EFFECTIVE_USER_NAME)
-        current = get_file_owner(dest)
-        assert current == EFFECTIVE_USER_NAME
+    def test_owner(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        dest = temp_path_not_exist / temp_file.name
+        cp(temp_file, dest, owner=EFFECTIVE_USER_NAME)
+        result = get_file_owner(dest)
+        assert result == EFFECTIVE_USER_NAME
 
-    def test_error(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "dir"
-        dest = tmp_path / "dir2"
+    def test_error(self, *, temp_path_not_exist: Path, tmp_path: Path) -> None:
+        dest = tmp_path / temp_path_not_exist.name
         with raises(
             CpError, match=r"Unable to copy '.+' to '.+'; source does not exist"
         ):
-            cp(src, dest)
+            cp(temp_path_not_exist, dest)
 
 
 class TestCpCmd:
@@ -325,10 +308,13 @@ class TestMaybeSudoCmd:
 
 
 class TestMkDir:
-    def test_main(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "dir"
-        mkdir(path)
-        assert Path(path).is_dir()
+    def test_main(self, *, temp_path_not_exist: Path) -> None:
+        assert not temp_path_not_exist.exists()
+        mkdir(temp_path_not_exist)
+        assert temp_path_not_exist.is_dir()
+
+    def test_idempotent(self, *, tmp_path: Path) -> None:
+        mkdir(tmp_path)
 
 
 class TestMkDirCmd:
@@ -344,46 +330,39 @@ class TestMkDirCmd:
 
 
 class TestMv:
-    def test_file(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        dest = tmp_path / "file2.txt"
-        mv(src, dest)
-        assert not src.exists()
+    def test_file(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        dest = temp_path_not_exist / temp_file.name
+        mv(temp_file, dest)
+        assert not temp_file.exists()
         assert dest.is_file()
 
-    def test_dir(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "dir"
+    def test_dir(self, *, tmp_path: Path, temp_path_not_exist: Path) -> None:
+        src = tmp_path / tmp_path.name
         src.mkdir()
-        dest = tmp_path / "dir2"
+        dest = temp_path_not_exist / tmp_path.name
         mv(src, dest)
         assert not src.exists()
         assert dest.is_dir()
 
-    def test_perms(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        dest = tmp_path / "file2.txt"
+    def test_perms(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        dest = temp_path_not_exist / temp_file.name
         perms = Permissions.from_text("u=rwx,g=,o=")
-        mv(src, dest, perms=perms)
-        current = Permissions.from_path(dest)
-        assert current == perms
+        mv(temp_file, dest, perms=perms)
+        result = Permissions.from_path(dest)
+        assert result == perms
 
-    def test_owner(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        dest = tmp_path / "file2.txt"
-        mv(src, dest, owner=EFFECTIVE_USER_NAME)
-        current = get_file_owner(dest)
-        assert current == EFFECTIVE_USER_NAME
+    def test_owner(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        dest = temp_path_not_exist / temp_file.name
+        mv(temp_file, dest, owner=EFFECTIVE_USER_NAME)
+        result = get_file_owner(dest)
+        assert result == EFFECTIVE_USER_NAME
 
-    def test_error(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "dir"
-        dest = tmp_path / "dir2"
+    def test_error(self, *, temp_path_not_exist: Path, tmp_path: Path) -> None:
+        dest = tmp_path / temp_path_not_exist.name
         with raises(
             MvFileError, match=r"Unable to move '.+' to '.+'; source does not exist"
         ):
-            mv(src, dest)
+            mv(temp_path_not_exist, dest)
 
 
 class TestMvCmd:
@@ -395,10 +374,9 @@ class TestMvCmd:
 
 class TestRipGrep:
     @skipif_ci
-    def test_main(self, *, tmp_path: Path) -> None:
-        path1, path2 = [tmp_path / f"file{i}.txt" for i in [1, 2]]
+    def test_main(self, *, tmp_path: Path, temp_files: tuple[Path, Path]) -> None:
+        path1, _ = temp_files
         _ = path1.write_text("foo")
-        path2.touch()
         result = ripgrep("--files-with-matches", "foo", path=tmp_path)
         expected = str(path1)
         assert result == expected
@@ -423,16 +401,12 @@ class TestRipGrepCmd:
 
 
 class TestRm:
-    def test_single_file(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
-        rm(path)
-        assert not path.exists()
+    def test_single_file(self, *, temp_file: Path) -> None:
+        rm(temp_file)
+        assert not temp_file.exists()
 
-    def test_multiple_files(self, *, tmp_path: Path) -> None:
-        path1, path2 = [tmp_path / f"file{i}.txt" for i in [1, 2]]
-        path1.touch()
-        path2.touch()
+    def test_multiple_files(self, *, temp_files: tuple[Path, Path]) -> None:
+        path1, path2 = temp_files
         rm(path1, path2)
         assert not path1.exists()
         assert not path2.exists()
@@ -460,13 +434,10 @@ class TestRmCmd:
 class TestRsync:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_file(self, *, ssh_user: str, ssh_hostname: str) -> None:
-        with (
-            TemporaryFile() as src,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
-        ):
-            dest = temp_dest / src.name
-            rsync(src, ssh_user, ssh_hostname, dest)
+    def test_file(self, *, temp_file: Path, ssh_user: str, ssh_hostname: str) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
+            dest = temp_dest / temp_file.name
+            rsync(temp_file, ssh_user, ssh_hostname, dest)
             ssh(
                 ssh_user,
                 ssh_hostname,
@@ -477,68 +448,55 @@ class TestRsync:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
     def test_dir_without_trailing_slash(
-        self, *, ssh_user: str, ssh_hostname: str
+        self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
     ) -> None:
-        with (
-            TemporaryDirectory() as src,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
-        ):
-            (src / "file.txt").touch()
-            name = src.name
-            dest = temp_dest / name
-            rsync(src, ssh_user, ssh_hostname, dest)
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest:
+            rsync(tmp_path, ssh_user, ssh_hostname, dest)
             ssh(
                 ssh_user,
                 ssh_hostname,
                 *BASH_LS,
                 input=strip_and_dedent(f"""
                     if ! [ -d {dest} ]; then exit 1; fi
-                    if ! [ -d {dest}/{name} ]; then exit 1; fi
-                    if ! [ -f {dest}/{name}/file.txt ]; then exit 1; fi
+                    if ! [ -d {dest}/{tmp_path.name} ]; then exit 1; fi
+                    if ! [ -f {dest}/{tmp_path.name}/{temp_file.name} ]; then exit 1; fi
                 """),
             )
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_dir_with_trailing_slash(self, *, ssh_user: str, ssh_hostname: str) -> None:
-        with (
-            TemporaryDirectory() as src,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
-        ):
-            (src / "file.txt").touch()
-            dest = temp_dest / src.name
-            rsync(f"{src}/", ssh_user, ssh_hostname, dest)
+    def test_dir_with_trailing_slash(
+        self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
+    ) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest:
+            rsync(f"{tmp_path}/", ssh_user, ssh_hostname, dest)
             ssh(
                 ssh_user,
                 ssh_hostname,
                 *BASH_LS,
                 input=strip_and_dedent(f"""
                     if ! [ -d {dest} ]; then exit 1; fi
-                    if ! [ -f {dest}/file.txt ]; then exit 1; fi
+                    if ! [ -f {dest}/{temp_file.name} ]; then exit 1; fi
                 """),
             )
 
 
 class TestRsyncCmd:
-    def test_main(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        result = rsync_cmd(src, "user", "hostname", "dest")
+    def test_main(self, *, temp_file: Path) -> None:
+        result = rsync_cmd(temp_file, "user", "hostname", "dest")
         expected: list[str] = [
             "rsync",
             "--checksum",
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            str(src),
+            str(temp_file),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_multiple_sources(self, *, tmp_path: Path) -> None:
-        src1, src2 = [tmp_path / f"file{i}.txt" for i in [1, 2]]
-        src1.touch()
-        src2.touch()
+    def test_multiple_sources(self, *, temp_files: tuple[Path, Path]) -> None:
+        src1, src2 = temp_files
         result = rsync_cmd([src1, src2], "user", "hostname", "dest")
         expected: list[str] = [
             "rsync",
@@ -553,24 +511,21 @@ class TestRsyncCmd:
         assert result == expected
 
     def test_source_with_trailing_slash(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "src"
-        src.mkdir()
-        result = rsync_cmd(f"{src}/", "user", "hostname", "dest")
+        src = f"{tmp_path}/"
+        result = rsync_cmd(src, "user", "hostname", "dest")
         expected: list[str] = [
             "rsync",
             "--checksum",
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            f"{src}/",
+            src,
             "user@hostname:dest",
         ]
         assert result == expected
 
     def test_archive(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "src"
-        src.mkdir()
-        result = rsync_cmd(src, "user", "hostname", "dest", archive=True)
+        result = rsync_cmd(tmp_path, "user", "hostname", "dest", archive=True)
         expected: list[str] = [
             "rsync",
             "--archive",
@@ -578,15 +533,13 @@ class TestRsyncCmd:
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            str(src),
+            str(tmp_path),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_chown_user(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        result = rsync_cmd(src, "user", "hostname", "dest", chown_user="user2")
+    def test_chown_user(self, *, temp_file: Path) -> None:
+        result = rsync_cmd(temp_file, "user", "hostname", "dest", chown_user="user2")
         expected: list[str] = [
             "rsync",
             "--checksum",
@@ -595,15 +548,13 @@ class TestRsyncCmd:
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            str(src),
+            str(temp_file),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_chown_group(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        result = rsync_cmd(src, "user", "hostname", "dest", chown_group="group")
+    def test_chown_group(self, *, temp_file: Path) -> None:
+        result = rsync_cmd(temp_file, "user", "hostname", "dest", chown_group="group")
         expected: list[str] = [
             "rsync",
             "--checksum",
@@ -612,16 +563,19 @@ class TestRsyncCmd:
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            str(src),
+            str(temp_file),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_chown_user_and_group(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
+    def test_chown_user_and_group(self, *, temp_file: Path) -> None:
         result = rsync_cmd(
-            src, "user", "hostname", "dest", chown_user="user2", chown_group="group"
+            temp_file,
+            "user",
+            "hostname",
+            "dest",
+            chown_user="user2",
+            chown_group="group",
         )
         expected: list[str] = [
             "rsync",
@@ -631,15 +585,13 @@ class TestRsyncCmd:
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            str(src),
+            str(temp_file),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_exclude(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        result = rsync_cmd(src, "user", "hostname", "dest", exclude="exclude")
+    def test_exclude(self, *, temp_file: Path) -> None:
+        result = rsync_cmd(temp_file, "user", "hostname", "dest", exclude="exclude")
         expected: list[str] = [
             "rsync",
             "--checksum",
@@ -648,16 +600,14 @@ class TestRsyncCmd:
             "exclude",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            str(src),
+            str(temp_file),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_exclude_multiple(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
+    def test_exclude_multiple(self, *, temp_file: Path) -> None:
         result = rsync_cmd(
-            src, "user", "hostname", "dest", exclude=["exclude1", "exclude2"]
+            temp_file, "user", "hostname", "dest", exclude=["exclude1", "exclude2"]
         )
         expected: list[str] = [
             "rsync",
@@ -669,15 +619,13 @@ class TestRsyncCmd:
             "exclude2",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            str(src),
+            str(temp_file),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_sudo(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        result = rsync_cmd(src, "user", "hostname", "dest", sudo=True)
+    def test_sudo(self, *, temp_file: Path) -> None:
+        result = rsync_cmd(temp_file, "user", "hostname", "dest", sudo=True)
         expected: list[str] = [
             "rsync",
             "--checksum",
@@ -686,7 +634,7 @@ class TestRsyncCmd:
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
             "--rsync-path",
             "sudo rsync",
-            str(src),
+            str(temp_file),
             "user@hostname:dest",
         ]
         assert result == expected
@@ -698,27 +646,23 @@ class TestRsyncCmd:
         ):
             _ = rsync_cmd([], "user", "hostname", "dest")
 
-    def test_error_sources_not_found(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
+    def test_error_sources_not_found(self, *, temp_path_not_exist: Path) -> None:
         with raises(
             RsyncCmdSourcesNotFoundError,
-            match=r"Sources selected to send to user@hostname:dest but not found: '.*/file\.txt'",
+            match=r"Sources selected to send to user@hostname:dest but not found: '.*'",
         ):
-            _ = rsync_cmd(src, "user", "hostname", "dest")
+            _ = rsync_cmd(temp_path_not_exist, "user", "hostname", "dest")
 
 
 class TestRsyncMany:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_single_file(self, *, ssh_user: str, ssh_hostname: str) -> None:
-        with (
-            TemporaryDirectory() as temp_src,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
-        ):
-            src = temp_src / "file.txt"
-            src.touch()
-            dest = temp_dest / src.name
-            rsync_many(ssh_user, ssh_hostname, (src, dest))
+    def test_single_file(
+        self, *, temp_file: Path, ssh_user: str, ssh_hostname: str
+    ) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
+            dest = temp_dest / temp_file.name
+            rsync_many(ssh_user, ssh_hostname, (temp_file, dest))
             ssh(
                 ssh_user,
                 ssh_hostname,
@@ -728,15 +672,12 @@ class TestRsyncMany:
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_multiple_files(self, *, ssh_user: str, ssh_hostname: str) -> None:
-        with (
-            TemporaryDirectory() as temp_src,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
-        ):
-            src1, src2 = [temp_src / f"file{i}.txt" for i in [1, 2]]
-            src1.touch()
-            src2.touch()
-            dest1, dest2 = [temp_dest / src.name for src in [src1, src2]]
+    def test_multiple_files(
+        self, *, temp_files: tuple[Path, Path], ssh_user: str, ssh_hostname: str
+    ) -> None:
+        src1, src2 = temp_files
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
+            dest1, dest2 = [temp_dest / src.name for src in temp_files]
             rsync_many(ssh_user, ssh_hostname, (src1, dest1), (src2, dest2))
             ssh(
                 ssh_user,
@@ -750,16 +691,11 @@ class TestRsyncMany:
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_single_directory(self, *, ssh_user: str, ssh_hostname: str) -> None:
-        with (
-            TemporaryDirectory() as temp_src,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
-        ):
-            src = temp_src / "dir"
-            src.mkdir()
-            (src / "file.txt").touch()
-            dest = temp_dest / src.name
-            rsync_many(ssh_user, ssh_hostname, (src, dest))
+    def test_single_directory(
+        self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
+    ) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest:
+            rsync_many(ssh_user, ssh_hostname, (tmp_path, dest))
             ssh(
                 ssh_user,
                 ssh_hostname,
@@ -767,8 +703,38 @@ class TestRsyncMany:
                 input=(
                     f"""
                     if ! [ -d {dest} ]; then exit 1; fi
-                    if ! [ -f {dest}/file.txt ]; then exit 1; fi
-                """
+                    if ! [ -f {dest}/{temp_file.name} ]; then exit 1; fi
+                    """
+                ),
+            )
+
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_file_and_directory(
+        self, *, tmp_path: Path, ssh_user: str, ssh_hostname: str
+    ) -> None:
+        with (
+            TemporaryDirectory(dir=tmp_path) as temp_src,
+            TemporaryFile(dir=temp_src) as src_file,
+            TemporaryDirectory(dir=temp_src) as src_dir,
+            yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest,
+        ):
+            rsync_many(
+                ssh_user,
+                ssh_hostname,
+                (src_file, dest / src_file.name),
+                (src_dir, dest / src_dir.name),
+            )
+            ssh(
+                ssh_user,
+                ssh_hostname,
+                *BASH_LS,
+                input=(
+                    f"""
+                    if ! [ -d {dest} ]; then exit 1; fi
+                    if ! [ -f {dest}/{src_file.name} ]; then exit 1; fi
+                    if ! [ -d {dest}/{src_dir.name} ]; then exit 1; fi
+                    """
                 ),
             )
 
@@ -1225,14 +1191,18 @@ class TestSSHCmd:
 
 
 class TestSSHKeyScan:
-    @mark.parametrize("touch", [param(True), param(False)])
     @skipif_ci
-    def test_main(self, *, tmp_path: Path, touch: bool, github_public_key: str) -> None:
-        path = tmp_path / "file.txt"
-        if touch:
-            path.touch()
-        ssh_keyscan("github.com", path=path)
-        result = path.read_text()
+    def test_missing(
+        self, *, temp_path_not_exist: Path, github_public_key: str
+    ) -> None:
+        ssh_keyscan("github.com", path=temp_path_not_exist)
+        result = temp_path_not_exist.read_text()
+        assert result == github_public_key
+
+    @skipif_ci
+    def test_existing(self, *, temp_file: Path, github_public_key: str) -> None:
+        ssh_keyscan("github.com", path=temp_file)
+        result = temp_file.read_text()
         assert result == github_public_key
 
 
@@ -1354,13 +1324,10 @@ class TestSudoNoPasswdCmd:
 
 
 class TestSymLink:
-    def test_main(self, *, tmp_path: Path) -> None:
-        target = tmp_path / "file.txt"
-        target.touch()
-        link = tmp_path / "link.txt"
-        symlink(target, link)
-        assert link.is_symlink()
-        assert link.resolve() == target
+    def test_main(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        symlink(temp_file, temp_path_not_exist)
+        assert temp_path_not_exist.is_symlink()
+        assert temp_path_not_exist.resolve() == temp_file
 
 
 class TestSymLinkCmd:
@@ -1371,12 +1338,19 @@ class TestSymLinkCmd:
 
 
 class TestTee:
-    def test_main(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
+    def test_main(self, *, temp_path_not_exist: Path) -> None:
         text = "text"
-        tee(path, text)
-        result = path.read_text()
+        tee(temp_path_not_exist, text)
+        result = temp_path_not_exist.read_text()
         assert result == text
+
+    def test_append(self, *, temp_path_not_exist: Path) -> None:
+        init, post = "init", "post"
+        tee(temp_path_not_exist, init)
+        tee(temp_path_not_exist, post, append=True)
+        result = temp_path_not_exist.read_text()
+        expected = f"{init}{post}"
+        assert result == expected
 
 
 class TestTeeCmd:

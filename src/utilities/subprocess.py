@@ -632,6 +632,7 @@ def _rsync_many_prepare(
         case never:
             assert_never(never)
     cmds: list[list[str]] = [
+        maybe_sudo_cmd(*rm_cmd(dest), sudo=sudo),
         maybe_sudo_cmd(*mkdir_cmd(dest, parent=True), sudo=sudo),
         maybe_sudo_cmd(*cp_cmd(temp_dest / name, dest), sudo=sudo),
     ]
@@ -1260,6 +1261,7 @@ def tee(
     path: PathLike, text: str, /, *, sudo: bool = False, append: bool = False
 ) -> None:
     """Use 'tee' to duplicate standard input."""
+    mkdir(path, sudo=sudo, parent=True)
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*tee_cmd(path, append=append)), input=text)
     else:
