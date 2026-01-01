@@ -110,13 +110,11 @@ class TestCDCmd:
 
 
 class TestChMod:
-    def test_main(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
+    def test_main(self, *, temp_file: Path) -> None:
         perms = Permissions.from_text("u=rw,g=r,o=r")
-        _ = chmod(path, perms)
-        current = Permissions.from_path(path)
-        assert current == perms
+        _ = chmod(temp_file, perms)
+        result = Permissions.from_path(temp_file)
+        assert result == perms
 
 
 class TestChModCmd:
@@ -180,9 +178,9 @@ class TestCp:
         assert dest.is_file()
 
     def test_dir(self, *, tmp_path: Path, temp_path_not_exist: Path) -> None:
-        src = tmp_path / "dir"
+        src = tmp_path / tmp_path.name
         src.mkdir()
-        dest = temp_path_not_exist / src.name
+        dest = temp_path_not_exist / tmp_path.name
         cp(src, dest)
         assert src.is_dir()
         assert dest.is_dir()
@@ -1309,13 +1307,10 @@ class TestSudoNoPasswdCmd:
 
 
 class TestSymLink:
-    def test_main(self, *, tmp_path: Path) -> None:
-        target = tmp_path / "file.txt"
-        target.touch()
-        link = tmp_path / "link.txt"
-        symlink(target, link)
-        assert link.is_symlink()
-        assert link.resolve() == target
+    def test_main(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        symlink(temp_file, temp_path_not_exist)
+        assert temp_path_not_exist.is_symlink()
+        assert temp_path_not_exist.resolve() == temp_file
 
 
 class TestSymLinkCmd:
