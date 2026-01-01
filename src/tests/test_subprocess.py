@@ -5,8 +5,10 @@ from pathlib import Path
 from re import MULTILINE, search
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
+from uuid import uuid4
 
 from pytest import LogCaptureFixture, mark, param, raises
+from pytest_lazy_fixtures import lf
 
 from utilities.grp import EFFECTIVE_GROUP_NAME
 from utilities.iterables import one
@@ -33,6 +35,7 @@ from utilities.subprocess import (
     cp,
     cp_cmd,
     echo_cmd,
+    env_cmds,
     expand_path,
     git_branch_current,
     git_checkout,
@@ -226,6 +229,13 @@ class TestEchoCmd:
     def test_main(self) -> None:
         result = echo_cmd("'hello world'")
         expected = ["echo", "'hello world'"]
+        assert result == expected
+
+
+class TestEnvCmds:
+    def test_main(self) -> None:
+        result = env_cmds({"KEY": "value"})
+        expected = ["KEY=value"]
         assert result == expected
 
 
@@ -1076,23 +1086,41 @@ class TestSetHostnameCmd:
 class TestSSH:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
+    @mark.parametrize(
+        ("cmd", "expected"),
+        [
+            param("whoami", lf("ssh_user")),
+            param("hostname", lf("ssh_hostname_internal")),
+        ],
+    )
     def test_main(
         self,
         *,
         capsys: CaptureFixture,
         ssh_user: str,
         ssh_hostname: str,
-        ssh_hostname_internal: str,
+        cmd: str,
+        expected: str,
     ) -> None:
-        input_ = strip_and_dedent("""
-            whoami
-            hostname 1>&2
-        """)
-        result = ssh(ssh_user, ssh_hostname, input=input_, print=True)
+        result = ssh(ssh_user, ssh_hostname, cmd, print=True)
         assert result is None
         cap = capsys.readouterr()
-        assert cap.out == f"{ssh_user}\n"
-        assert cap.err == f"{ssh_hostname_internal}\n"
+        assert cap.out == f"{expected}\n"
+        assert cap.err == ""
+
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_env(
+        self, *, capsys: CaptureFixture, ssh_user: str, ssh_hostname: str
+    ) -> None:
+        name = str(uuid4()).replace("-", "")
+        result = ssh(
+            ssh_user, ssh_hostname, "printenv", name, env={name: "1234"}, print=True
+        )
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == "1234\n"
+        assert cap.err == ""
 
 
 class TestSSHCmd:
@@ -1108,6 +1136,23 @@ class TestSSHCmd:
             "StrictHostKeyChecking=yes",
             "-T",
             "user@hostname",
+            "true",
+        ]
+        assert result == expected
+
+    def test_env(self) -> None:
+        result = ssh_cmd("user", "hostname", "true", env={"KEY": "value"})
+        expected = [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "HostKeyAlgorithms=ssh-ed25519",
+            "-o",
+            "StrictHostKeyChecking=yes",
+            "-T",
+            "user@hostname",
+            "KEY=value",
             "true",
         ]
         assert result == expected
