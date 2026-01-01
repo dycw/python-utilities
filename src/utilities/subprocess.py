@@ -65,6 +65,7 @@ def append_text(
     flags: int = 0,
     blank_lines: int = 1,
 ) -> None:
+    """Append text to a file."""
     try:
         existing = cat(path, sudo=sudo)
     except (CalledProcessError, FileNotFoundError):
