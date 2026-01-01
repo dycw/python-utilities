@@ -344,7 +344,7 @@ class TestMv:
         src.touch()
         dest = tmp_path / "file2.txt"
         mv(src, dest)
-        assert not src.is_file()
+        assert not src.exists()
         assert dest.is_file()
 
     def test_dir(self, *, tmp_path: Path) -> None:
@@ -352,7 +352,7 @@ class TestMv:
         src.mkdir()
         dest = tmp_path / "dir2"
         mv(src, dest)
-        assert not src.is_dir()
+        assert not src.exists()
         assert dest.is_dir()
 
     def test_perms(self, *, tmp_path: Path) -> None:
