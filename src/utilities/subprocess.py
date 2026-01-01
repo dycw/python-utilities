@@ -542,6 +542,53 @@ def git_clone_cmd(url: str, path: PathLike, /) -> list[str]:
 ##
 
 
+def install(
+    path: PathLike,
+    /,
+    *,
+    directory: bool = False,
+    mode: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
+    sudo: bool = False,
+) -> None:
+    """Install a binary."""
+    args = maybe_sudo_cmd(
+        *install_cmd(path, directory=directory, mode=mode, owner=owner, group=group),
+        sudo=sudo,
+    )
+    run(*args)
+
+
+def install_cmd(
+    path: PathLike,
+    /,
+    *,
+    directory: bool = False,
+    mode: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
+) -> list[str]:
+    """Command to use 'install' to install a binary."""
+    args: list[str] = ["install"]
+    if directory:
+        args.append("-d")
+    if mode is not None:
+        args.extend(["-m", str(ensure_perms(mode))])
+    if owner is not None:
+        args.extend(["-o", str(owner)])
+    if group is not None:
+        args.extend(["-g", str(group)])
+    if directory:
+        args.append(str(path))
+    else:
+        args.extend(["/dev/null", str(path)])
+    return args
+
+
+##
+
+
 def maybe_parent(path: PathLike, /, *, parent: bool = False) -> Path:
     """Get the parent of a path, if required."""
     path = Path(path)
@@ -1831,6 +1878,8 @@ __all__ = [
     "git_checkout_cmd",
     "git_clone",
     "git_clone_cmd",
+    "install",
+    "install_cmd",
     "maybe_parent",
     "maybe_sudo_cmd",
     "mkdir",

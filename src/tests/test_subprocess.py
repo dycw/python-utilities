@@ -50,6 +50,8 @@ from utilities.subprocess import (
     git_checkout_cmd,
     git_clone,
     git_clone_cmd,
+    install,
+    install_cmd,
     maybe_parent,
     maybe_sudo_cmd,
     mkdir,
@@ -417,6 +419,63 @@ class TestGitCloneCmd:
     def test_main(self, *, git_repo_url: str) -> None:
         result = git_clone_cmd(git_repo_url, "path")
         expected = ["git", "clone", "--recurse-submodules", git_repo_url, "path"]
+        assert result == expected
+
+
+class TestInstall:
+    def test_file(self, *, temp_path_not_exist: Path) -> None:
+        install(temp_path_not_exist)
+        assert temp_path_not_exist.is_file()
+
+    def test_directory(self, *, temp_path_not_exist: Path) -> None:
+        install(temp_path_not_exist, directory=True)
+        assert temp_path_not_exist.is_dir()
+
+    def test_mode(self, *, temp_path_not_exist: Path) -> None:
+        perms = Permissions.from_text("u=rwx,g=,o=")
+        install(temp_path_not_exist, mode=perms)
+        result = Permissions.from_path(temp_path_not_exist)
+        assert result == perms
+
+    def test_owner(self, *, temp_path_not_exist: Path) -> None:
+        install(temp_path_not_exist, owner=EFFECTIVE_USER_NAME)
+        result = get_file_owner(temp_path_not_exist)
+        assert result == EFFECTIVE_USER_NAME
+
+    def test_group(self, *, temp_path_not_exist: Path) -> None:
+        install(temp_path_not_exist, group=EFFECTIVE_GROUP_NAME)
+        result = get_file_group(temp_path_not_exist)
+        assert result == EFFECTIVE_GROUP_NAME
+
+    def test_error_file(self, *, temp_path_nested_not_exist: Path) -> None:
+        with raises(CalledProcessError):
+            install(temp_path_nested_not_exist)
+
+
+class TestInstallCmd:
+    def test_file(self) -> None:
+        result = install_cmd("path")
+        expected = ["install", "/dev/null", "path"]
+        assert result == expected
+
+    def test_directory(self) -> None:
+        result = install_cmd("path", directory=True)
+        expected = ["install", "-d", "path"]
+        assert result == expected
+
+    def test_mode(self) -> None:
+        result = install_cmd("path", mode="u=rwx,g=,o=")
+        expected = ["install", "-m", "u=rwx,g=,o=", "/dev/null", "path"]
+        assert result == expected
+
+    def test_owner(self) -> None:
+        result = install_cmd("path", owner="owner")
+        expected = ["install", "-o", "owner", "/dev/null", "path"]
+        assert result == expected
+
+    def test_group(self) -> None:
+        result = install_cmd("path", group="group")
+        expected = ["install", "-g", "group", "/dev/null", "path"]
         assert result == expected
 
 

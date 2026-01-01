@@ -84,6 +84,11 @@ def temp_path_not_exist(*, tmp_path: Path) -> Path:
     return temp
 
 
+@fixture
+def temp_path_nested_not_exist(*, tmp_path: Path, temp_path_not_exist: Path) -> Path:
+    return tmp_path / temp_path_not_exist.name / temp_path_not_exist.name
+
+
 # fixtures - redis
 
 
