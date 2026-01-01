@@ -33,6 +33,7 @@ from utilities.subprocess import (
     cp,
     cp_cmd,
     echo_cmd,
+    env_cmds,
     expand_path,
     git_branch_current,
     git_checkout,
@@ -226,6 +227,13 @@ class TestEchoCmd:
     def test_main(self) -> None:
         result = echo_cmd("'hello world'")
         expected = ["echo", "'hello world'"]
+        assert result == expected
+
+
+class TestEnvCmds:
+    def test_main(self) -> None:
+        result = env_cmds({"KEY": "value"})
+        expected = ["KEY=value"]
         assert result == expected
 
 
@@ -1108,6 +1116,23 @@ class TestSSHCmd:
             "StrictHostKeyChecking=yes",
             "-T",
             "user@hostname",
+            "true",
+        ]
+        assert result == expected
+
+    def test_env(self) -> None:
+        result = ssh_cmd("user", "hostname", "true", env={"KEY": "value"})
+        expected = [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "HostKeyAlgorithms=ssh-ed25519",
+            "-o",
+            "StrictHostKeyChecking=yes",
+            "-T",
+            "user@hostname",
+            "KEY=value",
             "true",
         ]
         assert result == expected

@@ -217,6 +217,13 @@ def echo_cmd(text: str, /) -> list[str]:
 ##
 
 
+def env_cmds(env: StrStrMapping, /) -> list[str]:
+    return [f"{key}={value}" for key, value in env.items()]
+
+
+##
+
+
 def expand_path(
     path: PathLike, /, *, subs: StrMapping | None = None, sudo: bool = False
 ) -> Path:
@@ -893,11 +900,12 @@ def ssh(
     user: str,
     hostname: str,
     /,
-    *cmd_and_cmds_or_args: str,
+    *cmd_and_args: str,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
+    env: StrStrMapping | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -913,11 +921,12 @@ def ssh(
     user: str,
     hostname: str,
     /,
-    *cmd_and_cmds_or_args: str,
+    *cmd_and_args: str,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
+    env: StrStrMapping | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -933,11 +942,12 @@ def ssh(
     user: str,
     hostname: str,
     /,
-    *cmd_and_cmds_or_args: str,
+    *cmd_and_args: str,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
+    env: StrStrMapping | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -953,11 +963,12 @@ def ssh(
     user: str,
     hostname: str,
     /,
-    *cmd_and_cmds_or_args: str,
+    *cmd_and_args: str,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
+    env: StrStrMapping | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -973,11 +984,12 @@ def ssh(
     user: str,
     hostname: str,
     /,
-    *cmd_and_cmds_or_args: str,
+    *cmd_and_args: str,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
+    env: StrStrMapping | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -992,11 +1004,12 @@ def ssh(
     user: str,
     hostname: str,
     /,
-    *cmd_and_cmds_or_args: str,
+    *cmd_and_args: str,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
+    env: StrStrMapping | None = None,
     input: str | None = None,  # noqa: A002
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
@@ -1008,18 +1021,19 @@ def ssh(
     logger: LoggerLike | None = None,
 ) -> str | None:
     """Execute a command on a remote machine."""
-    cmd_and_args = ssh_cmd(  # skipif-ci
+    run_cmd_and_args = ssh_cmd(  # skipif-ci
         user,
         hostname,
-        *cmd_and_cmds_or_args,
+        *cmd_and_args,
         batch_mode=batch_mode,
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
         port=port,
+        env=env,
     )
     try:  # skipif-ci
         return run(
-            *cmd_and_args,
+            *run_cmd_and_args,
             input=input,
             print=print,
             print_stdout=print_stdout,
@@ -1038,7 +1052,7 @@ def ssh(
         return ssh(
             user,
             hostname,
-            *cmd_and_cmds_or_args,
+            *cmd_and_args,
             batch_mode=batch_mode,
             host_key_algorithms=host_key_algorithms,
             strict_host_key_checking=strict_host_key_checking,
@@ -1072,11 +1086,12 @@ def ssh_cmd(
     user: str,
     hostname: str,
     /,
-    *cmd_and_cmds_or_args: str,
+    *cmd_and_args: str,
     batch_mode: bool = True,
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
+    env: StrStrMapping | None = None,
 ) -> list[str]:
     """Command to use 'ssh' to execute a command on a remote machine."""
     args: list[str] = ssh_opts_cmd(
@@ -1085,7 +1100,10 @@ def ssh_cmd(
         strict_host_key_checking=strict_host_key_checking,
         port=port,
     )
-    return [*args, f"{user}@{hostname}", *cmd_and_cmds_or_args]
+    args.append(f"{user}@{hostname}")
+    if env is not None:
+        args.extend(env_cmds(env))
+    return [*args, *cmd_and_args]
 
 
 def ssh_opts_cmd(
@@ -1407,6 +1425,7 @@ __all__ = [
     "cp",
     "cp_cmd",
     "echo_cmd",
+    "env_cmds",
     "expand_path",
     "git_branch_current",
     "git_checkout",
