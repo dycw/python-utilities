@@ -691,7 +691,7 @@ class TestRsyncMany:
     ) -> None:
         src1, src2 = temp_files
         with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
-            dest1, dest2 = [temp_dest / src.name for src in [src1, src2]]
+            dest1, dest2 = [temp_dest / src.name for src in temp_files]
             rsync_many(ssh_user, ssh_hostname, (src1, dest1), (src2, dest2))
             ssh(
                 ssh_user,
@@ -705,16 +705,12 @@ class TestRsyncMany:
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_single_directory(self, *, ssh_user: str, ssh_hostname: str) -> None:
-        with (
-            TemporaryDirectory() as temp_src,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest,
-        ):
-            src = temp_src / "dir"
-            src.mkdir()
-            (src / "file.txt").touch()
-            dest = temp_dest / src.name
-            rsync_many(ssh_user, ssh_hostname, (src, dest))
+    def test_single_directory(
+        self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
+    ) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
+            dest = temp_dest / tmp_path.name
+            rsync_many(ssh_user, ssh_hostname, (tmp_path, dest))
             ssh(
                 ssh_user,
                 ssh_hostname,
@@ -722,7 +718,7 @@ class TestRsyncMany:
                 input=(
                     f"""
                     if ! [ -d {dest} ]; then exit 1; fi
-                    if ! [ -f {dest}/file.txt ]; then exit 1; fi
+                    if ! [ -f {dest}/{temp_file.name} ]; then exit 1; fi
                 """
                 ),
             )
@@ -1180,14 +1176,18 @@ class TestSSHCmd:
 
 
 class TestSSHKeyScan:
-    @mark.parametrize("touch", [param(True), param(False)])
     @skipif_ci
-    def test_main(self, *, tmp_path: Path, touch: bool, github_public_key: str) -> None:
-        path = tmp_path / "file.txt"
-        if touch:
-            path.touch()
-        ssh_keyscan("github.com", path=path)
-        result = path.read_text()
+    def test_missing(
+        self, *, temp_path_not_exist: Path, github_public_key: str
+    ) -> None:
+        ssh_keyscan("github.com", path=temp_path_not_exist)
+        result = temp_path_not_exist.read_text()
+        assert result == github_public_key
+
+    @skipif_ci
+    def test_existing(self, *, temp_file: Path, github_public_key: str) -> None:
+        ssh_keyscan("github.com", path=temp_file)
+        result = temp_file.read_text()
         assert result == github_public_key
 
 
