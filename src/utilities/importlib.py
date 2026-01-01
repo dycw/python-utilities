@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 def files(*, anchor: Anchor | None = None) -> Path:
-    """"""
+    """Get the path for an anchor."""
     path = importlib.resources.files(anchor)
     if isinstance(path, Path):
         return path
