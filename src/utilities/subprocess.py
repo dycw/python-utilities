@@ -295,6 +295,52 @@ def cp_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
 ##
 
 
+def curl(
+    *,
+    fail: bool = True,
+    location: bool = True,
+    output: PathLike | None = None,
+    show_error: bool = True,
+    silent: bool = True,
+    sudo: bool = False,
+) -> None:
+    """Transfer a URL."""
+    cmd = curl_cmd(
+        fail=fail,
+        location=location,
+        output=output,
+        show_error=show_error,
+        silent=silent,
+    )
+    return run(*maybe_sudo_cmd(*cmd, sudo=sudo))
+
+
+def curl_cmd(
+    *,
+    fail: bool = True,
+    location: bool = True,
+    output: PathLike | None = None,
+    show_error: bool = True,
+    silent: bool = True,
+) -> list[str]:
+    """Command to use 'curl' to transfer a URL."""
+    args: list[str] = ["curl"]
+    if fail:
+        args.append("--fail")
+    if location:
+        args.append("--location")
+    if output is not None:
+        args.extend(["--output", str(output)])
+    if show_error:
+        args.append("--show-error")
+    if silent:
+        args.append("--silent")
+    return args
+
+
+##
+
+
 def echo_cmd(text: str, /) -> list[str]:
     """Command to use 'echo' to write arguments to the standard output."""
     return ["echo", text]
@@ -1642,6 +1688,8 @@ __all__ = [
     "copy_text",
     "cp",
     "cp_cmd",
+    "curl",
+    "curl_cmd",
     "echo_cmd",
     "env_cmds",
     "expand_path",
