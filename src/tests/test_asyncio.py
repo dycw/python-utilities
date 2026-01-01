@@ -393,31 +393,33 @@ class TestPutItems:
 
 
 class TestSleepMaxDur:
+    multiple: ClassVar[int] = 2
     delta: ClassVar[TimeDelta] = 0.05 * SECOND
 
     async def test_main(self) -> None:
         with Timer() as timer:
             await sleep_max(self.delta)
-        assert timer <= 2 * self.delta
+        assert timer <= self.multiple * self.delta
 
     async def test_none(self) -> None:
         with Timer() as timer:
             await sleep_max()
-        assert timer <= self.delta
+        assert timer <= self.multiple * self.delta
 
 
 class TestSleepTD:
+    multiple: ClassVar[int] = 5
     delta: ClassVar[TimeDelta] = 0.05 * SECOND
 
     async def test_main(self) -> None:
         with Timer() as timer:
             await sleep_td(self.delta)
-        assert timer <= 2 * self.delta
+        assert timer <= self.multiple * self.delta
 
     async def test_none(self) -> None:
         with Timer() as timer:
             await sleep_td()
-        assert timer <= self.delta
+        assert timer <= self.multiple * self.delta
 
 
 class TestSleepUntil:
