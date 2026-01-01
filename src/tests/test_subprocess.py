@@ -96,47 +96,47 @@ if TYPE_CHECKING:
 
 class TestAppendText:
     def test_non_existing(self, *, temp_path_not_exist: Path) -> None:
-        text = "text"
-        append_text(temp_path_not_exist, text)
+        append_text(temp_path_not_exist, "text")
         result = temp_path_not_exist.read_text()
-        assert result == text
+        assert result == "text"
 
     def test_existing(self, *, temp_file: Path) -> None:
-        init, post = "init", "post"
-        _ = temp_file.write_text(init)
-        append_text(temp_file, post)
+        _ = temp_file.write_text("init")
+        append_text(temp_file, "post")
         result = temp_file.read_text()
-        expected = f"{init}\n{post}"
+        expected = "init\npost"
         assert result == expected
 
     def test_skip_if_present_with_effect(self, *, temp_file: Path) -> None:
-        text = "text"
-        _ = temp_file.write_text(text)
-        append_text(temp_file, text, skip_if_present=True)
+        _ = temp_file.write_text("text")
+        append_text(temp_file, "text", skip_if_present=True)
         result = temp_file.read_text()
-        assert result == text
+        assert result == "text"
 
     def test_skip_if_present_without_effect(self, *, temp_file: Path) -> None:
-        init, post = "init", "post"
-        _ = temp_file.write_text(init)
-        append_text(temp_file, post, skip_if_present=True)
+        _ = temp_file.write_text("init")
+        append_text(temp_file, "post", skip_if_present=True)
         result = temp_file.read_text()
-        expected = f"{init}\n{post}"
+        expected = "init\npost"
         assert result == expected
 
     def test_blank_lines(self, *, temp_file: Path) -> None:
-        init, post = "init", "post"
-        _ = temp_file.write_text(init)
-        append_text(temp_file, post, blank_lines=2)
+        _ = temp_file.write_text("init")
+        append_text(temp_file, "post", blank_lines=2)
         result = temp_file.read_text()
-        expected = f"{init}\n\n{post}"
+        expected = "init\n\npost"
         assert result == expected
 
 
 class TestAptInstallCmd:
-    def test_main(self) -> None:
+    def test_single(self) -> None:
         result = apt_install_cmd("package")
         expected = ["apt", "install", "-y", "package"]
+        assert result == expected
+
+    def test_multiple(self) -> None:
+        result = apt_install_cmd("package1", "package2")
+        expected = ["apt", "install", "-y", "package1", "package2"]
         assert result == expected
 
 
@@ -154,18 +154,16 @@ class TestAptRemoveCmd:
 
 class TestCat:
     def test_single(self, *, temp_file: Path) -> None:
-        text = "text"
-        _ = temp_file.write_text(text)
+        _ = temp_file.write_text("text")
         result = cat(temp_file)
-        assert result == text
+        assert result == "text"
 
     def test_multiple(self, *, temp_files: tuple[Path, Path]) -> None:
         path1, path2 = temp_files
-        text1, text2 = [f"text{i}" for i in [1, 2]]
-        _ = path1.write_text(text1)
-        _ = path2.write_text(text2)
+        _ = path1.write_text("text1")
+        _ = path2.write_text("text2")
         result = cat(path1, path2)
-        expected = f"{text1}\n{text2}"
+        expected = "text1\ntext2"
         assert result == expected
 
 
@@ -462,11 +460,10 @@ class TestMvCmd:
 
 class TestReplaceText:
     def test_main(self, *, temp_file: Path) -> None:
-        init, post = "init", "post"
-        _ = temp_file.write_text(init)
-        replace_text(temp_file, (init, post))
+        _ = temp_file.write_text("init")
+        replace_text(temp_file, ("init", "post"))
         result = temp_file.read_text()
-        assert result == post
+        assert result == "post"
 
 
 class TestRipGrep:
@@ -1466,24 +1463,21 @@ class TestSymLinkCmd:
 
 class TestTee:
     def test_non_existing(self, *, temp_path_not_exist: Path) -> None:
-        text = "text"
-        tee(temp_path_not_exist, text)
+        tee(temp_path_not_exist, "text")
         result = temp_path_not_exist.read_text()
-        assert result == text
+        assert result == "text"
 
     def test_existing(self, *, temp_file: Path) -> None:
-        post = "post"
         _ = temp_file.write_text("init")
-        tee(temp_file, post)
+        tee(temp_file, "post")
         result = temp_file.read_text()
-        assert result == post
+        assert result == "post"
 
     def test_append(self, *, temp_file: Path) -> None:
-        init, post = "init", "post"
-        _ = temp_file.write_text(init)
-        tee(temp_file, post, append=True)
+        _ = temp_file.write_text("init")
+        tee(temp_file, "post", append=True)
         result = temp_file.read_text()
-        expected = f"{init}{post}"
+        expected = "initpost"
         assert result == expected
 
 
