@@ -96,15 +96,15 @@ def apt_install_cmd(package: str, /) -> list[str]:
 
 
 def cat(path: PathLike, /, *, sudo: bool = False) -> str:
-    """Concatenate a file."""
+    """Concatenate and print files."""
     if sudo:  # pragma: no cover
         return run(*sudo_cmd(*cat_cmd(path)), return_=True)
     return Path(path).read_text()
 
 
-def cat_cmd(path: PathLike, /) -> list[str]:
+def cat_cmd(path: PathLike, /, *paths: PathLike) -> list[str]:
     """Command to use 'cat' to concatenate and print files."""
-    return ["cat", str(path)]
+    return ["cat", str(path), *map(str, paths)]
 
 
 ##

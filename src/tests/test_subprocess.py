@@ -147,9 +147,14 @@ class TestCat:
 
 
 class TestCatCmd:
-    def test_main(self) -> None:
+    def test_single(self) -> None:
         result = cat_cmd("path")
         expected = ["cat", "path"]
+        assert result == expected
+
+    def test_multiple(self) -> None:
+        result = cat_cmd("path1", "path2")
+        expected = ["cat", "path1", "path2"]
         assert result == expected
 
 
