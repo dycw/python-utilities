@@ -1311,10 +1311,10 @@ def useradd(
     password: str | None = None,
 ) -> None:
     """Create a new user."""
-    args = useradd_cmd(  # pragma: no cover
-        login, create_home=create_home, groups=groups, shell=shell
+    args = maybe_sudo_cmd(  # pragma: no cover
+        *useradd_cmd(login, create_home=create_home, groups=groups, shell=shell)
     )
-    run(*maybe_sudo_cmd(*args))  # pragma: no cover
+    run(*args)  # pragma: no cover
     if password is not None:  # pragma: no cover
         chpasswd(login, password, sudo=sudo)
 
