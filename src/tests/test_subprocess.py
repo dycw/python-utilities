@@ -1075,6 +1075,19 @@ value@stderr
 """)
         assert record.message == expected
 
+    @mark.only
+    def test_ripgrep(self) -> None:
+        version = "3.14"
+        files = run(
+            "rg",
+            "--files-with-matches",
+            # "--glob=!.venv/**",
+            "--pcre2",
+            "--type=py",
+            rf'# requires-python = ">=(?!{version})\d+\.\d+"',
+            return_=True,
+        ).splitlines()
+
     def _test_retry_cmd(self, path: PathLike, attempts: int, /) -> str:
         return strip_and_dedent(
             f"""

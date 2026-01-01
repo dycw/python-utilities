@@ -785,6 +785,8 @@ def run(
                 proc.stdin.flush()
                 proc.stdin.close()
             return_code = proc.wait()
+        assert 0, args
+
         match return_code, return_ or return_stdout, return_ or return_stderr:
             case 0, True, True:
                 _ = buffer.seek(0)
