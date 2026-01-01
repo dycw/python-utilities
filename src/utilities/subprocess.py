@@ -80,16 +80,43 @@ def append_text(
 ##
 
 
-def apt_install(package: str, /, *, update: bool = False, sudo: bool = False) -> None:
-    """Install a package."""
+def apt_install(
+    package: str, /, *packages: str, update: bool = False, sudo: bool = False
+) -> None:
+    """Install packages."""
     if update:  # pragma: no cover
-        run(*maybe_sudo_cmd(*APT_UPDATE, sudo=sudo))
-    run(*maybe_sudo_cmd(*apt_install_cmd(package), sudo=sudo))  # pragma: no cover
+        apt_update(sudo=sudo)
+    run(  # pragma: no cover
+        *maybe_sudo_cmd(*apt_install_cmd(package, *packages), sudo=sudo)
+    )
 
 
-def apt_install_cmd(package: str, /) -> list[str]:
-    """Command to use 'apt' to install a package."""
-    return ["apt", "install", "-y", package]
+def apt_install_cmd(package: str, /, *packages: str) -> list[str]:
+    """Command to use 'apt' to install packages."""
+    return ["apt", "install", "-y", package, *packages]
+
+
+##
+
+
+def apt_remove(package: str, /, *packages: str, sudo: bool = False) -> None:
+    """Remove a package."""
+    run(  # pragma: no cover
+        *maybe_sudo_cmd(*apt_remove_cmd(package, *packages), sudo=sudo)
+    )
+
+
+def apt_remove_cmd(package: str, /, *packages: str) -> list[str]:
+    """Command to use 'apt' to remove packages."""
+    return ["apt", "remove", "-y", package, *packages]
+
+
+##
+
+
+def apt_update(*, sudo: bool = False) -> None:
+    """Update 'apt'."""
+    run(*maybe_sudo_cmd(*APT_UPDATE, sudo=sudo))
 
 
 ##
@@ -1602,6 +1629,9 @@ __all__ = [
     "append_text",
     "apt_install",
     "apt_install_cmd",
+    "apt_remove",
+    "apt_remove_cmd",
+    "apt_update",
     "cat",
     "cd_cmd",
     "chmod",

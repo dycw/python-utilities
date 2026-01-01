@@ -29,6 +29,7 @@ from utilities.subprocess import (
     _ssh_is_strict_checking_error,
     append_text,
     apt_install_cmd,
+    apt_remove_cmd,
     cat,
     cat_cmd,
     cd_cmd,
@@ -136,6 +137,18 @@ class TestAptInstallCmd:
     def test_main(self) -> None:
         result = apt_install_cmd("package")
         expected = ["apt", "install", "-y", "package"]
+        assert result == expected
+
+
+class TestAptRemoveCmd:
+    def test_single(self) -> None:
+        result = apt_remove_cmd("package")
+        expected = ["apt", "remove", "-y", "package"]
+        assert result == expected
+
+    def test_multiple(self) -> None:
+        result = apt_remove_cmd("package1", "package2")
+        expected = ["apt", "remove", "-y", "package1", "package2"]
         assert result == expected
 
 
