@@ -209,8 +209,8 @@ class TestChOwnCmd:
 
 
 class TestCopyText:
-    def test_main(self, *, temp_files: tuple[Path, Path]) -> None:
-        src, dest = temp_files
+    def test_main(self, *, temp_paths: tuple[Path, Path]) -> None:
+        src, dest = temp_paths
         _ = src.write_text("${KEY}")
         copy_text(src, dest, substitutions={"KEY": "value"})
         result = dest.read_text()

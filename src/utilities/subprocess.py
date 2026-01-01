@@ -210,7 +210,6 @@ def copy_text(
     sudo: bool = False,
     substitutions: StrMapping | None = None,
 ) -> None:
-    """Copy the text contents of a file."""
     text = cat(src, sudo=sudo)
     if substitutions is not None:
         text = Template(text).substitute(**substitutions)
