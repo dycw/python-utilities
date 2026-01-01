@@ -566,14 +566,6 @@ def rsync_many(
             user, hostname, retry=retry, logger=logger, keep=keep
         ) as temp_dest,
     ):
-        # !!!!!
-        temp_src = Path("/tmp/src-temp")
-        rmtree(temp_src, ignore_errors=True)
-        temp_src.mkdir()
-        temp_dest = Path("/tmp/dest-temp")
-        ssh(user, hostname, *rm_cmd(temp_dest))
-        ssh(user, hostname, *mkdir_cmd(temp_dest))
-        # !!!!!
         for item in items:
             match item:
                 case Path() | str() as src, Path() | str() as dest:

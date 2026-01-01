@@ -3,7 +3,6 @@ from __future__ import annotations
 from logging import INFO, getLogger
 from pathlib import Path
 from re import MULTILINE, search
-from shutil import rmtree
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 from uuid import uuid4
@@ -79,6 +78,7 @@ from utilities.subprocess import (
     yield_git_repo,
     yield_ssh_temp_dir,
 )
+from utilities.tempfile import TemporaryDirectory, TemporaryFile
 from utilities.text import strip_and_dedent, unique_str
 from utilities.whenever import MINUTE, SECOND
 
@@ -691,22 +691,10 @@ class TestRsyncMany:
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    @mark.only
     def test_single_directory(
         self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
     ) -> None:
-        # !!!!!
-        tmp_path = Path("/tmp/src")
-        rmtree(tmp_path, ignore_errors=True)  # TODO
-        tmp_path.mkdir()
-        (tmp_path / temp_file.name).touch()
-        # !!!!!
         with yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest:
-            # !!!!!
-            dest = Path("/tmp/dest")
-            ssh(ssh_user, ssh_hostname, *rm_cmd(dest))
-            ssh(ssh_user, ssh_hostname, *mkdir_cmd(dest))
-            # !!!!!
             rsync_many(ssh_user, ssh_hostname, (tmp_path, dest))
             ssh(
                 ssh_user,
@@ -716,6 +704,36 @@ class TestRsyncMany:
                     f"""
                     if ! [ -d {dest} ]; then exit 1; fi
                     if ! [ -f {dest}/{temp_file.name} ]; then exit 1; fi
+                """
+                ),
+            )
+
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_file_and_directory(
+        self, *, tmp_path: Path, ssh_user: str, ssh_hostname: str
+    ) -> None:
+        with (
+            TemporaryDirectory(dir=tmp_path) as temp_src,
+            TemporaryFile(dir=temp_src) as src_file,
+            TemporaryDirectory(dir=temp_src) as src_dir,
+            yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest,
+        ):
+            rsync_many(
+                ssh_user,
+                ssh_hostname,
+                (src_file, dest / src_file.name),
+                (src_dir, dest / src_dir.name),
+            )
+            ssh(
+                ssh_user,
+                ssh_hostname,
+                *BASH_LS,
+                input=(
+                    f"""
+                    if ! [ -d {dest} ]; then exit 1; fi
+                    if ! [ -f {dest}/{src_file.name} ]; then exit 1; fi
+                    if ! [ -d {dest}/{src_dir.name} ]; then exit 1; fi
                 """
                 ),
             )
