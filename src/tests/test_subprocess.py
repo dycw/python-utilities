@@ -127,24 +127,24 @@ class TestChModCmd:
 
 
 class TestChOwn:
-    def test_none(self, *, tmp_file: Path) -> None:
-        chown(tmp_file)
+    def test_none(self, *, temp_file: Path) -> None:
+        chown(temp_file)
 
-    def test_user(self, *, tmp_file: Path) -> None:
-        chown(tmp_file, user=EFFECTIVE_USER_NAME)
-        result = get_file_owner(tmp_file)
+    def test_user(self, *, temp_file: Path) -> None:
+        chown(temp_file, user=EFFECTIVE_USER_NAME)
+        result = get_file_owner(temp_file)
         assert result == EFFECTIVE_USER_NAME
 
-    def test_group(self, *, tmp_file: Path) -> None:
-        chown(tmp_file, group=EFFECTIVE_GROUP_NAME)
-        result = get_file_group(tmp_file)
+    def test_group(self, *, temp_file: Path) -> None:
+        chown(temp_file, group=EFFECTIVE_GROUP_NAME)
+        result = get_file_group(temp_file)
         assert result == EFFECTIVE_GROUP_NAME
 
-    def test_user_and_group(self, *, tmp_file: Path) -> None:
-        chown(tmp_file, user=EFFECTIVE_USER_NAME, group=EFFECTIVE_GROUP_NAME)
-        owner = get_file_owner(tmp_file)
+    def test_user_and_group(self, *, temp_file: Path) -> None:
+        chown(temp_file, user=EFFECTIVE_USER_NAME, group=EFFECTIVE_GROUP_NAME)
+        owner = get_file_owner(temp_file)
         assert owner == EFFECTIVE_USER_NAME
-        group = get_file_group(tmp_file)
+        group = get_file_group(temp_file)
         assert group == EFFECTIVE_GROUP_NAME
 
 
@@ -173,35 +173,31 @@ class TestChOwnCmd:
 
 
 class TestCp:
-    def test_file(self, *, tmp_path_sub_path: Path) -> None:
-        src = tmp_path_sub_path / "file.txt"
-        src.touch()
-        dest = tmp_path_sub_path / "file2.txt"
-        cp(src, dest)
-        assert src.is_file()
+    def test_file(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        dest = temp_path_not_exist / temp_file.name
+        cp(temp_file, dest)
+        assert temp_file.is_file()
         assert dest.is_file()
 
-    def test_dir(self, *, tmp_path_sub_path: Path) -> None:
-        src = tmp_path_sub_path / "dir"
+    def test_dir(self, *, tmp_path: Path, temp_path_not_exist: Path) -> None:
+        src = tmp_path / "dir"
         src.mkdir()
-        dest = tmp_path_sub_path / "dir2"
+        dest = temp_path_not_exist / src.name
         cp(src, dest)
         assert src.is_dir()
         assert dest.is_dir()
 
-    def test_perms(self, *, tmp_path_sub_path: Path) -> None:
-        src = tmp_path_sub_path / "file.txt"
-        src.touch()
-        dest = tmp_path_sub_path / "file2.txt"
+    def test_perms(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        dest = temp_path_not_exist / temp_file.name
         perms = Permissions.from_text("u=rwx,g=,o=")
-        cp(src, dest, perms=perms)
+        cp(temp_file, dest, perms=perms)
         current = Permissions.from_path(dest)
         assert current == perms
 
-    def test_owner(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
+    def test_owner(self, *, temp_path_not_exist: Path) -> None:
+        src = temp_path_not_exist / "file.txt"
         src.touch()
-        dest = tmp_path / "file2.txt"
+        dest = temp_path_not_exist / "file2.txt"
         cp(src, dest, owner=EFFECTIVE_USER_NAME)
         current = get_file_owner(dest)
         assert current == EFFECTIVE_USER_NAME

@@ -63,15 +63,16 @@ def set_log_factory() -> AbstractContextManager[None]:
 
 
 @fixture
-def tmp_file(*, tmp_path: Path) -> Iterator[Path]:
-    with TemporaryFile(dir=tmp_path) as path:
-        path.touch()
-        yield path
+def temp_file(*, tmp_path: Path) -> Iterator[Path]:
+    with TemporaryFile(dir=tmp_path) as temp:
+        temp.touch()
+        yield temp
 
 
 @fixture
-def tmp_path_sub_path(*, tmp_path: Path) -> Path:
-    return tmp_path / "dir"
+def temp_path_not_exist(*, tmp_path: Path) -> Iterator[Path]:
+    with TemporaryFile(dir=tmp_path) as temp:
+        yield temp
 
 
 # fixtures - redis
