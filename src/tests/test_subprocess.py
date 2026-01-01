@@ -525,24 +525,21 @@ class TestRsyncCmd:
         assert result == expected
 
     def test_source_with_trailing_slash(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "src"
-        src.mkdir()
-        result = rsync_cmd(f"{src}/", "user", "hostname", "dest")
+        src = f"{tmp_path}/"
+        result = rsync_cmd(src, "user", "hostname", "dest")
         expected: list[str] = [
             "rsync",
             "--checksum",
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            f"{src}/",
+            src,
             "user@hostname:dest",
         ]
         assert result == expected
 
     def test_archive(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "src"
-        src.mkdir()
-        result = rsync_cmd(src, "user", "hostname", "dest", archive=True)
+        result = rsync_cmd(tmp_path, "user", "hostname", "dest", archive=True)
         expected: list[str] = [
             "rsync",
             "--archive",
@@ -550,15 +547,13 @@ class TestRsyncCmd:
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            str(src),
+            str(tmp_path),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_chown_user(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        result = rsync_cmd(src, "user", "hostname", "dest", chown_user="user2")
+    def test_chown_user(self, *, temp_file: Path) -> None:
+        result = rsync_cmd(temp_file, "user", "hostname", "dest", chown_user="user2")
         expected: list[str] = [
             "rsync",
             "--checksum",
@@ -567,15 +562,13 @@ class TestRsyncCmd:
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            str(src),
+            str(temp_file),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_chown_group(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        result = rsync_cmd(src, "user", "hostname", "dest", chown_group="group")
+    def test_chown_group(self, *, temp_file: Path) -> None:
+        result = rsync_cmd(temp_file, "user", "hostname", "dest", chown_group="group")
         expected: list[str] = [
             "rsync",
             "--checksum",
@@ -584,16 +577,19 @@ class TestRsyncCmd:
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            str(src),
+            str(temp_file),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_chown_user_and_group(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
+    def test_chown_user_and_group(self, *, temp_file: Path) -> None:
         result = rsync_cmd(
-            src, "user", "hostname", "dest", chown_user="user2", chown_group="group"
+            temp_file,
+            "user",
+            "hostname",
+            "dest",
+            chown_user="user2",
+            chown_group="group",
         )
         expected: list[str] = [
             "rsync",
@@ -603,7 +599,7 @@ class TestRsyncCmd:
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            str(src),
+            str(temp_file),
             "user@hostname:dest",
         ]
         assert result == expected
