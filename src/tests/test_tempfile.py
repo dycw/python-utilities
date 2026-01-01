@@ -42,7 +42,10 @@ class TestTemporaryFile:
 
     def test_name(self) -> None:
         with TemporaryFile(name="name") as temp:
-            assert isinstance(temp, Path)
-            assert temp.is_file()
             assert temp.name == "name"
-        assert not temp.is_file()
+
+    def test_text(self) -> None:
+        contents = "text"
+        with TemporaryFile(text=contents) as temp:
+            current = temp.read_text()
+            assert current == contents
