@@ -22,13 +22,14 @@ from utilities.pathlib import PWD
 from utilities.permissions import Permissions, ensure_perms
 from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
-from utilities.whenever import to_seconds
+from utilities.whenever import SECOND, to_seconds
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
     from utilities.permissions import PermissionsLike
     from utilities.types import (
+        Delta,
         LoggerLike,
         MaybeIterable,
         PathLike,
@@ -1147,6 +1148,30 @@ def ssh_opts_cmd(
 ##
 
 
+def ssh_await(
+    user: str,
+    hostname: str,
+    /,
+    *,
+    logger: LoggerLike | None = None,
+    delta: Delta = SECOND,
+) -> None:
+    while True:  # skipif-ci
+        if logger is not None:
+            to_logger(logger).info("Waiting for '%s'...", hostname)
+        try:
+            ssh(user, hostname, "true")
+        except CalledProcessError:
+            sleep(to_seconds(delta))
+        else:
+            if logger is not None:
+                to_logger(logger).info("'%s' is up", hostname)
+            return
+
+
+##
+
+
 def ssh_keyscan(
     hostname: str, /, *, path: PathLike = KNOWN_HOSTS, port: int | None = None
 ) -> None:
@@ -1474,6 +1499,7 @@ __all__ = [
     "run",
     "set_hostname_cmd",
     "ssh",
+    "ssh_await",
     "ssh_cmd",
     "ssh_keygen_remove",
     "ssh_keygen_remove_cmd",

@@ -58,6 +58,7 @@ from utilities.subprocess import (
     run,
     set_hostname_cmd,
     ssh,
+    ssh_await,
     ssh_cmd,
     ssh_keygen_remove,
     ssh_keygen_remove_cmd,
@@ -1164,6 +1165,28 @@ class TestSSH:
         cap = capsys.readouterr()
         assert cap.out == "1234\n"
         assert cap.err == ""
+
+
+class TestSSHAwait:
+    @mark.only
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_main(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        ssh_await(ssh_user, ssh_hostname)
+
+    @mark.only
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
+    def test_logger(
+        self, *, caplog: LogCaptureFixture, ssh_user: str, ssh_hostname: str
+    ) -> None:
+        name = unique_str()
+        logger = getLogger(name=name)
+        logger.setLevel(INFO)
+        ssh_await(ssh_user, ssh_hostname, logger=name)
+        first, second = [r for r in caplog.records if r.name == name]
+        assert search(r"^Waiting for '.*'...$", first.message)
+        assert search(r"^'.*' is up$", second.message)
 
 
 class TestSSHCmd:
