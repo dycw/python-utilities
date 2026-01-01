@@ -446,20 +446,20 @@ class TestRsync:
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
+    @mark.only
     def test_dir_without_trailing_slash(
         self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
     ) -> None:
         with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
-            dest = temp_dest / tmp_path.name
-            rsync(tmp_path, ssh_user, ssh_hostname, dest)
+            rsync(tmp_path, ssh_user, ssh_hostname, temp_dest)
             ssh(
                 ssh_user,
                 ssh_hostname,
                 *BASH_LS,
                 input=strip_and_dedent(f"""
-                    if ! [ -d {dest} ]; then exit 1; fi
-                    if ! [ -d {dest}/{tmp_path.name} ]; then exit 1; fi
-                    if ! [ -f {dest}/{tmp_path.name}/{temp_file.name} ]; then exit 1; fi
+                    if ! [ -d {temp_dest} ]; then exit 1; fi
+                    if ! [ -d {temp_dest}/{tmp_path.name} ]; then exit 1; fi
+                    if ! [ -f {temp_dest}/{tmp_path.name}/{temp_file.name} ]; then exit 1; fi
                 """),
             )
 
@@ -1310,12 +1310,19 @@ class TestSymLinkCmd:
 
 
 class TestTee:
-    def test_main(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "dir/file.txt"
+    def test_main(self, *, temp_path_not_exist: Path) -> None:
         text = "text"
-        tee(path, text)
-        result = path.read_text()
+        tee(temp_path_not_exist, text)
+        result = temp_path_not_exist.read_text()
         assert result == text
+
+    def test_append(self, *, temp_path_not_exist: Path) -> None:
+        init, post = "init", "post"
+        tee(temp_path_not_exist, init)
+        tee(temp_path_not_exist, post, append=True)
+        result = temp_path_not_exist.read_text()
+        expected = f"{init}{post}"
+        assert result == expected
 
 
 class TestTeeCmd:

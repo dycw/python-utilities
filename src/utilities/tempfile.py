@@ -73,23 +73,44 @@ class _TemporaryDirectoryNoResourceWarning(tempfile.TemporaryDirectory):
 @contextmanager
 def TemporaryFile(  # noqa: N802
     *,
+    dir: PathLike | None = None,  # noqa: A002
     suffix: str | None = None,
     prefix: str | None = None,
-    dir: PathLike | None = None,  # noqa: A002
     ignore_cleanup_errors: bool = False,
     delete: bool = True,
     name: str | None = None,
     text: str | None = None,
 ) -> Iterator[Path]:
     """Yield a temporary file."""
-    with _temporary_file_inner(
-        suffix=suffix,
-        prefix=prefix,
-        dir=dir,
-        ignore_cleanup_errors=ignore_cleanup_errors,
-        delete=delete,
-        name=name,
-    ) as temp:
+    if dir is None:
+        with (
+            TemporaryDirectory(
+                suffix=suffix,
+                prefix=prefix,
+                dir=dir,
+                ignore_cleanup_errors=ignore_cleanup_errors,
+                delete=delete,
+            ) as temp_dir,
+            _temporary_file_outer(
+                temp_dir, delete=delete, name=name, text=text
+            ) as temp,
+        ):
+            yield temp
+    else:
+        with _temporary_file_outer(dir, delete=delete, name=name, text=text) as temp:
+            yield temp
+
+
+@contextmanager
+def _temporary_file_outer(
+    path: PathLike,
+    /,
+    *,
+    delete: bool = True,
+    name: str | None = None,
+    text: str | None = None,
+) -> Iterator[Path]:
+    with _temporary_file_inner(path, delete=delete, name=name) as temp:
         if text is not None:
             _ = temp.write_text(text)
         yield temp
@@ -97,29 +118,17 @@ def TemporaryFile(  # noqa: N802
 
 @contextmanager
 def _temporary_file_inner(
-    *,
-    suffix: str | None = None,
-    prefix: str | None = None,
-    dir: PathLike | None = None,  # noqa: A002
-    ignore_cleanup_errors: bool = False,
-    delete: bool = True,
-    name: str | None = None,
+    path: PathLike, /, *, delete: bool = True, name: str | None = None
 ) -> Iterator[Path]:
-    with TemporaryDirectory(
-        suffix=suffix,
-        prefix=prefix,
-        dir=dir,
-        ignore_cleanup_errors=ignore_cleanup_errors,
-        delete=delete,
-    ) as temp_dir:
-        temp_file = _NamedTemporaryFile(  # noqa: SIM115
-            dir=temp_dir, delete=delete, delete_on_close=False
-        )
-        if name is None:
-            yield temp_dir / temp_file.name
-        else:
-            _ = move(temp_dir / temp_file.name, temp_dir / name)
-            yield temp_dir / name
+    path = Path(path)
+    temp = _NamedTemporaryFile(  # noqa: SIM115
+        dir=path, delete=delete, delete_on_close=False
+    )
+    if name is None:
+        yield path / temp.name
+    else:
+        _ = move(path / temp.name, path / name)
+        yield path / name
 
 
 ##
