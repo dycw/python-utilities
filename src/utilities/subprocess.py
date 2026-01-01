@@ -5,6 +5,7 @@ import sys
 from contextlib import contextmanager
 from dataclasses import dataclass
 from io import StringIO
+from itertools import repeat
 from pathlib import Path
 from re import search
 from shlex import join
@@ -54,11 +55,36 @@ UPDATE_CA_CERTIFICATES: str = "update-ca-certificates"
 ##
 
 
+def append_text(
+    path: PathLike,
+    text: str,
+    /,
+    *,
+    sudo: bool = False,
+    skip_if_present: bool = False,
+    flags: int = 0,
+    blank_lines: int = 1,
+) -> None:
+    """Append text to a file."""
+    try:
+        existing = cat(path, sudo=sudo)
+    except (CalledProcessError, FileNotFoundError):
+        tee(path, text, sudo=sudo, append=True)
+        return
+    if skip_if_present and (search(text, existing, flags=flags) is not None):
+        return
+    full = "".join([*repeat("\n", times=blank_lines), text])
+    tee(path, full, sudo=sudo, append=True)
+
+
+##
+
+
 def apt_install(package: str, /, *, update: bool = False, sudo: bool = False) -> None:
     """Install a package."""
     if update:  # pragma: no cover
         run(*maybe_sudo_cmd(*APT_UPDATE, sudo=sudo))
-    run(*maybe_sudo_cmd(*apt_install_cmd(package), sudo=sudo))
+    run(*maybe_sudo_cmd(*apt_install_cmd(package), sudo=sudo))  # pragma: no cover
 
 
 def apt_install_cmd(package: str, /) -> list[str]:
@@ -67,6 +93,13 @@ def apt_install_cmd(package: str, /) -> list[str]:
 
 
 ##
+
+
+def cat(path: PathLike, /, *, sudo: bool = False) -> str:
+    """Concatenate a file."""
+    if sudo:  # pragma: no cover
+        return run(*sudo_cmd(*cat_cmd(path)), return_=True)
+    return Path(path).read_text()
 
 
 def cat_cmd(path: PathLike, /) -> list[str]:
@@ -165,6 +198,24 @@ def chpasswd(user_name: str, password: str, /, *, sudo: bool = False) -> None:
     run(  # pragma: no cover
         *maybe_sudo_cmd(CHPASSWD, sudo=sudo), input=f"{user_name}:{password}"
     )
+
+
+##
+
+
+def copy_text(
+    src: PathLike,
+    dest: PathLike,
+    /,
+    *,
+    sudo: bool = False,
+    substitutions: StrMapping | None = None,
+) -> None:
+    """Copy the text contents of a file."""
+    text = cat(src, sudo=sudo)
+    if substitutions is not None:
+        text = Template(text).substitute(**substitutions)
+    tee(dest, text, sudo=sudo)
 
 
 ##
@@ -351,6 +402,20 @@ class MvFileError(Exception):
 def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
     """Command to use 'mv' to move a file/directory."""
     return ["mv", str(src), str(dest)]
+
+
+##
+
+
+def replace_text(
+    path: PathLike, /, *replacements: tuple[str, str], sudo: bool = False
+) -> None:
+    """Replace the text in a file."""
+    path = Path(path)
+    text = cat(path, sudo=sudo)
+    for old, new in replacements:
+        text = text.replace(old, new)
+    tee(path, text, sudo=sudo)
 
 
 ##
@@ -1260,7 +1325,7 @@ def symlink_cmd(target: PathLike, link: PathLike, /) -> list[str]:
 def tee(
     path: PathLike, text: str, /, *, sudo: bool = False, append: bool = False
 ) -> None:
-    """Use 'tee' to duplicate standard input."""
+    """Duplicate standard input."""
     mkdir(path, sudo=sudo, parent=True)
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*tee_cmd(path, append=append)), input=text)
@@ -1516,14 +1581,17 @@ __all__ = [
     "RsyncCmdError",
     "RsyncCmdNoSourcesError",
     "RsyncCmdSourcesNotFoundError",
+    "append_text",
     "apt_install",
     "apt_install_cmd",
+    "cat",
     "cd_cmd",
     "chmod",
     "chmod_cmd",
     "chown",
     "chown_cmd",
     "chpasswd",
+    "copy_text",
     "cp",
     "cp_cmd",
     "echo_cmd",
@@ -1540,6 +1608,7 @@ __all__ = [
     "mkdir_cmd",
     "mv",
     "mv_cmd",
+    "replace_text",
     "ripgrep",
     "ripgrep_cmd",
     "rm",
