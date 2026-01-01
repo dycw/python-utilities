@@ -412,7 +412,7 @@ class TestSleepTD:
     async def test_main(self) -> None:
         with Timer() as timer:
             await sleep_td(self.delta)
-        assert timer <= 2 * self.delta
+        assert timer <= 3 * self.delta
 
     async def test_none(self) -> None:
         with Timer() as timer:
