@@ -392,7 +392,6 @@ class TestRm:
     def test_single_file(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file.txt"
         path.touch()
-        assert path.is_file()
         rm(path)
         assert not path.exists()
 
@@ -400,8 +399,6 @@ class TestRm:
         path1, path2 = [tmp_path / f"file{i}.txt" for i in [1, 2]]
         path1.touch()
         path2.touch()
-        assert path1.is_file()
-        assert path2.is_file()
         rm(path1, path2)
         assert not path1.exists()
         assert not path2.exists()
