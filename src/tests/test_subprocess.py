@@ -181,15 +181,16 @@ class TestChOwnCmd:
 
 
 class TestCp:
-    def test_file(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
+    def test_file(self, *, tmp_path_sub_path: Path) -> None:
+        src = tmp_path_sub_path / "file.txt"
         src.touch()
-        dest = tmp_path / "file2.txt"
+        dest = tmp_path_sub_path / "file2.txt"
         cp(src, dest)
         assert src.is_file()
         assert dest.is_file()
 
     def test_dir(self, *, tmp_path: Path) -> None:
+        tmp_path / "dir"
         src = tmp_path / "dir"
         src.mkdir()
         dest = tmp_path / "dir2"

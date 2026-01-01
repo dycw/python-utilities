@@ -58,6 +58,14 @@ def set_log_factory() -> AbstractContextManager[None]:
     return cm()
 
 
+# fixtures - pathlib
+
+
+@fixture
+def tmp_path_sub_path(*, tmp_path: Path) -> Path:
+    return tmp_path / "dir"
+
+
 # fixtures - redis
 
 
