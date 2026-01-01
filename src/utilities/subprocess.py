@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from io import StringIO
 from itertools import repeat
 from pathlib import Path
-from re import search
+from re import MULTILINE, search
 from shlex import join
 from shutil import copyfile, copytree, move, rmtree
 from string import Template
@@ -62,16 +62,17 @@ def append_text(
     *,
     sudo: bool = False,
     skip_if_present: bool = False,
-    newlines: int = 1,
+    flags: int = 0,
+    blank_lines: int = 1,
 ) -> None:
     try:
         existing = cat(path, sudo=sudo)
     except (CalledProcessError, FileNotFoundError):
         tee(path, text, sudo=sudo, append=True)
         return
-    if skip_if_present and (search(text, existing) is not None):
+    if skip_if_present and (search(text, existing, flags=flags) is not None):
         return
-    full = "\n".join([existing, *repeat("\n", times=newlines), text])
+    full = "\n".join([existing, *repeat("\n", times=blank_lines), text])
     tee(path, full, sudo=sudo, append=True)
 
 
@@ -82,7 +83,7 @@ def apt_install(package: str, /, *, update: bool = False, sudo: bool = False) ->
     """Install a package."""
     if update:  # pragma: no cover
         run(*maybe_sudo_cmd(*APT_UPDATE, sudo=sudo))
-    run(*maybe_sudo_cmd(*apt_install_cmd(package), sudo=sudo))
+    run(*maybe_sudo_cmd(*apt_install_cmd(package), sudo=sudo))  # pragma: no cover
 
 
 def apt_install_cmd(package: str, /) -> list[str]:
