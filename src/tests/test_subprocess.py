@@ -604,10 +604,8 @@ class TestRsyncCmd:
         ]
         assert result == expected
 
-    def test_exclude(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        result = rsync_cmd(src, "user", "hostname", "dest", exclude="exclude")
+    def test_exclude(self, *, temp_file: Path) -> None:
+        result = rsync_cmd(temp_file, "user", "hostname", "dest", exclude="exclude")
         expected: list[str] = [
             "rsync",
             "--checksum",
@@ -616,16 +614,14 @@ class TestRsyncCmd:
             "exclude",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            str(src),
+            str(temp_file),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_exclude_multiple(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
+    def test_exclude_multiple(self, *, temp_file: Path) -> None:
         result = rsync_cmd(
-            src, "user", "hostname", "dest", exclude=["exclude1", "exclude2"]
+            temp_file, "user", "hostname", "dest", exclude=["exclude1", "exclude2"]
         )
         expected: list[str] = [
             "rsync",
@@ -637,15 +633,13 @@ class TestRsyncCmd:
             "exclude2",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            str(src),
+            str(temp_file),
             "user@hostname:dest",
         ]
         assert result == expected
 
-    def test_sudo(self, *, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        result = rsync_cmd(src, "user", "hostname", "dest", sudo=True)
+    def test_sudo(self, *, temp_file: Path) -> None:
+        result = rsync_cmd(temp_file, "user", "hostname", "dest", sudo=True)
         expected: list[str] = [
             "rsync",
             "--checksum",
@@ -654,7 +648,7 @@ class TestRsyncCmd:
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
             "--rsync-path",
             "sudo rsync",
-            str(src),
+            str(temp_file),
             "user@hostname:dest",
         ]
         assert result == expected
