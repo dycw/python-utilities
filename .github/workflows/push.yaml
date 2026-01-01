@@ -4,13 +4,6 @@ on:
     branches:
       - master
 jobs:
-  tag:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Tag latest commit
-        uses: dycw/action-tag@latest
-        with:
-          token: ${{secrets.GITHUB_TOKEN}}
   publish:
     environment:
       name: pypi
@@ -20,5 +13,12 @@ jobs:
     steps:
       - name: Build and publish package
         uses: dycw/action-publish@latest
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tag latest commit
+        uses: dycw/action-tag@latest
         with:
           token: ${{secrets.GITHUB_TOKEN}}
