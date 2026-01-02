@@ -411,6 +411,14 @@ def _escape_separator(*, separator: str = _DEFAULT_SEPARATOR) -> str:
 ##
 
 
+def repr_str(obj: Any, /) -> str:
+    """Get the representation of the string of an object."""
+    return repr(str(obj))
+
+
+##
+
+
 class secret_str(str):  # noqa: N801
     """A string with an obfuscated representation."""
 
@@ -544,6 +552,7 @@ __all__ = [
     "pascal_case",
     "prompt_bool",
     "repr_encode",
+    "repr_str",
     "secret_str",
     "snake_case",
     "split_key_value_pairs",

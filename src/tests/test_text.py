@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from itertools import chain
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from hypothesis import given
@@ -34,6 +35,7 @@ from utilities.text import (
     pascal_case,
     prompt_bool,
     repr_encode,
+    repr_str,
     secret_str,
     snake_case,
     split_key_value_pairs,
@@ -197,6 +199,12 @@ class TestPascalSnakeAndKebabCase:
 class TestPromptBool:
     def test_main(self) -> None:
         assert prompt_bool(confirm=True)
+
+
+class TestReprStr:
+    def test_main(self) -> None:
+        s = repr_str(Path("path"))
+        assert s == "'path'"
 
 
 class TestSecretStr:

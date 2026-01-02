@@ -1,6 +1,6 @@
 repos:
-  - repo: https://github.com/dycw/pre-commit-hook-nitpick
-    rev: 0.8.0
+  - repo: https://github.com/dycw/conformalize
+    rev: 0.10.3
     hooks:
       - args:
           # - --coverage
@@ -31,7 +31,7 @@ repos:
           - --readme
           - --repo-name=python-utilities
           - --ruff
-        id: nitpick
+        id: conformalize
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -82,3 +82,7 @@ repos:
       - id: uv-lock
         args:
           - --upgrade
+          - --resolution
+          - highest
+          - --prerelease
+          - disallow
