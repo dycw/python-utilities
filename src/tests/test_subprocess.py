@@ -33,6 +33,7 @@ from utilities.subprocess import (
     cat,
     cat_cmd,
     cd_cmd,
+    chattr_cmd,
     chmod,
     chmod_cmd,
     chown,
@@ -187,6 +188,23 @@ class TestCDCmd:
     def test_main(self) -> None:
         result = cd_cmd("path")
         expected = ["cd", "path"]
+        assert result == expected
+
+
+class TestChAttrCmd:
+    def test_main(self) -> None:
+        result = chattr_cmd("path")
+        expected = ["chattr", "path"]
+        assert result == expected
+
+    def test_immutable(self) -> None:
+        result = chattr_cmd("path", immutable=True)
+        expected = ["chattr", "+i", "path"]
+        assert result == expected
+
+    def test_mutable(self) -> None:
+        result = chattr_cmd("path", immutable=False)
+        expected = ["chattr", "-i", "path"]
         assert result == expected
 
 

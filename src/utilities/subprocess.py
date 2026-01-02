@@ -146,6 +146,28 @@ def cd_cmd(path: PathLike, /) -> list[str]:
 ##
 
 
+def chattr(
+    path: PathLike, /, *, immutable: bool | None = None, sudo: bool = False
+) -> None:
+    """Change file attributes."""
+    run(
+        *maybe_sudo_cmd(*chattr_cmd(path, immutable=immutable), sudo=sudo)
+    )  # pragma: no cover
+
+
+def chattr_cmd(path: PathLike, /, *, immutable: bool | None = None) -> list[str]:
+    """Command to use 'chattr' to change file attributes."""
+    args: list[str] = ["chattr"]
+    if immutable is True:
+        args.append("+i")
+    elif immutable is False:
+        args.append("-i")
+    return [*args, str(path)]
+
+
+##
+
+
 def chmod(path: PathLike, perms: PermissionsLike, /, *, sudo: bool = False) -> None:
     """Change file mode."""
     if sudo:  # pragma: no cover
@@ -1860,6 +1882,8 @@ __all__ = [
     "apt_update",
     "cat",
     "cd_cmd",
+    "chattr",
+    "chattr_cmd",
     "chmod",
     "chmod_cmd",
     "chown",
