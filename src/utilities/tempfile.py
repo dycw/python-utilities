@@ -92,7 +92,12 @@ def TemporaryFile(  # noqa: N802
                 delete=delete,
             ) as temp_dir,
             _temporary_file_outer(
-                temp_dir, delete=delete, name=name, text=text
+                temp_dir,
+                suffix=suffix,
+                prefix=prefix,
+                delete=delete,
+                name=name,
+                text=text,
             ) as temp,
         ):
             yield temp
@@ -106,11 +111,15 @@ def _temporary_file_outer(
     path: PathLike,
     /,
     *,
+    suffix: str | None = None,
+    prefix: str | None = None,
     delete: bool = True,
     name: str | None = None,
     text: str | None = None,
 ) -> Iterator[Path]:
-    with _temporary_file_inner(path, delete=delete, name=name) as temp:
+    with _temporary_file_inner(
+        path, suffix=suffix, prefix=prefix, delete=delete, name=name
+    ) as temp:
         if text is not None:
             _ = temp.write_text(text)
         yield temp
@@ -118,11 +127,17 @@ def _temporary_file_outer(
 
 @contextmanager
 def _temporary_file_inner(
-    path: PathLike, /, *, delete: bool = True, name: str | None = None
+    path: PathLike,
+    /,
+    *,
+    suffix: str | None = None,
+    prefix: str | None = None,
+    delete: bool = True,
+    name: str | None = None,
 ) -> Iterator[Path]:
     path = Path(path)
     temp = _NamedTemporaryFile(  # noqa: SIM115
-        dir=path, delete=delete, delete_on_close=False
+        suffix=suffix, prefix=prefix, dir=path, delete=delete, delete_on_close=False
     )
     if name is None:
         yield path / temp.name

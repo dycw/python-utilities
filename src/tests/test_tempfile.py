@@ -16,19 +16,32 @@ class TestTempDir:
 
 
 class TestTemporaryDirectory:
-    def test_path(self) -> None:
+    def test_main(self) -> None:
         temp_dir = TemporaryDirectory()
         path = temp_dir.path
         assert isinstance(path, Path)
         assert path.is_dir()
         assert set(path.iterdir()) == set()
 
-    def test_as_context_manager(self) -> None:
+    def test_context_manager(self) -> None:
         with TemporaryDirectory() as temp:
             assert isinstance(temp, Path)
             assert temp.is_dir()
             assert set(temp.iterdir()) == set()
-        assert not temp.is_dir()
+        assert not temp.exists()
+
+    def test_suffix(self) -> None:
+        with TemporaryDirectory(suffix="suffix") as temp:
+            assert temp.name.endswith("suffix")
+
+    def test_prefix(self) -> None:
+        with TemporaryDirectory(prefix="prefix") as temp:
+            assert temp.name.startswith("prefix")
+
+    def test_dir(self, *, tmp_path: Path) -> None:
+        with TemporaryDirectory(dir=tmp_path) as temp:
+            relative = temp.relative_to(tmp_path)
+        assert len(relative.parts) == 1
 
 
 class TestTemporaryFile:
@@ -38,12 +51,20 @@ class TestTemporaryFile:
             assert temp.is_file()
             _ = temp.write_text("text")
             assert temp.read_text() == "text"
-        assert not temp.is_file()
+        assert not temp.exists()
 
     def test_dir(self, *, tmp_path: Path) -> None:
         with TemporaryFile(dir=tmp_path) as temp:
             relative = temp.relative_to(tmp_path)
         assert len(relative.parts) == 1
+
+    def test_suffix(self) -> None:
+        with TemporaryFile(suffix="suffix") as temp:
+            assert temp.name.endswith("suffix")
+
+    def test_prefix(self) -> None:
+        with TemporaryFile(prefix="prefix") as temp:
+            assert temp.name.startswith("prefix")
 
     def test_name(self) -> None:
         with TemporaryFile(name="name") as temp:
