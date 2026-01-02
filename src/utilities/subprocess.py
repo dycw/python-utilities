@@ -192,36 +192,46 @@ def chown(
     /,
     *,
     sudo: bool = False,
+    recursive: bool = False,
     user: str | int | None = None,
     group: str | int | None = None,
 ) -> None:
     """Change file owner and/or group."""
     if sudo:  # pragma: no cover
-        match user, group:
-            case None, None:
-                ...
-            case str() | int() | None, str() | int() | None:
-                run(*sudo_cmd(*chown_cmd(path, user=user, group=group)))
-            case never:
-                assert_never(never)
+        if (user is not None) or (group is not None):
+            args = sudo_cmd(
+                *chown_cmd(path, recursive=recursive, user=user, group=group)
+            )
+            run(*args)
     else:
-        match user, group:
-            case None, None:
-                ...
-            case str() | int(), None:
-                shutil.chown(path, user, group)
-            case None, str() | int():
-                shutil.chown(path, user, group)
-            case str() | int(), str() | int():
-                shutil.chown(path, user, group)
-            case never:
-                assert_never(never)
+        path = Path(path)
+        paths = list(path.rglob("**/*")) if recursive else [path]
+        for p in paths:
+            match user, group:
+                case None, None:
+                    ...
+                case str() | int(), None:
+                    shutil.chown(p, user, group)
+                case None, str() | int():
+                    shutil.chown(p, user, group)
+                case str() | int(), str() | int():
+                    shutil.chown(p, user, group)
+                case never:
+                    assert_never(never)
 
 
 def chown_cmd(
-    path: PathLike, /, *, user: str | int | None = None, group: str | int | None = None
+    path: PathLike,
+    /,
+    *,
+    recursive: bool = False,
+    user: str | int | None = None,
+    group: str | int | None = None,
 ) -> list[str]:
     """Command to use 'chown' to change file owner and/or group."""
+    args: list[str] = ["chown"]
+    if recursive:
+        args.append("-R")
     match user, group:
         case None, None:
             raise ChownCmdError
@@ -233,7 +243,7 @@ def chown_cmd(
             ownership = f"{user}:{group}"
         case never:
             assert_never(never)
-    return ["chown", ownership, str(path)]
+    return [*args, ownership, str(path)]
 
 
 @dataclass(kw_only=True, slots=True)
