@@ -174,7 +174,7 @@ def docker_exec(
     container: str,
     cmd: str,
     /,
-    *cmds_or_args: str,
+    *args: str,
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
@@ -194,7 +194,7 @@ def docker_exec(
     container: str,
     cmd: str,
     /,
-    *cmds_or_args: str,
+    *args: str,
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
@@ -214,7 +214,7 @@ def docker_exec(
     container: str,
     cmd: str,
     /,
-    *cmds_or_args: str,
+    *args: str,
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
@@ -234,7 +234,7 @@ def docker_exec(
     container: str,
     cmd: str,
     /,
-    *cmds_or_args: str,
+    *args: str,
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
@@ -254,7 +254,7 @@ def docker_exec(
     container: str,
     cmd: str,
     /,
-    *cmds_or_args: str,
+    *args: str,
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
@@ -273,7 +273,7 @@ def docker_exec(
     container: str,
     cmd: str,
     /,
-    *cmds_or_args: str,
+    *args: str,
     env: StrStrMapping | None = None,
     user: str | None = None,
     workdir: PathLike | None = None,
@@ -289,10 +289,10 @@ def docker_exec(
     **env_kwargs: str,
 ) -> str | None:
     """Execute a command in a container."""
-    cmd_and_args = docker_exec_cmd(  # skipif-ci
+    run_cmd_and_args = docker_exec_cmd(  # skipif-ci
         container,
         cmd,
-        *cmds_or_args,
+        *args,
         env=env,
         interactive=input is not None,
         user=user,
@@ -300,7 +300,7 @@ def docker_exec(
         **env_kwargs,
     )
     return run(  # skipif-ci
-        *cmd_and_args,
+        *run_cmd_and_args,
         input=input,
         print=print,
         print_stdout=print_stdout,
@@ -317,7 +317,7 @@ def docker_exec_cmd(
     container: str,
     cmd: str,
     /,
-    *cmds_or_args: str,
+    *args: str,
     env: StrStrMapping | None = None,
     interactive: bool = False,
     user: str | None = None,
@@ -325,17 +325,17 @@ def docker_exec_cmd(
     **env_kwargs: str,
 ) -> list[str]:
     """Command to use `docker exec` to execute a command in a container."""
-    args: list[str] = ["docker", "exec"]
+    all_args: list[str] = ["docker", "exec"]
     mapping: dict[str, str] = ({} if env is None else dict(env)) | env_kwargs
     for key, value in mapping.items():
-        args.extend(["--env", f"{key}={value}"])
+        all_args.extend(["--env", f"{key}={value}"])
     if interactive:
-        args.append("--interactive")
+        all_args.append("--interactive")
     if user is not None:
-        args.extend(["--user", user])
+        all_args.extend(["--user", user])
     if workdir is not None:
-        args.extend(["--workdir", str(workdir)])
-    return [*args, container, cmd, *cmds_or_args]
+        all_args.extend(["--workdir", str(workdir)])
+    return [*all_args, container, cmd, *args]
 
 
 ##
