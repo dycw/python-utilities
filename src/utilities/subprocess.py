@@ -208,7 +208,7 @@ def chown(
         paths = list(path.rglob("*")) if recursive else [path]
         for p in paths:
             match user, group:
-                case None, None, _:
+                case None, None:
                     ...
                 case str() | int(), None:
                     shutil.chown(p, user, group)
