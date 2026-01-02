@@ -340,6 +340,10 @@ def yield_docker_temp_dir(
 
 
 __all__ = [
+    "docker_compose_down",
+    "docker_compose_down_cmd",
+    "docker_compose_pull",
+    "docker_compose_pull_cmd",
     "docker_compose_up",
     "docker_compose_up_cmd",
     "docker_cp",
