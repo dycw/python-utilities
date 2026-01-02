@@ -102,7 +102,9 @@ def TemporaryFile(  # noqa: N802
         ):
             yield temp
     else:
-        with _temporary_file_outer(dir, delete=delete, name=name, text=text) as temp:
+        with _temporary_file_outer(
+            dir, suffix=suffix, prefix=prefix, delete=delete, name=name, text=text
+        ) as temp:
             yield temp
 
 
