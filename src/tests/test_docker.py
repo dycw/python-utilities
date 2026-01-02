@@ -55,6 +55,11 @@ class TestDockerComposeCmd:
         ]
         assert result == expected
 
+    def test_args(self) -> None:
+        result = _docker_compose_cmd("cmd", "arg")
+        expected = ["docker", "compose", "cmd", "arg"]
+        assert result == expected
+
 
 class TestDockerComposeDownCmd:
     def test_main(self) -> None:
@@ -73,6 +78,11 @@ class TestDockerComposePullCmd:
 class TestDockerComposeUpCmd:
     def test_main(self) -> None:
         result = docker_compose_up_cmd()
+        expected = ["docker", "compose", "up", "--detach"]
+        assert result == expected
+
+    def test_detach(self) -> None:
+        result = docker_compose_up_cmd(detach=False)
         expected = ["docker", "compose", "up"]
         assert result == expected
 
