@@ -222,6 +222,7 @@ def chown_cmd(
     path: PathLike, /, *, user: str | int | None = None, group: str | int | None = None
 ) -> list[str]:
     """Command to use 'chown' to change file owner and/or group."""
+
     match user, group:
         case None, None:
             raise ChownCmdError
