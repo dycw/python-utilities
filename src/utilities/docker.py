@@ -73,30 +73,36 @@ def docker_compose_pull_cmd(
 def docker_compose_up(
     *,
     files: MaybeIterable[PathLike] | None = None,
+    detach: bool = True,
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
 ) -> None:
     """Create and start containers."""
-    args = docker_compose_up_cmd(files=files)  # pragma: no cover
+    args = docker_compose_up_cmd(files=files, detach=detach)  # pragma: no cover
     run(  # pragma: no cover
         *args, print=print, print_stdout=print_stdout, print_stderr=print_stderr
     )
 
 
-def docker_compose_up_cmd(*, files: MaybeIterable[PathLike] | None = None) -> list[str]:
+def docker_compose_up_cmd(
+    *, files: MaybeIterable[PathLike] | None = None, detach: bool = True
+) -> list[str]:
     """Command to use 'docker compose up' to create and start containers."""
-    return _docker_compose_cmd("up", files=files)
+    args: list[str] = []
+    if detach:
+        args.append("--detach")
+    return _docker_compose_cmd("up", *args, files=files)
 
 
 def _docker_compose_cmd(
-    cmd: str, /, *, files: MaybeIterable[PathLike] | None = None
+    cmd: str, /, *args: str, files: MaybeIterable[PathLike] | None = None
 ) -> list[str]:
-    args: list[str] = ["docker", "compose"]
+    all_args: list[str] = ["docker", "compose"]
     if files is not None:
         for file in always_iterable(files):
-            args.extend(["--file", str(file)])
-    return [*args, cmd]
+            all_args.extend(["--file", str(file)])
+    return [*all_args, cmd, *args]
 
 
 ##
