@@ -28,9 +28,18 @@ if TYPE_CHECKING:
     )
 
 
-def docker_compose_down(*, files: MaybeIterable[PathLike] | None = None) -> None:
+def docker_compose_down(
+    *,
+    files: MaybeIterable[PathLike] | None = None,
+    print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+) -> None:
     """Stop and remove containers."""
-    run(*docker_compose_down_cmd(files=files))  # pragma: no cover
+    args = docker_compose_down_cmd(files=files)  # pragma: no cover
+    run(  # pragma: no cover
+        *args, print=print, print_stdout=print_stdout, print_stderr=print_stderr
+    )
 
 
 def docker_compose_down_cmd(
@@ -40,9 +49,18 @@ def docker_compose_down_cmd(
     return _docker_compose_cmd("down", files=files)
 
 
-def docker_compose_pull(*, files: MaybeIterable[PathLike] | None = None) -> None:
+def docker_compose_pull(
+    *,
+    files: MaybeIterable[PathLike] | None = None,
+    print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+) -> None:
     """Pull service images."""
-    run(*docker_compose_pull_cmd(files=files))  # pragma: no cover
+    args = docker_compose_pull_cmd(files=files)  # pragma: no cover
+    run(  # pragma: no cover
+        *args, print=print, print_stdout=print_stdout, print_stderr=print_stderr
+    )
 
 
 def docker_compose_pull_cmd(
@@ -52,9 +70,18 @@ def docker_compose_pull_cmd(
     return _docker_compose_cmd("pull", files=files)
 
 
-def docker_compose_up(*, files: MaybeIterable[PathLike] | None = None) -> None:
+def docker_compose_up(
+    *,
+    files: MaybeIterable[PathLike] | None = None,
+    print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+) -> None:
     """Create and start containers."""
-    run(*docker_compose_up_cmd(files=files))  # pragma: no cover
+    args = docker_compose_up_cmd(files=files)  # pragma: no cover
+    run(  # pragma: no cover
+        *args, print=print, print_stdout=print_stdout, print_stderr=print_stderr
+    )
 
 
 def docker_compose_up_cmd(*, files: MaybeIterable[PathLike] | None = None) -> list[str]:
