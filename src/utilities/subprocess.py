@@ -893,7 +893,8 @@ def rsync_many(
     /,
     *items: tuple[PathLike, PathLike]
     | tuple[Literal["sudo"], PathLike, PathLike]
-    | tuple[PathLike, PathLike, PermissionsLike],
+    | tuple[PathLike, PathLike, PermissionsLike]
+    | tuple[Literal["sudo"], PathLike, PathLike, PermissionsLike],
     retry: Retry | None = None,
     logger: LoggerLike | None = None,
     keep: bool = False,
@@ -925,6 +926,17 @@ def rsync_many(
                 ):
                     cmds.extend(
                         _rsync_many_prepare(src, dest, temp_src, temp_dest, perms=perms)
+                    )
+                case (
+                    "sudo",
+                    Path() | str() as src,
+                    Path() | str() as dest,
+                    Permissions() | int() | str() as perms,
+                ):
+                    cmds.extend(
+                        _rsync_many_prepare(
+                            src, dest, temp_src, temp_dest, sudo=True, perms=perms
+                        )
                     )
                 case never:
                     assert_never(never)
