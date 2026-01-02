@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from pytest import CaptureFixture, LogCaptureFixture, mark, param, raises
 
 from utilities.docker import (
+    docker_compose_up_cmd,
     docker_cp,
     docker_cp_cmd,
     docker_exec,
@@ -25,6 +26,31 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from utilities.types import PathLike
+
+
+class TestDockerComposeUpCmd:
+    def test_main(self) -> None:
+        result = docker_compose_up_cmd()
+        expected = ["docker", "compose", "up"]
+        assert result == expected
+
+    def test_single_file(self) -> None:
+        result = docker_compose_up_cmd(files="compose.yaml")
+        expected = ["docker", "compose", "--file", "compose.yaml", "up"]
+        assert result == expected
+
+    def test_multiple_files(self) -> None:
+        result = docker_compose_up_cmd(files=["compose1.yaml", "compose2.yaml"])
+        expected = [
+            "docker",
+            "compose",
+            "--file",
+            "compose1.yaml",
+            "--file",
+            "compose2.yaml",
+            "up",
+        ]
+        assert result == expected
 
 
 class TestDockerCp:
