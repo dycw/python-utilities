@@ -227,6 +227,9 @@ class TestChOwn:
     def test_none(self, *, temp_file: Path) -> None:
         chown(temp_file)
 
+    def test_recursive(self, *, temp_file: Path) -> None:
+        chown(temp_file, recursive=True)
+
     def test_user(self, *, temp_file: Path) -> None:
         chown(temp_file, user=EFFECTIVE_USER_NAME)
         result = get_file_owner(temp_file)
@@ -249,6 +252,11 @@ class TestChOwnCmd:
     def test_user(self) -> None:
         result = chown_cmd("path", user="user")
         expected = ["chown", "user", "path"]
+        assert result == expected
+
+    def test_recursive(self) -> None:
+        result = chown_cmd("path", recursive=True, user="user")
+        expected = ["chown", "-R", "user", "path"]
         assert result == expected
 
     def test_group(self) -> None:
