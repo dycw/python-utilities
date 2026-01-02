@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import re
 from logging import INFO, getLogger
-from re import MULTILINE, search
+from re import MULTILINE, Pattern, search
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
-from pytest import CaptureFixture, LogCaptureFixture, raises
+from pytest import CaptureFixture, LogCaptureFixture, mark, param, raises
 
 from utilities.docker import (
+    _docker_compose_cmd,
+    docker_compose_down_cmd,
+    docker_compose_pull_cmd,
+    docker_compose_up_cmd,
     docker_cp,
     docker_cp_cmd,
     docker_exec,
@@ -17,7 +22,7 @@ from utilities.docker import (
 from utilities.iterables import one
 from utilities.pytest import skipif_ci, throttle
 from utilities.subprocess import BASH_LS, touch_cmd
-from utilities.text import strip_and_dedent, unique_str
+from utilities.text import unique_str
 from utilities.whenever import MINUTE
 
 if TYPE_CHECKING:
@@ -26,28 +31,71 @@ if TYPE_CHECKING:
     from utilities.types import PathLike
 
 
+class TestDockerComposeCmd:
+    def test_main(self) -> None:
+        result = _docker_compose_cmd("cmd")
+        expected = ["docker", "compose", "cmd"]
+        assert result == expected
+
+    def test_single_file(self) -> None:
+        result = _docker_compose_cmd("cmd", files="compose.yaml")
+        expected = ["docker", "compose", "--file", "compose.yaml", "cmd"]
+        assert result == expected
+
+    def test_multiple_files(self) -> None:
+        result = _docker_compose_cmd("cmd", files=["compose1.yaml", "compose2.yaml"])
+        expected = [
+            "docker",
+            "compose",
+            "--file",
+            "compose1.yaml",
+            "--file",
+            "compose2.yaml",
+            "cmd",
+        ]
+        assert result == expected
+
+
+class TestDockerComposeDownCmd:
+    def test_main(self) -> None:
+        result = docker_compose_down_cmd()
+        expected = ["docker", "compose", "down"]
+        assert result == expected
+
+
+class TestDockerComposePullCmd:
+    def test_main(self) -> None:
+        result = docker_compose_pull_cmd()
+        expected = ["docker", "compose", "pull"]
+        assert result == expected
+
+
+class TestDockerComposeUpCmd:
+    def test_main(self) -> None:
+        result = docker_compose_up_cmd()
+        expected = ["docker", "compose", "up"]
+        assert result == expected
+
+
 class TestDockerCp:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_into_container(self, *, container: str, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
-        src.touch()
-        with yield_docker_temp_dir(container) as temp_cont:
-            dest = temp_cont / src.name
-            docker_cp(src, (container, dest))
+    def test_into_container(self, *, container: str, temp_file: Path) -> None:
+        with yield_docker_temp_dir(container) as temp_dir:
+            dest = temp_dir / temp_file.name
+            docker_cp(temp_file, (container, dest))
             docker_exec(
                 container, *BASH_LS, input=f"if ! [ -f {dest} ]; then exit 1; fi"
             )
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_from_container(self, *, container: str, tmp_path: Path) -> None:
-        with yield_docker_temp_dir(container) as temp_cont:
-            src = temp_cont / "file.txt"
+    def test_from_container(self, *, container: str, temp_path_not_exist: Path) -> None:
+        with yield_docker_temp_dir(container) as temp_dir:
+            src = temp_dir / temp_path_not_exist.name
             docker_exec(container, *touch_cmd(src))
-            dest = tmp_path / src.name
-            docker_cp((container, src), dest)
-        assert dest.is_file()
+            docker_cp((container, src), temp_path_not_exist)
+        assert temp_path_not_exist.is_file()
 
 
 class TestDockerCpCmd:
@@ -63,18 +111,28 @@ class TestDockerCpCmd:
 
 
 class TestDockerExec:
+    @mark.parametrize(
+        ("cmd", "expected"),
+        [
+            param("hostname", re.compile(r"^[0-9a-f]{12}$")),
+            param("whoami", re.compile(r"^root$")),
+        ],
+    )
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_main(self, *, capsys: CaptureFixture, container: str) -> None:
-        input_ = strip_and_dedent("""
-            hostname
-            whoami 1>&2
-        """)
-        result = docker_exec(container, *BASH_LS, input=input_, print=True)
+    def test_main(
+        self,
+        *,
+        capsys: CaptureFixture,
+        container: str,
+        cmd: str,
+        expected: Pattern[str],
+    ) -> None:
+        result = docker_exec(container, cmd, print=True)
         assert result is None
         cap = capsys.readouterr()
-        assert search("^[0-9a-f]{12}$", cap.out)
-        assert cap.err == "root\n"
+        assert expected.search(cap.out)
+        assert cap.err == ""
 
 
 class TestDockerExecCmd:
