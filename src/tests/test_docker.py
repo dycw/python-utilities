@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 from pytest import CaptureFixture, LogCaptureFixture, mark, param, raises
 
 from utilities.docker import (
+    docker_compose_down_cmd,
+    docker_compose_pull_cmd,
     docker_compose_up_cmd,
     docker_cp,
     docker_cp_cmd,
@@ -26,6 +28,20 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from utilities.types import PathLike
+
+
+class TestDockerComposeDownCmd:
+    def test_main(self) -> None:
+        result = docker_compose_down_cmd()
+        expected = ["docker", "compose", "down"]
+        assert result == expected
+
+
+class TestDockerComposePullCmd:
+    def test_main(self) -> None:
+        result = docker_compose_pull_cmd()
+        expected = ["docker", "compose", "pull"]
+        assert result == expected
 
 
 class TestDockerComposeUpCmd:
