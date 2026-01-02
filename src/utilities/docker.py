@@ -29,15 +29,27 @@ if TYPE_CHECKING:
 
 
 def docker_compose_down(*, files: MaybeIterable[PathLike] | None = None) -> None:
-    """Create and start containers."""
+    """Stop and remove containers."""
     run(*docker_compose_down_cmd(files=files))  # pragma: no cover
 
 
 def docker_compose_down_cmd(
     *, files: MaybeIterable[PathLike] | None = None
 ) -> list[str]:
-    """Command to use 'docker compose down' to create and start containers."""
+    """Command to use 'docker compose down' to stop and remove containers."""
     return _docker_compose_cmd("down", files=files)
+
+
+def docker_compose_pull(*, files: MaybeIterable[PathLike] | None = None) -> None:
+    """Pull service images."""
+    run(*docker_compose_pull_cmd(files=files))  # pragma: no cover
+
+
+def docker_compose_pull_cmd(
+    *, files: MaybeIterable[PathLike] | None = None
+) -> list[str]:
+    """Command to use 'docker compose pull' to pull service images."""
+    return _docker_compose_cmd("pull", files=files)
 
 
 def docker_compose_up(*, files: MaybeIterable[PathLike] | None = None) -> None:
