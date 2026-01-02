@@ -52,43 +52,29 @@ def docker_cp(
             docker_exec(
                 cont, *maybe_sudo_cmd(*mkdir_cmd(dest_path, parent=True), sudo=sudo)
             )
-            run(*docker_cp_cmd(src, dest, sudo=sudo), logger=logger)
+            run(*maybe_sudo_cmd(*docker_cp_cmd(src, dest), sudo=sudo), logger=logger)
         case (str(), Path() | str()), Path() | str():
             mkdir(dest, parent=True, sudo=sudo)
-            run(*docker_cp_cmd(src, dest, sudo=sudo), logger=logger)
+            run(*maybe_sudo_cmd(*docker_cp_cmd(src, dest), sudo=sudo), logger=logger)
         case _:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{src}", f"{dest=}"])
 
 
 @overload
-def docker_cp_cmd(
-    src: tuple[str, PathLike], dest: PathLike, /, *, sudo: bool = False
-) -> list[str]: ...
+def docker_cp_cmd(src: tuple[str, PathLike], dest: PathLike, /) -> list[str]: ...
 @overload
+def docker_cp_cmd(src: PathLike, dest: tuple[str, PathLike], /) -> list[str]: ...
 def docker_cp_cmd(
-    src: PathLike, dest: tuple[str, PathLike], /, *, sudo: bool = False
-) -> list[str]: ...
-def docker_cp_cmd(
-    src: PathLike | tuple[str, PathLike],
-    dest: PathLike | tuple[str, PathLike],
-    /,
-    *,
-    sudo: bool = False,
+    src: PathLike | tuple[str, PathLike], dest: PathLike | tuple[str, PathLike], /
 ) -> list[str]:
+    args: list[str] = ["docker", "cp"]
     match src, dest:
-        case (Path() | str()) as src_use, (
-            str() as dest_cont,
-            Path() | str() as dest_path,
-        ):
-            dest_use = f"{dest_cont}:{dest_path}"
-        case (str() as src_cont, (Path() | str()) as src_path), (
-            Path() | str() as dest_use
-        ):
-            src_use = f"{src_cont}:{src_path}"
+        case ((Path() | str()), (str() as cont, Path() | str() as path)):
+            return [*args, str(src), f"{cont}:{path}"]
+        case (str() as cont, (Path() | str()) as path), (Path() | str() as dest):
+            return [*args, f"{cont}:{path}", str(dest)]
         case _:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{src}", f"{dest=}"])
-    parts: list[str] = ["docker", "cp", str(src_use), str(dest_use)]
-    return maybe_sudo_cmd(*parts, sudo=sudo)
 
 
 ##
