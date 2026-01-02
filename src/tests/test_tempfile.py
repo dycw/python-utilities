@@ -62,6 +62,10 @@ class TestTemporaryFile:
         with TemporaryFile(suffix="suffix") as temp:
             assert temp.name.endswith("suffix")
 
+    def test_dir_and_suffix(self, *, tmp_path: Path) -> None:
+        with TemporaryFile(dir=tmp_path, suffix="suffix") as temp:
+            assert temp.name.endswith("suffix")
+
     def test_prefix(self) -> None:
         with TemporaryFile(prefix="prefix") as temp:
             assert temp.name.startswith("prefix")
