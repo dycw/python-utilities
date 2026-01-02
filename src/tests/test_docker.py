@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import re
 from logging import INFO, getLogger
-from re import MULTILINE, search
+from re import MULTILINE, Pattern, search
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
-from pytest import CaptureFixture, LogCaptureFixture, raises
+from pytest import CaptureFixture, LogCaptureFixture, mark, param, raises
 
 from utilities.docker import (
     docker_cp,
@@ -17,7 +18,7 @@ from utilities.docker import (
 from utilities.iterables import one
 from utilities.pytest import skipif_ci, throttle
 from utilities.subprocess import BASH_LS, touch_cmd
-from utilities.text import strip_and_dedent, unique_str
+from utilities.text import unique_str
 from utilities.whenever import MINUTE
 
 if TYPE_CHECKING:
@@ -60,18 +61,28 @@ class TestDockerCpCmd:
 
 
 class TestDockerExec:
+    @mark.parametrize(
+        ("cmd", "expected"),
+        [
+            param("hostname", re.compile(r"^[0-9a-f]{12}$")),
+            param("whoami", re.compile(r"^root$")),
+        ],
+    )
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_main(self, *, capsys: CaptureFixture, container: str) -> None:
-        input_ = strip_and_dedent("""
-            hostname
-            whoami 1>&2
-        """)
-        result = docker_exec(container, *BASH_LS, input=input_, print=True)
+    def test_main(
+        self,
+        *,
+        capsys: CaptureFixture,
+        container: str,
+        cmd: str,
+        expected: Pattern[str],
+    ) -> None:
+        result = docker_exec(container, cmd, print=True)
         assert result is None
         cap = capsys.readouterr()
-        assert search("^[0-9a-f]{12}$", cap.out)
-        assert cap.err == "root\n"
+        assert expected.search(cap.out)
+        assert cap.err == ""
 
 
 class TestDockerExecCmd:

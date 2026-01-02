@@ -1317,8 +1317,6 @@ class TestSetHostnameCmd:
 
 
 class TestSSH:
-    @skipif_ci
-    @throttle(delta=5 * MINUTE)
     @mark.parametrize(
         ("cmd", "expected"),
         [
@@ -1326,6 +1324,8 @@ class TestSSH:
             param("hostname", lf("ssh_hostname_internal")),
         ],
     )
+    @skipif_ci
+    @throttle(delta=5 * MINUTE)
     def test_main(
         self,
         *,
