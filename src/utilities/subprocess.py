@@ -205,26 +205,19 @@ def chown(
             run(*args)
     else:
         path = Path(path)
-        match user, group, recursive:
-            case None, None, _:
-                ...
-            case str() | int(), None, False:
-                shutil.chown(path, user, group)
-            case str() | int(), None, True:
-                for p in path.rglob("*"):
+        paths = list(path.rglob("*")) if recursive else [path]
+        for p in paths:
+            match user, group:
+                case None, None, _:
+                    ...
+                case str() | int(), None:
                     shutil.chown(p, user, group)
-            case None, str() | int(), False:
-                shutil.chown(path, user, group)
-            case None, str() | int(), True:
-                for p in path.rglob("*"):
+                case None, str() | int():
                     shutil.chown(p, user, group)
-            case str() | int(), str() | int(), False:
-                shutil.chown(path, user, group)
-            case str() | int(), str() | int(), True:
-                for p in path.rglob("*"):
+                case str() | int(), str() | int():
                     shutil.chown(p, user, group)
-            case never:
-                assert_never(never)
+                case never:
+                    assert_never(never)
 
 
 def chown_cmd(
