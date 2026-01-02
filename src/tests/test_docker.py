@@ -30,24 +30,21 @@ class TestDockerCp:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
     def test_into_container(self, *, container: str, temp_file: Path) -> None:
-        src = temp_file / "file.txt"
-        src.touch()
-        with yield_docker_temp_dir(container) as temp_cont:
-            dest = temp_cont / src.name
-            docker_cp(src, (container, dest))
+        with yield_docker_temp_dir(container) as temp_dir:
+            dest = temp_dir / temp_file.name
+            docker_cp(temp_file, (container, dest))
             docker_exec(
                 container, *BASH_LS, input=f"if ! [ -f {dest} ]; then exit 1; fi"
             )
 
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_from_container(self, *, container: str, tmp_path: Path) -> None:
-        with yield_docker_temp_dir(container) as temp_cont:
-            src = temp_cont / "file.txt"
+    def test_from_container(self, *, container: str, temp_path_not_exist: Path) -> None:
+        with yield_docker_temp_dir(container) as temp_dir:
+            src = temp_dir / temp_path_not_exist.name
             docker_exec(container, *touch_cmd(src))
-            dest = tmp_path / src.name
-            docker_cp((container, src), dest)
-        assert dest.is_file()
+            docker_cp((container, src), temp_path_not_exist)
+        assert temp_path_not_exist.is_file()
 
 
 class TestDockerCpCmd:
