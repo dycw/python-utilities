@@ -205,7 +205,7 @@ def chown(
             run(*args)
     else:
         path = Path(path)
-        paths = list(path.rglob("*")) if recursive else [path]
+        paths = list(path.rglob("**/*")) if recursive else [path]
         for p in paths:
             match user, group:
                 case None, None:
