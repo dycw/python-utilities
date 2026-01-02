@@ -29,8 +29,8 @@ if TYPE_CHECKING:
 class TestDockerCp:
     @skipif_ci
     @throttle(delta=5 * MINUTE)
-    def test_into_container(self, *, container: str, tmp_path: Path) -> None:
-        src = tmp_path / "file.txt"
+    def test_into_container(self, *, container: str, temp_file: Path) -> None:
+        src = temp_file / "file.txt"
         src.touch()
         with yield_docker_temp_dir(container) as temp_cont:
             dest = temp_cont / src.name
