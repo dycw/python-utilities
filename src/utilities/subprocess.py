@@ -86,9 +86,10 @@ def apt_install(
     """Install packages."""
     if update:  # pragma: no cover
         apt_update(sudo=sudo)
-    run(  # pragma: no cover
-        *maybe_sudo_cmd(*apt_install_cmd(package, *packages), sudo=sudo)
+    args = maybe_sudo_cmd(  # pragma: no cover
+        *apt_install_cmd(package, *packages), sudo=sudo
     )
+    run(*args)  # pragma: no cover
 
 
 def apt_install_cmd(package: str, /, *packages: str) -> list[str]:
@@ -101,9 +102,10 @@ def apt_install_cmd(package: str, /, *packages: str) -> list[str]:
 
 def apt_remove(package: str, /, *packages: str, sudo: bool = False) -> None:
     """Remove a package."""
-    run(  # pragma: no cover
-        *maybe_sudo_cmd(*apt_remove_cmd(package, *packages), sudo=sudo)
+    args = maybe_sudo_cmd(  # pragma: no cover
+        *apt_remove_cmd(package, *packages), sudo=sudo
     )
+    run(*args)  # pragma: no cover
 
 
 def apt_remove_cmd(package: str, /, *packages: str) -> list[str]:
@@ -246,9 +248,8 @@ class ChownCmdError(Exception):
 
 def chpasswd(user_name: str, password: str, /, *, sudo: bool = False) -> None:
     """Update passwords."""
-    run(  # pragma: no cover
-        *maybe_sudo_cmd(CHPASSWD, sudo=sudo), input=f"{user_name}:{password}"
-    )
+    args = maybe_sudo_cmd(CHPASSWD, sudo=sudo)  # pragma: no cover
+    run(*args, input=f"{user_name}:{password}")  # pragma: no cover
 
 
 ##
