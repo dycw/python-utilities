@@ -105,7 +105,12 @@ class TestAppendText:
         result = temp_path_not_exist.read_text()
         assert result == "text"
 
-    def test_existing(self, *, temp_file: Path) -> None:
+    def test_existing_empty(self, *, temp_file: Path) -> None:
+        append_text(temp_file, "text")
+        result = temp_file.read_text()
+        assert result == "text"
+
+    def test_existing_non_empty(self, *, temp_file: Path) -> None:
         _ = temp_file.write_text("init")
         append_text(temp_file, "post")
         result = temp_file.read_text()
@@ -117,6 +122,11 @@ class TestAppendText:
         append_text(temp_file, "text", skip_if_present=True)
         result = temp_file.read_text()
         assert result == "text"
+
+    def test_skip_if_present_with_special_character(self, *, temp_file: Path) -> None:
+        append_text(temp_file, "*", skip_if_present=True)
+        result = temp_file.read_text()
+        assert result == "*"
 
     def test_skip_if_present_without_effect(self, *, temp_file: Path) -> None:
         _ = temp_file.write_text("init")

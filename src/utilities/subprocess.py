@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from io import StringIO
 from itertools import repeat
 from pathlib import Path
-from re import MULTILINE, search
+from re import MULTILINE, escape, search
 from shlex import join
 from shutil import copyfile, copytree, move, rmtree
 from string import Template
@@ -69,9 +69,12 @@ def append_text(
     try:
         existing = cat(path, sudo=sudo)
     except (CalledProcessError, FileNotFoundError):
-        tee(path, text, sudo=sudo, append=True)
+        tee(path, text, sudo=sudo)
         return
-    if skip_if_present and (search(text, existing, flags=flags) is not None):
+    if existing == "":
+        tee(path, text, sudo=sudo)
+        return
+    if skip_if_present and (search(escape(text), existing, flags=flags) is not None):
         return
     full = "".join([*repeat("\n", times=blank_lines), text])
     tee(path, full, sudo=sudo, append=True)
