@@ -78,6 +78,10 @@ class TestTemporaryFile:
         with TemporaryFile(name="name") as temp:
             assert temp.name == "name"
 
+    def test_dir_and_name(self, *, tmp_path: Path) -> None:
+        with TemporaryFile(dir=tmp_path, name="name") as temp:
+            assert temp.name == "name"
+
     def test_text(self) -> None:
         contents = "text"
         with TemporaryFile(text=contents) as temp:
