@@ -150,9 +150,10 @@ def chattr(
     path: PathLike, /, *, immutable: bool | None = None, sudo: bool = False
 ) -> None:
     """Change file attributes."""
-    run(
-        *maybe_sudo_cmd(*chattr_cmd(path, immutable=immutable), sudo=sudo)
-    )  # pragma: no cover
+    args = maybe_sudo_cmd(  # pragma: no cover
+        *chattr_cmd(path, immutable=immutable), sudo=sudo
+    )
+    run(*args)  # pragma: no cover
 
 
 def chattr_cmd(path: PathLike, /, *, immutable: bool | None = None) -> list[str]:
@@ -443,8 +444,8 @@ def curl(
     logger: LoggerLike | None = None,
 ) -> str | None:
     """Transfer a URL."""
-    args = maybe_sudo_cmd(
-        *curl_cmd(  # skipif-ci
+    args = maybe_sudo_cmd(  # skipif-ci
+        *curl_cmd(
             url,
             fail=fail,
             location=location,
