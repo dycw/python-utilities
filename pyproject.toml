@@ -6,7 +6,7 @@
   altair = ["altair >=6.0.0, <7"]
   altair-test = [
     "polars >=1.36.1, <2",
-    "img2pdf >=0.6.3",
+    "img2pdf >=0.6.3, <1",
     "vl-convert-python >=1.9.0, <2",
   ]
   atools = ["atools >=0.14.2, <1"]
@@ -126,7 +126,7 @@
   name = "dycw-utilities"
   readme = "README.md"
   requires-python = ">= 3.12"
-  version = "0.176.0"
+  version = "0.176.1"
 
   [project.entry-points.pytest11]
     pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
