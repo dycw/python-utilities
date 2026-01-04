@@ -33,24 +33,24 @@
     "rich",
   ]
   fastapi = ["fastapi >=0.128.0, <1"]
-  fastapi-test = ["httpx", "uvicorn"]
+  fastapi-test = ["httpx >=0.28.1, <1", "uvicorn >=0.40.0, <1"]
   fpdf2 = ["fpdf2 >=2.8.5, <3"]
   gitpython = ["gitpython >=3.1.46, <4"]
   hashlib-test = ["orjson >=3.11.5, <4"]
   http-test = ["orjson >=3.11.5, <4"]
   hypothesis = ["hypothesis >=6.148.11, <7"]
   hypothesis-test = [
-    "libcst",
+    "libcst >=1.8.6, <2",
     "numpy >=2.4.0, <3",
     "pathvalidate >=3.3.1, <4",
     "pytest-rerunfailures >=16.1, <17",
   ]
   inflect = ["inflect >=7.5.0, <8"]
   jinja2 = ["jinja2 >=3.1.6, <4"]
-  jupyter-test = ["pandas", "polars >=1.36.1, <2"]
+  jupyter-test = ["pandas >=2.3.3, <3", "polars >=1.36.1, <2"]
   libcst = ["libcst >=1.8.6, <2"]
   lightweight-charts = ["lightweight-charts >=2.1, <3"]
-  lightweight-charts-test = ["polars >=1.36.1, <2", "pyarrow"]
+  lightweight-charts-test = ["polars >=1.36.1, <2", "pyarrow >=22.0.0, <23"]
   math-test = ["numpy >=2.4.0, <3"]
   memory-profiler = ["memory-profiler >=0.61.0, <1"]
   more-itertools = ["more-itertools >=10.8.0, <11"]
@@ -61,7 +61,7 @@
   orjson-test = ["polars >=1.36.1, <2"]
   polars = ["polars >=1.36.1, <2"]
   polars-ols = ["polars-ols >=0.3.5, <1"]
-  polars-ols-test = ["scikit-learn"]
+  polars-ols-test = ["scikit-learn >=1.8.0, <2"]
   polars-test = [
     "numpy >=2.4.0, <3",
     "scipy >=1.16.3, <2",
@@ -97,8 +97,8 @@
   sklearn = ["scikit-learn >=1.8.0, <2"]
   slack-sdk = ["slack-sdk >=3.39.0, <4"]
   slack-sdk-test = ["aiohttp >=3.13.2, <4"]
-  sqlalchemy = ["sqlalchemy >=2.0.45, <3", "psycopg"]
-  sqlalchemy-polars = ["sqlalchemy", "polars >=1.36.1, <2"]
+  sqlalchemy = ["sqlalchemy >=2.0.45, <3", "psycopg >=3.3.2, <4"]
+  sqlalchemy-polars = ["sqlalchemy >=2.0.45, <3", "polars >=1.36.1, <2"]
   sqlalchemy-polars-test = [
     "aiosqlite >=0.22.1, <1",
     "asyncpg >=0.31.0, <1",
