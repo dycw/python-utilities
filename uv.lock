@@ -625,7 +625,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.175.39"
+version = "0.176.0"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -1025,7 +1025,7 @@ reprlib-test = [{ name = "rich" }]
 scipy = [{ name = "scipy", specifier = ">=1.16.3,<2" }]
 sklearn = [{ name = "scikit-learn", specifier = ">=1.8.0,<2" }]
 slack-sdk = [{ name = "slack-sdk", specifier = ">=3.39.0,<4" }]
-slack-sdk-test = [{ name = "aiohttp" }]
+slack-sdk-test = [{ name = "aiohttp", specifier = ">=3.13.2,<4" }]
 sqlalchemy = [
     { name = "psycopg" },
     { name = "sqlalchemy", specifier = ">=2.0.45,<3" },

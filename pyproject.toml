@@ -78,7 +78,7 @@
   scipy = ["scipy >=1.16.3, <2"]
   sklearn = ["scikit-learn >=1.8.0, <2"]
   slack-sdk = ["slack-sdk >=3.39.0, <4"]
-  slack-sdk-test = ["aiohttp"]
+  slack-sdk-test = ["aiohttp >=3.13.2, <4"]
   sqlalchemy = ["sqlalchemy >=2.0.45, <3", "psycopg"]
   sqlalchemy-polars = ["sqlalchemy", "polars"]
   sqlalchemy-polars-test = ["aiosqlite", "asyncpg", "greenlet"]
@@ -100,7 +100,7 @@
   name = "dycw-utilities"
   readme = "README.md"
   requires-python = ">= 3.12"
-  version = "0.175.39"
+  version = "0.176.0"
 
   [project.entry-points.pytest11]
     pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
