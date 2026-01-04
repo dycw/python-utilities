@@ -3,98 +3,98 @@
   requires = ["uv_build"]
 
 [dependency-groups]
-  altair = ["altair >=6.0.0, <6.1"]
-  altair-test = ["polars", "img2pdf", "vl-convert-python"]
-  atools = ["atools >=0.14.2, <0.15"]
-  cachetools = ["cachetools >=6.2.4, <6.3"]
-  click = ["click >=8.3.1, <8.4"]
+  altair = ["altair >=6.0.0, <7"]
+  altair-test = ["polars", "img2pdf >=0.6.3", "vl-convert-python"]
+  atools = ["atools >=0.14.2, <1"]
+  cachetools = ["cachetools >=6.2.4, <7"]
+  click = ["click >=8.3.1, <9"]
   core = [
-    "atomicwrites >=1.4.1, <1.5",
-    "typing-extensions >=4.15.0, <4.16",
-    "tzlocal >=5.3.1, <5.4",
-    "whenever >=0.9.4, <0.10",
+    "atomicwrites >=1.4.1, <2",
+    "typing-extensions >=4.15.0, <5",
+    "tzlocal >=5.3.1, <6",
+    "whenever >=0.9.4, <1",
   ]
-  cryptography = ["cryptography >=46.0.3, <46.1"]
-  cvxpy = ["cvxpy >=1.7.5, <1.8"]
+  cryptography = ["cryptography >=46.0.3, <47"]
+  cvxpy = ["cvxpy >=1.7.5, <2"]
   dataclasses-test = ["orjson", "polars"]
   dev = [
-    "coloredlogs >=15.0.1, <15.1",
-    "coverage-conditional-plugin >=0.9.0, <0.10",
-    "dycw-pytest-only >=2.1.1, <2.2",
-    "pyright[nodejs] >=1.1.407, <1.2",
-    "pytest-cov >=7.0.0, <7.1",
-    "pytest-timeout >=2.4.0, <2.5",
+    "coloredlogs >=15.0.1, <16",
+    "coverage-conditional-plugin >=0.9.0, <1",
+    "dycw-pytest-only >=2.1.1, <3",
+    "pyright[nodejs] >=1.1.407, <2",
+    "pytest-cov >=7.0.0, <8",
+    "pytest-timeout >=2.4.0, <3",
     "dycw-utilities[test]",
     "rich",
   ]
-  fastapi = ["fastapi >=0.128.0, <0.129"]
+  fastapi = ["fastapi >=0.128.0, <1"]
   fastapi-test = ["httpx", "uvicorn"]
-  fpdf2 = ["fpdf2 >=2.8.5, <2.9"]
-  gitpython = ["gitpython >=3.1.46, <3.2"]
+  fpdf2 = ["fpdf2 >=2.8.5, <3"]
+  gitpython = ["gitpython >=3.1.46, <4"]
   hashlib-test = ["orjson"]
   http-test = ["orjson"]
-  hypothesis = ["hypothesis >=6.148.11, <6.149"]
+  hypothesis = ["hypothesis >=6.148.11, <7"]
   hypothesis-test = ["libcst", "numpy", "pathvalidate", "pytest-rerunfailures"]
-  inflect = ["inflect >=7.5.0, <7.6"]
-  jinja2 = ["jinja2 >=3.1.6, <3.2"]
+  inflect = ["inflect >=7.5.0, <8"]
+  jinja2 = ["jinja2 >=3.1.6, <4"]
   jupyter-test = ["pandas", "polars"]
-  libcst = ["libcst >=1.8.6, <1.9"]
-  lightweight-charts = ["lightweight-charts >=2.1, <2.2"]
+  libcst = ["libcst >=1.8.6, <2"]
+  lightweight-charts = ["lightweight-charts >=2.1, <3"]
   lightweight-charts-test = ["polars", "pyarrow"]
   math-test = ["numpy"]
-  memory-profiler = ["memory-profiler >=0.61.0, <0.62"]
-  more-itertools = ["more-itertools >=10.8.0, <10.9"]
-  numpy = ["numpy >=2.4.0, <2.5"]
+  memory-profiler = ["memory-profiler >=0.61.0, <1"]
+  more-itertools = ["more-itertools >=10.8.0, <11"]
+  numpy = ["numpy >=2.4.0, <3"]
   operator = ["polars"]
-  optuna = ["optuna >=4.6.0, <4.7"]
-  orjson = ["orjson >=3.11.5, <3.12"]
+  optuna = ["optuna >=4.6.0, <5"]
+  orjson = ["orjson >=3.11.5, <4"]
   orjson-test = ["polars"]
-  polars = ["polars >=1.36.1, <1.37"]
-  polars-ols = ["polars-ols >=0.3.5, <0.4"]
+  polars = ["polars >=1.36.1, <2"]
+  polars-ols = ["polars-ols >=0.3.5, <1"]
   polars-ols-test = ["scikit-learn"]
   polars-test = ["numpy", "scipy", "statsmodels"]
-  pottery = ["pottery >=3.0.1, <3.1"]
+  pottery = ["pottery >=3.0.1, <4"]
   pottery-test = ["orjson"]
-  pqdm = ["pqdm >=0.2.0, <0.3"]
-  psutil = ["psutil >=7.2.0, <7.3"]
-  pydantic = ["pydantic >=2.12.5, <2.13"]
-  pydantic-settings = ["pydantic-settings >=2.12.0, <2.13"]
+  pqdm = ["pqdm >=0.2.0, <1"]
+  psutil = ["psutil >=7.2.0, <8"]
+  pydantic = ["pydantic >=2.12.5, <3"]
+  pydantic-settings = ["pydantic-settings >=2.12.0, <3"]
   pydantic-settings-sops = ["pydantic-settings-sops"]
   pydantic-settings-test = ["pyyaml", "tomlkit"]
-  pyinstrument = ["pyinstrument >=5.1.1, <5.2"]
+  pyinstrument = ["pyinstrument >=5.1.1, <6"]
   pytest = [
-    "pytest >=9.0.2, <9.1",
-    "pytest-asyncio >=1.3.0, <1.4",
-    "pytest-randomly >=4.0.1, <4.1",
-    "pytest-timeout >=2.4.0, <2.5",
-    "pytest-xdist >=3.8.0, <3.9",
+    "pytest >=9.0.2, <10",
+    "pytest-asyncio >=1.3.0, <2",
+    "pytest-randomly >=4.0.1, <5",
+    "pytest-timeout >=2.4.0, <3",
+    "pytest-xdist >=3.8.0, <4",
   ]
-  pytest-regressions = ["pytest-regressions >=2.8.3, <2.9"]
+  pytest-regressions = ["pytest-regressions >=2.8.3, <3"]
   pytest-regressions-test = ["orjson", "polars"]
   pytest-test = ["orjson", "pytest-rerunfailures", "pytest-rng"]
-  redis = ["redis >=7.1.0, <7.2", "orjson"]
+  redis = ["redis >=7.1.0, <8", "orjson"]
   redis-test = ["pytest-rerunfailures"]
   reprlib-test = ["rich"]
-  scipy = ["scipy >=1.16.3, <1.17"]
-  sklearn = ["scikit-learn >=1.8.0, <1.9"]
-  slack-sdk = ["slack-sdk >=3.39.0, <3.40"]
+  scipy = ["scipy >=1.16.3, <2"]
+  sklearn = ["scikit-learn >=1.8.0, <2"]
+  slack-sdk = ["slack-sdk >=3.39.0, <4"]
   slack-sdk-test = ["aiohttp"]
-  sqlalchemy = ["sqlalchemy >=2.0.45, <2.1", "psycopg"]
+  sqlalchemy = ["sqlalchemy >=2.0.45, <3", "psycopg"]
   sqlalchemy-polars = ["sqlalchemy", "polars"]
   sqlalchemy-polars-test = ["aiosqlite", "asyncpg", "greenlet"]
   sqlalchemy-test = ["aiosqlite", "asyncpg", "greenlet"]
-  statsmodels = ["statsmodels >=0.14.6, <0.15"]
-  testbook = ["testbook >=0.4.2, <0.5"]
-  tzdata = ["tzdata >=2025.3, <2025.4"]
+  statsmodels = ["statsmodels >=0.14.6, <1"]
+  testbook = ["testbook >=0.4.2, <1"]
+  tzdata = ["tzdata >=2025.3, <2026"]
   whenever-test = ["pathvalidate"]
 
 [project]
   authors = [{ email = "d.wan@icloud.com", name = "Derek Wan" }]
   dependencies = [
-    "atomicwrites >=1.4.1, <1.5",
-    "typing-extensions >=4.15.0, <4.16",
-    "tzlocal >=5.3.1, <5.4",
-    "whenever >=0.9.4, <0.10",
+    "atomicwrites >=1.4.1, <2",
+    "typing-extensions >=4.15.0, <5",
+    "tzlocal >=5.3.1, <6",
+    "whenever >=0.9.4, <1",
   ]
   description = "Miscellaneous Python utilities"
   name = "dycw-utilities"
@@ -107,23 +107,23 @@
     pytest-regressions = "utilities.pytest_plugins.pytest_regressions"
 
   [project.optional-dependencies]
-    logging = ["coloredlogs >=15.0.1, <15.1"]
+    logging = ["coloredlogs >=15.0.1, <16"]
     test = [
-      "dycw-pytest-only >=2.1.1, <2.2",
-      "hypothesis >=6.148.11, <6.149",
-      "pytest >=9.0.2, <9.1",
-      "pytest-asyncio >=1.3.0, <1.4",
-      "pytest-cov >=7.0.0, <7.1",
-      "pytest-instafail >=0.5.0, <0.6",
-      "pytest-lazy-fixtures >=1.4.0, <1.5",
-      "pytest-randomly >=4.0.1, <4.1",
-      "pytest-regressions >=2.8.3, <2.9",
-      "pytest-repeat >=0.9.4, <0.10",
-      "pytest-rerunfailures >=16.1, <16.2",
-      "pytest-rng >=1.0.0, <1.1",
-      "pytest-timeout >=2.4.0, <2.5",
-      "pytest-xdist >=3.8.0, <3.9",
-      "testbook >=0.4.2, <0.5",
+      "dycw-pytest-only >=2.1.1, <3",
+      "hypothesis >=6.148.11, <7",
+      "pytest >=9.0.2, <10",
+      "pytest-asyncio >=1.3.0, <2",
+      "pytest-cov >=7.0.0, <8",
+      "pytest-instafail >=0.5.0, <1",
+      "pytest-lazy-fixtures >=1.4.0, <2",
+      "pytest-randomly >=4.0.1, <5",
+      "pytest-regressions >=2.8.3, <3",
+      "pytest-repeat >=0.9.4, <1",
+      "pytest-rerunfailures >=16.1, <17",
+      "pytest-rng >=1.0.0, <2",
+      "pytest-timeout >=2.4.0, <3",
+      "pytest-xdist >=3.8.0, <4",
+      "testbook >=0.4.2, <1",
     ]
 
 [tool]
