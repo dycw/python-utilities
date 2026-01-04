@@ -958,7 +958,7 @@ hypothesis-test = [
     { name = "libcst" },
     { name = "numpy" },
     { name = "pathvalidate" },
-    { name = "pytest-rerunfailures" },
+    { name = "pytest-rerunfailures", specifier = ">=16.1,<17" },
 ]
 inflect = [{ name = "inflect", specifier = ">=7.5.0,<8" }]
 jinja2 = [{ name = "jinja2", specifier = ">=3.1.6,<4" }]
@@ -1014,7 +1014,7 @@ pytest-regressions-test = [
 ]
 pytest-test = [
     { name = "orjson", specifier = ">=3.11.5,<4" },
-    { name = "pytest-rerunfailures" },
+    { name = "pytest-rerunfailures", specifier = ">=16.1,<17" },
     { name = "pytest-rng" },
 ]
 redis = [
@@ -1036,14 +1036,14 @@ sqlalchemy-polars = [
     { name = "sqlalchemy" },
 ]
 sqlalchemy-polars-test = [
-    { name = "aiosqlite" },
-    { name = "asyncpg" },
-    { name = "greenlet" },
+    { name = "aiosqlite", specifier = ">=0.22.1,<1" },
+    { name = "asyncpg", specifier = ">=0.31.0,<1" },
+    { name = "greenlet", specifier = ">=3.3.0,<4" },
 ]
 sqlalchemy-test = [
-    { name = "aiosqlite" },
-    { name = "asyncpg" },
-    { name = "greenlet" },
+    { name = "aiosqlite", specifier = ">=0.22.1,<1" },
+    { name = "asyncpg", specifier = ">=0.31.0,<1" },
+    { name = "greenlet", specifier = ">=3.3.0,<4" },
 ]
 statsmodels = [{ name = "statsmodels", specifier = ">=0.14.6,<1" }]
 testbook = [{ name = "testbook", specifier = ">=0.4.2,<1" }]

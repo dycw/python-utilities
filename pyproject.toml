@@ -39,7 +39,12 @@
   hashlib-test = ["orjson >=3.11.5, <4"]
   http-test = ["orjson >=3.11.5, <4"]
   hypothesis = ["hypothesis >=6.148.11, <7"]
-  hypothesis-test = ["libcst", "numpy", "pathvalidate", "pytest-rerunfailures"]
+  hypothesis-test = [
+    "libcst",
+    "numpy",
+    "pathvalidate",
+    "pytest-rerunfailures >=16.1, <17",
+  ]
   inflect = ["inflect >=7.5.0, <8"]
   jinja2 = ["jinja2 >=3.1.6, <4"]
   jupyter-test = ["pandas", "polars >=1.36.1, <2"]
@@ -76,7 +81,11 @@
   ]
   pytest-regressions = ["pytest-regressions >=2.8.3, <3"]
   pytest-regressions-test = ["orjson >=3.11.5, <4", "polars >=1.36.1, <2"]
-  pytest-test = ["orjson >=3.11.5, <4", "pytest-rerunfailures", "pytest-rng"]
+  pytest-test = [
+    "orjson >=3.11.5, <4",
+    "pytest-rerunfailures >=16.1, <17",
+    "pytest-rng",
+  ]
   redis = ["redis >=7.1.0, <8", "orjson >=3.11.5, <4"]
   redis-test = ["pytest-rerunfailures >=16.1, <17"]
   reprlib-test = ["rich >=14.2.0, <15"]
@@ -86,8 +95,16 @@
   slack-sdk-test = ["aiohttp >=3.13.2, <4"]
   sqlalchemy = ["sqlalchemy >=2.0.45, <3", "psycopg"]
   sqlalchemy-polars = ["sqlalchemy", "polars >=1.36.1, <2"]
-  sqlalchemy-polars-test = ["aiosqlite", "asyncpg", "greenlet"]
-  sqlalchemy-test = ["aiosqlite", "asyncpg", "greenlet"]
+  sqlalchemy-polars-test = [
+    "aiosqlite >=0.22.1, <1",
+    "asyncpg >=0.31.0, <1",
+    "greenlet >=3.3.0, <4",
+  ]
+  sqlalchemy-test = [
+    "aiosqlite >=0.22.1, <1",
+    "asyncpg >=0.31.0, <1",
+    "greenlet >=3.3.0, <4",
+  ]
   statsmodels = ["statsmodels >=0.14.6, <1"]
   testbook = ["testbook >=0.4.2, <1"]
   tzdata = ["tzdata >=2025.3, <2026"]
