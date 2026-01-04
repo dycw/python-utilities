@@ -1,22 +1,19 @@
 repos:
   - repo: https://github.com/dycw/conformalize
-    rev: 0.10.3
+    rev: 0.13.1
     hooks:
       - args:
           # - --coverage
           - --description=Miscellaneous Python utilities
           - --github--pull-request--pre-commit
           - --github--pull-request--pyright
-          - --github--pull-request--pytest--os--macos
-          - --github--pull-request--pytest--os--ubuntu
-          - --github--pull-request--pytest--python-version--3-12
-          - --github--pull-request--pytest--python-version--3-13
-          - --github--pull-request--pytest--python-version--3-14
-          - --github--pull-request--pytest--resolution--highest
+          - --github--pull-request--pytest--macos
+          - --github--pull-request--pytest--ubuntu
           - --github--pull-request--ruff
           - --github--push--publish
           - --github--push--tag
           - --package-name=dycw-utilities
+          - --pre-commit--dycw
           - --pre-commit--prettier
           - --pre-commit--ruff
           - --pre-commit--taplo
@@ -49,6 +46,11 @@ repos:
         args:
           - --autofix
       - id: trailing-whitespace
+  - repo: https://github.com/dycw/actions
+    rev: 0.3.32
+    hooks:
+      - id: format-requirements
+      - id: replace-sequence-strs
   - repo: local
     hooks:
       - id: prettier

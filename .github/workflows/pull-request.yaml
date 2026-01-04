@@ -12,18 +12,20 @@ jobs:
       - name: Run 'pre-commit'
         uses: dycw/action-pre-commit@latest
         with:
-          token: ${{secrets.GITHUB_TOKEN}}
           repos: |-
-            dycw/pre-commit-hook-nitpick
+            dycw/conformalize
             pre-commit/pre-commit-hooks
+          token-checkout: ${{secrets.GITHUB_TOKEN}}
+          token-uv: ${{secrets.GITHUB_TOKEN}}
   pyright:
     runs-on: ubuntu-latest
     steps:
       - name: Run 'pyright'
         uses: dycw/action-pyright@latest
         with:
-          token: ${{secrets.GITHUB_TOKEN}}
           python-version: "3.12"
+          token-checkout: ${{secrets.GITHUB_TOKEN}}
+          token-uv: ${{secrets.GITHUB_TOKEN}}
   pytest:
     env:
       CI: "1"
@@ -40,9 +42,10 @@ jobs:
       - name: Run 'pytest'
         uses: dycw/action-pytest@latest
         with:
-          token: ${{secrets.GITHUB_TOKEN}}
           python-version: ${{matrix.python-version}}
           resolution: ${{matrix.resolution}}
+          token-checkout: ${{secrets.GITHUB_TOKEN}}
+          token-uv: ${{secrets.GITHUB_TOKEN}}
     strategy:
       fail-fast: false
       matrix:
@@ -55,6 +58,7 @@ jobs:
           - "3.14"
         resolution:
           - highest
+          - lowest-direct
     timeout-minutes: 10
   ruff:
     runs-on: ubuntu-latest
@@ -62,4 +66,5 @@ jobs:
       - name: Run 'ruff'
         uses: dycw/action-ruff@latest
         with:
-          token: ${{secrets.GITHUB_TOKEN}}
+          token-checkout: ${{secrets.GITHUB_TOKEN}}
+          token-ruff: ${{secrets.GITHUB_TOKEN}}
