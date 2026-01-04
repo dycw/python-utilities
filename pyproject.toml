@@ -73,8 +73,8 @@
   psutil = ["psutil >=7.2.0, <8"]
   pydantic = ["pydantic >=2.12.5, <3"]
   pydantic-settings = ["pydantic-settings >=2.12.0, <3"]
-  pydantic-settings-sops = ["pydantic-settings-sops"]
-  pydantic-settings-test = ["pyyaml", "tomlkit"]
+  pydantic-settings-sops = ["pydantic-settings-sops >=0.1.2, <1"]
+  pydantic-settings-test = ["pyyaml >=6.0.3, <7", "tomlkit >=0.13.3, <1"]
   pyinstrument = ["pyinstrument >=5.1.1, <6"]
   pytest = [
     "pytest >=9.0.2, <10",

@@ -994,10 +994,10 @@ pqdm = [{ name = "pqdm", specifier = ">=0.2.0,<1" }]
 psutil = [{ name = "psutil", specifier = ">=7.2.0,<8" }]
 pydantic = [{ name = "pydantic", specifier = ">=2.12.5,<3" }]
 pydantic-settings = [{ name = "pydantic-settings", specifier = ">=2.12.0,<3" }]
-pydantic-settings-sops = [{ name = "pydantic-settings-sops" }]
+pydantic-settings-sops = [{ name = "pydantic-settings-sops", specifier = ">=0.1.2,<1" }]
 pydantic-settings-test = [
-    { name = "pyyaml" },
-    { name = "tomlkit" },
+    { name = "pyyaml", specifier = ">=6.0.3,<7" },
+    { name = "tomlkit", specifier = ">=0.13.3,<1" },
 ]
 pyinstrument = [{ name = "pyinstrument", specifier = ">=5.1.1,<6" }]
 pytest = [
