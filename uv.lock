@@ -956,8 +956,8 @@ http-test = [{ name = "orjson", specifier = ">=3.11.5,<4" }]
 hypothesis = [{ name = "hypothesis", specifier = ">=6.148.11,<7" }]
 hypothesis-test = [
     { name = "libcst" },
-    { name = "numpy" },
-    { name = "pathvalidate" },
+    { name = "numpy", specifier = ">=2.4.0,<3" },
+    { name = "pathvalidate", specifier = ">=3.3.1,<4" },
     { name = "pytest-rerunfailures", specifier = ">=16.1,<17" },
 ]
 inflect = [{ name = "inflect", specifier = ">=7.5.0,<8" }]
@@ -972,7 +972,7 @@ lightweight-charts-test = [
     { name = "polars", specifier = ">=1.36.1,<2" },
     { name = "pyarrow" },
 ]
-math-test = [{ name = "numpy" }]
+math-test = [{ name = "numpy", specifier = ">=2.4.0,<3" }]
 memory-profiler = [{ name = "memory-profiler", specifier = ">=0.61.0,<1" }]
 more-itertools = [{ name = "more-itertools", specifier = ">=10.8.0,<11" }]
 numpy = [{ name = "numpy", specifier = ">=2.4.0,<3" }]
@@ -984,9 +984,9 @@ polars = [{ name = "polars", specifier = ">=1.36.1,<2" }]
 polars-ols = [{ name = "polars-ols", specifier = ">=0.3.5,<1" }]
 polars-ols-test = [{ name = "scikit-learn" }]
 polars-test = [
-    { name = "numpy" },
-    { name = "scipy" },
-    { name = "statsmodels" },
+    { name = "numpy", specifier = ">=2.4.0,<3" },
+    { name = "scipy", specifier = ">=1.16.3,<2" },
+    { name = "statsmodels", specifier = ">=0.14.6,<1" },
 ]
 pottery = [{ name = "pottery", specifier = ">=3.0.1,<4" }]
 pottery-test = [{ name = "orjson", specifier = ">=3.11.5,<4" }]
@@ -1048,7 +1048,7 @@ sqlalchemy-test = [
 statsmodels = [{ name = "statsmodels", specifier = ">=0.14.6,<1" }]
 testbook = [{ name = "testbook", specifier = ">=0.4.2,<1" }]
 tzdata = [{ name = "tzdata", specifier = ">=2025.3,<2026" }]
-whenever-test = [{ name = "pathvalidate" }]
+whenever-test = [{ name = "pathvalidate", specifier = ">=3.3.1,<4" }]
 
 [[package]]
 name = "execnet"
