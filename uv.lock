@@ -625,7 +625,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.176.0"
+version = "0.176.1"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -914,7 +914,7 @@ provides-extras = ["logging", "test"]
 [package.metadata.requires-dev]
 altair = [{ name = "altair", specifier = ">=6.0.0,<7" }]
 altair-test = [
-    { name = "img2pdf", specifier = ">=0.6.3" },
+    { name = "img2pdf", specifier = ">=0.6.3,<1" },
     { name = "polars", specifier = ">=1.36.1,<2" },
     { name = "vl-convert-python", specifier = ">=1.9.0,<2" },
 ]
