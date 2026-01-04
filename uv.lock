@@ -1015,7 +1015,7 @@ pytest-regressions-test = [
 pytest-test = [
     { name = "orjson", specifier = ">=3.11.5,<4" },
     { name = "pytest-rerunfailures", specifier = ">=16.1,<17" },
-    { name = "pytest-rng" },
+    { name = "pytest-rng", specifier = ">=1.0.0,<2" },
 ]
 redis = [
     { name = "orjson", specifier = ">=3.11.5,<4" },
