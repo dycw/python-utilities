@@ -33,7 +33,7 @@
   gitpython = ["gitpython >=3.1.46, <3.2"]
   hashlib-test = ["orjson"]
   http-test = ["orjson"]
-  hypothesis = ["hypothesis >=6.148.8, <6.149"]
+  hypothesis = ["hypothesis >=6.148.11, <6.149"]
   hypothesis-test = ["libcst", "numpy", "pathvalidate", "pytest-rerunfailures"]
   inflect = ["inflect >=7.5.0, <7.6"]
   jinja2 = ["jinja2 >=3.1.6, <3.2"]
@@ -100,7 +100,7 @@
   name = "dycw-utilities"
   readme = "README.md"
   requires-python = ">= 3.12"
-  version = "0.175.38"
+  version = "0.175.39"
 
   [project.entry-points.pytest11]
     pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -110,7 +110,7 @@
     logging = ["coloredlogs >=15.0.1, <15.1"]
     test = [
       "dycw-pytest-only >=2.1.1, <2.2",
-      "hypothesis >=6.148.8, <6.149",
+      "hypothesis >=6.148.11, <6.149",
       "pytest >=9.0.2, <9.1",
       "pytest-asyncio >=1.3.0, <1.4",
       "pytest-cov >=7.0.0, <7.1",
