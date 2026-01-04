@@ -4,7 +4,11 @@
 
 [dependency-groups]
   altair = ["altair >=6.0.0, <7"]
-  altair-test = ["polars >=1.36.1, <2", "img2pdf >=0.6.3", "vl-convert-python"]
+  altair-test = [
+    "polars >=1.36.1, <2",
+    "img2pdf >=0.6.3",
+    "vl-convert-python >=1.9.0, <2",
+  ]
   atools = ["atools >=0.14.2, <1"]
   cachetools = ["cachetools >=6.2.4, <7"]
   click = ["click >=8.3.1, <9"]
@@ -16,7 +20,7 @@
   ]
   cryptography = ["cryptography >=46.0.3, <47"]
   cvxpy = ["cvxpy >=1.7.5, <2"]
-  dataclasses-test = ["orjson", "polars >=1.36.1, <2"]
+  dataclasses-test = ["orjson >=3.11.5, <4", "polars >=1.36.1, <2"]
   dev = [
     "coloredlogs >=15.0.1, <16",
     "coverage-conditional-plugin >=0.9.0, <1",
@@ -25,14 +29,15 @@
     "pytest-cov >=7.0.0, <8",
     "pytest-timeout >=2.4.0, <3",
     "dycw-utilities[test]",
+    "rich >=14.2.0, <15",
     "rich",
   ]
   fastapi = ["fastapi >=0.128.0, <1"]
   fastapi-test = ["httpx", "uvicorn"]
   fpdf2 = ["fpdf2 >=2.8.5, <3"]
   gitpython = ["gitpython >=3.1.46, <4"]
-  hashlib-test = ["orjson"]
-  http-test = ["orjson"]
+  hashlib-test = ["orjson >=3.11.5, <4"]
+  http-test = ["orjson >=3.11.5, <4"]
   hypothesis = ["hypothesis >=6.148.11, <7"]
   hypothesis-test = ["libcst", "numpy", "pathvalidate", "pytest-rerunfailures"]
   inflect = ["inflect >=7.5.0, <8"]
@@ -54,7 +59,7 @@
   polars-ols-test = ["scikit-learn"]
   polars-test = ["numpy", "scipy", "statsmodels"]
   pottery = ["pottery >=3.0.1, <4"]
-  pottery-test = ["orjson"]
+  pottery-test = ["orjson >=3.11.5, <4"]
   pqdm = ["pqdm >=0.2.0, <1"]
   psutil = ["psutil >=7.2.0, <8"]
   pydantic = ["pydantic >=2.12.5, <3"]
@@ -70,11 +75,11 @@
     "pytest-xdist >=3.8.0, <4",
   ]
   pytest-regressions = ["pytest-regressions >=2.8.3, <3"]
-  pytest-regressions-test = ["orjson", "polars >=1.36.1, <2"]
-  pytest-test = ["orjson", "pytest-rerunfailures", "pytest-rng"]
-  redis = ["redis >=7.1.0, <8", "orjson"]
-  redis-test = ["pytest-rerunfailures"]
-  reprlib-test = ["rich"]
+  pytest-regressions-test = ["orjson >=3.11.5, <4", "polars >=1.36.1, <2"]
+  pytest-test = ["orjson >=3.11.5, <4", "pytest-rerunfailures", "pytest-rng"]
+  redis = ["redis >=7.1.0, <8", "orjson >=3.11.5, <4"]
+  redis-test = ["pytest-rerunfailures >=16.1, <17"]
+  reprlib-test = ["rich >=14.2.0, <15"]
   scipy = ["scipy >=1.16.3, <2"]
   sklearn = ["scikit-learn >=1.8.0, <2"]
   slack-sdk = ["slack-sdk >=3.39.0, <4"]
