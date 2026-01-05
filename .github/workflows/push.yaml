@@ -14,21 +14,11 @@ jobs:
       - name: Build and publish package
         uses: dycw/action-publish@latest
         with:
-          token-checkout: ${{secrets.GITHUB_TOKEN}}
-          token-uv: ${{secrets.GITHUB_TOKEN}}
-      - name: Build and publish package
-        uses: dycw/action-publish@latest
-        with:
           token-checkout: ${{github.token}}
           token-uv: ${{github.token}}
   tag:
     runs-on: ubuntu-latest
     steps:
-      - name: Tag latest commit
-        uses: dycw/action-tag@latest
-        with:
-          token-checkout: ${{secrets.GITHUB_TOKEN}}
-          token-uv: ${{secrets.GITHUB_TOKEN}}
       - name: Tag latest commit
         uses: dycw/action-tag@latest
         with:

@@ -12,14 +12,6 @@ jobs:
       - name: Run 'pre-commit'
         uses: dycw/action-pre-commit@latest
         with:
-          repos: |-
-            dycw/conformalize
-            pre-commit/pre-commit-hooks
-          token-checkout: ${{secrets.GITHUB_TOKEN}}
-          token-uv: ${{secrets.GITHUB_TOKEN}}
-      - name: Run 'pre-commit'
-        uses: dycw/action-pre-commit@latest
-        with:
           token-checkout: ${{github.token}}
           token-uv: ${{github.token}}
           repos: |-
@@ -29,12 +21,6 @@ jobs:
   pyright:
     runs-on: ubuntu-latest
     steps:
-      - name: Run 'pyright'
-        uses: dycw/action-pyright@latest
-        with:
-          python-version: "3.12"
-          token-checkout: ${{secrets.GITHUB_TOKEN}}
-          token-uv: ${{secrets.GITHUB_TOKEN}}
       - name: Run 'pyright'
         uses: dycw/action-pyright@latest
         with:
@@ -49,20 +35,7 @@ jobs:
     name: pytest (${{matrix.os}}, ${{matrix.python-version}},
       ${{matrix.resolution}})
     runs-on: ${{matrix.os}}
-    services:
-      redis:
-        image: ${{ matrix.os == 'ubuntu-latest' && 'redis/redis-stack:latest' ||
-          '' }}
-        ports:
-          - 6379:6379
     steps:
-      - name: Run 'pytest'
-        uses: dycw/action-pytest@latest
-        with:
-          python-version: ${{matrix.python-version}}
-          resolution: ${{matrix.resolution}}
-          token-checkout: ${{secrets.GITHUB_TOKEN}}
-          token-uv: ${{secrets.GITHUB_TOKEN}}
       - name: Run 'pytest'
         uses: dycw/action-pytest@latest
         with:
@@ -88,11 +61,6 @@ jobs:
   ruff:
     runs-on: ubuntu-latest
     steps:
-      - name: Run 'ruff'
-        uses: dycw/action-ruff@latest
-        with:
-          token-checkout: ${{secrets.GITHUB_TOKEN}}
-          token-ruff: ${{secrets.GITHUB_TOKEN}}
       - name: Run 'ruff'
         uses: dycw/action-ruff@latest
         with:
