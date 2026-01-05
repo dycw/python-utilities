@@ -1,10 +1,12 @@
 repos:
   - repo: https://github.com/dycw/conformalize
-    rev: 0.13.1
+    rev: 0.13.6
     hooks:
       - args:
           # - --coverage
           - --description=Miscellaneous Python utilities
+          - --envrc
+          - --envrc--uv
           - --github--pull-request--pre-commit
           - --github--pull-request--pyright
           - --github--pull-request--pytest--macos
@@ -12,6 +14,7 @@ repos:
           - --github--pull-request--ruff
           - --github--push--publish
           - --github--push--tag
+          - --gitignore
           - --package-name=dycw-utilities
           - --pre-commit--dycw
           - --pre-commit--prettier
@@ -47,7 +50,7 @@ repos:
           - --autofix
       - id: trailing-whitespace
   - repo: https://github.com/dycw/actions
-    rev: 0.3.32
+    rev: 0.3.40
     hooks:
       - id: format-requirements
       - id: replace-sequence-strs
