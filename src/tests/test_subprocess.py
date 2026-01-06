@@ -979,7 +979,6 @@ class TestRsyncMany:
             )
 
 
-@mark.only
 class TestRsyncManyPrepare:
     @mark.parametrize("as_path", [param(False), param(True)])
     def test_single_file(
