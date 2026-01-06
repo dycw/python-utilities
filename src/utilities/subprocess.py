@@ -994,10 +994,15 @@ def _rsync_many_prepare(
         case Path():
             cp(src, temp_src / name)
         case str():
-            if Path(src).exists():
-                cp(src, temp_src / name)
-            else:
+            try:
+                exists = Path(src).exists()
+            except OSError:
                 tee(temp_src / name, src)
+            else:
+                if exists:
+                    cp(src, temp_src / name)
+                else:
+                    tee(temp_src / name, src)
         case never:
             assert_never(never)
     cmds: list[list[str]] = [

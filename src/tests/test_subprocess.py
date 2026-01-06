@@ -981,13 +981,17 @@ class TestRsyncMany:
 
 @mark.only
 class TestRsyncManyPrepare:
-    def test_single_file(self, *, tmp_path: Path, temp_file: Path) -> None:
+    @mark.parametrize("as_path", [param(False), param(True)])
+    def test_single_file(
+        self, *, tmp_path: Path, temp_file: Path, as_path: bool
+    ) -> None:
         dest = tmp_path / "dest"
         with (
             TemporaryDirectory(dir=tmp_path) as temp_src,
             TemporaryDirectory(dir=tmp_path) as temp_dest,
         ):
-            result = _rsync_many_prepare(temp_file, dest, temp_src, temp_dest)
+            src = temp_file if as_path else str(temp_file)
+            result = _rsync_many_prepare(src, dest, temp_src, temp_dest)
             assert one(temp_src.iterdir()) == temp_src / "0"
         expected: list[list[str]] = [
             rm_cmd(dest),
@@ -1021,14 +1025,16 @@ class TestRsyncManyPrepare:
         ]
         assert result2 == expected2
 
-    def test_single_file_as_str(self, *, tmp_path: Path, temp_file: Path) -> None:
+    @mark.parametrize("text", [param("text"), param(100 * "text")])
+    def test_text(self, *, tmp_path: Path, text: str) -> None:
         dest = tmp_path / "dest"
         with (
             TemporaryDirectory(dir=tmp_path) as temp_src,
             TemporaryDirectory(dir=tmp_path) as temp_dest,
         ):
-            result = _rsync_many_prepare(str(temp_file), dest, temp_src, temp_dest)
+            result = _rsync_many_prepare(text, dest, temp_src, temp_dest)
             assert one(temp_src.iterdir()) == temp_src / "0"
+            assert (temp_src / "0").read_text() == text
         expected: list[list[str]] = [
             rm_cmd(dest),
             mkdir_cmd(dest, parent=True),
