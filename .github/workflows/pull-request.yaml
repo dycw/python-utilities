@@ -48,6 +48,8 @@ jobs:
           token-checkout: ${{github.token}}
           token-uv: ${{github.token}}
           python-version: ${{matrix.python-version}}
+          token-sops: ${{github.token}}
+          token-age: ${{github.token}}
           resolution: ${{matrix.resolution}}
           prerelease: disallow
     strategy:
