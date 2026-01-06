@@ -1010,7 +1010,7 @@ class TestRsyncManyPrepare:
         ):
             result1 = _rsync_many_prepare(path1, dest1, temp_src, temp_dest)
             result2 = _rsync_many_prepare(path2, dest2, temp_src, temp_dest)
-            assert list(temp_src.iterdir()) == [temp_src / str(i) for i in [0, 1]]
+            assert set(temp_src.iterdir()) == {temp_src / str(i) for i in [0, 1]}
         expected1: list[list[str]] = [
             rm_cmd(dest1),
             mkdir_cmd(dest1, parent=True),
