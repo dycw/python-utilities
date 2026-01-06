@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/dycw/conformalize
-    rev: 0.13.6
+    rev: 0.13.7
     hooks:
       - args:
           # - --coverage
@@ -50,7 +50,7 @@ repos:
           - --autofix
       - id: trailing-whitespace
   - repo: https://github.com/dycw/actions
-    rev: 0.3.40
+    rev: 0.3.42
     hooks:
       - id: format-requirements
       - id: replace-sequence-strs

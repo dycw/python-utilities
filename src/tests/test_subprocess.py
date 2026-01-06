@@ -26,6 +26,7 @@ from utilities.subprocess import (
     MvFileError,
     RsyncCmdNoSourcesError,
     RsyncCmdSourcesNotFoundError,
+    _rsync_many_prepare,
     _ssh_is_strict_checking_error,
     append_text,
     apt_install_cmd,
@@ -976,6 +977,64 @@ class TestRsyncMany:
                     """
                 ),
             )
+
+
+@mark.only
+class TestRsyncManyPrepare:
+    def test_single_file(self, *, tmp_path: Path, temp_file: Path) -> None:
+        dest = tmp_path / "dest"
+        with (
+            TemporaryDirectory(dir=tmp_path) as temp_src,
+            TemporaryDirectory(dir=tmp_path) as temp_dest,
+        ):
+            result = _rsync_many_prepare(temp_file, dest, temp_src, temp_dest)
+            assert one(temp_src.iterdir()) == temp_src / "0"
+        expected: list[list[str]] = [
+            rm_cmd(dest),
+            mkdir_cmd(dest, parent=True),
+            cp_cmd(temp_dest / "0", dest),
+        ]
+        assert result == expected
+
+    def test_multiple_files(
+        self, *, tmp_path: Path, temp_files: tuple[Path, Path]
+    ) -> None:
+        path1, path2 = temp_files
+        dest1, dest2 = [tmp_path / "dest" / p.name for p in temp_files]
+        with (
+            TemporaryDirectory(dir=tmp_path) as temp_src,
+            TemporaryDirectory(dir=tmp_path) as temp_dest,
+        ):
+            result1 = _rsync_many_prepare(path1, dest1, temp_src, temp_dest)
+            result2 = _rsync_many_prepare(path2, dest2, temp_src, temp_dest)
+            assert list(temp_src.iterdir()) == [temp_src / str(i) for i in [0, 1]]
+        expected1: list[list[str]] = [
+            rm_cmd(dest1),
+            mkdir_cmd(dest1, parent=True),
+            cp_cmd(temp_dest / "0", dest1),
+        ]
+        assert result1 == expected1
+        expected2: list[list[str]] = [
+            rm_cmd(dest2),
+            mkdir_cmd(dest2, parent=True),
+            cp_cmd(temp_dest / "1", dest2),
+        ]
+        assert result2 == expected2
+
+    def test_single_file_as_str(self, *, tmp_path: Path, temp_file: Path) -> None:
+        dest = tmp_path / "dest"
+        with (
+            TemporaryDirectory(dir=tmp_path) as temp_src,
+            TemporaryDirectory(dir=tmp_path) as temp_dest,
+        ):
+            result = _rsync_many_prepare(str(temp_file), dest, temp_src, temp_dest)
+            assert one(temp_src.iterdir()) == temp_src / "0"
+        expected: list[list[str]] = [
+            rm_cmd(dest),
+            mkdir_cmd(dest, parent=True),
+            cp_cmd(temp_dest / "0", dest),
+        ]
+        assert result == expected
 
 
 class TestRun:
