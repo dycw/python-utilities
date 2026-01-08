@@ -18,6 +18,8 @@ class TestRequirement:
         assert requirement["<"] == "1.3"
         with raises(KeyError):
             _ = requirement[">"]
+        assert requirement.get("<") == "1.3"
+        assert requirement.get(">") is None
 
     def test_marker(self) -> None:
         requirement = Requirement.new('package; python_version >= "3"')
