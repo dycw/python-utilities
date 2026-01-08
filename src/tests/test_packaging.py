@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pytest import mark, param
+from pytest import mark, param, raises
 
 from utilities.iterables import one
 from utilities.packaging import Requirement
@@ -16,6 +16,8 @@ class TestRequirement:
         requirement = Requirement.new("package>=1.2.3, <1.3")
         assert requirement[">="] == "1.2.3"
         assert requirement["<"] == "1.3"
+        with raises(KeyError):
+            _ = requirement[">"]
 
     def test_marker(self) -> None:
         requirement = Requirement.new('package; python_version >= "3"')
