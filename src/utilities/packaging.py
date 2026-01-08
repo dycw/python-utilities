@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Self, overload, override
 
 import packaging._parser
@@ -14,26 +14,22 @@ if TYPE_CHECKING:
     from packaging._parser import MarkerList
 
 
-@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, slots=True)
 class Requirement:
     requirement: str
-    _parsed_req: packaging._parser.ParsedRequirement
-    _custom_req: _CustomRequirement
+    _parsed_req: packaging._parser.ParsedRequirement = field(init=False, repr=False)
+    _custom_req: _CustomRequirement = field(init=False, repr=False)
 
     def __getitem__(self, operator: str, /) -> str:
         return self.specifier_set[operator]
 
+    def __post_init__(self) -> None:
+        self._parsed_req = _parse_requirement(self.requirement)
+        self._custom_req = _CustomRequirement(self.requirement)
+
     @override
     def __str__(self) -> str:
         return str(self._custom_req)
-
-    @classmethod
-    def new(cls, requirement: str, /) -> Self:
-        return cls(
-            requirement=requirement,
-            _parsed_req=_parse_requirement(requirement),
-            _custom_req=_CustomRequirement(requirement),
-        )
 
     @property
     def extras(self) -> list[str]:
@@ -96,6 +92,11 @@ class _CustomSpecifierSet(SpecifierSet):
             return self[operator]
         except KeyError:
             return default
+
+    def replace(self, operator: str, version: str, /) -> Self:
+        new = Specifier(spec=f"{operator}{version}")
+        remainder = (s for s in self if s.operator != operator)
+        return type(self)([new, *remainder])
 
     def _sort_key(self, spec: Specifier, /) -> int:
         return [">=", "<"].index(spec.operator)
