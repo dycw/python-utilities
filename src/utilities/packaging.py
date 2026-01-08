@@ -13,33 +13,38 @@ if TYPE_CHECKING:
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
-class ParsedRequirement:
+class Requirement:
     requirement: str
-    _parsed: packaging._parser.ParsedRequirement
+    _parsed_req: packaging._parser.ParsedRequirement
+    _requirement: _CustomRequirement
 
     @override
     def __str__(self) -> str:
-        return str(_CustomRequirement(self.requirement))
+        return str(self._requirement)
 
     @classmethod
     def new(cls, requirement: str, /) -> Self:
-        return cls(requirement=requirement, _parsed=_parse_requirement(requirement))
+        return cls(
+            requirement=requirement,
+            _parsed_req=_parse_requirement(requirement),
+            _requirement=_CustomRequirement(requirement),
+        )
 
     @property
     def extras(self) -> list[str]:
-        return self._parsed.extras
+        return self._parsed_req.extras
 
     @property
     def marker(self) -> MarkerList | None:
-        return self._parsed.marker
+        return self._parsed_req.marker
 
     @property
     def name(self) -> str:
-        return self._parsed.name
+        return self._parsed_req.name
 
     @property
     def specifier(self) -> str:
-        return self._parsed.specifier
+        return self._parsed_req.specifier
 
     @property
     def specifier_set(self) -> _CustomSpecifierSet:
@@ -47,7 +52,7 @@ class ParsedRequirement:
 
     @property
     def url(self) -> str:
-        return self._parsed.url
+        return self._parsed_req.url
 
 
 class _CustomRequirement(packaging.requirements.Requirement):
@@ -68,4 +73,4 @@ class _CustomSpecifierSet(SpecifierSet):
         return [">=", "<"].index(spec.operator)
 
 
-__all__ = ["ParsedRequirement"]
+__all__ = ["Requirement"]
