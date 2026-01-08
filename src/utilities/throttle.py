@@ -108,6 +108,7 @@ def _is_throttle(
     if path.is_file():
         text = path.read_text()
         if text == "":
+            path.unlink(missing_ok=True)
             return False
         try:
             last = ZonedDateTime.parse_iso(text)

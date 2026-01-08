@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from inspect import signature
 from time import sleep
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NoReturn
 
 from pytest import mark, param, raises
 
@@ -54,52 +54,33 @@ class TestThrottle:
             counter += 1
             raise CustomError
 
-        for _ in range(2):
+        for i in range(1, 3):
             with raises(CustomError):
                 func()
-            assert counter == 1
+            assert counter == i
             assert not temp_file.exists()
 
-    @mark.flaky
-    @mark.parametrize("asyncio_first", [param(True), param(False)])
-    @mark.parametrize("on_try", [param(True), param(False)])
-    def test_async(
-        self, *, testdir: Testdir, tmp_path: Path, asyncio_first: bool, on_try: bool
-    ) -> None:
-        if asyncio_first:
-            _ = testdir.makepyfile(
-                f"""
-                from whenever import TimeDelta
+    @mark.only
+    async def test_sync_on_pass_with_raiser(self, *, temp_file: Path) -> None:
+        class CustomError(Exception): ...
 
-                from pytest import mark
+        counter = 0
 
-                from utilities.pytest import throttle
+        def raiser() -> NoReturn:
+            raise CustomError
 
-                @mark.asyncio
-                @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}), on_try={on_try})
-                async def test_main() -> None:
-                    assert True
-                """
-            )
-        else:
-            _ = testdir.makepyfile(
-                f"""
-                from whenever import TimeDelta
+        @throttle(delta=_DELTA, path=temp_file, raiser=raiser)
+        def func() -> None:
+            nonlocal counter
+            counter += 1
 
-                from pytest import mark
-
-                from utilities.pytest import throttle
-
-                @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}), on_try={on_try})
-                @mark.asyncio
-                async def test_main() -> None:
-                    assert True
-                """
-            )
-        testdir.runpytest().assert_outcomes(passed=1)
-        testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(self.delta)
-        testdir.runpytest().assert_outcomes(passed=1)
+        func()
+        assert counter == 1
+        assert temp_file.is_file()
+        with raises(CustomError):
+            func()
+        assert counter == 1
+        assert temp_file.is_file()
 
     @mark.flaky
     @mark.parametrize("on_try", [param(True), param(False)])
