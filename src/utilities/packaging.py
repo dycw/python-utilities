@@ -10,6 +10,10 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 
+def format_requirement(requirement: str, /) -> str:
+    return str(SortedRequirement(requirement))
+
+
 class SortedRequirement(Requirement):
     @override
     def __init__(self, requirement_string: str) -> None:
@@ -46,4 +50,4 @@ class _CustomSpecifierSet(SpecifierSet):
         return [">=", "<"].index(spec.operator)
 
 
-__all__ = ["SortedRequirement"]
+__all__ = ["SortedRequirement", "format_requirement"]
