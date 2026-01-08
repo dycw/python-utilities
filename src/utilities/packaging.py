@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Self, override
+from typing import TYPE_CHECKING, Self, overload, override
 
 import packaging._parser
 import packaging.requirements
@@ -20,8 +20,8 @@ class Requirement:
     _parsed_req: packaging._parser.ParsedRequirement
     _custom_req: _CustomRequirement
 
-    def __getitem__(self, key: str, /) -> str:
-        return self.specifier_set[key]
+    def __getitem__(self, operator: str, /) -> str:
+        return self.specifier_set[operator]
 
     @override
     def __str__(self) -> str:
@@ -38,6 +38,13 @@ class Requirement:
     @property
     def extras(self) -> list[str]:
         return self._parsed_req.extras
+
+    @overload
+    def get(self, operator: str, default: str, /) -> str: ...
+    @overload
+    def get(self, operator: str, default: None = None, /) -> str | None: ...
+    def get(self, operator: str, default: str | None = None, /) -> str | None:
+        return self.specifier_set.get(operator, default)
 
     @property
     def marker(self) -> MarkerList | None:
@@ -69,18 +76,28 @@ class _CustomRequirement(packaging.requirements.Requirement):
 
 
 class _CustomSpecifierSet(SpecifierSet):
-    def __getitem__(self, key: str, /) -> str:
+    def __getitem__(self, operator: str, /) -> str:
         try:
-            return one(s.version for s in self if s.operator == key)
+            return one(s.version for s in self if s.operator == operator)
         except OneEmptyError:
-            raise KeyError(key) from None
+            raise KeyError(operator) from None
 
     @override
     def __str__(self) -> str:
-        specs = sorted(self._specs, key=self._key)
+        specs = sorted(self._specs, key=self._sort_key)
         return ", ".join(map(str, specs))
 
-    def _key(self, spec: Specifier, /) -> int:
+    @overload
+    def get(self, operator: str, default: str, /) -> str: ...
+    @overload
+    def get(self, operator: str, default: None = None, /) -> str | None: ...
+    def get(self, operator: str, default: str | None = None, /) -> str | None:
+        try:
+            return self[operator]
+        except KeyError:
+            return default
+
+    def _sort_key(self, spec: Specifier, /) -> int:
         return [">=", "<"].index(spec.operator)
 
 
