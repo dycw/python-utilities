@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from functools import partial, wraps
-from inspect import iscoroutinefunction
+from functools import partial
 from os import environ
 from pathlib import Path
 from re import sub
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, NoReturn, assert_never, cast, override
+from typing import TYPE_CHECKING, Any, NoReturn, override
 
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
@@ -20,10 +19,8 @@ from utilities.pathlib import (
     module_path,
 )
 from utilities.platform import IS_LINUX, IS_MAC, IS_NOT_LINUX, IS_NOT_MAC
-from utilities.random import bernoulli
-from utilities.text import to_bool
 from utilities.throttle import throttle
-from utilities.types import MaybeCallableBoolLike, MaybeCoro, Seed
+from utilities.types import MaybeCoro
 from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
@@ -33,7 +30,7 @@ if TYPE_CHECKING:
     from _pytest.config.argparsing import Parser
     from _pytest.python import Function
 
-    from utilities.types import Coro, Delta, PathLike
+    from utilities.types import Delta, PathLike
 
 
 IS_CI = "CI" in environ
@@ -192,66 +189,6 @@ class _NodeIdToPathNotGetTailError(NodeIdToPathError):
 ##
 
 
-def run_frac[F: Callable[..., MaybeCoro[None]]](
-    *,
-    predicate: MaybeCallableBoolLike | None = None,
-    frac: float = 0.5,
-    seed: Seed | None = None,
-) -> Callable[[F], F]:
-    """Run a test only a fraction of the time.."""
-    return cast(
-        "Any", partial(_run_frac_inner, predicate=predicate, frac=frac, seed=seed)
-    )
-
-
-def _run_frac_inner[F: Callable[..., MaybeCoro[None]]](
-    func: F,
-    /,
-    *,
-    predicate: MaybeCallableBoolLike | None = None,
-    frac: float = 0.5,
-    seed: Seed | None = None,
-) -> F:
-    match bool(iscoroutinefunction(func)):
-        case False:
-
-            @wraps(func)
-            def run_frac_sync(*args: Any, **kwargs: Any) -> None:
-                _skipif_frac(predicate=predicate, frac=frac, seed=seed)
-                cast("Callable[..., None]", func)(*args, **kwargs)
-
-            return cast("Any", run_frac_sync)
-
-        case True:
-
-            @wraps(func)
-            async def run_frac_async(*args: Any, **kwargs: Any) -> None:
-                _skipif_frac(predicate=predicate, frac=frac, seed=seed)
-                await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
-
-            return cast("Any", run_frac_async)
-
-        case never:
-            assert_never(never)
-
-
-def _skipif_frac(
-    *,
-    predicate: MaybeCallableBoolLike | None = None,
-    frac: float = 0.5,
-    seed: Seed | None = None,
-) -> None:
-    from pytest import skip
-
-    if ((predicate is None) or to_bool(predicate)) and bernoulli(
-        true=1 - frac, seed=seed
-    ):
-        skip(reason=f"{_get_name()} skipped (run {frac:.0%})")
-
-
-##
-
-
 def throttle_test[F: Callable[..., MaybeCoro[None]]](
     *, on_try: bool = False, root: PathLike | None = None, delta: Delta = SECOND
 ) -> Callable[[F], F]:
@@ -296,7 +233,6 @@ __all__ = [
     "add_pytest_configure",
     "make_ids",
     "node_id_path",
-    "run_frac",
     "skipif_ci",
     "skipif_ci_and_not_linux",
     "skipif_linux",
