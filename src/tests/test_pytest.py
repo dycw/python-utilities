@@ -382,8 +382,26 @@ class TestRunFrac:
             result.assert_outcomes(skipped=1)
 
 
-class TestThrottle:
+class TestThrottleTest:
     delta: ClassVar[float] = 5.0 if IS_CI else 0.5
+
+    @mark.only
+    def test_main(self, *, testdir: Testdir, tmp_path: Path, on_try: bool) -> None:
+        _ = testdir.makepyfile(
+            f"""
+            from whenever import TimeDelta
+
+            from utilities.pytest import throttle
+
+            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}), on_try={on_try})
+            def test_main() -> None:
+                assert True
+            """
+        )
+        testdir.runpytest().assert_outcomes(passed=1)
+        testdir.runpytest().assert_outcomes(skipped=1)
+        sleep(self.delta)
+        testdir.runpytest().assert_outcomes(passed=1)
 
     @mark.flaky
     @mark.parametrize("on_try", [param(True), param(False)])
