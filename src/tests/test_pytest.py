@@ -14,7 +14,7 @@ from utilities.pytest import (
     _NodeIdToPathNotGetTailError,
     _NodeIdToPathNotPythonFileError,
     node_id_path,
-    throttle,
+    throttle_test,
 )
 
 if TYPE_CHECKING:
@@ -554,7 +554,7 @@ class TestThrottle:
         testdir.runpytest().assert_outcomes(passed=1)
 
     def test_signature(self) -> None:
-        @throttle()
+        @throttle_test()
         def func(*, fix: bool) -> None:
             assert fix
 
