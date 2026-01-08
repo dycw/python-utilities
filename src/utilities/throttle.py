@@ -42,8 +42,6 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
     path: MaybeCallablePathLike = Path.cwd,
     raiser: Callable[[], NoReturn] | None = None,
 ) -> F:
-    if get_env_var("THROTTLE", nullable=True) is not None:
-        return func
     match bool(iscoroutinefunction(func)), on_try:
         case False, False:
 
@@ -104,6 +102,8 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
 def _is_throttle(
     *, path: MaybeCallablePathLike = Path.cwd, delta: Delta = SECOND
 ) -> bool:
+    if get_env_var("THROTTLE", nullable=True):
+        return False
     path = to_path(path)
     if path.is_file():
         text = path.read_text()

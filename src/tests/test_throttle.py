@@ -193,28 +193,19 @@ class TestThrottle:
         await func()
         assert counter == 2
 
-    ##
-    @mark.skip
-    @mark.parametrize("on_try", [param(True), param(False)])
-    def test_disabled_via_env_var(
-        self, *, testdir: Testdir, tmp_path: Path, on_try: bool
-    ) -> None:
-        _ = testdir.makepyfile(
-            f"""
-            from whenever import TimeDelta
+    def test_env_var(self, *, temp_file: Path) -> None:
+        counter = 0
 
-            from utilities.pytest import throttle
+        @throttle(delta=_DELTA, path=temp_file)
+        def func() -> None:
+            nonlocal counter
+            counter += 1
 
-            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}), on_try={on_try})
-            def test_main() -> None:
-                assert True
-            """
-        )
         with temp_environ(THROTTLE="1"):
-            testdir.runpytest().assert_outcomes(passed=1)
-            testdir.runpytest().assert_outcomes(passed=1)
-            sleep(self.delta)
-            testdir.runpytest().assert_outcomes(passed=1)
+            for i in range(2):
+                func()
+                assert counter == (i + 1)
+                assert temp_file.is_file()
 
     def test_signature(self) -> None:
         @throttle()
