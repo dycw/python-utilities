@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from inspect import signature
 from time import sleep
-from typing import TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING, ClassVar, NoReturn
 
-from pytest import mark, param, raises
+from pytest import fixture, mark, param, raises
 
-from utilities.asyncio import sleep_td
+from utilities.asyncio import sleep_td, timeout_td
 from utilities.iterables import one
 from utilities.os import temp_environ
 from utilities.throttle import throttle
+from utilities.types import Delta
 from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
@@ -23,10 +24,11 @@ _DELTA: TimeDelta = 0.1 * SECOND
 
 
 class TestThrottle:
-    async def test_sync_on_pass_func_passing(self, *, temp_file: Path) -> None:
+    @mark.parametrize("on_try", [param(False), param(True)])
+    async def test_sync_func_passing(self, *, on_try: bool, temp_file: Path) -> None:
         counter = 0
 
-        @throttle(delta=_DELTA, path=temp_file)
+        @throttle(on_try=on_try, delta=_DELTA, path=temp_file)
         def func() -> None:
             nonlocal counter
             counter += 1
@@ -39,26 +41,11 @@ class TestThrottle:
         for _ in range(2):
             func()
             assert counter == 2
-            assert temp_file.is_file()
 
-    async def test_sync_on_pass_func_failing(self, *, temp_file: Path) -> None:
-        class CustomError(Exception): ...
-
-        counter = 0
-
-        @throttle(delta=_DELTA, path=temp_file)
-        def func() -> None:
-            nonlocal counter
-            counter += 1
-            raise CustomError
-
-        for i in range(1, 3):
-            with raises(CustomError):
-                func()
-            assert counter == i
-            assert not temp_file.exists()
-
-    async def test_sync_on_pass_with_raiser(self, *, temp_file: Path) -> None:
+    @mark.parametrize("on_try", [param(False), param(True)])
+    async def test_sync_func_with_raiser(
+        self, *, on_try: bool, temp_file: Path
+    ) -> None:
         class CustomError(Exception): ...
 
         counter = 0
@@ -66,7 +53,7 @@ class TestThrottle:
         def raiser() -> NoReturn:
             raise CustomError
 
-        @throttle(delta=_DELTA, path=temp_file, raiser=raiser)
+        @throttle(on_try=on_try, delta=_DELTA, path=temp_file, raiser=raiser)
         def func() -> None:
             nonlocal counter
             counter += 1
@@ -77,7 +64,48 @@ class TestThrottle:
         with raises(CustomError):
             func()
         assert counter == 1
+
+    async def test_sync_func_on_pass_failing(self, *, temp_file: Path) -> None:
+        class CustomError(Exception): ...
+
+        counter = 0
+
+        @throttle(delta=_DELTA, path=temp_file)
+        def func() -> None:
+            nonlocal counter
+            counter += 1
+            raise CustomError
+
+        for i in range(2):
+            with raises(CustomError):
+                func()
+            assert counter == (i + 1)
+            assert not temp_file.exists()
+
+    async def test_sync_on_func_on_try_failing(self, *, temp_file: Path) -> None:
+        class CustomError(Exception): ...
+
+        counter = 0
+
+        @throttle(on_try=True, delta=_DELTA, path=temp_file)
+        def func() -> None:
+            nonlocal counter
+            counter += 1
+            raise CustomError
+
+        with raises(CustomError):
+            func()
+        assert counter == 1
         assert temp_file.is_file()
+        func()
+        assert counter == 1
+        await sleep_td(2 * _DELTA)
+        with raises(CustomError):
+            func()
+        assert counter == 2
+        assert temp_file.is_file()
+        func()
+        assert counter == 2
 
     @mark.skip
     @mark.parametrize("on_try", [param(True), param(False)])
