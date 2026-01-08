@@ -8,6 +8,8 @@ import packaging.requirements
 from packaging.requirements import _parse_requirement
 from packaging.specifiers import Specifier, SpecifierSet
 
+from utilities.iterables import OneEmptyError, one
+
 if TYPE_CHECKING:
     from packaging._parser import MarkerList
 
@@ -16,18 +18,21 @@ if TYPE_CHECKING:
 class Requirement:
     requirement: str
     _parsed_req: packaging._parser.ParsedRequirement
-    _requirement: _CustomRequirement
+    _custom_req: _CustomRequirement
+
+    def __getitem__(self, key: str, /) -> str:
+        return self.specifier_set[key]
 
     @override
     def __str__(self) -> str:
-        return str(self._requirement)
+        return str(self._custom_req)
 
     @classmethod
     def new(cls, requirement: str, /) -> Self:
         return cls(
             requirement=requirement,
             _parsed_req=_parse_requirement(requirement),
-            _requirement=_CustomRequirement(requirement),
+            _custom_req=_CustomRequirement(requirement),
         )
 
     @property
@@ -64,6 +69,12 @@ class _CustomRequirement(packaging.requirements.Requirement):
 
 
 class _CustomSpecifierSet(SpecifierSet):
+    def __getitem__(self, key: str, /) -> str:
+        try:
+            return one(s.version for s in self if s.operator == key)
+        except OneEmptyError:
+            raise KeyError(key) from None
+
     @override
     def __str__(self) -> str:
         specs = sorted(self._specs, key=self._key)

@@ -12,6 +12,11 @@ class TestRequirement:
         requirement = Requirement.new(f"package[{extra}]")
         assert requirement.extras == [extra]
 
+    def test_get_item(self) -> None:
+        requirement = Requirement.new("package>=1.2.3, <1.3")
+        assert requirement[">="] == "1.2.3"
+        assert requirement["<"] == "1.3"
+
     def test_marker(self) -> None:
         requirement = Requirement.new('package; python_version >= "3"')
         assert requirement.marker is not None
