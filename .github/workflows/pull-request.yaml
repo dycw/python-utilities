@@ -9,15 +9,6 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - name: Run 'pre-commit'
-        uses: dycw/action-pre-commit@latest
-        with:
-          token-checkout: ${{github.token}}
-          token-uv: ${{github.token}}
-          repos: |-
-            dycw/conformalize
-            pre-commit/pre-commit-hooks
-          sleep: 1
       - if: github.event_name == 'pull_request'
         name: Run 'pre-commit' hooks
         uses: dycw/action-run-hooks@latest
@@ -33,14 +24,6 @@ jobs:
       - name: Run 'pyright'
         uses: dycw/action-pyright@latest
         with:
-          token-checkout: ${{github.token}}
-          token-uv: ${{github.token}}
-          python-version: "3.12"
-          resolution: highest
-          prerelease: disallow
-      - name: Run 'pyright'
-        uses: dycw/action-pyright@latest
-        with:
           token: ${{github.token}}
           python-version: "3.12"
           resolution: highest
@@ -51,23 +34,7 @@ jobs:
     name: pytest (${{matrix.os}}, ${{matrix.python-version}},
       ${{matrix.resolution}})
     runs-on: ${{matrix.os}}
-    services:
-      redis:
-        image: ${{ matrix.os == 'ubuntu-latest' && 'redis/redis-stack:latest' ||
-          '' }}
-        ports:
-          - 6379:6379
     steps:
-      - name: Run 'pytest'
-        uses: dycw/action-pytest@latest
-        with:
-          token-checkout: ${{github.token}}
-          token-uv: ${{github.token}}
-          python-version: ${{matrix.python-version}}
-          token-sops: ${{github.token}}
-          token-age: ${{github.token}}
-          resolution: ${{matrix.resolution}}
-          prerelease: disallow
       - name: Run 'pytest'
         uses: dycw/action-pytest@latest
         with:
@@ -92,11 +59,6 @@ jobs:
   ruff:
     runs-on: ubuntu-latest
     steps:
-      - name: Run 'ruff'
-        uses: dycw/action-ruff@latest
-        with:
-          token-checkout: ${{github.token}}
-          token-ruff: ${{github.token}}
       - name: Run 'ruff'
         uses: dycw/action-ruff@latest
         with:
