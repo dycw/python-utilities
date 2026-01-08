@@ -155,4 +155,4 @@ class _ThrottleMarkerFileError(ThrottleError):
         return f"Invalid marker file {str(self.path)!r}"
 
 
-__all__ = ["ThrottleError", "_ThrottleParseZonedDateTimeError", "throttle"]
+__all__ = ["ThrottleError", "throttle"]
