@@ -1,6 +1,6 @@
 [tool.bumpversion]
   allow_dirty = true
-  current_version = "0.177.1"
+  current_version = "0.178.0"
 
   [[tool.bumpversion.files]]
     filename = "pyproject.toml"
