@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/dycw/actions
-    rev: 0.6.21
+    rev: 0.7.3
     hooks:
       - args:
           # - --coverage

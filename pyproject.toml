@@ -30,7 +30,6 @@
     "pytest-timeout>=2.4.0, <3",
     "dycw-utilities[test]",
     "rich>=14.2.0, <15",
-    "rich",
   ]
   fastapi = ["fastapi>=0.128.0, <1"]
   fastapi-test = ["httpx>=0.28.1, <1", "uvicorn>=0.40.0, <1"]

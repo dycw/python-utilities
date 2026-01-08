@@ -944,7 +944,6 @@ dev = [
     { name = "pyright", extras = ["nodejs"], specifier = ">=1.1.407,<2" },
     { name = "pytest-cov", specifier = ">=7.0.0,<8" },
     { name = "pytest-timeout", specifier = ">=2.4.0,<3" },
-    { name = "rich" },
     { name = "rich", specifier = ">=14.2.0,<15" },
 ]
 fastapi = [{ name = "fastapi", specifier = ">=0.128.0,<1" }]
