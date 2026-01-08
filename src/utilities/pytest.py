@@ -132,9 +132,9 @@ def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) 
 
 
 def make_ids(obj: Any, /) -> str:
-    if isinstance(obj, FunctionType):
+    if isinstance(obj, FunctionType):  # pragma: no cover
         return sub(r"\s+at +0x[0-9a-fA-F]+", "", repr(obj))
-    return repr(obj)
+    return repr(obj)  # pragma: no cover
 
 
 ##
