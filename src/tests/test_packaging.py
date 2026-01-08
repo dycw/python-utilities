@@ -12,10 +12,18 @@ class TestRequirement:
         requirement = Requirement(f"package[{extra}]")
         assert requirement.extras == [extra]
 
+    def test_get(self) -> None:
+        requirement = Requirement("package>=1.2.3, <1.3")
+        assert requirement.get(">=") == "1.3"
+        assert requirement.get("<") == "1.3"
+        assert requirement.get(">") is None
+
     def test_get_item(self) -> None:
         requirement = Requirement("package>=1.2.3, <1.3")
         assert requirement[">="] == "1.2.3"
         assert requirement["<"] == "1.3"
+        with raises(KeyError):
+            _ = requirement[">"]
 
     def test_marker(self) -> None:
         requirement = Requirement('package; python_version >= "3"')
@@ -62,6 +70,12 @@ class TestRequirement:
 
 
 class TestCustomSpecifierSet:
+    def test_get(self) -> None:
+        set_ = _CustomSpecifierSet(">=1.2.3, <1.3")
+        assert set_.get(">=") == "1.3"
+        assert set_.get("<") == "1.3"
+        assert set_.get(">") is None
+
     def test_get_item(self) -> None:
         set_ = _CustomSpecifierSet(">=1.2.3, <1.3")
         assert set_[">="] == "1.2.3"
