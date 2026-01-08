@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/dycw/actions
-    rev: 0.7.3
+    rev: 0.7.7
     hooks:
       - args:
           # - --coverage
@@ -36,6 +36,7 @@ repos:
       - id: replace-sequence-strs
       - id: touch-empty-py
       - id: touch-py-typed
+      - id: update-requirements
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
