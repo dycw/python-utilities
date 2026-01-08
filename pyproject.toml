@@ -59,6 +59,7 @@
   optuna = ["optuna >=4.6.0, <5"]
   orjson = ["orjson >=3.11.5, <4"]
   orjson-test = ["polars >=1.36.1, <2"]
+  packaging = ["packaging >=25.0, <26"]
   polars = ["polars >=1.36.1, <2"]
   polars-ols = ["polars-ols >=0.3.5, <1"]
   polars-ols-test = ["scikit-learn >=1.8.0, <2"]
@@ -126,7 +127,7 @@
   name = "dycw-utilities"
   readme = "README.md"
   requires-python = ">= 3.12"
-  version = "0.176.4"
+  version = "0.176.5"
 
   [project.entry-points.pytest11]
     pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
