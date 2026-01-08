@@ -25,10 +25,10 @@
     "coloredlogs>=15.0.1, <16",
     "coverage-conditional-plugin>=0.9.0, <1",
     "dycw-pytest-only>=2.1.1, <3",
+    "dycw-utilities[test]",
     "pyright[nodejs]>=1.1.407, <2",
     "pytest-cov>=7.0.0, <8",
     "pytest-timeout>=2.4.0, <3",
-    "dycw-utilities[test]",
     "rich>=14.2.0, <15",
   ]
   fastapi = ["fastapi>=0.128.0, <1"]
