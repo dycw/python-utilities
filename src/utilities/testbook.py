@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from testbook import testbook
 
-from utilities.pytest import throttle
+from utilities.pytest import throttle_test
 from utilities.text import pascal_case
 
 if TYPE_CHECKING:
@@ -42,7 +42,7 @@ def _build_test_method(
         _ = (self, tb)  # pragma: no cover
 
     if delta is not None:
-        method = throttle(delta=delta, on_try=on_try)(method)
+        method = throttle_test(delta=delta, on_try=on_try)(method)
 
     return method
 

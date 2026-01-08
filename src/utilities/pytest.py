@@ -2,20 +2,15 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from functools import partial, wraps
-from inspect import iscoroutinefunction
+from functools import partial
 from os import environ
 from pathlib import Path
 from re import sub
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, assert_never, cast, override
+from typing import TYPE_CHECKING, Any, NoReturn, override
 
-from whenever import ZonedDateTime
-
-from utilities.atomicwrites import writer
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
-from utilities.os import get_env_var
 from utilities.pathlib import (
     _GetTailEmptyError,
     ensure_suffix,
@@ -24,10 +19,9 @@ from utilities.pathlib import (
     module_path,
 )
 from utilities.platform import IS_LINUX, IS_MAC, IS_NOT_LINUX, IS_NOT_MAC
-from utilities.random import bernoulli
-from utilities.text import to_bool
-from utilities.types import MaybeCallableBoolLike, MaybeCoro, Seed
-from utilities.whenever import SECOND, get_now_local
+from utilities.throttle import throttle
+from utilities.types import MaybeCoro
+from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -36,7 +30,7 @@ if TYPE_CHECKING:
     from _pytest.config.argparsing import Parser
     from _pytest.python import Function
 
-    from utilities.types import Coro, Delta, PathLike
+    from utilities.types import Delta, PathLike
 
 
 IS_CI = "CI" in environ
@@ -138,9 +132,9 @@ def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) 
 
 
 def make_ids(obj: Any, /) -> str:
-    if isinstance(obj, FunctionType):
+    if isinstance(obj, FunctionType):  # pragma: no cover
         return sub(r"\s+at +0x[0-9a-fA-F]+", "", repr(obj))
-    return repr(obj)
+    return repr(obj)  # pragma: no cover
 
 
 ##
@@ -195,152 +189,26 @@ class _NodeIdToPathNotGetTailError(NodeIdToPathError):
 ##
 
 
-def run_frac[F: Callable[..., MaybeCoro[None]]](
-    *,
-    predicate: MaybeCallableBoolLike | None = None,
-    frac: float = 0.5,
-    seed: Seed | None = None,
+def throttle_test[F: Callable[..., MaybeCoro[None]]](
+    *, on_try: bool = False, root: PathLike | None = None, delta: Delta = SECOND
 ) -> Callable[[F], F]:
-    """Run a test only a fraction of the time.."""
-    return cast(
-        "Any", partial(_run_frac_inner, predicate=predicate, frac=frac, seed=seed)
+    """Throttle a test. On success by default, on try otherwise."""
+    return throttle(
+        on_try=on_try,
+        delta=delta,
+        path=partial(_get_test_path, root=root),
+        raiser=_run_skip,
     )
 
 
-def _run_frac_inner[F: Callable[..., MaybeCoro[None]]](
-    func: F,
-    /,
-    *,
-    predicate: MaybeCallableBoolLike | None = None,
-    frac: float = 0.5,
-    seed: Seed | None = None,
-) -> F:
-    match bool(iscoroutinefunction(func)):
-        case False:
-
-            @wraps(func)
-            def run_frac_sync(*args: Any, **kwargs: Any) -> None:
-                _skipif_frac(predicate=predicate, frac=frac, seed=seed)
-                cast("Callable[..., None]", func)(*args, **kwargs)
-
-            return cast("Any", run_frac_sync)
-
-        case True:
-
-            @wraps(func)
-            async def run_frac_async(*args: Any, **kwargs: Any) -> None:
-                _skipif_frac(predicate=predicate, frac=frac, seed=seed)
-                await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
-
-            return cast("Any", run_frac_async)
-
-        case never:
-            assert_never(never)
-
-
-def _skipif_frac(
-    *,
-    predicate: MaybeCallableBoolLike | None = None,
-    frac: float = 0.5,
-    seed: Seed | None = None,
-) -> None:
+def _run_skip() -> NoReturn:
     from pytest import skip
 
-    if ((predicate is None) or to_bool(predicate)) and bernoulli(
-        true=1 - frac, seed=seed
-    ):
-        skip(reason=f"{_get_name()} skipped (run {frac:.0%})")
+    skip(reason=f"{_get_name()} throttled")
 
 
-##
-
-
-def throttle[F: Callable[..., MaybeCoro[None]]](
-    *, root: PathLike | None = None, delta: Delta = SECOND, on_try: bool = False
-) -> Callable[[F], F]:
-    """Throttle a test. On success by default, on try otherwise."""
-    return cast("Any", partial(_throttle_inner, root=root, delta=delta, on_try=on_try))
-
-
-def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
-    func: F,
-    /,
-    *,
-    root: PathLike | None = None,
-    delta: Delta = SECOND,
-    on_try: bool = False,
-) -> F:
-    if get_env_var("THROTTLE", nullable=True) is not None:
-        return func
-    match bool(iscoroutinefunction(func)), on_try:
-        case False, False:
-
-            @wraps(func)
-            def throttle_sync_on_pass(*args: Any, **kwargs: Any) -> None:
-                _skipif_recent(root=root, delta=delta)
-                cast("Callable[..., None]", func)(*args, **kwargs)
-                _write(root)
-
-            return cast("Any", throttle_sync_on_pass)
-
-        case False, True:
-
-            @wraps(func)
-            def throttle_sync_on_try(*args: Any, **kwargs: Any) -> None:
-                _skipif_recent(root=root, delta=delta)
-                _write(root)
-                cast("Callable[..., None]", func)(*args, **kwargs)
-
-            return cast("Any", throttle_sync_on_try)
-
-        case True, False:
-
-            @wraps(func)
-            async def throttle_async_on_pass(*args: Any, **kwargs: Any) -> None:
-                _skipif_recent(root=root, delta=delta)
-                await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
-                _write(root)
-
-            return cast("Any", throttle_async_on_pass)
-
-        case True, True:
-
-            @wraps(func)
-            async def throttle_async_on_try(*args: Any, **kwargs: Any) -> None:
-                _skipif_recent(root=root, delta=delta)
-                _write(root)
-                await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
-
-            return cast("Any", throttle_async_on_try)
-
-        case never:
-            assert_never(never)
-
-
-def _skipif_recent(*, root: PathLike | None = None, delta: Delta = SECOND) -> None:
-    from pytest import skip
-
-    path = _get_path(root)
-    try:
-        contents = path.read_text()
-    except FileNotFoundError:
-        return
-    try:
-        last = ZonedDateTime.parse_iso(contents)
-    except ValueError:
-        return
-    now = get_now_local()
-    if (now - delta) < last:
-        age = now - last
-        _ = skip(reason=f"{_get_name()} throttled (age {age})")
-
-
-def _get_path(root: PathLike | None = None, /) -> Path:
-    if root is None:
-        root_use = get_root().joinpath(".pytest_cache", "throttle")  # pragma: no cover
-    else:
-        root_use = root
-    return Path(root_use, _md5_hash_cached(_get_name()))
+def _get_name() -> str:
+    return environ["PYTEST_CURRENT_TEST"]
 
 
 @cache
@@ -348,14 +216,12 @@ def _md5_hash_cached(text: str, /) -> str:
     return md5_hash(text)
 
 
-def _get_name() -> str:
-    return environ["PYTEST_CURRENT_TEST"]
-
-
-def _write(root: PathLike | None = None, /) -> None:
-    path = _get_path(root)
-    with writer(path, overwrite=True) as temp:
-        _ = temp.write_text(get_now_local().format_iso())
+def _get_test_path(*, root: PathLike | None = None) -> Path:
+    if root is None:
+        root_use = get_root().joinpath(".pytest_cache", "throttle")  # pragma: no cover
+    else:
+        root_use = root
+    return Path(root_use, _md5_hash_cached(_get_name()))
 
 
 __all__ = [
@@ -367,12 +233,11 @@ __all__ = [
     "add_pytest_configure",
     "make_ids",
     "node_id_path",
-    "run_frac",
     "skipif_ci",
     "skipif_ci_and_not_linux",
     "skipif_linux",
     "skipif_mac",
     "skipif_not_linux",
     "skipif_not_mac",
-    "throttle",
+    "throttle_test",
 ]
