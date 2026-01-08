@@ -6,7 +6,7 @@ from pytest import mark, param, raises
 from utilities.packaging import ParsedRequirement, SortedRequirement
 
 
-class TestFormatRequirement:
+class TestRequirement:
     @mark.parametrize(
         ("requirement", "expected"),
         [
