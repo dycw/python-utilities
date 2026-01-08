@@ -9,13 +9,13 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - name: Run 'pre-commit'
-        uses: dycw/action-pre-commit@latest
+      - if: github.event_name == 'pull_request'
+        name: Run 'pre-commit' hooks
+        uses: dycw/action-run-hooks@latest
         with:
-          token-checkout: ${{github.token}}
-          token-uv: ${{github.token}}
+          token: ${{github.token}}
           repos: |-
-            dycw/conformalize
+            dycw/actions
             pre-commit/pre-commit-hooks
           sleep: 1
   pyright:
@@ -24,8 +24,7 @@ jobs:
       - name: Run 'pyright'
         uses: dycw/action-pyright@latest
         with:
-          token-checkout: ${{github.token}}
-          token-uv: ${{github.token}}
+          token: ${{github.token}}
           python-version: "3.12"
           resolution: highest
           prerelease: disallow
@@ -45,11 +44,8 @@ jobs:
       - name: Run 'pytest'
         uses: dycw/action-pytest@latest
         with:
-          token-checkout: ${{github.token}}
-          token-uv: ${{github.token}}
+          token: ${{github.token}}
           python-version: ${{matrix.python-version}}
-          token-sops: ${{github.token}}
-          token-age: ${{github.token}}
           resolution: ${{matrix.resolution}}
           prerelease: disallow
     strategy:
@@ -72,5 +68,4 @@ jobs:
       - name: Run 'ruff'
         uses: dycw/action-ruff@latest
         with:
-          token-checkout: ${{github.token}}
-          token-ruff: ${{github.token}}
+          token: ${{github.token}}
