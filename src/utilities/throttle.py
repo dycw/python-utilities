@@ -51,7 +51,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
             def throttle_sync_on_pass(*args: Any, **kwargs: Any) -> None:
                 path_use = to_path(path)
                 if _is_throttle(path=path_use, delta=delta):
-                    _return_or_raise(raiser=raiser)
+                    _try_raise(raiser=raiser)
                 else:
                     cast("Callable[..., None]", func)(*args, **kwargs)
                     _write_throttle(path=path_use)
@@ -64,7 +64,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
             def throttle_sync_on_try(*args: Any, **kwargs: Any) -> None:
                 path_use = to_path(path)
                 if _is_throttle(path=path_use, delta=delta):
-                    _return_or_raise(raiser=raiser)
+                    _try_raise(raiser=raiser)
                 else:
                     _write_throttle(path=path_use)
                     cast("Callable[..., None]", func)(*args, **kwargs)
@@ -77,7 +77,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
             async def throttle_async_on_pass(*args: Any, **kwargs: Any) -> None:
                 path_use = to_path(path)
                 if _is_throttle(path=path_use, delta=delta):
-                    _return_or_raise(raiser=raiser)
+                    _try_raise(raiser=raiser)
                 else:
                     await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
                     _write_throttle(path=path_use)
@@ -90,7 +90,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
             async def throttle_async_on_try(*args: Any, **kwargs: Any) -> None:
                 path_use = to_path(path)
                 if _is_throttle(path=path_use, delta=delta):
-                    _return_or_raise(raiser=raiser)
+                    _try_raise(raiser=raiser)
                 else:
                     _write_throttle(path=path_use)
                     await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
@@ -107,6 +107,8 @@ def _is_throttle(
     path = to_path(path)
     if path.is_file():
         text = path.read_text()
+        if text == "":
+            return False
         try:
             last = ZonedDateTime.parse_iso(text)
         except ValueError:
@@ -118,10 +120,9 @@ def _is_throttle(
     raise _ThrottleMarkerFileError(path=path)
 
 
-def _return_or_raise(*, raiser: Callable[[], NoReturn] | None = None) -> None:
-    if raiser is None:
-        return
-    raiser()
+def _try_raise(*, raiser: Callable[[], NoReturn] | None = None) -> None:
+    if raiser is not None:
+        raiser()
 
 
 def _write_throttle(*, path: MaybeCallablePathLike = Path.cwd) -> None:

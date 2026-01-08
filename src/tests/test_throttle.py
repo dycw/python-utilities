@@ -2,22 +2,14 @@ from __future__ import annotations
 
 from inspect import signature
 from time import sleep
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING
 
-from pytest import fixture, mark, param, raises
+from pytest import mark, param, raises
 
-from utilities.asyncio import sleep_td, timeout_td
+from utilities.asyncio import sleep_td
 from utilities.iterables import one
 from utilities.os import temp_environ
-from utilities.pytest import (
-    IS_CI,
-    _NodeIdToPathNotGetTailError,
-    _NodeIdToPathNotPythonFileError,
-    node_id_path,
-    throttle,
-)
 from utilities.throttle import throttle
-from utilities.types import Delta
 from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
@@ -32,11 +24,10 @@ _DELTA: TimeDelta = 0.1 * SECOND
 
 class TestThrottle:
     @mark.only
-    async def test_basic(self, *, tmp_path: Path) -> None:
+    async def test_sync_on_pass_func_passing(self, *, temp_file: Path) -> None:
         counter = 0
-        path = tmp_path / "file.txt"
 
-        @throttle(delta=_DELTA, path=path)
+        @throttle(delta=_DELTA, path=temp_file)
         def func() -> None:
             nonlocal counter
             counter += 1
@@ -44,12 +35,30 @@ class TestThrottle:
         for _ in range(2):
             func()
             assert counter == 1
-            assert path.is_file()
+            assert temp_file.is_file()
         await sleep_td(2 * _DELTA)
         for _ in range(2):
             func()
             assert counter == 2
-            assert path.is_file()
+            assert temp_file.is_file()
+
+    @mark.only
+    async def test_sync_on_pass_func_failing(self, *, temp_file: Path) -> None:
+        class CustomError(Exception): ...
+
+        counter = 0
+
+        @throttle(delta=_DELTA, path=temp_file)
+        def func() -> None:
+            nonlocal counter
+            counter += 1
+            raise CustomError
+
+        for _ in range(2):
+            with raises(CustomError):
+                func()
+            assert counter == 1
+            assert not temp_file.exists()
 
     @mark.flaky
     @mark.parametrize("asyncio_first", [param(True), param(False)])
