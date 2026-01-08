@@ -3,7 +3,7 @@ from __future__ import annotations
 from packaging.requirements import InvalidRequirement
 from pytest import mark, param, raises
 
-from utilities.packaging import SortedRequirement, format_requirement
+from utilities.packaging import ParsedRequirement, SortedRequirement
 
 
 class TestFormatRequirement:
@@ -26,10 +26,4 @@ class TestFormatRequirement:
         ],
     )
     def test_main(self, *, requirement: str, expected: str) -> None:
-        assert format_requirement(requirement) == expected
-
-
-class TestSortedRequirement:
-    def test_error(self) -> None:
-        with raises(InvalidRequirement, match="Expected end or semicolon"):
-            _ = SortedRequirement("invalid >> 1.2.3")
+        assert str(ParsedRequirement.new(requirement)) == expected

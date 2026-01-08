@@ -1,26 +1,24 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Self, override
 
 import packaging._parser
-from packaging.requirements import Requirement, _parse_requirement
+from packaging.requirements import _parse_requirement
 from packaging.specifiers import Specifier, SpecifierSet
-from pytest import Mark
 
 if TYPE_CHECKING:
-    import packaging.requirements
     from packaging._parser import MarkerList
-
-
-def format_requirement(requirement: str, /) -> str:
-    return str(SortedRequirement(requirement))
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
 class ParsedRequirement:
     requirement: str
     _parsed: packaging._parser.ParsedRequirement
+
+    @override
+    def __str__(self) -> str:
+        return str(SortedRequirement(self.requirement))
 
     @classmethod
     def new(cls, requirement: str, /) -> Self:
@@ -51,7 +49,7 @@ class ParsedRequirement:
         return self._parsed.url
 
 
-class SortedRequirement(Requirement):
+class SortedRequirement(packaging.requirements.Requirement):
     @override
     def __init__(self, requirement_string: str) -> None:
         super().__init__(requirement_string)
@@ -69,4 +67,4 @@ class _CustomSpecifierSet(SpecifierSet):
         return [">=", "<"].index(spec.operator)
 
 
-__all__ = ["SortedRequirement", "format_requirement"]
+__all__ = ["ParsedRequirement"]
