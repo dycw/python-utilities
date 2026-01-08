@@ -50,6 +50,9 @@ class Requirement:
     def name(self) -> str:
         return self._parsed_req.name
 
+    def replace(self, operator: str, version: str, /) -> Self:
+        return type(self)(str(self._custom_req.replace(operator, version)))
+
     @property
     def specifier(self) -> str:
         return self._parsed_req.specifier
@@ -64,11 +67,18 @@ class Requirement:
 
 
 class _CustomRequirement(packaging.requirements.Requirement):
+    specifier: _CustomSpecifierSet
+
     @override
     def __init__(self, requirement_string: str) -> None:
         super().__init__(requirement_string)
         parsed = _parse_requirement(requirement_string)
-        self.specifier = _CustomSpecifierSet(parsed.specifier)
+        self.specifier = _CustomSpecifierSet(parsed.specifier)  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    def replace(self, operator: str, version: str, /) -> Self:
+        new = type(self)(super().__str__())
+        new.specifier = self.specifier.replace(operator, version)
+        return new
 
 
 class _CustomSpecifierSet(SpecifierSet):

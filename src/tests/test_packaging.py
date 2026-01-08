@@ -3,50 +3,90 @@ from __future__ import annotations
 from pytest import mark, param, raises
 
 from utilities.iterables import one
-from utilities.packaging import Requirement, _CustomSpecifierSet
+from utilities.packaging import Requirement, _CustomRequirement, _CustomSpecifierSet
+
+
+class TestCustomRequirement:
+    def test_main(self) -> None:
+        req = _CustomRequirement("package>=1.2.3, <2")
+        assert isinstance(req.specifier, _CustomSpecifierSet)
+
+    def test_replace_existing(self) -> None:
+        req = _CustomRequirement("package>=1.2.3, <1.3").replace(">=", "1.2.4")
+        expected = _CustomRequirement("package>=1.2.4, <1.3")
+        assert req == expected
+
+    def test_replace_new(self) -> None:
+        req = _CustomRequirement("package>=1.2.3").replace("<", "1.3")
+        expected = _CustomRequirement("package>=1.2.3, <1.3")
+        assert req == expected
+
+    @mark.parametrize(
+        ("req", "expected"),
+        [
+            param("package", "package"),
+            param("package>=1.2.3", "package>=1.2.3"),
+            param("package<1.3", "package<1.3"),
+            param("package>=1.2.3,<1.3", "package>=1.2.3, <1.3"),
+            param("package<1.3,>=1.2.3", "package>=1.2.3, <1.3"),
+        ],
+    )
+    def test_str(self, *, req: str, expected: str) -> None:
+        requirement = _CustomRequirement(req)
+        assert str(requirement) == expected
 
 
 class TestRequirement:
     def test_extra(self) -> None:
         extra = "extra"
-        requirement = Requirement(f"package[{extra}]")
-        assert requirement.extras == [extra]
+        req = Requirement(f"package[{extra}]")
+        assert req.extras == [extra]
 
     def test_get(self) -> None:
-        requirement = Requirement("package>=1.2.3, <1.3")
-        assert requirement.get(">=") == "1.3"
-        assert requirement.get("<") == "1.3"
-        assert requirement.get(">") is None
+        req = Requirement("package>=1.2.3, <1.3")
+        assert req.get(">=") == "1.2.3"
+        assert req.get("<") == "1.3"
+        assert req.get(">") is None
 
     def test_get_item(self) -> None:
-        requirement = Requirement("package>=1.2.3, <1.3")
-        assert requirement[">="] == "1.2.3"
-        assert requirement["<"] == "1.3"
+        req = Requirement("package>=1.2.3, <1.3")
+        assert req[">="] == "1.2.3"
+        assert req["<"] == "1.3"
         with raises(KeyError):
-            _ = requirement[">"]
+            _ = req[">"]
 
     def test_marker(self) -> None:
-        requirement = Requirement('package; python_version >= "3"')
-        assert requirement.marker is not None
-        variable, op, value = one(requirement.marker)
+        req = Requirement('package; python_version >= "3"')
+        assert req.marker is not None
+        variable, op, value = one(req.marker)
         assert str(variable) == "python_version"
         assert str(op) == ">="
         assert str(value) == "3"
 
     def test_name(self) -> None:
-        requirement = Requirement("package")
-        assert requirement.name == "package"
+        req = Requirement("package")
+        assert req.name == "package"
+
+    def test_replace_existing(self) -> None:
+        req = Requirement("package>=1.2.3, <1.3").replace(">=", "1.2.4")
+        expected = Requirement("package>=1.2.4, <1.3")
+        assert req == expected
+
+    def test_replace_new(self) -> None:
+        req = Requirement("package>=1.2.3").replace("<", "1.3")
+        expected = Requirement("package>=1.2.3, <1.3")
+        assert req == expected
 
     def test_specifier(self) -> None:
-        requirement = Requirement("package>=1.2.3, <1.3")
-        assert requirement.specifier == ">=1.2.3,<1.3"
+        req = Requirement("package>=1.2.3, <1.3")
+        assert req.specifier == ">=1.2.3,<1.3"
 
     def test_specifier_set(self) -> None:
-        requirement = Requirement("package>=1.2.3, <1.3")
-        assert requirement.specifier_set == ">=1.2.3,<1.3"
+        req = Requirement("package>=1.2.3, <1.3")
+        assert req.specifier_set == ">=1.2.3,<1.3"
 
     @mark.parametrize(
-        ("requirement", "expected"),
+        ("req", "expected"),
         [
             param("package", "package"),
             param("package>=1.2.3", "package>=1.2.3"),
@@ -60,19 +100,20 @@ class TestRequirement:
             ),
         ],
     )
-    def test_str(self, *, requirement: str, expected: str) -> None:
-        assert str(Requirement(requirement)) == expected
+    def test_str(self, *, req: str, expected: str) -> None:
+        requirement = Requirement(req)
+        assert str(requirement) == expected
 
     def test_url(self) -> None:
         url = "https://www.github.com"
-        requirement = Requirement(f"package@{url}")
-        assert requirement.url == url
+        req = Requirement(f"package@{url}")
+        assert req.url == url
 
 
 class TestCustomSpecifierSet:
     def test_get(self) -> None:
         set_ = _CustomSpecifierSet(">=1.2.3, <1.3")
-        assert set_.get(">=") == "1.3"
+        assert set_.get(">=") == "1.2.3"
         assert set_.get("<") == "1.3"
         assert set_.get(">") is None
 
@@ -82,8 +123,6 @@ class TestCustomSpecifierSet:
         assert set_["<"] == "1.3"
         with raises(KeyError):
             _ = set_[">"]
-        assert set_.get("<") == "1.3"
-        assert set_.get(">") is None
 
     def test_replace_existing(self) -> None:
         set_ = _CustomSpecifierSet(">=1.2.3, <1.3").replace(">=", "1.2.4")
