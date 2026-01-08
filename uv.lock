@@ -625,7 +625,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.178.0"
+version = "0.178.1"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -894,7 +894,7 @@ requires-dist = [
     { name = "atomicwrites", specifier = ">=1.4.1,<2" },
     { name = "coloredlogs", marker = "extra == 'logging'", specifier = ">=15.0.1,<16" },
     { name = "dycw-pytest-only", marker = "extra == 'test'", specifier = ">=2.1.1,<3" },
-    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.149.1,<7" },
+    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.150.0,<7" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=9.0.2,<10" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=1.3.0,<2" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=7.0.0,<8" },
@@ -940,8 +940,8 @@ dev = [
     { name = "coloredlogs", specifier = ">=15.0.1,<16" },
     { name = "coverage-conditional-plugin", specifier = ">=0.9.0,<1" },
     { name = "dycw-pytest-only", specifier = ">=2.1.1,<3" },
-    { name = "dycw-utilities", extras = ["test"] },
-    { name = "pyright", extras = ["nodejs"], specifier = ">=1.1.407,<2" },
+    { name = "dycw-utilities", extras = ["test"], specifier = ">=0.178.1,<1" },
+    { name = "pyright", extras = ["nodejs"], specifier = ">=1.1.408,<2" },
     { name = "pytest-cov", specifier = ">=7.0.0,<8" },
     { name = "pytest-timeout", specifier = ">=2.4.0,<3" },
     { name = "rich", specifier = ">=14.2.0,<15" },
@@ -955,7 +955,7 @@ fpdf2 = [{ name = "fpdf2", specifier = ">=2.8.5,<3" }]
 gitpython = [{ name = "gitpython", specifier = ">=3.1.46,<4" }]
 hashlib-test = [{ name = "orjson", specifier = ">=3.11.5,<4" }]
 http-test = [{ name = "orjson", specifier = ">=3.11.5,<4" }]
-hypothesis = [{ name = "hypothesis", specifier = ">=6.149.1,<7" }]
+hypothesis = [{ name = "hypothesis", specifier = ">=6.150.0,<7" }]
 hypothesis-test = [
     { name = "libcst", specifier = ">=1.8.6,<2" },
     { name = "numpy", specifier = ">=2.4.0,<3" },
@@ -994,7 +994,7 @@ polars-test = [
 pottery = [{ name = "pottery", specifier = ">=3.0.1,<4" }]
 pottery-test = [{ name = "orjson", specifier = ">=3.11.5,<4" }]
 pqdm = [{ name = "pqdm", specifier = ">=0.2.0,<1" }]
-psutil = [{ name = "psutil", specifier = ">=7.2.0,<8" }]
+psutil = [{ name = "psutil", specifier = ">=7.2.1,<8" }]
 pydantic = [{ name = "pydantic", specifier = ">=2.12.5,<3" }]
 pydantic-settings = [{ name = "pydantic-settings", specifier = ">=2.12.0,<3" }]
 pydantic-settings-sops = [{ name = "pydantic-settings-sops", specifier = ">=0.1.2,<1" }]
@@ -1029,7 +1029,7 @@ reprlib-test = [{ name = "rich", specifier = ">=14.2.0,<15" }]
 scipy = [{ name = "scipy", specifier = ">=1.16.3,<2" }]
 sklearn = [{ name = "scikit-learn", specifier = ">=1.8.0,<2" }]
 slack-sdk = [{ name = "slack-sdk", specifier = ">=3.39.0,<4" }]
-slack-sdk-test = [{ name = "aiohttp", specifier = ">=3.13.2,<4" }]
+slack-sdk-test = [{ name = "aiohttp", specifier = ">=3.13.3,<4" }]
 sqlalchemy = [
     { name = "psycopg", specifier = ">=3.3.2,<4" },
     { name = "sqlalchemy", specifier = ">=2.0.45,<3" },
