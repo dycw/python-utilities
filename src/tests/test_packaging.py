@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from packaging.requirements import InvalidRequirement
-from pytest import mark, param, raises
+from pytest import mark, param
 
-from utilities.packaging import ParsedRequirement, SortedRequirement
+from utilities.packaging import ParsedRequirement
 
 
 class TestRequirement:

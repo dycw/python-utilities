@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Self, override
 
 import packaging._parser
+import packaging.requirements
 from packaging.requirements import _parse_requirement
 from packaging.specifiers import Specifier, SpecifierSet
 
@@ -18,7 +19,7 @@ class ParsedRequirement:
 
     @override
     def __str__(self) -> str:
-        return str(SortedRequirement(self.requirement))
+        return str(_CustomRequirement(self.requirement))
 
     @classmethod
     def new(cls, requirement: str, /) -> Self:
@@ -49,7 +50,7 @@ class ParsedRequirement:
         return self._parsed.url
 
 
-class SortedRequirement(packaging.requirements.Requirement):
+class _CustomRequirement(packaging.requirements.Requirement):
     @override
     def __init__(self, requirement_string: str) -> None:
         super().__init__(requirement_string)
