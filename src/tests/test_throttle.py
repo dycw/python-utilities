@@ -7,15 +7,17 @@ from typing import TYPE_CHECKING, NoReturn
 from pytest import mark, param, raises
 
 from utilities.asyncio import sleep_td
-from utilities.iterables import one
 from utilities.os import temp_environ
-from utilities.throttle import throttle
+from utilities.throttle import (
+    _ThrottleMarkerFileError,
+    _ThrottleParseZonedDateTimeError,
+    throttle,
+)
 from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from _pytest.legacypath import Testdir
     from whenever import TimeDelta
 
 
@@ -217,22 +219,23 @@ class TestThrottle:
 
         assert signature(func) == signature(other)
 
-    @mark.skip
-    def test_error_decoding_timestamp(
-        self, *, testdir: Testdir, tmp_path: Path
-    ) -> None:
-        _ = testdir.makepyfile(
-            f"""
-            from whenever import TimeDelta
+    def test_error_marker_file(self, *, temp_path_not_exist: Path) -> None:
+        temp_path_not_exist.mkdir()
 
-            from utilities.pytest import throttle
+        @throttle(delta=_DELTA, path=temp_path_not_exist)
+        def func() -> None: ...
 
-            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}))
-            def test_main() -> None:
-                assert True
-            """
-        )
-        testdir.runpytest().assert_outcomes(passed=1)
-        path = one(tmp_path.iterdir())
-        _ = path.write_text("invalid")
-        testdir.runpytest().assert_outcomes(passed=1)
+        with raises(_ThrottleMarkerFileError, match=r"Invalid marker file '.*'"):
+            func()
+
+    def test_error_parse_zoned_date_time(self, *, temp_file: Path) -> None:
+        _ = temp_file.write_text("invalid")
+
+        @throttle(delta=_DELTA, path=temp_file)
+        def func() -> None: ...
+
+        with raises(
+            _ThrottleParseZonedDateTimeError,
+            match=r"Unable to parse the contents 'invalid' of '.*' to a ZonedDateTime",
+        ):
+            func()
