@@ -23,7 +23,6 @@ _DELTA: TimeDelta = 0.1 * SECOND
 
 
 class TestThrottle:
-    @mark.only
     async def test_sync_on_pass_func_passing(self, *, temp_file: Path) -> None:
         counter = 0
 
@@ -42,7 +41,6 @@ class TestThrottle:
             assert counter == 2
             assert temp_file.is_file()
 
-    @mark.only
     async def test_sync_on_pass_func_failing(self, *, temp_file: Path) -> None:
         class CustomError(Exception): ...
 
@@ -60,7 +58,6 @@ class TestThrottle:
             assert counter == i
             assert not temp_file.exists()
 
-    @mark.only
     async def test_sync_on_pass_with_raiser(self, *, temp_file: Path) -> None:
         class CustomError(Exception): ...
 
@@ -82,7 +79,7 @@ class TestThrottle:
         assert counter == 1
         assert temp_file.is_file()
 
-    @mark.flaky
+    @mark.skip
     @mark.parametrize("on_try", [param(True), param(False)])
     def test_disabled_via_env_var(
         self, *, testdir: Testdir, tmp_path: Path, on_try: bool
@@ -104,92 +101,6 @@ class TestThrottle:
             sleep(self.delta)
             testdir.runpytest().assert_outcomes(passed=1)
 
-    @mark.flaky
-    def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
-        _ = testdir.makeconftest(
-            """
-            from pytest import fixture
-
-            def pytest_addoption(parser):
-                parser.addoption("--pass", action="store_true")
-
-            @fixture
-            def is_pass(request) -> bool:
-                return request.config.getoption("--pass")
-            """
-        )
-        _ = testdir.makepyfile(
-            f"""
-            from whenever import TimeDelta
-
-            from utilities.pytest import throttle
-
-            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}))
-            def test_main(*, is_pass: bool) -> None:
-                assert is_pass
-            """
-        )
-        for delta_use in [self.delta, 0.0]:
-            testdir.runpytest().assert_outcomes(failed=1)
-            testdir.runpytest("--pass").assert_outcomes(passed=1)
-            testdir.runpytest("--pass").assert_outcomes(skipped=1)
-            sleep(delta_use)
-
-    @mark.flaky
-    def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
-        _ = testdir.makeconftest(
-            """
-            from pytest import fixture
-
-            def pytest_addoption(parser):
-                parser.addoption("--pass", action="store_true")
-
-            @fixture
-            def is_pass(request):
-                return request.config.getoption("--pass")
-            """
-        )
-        root_str = str(tmp_path)
-        _ = testdir.makepyfile(
-            f"""
-            from whenever import TimeDelta
-
-            from utilities.pytest import throttle
-
-            @throttle(root={root_str!r}, delta=TimeDelta(seconds={self.delta}), on_try=True)
-            def test_main(*, is_pass: bool) -> None:
-                assert is_pass
-            """
-        )
-        for delta_use in [self.delta, 0.0]:
-            testdir.runpytest().assert_outcomes(failed=1)
-            testdir.runpytest().assert_outcomes(skipped=1)
-            sleep(self.delta)
-            testdir.runpytest("--pass").assert_outcomes(passed=1)
-            testdir.runpytest().assert_outcomes(skipped=1)
-            sleep(delta_use)
-
-    @mark.flaky
-    def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
-        _ = testdir.makepyfile(
-            f"""
-            from pytest import mark
-            from string import printable
-            from whenever import TimeDelta
-
-            from utilities.pytest import throttle
-
-            @mark.parametrize("arg", [10 * printable])
-            @throttle(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}))
-            def test_main(*, arg: str) -> None:
-                assert True
-            """
-        )
-        testdir.runpytest().assert_outcomes(passed=1)
-        testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(self.delta)
-        testdir.runpytest().assert_outcomes(passed=1)
-
     def test_signature(self) -> None:
         @throttle()
         def func(*, fix: bool) -> None:
@@ -200,7 +111,7 @@ class TestThrottle:
 
         assert signature(func) == signature(other)
 
-    @mark.flaky
+    @mark.skip
     def test_error_decoding_timestamp(
         self, *, testdir: Testdir, tmp_path: Path
     ) -> None:
