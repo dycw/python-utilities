@@ -82,7 +82,7 @@ from utilities.math import (
     is_non_negative,
 )
 from utilities.reprlib import get_repr
-from utilities.types import MaybeStr, Number, PathLike, WeekDay
+from utilities.types import MaybeStr, Number, PathLike, StrDict, WeekDay
 from utilities.typing import (
     get_args,
     is_dataclass_class,
@@ -1147,7 +1147,7 @@ def dataclass_to_schema(
     warn_name_errors: bool = False,
 ) -> SchemaDict:
     """Cast a dataclass as a schema dict."""
-    out: dict[str, Any] = {}
+    out: StrDict = {}
     for field in yield_fields(
         obj, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
     ):
@@ -1204,7 +1204,7 @@ def _dataclass_to_schema_one(
         if issubclass(obj, enum.Enum):
             return pl.Enum([e.name for e in obj])
     if is_dataclass_class(obj):
-        out: dict[str, Any] = {}
+        out: StrDict = {}
         for field in yield_fields(obj, globalns=globalns, localns=localns):
             out[field.name] = _dataclass_to_schema_one(
                 field.type_, globalns=globalns, localns=localns

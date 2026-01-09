@@ -3,12 +3,14 @@ from __future__ import annotations
 from contextlib import ExitStack
 from dataclasses import dataclass, field, replace
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Self
 
 from utilities.ipython import check_ipython_class
 
 if TYPE_CHECKING:
     from types import TracebackType
+
+    from utilities.types import StrDict
 
 
 def is_jupyter() -> bool:
@@ -55,7 +57,7 @@ class _Show:
         except ModuleNotFoundError:  # pragma: no cover
             pass
         else:
-            kwargs: dict[str, Any] = {}
+            kwargs: StrDict = {}
             if self.dp is not None:
                 kwargs["display.precision"] = self.dp
             if self.rows is not None:
@@ -72,7 +74,7 @@ class _Show:
         except ModuleNotFoundError:  # pragma: no cover
             pass
         else:
-            kwargs: dict[str, Any] = {}
+            kwargs: StrDict = {}
             if self.dp is not None:
                 kwargs["float_precision"] = self.dp
             if self.rows is not None:

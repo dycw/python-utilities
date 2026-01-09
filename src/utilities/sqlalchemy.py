@@ -86,12 +86,13 @@ from utilities.types import (
     Delta,
     MaybeIterable,
     MaybeType,
+    StrDict,
     StrMapping,
     TupleOrStrMapping,
 )
 from utilities.typing import (
     is_sequence_of_tuple_or_str_mapping,
-    is_string_mapping,
+    is_str_mapping,
     is_tuple,
     is_tuple_or_str_mapping,
 )
@@ -1020,7 +1021,7 @@ def _is_pair_of_str_mapping_and_table(
     obj: Any, /
 ) -> TypeGuard[_PairOfStrMappingAndTable]:
     """Check if an object is a pair of a string mapping and a table."""
-    return _is_pair_with_predicate_and_table(obj, is_string_mapping)
+    return _is_pair_with_predicate_and_table(obj, is_str_mapping)
 
 
 def _is_pair_of_tuple_and_table(obj: Any, /) -> TypeGuard[_PairOfTupleAndTable]:
@@ -1063,7 +1064,7 @@ def _map_mapping_to_table(
                 mapping=mapping, columns=columns, extra=error.extra
             ) from None
         return {k: v for k, v in mapping.items() if k in columns}
-    out: dict[str, Any] = {}
+    out: StrDict = {}
     for key, value in mapping.items():
         try:
             col = one(c for c in columns if snake_case(c) == snake_case(key))
@@ -1156,7 +1157,7 @@ def _orm_inst_to_dict_predicate(
 
 def _tuple_to_mapping(
     values: tuple[Any, ...], table_or_orm: TableOrORMInstOrClass, /
-) -> dict[str, Any]:
+) -> StrDict:
     columns = get_column_names(table_or_orm)
     mapping = dict(zip(columns, tuple(values), strict=False))
     return {k: v for k, v in mapping.items() if v is not None}

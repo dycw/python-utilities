@@ -65,6 +65,7 @@ type OpenMode = Literal[
 type MaybeCallable[T] = T | Callable[[], T]
 type MaybeStr[T] = T | str
 type MaybeType[T] = T | type[T]
+type StrDict = dict[str, Any]
 type StrMapping = Mapping[str, Any]
 type StrStrMapping = Mapping[str, str]
 type TupleOrStrMapping = tuple[Any, ...] | StrMapping
@@ -98,7 +99,7 @@ type Parallelism = Literal["processes", "threads"]
 class Dataclass(Protocol):
     """Protocol for `dataclass` classes."""
 
-    __dataclass_fields__: ClassVar[dict[str, Any]]
+    __dataclass_fields__: ClassVar[StrDict]
 
 
 # datetime
@@ -127,7 +128,7 @@ type SequenceLT[T] = list[T] | tuple[T, ...]
 # iterables - dervied
 type MaybeSequence[T] = T | SequenceLT[T]
 type SequenceStr = SequenceLT[str]
-type CollectionStr = dict[str, Any] | frozenset[str] | set[str] | SequenceStr
+type CollectionStr = StrDict | frozenset[str] | set[str] | SequenceStr
 # iterables - maybe str
 type MaybeCollectionStr = str | CollectionStr
 type MaybeSequenceStr = str | SequenceStr
@@ -341,6 +342,7 @@ __all__ = [
     "SequenceStr",
     "SerializeObjectExtra",
     "Sign",
+    "StrDict",
     "StrMapping",
     "StrStrMapping",
     "SupportsAbs",
