@@ -18,6 +18,13 @@ jobs:
             dycw/actions
             pre-commit/pre-commit-hooks
           sleep: 1
+      - if: github.event_name == 'pull_request'
+        name: Run 'pre-commit' hooks
+        uses: dycw/action-run-hooks@latest
+        with:
+          submodules: false
+          repos: |-
+            pre-commit/pre-commit-hooks
   pyright:
     runs-on: ubuntu-latest
     steps:
@@ -28,6 +35,10 @@ jobs:
           python-version: "3.12"
           resolution: highest
           prerelease: disallow
+      - name: Run 'pyright'
+        uses: dycw/action-pyright@latest
+        with:
+          python-version: "3.12"
   pytest:
     env:
       CI: "1"
@@ -48,6 +59,11 @@ jobs:
           python-version: ${{matrix.python-version}}
           resolution: ${{matrix.resolution}}
           prerelease: disallow
+      - name: Run 'pytest'
+        uses: dycw/action-pytest@latest
+        with:
+          python-version: ${{matrix.python-version}}
+          resolution: ${{matrix.resolution}}
     strategy:
       fail-fast: false
       matrix:
@@ -69,3 +85,5 @@ jobs:
         uses: dycw/action-ruff@latest
         with:
           token: ${{github.token}}
+      - name: Run 'ruff'
+        uses: dycw/action-ruff@latest

@@ -124,6 +124,14 @@ def snake_case(text: str, /) -> str:
 ##
 
 
+def split_f_str_equals(text: str, /) -> tuple[str, str]:
+    """Split an `f`-string with `=`."""
+    return split_str(text, separator="=", n=2)
+
+
+##
+
+
 LIST_SEPARATOR = _DEFAULT_SEPARATOR
 PAIR_SEPARATOR = "="
 BRACKETS = [("(", ")"), ("[", "]"), ("{", "}")]
@@ -555,6 +563,7 @@ __all__ = [
     "repr_str",
     "secret_str",
     "snake_case",
+    "split_f_str_equals",
     "split_key_value_pairs",
     "split_str",
     "str_encode",

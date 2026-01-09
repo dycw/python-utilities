@@ -1,19 +1,19 @@
 repos:
   - repo: https://github.com/dycw/actions
-    rev: 0.7.8
+    rev: 0.8.9
     hooks:
       - args:
+          - --ci--pull-request--pre-commit
+          - --ci--pull-request--pyright
+          - --ci--pull-request--pytest--macos
+          - --ci--pull-request--pytest--ubuntu
+          - --ci--pull-request--ruff
+          - --ci--push--publish
+          - --ci--push--tag
           # - --coverage
           - --description=Miscellaneous Python utilities
           - --envrc
           - --envrc--uv
-          - --github--pull-request--pre-commit
-          - --github--pull-request--pyright
-          - --github--pull-request--pytest--macos
-          - --github--pull-request--pytest--ubuntu
-          - --github--pull-request--ruff
-          - --github--push--publish
-          - --github--push--tag
           - --gitignore
           - --package-name=dycw-utilities
           - --pre-commit--prettier

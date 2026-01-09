@@ -15,6 +15,8 @@ jobs:
         uses: dycw/action-publish-package@latest
         with:
           token: ${{github.token}}
+      - name: Build and publish the package
+        uses: dycw/action-publish-package@latest
   tag:
     runs-on: ubuntu-latest
     steps:
@@ -24,3 +26,5 @@ jobs:
           token: ${{github.token}}
           user-name: github-actions-bot
           user-email: noreply@github.com
+      - name: Tag the latest commit
+        uses: dycw/action-tag-commit@latest

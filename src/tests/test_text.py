@@ -38,6 +38,7 @@ from utilities.text import (
     repr_str,
     secret_str,
     snake_case,
+    split_f_str_equals,
     split_key_value_pairs,
     split_str,
     str_encode,
@@ -219,6 +220,26 @@ class TestSecretStr:
         assert not isinstance(s.str, secret_str)
         assert repr(s.str) == repr("text")
         assert str(s.str) == "text"
+
+
+class TestSplitFStrEquals:
+    def test_main(self) -> None:
+        x = 123
+        result1, result2 = split_f_str_equals(f"{x=}")
+        assert result1 == "x"
+        assert result2 == "123"
+
+    def test_underscore(self) -> None:
+        x_y_z = 123
+        result1, result2 = split_f_str_equals(f"{x_y_z=}")
+        assert result1 == "x_y_z"
+        assert result2 == "123"
+
+    def test_digits(self) -> None:
+        x123 = 123
+        result1, result2 = split_f_str_equals(f"{x123=}")
+        assert result1 == "x123"
+        assert result2 == "123"
 
 
 class TestSplitKeyValuePairs:
