@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
     from pydantic_settings.sources import PathType
 
-    from utilities.types import MaybeSequenceStr, PathLike
+    from utilities.types import MaybeSequenceStr, PathLike, StrDict
 
 
 type PathLikeWithSection = tuple[PathLike, MaybeSequenceStr]
@@ -95,7 +95,7 @@ class JsonConfigSectionSettingsSource(JsonConfigSettingsSource):
         self.section = section
 
     @override
-    def __call__(self) -> dict[str, Any]:
+    def __call__(self) -> StrDict:
         return _get_section(super().__call__(), self.section)
 
 
@@ -112,7 +112,7 @@ class TomlConfigSectionSettingsSource(TomlConfigSettingsSource):
         self.section = section
 
     @override
-    def __call__(self) -> dict[str, Any]:
+    def __call__(self) -> StrDict:
         return _get_section(super().__call__(), self.section)
 
 
@@ -136,7 +136,7 @@ class YamlConfigSectionSettingsSource(YamlConfigSettingsSource):
         self.section = section
 
     @override
-    def __call__(self) -> dict[str, Any]:
+    def __call__(self) -> StrDict:
         return _get_section(super().__call__(), self.section)
 
 
@@ -150,9 +150,7 @@ def _ensure_section(file: PathLikeOrWithSection, /) -> PathLikeWithSection:
             assert_never(never)
 
 
-def _get_section(
-    mapping: dict[str, Any], section: MaybeSequenceStr, /
-) -> dict[str, Any]:
+def _get_section(mapping: StrDict, section: MaybeSequenceStr, /) -> StrDict:
     return reduce(lambda acc, el: acc.get(el, {}), always_iterable(section), mapping)
 
 
@@ -215,7 +213,7 @@ def _load_settings_create_model[T: BaseSettings](
     cls: type[T], /, *, values: T | None = None
 ) -> type[T]:
     values_use = cls() if values is None else values
-    kwargs: dict[str, Any] = {}
+    kwargs: StrDict = {}
     for name, field in cls.model_fields.items():
         if (ann := field.annotation) is None:
             raise ImpossibleCaseError(case=[f"{ann=}"])  # pragma: no cover

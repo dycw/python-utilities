@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from logging import Filter, LogRecord, getLogger
 from re import search
-from typing import TYPE_CHECKING, Any, ClassVar, override
+from typing import TYPE_CHECKING, ClassVar, override
 
 from pydantic_settings.sources import DEFAULT_PATH
 from pydantic_settings_sops import SOPSConfigSettingsSource
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
     from pydantic_settings.sources import PathType
 
-    from utilities.types import MaybeSequenceStr
+    from utilities.types import MaybeSequenceStr, StrDict
 
 
 class _SuppressDefaultConfigMessage(Filter):
@@ -69,7 +69,7 @@ class SOPSConfigSectionSettingsSource(SOPSConfigSettingsSource):
         self.section = section
 
     @override
-    def __call__(self) -> dict[str, Any]:
+    def __call__(self) -> StrDict:
         return _get_section(super().__call__(), self.section)
 
 

@@ -19,7 +19,6 @@ from typing import (
     TypeGuard,
     Union,  # pyright: ignore[reportDeprecated]
     _TypedDictMeta,  # pyright: ignore[reportAttributeAccessIssue]
-    cast,
     get_origin,
     overload,
     override,
@@ -44,6 +43,7 @@ from utilities.iterables import unique_everseen
 from utilities.sentinel import Sentinel
 from utilities.types import (
     Dataclass,
+    StrDict,
     StrMapping,
     StrStrMapping,
     TupleOrStrMapping,
@@ -145,7 +145,7 @@ def get_type_hints(
     globalns: StrMapping | None = None,
     localns: StrMapping | None = None,
     warn_name_errors: bool = False,
-) -> dict[str, Any]:
+) -> StrDict:
     """Get the type hints of an object."""
     _ = {
         Date,
@@ -170,7 +170,7 @@ def get_type_hints(
     }
     globalns_use = globals() | ({} if globalns is None else dict(globalns))
     localns_use = {} if localns is None else dict(localns)
-    result: dict[str, Any] = obj.__annotations__
+    result: StrDict = obj.__annotations__
     result = result | dict(get_forward_ref_args(obj))
     try:
         hints = _get_type_hints(
@@ -404,11 +404,8 @@ def _is_instance_typed_dict[T: _TypedDictMeta](
     localns: StrMapping | None = None,
     warn_name_errors: bool = False,
 ) -> TypeGuard[T]:
-    if not isinstance(obj, dict):
+    if not is_str_dict(obj):
         return False
-    if not all(isinstance(k, str) for k in obj):
-        return False
-    obj = cast("dict[str, Any]", obj)
     hints = get_type_hints(
         type_, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
     )
@@ -749,7 +746,15 @@ def is_set_type(obj: Any, /) -> bool:
 ##
 
 
-def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
+def is_str_dict(obj: Any, /) -> TypeGuard[StrDict]:
+    """Check if an object is a string mapping."""
+    return isinstance(obj, Mapping) and is_iterable_of(obj, str)
+
+
+##
+
+
+def is_str_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
     """Check if an object is a string mapping."""
     return isinstance(obj, Mapping) and is_iterable_of(obj, str)
 
@@ -852,7 +857,7 @@ def is_tuple(obj: Any, /) -> TypeGuard[tuple[Any, ...]]:
 
 def is_tuple_or_str_mapping(obj: Any, /) -> TypeGuard[TupleOrStrMapping]:
     """Check if an object is a tuple or string mapping."""
-    return is_tuple(obj) or is_string_mapping(obj)
+    return is_tuple(obj) or is_str_mapping(obj)
 
 
 ##
@@ -943,7 +948,8 @@ __all__ = [
     "is_sequence_of_tuple_or_str_mapping",
     "is_sequence_type",
     "is_set_type",
-    "is_string_mapping",
+    "is_str_dict",
+    "is_str_mapping",
     "is_subclass_gen",
     "is_tuple",
     "is_tuple_or_str_mapping",

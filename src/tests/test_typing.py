@@ -121,7 +121,8 @@ from utilities.typing import (
     is_sequence_of_tuple_or_str_mapping,
     is_sequence_type,
     is_set_type,
-    is_string_mapping,
+    is_str_dict,
+    is_str_mapping,
     is_subclass_gen,
     is_tuple,
     is_tuple_or_str_mapping,
@@ -1012,7 +1013,7 @@ class TestIsSequenceOfTupleOrStrMapping:
         assert result is expected
 
 
-class TestIsStringMapping:
+class TestIsStrDict:
     @mark.parametrize(
         ("obj", "expected"),
         [
@@ -1022,7 +1023,21 @@ class TestIsStringMapping:
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = is_string_mapping(obj)
+        result = is_str_dict(obj)
+        assert result is expected
+
+
+class TestIsStrMapping:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param({"a": 1, "b": 2, "c": 3}, True),
+            param({1: "a", 2: "b", 3: "c"}, False),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_str_mapping(obj)
         assert result is expected
 
 

@@ -51,7 +51,7 @@ from utilities.json import write_formatted_json
 from utilities.logging import get_logging_level_number
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
-from utilities.typing import is_string_mapping
+from utilities.typing import is_str_mapping
 from utilities.tzlocal import LOCAL_TIME_ZONE
 from utilities.version import Version, parse_version
 from utilities.whenever import (
@@ -566,7 +566,7 @@ def _object_hook(
                     ) is not None:
                         return container
                 if (
-                    is_string_mapping(value)
+                    is_str_mapping(value)
                     and (
                         dataclass := _object_hook_dataclass(
                             key,
@@ -587,7 +587,7 @@ def _object_hook(
                 ) is not None:
                     return enum
                 if (
-                    is_string_mapping(value)
+                    is_str_mapping(value)
                     and (
                         exc_instance := _object_hook_exception_instance(
                             key, value, data=data, objects=objects, redirects=redirects
