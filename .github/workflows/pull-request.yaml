@@ -16,6 +16,12 @@ jobs:
           submodules: false
           repos: |-
             pre-commit/pre-commit-hooks
+      - if: github.event_name == 'pull_request'
+        name: Run 'pre-commit' hooks
+        uses: dycw/action-run-hooks@latest
+        with:
+          repos: |-
+            pre-commit/pre-commit-hooks
   pyright:
     runs-on: ubuntu-latest
     steps:
