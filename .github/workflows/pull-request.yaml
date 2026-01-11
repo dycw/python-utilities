@@ -13,13 +13,6 @@ jobs:
         name: Run 'pre-commit' hooks
         uses: dycw/action-run-hooks@latest
         with:
-          submodules: false
-          repos: |-
-            pre-commit/pre-commit-hooks
-      - if: github.event_name == 'pull_request'
-        name: Run 'pre-commit' hooks
-        uses: dycw/action-run-hooks@latest
-        with:
           repos: |-
             pre-commit/pre-commit-hooks
   pyright:
@@ -35,12 +28,6 @@ jobs:
     name: pytest (${{matrix.os}}, ${{matrix.python-version}},
       ${{matrix.resolution}})
     runs-on: ${{matrix.os}}
-    services:
-      redis:
-        image: ${{ matrix.os == 'ubuntu-latest' && 'redis/redis-stack:latest' ||
-          '' }}
-        ports:
-          - 6379:6379
     steps:
       - name: Run 'pytest'
         uses: dycw/action-pytest@latest
@@ -55,8 +42,6 @@ jobs:
           - ubuntu-latest
         python-version:
           - "3.12"
-          - "3.13"
-          - "3.14"
         resolution:
           - highest
           - lowest-direct
