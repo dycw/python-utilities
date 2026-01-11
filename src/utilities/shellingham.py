@@ -2,27 +2,34 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from os import environ, name
-from typing import override
+from typing import Literal, override
 
-import shellingham
-from shellingham import ShellDetectionFailure
+from shellingham import ShellDetectionFailure, detect_shell
+
+Shell = Literal["bash", "zsh", "fish"]
 
 
-def detect_shell() -> str:
+def get_shell() -> Shell:
+    """Get the shell."""
     try:
-        (shell,) = shellingham.detect_shell()
+        shell, _ = detect_shell()
     except ShellDetectionFailure:
         if name == "posix":
-            return environ["SHELL"]
+            shell = environ["SHELL"]
         if name == "nt":
-            return environ["COMSPEC"]
-        raise DetectShellError(name=name) from None
-    else:
-        return shell
+            shell = environ["COMSPEC"]
+        raise _GetShellOSError(name=name) from None
+    if shell == "bash":
+        return "bash"
+    if shell == "zsh":
+        return "zsh"
+    if shell == "fish":
+        return "fish"
+    raise _GetShellUnsupportedError(shell=shell)
 
 
 @dataclass(kw_only=True, slots=True)
-class DetectShellError(Exception):
+class GetShellError(Exception):
     name: str
 
     @override
@@ -30,4 +37,25 @@ class DetectShellError(Exception):
         return f"Invalid OS; got {self.name!r}"
 
 
-__all__ = ["DetectShellError", "detect_shell"]
+@dataclass(kw_only=True, slots=True)
+class _GetShellUnsupportedError(Exception):
+    shell: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid shell; got {self.shell!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _GetShellOSError(GetShellError):
+    name: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid OS; got {self.name!r}"
+
+
+SHELL = get_shell()
+
+
+__all__ = ["SHELL", "GetShellError", "get_shell"]
