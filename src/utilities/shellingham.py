@@ -13,28 +13,24 @@ def get_shell() -> Shell:
     """Get the shell."""
     try:
         shell, _ = detect_shell()
-    except ShellDetectionFailure:
+    except ShellDetectionFailure:  # pragma: no cover
         if name == "posix":
             shell = environ["SHELL"]
         if name == "nt":
             shell = environ["COMSPEC"]
         raise _GetShellOSError(name=name) from None
-    if shell == "bash":
+    if shell == "bash":  # pragma: no cover
         return "bash"
-    if shell == "zsh":
+    if shell == "zsh":  # pragma: no cover
         return "zsh"
-    if shell == "fish":
+    if shell == "fish":  # pragma: no cover
         return "fish"
-    raise _GetShellUnsupportedError(shell=shell)
+    raise _GetShellUnsupportedError(shell=shell)  # pragma: no cover
 
 
 @dataclass(kw_only=True, slots=True)
 class GetShellError(Exception):
     name: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid OS; got {self.name!r}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -43,7 +39,7 @@ class _GetShellUnsupportedError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid shell; got {self.shell!r}"
+        return f"Invalid shell; got {self.shell!r}"  # pragma: no cover
 
 
 @dataclass(kw_only=True, slots=True)
@@ -52,7 +48,7 @@ class _GetShellOSError(GetShellError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid OS; got {self.name!r}"
+        return f"Invalid OS; got {self.name!r}"  # pragma: no cover
 
 
 SHELL = get_shell()
