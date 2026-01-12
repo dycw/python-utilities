@@ -6,7 +6,9 @@ from typing import Literal, override
 
 from shellingham import ShellDetectionFailure, detect_shell
 
-Shell = Literal["bash", "zsh", "fish"]
+from utilities.typing import get_args
+
+type Shell = Literal["bash", "fish", "posix", "zsh"]
 
 
 def get_shell() -> Shell:
@@ -19,12 +21,9 @@ def get_shell() -> Shell:
         if name == "nt":
             shell = environ["COMSPEC"]
         raise _GetShellOSError(name=name) from None
-    if shell == "bash":  # pragma: no cover
-        return "bash"
-    if shell == "zsh":  # pragma: no cover
-        return "zsh"
-    if shell == "fish":  # pragma: no cover
-        return "fish"
+    shells: list[Shell] = list(get_args(Shell))
+    if shell in shells:
+        return shell
     raise _GetShellUnsupportedError(shell=shell)  # pragma: no cover
 
 
