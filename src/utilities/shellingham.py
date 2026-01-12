@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from os import environ, name
+from re import search
 from typing import Literal, override
 
 from shellingham import ShellDetectionFailure, detect_shell
 
+from utilities.iterables import OneEmptyError, one
 from utilities.typing import get_args
 
 type Shell = Literal["bash", "fish", "posix", "zsh"]
@@ -22,10 +24,12 @@ def get_shell() -> Shell:
             shell = environ["COMSPEC"]
         else:
             raise _GetShellOSError(name=name) from None
-    shells: list[Shell] = list(get_args(Shell))
-    if shell in shells:
-        return shell
-    raise _GetShellUnsupportedError(shell=shell)  # pragma: no cover
+    shells: tuple[Shell, ...] = get_args(Shell)
+    matches: dict[Shell, bool] = {s: search(shell, s) is not None for s in shells}
+    try:
+        return one(k for k, v in matches.items() if v is not None)
+    except OneEmptyError:  # pragma: no cover
+        raise _GetShellUnsupportedError(shell=shell) from None
 
 
 @dataclass(kw_only=True, slots=True)
