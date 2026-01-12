@@ -18,9 +18,10 @@ def get_shell() -> Shell:
     except ShellDetectionFailure:  # pragma: no cover
         if name == "posix":
             shell = environ["SHELL"]
-        if name == "nt":
+        elif name == "nt":
             shell = environ["COMSPEC"]
-        raise _GetShellOSError(name=name) from None
+        else:
+            raise _GetShellOSError(name=name) from None
     shells: list[Shell] = list(get_args(Shell))
     if shell in shells:
         return shell
