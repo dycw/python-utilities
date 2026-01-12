@@ -7,6 +7,7 @@ from pathlib import Path
 from shutil import copytree
 from typing import TYPE_CHECKING, Any, assert_never, override
 
+from pytest_datadir.plugin import LazyDataDir
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from utilities.functions import ensure_str
@@ -36,7 +37,9 @@ class OrjsonRegressionFixture:
         with suppress(FileNotFoundError):
             _ = copytree(original_datadir, data_dir)
         self._fixture = FileRegressionFixture(
-            datadir=data_dir, original_datadir=original_datadir, request=request
+            datadir=LazyDataDir(original_datadir=original_datadir, tmp_path=data_dir),
+            original_datadir=original_datadir,
+            request=request,
         )
         self._basename = path.name
 
