@@ -13,7 +13,6 @@ jobs:
         name: Run 'pre-commit' hooks
         uses: dycw/action-run-hooks@latest
         with:
-          submodules: false
           repos: |-
             pre-commit/pre-commit-hooks
   pyright:

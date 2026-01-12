@@ -1,16 +1,17 @@
 repos:
   - repo: https://github.com/dycw/actions
-    rev: 0.8.9
+    rev: 0.10.11
     hooks:
       - args:
           - --ci--pull-request--pre-commit
           - --ci--pull-request--pyright
+          - --ci--pull-request--pytest--all-versions
           - --ci--pull-request--pytest--macos
           - --ci--pull-request--pytest--ubuntu
           - --ci--pull-request--ruff
           - --ci--push--publish
           - --ci--push--tag
-          # - --coverage
+            # - --coverage
           - --description=Miscellaneous Python utilities
           - --envrc
           - --envrc--uv
@@ -19,6 +20,7 @@ repos:
           - --pre-commit--prettier
           - --pre-commit--python
           - --pre-commit--ruff
+          - --pre-commit--shell
           - --pre-commit--taplo
           - --pre-commit--uv
           - --pyproject
@@ -70,6 +72,14 @@ repos:
         args:
           - --fix
       - id: ruff-format
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.12.0-2
+    hooks:
+      - id: shfmt
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.11.0
+    hooks:
+      - id: shellcheck
   - repo: https://github.com/compwa/taplo-pre-commit
     rev: v0.9.3
     hooks:
@@ -82,7 +92,7 @@ repos:
           - --option
           - reorder_keys=true
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.9.22
+    rev: 0.9.24
     hooks:
       - id: uv-lock
         args:
