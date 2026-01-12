@@ -25,9 +25,9 @@ def get_shell() -> Shell:
         else:
             raise _GetShellOSError(name=name) from None
     shells: tuple[Shell, ...] = get_args(Shell)
-    matches: dict[Shell, bool] = {s: search(shell, s) is not None for s in shells}
+    matches: list[Shell] = [s for s in shells if search(s, shell) is not None]
     try:
-        return one(k for k, v in matches.items() if v is not None)
+        return one(matches)
     except OneEmptyError:  # pragma: no cover
         raise _GetShellUnsupportedError(shell=shell) from None
 
