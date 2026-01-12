@@ -6,25 +6,19 @@ from typing import TYPE_CHECKING, Any
 from tabulate import tabulate
 
 from utilities.functions import get_func_name
-from utilities.text import split_f_str_equals, strip_and_dedent
+from utilities.text import split_f_str_equals
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-def func_and_params_str(
-    func: Callable[..., Any], version: str, /, *variables: str
-) -> str:
-    """Generate a string describing a function call."""
+def func_param_desc(func: Callable[..., Any], version: str, /, *variables: str) -> str:
+    """Generate a string describing a function & its parameters."""
     name = get_func_name(func)
-    table = tabulate(
-        list(map(split_f_str_equals, variables)), tablefmt="rounded_outline"
-    )
-    indented = indent(table, "  ")
-    return strip_and_dedent(f"""
-        Running {name!r} (version {version}) with:
-        {indented}
-    """)
+    table = indent(params_table(*variables), "  ")
+    return f"""\
+Running {name!r} (version {version}) with:
+{table}"""
 
 
 def params_table(*variables: str) -> str:
@@ -34,4 +28,4 @@ def params_table(*variables: str) -> str:
     )
 
 
-__all__ = ["func_and_params_str", "params_table"]
+__all__ = ["func_param_desc", "params_table"]
