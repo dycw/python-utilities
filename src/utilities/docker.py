@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, overload
 
+from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
 from utilities.logging import to_logger
@@ -341,7 +341,7 @@ def docker_exec_cmd(
 ##
 
 
-@contextmanager
+@enhanced_context_manager
 def yield_docker_temp_dir(
     container: str,
     /,

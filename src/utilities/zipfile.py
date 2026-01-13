@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from zipfile import ZipFile
 
+from utilities.contextlib import enhanced_context_manager
 from utilities.tempfile import TemporaryDirectory
 
 if TYPE_CHECKING:
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from utilities.types import PathLike
 
 
-@contextmanager
+@enhanced_context_manager
 def yield_zip_file_contents(path: PathLike, /) -> Iterator[list[Path]]:
     """Yield the contents of a zipfile in a temporary directory."""
     with ZipFile(path) as zf, TemporaryDirectory() as temp:

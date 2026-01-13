@@ -240,7 +240,7 @@ def _suppress_signal_error() -> Iterator[None]:
 _SUPER_OBJECT_HAS_NO_ATTRIBUTE = re.compile(r"'super' object has no attribute '\w+'")
 
 
-@contextmanager
+@enhanced_context_manager
 def suppress_super_object_attribute_error() -> Iterator[None]:
     """Suppress the super() attribute error, for mix-ins."""
     try:
