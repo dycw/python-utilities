@@ -4,7 +4,7 @@ on:
     branches:
       - master
 jobs:
-  publish:
+  publish-github:
     environment:
       name: pypi
     permissions:
@@ -18,12 +18,3 @@ jobs:
     steps:
       - name: Tag the latest commit
         uses: dycw/action-tag-commit@latest
-  publish-github:
-    environment:
-      name: pypi
-    permissions:
-      id-token: write
-    runs-on: ubuntu-latest
-    steps:
-      - name: Build and publish the package
-        uses: dycw/action-publish-package@latest
