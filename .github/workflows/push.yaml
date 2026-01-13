@@ -4,7 +4,7 @@ on:
     branches:
       - master
 jobs:
-  publish:
+  publish-github:
     environment:
       name: pypi
     permissions:

@@ -126,7 +126,8 @@ def snake_case(text: str, /) -> str:
 
 def split_f_str_equals(text: str, /) -> tuple[str, str]:
     """Split an `f`-string with `=`."""
-    return split_str(text, separator="=", n=2)
+    first, second = text.split(sep="=", maxsplit=1)
+    return first, second
 
 
 ##

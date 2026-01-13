@@ -14,6 +14,7 @@ jobs:
         uses: dycw/action-run-hooks@latest
         with:
           repos: |-
+            dycw/actions
             pre-commit/pre-commit-hooks
   pyright:
     runs-on: ubuntu-latest
