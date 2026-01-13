@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from asyncio import run
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from inspect import signature
 from multiprocessing import Process
@@ -114,6 +115,25 @@ class TestEnhancedContextManager:
         expected = {"x", "y"}
         assert sig == expected
 
+    def test_sync_threaded(self) -> None:
+        cleared = False
+
+        def func() -> None:
+            with yield_marker():
+                ...
+
+        @enhanced_context_manager
+        def yield_marker() -> Iterator[None]:
+            try:
+                yield
+            finally:
+                nonlocal cleared
+                cleared |= True
+
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(func)
+            future.result()
+
     @given(
         sigabrt=booleans(),
         sigfpe=booleans(),
@@ -163,6 +183,29 @@ class TestEnhancedContextManager:
         sig = set(signature(yield_marker).parameters)
         expected = {"x", "y"}
         assert sig == expected
+
+    def test_async_threaded(self) -> None:
+        cleared = False
+
+        def sync_func() -> None:
+            run(async_func())
+
+        async def async_func() -> None:
+            async with yield_marker():
+                ...
+
+        @enhanced_async_context_manager
+        async def yield_marker() -> AsyncIterator[None]:
+            await asyncio.sleep(0.0)
+            try:
+                yield
+            finally:
+                nonlocal cleared
+                cleared |= True
+
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(sync_func)
+            future.result()
 
     @mark.parametrize(
         "target",
