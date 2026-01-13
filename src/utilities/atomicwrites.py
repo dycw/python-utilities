@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, assert_never, override
 
 from atomicwrites import replace_atomic
 
-from utilities.errors import ImpossibleCaseError
 from utilities.iterables import transpose
+from utilities.pathlib import file_or_dir
 from utilities.tempfile import TemporaryDirectory
 
 if TYPE_CHECKING:
@@ -25,38 +25,24 @@ def move(
 ) -> None:
     """Move/replace a file/directory atomically."""
     source, destination = map(Path, [source, destination])
-    match (
-        source.is_file(),
-        source.is_dir(),
-        destination.is_file(),
-        destination.is_dir(),
-        overwrite,
-    ):
-        case False, False, _, _, _:
+    match file_or_dir(source), file_or_dir(destination), overwrite:
+        case None, _, _:
             raise _MoveSourceNotFoundError(source=source)
-        # files
-        case (True, False, True, False, False) | (True, False, False, True, False):
+        case "file", "file" | "dir", False:
             raise _MoveFileExistsError(source=source, destination=destination) from None
-        case True, False, False, True, _:
+        case "file", "dir", _:
             rmtree(destination, ignore_errors=True)
-            return replace_atomic(str(source), str(destination))  # must be `str`s
-        case True, False, _, _, _:
-            return replace_atomic(str(source), str(destination))  # must be `str`s
-        # directories
-        case (False, True, True, False, False) | (False, True, False, True, False):
+            replace_atomic(str(source), str(destination))  # must be `str`s
+        case "file", _, _:
+            replace_atomic(str(source), str(destination))  # must be `str`s
+        case "dir", "file" | "dir", False:
             raise _MoveDirectoryExistsError(source=source, destination=destination)
-        case False, True, False, True, _:
+        case "dir", "dir", _:
             rmtree(destination, ignore_errors=True)
             _ = shutil.move(source, destination)
-            return None
-        case False, True, _, _, _:
+        case "dir", _, _:
             destination.unlink(missing_ok=True)
             _ = shutil.move(source, destination)
-            return None
-        case True, True, _, _, _:  # pragma: no cover
-            raise ImpossibleCaseError(
-                case=[f"{source.is_file()=}", f"{source.is_dir()=}"]
-            )
         case never:
             assert_never(never)
 
