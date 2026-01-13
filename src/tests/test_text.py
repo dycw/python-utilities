@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from itertools import chain
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -223,22 +223,25 @@ class TestSecretStr:
 
 
 class TestSplitFStrEquals:
-    def test_main(self) -> None:
-        x = 123
+    @mark.parametrize(
+        ("x", "expected"),
+        [param(123, "123"), param("a=1", "'a=1'"), param("a=1,b=2", "'a=1,b=2'")],
+    )
+    def test_main2(self, *, x: Any, expected: str) -> None:
         result1, result2 = split_f_str_equals(f"{x=}")
         assert result1 == "x"
-        assert result2 == "123"
+        assert result2 == expected
 
-    def test_underscore(self) -> None:
-        x_y_z = 123
-        result1, result2 = split_f_str_equals(f"{x_y_z=}")
-        assert result1 == "x_y_z"
-        assert result2 == "123"
-
-    def test_digits(self) -> None:
+    def test_variable_with_digits(self) -> None:
         x123 = 123
         result1, result2 = split_f_str_equals(f"{x123=}")
         assert result1 == "x123"
+        assert result2 == "123"
+
+    def test_variable_with_underscore(self) -> None:
+        x_y_z = 123
+        result1, result2 = split_f_str_equals(f"{x_y_z=}")
+        assert result1 == "x_y_z"
         assert result2 == "123"
 
 
