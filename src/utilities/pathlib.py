@@ -19,7 +19,7 @@ from utilities.sentinel import Sentinel
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
-    from utilities.types import MaybeCallablePathLike, PathLike
+    from utilities.types import FileOrDir, MaybeCallablePathLike, PathLike
 
 
 PWD = Path.cwd()
@@ -49,6 +49,32 @@ def expand_path(path: PathLike, /) -> Path:
     path = str(path)
     path = expandvars(path)
     return Path(path).expanduser()
+
+
+##
+
+
+def file_or_dir(path: PathLike, /) -> FileOrDir | None:
+    """Classify a path as a file, directory or non-existent."""
+    path = Path(path)
+    match path.exists(), path.is_file(), path.is_dir():
+        case True, True, False:
+            return "file"
+        case True, False, True:
+            return "dir"
+        case False, False, False:
+            return None
+        case _:
+            raise FileOrDirError(path=path)
+
+
+@dataclass(kw_only=True, slots=True)
+class FileOrDirError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Path is neither a file nor a directory: {str(self.path)!r}"
 
 
 ##
@@ -84,11 +110,11 @@ def get_package_root(path: MaybeCallablePathLike = Path.cwd, /) -> Path:
 
 @dataclass(kw_only=True, slots=True)
 class GetPackageRootError(Exception):
-    path: PathLike
+    path: Path
 
     @override
     def __str__(self) -> str:
-        return f"Path is not part of a package: {self.path}"
+        return f"Path is not part of a package: {str(self.path)!r}"
 
 
 ##
@@ -337,11 +363,13 @@ def to_path(
 
 __all__ = [
     "PWD",
+    "FileOrDirError",
     "GetPackageRootError",
     "GetRepoRootError",
     "GetTailError",
     "ensure_suffix",
     "expand_path",
+    "file_or_dir",
     "get_file_group",
     "get_file_owner",
     "get_package_root",
