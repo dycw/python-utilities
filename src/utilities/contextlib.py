@@ -90,12 +90,13 @@ def enhanced_context_manager[**P, T_co](
             with gcm as value:
                 yield value
         finally:
-            _ = signal(SIGABRT, sigabrt0) if sigabrt else None
-            _ = signal(SIGFPE, sigfpe0) if sigfpe else None
-            _ = signal(SIGILL, sigill0) if sigill else None
-            _ = signal(SIGINT, sigint0) if sigint else None
-            _ = signal(SIGSEGV, sigsegv0) if sigsegv else None
-            _ = signal(SIGTERM, sigterm0) if sigterm else None
+            with _suppress_signal_error():
+                _ = signal(SIGABRT, sigabrt0) if sigabrt else None
+                _ = signal(SIGFPE, sigfpe0) if sigfpe else None
+                _ = signal(SIGILL, sigill0) if sigill else None
+                _ = signal(SIGINT, sigint0) if sigint else None
+                _ = signal(SIGSEGV, sigsegv0) if sigsegv else None
+                _ = signal(SIGTERM, sigterm0) if sigterm else None
 
     return wrapped
 
@@ -173,12 +174,13 @@ def enhanced_async_context_manager[**P, T_co](
             async with agcm as value:
                 yield value
         finally:
-            _ = signal(SIGABRT, sigabrt0) if sigabrt else None
-            _ = signal(SIGFPE, sigfpe0) if sigfpe else None
-            _ = signal(SIGILL, sigill0) if sigill else None
-            _ = signal(SIGINT, sigint0) if sigint else None
-            _ = signal(SIGSEGV, sigsegv0) if sigsegv else None
-            _ = signal(SIGTERM, sigterm0) if sigterm else None
+            with _suppress_signal_error():
+                _ = signal(SIGABRT, sigabrt0) if sigabrt else None
+                _ = signal(SIGFPE, sigfpe0) if sigfpe else None
+                _ = signal(SIGILL, sigill0) if sigill else None
+                _ = signal(SIGINT, sigint0) if sigint else None
+                _ = signal(SIGSEGV, sigsegv0) if sigsegv else None
+                _ = signal(SIGTERM, sigterm0) if sigterm else None
 
     return wrapped
 
@@ -191,7 +193,8 @@ def _swap_handler(
 ) -> _HANDLER:
     orig_handler = getsignal(signum)
     new_handler = _make_handler(signum, obj)
-    _ = signal(signum, new_handler)
+    with _suppress_signal_error():
+        _ = signal(signum, new_handler)
     return orig_handler
 
 
@@ -218,6 +221,17 @@ def _make_handler(
             orig_handler(signum, frame)
 
     return new_handler
+
+
+@contextmanager
+def _suppress_signal_error() -> Iterator[None]:
+    try:
+        yield
+    except ValueError as error:
+        (msg,) = error.args
+        if msg == "signal only works in main thread of the main interpreter":
+            return
+        raise  # pragma: no cover
 
 
 ##

@@ -625,7 +625,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.179.4"
+version = "0.179.5"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
@@ -899,7 +899,7 @@ requires-dist = [
     { name = "atomicwrites", specifier = ">=1.4.1,<2" },
     { name = "coloredlogs", marker = "extra == 'logging'", specifier = ">=15.0.1,<16" },
     { name = "dycw-pytest-only", marker = "extra == 'test'", specifier = ">=2.1.1,<3" },
-    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.150.1,<7" },
+    { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.150.2,<7" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=9.0.2,<10" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=1.3.0,<2" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=7.0.0,<8" },
@@ -944,7 +944,7 @@ dev = [
     { name = "coloredlogs", specifier = ">=15.0.1,<16" },
     { name = "coverage-conditional-plugin", specifier = ">=0.9.0,<1" },
     { name = "dycw-pytest-only", specifier = ">=2.1.1,<3" },
-    { name = "dycw-utilities", extras = ["test"], specifier = ">=0.179.4,<1" },
+    { name = "dycw-utilities", extras = ["test"], specifier = ">=0.179.5,<1" },
     { name = "pyright", specifier = ">=1.1.408,<2" },
     { name = "pytest-cov", specifier = ">=7.0.0,<8" },
     { name = "pytest-timeout", specifier = ">=2.4.0,<3" },
@@ -959,7 +959,7 @@ fpdf2 = [{ name = "fpdf2", specifier = ">=2.8.5,<3" }]
 gitpython = [{ name = "gitpython", specifier = ">=3.1.46,<4" }]
 hashlib-test = [{ name = "orjson", specifier = ">=3.11.5,<4" }]
 http-test = [{ name = "orjson", specifier = ">=3.11.5,<4" }]
-hypothesis = [{ name = "hypothesis", specifier = ">=6.150.1,<7" }]
+hypothesis = [{ name = "hypothesis", specifier = ">=6.150.2,<7" }]
 hypothesis-test = [
     { name = "libcst", specifier = ">=1.8.6,<2" },
     { name = "numpy", specifier = ">=2.4.1,<3" },
@@ -1359,14 +1359,14 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.150.1"
+version = "6.150.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ad/4e/cd3a398b9834386a79f4eb777dc4004ca439c1019d324771ec8196fc8354/hypothesis-6.150.1.tar.gz", hash = "sha256:dc79672b3771e92e6563ca0c56a24135438f319b257a1a1982deb8fbb791be89", size = 474924, upload-time = "2026-01-12T08:45:45.416Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d2/19/a4eee0c98e2ec678854272f79646f34943f8fbbc42689cc355b530c5bc96/hypothesis-6.150.2.tar.gz", hash = "sha256:deb043c41c53eaf0955f4a08739c2a34c3d8040ee3d9a2da0aa5470122979f75", size = 475250, upload-time = "2026-01-13T17:09:22.146Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/22/18/f43815244cd99b54d8ac9f44f9799bb7c0115e48e29bc7a1899c0589ee48/hypothesis-6.150.1-py3-none-any.whl", hash = "sha256:7badb28a0da323d6afaf25eae1c93932cb8ac06193355f5e080d6e6465a51da5", size = 542374, upload-time = "2026-01-12T08:45:41.854Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/5e/21caad4acf45db7caf730cca1bc61422283e4c4e841efbc862d17ab81a21/hypothesis-6.150.2-py3-none-any.whl", hash = "sha256:648d6a2be435889e713ba3d335b0fb5e7a250f569b56e6867887c1e7a0d1f02f", size = 542712, upload-time = "2026-01-13T17:09:19.945Z" },
 ]
 
 [[package]]
