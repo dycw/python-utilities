@@ -30,10 +30,9 @@ def yield_zip_file_contents(path: PathLike, /) -> Iterator[Path]:
 ##
 
 
-def zip_paths(src: PathLike, /, *srcs_or_dest: PathLike) -> None:
+def zip_paths(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
     """Create a Zip file."""
-    all_paths = list(map(Path, [src, *srcs_or_dest]))
-    *srcs, dest = all_paths
+    *srcs, dest = map(Path, [src_or_dest, *srcs_or_dest])
     with writer(dest, overwrite=True) as temp, ZipFile(temp, mode="w") as zf:
         for src_i in sorted(srcs):
             match file_or_dir(src_i):

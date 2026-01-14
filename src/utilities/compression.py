@@ -22,7 +22,7 @@ def compress_paths(
     func: PathToBinaryIO, src_or_dest: PathLike, /, *srcs_or_dest: PathLike
 ) -> None:
     """Compress a set of files and/or directories."""
-    *srcs, dest = list(map(Path, [src_or_dest, *srcs_or_dest]))
+    *srcs, dest = map(Path, [src_or_dest, *srcs_or_dest])
     with writer(dest, overwrite=True) as temp, func(temp) as buffer:
         match srcs:
             case [src]:
