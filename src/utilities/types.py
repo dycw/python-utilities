@@ -11,6 +11,7 @@ from re import Pattern
 from types import TracebackType
 from typing import (
     Any,
+    BinaryIO,
     ClassVar,
     Literal,
     Protocol,
@@ -88,6 +89,10 @@ type SupportsFloatOrIndex = SupportsFloat | SupportsIndex
 class SupportsKeysAndGetItem(Protocol[_T, _T_co]):
     def keys(self) -> Iterable[_T]: ...  # pragma: no cover
     def __getitem__(self, key: _T, /) -> _T_co: ...  # pragma: no cover
+
+
+# compression
+type PathToBinaryIO = Callable[[PathLike], BinaryIO]
 
 
 # concurrent
@@ -337,6 +342,7 @@ __all__ = [
     "Parallelism",
     "ParseObjectExtra",
     "PathLike",
+    "PathToBinaryIO",
     "PatternLike",
     "PlainDateTimeLike",
     "Retry",

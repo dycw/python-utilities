@@ -1,24 +1,16 @@
 from __future__ import annotations
 
 import gzip
-from functools import partial
 from gzip import GzipFile
 from pathlib import Path
-from shutil import copyfileobj
-from tarfile import ReadError
-from typing import TYPE_CHECKING, Any, BinaryIO, assert_never, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from utilities.atomicwrites import writer
-from utilities.bz2 import compress_paths, yield_compressed_contents
+from utilities.compression import compress_paths, yield_compressed_contents
 from utilities.contextlib import enhanced_context_manager
-from utilities.errors import ImpossibleCaseError
-from utilities.iterables import OneEmptyError, OneNonUniqueError, one
-from utilities.pathlib import file_or_dir
-from utilities.tempfile import TemporaryDirectory, TemporaryFile
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from tarfile import TarFile
 
     from utilities.types import PathLike
 

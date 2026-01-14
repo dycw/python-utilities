@@ -1,19 +1,48 @@
 from __future__ import annotations
 
+from bz2 import BZ2File
 from gzip import GzipFile
+from lzma import LZMAFile
 from tarfile import ReadError, TarFile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, BinaryIO, cast
 
 from hypothesis import given
 from hypothesis.strategies import binary, booleans
-from pytest import raises
+from pytest import fixture, mark, raises
 
+from utilities.compression import compress_paths, yield_compressed_contents
 from utilities.gzip import gzip_paths, read_binary, write_binary, yield_gzip_contents
 from utilities.hypothesis import temp_paths
 from utilities.iterables import one
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
+
+    from _pytest.fixtures import RequestFixtureDef, SubRequest
+
+    from utilities.types import PathLike, PathToBinaryIO
+
+
+@fixture(params=[(BZ2File, True), (GzipFile, True), (LZMAFile, True)])
+def reader_writer(*, request: SubRequest) -> tuple[PathToBinaryIO, PathToBinaryIO]:
+    cls, add_r = request.param
+
+    def reader(path: PathLike, /) -> BinaryIO:
+        mode = ("r" if add_r else "") + "b"
+        return cls(path, mode="rb")
+
+    def writer(path: PathLike, /) -> BinaryIO:
+        mode = ("w" if add_r else "") + "b"
+        return cls(path, mode="wb")
+
+    return reader, writer
+
+
+@fixture(params=[BZ2File, GzipFile, LZMAFile])
+def writer(*, reader_writer: tuple[PathToBinaryIO, PathToBinaryIO]) -> PathToBinaryIO:
+    _, writer = reader_writer
+    return writer
 
 
 class TestGzipPath:
@@ -79,31 +108,34 @@ class TestGzipPath:
             ...
 
 
-class TestReadAndWriteBinary:
-    @given(root=temp_paths(), data=binary(), compress=booleans())
-    def test_main(self, *, root: Path, data: bytes, compress: bool) -> None:
-        file = root.joinpath("file.json")
-        write_binary(data, file, compress=compress)
-        contents = read_binary(file, decompress=compress)
-        assert contents == data
-
-
-class TestYieldGzipContents:
-    def test_single_file(self, tmp_path: Path, temp_file: Path) -> None:
+class TestYieldCompressedContents:
+    def test_single_file(
+        self,
+        *,
+        reader_writer: tuple[PathToBinaryIO, PathToBinaryIO],
+        tmp_path: Path,
+        temp_file: Path,
+    ) -> None:
+        reader, writer = reader_writer
         _ = temp_file.write_text("text")
-        dest = tmp_path / "gzip"
-        gzip_paths(temp_file, dest)
-        with yield_gzip_contents(dest) as temp:
+        dest = tmp_path / "dest"
+        compress_paths(writer, temp_file, dest)
+        with yield_compressed_contents(dest, reader) as temp:
             assert temp.is_file()
             assert temp.read_text() == "text"
 
     def test_multiple_files(
-        self, tmp_path: Path, temp_files: tuple[Path, Path]
+        self,
+        *,
+        reader_writer: tuple[PathToBinaryIO, PathToBinaryIO],
+        tmp_path: Path,
+        temp_files: tuple[Path, Path],
     ) -> None:
+        reader, writer = reader_writer
         path1, path2 = temp_files
         dest = tmp_path / "gzip-tar"
-        gzip_paths(path1, path2, dest)
-        with yield_gzip_contents(dest) as temp:
+        compress_paths(writer, path1, path2, dest)
+        with yield_compressed_contents(dest, reader) as temp:
             assert temp.is_dir()
             result = {p.name for p in temp.iterdir()}
             expected = {p.name for p in temp_files}

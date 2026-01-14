@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import gzip
-from functools import partial
-from gzip import GzipFile
 from pathlib import Path
 from shutil import copyfileobj
 from tarfile import ReadError, TarFile
-from typing import IO, TYPE_CHECKING, Any, BinaryIO, assert_never, cast
+from typing import TYPE_CHECKING, BinaryIO, assert_never
 
 from utilities.atomicwrites import writer
 from utilities.contextlib import enhanced_context_manager
