@@ -260,7 +260,7 @@ class TestYieldCompressedContents:
         expected = {one(path1.iterdir()).name, one(path2.iterdir()).name}
         assert result == expected
 
-    def test_non_existent(
+    def test_single_non_existent(
         self,
         *,
         reader: PathToBinaryIO,
@@ -270,6 +270,20 @@ class TestYieldCompressedContents:
     ) -> None:
         dest = tmp_path / "dest"
         compress_paths(writer, temp_path_not_exist, dest)
+        with yield_compressed_contents(dest, reader) as temp:
+            assert temp.is_dir()
+            assert list(temp.iterdir()) == []
+
+    def test_multiple_non_existent(
+        self,
+        *,
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
+        tmp_path: Path,
+        temp_path_not_exist: Path,
+    ) -> None:
+        dest = tmp_path / "dest"
+        compress_paths(writer, temp_path_not_exist, temp_path_not_exist, dest)
         with yield_compressed_contents(dest, reader) as temp:
             assert temp.is_dir()
             assert list(temp.iterdir()) == []
