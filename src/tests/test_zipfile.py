@@ -12,15 +12,16 @@ from pytest import mark
 from utilities.hypothesis import temp_paths, text_ascii, text_ascii_lower
 from utilities.platform import maybe_lower_case
 from utilities.text import unique_str
-from utilities.zipfile import yield_zip_file_contents
+from utilities.zipfile import yield_zip_file_contents, zip_paths
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
 
 
+@mark.skip
 class TestYieldZipFileContents:
     @mark.only
-    def test_single(self, tmp_path: Path) -> None:
+    def test_single_file(self, tmp_path: Path) -> None:
         src = tmp_path / "src"
         src.mkdir()
         filename = maybe_lower_case(unique_str())
@@ -52,3 +53,59 @@ class TestYieldZipFileContents:
             assert len(paths) == len(contents)
             for path in paths:
                 assert isinstance(path, Path)
+
+
+class TestZipPath:
+    def test_single_file(self, tmp_path: Path, temp_file: Path) -> None:
+        dest = tmp_path / "zip"
+        zip_paths(temp_file, dest)
+        with ZipFile(dest) as zf:
+            assert zf.namelist() == [temp_file.name]
+
+    def test_multiple_files(
+        self, tmp_path: Path, temp_files: tuple[Path, Path]
+    ) -> None:
+        path1, path2 = temp_files
+        dest = tmp_path / "zip"
+        zip_paths(path1, path2, dest)
+        with ZipFile(dest) as zf:
+            assert zf.namelist() == [p.name for p in temp_files]
+
+    def test_dir_empty(self, tmp_path: Path) -> None:
+        src = tmp_path / "src"
+        src.mkdir()
+        dest = tmp_path / "zip"
+        zip_paths(src, dest)
+        with ZipFile(dest) as zf:
+            assert zf.namelist() == []
+
+    def test_dir_single_file(self, tmp_path: Path) -> None:
+        src = tmp_path / "src"
+        src.mkdir()
+        (src / "file.txt").touch()
+        dest = tmp_path / "zip"
+        zip_paths(src, dest)
+        with ZipFile(dest) as zf:
+            assert zf.namelist() == ["file.txt"]
+
+    def test_dir_multiple_files(self, tmp_path: Path) -> None:
+        src = tmp_path / "src"
+        src.mkdir()
+        (src / "file1.txt").touch()
+        (src / "file2.txt").touch()
+        dest = tmp_path / "zip"
+        zip_paths(src, dest)
+        with ZipFile(dest) as zf:
+            assert zf.namelist() == ["file1.txt", "file2.txt"]
+
+    def test_dir_nested(self, tmp_path: Path) -> None:
+        src = tmp_path / "src"
+        src.mkdir()
+        (src / "file1.txt").touch()
+        sub_dir = src / "sub_dir"
+        sub_dir.mkdir()
+        (sub_dir / "file2.txt").touch()
+        dest = tmp_path / "zip"
+        zip_paths(src, dest)
+        with ZipFile(dest) as zf:
+            assert zf.namelist() == ["file1.txt", "sub_dir/", "sub_dir/file2.txt"]

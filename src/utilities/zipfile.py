@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, assert_never
 from zipfile import ZipFile
 
+from utilities.atomicwrites import writer
 from utilities.pathlib import file_or_dir
 from utilities.tempfile import TemporaryDirectory
 
@@ -23,24 +24,22 @@ def yield_zip_file_contents(path: PathLike, /) -> Iterator[list[Path]]:
     _ = zf  # make coverage understand this is returned
 
 
-def zip_path(src: PathLike, dest: PathLike, /) -> None:
+def zip_paths(src: PathLike, /, *srcs_or_dest: PathLike) -> None:
     """Create a Zip file."""
-    src, dest = map(Path, [src, dest])
-    with ZipFile(dest, mode="w") as zf:
-        match file_or_dir(src):
-            case "file":
-                z
-            case "dir":
-                z
-            case None:  # pragma: no cover
-                a
-
-        if src.is_file():
-            a
-
-        zf.extractall(path=temp)
-        yield list(temp.iterdir())
-    _ = zf  # make coverage understand this is returned
+    all_paths = list(map(Path, [src, *srcs_or_dest]))
+    *srcs, dest = all_paths
+    with writer(dest, overwrite=True) as temp, ZipFile(temp, mode="w") as zf:
+        for src_i in srcs:
+            match file_or_dir(src_i):
+                case "file":
+                    zf.write(src_i, src_i.name)
+                case "dir":
+                    for p in sorted(src_i.rglob("**/*")):
+                        zf.write(p, p.relative_to(src_i))
+                case None:
+                    ...
+                case never:
+                    assert_never(never)
 
 
 __all__ = ["yield_zip_file_contents"]
