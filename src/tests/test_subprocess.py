@@ -658,6 +658,9 @@ class TestRm:
         rm(tmp_path)
         assert not tmp_path.exists()
 
+    def test_non_existent(self, *, temp_path_not_exist: Path) -> None:
+        rm(temp_path_not_exist)
+
 
 class TestRmCmd:
     def test_single(self) -> None:

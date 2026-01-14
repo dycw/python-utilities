@@ -220,6 +220,7 @@ type SerializeObjectExtra = Mapping[Any, Callable[[Any], str]]
 
 
 # pathlib
+type FileOrDir = Literal["file", "dir"]
 type PathLike = MaybeStr[Path]
 type MaybeCallablePathLike = MaybeCallable[PathLike]
 
@@ -304,6 +305,7 @@ __all__ = [
     "EnumLike",
     "ExcInfo",
     "ExceptionTypeLike",
+    "FileOrDir",
     "IPv4AddressLike",
     "IPv6AddressLike",
     "LogLevel",

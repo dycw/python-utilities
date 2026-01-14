@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from os import mkfifo
 from pathlib import Path
 from shutil import copytree
 from typing import TYPE_CHECKING, Self, assert_never
@@ -14,6 +15,8 @@ from utilities.hypothesis import git_repos, pairs, paths, temp_paths
 from utilities.pathlib import (
     GetPackageRootError,
     GetRootError,
+    _FileOrDirMissingError,
+    _FileOrDirTypeError,
     _GetRepoRootNotARepoError,
     _GetTailDisambiguate,
     _GetTailEmptyError,
@@ -21,6 +24,7 @@ from utilities.pathlib import (
     _GetTailNonUniqueError,
     ensure_suffix,
     expand_path,
+    file_or_dir,
     get_file_group,
     get_file_owner,
     get_package_root,
@@ -75,6 +79,38 @@ class TestExpandPath:
     def test_main(self, *, path: Path, expected: Path) -> None:
         result = expand_path(path)
         assert result == expected
+
+
+class TestFileOrDir:
+    def test_file(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        result = file_or_dir(path)
+        assert result == "file"
+
+    def test_dir(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "dir"
+        path.mkdir()
+        result = file_or_dir(path)
+        assert result == "dir"
+
+    def test_empty(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "non-existent"
+        result = file_or_dir(path)
+        assert result is None
+
+    def test_error_missing(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "non-existent"
+        with raises(_FileOrDirMissingError, match=r"Path does not exist: '.*'"):
+            _ = file_or_dir(path, exists=True)
+
+    def test_error_type(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "fifo"
+        mkfifo(path)
+        with raises(
+            _FileOrDirTypeError, match=r"Path is neither a file nor a directory: '.*'"
+        ):
+            _ = file_or_dir(path)
 
 
 class TestFileOwnerAndGroup:
