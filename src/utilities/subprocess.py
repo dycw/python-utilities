@@ -744,8 +744,8 @@ def rm(path: PathLike, /, *paths: PathLike, sudo: bool = False) -> None:
                     p.unlink(missing_ok=True)
                 case "dir":
                     rmtree(p, ignore_errors=True)
-                case None:
-                    ...
+                case None:  # pragma: no cover
+                    raise ImpossibleCaseError(case=[f"{p=}"])
                 case never:
                     assert_never(never)
 
