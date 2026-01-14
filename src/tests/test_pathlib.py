@@ -13,9 +13,10 @@ from pytest import mark, param, raises
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import git_repos, pairs, paths, temp_paths
 from utilities.pathlib import (
-    FileOrDirError,
     GetPackageRootError,
     GetRootError,
+    _FileOrDirMissingError,
+    _FileOrDirTypeError,
     _GetRepoRootNotARepoError,
     _GetTailDisambiguate,
     _GetTailEmptyError,
@@ -98,11 +99,16 @@ class TestFileOrDir:
         result = file_or_dir(path)
         assert result is None
 
-    def test_error(self, *, tmp_path: Path) -> None:
+    def test_error_missing(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "non-existent"
+        with raises(_FileOrDirMissingError, match=r"Path does not exist: '.*'"):
+            _ = file_or_dir(path, exists=True)
+
+    def test_error_type(self, *, tmp_path: Path) -> None:
         path = tmp_path / "fifo"
         mkfifo(path)
         with raises(
-            FileOrDirError, match=r"Path is neither a file nor a directory: '.*'"
+            _FileOrDirTypeError, match=r"Path is neither a file nor a directory: '.*'"
         ):
             _ = file_or_dir(path)
 
