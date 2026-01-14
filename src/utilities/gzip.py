@@ -22,8 +22,6 @@ def gzip_paths(
     *srcs, dest = all_paths
     with writer(dest, overwrite=True) as temp, GzipFile(temp, mode="wb") as gz:
         match srcs:
-            case []:  # pragma: no cover
-                raise NotImplementedError
             case [src]:
                 match file_or_dir(src):
                     case "file":
