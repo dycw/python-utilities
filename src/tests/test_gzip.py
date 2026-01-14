@@ -10,6 +10,7 @@ from pytest import mark, raises
 
 from utilities.gzip import gzip_paths, read_binary, write_binary
 from utilities.hypothesis import temp_paths
+from utilities.iterables import one
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -34,49 +35,38 @@ class TestGZipPath:
         expected = {p.name for p in temp_files}
         assert result == expected
 
-    def test_dir_empty(self, tmp_path: Path) -> None:
-        src = tmp_path / "src"
-        src.mkdir()
+    def test_dir_empty(self, tmp_path: Path, temp_dir_with_nothing: Path) -> None:
         dest = tmp_path / "gzip-tar"
-        gzip_paths(src, dest)
+        gzip_paths(temp_dir_with_nothing, dest)
         with GzipFile(dest) as gz, TarFile(fileobj=gz) as tar:
             assert tar.getnames() == []
 
-    def test_dir_single_file(self, tmp_path: Path) -> None:
-        src = tmp_path / "src"
-        src.mkdir()
-        (src / "file.txt").touch()
+    def test_dir_single_file(self, tmp_path: Path, temp_dir_with_file: Path) -> None:
         dest = tmp_path / "zip"
-        gzip_paths(src, dest)
+        gzip_paths(temp_dir_with_file, dest)
         with GzipFile(dest) as gz, TarFile(fileobj=gz) as tar:
-            assert tar.getnames() == ["file.txt"]
+            result = tar.getnames()
+        expected = [one(temp_dir_with_file.iterdir()).name]
+        assert result == expected
 
-    def test_dir_multiple_files(self, tmp_path: Path) -> None:
-        src = tmp_path / "src"
-        src.mkdir()
-        (src / "file1.txt").touch()
-        (src / "file2.txt").touch()
+    def test_dir_multiple_files(
+        self, tmp_path: Path, temp_dir_with_files: Path
+    ) -> None:
         dest = tmp_path / "zip"
-        gzip_paths(src, dest)
+        gzip_paths(temp_dir_with_files, dest)
         with GzipFile(dest) as gz, TarFile(fileobj=gz) as tar:
-            assert tar.getnames() == ["file1.txt", "file2.txt"]
+            result = set(tar.getnames())
+        expected = {p.name for p in temp_dir_with_files.iterdir()}
+        assert result == expected
 
-    def test_dir_nested(self, tmp_path: Path) -> None:
-        src = tmp_path / "src"
-        src.mkdir()
-        (src / "file1.txt").touch()
-        sub_dir = src / "sub_dir"
-        sub_dir.mkdir()
-        (sub_dir / "file2.txt").touch()
+    def test_dir_nested(self, tmp_path: Path, temp_dir_with_dir_and_file: Path) -> None:
         dest = tmp_path / "zip"
-        gzip_paths(src, dest)
+        gzip_paths(temp_dir_with_dir_and_file, dest)
         with GzipFile(dest) as gz, TarFile(fileobj=gz) as tar:
-            assert tar.getnames() == [
-                "file1.txt",
-                "sub_dir",
-                "sub_dir/file2.txt",
-                "sub_dir/file2.txt",
-            ]
+            result = set(tar.getnames())
+        inner = one(temp_dir_with_dir_and_file.iterdir())
+        expected = {inner.name, f"{inner.name}/{one(inner.iterdir()).name}"}
+        assert result == expected
 
     def test_non_existent(self, tmp_path: Path, temp_path_not_exist: Path) -> None:
         dest = tmp_path / "zip"
