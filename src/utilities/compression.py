@@ -65,9 +65,9 @@ def yield_compressed_contents(
     path: PathLike, func: PathToBinaryIO, /
 ) -> Iterator[Path]:
     """Yield the contents of a compressed file/directory."""
-    with func(path) as gz:
+    with func(path) as buffer:
         try:
-            with TarFile(fileobj=gz) as tf, TemporaryDirectory() as temp:
+            with TarFile(fileobj=buffer) as tf, TemporaryDirectory() as temp:
                 tf.extractall(path=temp, filter="data")
                 try:
                     yield one(temp.iterdir())
@@ -78,10 +78,10 @@ def yield_compressed_contents(
             if arg == "empty file":
                 with TemporaryDirectory() as temp:
                     yield temp
-            elif arg == "truncated header":
-                _ = gz.seek(0)
+            elif arg in {"bad checksum", "invalid header", "truncated header"}:
+                _ = buffer.seek(0)
                 with TemporaryFile() as temp, temp.open(mode="wb") as fh:
-                    copyfileobj(gz, fh)
+                    copyfileobj(buffer, fh)
                     _ = fh.seek(0)
                     yield temp
             else:  # pragma: no cover
