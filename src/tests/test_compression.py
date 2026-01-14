@@ -21,14 +21,12 @@ if TYPE_CHECKING:
 
 @fixture(params=[(BZ2File, True), (GzipFile, True), (LZMAFile, True)])
 def reader_writer(*, request: SubRequest) -> tuple[PathToBinaryIO, PathToBinaryIO]:
-    cls, add_r = request.param
+    cls, _add_r = request.param
 
     def reader(path: PathLike, /) -> BinaryIO:
-        ("r" if add_r else "") + "b"
         return cls(path, mode="rb")
 
     def writer(path: PathLike, /) -> BinaryIO:
-        ("w" if add_r else "") + "b"
         return cls(path, mode="wb")
 
     return reader, writer
