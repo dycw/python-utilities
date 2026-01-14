@@ -739,11 +739,13 @@ def rm(path: PathLike, /, *paths: PathLike, sudo: bool = False) -> None:
     else:
         all_paths = list(map(Path, [path, *paths]))
         for p in all_paths:
-            match file_or_dir(p, exists=True):
+            match file_or_dir(p):
                 case "file":
                     p.unlink(missing_ok=True)
                 case "dir":
                     rmtree(p, ignore_errors=True)
+                case None:
+                    ...
                 case never:
                     assert_never(never)
 
