@@ -4,11 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from platform import system
 from re import sub
-from typing import TYPE_CHECKING, Literal, assert_never, override
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
-
+from typing import Literal, assert_never, override
 
 System = Literal["windows", "mac", "linux"]
 

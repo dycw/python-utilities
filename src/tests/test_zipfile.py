@@ -29,6 +29,16 @@ class TestYieldZipFileContents:
         expected = {p.name for p in temp_files}
         assert result == expected
 
+    def test_dir_single_file(self, tmp_path: Path) -> None:
+        src = tmp_path / "src"
+        src.mkdir()
+        (src / "file.txt").touch()
+        dest = tmp_path / "zip"
+        zip_paths(src, dest)
+        with yield_zip_file_contents(dest) as temp:
+            assert temp.is_file()
+            assert temp.name == "file.txt"
+
 
 class TestZipPath:
     def test_single_file(self, tmp_path: Path, temp_file: Path) -> None:

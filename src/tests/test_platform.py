@@ -4,10 +4,9 @@ from re import search
 from typing import TYPE_CHECKING, assert_never
 
 from hypothesis import assume, given
-from hypothesis.strategies import sets
 from pytest import mark, param
 
-from utilities.hypothesis import text_ascii, text_clean
+from utilities.hypothesis import text_clean
 from utilities.platform import (
     IS_LINUX,
     IS_MAC,
@@ -27,7 +26,6 @@ from utilities.text import unique_str
 from utilities.typing import get_args
 
 if TYPE_CHECKING:
-    from collections.abc import Set as AbstractSet
     from pathlib import Path
 
 
