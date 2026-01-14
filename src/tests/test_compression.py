@@ -19,9 +19,9 @@ if TYPE_CHECKING:
     from utilities.types import PathLike, PathToBinaryIO
 
 
-@fixture(params=[(BZ2File, True), (GzipFile, True), (LZMAFile, True)])
+@fixture(params=[BZ2File, GzipFile, LZMAFile])
 def reader_writer(*, request: SubRequest) -> tuple[PathToBinaryIO, PathToBinaryIO]:
-    cls, _add_r = request.param
+    cls = request.param
 
     def reader(path: PathLike, /) -> BinaryIO:
         return cls(path, mode="rb")
@@ -32,7 +32,13 @@ def reader_writer(*, request: SubRequest) -> tuple[PathToBinaryIO, PathToBinaryI
     return reader, writer
 
 
-@fixture(params=[BZ2File, GzipFile, LZMAFile])
+@fixture
+def reader(*, reader_writer: tuple[PathToBinaryIO, PathToBinaryIO]) -> PathToBinaryIO:
+    reader, _ = reader_writer
+    return reader
+
+
+@fixture
 def writer(*, reader_writer: tuple[PathToBinaryIO, PathToBinaryIO]) -> PathToBinaryIO:
     _, writer = reader_writer
     return writer
@@ -40,49 +46,74 @@ def writer(*, reader_writer: tuple[PathToBinaryIO, PathToBinaryIO]) -> PathToBin
 
 class TestCompressPaths:
     def test_single_file(
-        self, *, writer: PathToBinaryIO, tmp_path: Path, temp_file: Path
+        self,
+        *,
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
+        tmp_path: Path,
+        temp_file: Path,
     ) -> None:
         _ = temp_file.write_text("text")
         dest = tmp_path / "dest"
         compress_paths(writer, temp_file, dest)
-        with GzipFile(dest) as gz:
-            assert gz.read() == b"text"
+        with reader(dest) as buffer:
+            assert buffer.read() == b"text"
 
     def test_multiple_files(
-        self, *, writer: PathToBinaryIO, tmp_path: Path, temp_files: tuple[Path, Path]
+        self,
+        *,
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
+        tmp_path: Path,
+        temp_files: tuple[Path, Path],
     ) -> None:
         path1, path2 = temp_files
         dest = tmp_path / "dest"
         compress_paths(writer, path1, path2, dest)
-        with GzipFile(dest) as gz, TarFile(fileobj=gz) as tar:
+        with reader(dest) as buffer, TarFile(fileobj=buffer) as tar:
             result = set(tar.getnames())
         expected = {p.name for p in temp_files}
         assert result == expected
 
     def test_dir_empty(
-        self, *, writer: PathToBinaryIO, tmp_path: Path, temp_dir_with_nothing: Path
+        self,
+        *,
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
+        tmp_path: Path,
+        temp_dir_with_nothing: Path,
     ) -> None:
         dest = tmp_path / "dest"
         compress_paths(writer, temp_dir_with_nothing, dest)
-        with GzipFile(dest) as gz, TarFile(fileobj=gz) as tar:
+        with reader(dest) as buffer, TarFile(fileobj=buffer) as tar:
             assert tar.getnames() == []
 
     def test_dir_single_file(
-        self, *, writer: PathToBinaryIO, tmp_path: Path, temp_dir_with_file: Path
+        self,
+        *,
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
+        tmp_path: Path,
+        temp_dir_with_file: Path,
     ) -> None:
         dest = tmp_path / "dest"
         compress_paths(writer, temp_dir_with_file, dest)
-        with GzipFile(dest) as gz, TarFile(fileobj=gz) as tar:
+        with reader(dest) as buffer, TarFile(fileobj=buffer) as tar:
             result = tar.getnames()
         expected = [one(temp_dir_with_file.iterdir()).name]
         assert result == expected
 
     def test_dir_multiple_files(
-        self, *, writer: PathToBinaryIO, tmp_path: Path, temp_dir_with_files: Path
+        self,
+        *,
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
+        tmp_path: Path,
+        temp_dir_with_files: Path,
     ) -> None:
         dest = tmp_path / "dest"
         compress_paths(writer, temp_dir_with_files, dest)
-        with GzipFile(dest) as gz, TarFile(fileobj=gz) as tar:
+        with reader(dest) as buffer, TarFile(fileobj=buffer) as tar:
             result = set(tar.getnames())
         expected = {p.name for p in temp_dir_with_files.iterdir()}
         assert result == expected
@@ -90,27 +121,33 @@ class TestCompressPaths:
     def test_dir_nested(
         self,
         *,
+        reader: PathToBinaryIO,
         writer: PathToBinaryIO,
         tmp_path: Path,
         temp_dir_with_dir_and_file: Path,
     ) -> None:
         dest = tmp_path / "dest"
         compress_paths(writer, temp_dir_with_dir_and_file, dest)
-        with GzipFile(dest) as gz, TarFile(fileobj=gz) as tar:
+        with reader(dest) as buffer, TarFile(fileobj=buffer) as tar:
             result = set(tar.getnames())
         inner = one(temp_dir_with_dir_and_file.iterdir())
         expected = {inner.name, f"{inner.name}/{one(inner.iterdir()).name}"}
         assert result == expected
 
     def test_non_existent(
-        self, *, writer: PathToBinaryIO, tmp_path: Path, temp_path_not_exist: Path
+        self,
+        *,
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
+        tmp_path: Path,
+        temp_path_not_exist: Path,
     ) -> None:
         dest = tmp_path / "dest"
         compress_paths(writer, temp_path_not_exist, dest)
         with (
-            GzipFile(dest) as gz,
+            reader(dest) as buffer,
             raises(ReadError, match="empty file"),
-            TarFile(fileobj=gz),
+            TarFile(fileobj=buffer),
         ):
             ...
 
@@ -119,11 +156,11 @@ class TestYieldCompressedContents:
     def test_single_file(
         self,
         *,
-        reader_writer: tuple[PathToBinaryIO, PathToBinaryIO],
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
         tmp_path: Path,
         temp_file: Path,
     ) -> None:
-        reader, writer = reader_writer
         _ = temp_file.write_text("text")
         dest = tmp_path / "dest"
         compress_paths(writer, temp_file, dest)
@@ -134,11 +171,11 @@ class TestYieldCompressedContents:
     def test_multiple_files(
         self,
         *,
-        reader_writer: tuple[PathToBinaryIO, PathToBinaryIO],
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
         tmp_path: Path,
         temp_files: tuple[Path, Path],
     ) -> None:
-        reader, writer = reader_writer
         path1, path2 = temp_files
         dest = tmp_path / "dest"
         compress_paths(writer, path1, path2, dest)
@@ -151,11 +188,11 @@ class TestYieldCompressedContents:
     def test_dir_empty(
         self,
         *,
-        reader_writer: tuple[PathToBinaryIO, PathToBinaryIO],
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
         tmp_path: Path,
         temp_dir_with_nothing: Path,
     ) -> None:
-        reader, writer = reader_writer
         dest = tmp_path / "dest"
         compress_paths(writer, temp_dir_with_nothing, dest)
         with yield_compressed_contents(dest, reader) as temp:
@@ -165,11 +202,11 @@ class TestYieldCompressedContents:
     def test_dir_single_file(
         self,
         *,
-        reader_writer: tuple[PathToBinaryIO, PathToBinaryIO],
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
         tmp_path: Path,
         temp_dir_with_file: Path,
     ) -> None:
-        reader, writer = reader_writer
         dest = tmp_path / "dest"
         compress_paths(writer, temp_dir_with_file, dest)
         with yield_compressed_contents(dest, reader) as temp:
@@ -180,11 +217,11 @@ class TestYieldCompressedContents:
     def test_dir_multiple_files(
         self,
         *,
-        reader_writer: tuple[PathToBinaryIO, PathToBinaryIO],
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
         tmp_path: Path,
         temp_dir_with_files: Path,
     ) -> None:
-        reader, writer = reader_writer
         dest = tmp_path / "dest"
         compress_paths(writer, temp_dir_with_files, dest)
         with yield_compressed_contents(dest, reader) as temp:
@@ -196,11 +233,11 @@ class TestYieldCompressedContents:
     def test_dir_nested(
         self,
         *,
-        reader_writer: tuple[PathToBinaryIO, PathToBinaryIO],
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
         tmp_path: Path,
         temp_dir_with_dir_and_file: Path,
     ) -> None:
-        reader, writer = reader_writer
         dest = tmp_path / "dest"
         compress_paths(writer, temp_dir_with_dir_and_file, dest)
         with yield_compressed_contents(dest, reader) as temp:
@@ -210,11 +247,11 @@ class TestYieldCompressedContents:
     def test_non_existent(
         self,
         *,
-        reader_writer: tuple[PathToBinaryIO, PathToBinaryIO],
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
         tmp_path: Path,
         temp_path_not_exist: Path,
     ) -> None:
-        reader, writer = reader_writer
         dest = tmp_path / "dest"
         compress_paths(writer, temp_path_not_exist, dest)
         with yield_compressed_contents(dest, reader) as temp:
