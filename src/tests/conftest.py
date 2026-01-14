@@ -12,7 +12,7 @@ from whenever import PlainDateTime
 from utilities.contextlib import enhanced_context_manager
 from utilities.pytest import IS_CI, IS_CI_AND_NOT_LINUX, skipif_ci
 from utilities.re import ExtractGroupError, extract_group
-from utilities.tempfile import TemporaryFile
+from utilities.tempfile import TemporaryDirectory, TemporaryFile
 from utilities.whenever import MINUTE, get_now_local_plain
 
 if TYPE_CHECKING:
@@ -60,6 +60,63 @@ def set_log_factory() -> AbstractContextManager[None]:
 
 
 # fixtures - pathlib
+
+
+@fixture
+def temp_dir_with_dir_and_file(*, tmp_path: Path) -> Iterator[Path]:
+    with (
+        TemporaryDirectory(dir=tmp_path) as outer,
+        TemporaryDirectory(dir=outer) as inner,
+        TemporaryFile(dir=inner) as temp_file,
+    ):
+        temp_file.touch()
+        yield outer
+
+
+@fixture
+def temp_dir_with_file(*, tmp_path: Path) -> Iterator[Path]:
+    with (
+        TemporaryDirectory(dir=tmp_path) as temp_dir,
+        TemporaryFile(dir=temp_dir) as temp_file,
+    ):
+        temp_file.touch()
+        yield temp_dir
+
+
+@fixture
+def temp_dir_with_files(*, tmp_path: Path) -> Iterator[Path]:
+    with (
+        TemporaryDirectory(dir=tmp_path) as temp_dir,
+        TemporaryFile(dir=temp_dir) as temp_file1,
+        TemporaryFile(dir=temp_dir) as temp_file2,
+    ):
+        temp_file1.touch()
+        temp_file2.touch()
+        yield temp_dir
+
+
+@fixture
+def temp_dir_with_nothing(*, tmp_path: Path) -> Iterator[Path]:
+    with TemporaryDirectory(dir=tmp_path) as temp_dir:
+        yield temp_dir
+
+
+@fixture
+def temp_dirs(*, tmp_path: Path) -> Iterator[tuple[Path, Path]]:
+    with (
+        TemporaryDirectory(dir=tmp_path) as temp1,
+        TemporaryDirectory(dir=tmp_path) as temp2,
+    ):
+        yield temp1, temp2
+
+
+@fixture
+def temp_dirs_with_files(
+    *, temp_dirs: tuple[Path, Path]
+) -> Iterator[tuple[Path, Path]]:
+    path1, path2 = temp_dirs
+    with TemporaryFile(dir=path1), TemporaryFile(dir=path2):
+        yield temp_dirs
 
 
 @fixture

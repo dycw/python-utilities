@@ -4,10 +4,9 @@ from re import search
 from typing import TYPE_CHECKING, assert_never
 
 from hypothesis import assume, given
-from hypothesis.strategies import sets
 from pytest import mark, param
 
-from utilities.hypothesis import text_ascii, text_clean
+from utilities.hypothesis import text_clean
 from utilities.platform import (
     IS_LINUX,
     IS_MAC,
@@ -21,12 +20,13 @@ from utilities.platform import (
     get_max_pid,
     get_strftime,
     get_system,
-    maybe_yield_lower_case,
+    maybe_lower_case,
 )
+from utilities.text import unique_str
 from utilities.typing import get_args
 
 if TYPE_CHECKING:
-    from collections.abc import Set as AbstractSet
+    from pathlib import Path
 
 
 class TestGetMaxPID:
@@ -84,16 +84,15 @@ class TestGetSystem:
         assert isinstance(predicate, bool)
 
 
-class TestMaybeYieldLowerCase:
-    @given(text=sets(text_ascii()))
-    def test_main(self, *, text: AbstractSet[str]) -> None:
-        result = set(maybe_yield_lower_case(text))
-        match SYSTEM:
-            case "windows":  # skipif-not-windows
-                assert all(text == text.lower() for text in result)
-            case "mac":  # skipif-not-macos
-                assert all(text == text.lower() for text in result)
-            case "linux":  # skipif-not-linux
-                assert result == text
-            case never:
-                assert_never(never)
+class TestMaybeLowerCase:
+    def test_main(self, *, tmp_path: Path) -> None:
+        upper = unique_str().upper()
+        lower = upper.lower()
+        file_upper = tmp_path / upper
+        file_upper.touch()
+        file_lower = tmp_path / lower
+        file_lower.touch()
+        maybe_lower = maybe_lower_case(upper)
+        result = len(list(tmp_path.iterdir()))
+        expected = 2 if maybe_lower == upper else 1
+        assert result == expected

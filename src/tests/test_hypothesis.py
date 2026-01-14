@@ -125,7 +125,7 @@ from utilities.math import (
     MIN_UINT32,
     MIN_UINT64,
 )
-from utilities.platform import IS_LINUX, maybe_yield_lower_case
+from utilities.platform import IS_LINUX, maybe_lower_case
 from utilities.sentinel import is_sentinel
 from utilities.version import Version
 from utilities.whenever import (
@@ -971,7 +971,7 @@ class TestTempDirs:
     ) -> None:
         path = temp_dir.path
         assert len(set(path.iterdir())) == 0
-        as_set = set(maybe_yield_lower_case(contents))
+        as_set = set(map(maybe_lower_case, contents))
         for content in as_set:
             Path(path, content).touch()
         assert len(set(path.iterdir())) == len(as_set)
@@ -987,7 +987,7 @@ class TestTempPaths:
     @mark.flaky
     def test_writing_files(self, *, path: Path, contents: AbstractSet[str]) -> None:
         assert len(set(path.iterdir())) == 0
-        as_set = set(maybe_yield_lower_case(contents))
+        as_set = set(map(maybe_lower_case, contents))
         for content in as_set:
             Path(path, content).touch()
         assert len(set(path.iterdir())) == len(as_set)

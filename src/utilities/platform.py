@@ -4,11 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from platform import system
 from re import sub
-from typing import TYPE_CHECKING, Literal, assert_never, override
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
-
+from typing import Literal, assert_never, override
 
 System = Literal["windows", "mac", "linux"]
 
@@ -87,15 +83,13 @@ def get_strftime(text: str, /) -> str:
 ##
 
 
-def maybe_yield_lower_case(text: Iterable[str], /) -> Iterator[str]:
-    """Yield lower-cased text if the platform is case-insentive."""
+def maybe_lower_case(text: str, /) -> str:
+    """Lower-case text if the platform is case-insensitive w.r.t. filenames."""
     match SYSTEM:
-        case "windows":  # skipif-not-windows
-            yield from (t.lower() for t in text)
-        case "mac":  # skipif-not-macos
-            yield from (t.lower() for t in text)
+        case "windows" | "mac":  # skipif-linux
+            return text.lower()
         case "linux":  # skipif-not-linux
-            yield from text
+            return text
         case never:
             assert_never(never)
 
@@ -114,5 +108,5 @@ __all__ = [
     "get_max_pid",
     "get_strftime",
     "get_system",
-    "maybe_yield_lower_case",
+    "maybe_lower_case",
 ]
