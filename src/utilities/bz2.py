@@ -5,12 +5,13 @@ from typing import TYPE_CHECKING, cast
 
 from utilities.compression import compress_paths, yield_compressed_contents
 from utilities.contextlib import enhanced_context_manager
+from utilities.types import PathLike
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
 
-    from utilities.types import PathLike
+    from utilities.types import PathLike, PathToBinaryIO
 
 
 def bz2_paths(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
