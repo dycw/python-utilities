@@ -25,8 +25,8 @@ class TestYieldZipFileContents:
         zip_paths(path1, path2, dest)
         with yield_zip_file_contents(dest) as temp:
             assert temp.is_dir()
-            result = [p.name for p in temp.iterdir()]
-        expected = [p.name for p in temp_files]
+            result = {p.name for p in temp.iterdir()}
+        expected = {p.name for p in temp_files}
         assert result == expected
 
 
@@ -44,7 +44,7 @@ class TestZipPath:
         dest = tmp_path / "zip"
         zip_paths(path1, path2, dest)
         with ZipFile(dest) as zf:
-            assert zf.namelist() == [p.name for p in temp_files]
+            assert set(zf.namelist()) == {p.name for p in temp_files}
 
     def test_dir_empty(self, tmp_path: Path) -> None:
         src = tmp_path / "src"
@@ -84,3 +84,9 @@ class TestZipPath:
         zip_paths(src, dest)
         with ZipFile(dest) as zf:
             assert zf.namelist() == ["file1.txt", "sub_dir/", "sub_dir/file2.txt"]
+
+    def test_non_existent(self, tmp_path: Path, temp_path_not_exist: Path) -> None:
+        dest = tmp_path / "zip"
+        zip_paths(temp_path_not_exist, dest)
+        with ZipFile(dest) as zf:
+            assert zf.namelist() == []

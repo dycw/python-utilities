@@ -32,7 +32,7 @@ def zip_paths(src: PathLike, /, *srcs_or_dest: PathLike) -> None:
     all_paths = list(map(Path, [src, *srcs_or_dest]))
     *srcs, dest = all_paths
     with writer(dest, overwrite=True) as temp, ZipFile(temp, mode="w") as zf:
-        for src_i in srcs:
+        for src_i in sorted(srcs):
             match file_or_dir(src_i):
                 case "file":
                     zf.write(src_i, src_i.name)
