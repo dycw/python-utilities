@@ -8,9 +8,13 @@ from tarfile import TarFile
 from typing import TYPE_CHECKING, assert_never
 
 from utilities.atomicwrites import writer
+from utilities.contextlib import enhanced_context_manager
 from utilities.pathlib import file_or_dir
+from utilities.tempfile import TemporaryDirectory
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from utilities.types import PathLike
 
 
@@ -73,6 +77,20 @@ def write_binary(
     """Write a byte string to disk."""
     with writer(path, compress=compress, overwrite=overwrite) as temp:
         _ = temp.write_bytes(data)
+
+
+##
+
+
+@enhanced_context_manager
+def yield_gzip_file_contents(path: PathLike, /) -> Iterator[Path]:
+    """Yield the contents of a Gzip file."""
+    with GzipFile(path) as zf, TemporaryDirectory() as temp:
+        zf.extractall(path=temp)
+        try:
+            yield one(temp.iterdir())
+        except OneNonUniqueError:
+            yield temp
 
 
 __all__ = ["read_binary", "write_binary"]

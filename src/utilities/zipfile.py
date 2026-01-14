@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, assert_never
 from zipfile import ZipFile
 
 from utilities.atomicwrites import writer
+from utilities.contextlib import enhanced_context_manager
 from utilities.iterables import OneNonUniqueError, one
 from utilities.pathlib import file_or_dir
 from utilities.tempfile import TemporaryDirectory
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from utilities.types import PathLike
 
 
-@contextmanager
+@enhanced_context_manager
 def yield_zip_file_contents(path: PathLike, /) -> Iterator[Path]:
     """Yield the contents of a Zip file."""
     with ZipFile(path) as zf, TemporaryDirectory() as temp:
@@ -25,6 +26,9 @@ def yield_zip_file_contents(path: PathLike, /) -> Iterator[Path]:
             yield one(temp.iterdir())
         except OneNonUniqueError:
             yield temp
+
+
+##
 
 
 def zip_paths(src: PathLike, /, *srcs_or_dest: PathLike) -> None:
