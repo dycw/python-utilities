@@ -3,7 +3,7 @@ from __future__ import annotations
 import gzip
 from gzip import GzipFile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 from utilities.atomicwrites import writer
 from utilities.compression import compress_paths, yield_compressed_contents
