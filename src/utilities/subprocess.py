@@ -19,7 +19,7 @@ from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
 from utilities.logging import to_logger
-from utilities.pathlib import PWD
+from utilities.pathlib import PWD, file_or_dir
 from utilities.permissions import Permissions, ensure_perms
 from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
@@ -301,13 +301,15 @@ def cp(
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*cp_cmd(src, dest)))
     else:
-        src, dest = map(Path, [src, dest])
-        if src.is_file():
-            _ = copyfile(src, dest)
-        elif src.is_dir():
-            _ = copytree(src, dest, dirs_exist_ok=True)
-        else:
-            raise CpError(src=src, dest=dest)
+        match file_or_dir(src):
+            case "file":
+                _ = copyfile(src, dest)
+            case "dir":
+                _ = copytree(src, dest, dirs_exist_ok=True)
+            case None:
+                raise CpError(src=Path(src), dest=Path(dest))
+            case never:
+                assert_never(never)
     if perms is not None:
         chmod(dest, perms, sudo=sudo)
     if (owner is not None) or (group is not None):
@@ -737,10 +739,15 @@ def rm(path: PathLike, /, *paths: PathLike, sudo: bool = False) -> None:
     else:
         all_paths = list(map(Path, [path, *paths]))
         for p in all_paths:
-            if p.is_file():
-                p.unlink(missing_ok=True)
-            elif p.is_dir():
-                rmtree(p, ignore_errors=True)
+            match file_or_dir(p):
+                case "file":
+                    p.unlink(missing_ok=True)
+                case "dir":
+                    rmtree(p, ignore_errors=True)
+                case None:  # pragma: no cover
+                    raise ImpossibleCaseError(case=[f"{p=}"])
+                case never:
+                    assert_never(never)
 
 
 def rm_cmd(path: PathLike, /, *paths: PathLike) -> list[str]:
