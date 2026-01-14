@@ -379,10 +379,10 @@ def to_path(
 
 __all__ = [
     "PWD",
+    "FileOrDirError",
     "GetPackageRootError",
     "GetRepoRootError",
     "GetTailError",
-    "_FileOrDirTypeError",
     "ensure_suffix",
     "expand_path",
     "file_or_dir",
