@@ -38,33 +38,39 @@ def writer(*, reader_writer: tuple[PathToBinaryIO, PathToBinaryIO]) -> PathToBin
     return writer
 
 
-class TestGzipPath:
-    def test_single_file(self, tmp_path: Path, temp_file: Path) -> None:
+class TestCompressPaths:
+    def test_single_file(
+        self, *, writer: PathToBinaryIO, tmp_path: Path, temp_file: Path
+    ) -> None:
         _ = temp_file.write_text("text")
-        dest = tmp_path / "gzip"
+        dest = tmp_path / "dest"
         compress_paths(writer, temp_file, dest)
         with GzipFile(dest) as gz:
             assert gz.read() == b"text"
 
     def test_multiple_files(
-        self, tmp_path: Path, temp_files: tuple[Path, Path]
+        self, *, writer: PathToBinaryIO, tmp_path: Path, temp_files: tuple[Path, Path]
     ) -> None:
         path1, path2 = temp_files
-        dest = tmp_path / "gzip-tar"
+        dest = tmp_path / "dest"
         compress_paths(writer, path1, path2, dest)
         with GzipFile(dest) as gz, TarFile(fileobj=gz) as tar:
             result = set(tar.getnames())
         expected = {p.name for p in temp_files}
         assert result == expected
 
-    def test_dir_empty(self, tmp_path: Path, temp_dir_with_nothing: Path) -> None:
-        dest = tmp_path / "gzip-tar"
+    def test_dir_empty(
+        self, *, writer: PathToBinaryIO, tmp_path: Path, temp_dir_with_nothing: Path
+    ) -> None:
+        dest = tmp_path / "dest"
         compress_paths(writer, temp_dir_with_nothing, dest)
         with GzipFile(dest) as gz, TarFile(fileobj=gz) as tar:
             assert tar.getnames() == []
 
-    def test_dir_single_file(self, tmp_path: Path, temp_dir_with_file: Path) -> None:
-        dest = tmp_path / "zip"
+    def test_dir_single_file(
+        self, *, writer: PathToBinaryIO, tmp_path: Path, temp_dir_with_file: Path
+    ) -> None:
+        dest = tmp_path / "dest"
         compress_paths(writer, temp_dir_with_file, dest)
         with GzipFile(dest) as gz, TarFile(fileobj=gz) as tar:
             result = tar.getnames()
@@ -72,17 +78,23 @@ class TestGzipPath:
         assert result == expected
 
     def test_dir_multiple_files(
-        self, tmp_path: Path, temp_dir_with_files: Path
+        self, *, writer: PathToBinaryIO, tmp_path: Path, temp_dir_with_files: Path
     ) -> None:
-        dest = tmp_path / "zip"
+        dest = tmp_path / "dest"
         compress_paths(writer, temp_dir_with_files, dest)
         with GzipFile(dest) as gz, TarFile(fileobj=gz) as tar:
             result = set(tar.getnames())
         expected = {p.name for p in temp_dir_with_files.iterdir()}
         assert result == expected
 
-    def test_dir_nested(self, tmp_path: Path, temp_dir_with_dir_and_file: Path) -> None:
-        dest = tmp_path / "zip"
+    def test_dir_nested(
+        self,
+        *,
+        writer: PathToBinaryIO,
+        tmp_path: Path,
+        temp_dir_with_dir_and_file: Path,
+    ) -> None:
+        dest = tmp_path / "dest"
         compress_paths(writer, temp_dir_with_dir_and_file, dest)
         with GzipFile(dest) as gz, TarFile(fileobj=gz) as tar:
             result = set(tar.getnames())
@@ -90,8 +102,10 @@ class TestGzipPath:
         expected = {inner.name, f"{inner.name}/{one(inner.iterdir()).name}"}
         assert result == expected
 
-    def test_non_existent(self, tmp_path: Path, temp_path_not_exist: Path) -> None:
-        dest = tmp_path / "zip"
+    def test_non_existent(
+        self, *, writer: PathToBinaryIO, tmp_path: Path, temp_path_not_exist: Path
+    ) -> None:
+        dest = tmp_path / "dest"
         compress_paths(writer, temp_path_not_exist, dest)
         with (
             GzipFile(dest) as gz,
@@ -126,7 +140,7 @@ class TestYieldCompressedContents:
     ) -> None:
         reader, writer = reader_writer
         path1, path2 = temp_files
-        dest = tmp_path / "gzip-tar"
+        dest = tmp_path / "dest"
         compress_paths(writer, path1, path2, dest)
         with yield_compressed_contents(dest, reader) as temp:
             assert temp.is_dir()
@@ -187,7 +201,7 @@ class TestYieldCompressedContents:
         temp_dir_with_dir_and_file: Path,
     ) -> None:
         reader, writer = reader_writer
-        dest = tmp_path / "zip"
+        dest = tmp_path / "dest"
         compress_paths(writer, temp_dir_with_dir_and_file, dest)
         with yield_compressed_contents(dest, reader) as temp:
             assert temp.is_dir()
@@ -201,7 +215,7 @@ class TestYieldCompressedContents:
         temp_path_not_exist: Path,
     ) -> None:
         reader, writer = reader_writer
-        dest = tmp_path / "zip"
+        dest = tmp_path / "dest"
         compress_paths(writer, temp_path_not_exist, dest)
         with yield_compressed_contents(dest, reader) as temp:
             assert temp.is_dir()
