@@ -7,7 +7,7 @@ from zipfile import ZipFile
 
 from utilities.atomicwrites import writer
 from utilities.contextlib import enhanced_context_manager
-from utilities.iterables import OneNonUniqueError, one
+from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 from utilities.pathlib import file_or_dir
 from utilities.tempfile import TemporaryDirectory
 
@@ -24,7 +24,7 @@ def yield_zip_file_contents(path: PathLike, /) -> Iterator[Path]:
         zf.extractall(path=temp)
         try:
             yield one(temp.iterdir())
-        except OneNonUniqueError:
+        except (OneEmptyError, OneNonUniqueError):
             yield temp
 
 

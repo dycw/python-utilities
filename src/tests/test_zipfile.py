@@ -27,18 +27,41 @@ class TestYieldZipFileContents:
         with yield_zip_file_contents(dest) as temp:
             assert temp.is_dir()
             result = {p.name for p in temp.iterdir()}
-        expected = {p.name for p in temp_files}
-        assert result == expected
+            expected = {p.name for p in temp_files}
+            assert result == expected
 
-    def test_dir_single_file(self, tmp_path: Path) -> None:
-        src = tmp_path / "src"
-        src.mkdir()
-        (src / "file.txt").touch()
+    def test_dir_empty(self, tmp_path: Path, temp_dir_with_nothing: Path) -> None:
         dest = tmp_path / "zip"
-        zip_paths(src, dest)
+        zip_paths(temp_dir_with_nothing, dest)
+        with yield_zip_file_contents(dest) as temp:
+            assert temp.is_dir()
+            assert list(temp.iterdir()) == []
+
+    def test_dir_single_file(self, tmp_path: Path, temp_dir_with_file: Path) -> None:
+        dest = tmp_path / "zip"
+        zip_paths(temp_dir_with_file, dest)
         with yield_zip_file_contents(dest) as temp:
             assert temp.is_file()
-            assert temp.name == "file.txt"
+            expected = one(temp_dir_with_file.iterdir()).name
+            assert temp.name == expected
+
+    def test_dir_multiple_files(
+        self, tmp_path: Path, temp_dir_with_files: Path
+    ) -> None:
+        dest = tmp_path / "zip"
+        zip_paths(temp_dir_with_files, dest)
+        with yield_zip_file_contents(dest) as temp:
+            assert temp.is_dir()
+            result = {p.name for p in temp.iterdir()}
+            expected = {p.name for p in temp_dir_with_files.iterdir()}
+            assert result == expected
+
+    def test_non_existent(self, tmp_path: Path, temp_path_not_exist: Path) -> None:
+        dest = tmp_path / "zip"
+        zip_paths(temp_path_not_exist, dest)
+        with yield_zip_file_contents(dest) as temp:
+            assert temp.is_dir()
+            assert list(temp.iterdir()) == []
 
 
 class TestZipPath:
