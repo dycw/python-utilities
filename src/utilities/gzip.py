@@ -5,11 +5,11 @@ from functools import partial
 from gzip import GzipFile
 from pathlib import Path
 from shutil import copyfileobj
-from tarfile import ReadError, TarFile
-from typing import TYPE_CHECKING, BinaryIO, assert_never, cast
+from tarfile import ReadError
+from typing import TYPE_CHECKING, Any, BinaryIO, assert_never, cast
 
 from utilities.atomicwrites import writer
-from utilities.bz2 import compress_paths
+from utilities.bz2 import compress_paths, yield_compressed_contents
 from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one
@@ -18,6 +18,7 @@ from utilities.tempfile import TemporaryDirectory, TemporaryFile
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from tarfile import TarFile
 
     from utilities.types import PathLike
 
@@ -29,41 +30,6 @@ def gzip_paths(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
         return GzipFile(path, mode="wb")
 
     compress_paths(src_or_dest, cast("Any", func), *srcs_or_dest)
-    return
-    all_paths = list(map(Path, [src_or_dest, src_or_dest, *srcs_or_dest]))
-    *srcs, dest = all_paths
-    with writer(dest, overwrite=True) as temp, GzipFile(temp, mode="wb") as gz:
-        match srcs:
-            case [src_or_dest]:
-                match file_or_dir(src_or_dest):
-                    case "file":
-                        with src_or_dest.open(mode="rb") as fh:
-                            copyfileobj(fh, gz)
-                    case "dir":
-                        with TarFile(mode="w", fileobj=gz) as tar:
-                            _gzip_paths_add_dir(src_or_dest, tar)
-                    case None:
-                        ...
-                    case never:
-                        assert_never(never)
-            case _:
-                with TarFile(mode="w", fileobj=gz) as tar:
-                    for src_i in sorted(srcs):
-                        match file_or_dir(src_i):
-                            case "file":
-                                tar.add(src_i, src_i.name)
-                            case "dir":
-                                _gzip_paths_add_dir(src_i, tar)
-                            case None:
-                                ...
-                            case never:
-                                assert_never(never)
-
-
-def _gzip_paths_add_dir(path: PathLike, tar: TarFile, /) -> None:
-    path = Path(path)
-    for p in sorted(path.rglob("**/*")):
-        tar.add(p, p.relative_to(path))
 
 
 ##
@@ -91,29 +57,14 @@ def write_binary(
 
 
 @enhanced_context_manager
-def yield_gzip_file_contents(path: PathLike, /) -> Iterator[Path]:
+def yield_gzip_contents(path: PathLike, /) -> Iterator[Path]:
     """Yield the contents of a Gzip file."""
-    with GzipFile(path, mode="rb") as gz:
-        try:
-            with TarFile(fileobj=gz) as tf, TemporaryDirectory() as temp:
-                tf.extractall(path=temp, filter="data")
-                try:
-                    yield one(temp.iterdir())
-                except (OneEmptyError, OneNonUniqueError):
-                    yield temp
-        except ReadError as error:
-            (arg,) = error.args
-            if arg == "empty file":
-                with TemporaryDirectory() as temp:
-                    yield temp
-            elif arg == "truncated header":
-                _ = gz.seek(0)
-                with TemporaryFile() as temp, temp.open(mode="wb") as fh:
-                    copyfileobj(gz, fh)
-                    _ = fh.seek(0)
-                    yield temp
-            else:  # pragma: no cover
-                raise ImpossibleCaseError(case=[f"{arg=}"]) from None
+
+    def func(path: PathLike, /) -> GzipFile:
+        return GzipFile(path, mode="rb")
+
+    with yield_compressed_contents(path, cast("Any", func)) as temp:
+        yield temp
 
 
-__all__ = ["read_binary", "write_binary"]
+__all__ = ["gzip_paths", "read_binary", "write_binary", "yield_gzip_contents"]
