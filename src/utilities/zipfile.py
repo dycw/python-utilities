@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from zipfile import ZipFile
 
-from utilities.contextlib import enhanced_context_manager
+from utilities.pathlib import file_or_dir
 from utilities.tempfile import TemporaryDirectory
 
 if TYPE_CHECKING:
@@ -27,6 +27,14 @@ def zip_path(src: PathLike, dest: PathLike, /) -> None:
     """Create a Zip file."""
     src, dest = map(Path, [src, dest])
     with ZipFile(dest, mode="w") as zf:
+        match file_or_dir(src):
+            case "file":
+                z
+            case "dir":
+                z
+            case None:  # pragma: no cover
+                a
+
         if src.is_file():
             a
 
