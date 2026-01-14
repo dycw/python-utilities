@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bz2 import BZ2File
+from lzma import LZMAFile
 from typing import TYPE_CHECKING, cast
 
 from utilities.compression import compress_paths, yield_compressed_contents
@@ -14,11 +14,11 @@ if TYPE_CHECKING:
     from utilities.types import PathLike, PathToBinaryIO
 
 
-def bz2_paths(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
-    """Create a BZ2 file."""
+def lzma_paths(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
+    """Create an LZMA file."""
 
-    def func(path: PathLike, /) -> BZ2File:
-        return BZ2File(path, mode="wb")
+    def func(path: PathLike, /) -> LZMAFile:
+        return LZMAFile(path, mode="wb")
 
     compress_paths(cast("PathToBinaryIO", func), src_or_dest, *srcs_or_dest)
 
@@ -27,14 +27,14 @@ def bz2_paths(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
 
 
 @enhanced_context_manager
-def yield_bz2_contents(path: PathLike, /) -> Iterator[Path]:
-    """Yield the contents of a BZ2 file."""
+def yield_lzma_contents(path: PathLike, /) -> Iterator[Path]:
+    """Yield the contents of an LZMA file."""
 
-    def func(path: PathLike, /) -> BZ2File:
-        return BZ2File(path, mode="rb")
+    def func(path: PathLike, /) -> LZMAFile:
+        return LZMAFile(path, mode="rb")
 
     with yield_compressed_contents(path, cast("PathToBinaryIO", func)) as temp:
         yield temp
 
 
-__all__ = ["bz2_paths", "yield_bz2_contents"]
+__all__ = ["lzma_paths", "yield_lzma_contents"]

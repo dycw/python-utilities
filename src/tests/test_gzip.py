@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from hypothesis import given
 from hypothesis.strategies import binary, booleans
 
-from utilities.gzip import read_binary, write_binary
+from utilities.gzip import gzip_paths, read_binary, write_binary, yield_gzip_contents
 from utilities.hypothesis import temp_paths
 
 if TYPE_CHECKING:
@@ -19,3 +19,13 @@ class TestReadAndWriteBinary:
         write_binary(data, file, compress=compress)
         contents = read_binary(file, decompress=compress)
         assert contents == data
+
+
+class TestGzipPathsAndYieldGzipContents:
+    def test_single_file(self, *, tmp_path: Path, temp_file: Path) -> None:
+        _ = temp_file.write_text("text")
+        dest = tmp_path / "dest"
+        gzip_paths(temp_file, dest)
+        with yield_gzip_contents(dest) as temp:
+            assert temp.is_file()
+            assert temp.read_text() == "text"

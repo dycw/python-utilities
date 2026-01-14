@@ -52,7 +52,7 @@ def write_binary(
 def yield_gzip_contents(path: PathLike, /) -> Iterator[Path]:
     """Yield the contents of a Gzip file."""
 
-    def func(path: PathLike, /) -> GzipFile:  # pragma: no cover
+    def func(path: PathLike, /) -> GzipFile:
         return GzipFile(path, mode="rb")
 
     with yield_compressed_contents(path, cast("PathToBinaryIO", func)) as temp:
