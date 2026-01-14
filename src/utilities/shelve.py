@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import shelve
-from contextlib import contextmanager
 from pathlib import Path
 from shelve import Shelf
 from typing import TYPE_CHECKING, Any, Literal
+
+from utilities.contextlib import enhanced_context_manager
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
 type _Flag = Literal["r", "w", "c", "n"]
 
 
-@contextmanager
+@enhanced_context_manager
 def yield_shelf(
     path: PathLike,
     /,

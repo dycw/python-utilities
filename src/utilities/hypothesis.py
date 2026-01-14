@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import builtins
 import datetime as dt
-from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum, auto
 from math import ceil, floor, inf, isclose, isfinite, nan
@@ -51,6 +50,7 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.contextlib import enhanced_context_manager
 from utilities.functions import ensure_int, ensure_str, max_nullable, min_nullable
 from utilities.math import (
     MAX_FLOAT32,
@@ -126,7 +126,7 @@ type Shape = int | tuple[int, ...]
 ##
 
 
-@contextmanager
+@enhanced_context_manager
 def assume_does_not_raise(
     *exceptions: type[Exception], match: str | None = None
 ) -> Iterator[None]:

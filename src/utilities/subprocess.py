@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import shutil
 import sys
-from contextlib import contextmanager
 from dataclasses import dataclass
 from io import StringIO
 from itertools import repeat
@@ -16,6 +15,7 @@ from threading import Thread
 from time import sleep
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
+from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
 from utilities.logging import to_logger
@@ -1270,7 +1270,7 @@ def run(
                 assert_never(never)
 
 
-@contextmanager
+@enhanced_context_manager
 def _run_yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
     thread = Thread(target=_run_daemon_target, args=(input_, *outputs), daemon=True)
     thread.start()
@@ -1863,7 +1863,7 @@ def uv_run_cmd(module: str, /, *args: str) -> list[str]:
 ##
 
 
-@contextmanager
+@enhanced_context_manager
 def yield_git_repo(url: str, /, *, branch: str | None = None) -> Iterator[Path]:
     """Yield a temporary git repository."""
     with TemporaryDirectory() as temp_dir:
@@ -1874,7 +1874,7 @@ def yield_git_repo(url: str, /, *, branch: str | None = None) -> Iterator[Path]:
 ##
 
 
-@contextmanager
+@enhanced_context_manager
 def yield_ssh_temp_dir(
     user: str,
     hostname: str,

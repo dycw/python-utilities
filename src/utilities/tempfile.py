@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import tempfile
-from contextlib import contextmanager
 from pathlib import Path
 from shutil import move
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from tempfile import gettempdir as _gettempdir
 from typing import TYPE_CHECKING, override
 
+from utilities.contextlib import enhanced_context_manager
 from utilities.warnings import suppress_warnings
 
 if TYPE_CHECKING:
@@ -70,7 +70,7 @@ class _TemporaryDirectoryNoResourceWarning(tempfile.TemporaryDirectory):
 ##
 
 
-@contextmanager
+@enhanced_context_manager
 def TemporaryFile(  # noqa: N802
     *,
     dir: PathLike | None = None,  # noqa: A002
@@ -108,7 +108,7 @@ def TemporaryFile(  # noqa: N802
             yield temp
 
 
-@contextmanager
+@enhanced_context_manager
 def _temporary_file_outer(
     path: PathLike,
     /,
@@ -127,7 +127,7 @@ def _temporary_file_outer(
         yield temp
 
 
-@contextmanager
+@enhanced_context_manager
 def _temporary_file_inner(
     path: PathLike,
     /,

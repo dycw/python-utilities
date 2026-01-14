@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack
 from typing import TYPE_CHECKING, Literal, TypedDict
 from warnings import catch_warnings, filterwarnings
+
+from utilities.contextlib import enhanced_context_manager
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -10,7 +12,7 @@ if TYPE_CHECKING:
     from utilities.types import TypeLike
 
 
-@contextmanager
+@enhanced_context_manager
 def catch_warnings_as_errors(
     *, message: str = "", category: TypeLike[Warning] | None = None
 ) -> Iterator[None]:
@@ -19,7 +21,7 @@ def catch_warnings_as_errors(
         yield
 
 
-@contextmanager
+@enhanced_context_manager
 def suppress_warnings(
     *, message: str = "", category: TypeLike[Warning] | None = None
 ) -> Iterator[None]:
@@ -47,7 +49,7 @@ def _handle_warnings(
     return stack
 
 
-@contextmanager
+@enhanced_context_manager
 def _handle_warnings_1(
     action: _ActionKind, /, *, message: str = "", category: type[Warning] | None = None
 ) -> Iterator[None]:

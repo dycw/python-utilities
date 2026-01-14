@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import TYPE_CHECKING
+
+from utilities.contextlib import enhanced_context_manager
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -28,7 +29,7 @@ def set_global_breakpoint() -> None:
 ##
 
 
-@contextmanager
+@enhanced_context_manager
 def yield_set_context(var: ContextVar[bool], /) -> Iterator[None]:
     """Yield a context var as being set."""
     token = var.set(True)

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 from typing import TYPE_CHECKING, override
 
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 
+from utilities.contextlib import enhanced_context_manager
 from utilities.whenever import format_compact, get_now_local
 
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ class _BasePDF(FPDF):
         self.ln()
 
 
-@contextmanager
+@enhanced_context_manager
 def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
     """Yield a PDF."""
 
