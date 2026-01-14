@@ -102,6 +102,24 @@ def temp_dir_with_nothing(*, tmp_path: Path) -> Iterator[Path]:
 
 
 @fixture
+def temp_dirs(*, tmp_path: Path) -> Iterator[tuple[Path, Path]]:
+    with (
+        TemporaryDirectory(dir=tmp_path) as temp1,
+        TemporaryDirectory(dir=tmp_path) as temp2,
+    ):
+        yield temp1, temp2
+
+
+@fixture
+def temp_dirs_with_files(
+    *, temp_dirs: tuple[Path, Path]
+) -> Iterator[tuple[Path, Path]]:
+    path1, path2 = temp_dirs
+    with TemporaryFile(dir=path1), TemporaryFile(dir=path2):
+        yield temp_dirs
+
+
+@fixture
 def temp_file(*, tmp_path: Path) -> Iterator[Path]:
     with TemporaryFile(dir=tmp_path) as temp:
         temp.touch()

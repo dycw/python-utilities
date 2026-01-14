@@ -75,7 +75,7 @@ class TestCompressPaths:
         expected = {p.name for p in temp_files}
         assert result == expected
 
-    def test_dir_empty(
+    def test_single_dir_empty(
         self,
         *,
         reader: PathToBinaryIO,
@@ -88,7 +88,7 @@ class TestCompressPaths:
         with reader(dest) as buffer, TarFile(fileobj=buffer) as tar:
             assert tar.getnames() == []
 
-    def test_dir_single_file(
+    def test_single_dir_single_file(
         self,
         *,
         reader: PathToBinaryIO,
@@ -103,7 +103,7 @@ class TestCompressPaths:
         expected = [one(temp_dir_with_file.iterdir()).name]
         assert result == expected
 
-    def test_dir_multiple_files(
+    def test_single_dir_multiple_files(
         self,
         *,
         reader: PathToBinaryIO,
@@ -118,7 +118,7 @@ class TestCompressPaths:
         expected = {p.name for p in temp_dir_with_files.iterdir()}
         assert result == expected
 
-    def test_dir_nested(
+    def test_single_dir_nested(
         self,
         *,
         reader: PathToBinaryIO,
@@ -185,7 +185,7 @@ class TestYieldCompressedContents:
             expected = {p.name for p in temp_files}
             assert result == expected
 
-    def test_dir_empty(
+    def test_single_dir_empty(
         self,
         *,
         reader: PathToBinaryIO,
@@ -199,7 +199,7 @@ class TestYieldCompressedContents:
             assert temp.is_dir()
             assert list(temp.iterdir()) == []
 
-    def test_dir_single_file(
+    def test_single_dir_single_file(
         self,
         *,
         reader: PathToBinaryIO,
@@ -214,7 +214,7 @@ class TestYieldCompressedContents:
             expected = one(temp_dir_with_file.iterdir()).name
             assert temp.name == expected
 
-    def test_dir_multiple_files(
+    def test_single_dir_multiple_files(
         self,
         *,
         reader: PathToBinaryIO,
@@ -230,7 +230,7 @@ class TestYieldCompressedContents:
             expected = {p.name for p in temp_dir_with_files.iterdir()}
             assert result == expected
 
-    def test_dir_nested(
+    def test_single_dir_nested(
         self,
         *,
         reader: PathToBinaryIO,
@@ -243,6 +243,22 @@ class TestYieldCompressedContents:
         with yield_compressed_contents(dest, reader) as temp:
             assert temp.is_dir()
             assert one(temp.iterdir()).is_file()
+
+    def test_multiple_dirs(
+        self,
+        *,
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
+        tmp_path: Path,
+        temp_dirs_with_files: tuple[Path, Path],
+    ) -> None:
+        path1, path2 = temp_dirs_with_files
+        dest = tmp_path / "dest"
+        compress_paths(writer, path1, path2, dest)
+        with yield_compressed_contents(dest, reader) as temp:
+            result = {p.name for p in temp.iterdir()}
+        expected = {one(path1.iterdir()).name, one(path2.iterdir()).name}
+        assert result == expected
 
     def test_non_existent(
         self,
