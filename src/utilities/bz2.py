@@ -1,23 +1,15 @@
 from __future__ import annotations
 
-import gzip
-from gzip import GzipFile
 from pathlib import Path
 from shutil import copyfileobj
-from tarfile import ReadError, TarFile
-from typing import TYPE_CHECKING, BinaryIO, assert_never
-
-from pytest import CallInfo
+from tarfile import TarFile
+from typing import IO, TYPE_CHECKING, BinaryIO, assert_never
 
 from utilities.atomicwrites import writer
-from utilities.contextlib import enhanced_context_manager
-from utilities.errors import ImpossibleCaseError
-from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 from utilities.pathlib import file_or_dir
-from utilities.tempfile import TemporaryDirectory, TemporaryFile
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable
 
     from utilities.types import PathLike
 

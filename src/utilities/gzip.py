@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import gzip
+from functools import partial
 from gzip import GzipFile
 from pathlib import Path
 from shutil import copyfileobj
 from tarfile import ReadError, TarFile
-from typing import TYPE_CHECKING, assert_never
+from typing import TYPE_CHECKING, BinaryIO, assert_never, cast
 
 from utilities.atomicwrites import writer
+from utilities.bz2 import compress_paths
 from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one
@@ -20,22 +22,26 @@ if TYPE_CHECKING:
     from utilities.types import PathLike
 
 
-def gzip_paths(
-    src: PathLike, src_or_dest: PathLike, /, *srcs_or_dest: PathLike
-) -> None:
+def gzip_paths(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
     """Create a Gzip file."""
-    all_paths = list(map(Path, [src, src_or_dest, *srcs_or_dest]))
+
+    def func(path: PathLike, /) -> GzipFile:
+        return GzipFile(path, mode="wb")
+
+    compress_paths(src_or_dest, cast("Any", func), *srcs_or_dest)
+    return
+    all_paths = list(map(Path, [src_or_dest, src_or_dest, *srcs_or_dest]))
     *srcs, dest = all_paths
     with writer(dest, overwrite=True) as temp, GzipFile(temp, mode="wb") as gz:
         match srcs:
-            case [src]:
-                match file_or_dir(src):
+            case [src_or_dest]:
+                match file_or_dir(src_or_dest):
                     case "file":
-                        with src.open(mode="rb") as fh:
+                        with src_or_dest.open(mode="rb") as fh:
                             copyfileobj(fh, gz)
                     case "dir":
                         with TarFile(mode="w", fileobj=gz) as tar:
-                            _gzip_paths_add_dir(src, tar)
+                            _gzip_paths_add_dir(src_or_dest, tar)
                     case None:
                         ...
                     case never:
