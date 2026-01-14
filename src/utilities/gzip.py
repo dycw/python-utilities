@@ -12,7 +12,7 @@ from utilities.contextlib import enhanced_context_manager
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from utilities.types import PathLike
+    from utilities.types import PathLike, PathToBinaryIO
 
 
 def gzip_paths(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
@@ -21,7 +21,7 @@ def gzip_paths(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
     def func(path: PathLike, /) -> GzipFile:
         return GzipFile(path, mode="wb")
 
-    compress_paths(src_or_dest, cast("Any", func), *srcs_or_dest)
+    compress_paths(cast("PathToBinaryIO", func), src_or_dest, *srcs_or_dest)
 
 
 ##
@@ -55,7 +55,7 @@ def yield_gzip_contents(path: PathLike, /) -> Iterator[Path]:
     def func(path: PathLike, /) -> GzipFile:
         return GzipFile(path, mode="rb")
 
-    with yield_compressed_contents(path, cast("Any", func)) as temp:
+    with yield_compressed_contents(path, cast("PathToBinaryIO", func)) as temp:
         yield temp
 
 
