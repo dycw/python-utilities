@@ -13,7 +13,7 @@ from utilities.pathlib import file_or_dir
 from utilities.tempfile import TemporaryDirectory, TemporaryFile
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Iterator
 
     from utilities.types import PathLike, PathToBinaryIO
 
