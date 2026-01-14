@@ -56,6 +56,13 @@ class TestYieldZipFileContents:
             expected = {p.name for p in temp_dir_with_files.iterdir()}
             assert result == expected
 
+    def test_dir_nested(self, tmp_path: Path, temp_dir_with_dir_and_file: Path) -> None:
+        dest = tmp_path / "zip"
+        zip_paths(temp_dir_with_dir_and_file, dest)
+        with yield_zip_file_contents(dest) as temp:
+            assert temp.is_dir()
+            assert one(temp.iterdir()).is_file()
+
     def test_non_existent(self, tmp_path: Path, temp_path_not_exist: Path) -> None:
         dest = tmp_path / "zip"
         zip_paths(temp_path_not_exist, dest)
