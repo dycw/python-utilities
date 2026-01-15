@@ -25,7 +25,7 @@ from utilities.whenever import format_compact, get_now
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from utilities.types import Duration
+    from utilities.types import Delta
 
 
 class TestFormatExceptionStack:
@@ -99,7 +99,7 @@ class TestMakeExceptHook:
             assert capsys.readouterr() != ""
 
     @mark.parametrize("path_max_age", [param(SECOND), param(None)])
-    def test_path(self, *, tmp_path: Path, path_max_age: Duration | None) -> None:
+    def test_path(self, *, tmp_path: Path, path_max_age: Delta | None) -> None:
         hook = make_except_hook(path=tmp_path, path_max_age=path_max_age)
         try:
             _ = 1 / 0
