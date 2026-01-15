@@ -52,6 +52,7 @@ KNOWN_HOSTS = Path.home() / ".ssh/known_hosts"
 MANAGED_PYTHON = "--managed-python"
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
 PRERELEASE_DISALLOW = ["--prerelease", "disallow"]
+RESOLUTION_HIGHEST = ["--resolution", "highest"]
 RESTART_SSHD = ["systemctl", "restart", "sshd"]
 UPDATE_CA_CERTIFICATES: str = "update-ca-certificates"
 
@@ -1948,6 +1949,7 @@ def uv_run_cmd(
         ISOLATED,
         *uv_index_cmd(index=index),
         *uv_native_tls_cmd(native_tls=native_tls),
+        *RESOLUTION_HIGHEST,
         *PRERELEASE_DISALLOW,
         "python",
         "-m",
@@ -2256,6 +2258,7 @@ def uv_tool_run_cmd(
     /,
     *,
     from_: str | None = None,
+    latest: bool = True,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -2263,12 +2266,14 @@ def uv_tool_run_cmd(
     """Command to use 'uv' to run a command provided by a Python package."""
     args: list[str] = ["uv", "tool", "run"]
     if from_ is not None:
-        args.extend(["--from", from_])
+        from_use = f"{from_}@latest" if latest else from_
+        args.extend(["--from", from_use])
     return [
         *args,
         *uv_with_cmd(with_=with_),
         ISOLATED,
         *uv_index_cmd(index=index),
+        *RESOLUTION_HIGHEST,
         *PRERELEASE_DISALLOW,
         MANAGED_PYTHON,
         *uv_native_tls_cmd(native_tls=native_tls),
@@ -2336,6 +2341,7 @@ __all__ = [
     "MANAGED_PYTHON",
     "MKTEMP_DIR_CMD",
     "PRERELEASE_DISALLOW",
+    "RESOLUTION_HIGHEST",
     "RESTART_SSHD",
     "UPDATE_CA_CERTIFICATES",
     "ChownCmdError",
