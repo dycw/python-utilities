@@ -3,7 +3,7 @@ from __future__ import annotations
 from operator import add, eq, ge, gt, le, lt, mul, ne, sub, truediv
 from typing import TYPE_CHECKING, Any, Self, override
 
-from utilities.functions import in_seconds
+from utilities.functions import in_timedelta
 from utilities.whenever import get_now_local
 
 if TYPE_CHECKING:
@@ -67,23 +67,23 @@ class Timer:
 
     @override
     def __eq__(self, other: object) -> bool:
-        return self._apply_op(eq, other)
+        return self._apply_op(eq, other, cast=True)
 
     def __ge__(self, other: Any) -> bool:
-        return self._apply_op(ge, other)
+        return self._apply_op(ge, other, cast=True)
 
     def __gt__(self, other: Any) -> bool:
-        return self._apply_op(gt, other)
+        return self._apply_op(gt, other, cast=True)
 
     def __le__(self, other: Any) -> bool:
-        return self._apply_op(le, other)
+        return self._apply_op(le, other, cast=True)
 
     def __lt__(self, other: Any) -> bool:
-        return self._apply_op(lt, other)
+        return self._apply_op(lt, other, cast=True)
 
     @override
     def __ne__(self, other: object) -> bool:
-        return self._apply_op(ne, other)
+        return self._apply_op(ne, other, cast=True)
 
     # properties
 
@@ -95,9 +95,13 @@ class Timer:
 
     # private
 
-    def _apply_op(self, op: Callable[[Any, Any], Any], other: Any, /) -> Any:
+    def _apply_op(
+        self, op: Callable[[Any, Any], Any], other: Any, /, *, cast: bool = False
+    ) -> Any:
         other_use = other.timedelta if isinstance(other, Timer) else other
-        return op(float(self), in_seconds(other_use))
+        if cast:
+            other_use = in_timedelta(other_use)
+        return op(self.timedelta, other_use)
 
 
 __all__ = ["Timer"]

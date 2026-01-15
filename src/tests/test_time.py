@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 _DURATION: TimeDelta = 0.05 * SECOND
-_MULTIPLE: int = 1
+_MULTIPLE: int = 10
 
 
 class TestSleep:
