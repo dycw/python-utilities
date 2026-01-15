@@ -53,9 +53,6 @@ if TYPE_CHECKING:
     )
 
 
-# bounds
-
-
 ZONED_DATE_TIME_MIN = PlainDateTime.MIN.assume_tz(UTC.key)
 ZONED_DATE_TIME_MAX = PlainDateTime.MAX.assume_tz(UTC.key)
 
@@ -113,22 +110,6 @@ DATE_TWO_DIGIT_YEAR_MAX = Date(DATE_TWO_DIGIT_YEAR_MIN.year + 99, 12, 31)
 
 
 ## common constants
-
-
-ZERO_DAYS = DateDelta()
-ZERO_TIME = TimeDelta()
-MICROSECOND = TimeDelta(microseconds=1)
-MILLISECOND = TimeDelta(milliseconds=1)
-SECOND = TimeDelta(seconds=1)
-MINUTE = TimeDelta(minutes=1)
-HOUR = TimeDelta(hours=1)
-DAY = DateDelta(days=1)
-WEEK = DateDelta(weeks=1)
-MONTH = DateDelta(months=1)
-YEAR = DateDelta(years=1)
-
-
-##
 
 
 def add_year_month(x: YearMonth, /, *, years: int = 0, months: int = 0) -> YearMonth:
@@ -618,7 +599,7 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < hours < 24) and (24 % hours == 0):
             return hours, "H"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=hours, divisor=24
+            delta=delta, increment=hours, divisor=24
         )
     try:
         minutes = to_minutes(delta)
@@ -628,7 +609,7 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < minutes < 60) and (60 % minutes == 0):
             return minutes, "M"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=minutes, divisor=60
+            delta=delta, increment=minutes, divisor=60
         )
     try:
         seconds = to_seconds(delta)
@@ -638,7 +619,7 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < seconds < 60) and (60 % seconds == 0):
             return seconds, "S"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=seconds, divisor=60
+            delta=delta, increment=seconds, divisor=60
         )
     try:
         milliseconds = to_milliseconds(delta)
@@ -648,7 +629,7 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < milliseconds < 1000) and (1000 % milliseconds == 0):
             return milliseconds, "ms"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=milliseconds, divisor=1000
+            delta=delta, increment=milliseconds, divisor=1000
         )
     try:
         microseconds = to_microseconds(delta)
@@ -658,16 +639,16 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < microseconds < 1000) and (1000 % microseconds == 0):
             return microseconds, "us"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=microseconds, divisor=1000
+            delta=delta, increment=microseconds, divisor=1000
         )
     try:
         nanoseconds = to_nanoseconds(delta)
     except ToNanosecondsError:
-        raise _RoundDateOrDateTimeInvalidDurationError(duration=delta) from None
+        raise _RoundDateOrDateTimeInvalidDeltaError(delta=delta) from None
     if (0 < nanoseconds < 1000) and (1000 % nanoseconds == 0):
         return nanoseconds, "ns"
     raise _RoundDateOrDateTimeIncrementError(
-        duration=delta, increment=nanoseconds, divisor=1000
+        delta=delta, increment=nanoseconds, divisor=1000
     )
 
 
@@ -787,22 +768,22 @@ class RoundDateOrDateTimeError(Exception): ...
 
 @dataclass(kw_only=True, slots=True)
 class _RoundDateOrDateTimeIncrementError(RoundDateOrDateTimeError):
-    duration: Delta
+    delta: Delta
     increment: int
     divisor: int
 
     @override
     def __str__(self) -> str:
-        return f"Duration {self.duration} increment must be a proper divisor of {self.divisor}; got {self.increment}"
+        return f"Delta {self.delta} increment must be a proper divisor of {self.divisor}; got {self.increment}"
 
 
 @dataclass(kw_only=True, slots=True)
-class _RoundDateOrDateTimeInvalidDurationError(RoundDateOrDateTimeError):
-    duration: Delta
+class _RoundDateOrDateTimeInvalidDeltaError(RoundDateOrDateTimeError):
+    delta: Delta
 
     @override
     def __str__(self) -> str:
-        return f"Duration must be valid; got {self.duration}"
+        return f"Delta must be valid; got {self.delta}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -2007,26 +1988,15 @@ __all__ = [
     "DATE_TIME_DELTA_PARSABLE_MIN",
     "DATE_TWO_DIGIT_YEAR_MAX",
     "DATE_TWO_DIGIT_YEAR_MIN",
-    "DAY",
-    "HOUR",
-    "MICROSECOND",
-    "MILLISECOND",
-    "MINUTE",
-    "MONTH",
     "NOW_LOCAL",
     "NOW_LOCAL_PLAIN",
     "NOW_PLAIN",
-    "SECOND",
     "TIME_DELTA_MAX",
     "TIME_DELTA_MIN",
     "TIME_LOCAL",
     "TIME_UTC",
     "TODAY_LOCAL",
     "TODAY_UTC",
-    "WEEK",
-    "YEAR",
-    "ZERO_DAYS",
-    "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
     "DatePeriod",

@@ -239,11 +239,15 @@ type PatternLike = MaybeStr[Pattern[str]]
 
 
 # retry
-type Retry = tuple[int, Delta | None]
+type Retry = tuple[int, Duration | None]
 
 
 # text
 type MaybeCallableStr = MaybeCallable[str]
+
+
+# time
+type Duration = Number | TimeDelta
 
 
 # traceback
@@ -307,6 +311,7 @@ __all__ = [
     "DateTimeDeltaLike",
     "DateTimeRoundMode",
     "Delta",
+    "Duration",
     "EnumLike",
     "ExcInfo",
     "ExceptionTypeLike",

@@ -10,7 +10,6 @@ from asyncio import (
     Task,
     TaskGroup,
     create_subprocess_shell,
-    sleep,
 )
 from contextlib import (
     AbstractAsyncContextManager,
@@ -36,7 +35,7 @@ from typing import (
     override,
 )
 
-from utilities.functions import ensure_int, ensure_not_none
+from utilities.functions import ensure_int, ensure_not_none, in_seconds
 from utilities.os import is_pytest
 from utilities.random import SYSTEM_RANDOM
 from utilities.reprlib import get_repr
@@ -44,7 +43,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.shelve import yield_shelf
 from utilities.text import to_bool
 from utilities.warnings import suppress_warnings
-from utilities.whenever import get_now, round_date_or_date_time, to_nanoseconds
+from utilities.whenever import get_now, round_date_or_date_time
 
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
@@ -71,6 +70,7 @@ if TYPE_CHECKING:
     from utilities.types import (
         Coro,
         Delta,
+        Duration,
         MaybeCallableBoolLike,
         MaybeType,
         PathLike,
@@ -229,7 +229,7 @@ class EnhancedTaskGroup(TaskGroup):
 
     _max_tasks: int | None
     _semaphore: Semaphore | None
-    _timeout: Delta | None
+    _timeout: Duration | None
     _error: MaybeType[BaseException]
     _debug: MaybeCallableBoolLike
     _stack: AsyncExitStack
@@ -240,7 +240,7 @@ class EnhancedTaskGroup(TaskGroup):
         self,
         *,
         max_tasks: int | None = None,
-        timeout: Delta | None = None,
+        timeout: Duration | None = None,
         error: MaybeType[BaseException] = TimeoutError,
         debug: MaybeCallableBoolLike = False,
     ) -> None:
@@ -342,7 +342,7 @@ class EnhancedTaskGroup(TaskGroup):
             return await coroutine
 
     async def _wrap_with_timeout[T](self, coroutine: _CoroutineLike[T], /) -> T:
-        async with timeout_td(self._timeout, error=self._error):
+        async with timeout(self._timeout, error=self._error):
             return await coroutine
 
 
@@ -467,13 +467,21 @@ def put_items_nowait[T](items: Iterable[T], queue: Queue[T], /) -> None:
 ##
 
 
+async def sleep(duration: Duration | None = None, /) -> None:
+    """Sleep which accepts durations."""
+    if duration is not None:
+        await asyncio.sleep(in_seconds(duration))
+
+
+##
+
+
 async def sleep_max(
-    sleep: Delta | None = None, /, *, random: Random = SYSTEM_RANDOM
+    duration: Duration | None = None, /, *, random: Random = SYSTEM_RANDOM
 ) -> None:
-    """Sleep which accepts deltas."""
-    if sleep is None:
-        return
-    await asyncio.sleep(random.uniform(0.0, to_nanoseconds(sleep) / 1e9))
+    """Sleep up to a maximum duration."""
+    if duration is not None:
+        await sleep(random.uniform(0.0, in_seconds(duration)))
 
 
 ##
@@ -487,19 +495,9 @@ async def sleep_rounded(delta: Delta, /) -> None:
 ##
 
 
-async def sleep_td(delta: Delta | None = None, /) -> None:
-    """Sleep which accepts deltas."""
-    if delta is None:
-        return
-    await sleep(to_nanoseconds(delta) / 1e9)
-
-
-##
-
-
 async def sleep_until(datetime: ZonedDateTime, /) -> None:
     """Sleep until a given time."""
-    await sleep_td(datetime - get_now())
+    await sleep(datetime - get_now())
 
 
 ##
@@ -550,16 +548,21 @@ async def _stream_one(
 
 
 @asynccontextmanager
-async def timeout_td(
-    timeout: Delta | None = None, /, *, error: MaybeType[BaseException] = TimeoutError
+async def timeout(
+    duration: Duration | None = None,
+    /,
+    *,
+    error: MaybeType[BaseException] = TimeoutError,
 ) -> AsyncIterator[None]:
-    """Timeout context manager which accepts deltas."""
-    timeout_use = None if timeout is None else (to_nanoseconds(timeout) / 1e9)
-    try:
-        async with asyncio.timeout(timeout_use):
-            yield
-    except TimeoutError:
-        raise error from None
+    """Timeout context manager which accepts durations."""
+    if duration is None:
+        yield
+    else:
+        try:
+            async with asyncio.timeout(in_seconds(duration)):
+                yield
+        except TimeoutError:
+            raise error from None
 
 
 ##
@@ -605,11 +608,11 @@ __all__ = [
     "one_async",
     "put_items",
     "put_items_nowait",
+    "sleep",
     "sleep_max",
     "sleep_rounded",
-    "sleep_td",
     "sleep_until",
     "stream_command",
-    "timeout_td",
+    "timeout",
     "yield_locked_shelf",
 ]

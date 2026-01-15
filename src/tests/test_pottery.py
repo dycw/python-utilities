@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING
 
 from pottery import AIORedlock
 from pytest import mark, param, raises
 
-from utilities.asyncio import sleep_td
+from utilities.asyncio import sleep
+from utilities.constants import MILLISECOND, SECOND
 from utilities.pottery import (
     _YieldAccessNumLocksError,
     _YieldAccessUnableToAcquireLockError,
@@ -15,11 +16,14 @@ from utilities.pottery import (
 )
 from utilities.text import unique_str
 from utilities.timer import Timer
-from utilities.whenever import MILLISECOND, SECOND
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis
     from whenever import TimeDelta
+
+
+_DURATION: TimeDelta = 0.05 * SECOND
+_MULTIPLE: int = 10
 
 
 class TestExtendLock:
@@ -33,8 +37,6 @@ class TestExtendLock:
 
 
 class TestYieldAccess:
-    delta: ClassVar[TimeDelta] = 0.1 * SECOND
-
     @mark.parametrize(
         ("num_tasks", "num_locks", "min_multiple"),
         [
@@ -63,7 +65,11 @@ class TestYieldAccess:
     ) -> None:
         with Timer() as timer:
             await self.func(test_redis, num_tasks, unique_str(), num_locks=num_locks)
-        assert (min_multiple * self.delta) <= timer <= (5 * min_multiple * self.delta)
+        assert (
+            (min_multiple * _DURATION)
+            <= timer
+            <= (min_multiple * _MULTIPLE * _DURATION)
+        )
 
     async def test_sub_second_timeout_release(self, *, test_redis: Redis) -> None:
         async with yield_access(
@@ -81,13 +87,16 @@ class TestYieldAccess:
 
     async def test_error_unable_to_acquire_lock(self, *, test_redis: Redis) -> None:
         key = unique_str()
-        delta = 0.1 * SECOND
 
         async def coroutine(key: str, /) -> None:
             async with yield_access(
-                test_redis, key, num=1, timeout_acquire=delta, throttle=5 * delta
+                test_redis,
+                key,
+                num=1,
+                timeout_acquire=_DURATION,
+                throttle=_MULTIPLE * _DURATION,
             ):
-                await sleep_td(delta)
+                await sleep(_DURATION)
 
         with raises(ExceptionGroup) as exc_info:
             async with TaskGroup() as tg:
@@ -103,7 +112,7 @@ class TestYieldAccess:
     ) -> None:
         async def coroutine() -> None:
             async with yield_access(redis, key, num=num_locks):
-                await sleep_td(self.delta)
+                await sleep(_DURATION)
 
         async with TaskGroup() as tg:
             _ = [tg.create_task(coroutine()) for _ in range(num_tasks)]

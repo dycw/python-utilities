@@ -3,12 +3,15 @@ from __future__ import annotations
 from operator import add, eq, ge, gt, le, lt, mul, ne, sub, truediv
 from typing import TYPE_CHECKING, Any, Self, override
 
+from whenever import TimeDelta
+
+from utilities.functions import in_timedelta
 from utilities.whenever import get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from whenever import TimeDelta, ZonedDateTime
+    from whenever import ZonedDateTime
 
 
 class Timer:
@@ -66,23 +69,23 @@ class Timer:
 
     @override
     def __eq__(self, other: object) -> bool:
-        return self._apply_op(eq, other)
+        return self._apply_op(eq, other, cast=True, type_error=False)
 
     def __ge__(self, other: Any) -> bool:
-        return self._apply_op(ge, other)
+        return self._apply_op(ge, other, cast=True)
 
     def __gt__(self, other: Any) -> bool:
-        return self._apply_op(gt, other)
+        return self._apply_op(gt, other, cast=True)
 
     def __le__(self, other: Any) -> bool:
-        return self._apply_op(le, other)
+        return self._apply_op(le, other, cast=True)
 
     def __lt__(self, other: Any) -> bool:
-        return self._apply_op(lt, other)
+        return self._apply_op(lt, other, cast=True)
 
     @override
     def __ne__(self, other: object) -> bool:
-        return self._apply_op(ne, other)
+        return self._apply_op(ne, other, cast=True, type_error=True)
 
     # properties
 
@@ -94,10 +97,24 @@ class Timer:
 
     # private
 
-    def _apply_op(self, op: Callable[[Any, Any], Any], other: Any, /) -> Any:
-        if isinstance(other, Timer):
-            return op(self.timedelta, other.timedelta)
-        return op(self.timedelta, other)
+    def _apply_op(
+        self,
+        op: Callable[[Any, Any], Any],
+        other: Any,
+        /,
+        *,
+        cast: bool = False,
+        type_error: bool | None = None,
+    ) -> Any:
+        other_use = other.timedelta if isinstance(other, Timer) else other
+        if cast:
+            if isinstance(other_use, float | int | TimeDelta):
+                other_use = in_timedelta(other_use)
+            elif type_error is not None:
+                return type_error
+            else:
+                raise TypeError  # pragma: no cover
+        return op(self.timedelta, other_use)
 
 
 __all__ = ["Timer"]

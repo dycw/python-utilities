@@ -1,12 +1,17 @@
 from __future__ import annotations
 
-from asyncio import sleep
+from typing import TYPE_CHECKING
 
-from utilities.asyncio import sleep_td
+from utilities.asyncio import sleep
 from utilities.atools import call_memoized, memoize
-from utilities.whenever import SECOND
+from utilities.constants import SECOND
 
-_DELTA = 0.1 * SECOND
+if TYPE_CHECKING:
+    from whenever import TimeDelta
+
+
+_DURATION: TimeDelta = 0.05 * SECOND
+_MULTIPLE: int = 2
 
 
 class TestCallMemoized:
@@ -14,7 +19,7 @@ class TestCallMemoized:
         counter = 0
 
         async def increment() -> int:
-            await sleep(0.0)
+            await sleep()
             nonlocal counter
             counter += 1
             return counter
@@ -27,17 +32,17 @@ class TestCallMemoized:
         counter = 0
 
         async def increment() -> int:
-            await sleep(0.0)
+            await sleep()
             nonlocal counter
             counter += 1
             return counter
 
         for _ in range(2):
-            assert (await call_memoized(increment, _DELTA)) == 1
+            assert (await call_memoized(increment, _DURATION)) == 1
             assert counter == 1
-        await sleep_td(2 * _DELTA)
+        await sleep(_MULTIPLE * _DURATION)
         for _ in range(2):
-            assert (await call_memoized(increment, _DELTA)) == 2
+            assert (await call_memoized(increment, _DURATION)) == 2
             assert counter == 2
 
 
@@ -47,7 +52,7 @@ class TestMemoize:
 
         @memoize
         async def increment() -> int:
-            await sleep(0.0)
+            await sleep()
             nonlocal counter
             counter += 1
             return counter
@@ -59,15 +64,15 @@ class TestMemoize:
     async def test_with_arguments(self) -> None:
         counter = 0
 
-        @memoize(duration=_DELTA)
+        @memoize(duration=_DURATION)
         async def increment() -> int:
-            await sleep(0.0)
+            await sleep()
             nonlocal counter
             counter += 1
             return counter
 
         assert await increment() == 1
         assert counter == 1
-        await sleep_td(2 * _DELTA)
+        await sleep(_MULTIPLE * _DURATION)
         assert await increment() == 2
         assert counter == 2

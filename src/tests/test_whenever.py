@@ -23,6 +23,7 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.constants import DAY, MICROSECOND, MINUTE, MONTH, SECOND, ZERO_DAYS
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -52,22 +53,16 @@ from utilities.whenever import (
     DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
     DATE_TIME_DELTA_PARSABLE_MIN,
-    DAY,
-    MICROSECOND,
-    MINUTE,
-    MONTH,
     NOW_LOCAL,
     NOW_LOCAL_PLAIN,
     NOW_PLAIN,
     NOW_UTC,
-    SECOND,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
     TIME_LOCAL,
     TIME_UTC,
     TODAY_LOCAL,
     TODAY_UTC,
-    ZERO_DAYS,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
     DatePeriod,
@@ -86,7 +81,7 @@ from utilities.whenever import (
     _RoundDateOrDateTimeDateWithIntradayDeltaError,
     _RoundDateOrDateTimeDateWithWeekdayError,
     _RoundDateOrDateTimeIncrementError,
-    _RoundDateOrDateTimeInvalidDurationError,
+    _RoundDateOrDateTimeInvalidDeltaError,
     _ToDaysMonthsError,
     _ToDaysNanosecondsError,
     _ToHoursMonthsError,
@@ -932,17 +927,16 @@ class TestRoundDateOrDateTime:
             param(TimeDelta(nanoseconds=3)),
         ],
     )
-    def test_error_increment(self, *, delta: TimeDelta) -> None:
+    def test_error_increment(self, *, delta: Delta) -> None:
         with raises(
             _RoundDateOrDateTimeIncrementError,
-            match=r"Duration PT.* increment must be a proper divisor of \d+; got \d+",
+            match=r"Delta PT.* increment must be a proper divisor of \d+; got \d+",
         ):
             _ = round_date_or_date_time(TODAY_UTC, delta)
 
     def test_error_invalid(self) -> None:
         with raises(
-            _RoundDateOrDateTimeInvalidDurationError,
-            match=r"Duration must be valid; got P1M",
+            _RoundDateOrDateTimeInvalidDeltaError, match=r"Delta must be valid; got P1M"
         ):
             _ = round_date_or_date_time(TODAY_UTC, MONTH)
 

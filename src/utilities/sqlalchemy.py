@@ -65,7 +65,7 @@ from sqlalchemy.orm import (
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
-from utilities.asyncio import timeout_td
+import utilities.asyncio
 from utilities.functions import ensure_str, get_class_name, yield_object_attributes
 from utilities.iterables import (
     CheckLengthError,
@@ -83,7 +83,7 @@ from utilities.os import is_pytest
 from utilities.reprlib import get_repr
 from utilities.text import secret_str, snake_case
 from utilities.types import (
-    Delta,
+    Duration,
     MaybeIterable,
     MaybeType,
     StrDict,
@@ -128,12 +128,15 @@ async def check_connect_async(
     engine: AsyncEngine,
     /,
     *,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
 ) -> bool:
     """Check if an engine can connect."""
     try:
-        async with timeout_td(timeout, error=error), engine.connect() as conn:
+        async with (
+            utilities.asyncio.timeout(timeout, error=error),
+            engine.connect() as conn,
+        ):
             return bool((await conn.execute(_SELECT)).scalar_one())
     except (gaierror, ConnectionRefusedError, DatabaseError, TimeoutError):
         return False
@@ -146,7 +149,7 @@ async def check_engine(
     engine: AsyncEngine,
     /,
     *,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
     num_tables: int | tuple[int, float] | None = None,
 ) -> None:
@@ -353,7 +356,7 @@ async def ensure_tables_created(
     engine: AsyncEngine,
     /,
     *tables_or_orms: TableOrORMInstOrClass,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
 ) -> None:
     """Ensure a table/set of tables is/are created."""
@@ -382,7 +385,7 @@ async def ensure_tables_created(
 async def ensure_tables_dropped(
     engine: AsyncEngine,
     *tables_or_orms: TableOrORMInstOrClass,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
@@ -616,9 +619,9 @@ async def insert_items(
     is_upsert: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
-    timeout_create: Delta | None = None,
+    timeout_create: Duration | None = None,
     error_create: MaybeType[BaseException] = TimeoutError,
-    timeout_insert: Delta | None = None,
+    timeout_insert: Duration | None = None,
     error_insert: MaybeType[BaseException] = TimeoutError,
 ) -> None:
     """Insert a set of items into a database.
@@ -861,9 +864,9 @@ async def migrate_data(
     table_or_orm_to: TableOrORMInstOrClass | None = None,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
-    timeout_create: Delta | None = None,
+    timeout_create: Duration | None = None,
     error_create: MaybeType[BaseException] = TimeoutError,
-    timeout_insert: Delta | None = None,
+    timeout_insert: Duration | None = None,
     error_insert: MaybeType[BaseException] = TimeoutError,
 ) -> None:
     """Migrate the contents of a table from one database to another."""
@@ -917,12 +920,15 @@ async def yield_connection(
     engine: AsyncEngine,
     /,
     *,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
 ) -> AsyncIterator[AsyncConnection]:
     """Yield an async connection."""
     try:
-        async with timeout_td(timeout, error=error), engine.begin() as conn:
+        async with (
+            utilities.asyncio.timeout(timeout, error=error),
+            engine.begin() as conn,
+        ):
             yield conn
     except GeneratorExit:  # pragma: no cover
         if not is_pytest():

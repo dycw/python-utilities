@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from pytest import CaptureFixture, LogCaptureFixture, mark, param, raises
 
+from utilities.constants import MINUTE
 from utilities.docker import (
     _docker_compose_cmd,
     docker_compose_down_cmd,
@@ -23,7 +24,6 @@ from utilities.iterables import one
 from utilities.pytest import skipif_ci, throttle_test
 from utilities.subprocess import BASH_LS, touch_cmd
 from utilities.text import unique_str
-from utilities.whenever import MINUTE
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -89,7 +89,7 @@ class TestDockerComposeUpCmd:
 
 class TestDockerCp:
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_into_container(self, *, container: str, temp_file: Path) -> None:
         with yield_docker_temp_dir(container) as temp_dir:
             dest = temp_dir / temp_file.name
@@ -99,7 +99,7 @@ class TestDockerCp:
             )
 
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_from_container(self, *, container: str, temp_path_not_exist: Path) -> None:
         with yield_docker_temp_dir(container) as temp_dir:
             src = temp_dir / temp_path_not_exist.name
@@ -129,7 +129,7 @@ class TestDockerExec:
         ],
     )
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_main(
         self,
         *,
@@ -179,7 +179,7 @@ class TestDockerExecCmd:
 
 class TestYieldDockerTempDir:
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_main(self, *, container: str) -> None:
         with yield_docker_temp_dir(container) as temp:
             docker_exec(container, *BASH_LS, input=self._raise_missing(temp))
@@ -190,14 +190,14 @@ class TestYieldDockerTempDir:
             docker_exec(container, *BASH_LS, input=self._raise_missing(temp))
 
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_keep(self, *, container: str) -> None:
         with yield_docker_temp_dir(container, keep=True) as temp:
             ...
         docker_exec(container, *BASH_LS, input=self._raise_missing(temp))
 
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_keep_and_logger(
         self, *, caplog: LogCaptureFixture, container: str
     ) -> None:

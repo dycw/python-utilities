@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import re
-from asyncio import Queue, run, sleep
+from asyncio import Queue, run
 from collections.abc import AsyncIterable, ItemsView, Iterable, KeysView, ValuesView
 from contextlib import asynccontextmanager
 from re import DOTALL, search
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import booleans, dictionaries, integers, lists, none, sets
@@ -23,17 +23,18 @@ from utilities.asyncio import (
     one_async,
     put_items,
     put_items_nowait,
+    sleep,
     sleep_max,
     sleep_rounded,
-    sleep_td,
     sleep_until,
     stream_command,
-    timeout_td,
+    timeout,
     yield_locked_shelf,
 )
+from utilities.constants import SECOND
 from utilities.hypothesis import pairs, text_ascii
 from utilities.timer import Timer
-from utilities.whenever import MILLISECOND, SECOND, get_now
+from utilities.whenever import get_now
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -42,6 +43,9 @@ if TYPE_CHECKING:
     from whenever import TimeDelta
 
 
+_DURATION: TimeDelta = 0.05 * SECOND
+_MULTIPLE = _MULTIPLE_HIGH = 10
+_MULTIPLE_LOW = 2
 async_dicts = dictionaries(text_ascii(), integers()).map(AsyncDict)
 
 
@@ -203,7 +207,7 @@ class TestChainAsync:
     @given(n=integers(0, 10))
     async def test_async(self, *, n: int) -> None:
         async def range_async(n: int, /) -> AsyncIterator[int]:
-            await sleep(0.0)
+            await sleep()
             for i in range(n):
                 yield i
 
@@ -214,14 +218,12 @@ class TestChainAsync:
 
 
 class TestEnhancedTaskGroup:
-    delta: ClassVar[TimeDelta] = 0.05 * SECOND
-
     async def test_create_task_context_coroutine(self) -> None:
         flag: bool = False
 
         @asynccontextmanager
         async def yield_true() -> AsyncIterator[None]:
-            await sleep(0.0)
+            await sleep()
             nonlocal flag
             try:
                 flag = True
@@ -230,9 +232,9 @@ class TestEnhancedTaskGroup:
                 flag = False
 
         assert not flag
-        async with EnhancedTaskGroup(timeout=2 * self.delta) as tg:
+        async with EnhancedTaskGroup(timeout=_MULTIPLE_HIGH * _DURATION) as tg:
             _ = tg.create_task_context(yield_true())
-            await sleep_td(self.delta)
+            await sleep(_DURATION)
             assert flag
         assert not flag
 
@@ -240,85 +242,85 @@ class TestEnhancedTaskGroup:
         with Timer() as timer:
             async with EnhancedTaskGroup() as tg:
                 for _ in range(10):
-                    _ = tg.create_task(sleep_td(self.delta))
-        assert timer <= 3 * self.delta
+                    _ = tg.create_task(sleep(_DURATION))
+        assert timer <= _MULTIPLE_HIGH * _DURATION
 
     async def test_max_tasks_enabled(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup(max_tasks=2) as tg:
                 for _ in range(10):
-                    _ = tg.create_task(sleep_td(self.delta))
-        assert timer >= 5 * self.delta
+                    _ = tg.create_task(sleep(_DURATION))
+        assert timer >= _MULTIPLE_LOW * _DURATION
 
     async def test_run_or_create_many_tasks_parallel_with_max_tasks_two(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup(max_tasks=2) as tg:
                 assert not tg._is_debug()
                 for _ in range(10):
-                    _ = await tg.run_or_create_many_tasks(sleep_td, self.delta)
-        assert timer >= 5 * self.delta
+                    _ = await tg.run_or_create_many_tasks(sleep, _DURATION)
+        assert timer >= _MULTIPLE_LOW * _DURATION
 
     async def test_run_or_create_many_tasks_serial_with_debug(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup(debug=True) as tg:
                 assert tg._is_debug()
                 for _ in range(10):
-                    _ = await tg.run_or_create_many_tasks(sleep_td, self.delta)
-        assert timer >= 10 * self.delta
+                    _ = await tg.run_or_create_many_tasks(sleep, _DURATION)
+        assert timer >= _MULTIPLE_LOW * _DURATION
 
     async def test_run_or_create_task_parallel_with_max_tasks_none(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup() as tg:
                 assert not tg._is_debug()
                 for _ in range(10):
-                    _ = await tg.run_or_create_task(sleep_td(self.delta))
-        assert timer <= 3 * self.delta
+                    _ = await tg.run_or_create_task(sleep(_DURATION))
+        assert timer <= _MULTIPLE_HIGH * _DURATION
 
     async def test_run_or_create_task_parallel_with_max_tasks_two(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup(max_tasks=2) as tg:
                 assert not tg._is_debug()
                 for _ in range(10):
-                    _ = await tg.run_or_create_task(sleep_td(self.delta))
-        assert timer >= 5 * self.delta
+                    _ = await tg.run_or_create_task(sleep(_DURATION))
+        assert timer >= _MULTIPLE_LOW * _DURATION
 
     async def test_run_or_create_task_serial_with_max_tasks_negative(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup(max_tasks=-1) as tg:
                 assert tg._is_debug()
                 for _ in range(10):
-                    _ = await tg.run_or_create_task(sleep_td(self.delta))
-        assert timer >= 10 * self.delta
+                    _ = await tg.run_or_create_task(sleep(_DURATION))
+        assert timer >= _MULTIPLE_LOW * _DURATION
 
     async def test_run_or_create_task_serial_with_debug(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup(debug=True) as tg:
                 assert tg._is_debug()
                 for _ in range(10):
-                    _ = await tg.run_or_create_task(sleep_td(self.delta))
-        assert timer >= 10 * self.delta
+                    _ = await tg.run_or_create_task(sleep(_DURATION))
+        assert timer >= _MULTIPLE_LOW * _DURATION
 
     async def test_timeout_pass(self) -> None:
-        async with EnhancedTaskGroup(timeout=2 * self.delta) as tg:
-            _ = tg.create_task(sleep_td(self.delta))
+        async with EnhancedTaskGroup(timeout=2 * _DURATION) as tg:
+            _ = tg.create_task(sleep(_DURATION))
 
     async def test_timeout_fail(self) -> None:
         with RaisesGroup(TimeoutError):
-            async with EnhancedTaskGroup(timeout=self.delta) as tg:
-                _ = tg.create_task(sleep_td(2 * self.delta))
+            async with EnhancedTaskGroup(timeout=_DURATION) as tg:
+                _ = tg.create_task(sleep(_MULTIPLE_HIGH * _DURATION))
 
     async def test_custom_error(self) -> None:
         class CustomError(Exception): ...
 
         with RaisesGroup(CustomError):
-            async with EnhancedTaskGroup(timeout=self.delta, error=CustomError) as tg:
-                _ = tg.create_task(sleep_td(2 * self.delta))
+            async with EnhancedTaskGroup(timeout=_DURATION, error=CustomError) as tg:
+                _ = tg.create_task(sleep(_MULTIPLE_HIGH * _DURATION))
 
 
 class TestGetCoroutineName:
     def test_main(self) -> None:
         async def func() -> None:
-            await sleep(0.0)
+            await sleep()
 
         result = get_coroutine_name(func)
         expected = "func"
@@ -371,7 +373,7 @@ class TestOneAsync:
 
     def _lift[T](self, iterable: Iterable[T], /) -> AsyncIterable[T]:
         async def lifted() -> AsyncIterator[Any]:
-            await sleep(0.0)
+            await sleep()
             for i in iterable:
                 yield i
 
@@ -392,61 +394,49 @@ class TestPutItems:
         assert result == xs
 
 
-class TestSleepMaxDur:
-    multiple: ClassVar[int] = 3
-    delta: ClassVar[TimeDelta] = 0.05 * SECOND
-
+class TestSleep:
     async def test_main(self) -> None:
         with Timer() as timer:
-            await sleep_max(self.delta)
-        assert timer <= self.multiple * self.delta
+            await sleep(_DURATION)
+        assert timer <= _MULTIPLE * _DURATION
 
     async def test_none(self) -> None:
-        with Timer() as timer:
-            await sleep_max()
-        assert timer <= self.multiple * self.delta
+        await sleep()
 
 
-class TestSleepTD:
-    multiple: ClassVar[int] = 5
-    delta: ClassVar[TimeDelta] = 0.05 * SECOND
-
+class TestSleepMax:
     async def test_main(self) -> None:
         with Timer() as timer:
-            await sleep_td(self.delta)
-        assert timer <= self.multiple * self.delta
+            await sleep_max(_DURATION)
+        assert timer <= _MULTIPLE * _DURATION
 
     async def test_none(self) -> None:
-        with Timer() as timer:
-            await sleep_td()
-        assert timer <= self.multiple * self.delta
+        await sleep_max()
 
 
 class TestSleepUntil:
     async def test_main(self) -> None:
-        await sleep_until(get_now() + 0.05 * SECOND)
+        await sleep_until(get_now() + _DURATION)
 
 
 class TestSleepUntilRounded:
     async def test_main(self) -> None:
-        await sleep_rounded(10 * MILLISECOND)
+        await sleep_rounded(_DURATION)
 
 
 class TestStreamCommand:
-    delta: ClassVar[TimeDelta] = 0.05 * SECOND
-
     async def test_main(self) -> None:
         output = await stream_command(
             'echo "stdout message" && sleep 0.1 && echo "stderr message" >&2'
         )
-        await sleep_td(self.delta)
+        await sleep(_DURATION)
         assert output.return_code == 0
         assert output.stdout == "stdout message\n"
         assert output.stderr == "stderr message\n"
 
     async def test_error(self) -> None:
         output = await stream_command("this-is-an-error")
-        await sleep_td(self.delta)
+        await sleep(_DURATION)
         assert output.return_code == 127
         assert output.stdout == ""
         assert search(
@@ -454,24 +444,26 @@ class TestStreamCommand:
         )
 
 
-class TestTimeoutTD:
-    delta: ClassVar[TimeDelta] = 0.05 * SECOND
-
+class TestTimeout:
     async def test_pass(self) -> None:
-        async with timeout_td(2 * self.delta):
-            await sleep_td(self.delta)
+        async with timeout(_MULTIPLE * _DURATION):
+            await sleep(_DURATION)
 
     async def test_fail(self) -> None:
         with raises(TimeoutError):
-            async with timeout_td(self.delta):
-                await sleep_td(2 * self.delta)
+            async with timeout(_DURATION):
+                await sleep(_MULTIPLE * _DURATION)
 
     async def test_custom_error(self) -> None:
         class CustomError(Exception): ...
 
         with raises(CustomError):
-            async with timeout_td(self.delta, error=CustomError):
-                await sleep_td(2 * self.delta)
+            async with timeout(_DURATION, error=CustomError):
+                await sleep(_MULTIPLE * _DURATION)
+
+    async def test_none(self) -> None:
+        async with timeout():
+            ...
 
 
 class TestYieldLockedShelf:

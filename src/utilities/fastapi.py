@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING, Any, override
 from fastapi import FastAPI
 from uvicorn import Config, Server
 
-from utilities.asyncio import timeout_td
+import utilities.asyncio
 from utilities.contextlib import enhanced_async_context_manager
 from utilities.whenever import get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
 
-    from utilities.types import Delta, MaybeType
+    from utilities.types import Duration, MaybeType
 
 
 _TASKS: list[Task[None]] = []
@@ -39,7 +39,7 @@ async def yield_ping_receiver(
     /,
     *,
     host: str = "localhost",
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
 ) -> AsyncIterator[None]:
     """Yield the ping receiver."""
@@ -47,7 +47,7 @@ async def yield_ping_receiver(
     server = Server(Config(app, host=host, port=port))  # skipif-ci
     _TASKS.append(create_task(server.serve()))  # skipif-ci
     try:  # skipif-ci
-        async with timeout_td(timeout, error=error):
+        async with utilities.asyncio.timeout(timeout, error=error):
             yield
     finally:  # skipif-ci
         await server.shutdown()

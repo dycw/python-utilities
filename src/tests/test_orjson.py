@@ -49,6 +49,7 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureTypeLiteral,
     DataClassFutureTypeLiteralNullable,
 )
+from utilities.constants import HOUR, MINUTE, SECOND
 from utilities.hypothesis import (
     date_periods,
     dates,
@@ -86,15 +87,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.types import LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args, is_sequence_of
 from utilities.tzlocal import LOCAL_TIME_ZONE
-from utilities.whenever import (
-    HOUR,
-    MINUTE,
-    SECOND,
-    DatePeriod,
-    TimePeriod,
-    ZonedDateTimePeriod,
-    get_now,
-)
+from utilities.whenever import DatePeriod, TimePeriod, ZonedDateTimePeriod, get_now
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:

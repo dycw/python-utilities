@@ -50,6 +50,7 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.constants import DAY
 from utilities.contextlib import enhanced_context_manager
 from utilities.functions import ensure_int, ensure_str, max_nullable, min_nullable
 from utilities.math import (
@@ -93,7 +94,6 @@ from utilities.whenever import (
     DATE_TIME_DELTA_PARSABLE_MIN,
     DATE_TWO_DIGIT_YEAR_MAX,
     DATE_TWO_DIGIT_YEAR_MIN,
-    DAY,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
     DatePeriod,

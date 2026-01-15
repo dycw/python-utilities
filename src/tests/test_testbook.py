@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING, ClassVar
 
 from pytest import mark, param
 
+from utilities.constants import HOUR
 from utilities.functions import get_class_name
 from utilities.testbook import build_notebook_tester
-from utilities.whenever import HOUR
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from utilities.types import Delta
+    from utilities.types import Duration
 
 
 class TestBuildNotebookTester:
@@ -33,6 +33,6 @@ class TestBuildNotebookTester:
             assert hasattr(tester, name)
 
     @mark.parametrize("throttle", [param(HOUR), param(None)])
-    def test_throttle(self, *, tmp_path: Path, throttle: Delta | None) -> None:
+    def test_throttle(self, *, tmp_path: Path, throttle: Duration | None) -> None:
         _ = tmp_path.joinpath("notebook.ipynb").write_text(self.text)
         _ = build_notebook_tester(tmp_path, throttle=throttle)

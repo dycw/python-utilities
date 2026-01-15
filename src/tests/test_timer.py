@@ -7,12 +7,16 @@ from typing import TYPE_CHECKING, Any
 from pytest import mark, param, raises
 from whenever import TimeDelta
 
-from utilities.asyncio import sleep_td
+from utilities.constants import SECOND, ZERO_TIME
+from utilities.time import sleep
 from utilities.timer import Timer
-from utilities.whenever import SECOND, ZERO_TIME
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+
+_DURATION: TimeDelta = 0.05 * SECOND
+_MULTIPLE: int = 2
 
 
 class TestTimer:
@@ -38,11 +42,11 @@ class TestTimer:
         ("op", "cls"),
         [param(add, TimeDelta), param(sub, TimeDelta), param(truediv, float)],
     )
-    async def test_arithmetic_against_another_timer(
+    def test_arithmetic_against_another_timer(
         self, *, op: Callable[[Any, Any], Any], cls: type[Any]
     ) -> None:
         with Timer() as timer1, Timer() as timer2:
-            await sleep_td(0.01 * SECOND)
+            sleep(_DURATION)
         assert isinstance(op(timer1, timer2), cls)
 
     @mark.parametrize(("op"), [param(add), param(sub), param(mul), param(truediv)])
@@ -95,11 +99,10 @@ class TestTimer:
         with raises(TypeError):
             _ = op(timer, "")
 
-    async def test_context_manager(self) -> None:
-        delta = 0.1 * SECOND
+    def test_context_manager(self) -> None:
         with Timer() as timer:
-            await sleep_td(2 * delta)
-        assert timer >= delta
+            sleep(_MULTIPLE * _DURATION)
+        assert timer >= _DURATION
 
     def test_float(self) -> None:
         with Timer() as timer:
@@ -111,19 +114,18 @@ class TestTimer:
         _ = hash(timer)
 
     @mark.parametrize("func", [param(repr), param(str)])
-    async def test_repr_and_str(self, *, func: Callable[[Timer], str]) -> None:
+    def test_repr_and_str(self, *, func: Callable[[Timer], str]) -> None:
         with Timer() as timer:
-            await sleep_td(0.01 * SECOND)
+            sleep(_DURATION)
         as_str = func(timer)
         assert search(r"^PT0\.\d+S$", as_str)
 
-    async def test_running(self) -> None:
-        delta = 0.1 * SECOND
+    def test_running(self) -> None:
         timer = Timer()
-        await sleep_td(2 * delta)
-        assert timer >= delta
-        await sleep_td(2 * delta)
-        assert timer >= 2 * delta
+        sleep(_MULTIPLE * _DURATION)
+        assert timer >= _DURATION
+        sleep(_MULTIPLE * _DURATION)
+        assert timer >= 2 * _MULTIPLE * _DURATION
 
     def test_timedelta(self) -> None:
         timer = Timer()

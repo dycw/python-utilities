@@ -5,13 +5,17 @@ from typing import TYPE_CHECKING
 from hypothesis import example, given
 from hypothesis.strategies import integers, none
 
-from utilities.asyncio import sleep_td
 from utilities.cachetools import TTLSet, cache
+from utilities.constants import SECOND
 from utilities.hypothesis import time_deltas
-from utilities.whenever import SECOND
+from utilities.time import sleep
 
 if TYPE_CHECKING:
     from whenever import TimeDelta
+
+
+_DURATION: TimeDelta = 0.05 * SECOND
+_MULTIPLE: int = 2
 
 
 class TestCache:
@@ -58,11 +62,10 @@ class TestTTLSet:
         set_ = TTLSet(range(3))
         assert len(set_) == 3
 
-    async def test_max_duration(self) -> None:
-        delta = 0.1 * SECOND
-        set_ = TTLSet(range(3), max_duration=delta)
+    def test_max_duration(self) -> None:
+        set_ = TTLSet(range(3), max_duration=_DURATION)
         assert set_ == {0, 1, 2}
-        await sleep_td(2 * delta)
+        sleep(_MULTIPLE * _DURATION)
         assert set_ == set()
 
     def test_max_size(self) -> None:

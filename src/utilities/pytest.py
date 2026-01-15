@@ -9,6 +9,7 @@ from re import sub
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, NoReturn, override
 
+from utilities.constants import SECOND
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
 from utilities.pathlib import (
@@ -20,8 +21,7 @@ from utilities.pathlib import (
 )
 from utilities.platform import IS_LINUX, IS_MAC, IS_NOT_LINUX, IS_NOT_MAC
 from utilities.throttle import throttle
-from utilities.types import MaybeCoro
-from utilities.whenever import SECOND
+from utilities.types import Duration, MaybeCoro
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from _pytest.config.argparsing import Parser
     from _pytest.python import Function
 
-    from utilities.types import Delta, PathLike
+    from utilities.types import PathLike
 
 
 IS_CI = "CI" in environ
@@ -190,12 +190,12 @@ class _NodeIdToPathNotGetTailError(NodeIdToPathError):
 
 
 def throttle_test[F: Callable[..., MaybeCoro[None]]](
-    *, on_try: bool = False, root: PathLike | None = None, delta: Delta = SECOND
+    *, on_try: bool = False, root: PathLike | None = None, duration: Duration = SECOND
 ) -> Callable[[F], F]:
     """Throttle a test. On success by default, on try otherwise."""
     return throttle(
         on_try=on_try,
-        delta=delta,
+        duration=duration,
         path=partial(_get_test_path, root=root),
         raiser=_run_skip,
     )
