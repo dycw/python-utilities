@@ -47,6 +47,7 @@ BASH_LC = ["bash", "-lc"]
 BASH_LS = ["bash", "-ls"]
 CHPASSWD = "chpasswd"
 GIT_BRANCH_SHOW_CURRENT = ["git", "branch", "--show-current"]
+ISOLATED = "--isolated"
 KNOWN_HOSTS = Path.home() / ".ssh/known_hosts"
 MANAGED_PYTHON = "--managed-python"
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
@@ -1944,7 +1945,7 @@ def uv_run_cmd(
         *parts,
         "--exact",
         *uv_with_cmd(with_=with_),
-        "--isolated",
+        ISOLATED,
         *uv_index_cmd(index=index),
         *uv_native_tls_cmd(native_tls=native_tls),
         *PRERELEASE_DISALLOW,
@@ -2113,6 +2114,171 @@ def uv_tool_install_cmd(
 ##
 
 
+@overload
+def uv_tool_run(
+    command: str,
+    /,
+    *,
+    from_: str | None = None,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[True],
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def uv_tool_run(
+    command: str,
+    /,
+    *,
+    from_: str | None = None,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: Literal[True],
+    return_stderr: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def uv_tool_run(
+    command: str,
+    /,
+    *,
+    from_: str | None = None,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: Literal[True],
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def uv_tool_run(
+    command: str,
+    /,
+    *,
+    from_: str | None = None,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[False] = False,
+    return_stdout: Literal[False] = False,
+    return_stderr: Literal[False] = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> None: ...
+@overload
+def uv_tool_run(
+    command: str,
+    /,
+    *,
+    from_: str | None = None,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str | None: ...
+def uv_tool_run(
+    command: str,
+    /,
+    *,
+    from_: str | None = None,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str | None:
+    """Run a command provided by a Python package."""
+    return run(  # pragma: no cover
+        *uv_tool_run_cmd(
+            command, from_=from_, with_=with_, index=index, native_tls=native_tls
+        ),
+        cwd=cwd,
+        env=env,
+        print=print,
+        print_stdout=print_stdout,
+        print_stderr=print_stderr,
+        return_=return_,
+        return_stdout=return_stdout,
+        return_stderr=return_stderr,
+        retry=retry,
+        logger=logger,
+    )
+
+
+def uv_tool_run_cmd(
+    command: str,
+    /,
+    *,
+    from_: str | None = None,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+    native_tls: bool = False,
+) -> list[str]:
+    """Command to use 'uv' to run a command provided by a Python package."""
+    args: list[str] = ["uv", "tool", "run"]
+    if from_ is not None:
+        args.extend(["--from", from_])
+    return [
+        *args,
+        *uv_with_cmd(with_=with_),
+        ISOLATED,
+        *uv_index_cmd(index=index),
+        *PRERELEASE_DISALLOW,
+        MANAGED_PYTHON,
+        *uv_native_tls_cmd(native_tls=native_tls),
+        command,
+    ]
+
+
+##
+
+
 def uv_with_cmd(*, with_: MaybeSequenceStr | None = None) -> list[str]:
     """Generate the `--with` commands if necessary."""
     return (
@@ -2166,6 +2332,7 @@ __all__ = [
     "BASH_LS",
     "CHPASSWD",
     "GIT_BRANCH_SHOW_CURRENT",
+    "ISOLATED",
     "MANAGED_PYTHON",
     "MKTEMP_DIR_CMD",
     "PRERELEASE_DISALLOW",
@@ -2246,6 +2413,8 @@ __all__ = [
     "uv_run_cmd",
     "uv_tool_install",
     "uv_tool_install_cmd",
+    "uv_tool_run",
+    "uv_tool_run_cmd",
     "uv_with_cmd",
     "yield_git_repo",
     "yield_ssh_temp_dir",

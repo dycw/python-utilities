@@ -90,6 +90,7 @@ from utilities.subprocess import (
     uv_native_tls_cmd,
     uv_run_cmd,
     uv_tool_install_cmd,
+    uv_tool_run_cmd,
     uv_with_cmd,
     yield_git_repo,
     yield_ssh_temp_dir,
@@ -1928,6 +1929,38 @@ class TestUvToolInstallCmd:
             "--reinstall",
             "--managed-python",
             "package",
+        ]
+        assert result == expected
+
+
+class TestUvToolRunCmd:
+    def test_main(self) -> None:
+        result = uv_tool_run_cmd("command")
+        expected = [
+            "uv",
+            "tool",
+            "run",
+            "--isolated",
+            "--prerelease",
+            "disallow",
+            "--managed-python",
+            "command",
+        ]
+        assert result == expected
+
+    def test_from_(self) -> None:
+        result = uv_tool_run_cmd("command", from_="from")
+        expected = [
+            "uv",
+            "tool",
+            "run",
+            "--from",
+            "from",
+            "--isolated",
+            "--prerelease",
+            "disallow",
+            "--managed-python",
+            "command",
         ]
         assert result == expected
 
