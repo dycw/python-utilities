@@ -86,8 +86,11 @@ from utilities.subprocess import (
     tee_cmd,
     touch_cmd,
     useradd_cmd,
+    uv_index_cmd,
+    uv_native_tls_cmd,
     uv_run_cmd,
     uv_tool_install_cmd,
+    uv_with_cmd,
     yield_git_repo,
     yield_ssh_temp_dir,
 )
@@ -1739,6 +1742,35 @@ class TestUserAddCmd:
         assert result == expected
 
 
+class TestUvIndexCmd:
+    def test_none(self) -> None:
+        result = uv_index_cmd()
+        expected = []
+        assert result == expected
+
+    def test_single(self) -> None:
+        result = uv_index_cmd(index="index")
+        expected = ["--index", "index"]
+        assert result == expected
+
+    def test_multiple(self) -> None:
+        result = uv_index_cmd(index=["index1", "index2"])
+        expected = ["--index", "index1,index2"]
+        assert result == expected
+
+
+class TestUvNativeTLSCmd:
+    def test_none(self) -> None:
+        result = uv_native_tls_cmd()
+        expected = []
+        assert result == expected
+
+    def test_native_tls(self) -> None:
+        result = uv_native_tls_cmd(native_tls=True)
+        expected = ["--native-tls"]
+        assert result == expected
+
+
 class TestUvRunCmd:
     def test_main(self) -> None:
         result = uv_run_cmd("foo.bar")
@@ -1789,51 +1821,21 @@ class TestUvToolInstallCmd:
         ]
         assert result == expected
 
-    def test_with(self) -> None:
-        result = uv_tool_install_cmd("package", with_="with")
-        expected = [
-            "uv",
-            "tool",
-            "install",
-            "--with",
-            "with",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "package",
-        ]
+
+class TestUvWithCmd:
+    def test_none(self) -> None:
+        result = uv_with_cmd()
+        expected = []
         assert result == expected
 
-    def test_index(self) -> None:
-        result = uv_tool_install_cmd("package", index="index")
-        expected = [
-            "uv",
-            "tool",
-            "install",
-            "--index",
-            "index",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "package",
-        ]
+    def test_single(self) -> None:
+        result = uv_with_cmd(with_="with")
+        expected = ["--with", "with"]
         assert result == expected
 
-    def test_native_tls(self) -> None:
-        result = uv_tool_install_cmd("package", native_tls=True)
-        expected = [
-            "uv",
-            "tool",
-            "install",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "--native-tls",
-            "package",
-        ]
+    def test_multiple(self) -> None:
+        result = uv_with_cmd(with_=["with1", "with2"])
+        expected = ["--with", "with1", "--with", "with2"]
         assert result == expected
 
 

@@ -4,7 +4,7 @@ import shutil
 import sys
 from dataclasses import dataclass
 from io import StringIO
-from itertools import repeat
+from itertools import chain, repeat
 from pathlib import Path
 from re import MULTILINE, escape, search
 from shlex import join
@@ -48,7 +48,9 @@ BASH_LS = ["bash", "-ls"]
 CHPASSWD = "chpasswd"
 GIT_BRANCH_SHOW_CURRENT = ["git", "branch", "--show-current"]
 KNOWN_HOSTS = Path.home() / ".ssh/known_hosts"
+MANAGED_PYTHON = "--managed-python"
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
+PRERELEASE_DISALLOW = ["--prerelease", "disallow"]
 RESTART_SSHD = ["systemctl", "restart", "sshd"]
 UPDATE_CA_CERTIFICATES: str = "update-ca-certificates"
 
@@ -1734,6 +1736,22 @@ def useradd_cmd(
 ##
 
 
+def uv_index_cmd(*, index: MaybeSequenceStr | None = None) -> list[str]:
+    """Generate the `--index` command if necessary."""
+    return [] if index is None else ["--index", ",".join(always_iterable(index))]
+
+
+##
+
+
+def uv_native_tls_cmd(*, native_tls: bool = False) -> list[str]:
+    """Generate the `--native-tls` command if necessary."""
+    return ["--native-tls"] if native_tls else []
+
+
+##
+
+
 @overload
 def uv_run(
     module: str,
@@ -1855,6 +1873,7 @@ def uv_run_cmd(
     all_groups: bool = False,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to run a command or script."""
     parts: list[str] = ["uv", "run"]
@@ -1869,14 +1888,19 @@ def uv_run_cmd(
             parts.extend(["--group", group_i])
     if all_groups:
         parts.append("--all-groups")
-    parts.append("--exact")
-    if with_ is not None:
-        for with_i in always_iterable(with_):
-            parts.extend(["--with", with_i])
-    parts.append("--isolated")
-    if index is not None:
-        parts.extend(["--index", ",".join(always_iterable(index))])
-    return [*parts, "--prerelease", "disallow", "python", "-m", module, *args]
+    return [
+        *parts,
+        "--exact",
+        *uv_with_cmd(with_=with_),
+        "--isolated",
+        *uv_index_cmd(index=index),
+        *uv_native_tls_cmd(native_tls=native_tls),
+        *PRERELEASE_DISALLOW,
+        "python",
+        "-m",
+        module,
+        *args,
+    ]
 
 
 ##
@@ -2020,16 +2044,30 @@ def uv_tool_install_cmd(
     native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to install commands provided by a Python package."""
-    args: list[str] = ["uv", "tool", "install"]
-    if with_ is not None:
-        for with_i in always_iterable(with_):
-            args.extend(["--with", with_i])
-    if index is not None:
-        args.extend(["--index", ",".join(always_iterable(index))])
-    args.extend(["--prerelease", "disallow", "--reinstall", "--managed-python"])
-    if native_tls:
-        args.append("--native-tls")
-    return [*args, package]
+    return [
+        "uv",
+        "tool",
+        "install",
+        *uv_with_cmd(with_=with_),
+        *uv_index_cmd(index=index),
+        *PRERELEASE_DISALLOW,
+        "--reinstall",
+        MANAGED_PYTHON,
+        *uv_native_tls_cmd(native_tls=native_tls),
+        package,
+    ]
+
+
+##
+
+
+def uv_with_cmd(*, with_: MaybeSequenceStr | None = None) -> list[str]:
+    """Generate the `--with` commands if necessary."""
+    return (
+        []
+        if with_ is None
+        else list(chain.from_iterable(["--with", w] for w in always_iterable(with_)))
+    )
 
 
 ##
@@ -2076,7 +2114,9 @@ __all__ = [
     "BASH_LS",
     "CHPASSWD",
     "GIT_BRANCH_SHOW_CURRENT",
+    "MANAGED_PYTHON",
     "MKTEMP_DIR_CMD",
+    "PRERELEASE_DISALLOW",
     "RESTART_SSHD",
     "UPDATE_CA_CERTIFICATES",
     "ChownCmdError",
@@ -2149,10 +2189,12 @@ __all__ = [
     "update_ca_certificates",
     "useradd",
     "useradd_cmd",
+    "uv_native_tls_cmd",
     "uv_run",
     "uv_run_cmd",
     "uv_tool_install",
     "uv_tool_install_cmd",
+    "uv_with_cmd",
     "yield_git_repo",
     "yield_ssh_temp_dir",
 ]
