@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from whenever import TimeDelta
 
 
-_DURATION: TimeDelta = 0.1 * SECOND
+_DURATION: TimeDelta = 0.05 * SECOND
 
 
 class TestCallMemoized:
