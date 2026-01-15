@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 _DURATION: TimeDelta = 0.05 * SECOND
-_MULTIPLE: int = 2
+_MULTIPLE: int = 10
 
 
 class TestThrottle:
