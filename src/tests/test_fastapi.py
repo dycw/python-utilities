@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class TestPingReceiver:
-    duration: ClassVar[TimeDelta] = 0.1 * SECOND
+    duration: ClassVar[TimeDelta] = 0.05 * SECOND
     port: ClassVar[int] = 5465
 
     @skipif_ci
