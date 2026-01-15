@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/dycw/actions
-    rev: 0.13.7
+    rev: 0.14.2
     hooks:
       - args:
           - --ci--pull-request--pre-commit
@@ -98,6 +98,6 @@ repos:
         args:
           - --upgrade
           - --resolution
-          - highest
+          - lowest-direct
           - --prerelease
           - disallow
