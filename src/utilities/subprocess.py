@@ -30,12 +30,12 @@ if TYPE_CHECKING:
 
     from utilities.permissions import PermissionsLike
     from utilities.types import (
-        Delta,
         LoggerLike,
         MaybeIterable,
         MaybeSequenceStr,
         PathLike,
         Retry,
+        SleepLike,
         StrMapping,
         StrStrMapping,
     )
@@ -1546,7 +1546,7 @@ def ssh_await(
     /,
     *,
     logger: LoggerLike | None = None,
-    delta: Delta = SECOND,
+    duration: SleepLike = SECOND,
 ) -> None:
     while True:  # skipif-ci
         if logger is not None:
@@ -1554,7 +1554,7 @@ def ssh_await(
         try:
             ssh(user, hostname, "true")
         except CalledProcessError:
-            sleep(delta)
+            sleep(duration)
         else:
             if logger is not None:
                 to_logger(logger).info("'%s' is up", hostname)
