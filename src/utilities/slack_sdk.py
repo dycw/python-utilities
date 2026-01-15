@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, override
 from slack_sdk.webhook import WebhookClient
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
-from utilities.asyncio import timeout
 from utilities.functools import cache
 from utilities.whenever import MINUTE, to_seconds
 

@@ -10,7 +10,6 @@ from pottery.exceptions import ReleaseUnlockedLock
 from redis.asyncio import Redis
 
 import utilities.asyncio
-from utilities.asyncio import timeout
 from utilities.contextlib import enhanced_async_context_manager
 from utilities.iterables import always_iterable
 from utilities.whenever import MILLISECOND, SECOND, to_nanoseconds
@@ -18,9 +17,8 @@ from utilities.whenever import MILLISECOND, SECOND, to_nanoseconds
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterable
 
-    from whenever import Delta
-
     from utilities.types import Duration, MaybeIterable
+
 
 _NUM: int = 1
 _TIMEOUT_RELEASE: Duration = 10 * SECOND
@@ -95,11 +93,13 @@ async def _get_first_available_lock(
     error = _YieldAccessUnableToAcquireLockError(  # skipif-ci-and-not-linux
         key=key, num=num, timeout=timeout
     )
-    async with timeout(timeout, error=error):  # skipif-ci-and-not-linux
+    async with utilities.asyncio.timeout(  # skipif-ci-and-not-linux
+        timeout, error=error
+    ):
         while True:
             if (result := await _get_first_available_lock_if_any(locks)) is not None:
                 return result
-            await sleep(sleep)
+            await utilities.asyncio.sleep(sleep)
 
 
 async def _get_first_available_lock_if_any(
@@ -128,7 +128,7 @@ class _YieldAccessNumLocksError(YieldAccessError):
 @dataclass(kw_only=True, slots=True)
 class _YieldAccessUnableToAcquireLockError(YieldAccessError):
     num: int
-    timeout: Delta | None
+    timeout: Duration | None
 
     @override
     def __str__(self) -> str:

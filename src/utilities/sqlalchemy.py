@@ -65,7 +65,6 @@ from sqlalchemy.orm import (
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
-from utilities.asyncio import timeout
 from utilities.functions import ensure_str, get_class_name, yield_object_attributes
 from utilities.iterables import (
     CheckLengthError,

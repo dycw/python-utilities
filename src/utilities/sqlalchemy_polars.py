@@ -26,7 +26,6 @@ from polars import (
 from sqlalchemy import Column, Select, select
 from sqlalchemy.exc import DuplicateColumnError
 
-from utilities.asyncio import timeout
 from utilities.functions import identity
 from utilities.iterables import (
     CheckDuplicatesError,
