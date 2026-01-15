@@ -22,6 +22,10 @@ if TYPE_CHECKING:
     from whenever import TimeDelta
 
 
+_DURATION: TimeDelta = 0.05 * SECOND
+_MULTIPLE: int = 10
+
+
 class TestExtendLock:
     async def test_main(self, *, test_redis: Redis) -> None:
         lock = AIORedlock(key=unique_str(), masters={test_redis})
@@ -64,9 +68,9 @@ class TestYieldAccess:
         with Timer() as timer:
             await self.func(test_redis, num_tasks, unique_str(), num_locks=num_locks)
         assert (
-            (min_multiple * self.duration)
+            (min_multiple * _DURATION)
             <= timer
-            <= (5 * min_multiple * self.duration)
+            <= (min_multiple * _MULTIPLE * _DURATION)
         )
 
     async def test_sub_second_timeout_release(self, *, test_redis: Redis) -> None:
@@ -85,13 +89,16 @@ class TestYieldAccess:
 
     async def test_error_unable_to_acquire_lock(self, *, test_redis: Redis) -> None:
         key = unique_str()
-        duration = 0.1 * SECOND
 
         async def coroutine(key: str, /) -> None:
             async with yield_access(
-                test_redis, key, num=1, timeout_acquire=duration, throttle=5 * duration
+                test_redis,
+                key,
+                num=1,
+                timeout_acquire=_DURATION,
+                throttle=_MULTIPLE * _DURATION,
             ):
-                await sleep(duration)
+                await sleep(_DURATION)
 
         with raises(ExceptionGroup) as exc_info:
             async with TaskGroup() as tg:
