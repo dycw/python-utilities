@@ -313,7 +313,7 @@ class TestPytestOptions:
 
 
 class TestThrottleTest:
-    delta: ClassVar[float] = 5.0 if IS_CI else 0.1
+    duration: ClassVar[float] = 5.0 if IS_CI else 0.1
 
     def test_main(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makepyfile(
@@ -322,14 +322,14 @@ class TestThrottleTest:
 
             from utilities.pytest import throttle_test
 
-            @throttle_test(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}))
+            @throttle_test(root={str(tmp_path)!r}, duration=TimeDelta(seconds={self.duration}))
             def test_main() -> None:
                 assert True
             """
         )
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(2 * self.delta)
+        sleep(2 * self.duration)
         testdir.runpytest().assert_outcomes(passed=1)
 
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
@@ -342,12 +342,12 @@ class TestThrottleTest:
             from utilities.pytest import throttle_test
 
             @mark.parametrize("arg", [10 * printable])
-            @throttle_test(root={str(tmp_path)!r}, delta=TimeDelta(seconds={self.delta}))
+            @throttle_test(root={str(tmp_path)!r}, duration=TimeDelta(seconds={self.duration}))
             def test_main(*, arg: str) -> None:
                 assert True
             """
         )
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(self.delta)
+        sleep(self.duration)
         testdir.runpytest().assert_outcomes(passed=1)

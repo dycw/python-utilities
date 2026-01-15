@@ -599,7 +599,7 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < hours < 24) and (24 % hours == 0):
             return hours, "H"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=hours, divisor=24
+            delta=delta, increment=hours, divisor=24
         )
     try:
         minutes = to_minutes(delta)
@@ -609,7 +609,7 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < minutes < 60) and (60 % minutes == 0):
             return minutes, "M"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=minutes, divisor=60
+            delta=delta, increment=minutes, divisor=60
         )
     try:
         seconds = to_seconds(delta)
@@ -619,7 +619,7 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < seconds < 60) and (60 % seconds == 0):
             return seconds, "S"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=seconds, divisor=60
+            delta=delta, increment=seconds, divisor=60
         )
     try:
         milliseconds = to_milliseconds(delta)
@@ -629,7 +629,7 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < milliseconds < 1000) and (1000 % milliseconds == 0):
             return milliseconds, "ms"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=milliseconds, divisor=1000
+            delta=delta, increment=milliseconds, divisor=1000
         )
     try:
         microseconds = to_microseconds(delta)
@@ -639,16 +639,16 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
         if (0 < microseconds < 1000) and (1000 % microseconds == 0):
             return microseconds, "us"
         raise _RoundDateOrDateTimeIncrementError(
-            duration=delta, increment=microseconds, divisor=1000
+            delta=delta, increment=microseconds, divisor=1000
         )
     try:
         nanoseconds = to_nanoseconds(delta)
     except ToNanosecondsError:
-        raise _RoundDateOrDateTimeInvalidDurationError(duration=delta) from None
+        raise _RoundDateOrDateTimeInvalidDeltaError(delta=delta) from None
     if (0 < nanoseconds < 1000) and (1000 % nanoseconds == 0):
         return nanoseconds, "ns"
     raise _RoundDateOrDateTimeIncrementError(
-        duration=delta, increment=nanoseconds, divisor=1000
+        delta=delta, increment=nanoseconds, divisor=1000
     )
 
 
@@ -768,22 +768,22 @@ class RoundDateOrDateTimeError(Exception): ...
 
 @dataclass(kw_only=True, slots=True)
 class _RoundDateOrDateTimeIncrementError(RoundDateOrDateTimeError):
-    duration: Delta
+    delta: Delta
     increment: int
     divisor: int
 
     @override
     def __str__(self) -> str:
-        return f"Duration {self.duration} increment must be a proper divisor of {self.divisor}; got {self.increment}"
+        return f"Delta {self.delta} increment must be a proper divisor of {self.divisor}; got {self.increment}"
 
 
 @dataclass(kw_only=True, slots=True)
-class _RoundDateOrDateTimeInvalidDurationError(RoundDateOrDateTimeError):
-    duration: Delta
+class _RoundDateOrDateTimeInvalidDeltaError(RoundDateOrDateTimeError):
+    delta: Delta
 
     @override
     def __str__(self) -> str:
-        return f"Duration must be valid; got {self.duration}"
+        return f"Delta must be valid; got {self.delta}"
 
 
 @dataclass(kw_only=True, slots=True)

@@ -81,7 +81,7 @@ from utilities.whenever import (
     _RoundDateOrDateTimeDateWithIntradayDeltaError,
     _RoundDateOrDateTimeDateWithWeekdayError,
     _RoundDateOrDateTimeIncrementError,
-    _RoundDateOrDateTimeInvalidDurationError,
+    _RoundDateOrDateTimeInvalidDeltaError,
     _ToDaysMonthsError,
     _ToDaysNanosecondsError,
     _ToHoursMonthsError,
@@ -927,17 +927,16 @@ class TestRoundDateOrDateTime:
             param(TimeDelta(nanoseconds=3)),
         ],
     )
-    def test_error_increment(self, *, delta: TimeDelta) -> None:
+    def test_error_increment(self, *, delta: Delta) -> None:
         with raises(
             _RoundDateOrDateTimeIncrementError,
-            match=r"Duration PT.* increment must be a proper divisor of \d+; got \d+",
+            match=r"Delta PT.* increment must be a proper divisor of \d+; got \d+",
         ):
             _ = round_date_or_date_time(TODAY_UTC, delta)
 
     def test_error_invalid(self) -> None:
         with raises(
-            _RoundDateOrDateTimeInvalidDurationError,
-            match=r"Duration must be valid; got P1M",
+            _RoundDateOrDateTimeInvalidDeltaError, match=r"Delta must be valid; got P1M"
         ):
             _ = round_date_or_date_time(TODAY_UTC, MONTH)
 
