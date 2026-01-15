@@ -33,6 +33,7 @@ if TYPE_CHECKING:
         Delta,
         LoggerLike,
         MaybeIterable,
+        MaybeSequenceStr,
         PathLike,
         Retry,
         StrMapping,
@@ -1863,6 +1864,174 @@ def uv_run_cmd(module: str, /, *args: str) -> list[str]:
 ##
 
 
+@overload
+def uv_tool_install(
+    package: str,
+    /,
+    *,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[True],
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def uv_tool_install(
+    package: str,
+    /,
+    *,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: Literal[True],
+    return_stderr: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def uv_tool_install(
+    package: str,
+    /,
+    *,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: Literal[True],
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def uv_tool_install(
+    package: str,
+    /,
+    *,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[False] = False,
+    return_stdout: Literal[False] = False,
+    return_stderr: Literal[False] = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> None: ...
+@overload
+def uv_tool_install(
+    package: str,
+    /,
+    *,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str | None: ...
+def uv_tool_install(
+    package: str,
+    /,
+    *,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str | None:
+    """Install commands provided by a Python package."""
+    return run(  # pragma: no cover
+        *uv_tool_install_cmd(
+            package,
+            with_=with_,
+            index=index,
+            reinstall=reinstall,
+            native_tls=native_tls,
+        ),
+        cwd=cwd,
+        env=env,
+        print=print,
+        print_stdout=print_stdout,
+        print_stderr=print_stderr,
+        return_=return_,
+        return_stdout=return_stdout,
+        return_stderr=return_stderr,
+        retry=retry,
+        logger=logger,
+    )
+
+
+def uv_tool_install_cmd(
+    package: str,
+    /,
+    *,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
+    native_tls: bool = False,
+) -> list[str]:
+    """Command to use 'uv' to install commands provided by a Python package."""
+    args: list[str] = ["uv", "tool"]
+    if with_ is not None:
+        for with_i in always_iterable(with_):
+            args.extend(["--with", with_i])
+    if index is not None:
+        args.extend(["--index", ",".join(always_iterable(index))])
+    if reinstall:
+        args.append("--reinstall")
+    args.append("--managed-python")
+    if native_tls:
+        args.append("--native-tls")
+    return [*args, package]
+
+
+##
+
+
 @enhanced_context_manager
 def yield_git_repo(url: str, /, *, branch: str | None = None) -> Iterator[Path]:
     """Yield a temporary git repository."""
@@ -1979,6 +2148,8 @@ __all__ = [
     "useradd_cmd",
     "uv_run",
     "uv_run_cmd",
+    "uv_tool_install",
+    "uv_tool_install_cmd",
     "yield_git_repo",
     "yield_ssh_temp_dir",
 ]

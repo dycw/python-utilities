@@ -1771,6 +1771,39 @@ class TestUvRunCmd:
         assert result == expected
 
 
+class TestUvToolInstallCmd:
+    def test_main(self) -> None:
+        result = uv_run_cmd("package")
+        expected = [
+            "uv",
+            "run",
+            "--no-dev",
+            "--active",
+            "--prerelease=disallow",
+            "--managed-python",
+            "python",
+            "-m",
+            "foo.bar",
+        ]
+        assert result == expected
+
+    def test_args(self) -> None:
+        result = uv_run_cmd("foo.bar", "--arg")
+        expected = [
+            "uv",
+            "run",
+            "--no-dev",
+            "--active",
+            "--prerelease=disallow",
+            "--managed-python",
+            "python",
+            "-m",
+            "foo.bar",
+            "--arg",
+        ]
+        assert result == expected
+
+
 class TestYieldGitRepo:
     @throttle_test(delta=5 * MINUTE)
     def test_main(self, *, git_repo_url: str) -> None:
