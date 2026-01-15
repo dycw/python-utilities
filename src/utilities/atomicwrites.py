@@ -21,6 +21,69 @@ if TYPE_CHECKING:
     from utilities.types import PathLike
 
 
+def copy(
+    source: PathLike, destination: PathLike, /, *, overwrite: bool = False
+) -> None:
+    """Copy a file/directory atomically."""
+    source, destination = map(Path, [source, destination])
+    match file_or_dir(source), file_or_dir(destination), overwrite:
+        case None, _, _:
+            raise _MoveSourceNotFoundError(source=source)
+        case "file", "file" | "dir", False:
+            raise _MoveFileExistsError(source=source, destination=destination) from None
+        case "file", "dir", _:
+            rmtree(destination, ignore_errors=True)
+            replace_atomic(str(source), str(destination))  # must be `str`s
+        case "file", _, _:
+            replace_atomic(str(source), str(destination))  # must be `str`s
+        case "dir", "file" | "dir", False:
+            raise _MoveDirectoryExistsError(source=source, destination=destination)
+        case "dir", "dir", _:
+            rmtree(destination, ignore_errors=True)
+            _ = shutil.move(source, destination)
+        case "dir", _, _:
+            destination.unlink(missing_ok=True)
+            _ = shutil.move(source, destination)
+        case never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class CopyError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _CopySourceNotFoundError(CopyError):
+    source: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Source {str(self.source)!r} does not exist"
+
+
+@dataclass(kw_only=True, slots=True)
+class _CopyFileExistsError(CopyError):
+    source: Path
+    destination: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot copy file {str(self.source)!r} as destination {str(self.destination)!r} already exists"
+
+
+@dataclass(kw_only=True, slots=True)
+class _CopyDirectoryExistsError(CopyError):
+    source: Path
+    destination: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot copy directory {str(self.source)!r} as destination {str(self.destination)!r} already exists"
+
+
+##
+
+
 def move(
     source: PathLike, destination: PathLike, /, *, overwrite: bool = False
 ) -> None:
@@ -166,4 +229,12 @@ class _WriterDirectoryExistsError(WriterError):
         return f"Cannot write to {str(self.destination)!r} as directory already exists"
 
 
-__all__ = ["MoveError", "WriterError", "move", "move_many", "writer"]
+__all__ = [
+    "CopyError",
+    "MoveError",
+    "WriterError",
+    "copy",
+    "move",
+    "move_many",
+    "writer",
+]
