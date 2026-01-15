@@ -5,7 +5,7 @@ import shutil
 from contextlib import ExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from shutil import copyfileobj, rmtree
+from shutil import copyfileobj, copytree, rmtree
 from typing import TYPE_CHECKING, assert_never, override
 
 from atomicwrites import replace_atomic
@@ -13,7 +13,7 @@ from atomicwrites import replace_atomic
 from utilities.contextlib import enhanced_context_manager
 from utilities.iterables import transpose
 from utilities.pathlib import file_or_dir
-from utilities.tempfile import TemporaryDirectory
+from utilities.tempfile import TemporaryDirectory, TemporaryFile
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -21,29 +21,28 @@ if TYPE_CHECKING:
     from utilities.types import PathLike
 
 
-def copy(
-    source: PathLike, destination: PathLike, /, *, overwrite: bool = False
-) -> None:
+def copy(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
     """Copy a file/directory atomically."""
-    source, destination = map(Path, [source, destination])
-    match file_or_dir(source), file_or_dir(destination), overwrite:
-        case None, _, _:
-            raise _MoveSourceNotFoundError(source=source)
-        case "file", "file" | "dir", False:
-            raise _MoveFileExistsError(source=source, destination=destination) from None
-        case "file", "dir", _:
-            rmtree(destination, ignore_errors=True)
-            replace_atomic(str(source), str(destination))  # must be `str`s
-        case "file", _, _:
-            replace_atomic(str(source), str(destination))  # must be `str`s
-        case "dir", "file" | "dir", False:
-            raise _MoveDirectoryExistsError(source=source, destination=destination)
-        case "dir", "dir", _:
-            rmtree(destination, ignore_errors=True)
-            _ = shutil.move(source, destination)
-        case "dir", _, _:
-            destination.unlink(missing_ok=True)
-            _ = shutil.move(source, destination)
+    src, dest = map(Path, [src, dest])
+    match file_or_dir(src):
+        case "file":
+            with TemporaryFile(data=src.read_bytes()) as temp:
+                try:
+                    move(temp, dest, overwrite=overwrite)
+                except _MoveFileExistsError as error:
+                    raise _CopyFileExistsError(src=error.src, dest=error.dest) from None
+        case "dir":
+            with TemporaryDirectory() as temp:
+                temp_sub_dir = temp / "sub_dir"
+                _ = copytree(src, temp_sub_dir)
+                try:
+                    move(temp_sub_dir, dest, overwrite=overwrite)
+                except _MoveDirectoryExistsError as error:
+                    raise _CopyDirectoryExistsError(
+                        src=error.src, dest=error.dest
+                    ) from None
+        case None:
+            raise _CopySourceNotFoundError(src=src)
         case never:
             assert_never(never)
 
@@ -54,59 +53,57 @@ class CopyError(Exception): ...
 
 @dataclass(kw_only=True, slots=True)
 class _CopySourceNotFoundError(CopyError):
-    source: Path
+    src: Path
 
     @override
     def __str__(self) -> str:
-        return f"Source {str(self.source)!r} does not exist"
+        return f"Source {str(self.src)!r} does not exist"
 
 
 @dataclass(kw_only=True, slots=True)
 class _CopyFileExistsError(CopyError):
-    source: Path
-    destination: Path
+    src: Path
+    dest: Path
 
     @override
     def __str__(self) -> str:
-        return f"Cannot copy file {str(self.source)!r} as destination {str(self.destination)!r} already exists"
+        return f"Cannot copy file {str(self.src)!r} as destination {str(self.dest)!r} already exists"
 
 
 @dataclass(kw_only=True, slots=True)
 class _CopyDirectoryExistsError(CopyError):
-    source: Path
-    destination: Path
+    src: Path
+    dest: Path
 
     @override
     def __str__(self) -> str:
-        return f"Cannot copy directory {str(self.source)!r} as destination {str(self.destination)!r} already exists"
+        return f"Cannot copy directory {str(self.src)!r} as destination {str(self.dest)!r} already exists"
 
 
 ##
 
 
-def move(
-    source: PathLike, destination: PathLike, /, *, overwrite: bool = False
-) -> None:
+def move(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
     """Move/replace a file/directory atomically."""
-    source, destination = map(Path, [source, destination])
-    match file_or_dir(source), file_or_dir(destination), overwrite:
+    src, dest = map(Path, [src, dest])
+    match file_or_dir(src), file_or_dir(dest), overwrite:
         case None, _, _:
-            raise _MoveSourceNotFoundError(source=source)
+            raise _MoveSourceNotFoundError(src=src)
         case "file", "file" | "dir", False:
-            raise _MoveFileExistsError(source=source, destination=destination) from None
+            raise _MoveFileExistsError(src=src, dest=dest) from None
         case "file", "dir", _:
-            rmtree(destination, ignore_errors=True)
-            replace_atomic(str(source), str(destination))  # must be `str`s
+            rmtree(dest, ignore_errors=True)
+            replace_atomic(str(src), str(dest))  # must be `str`s
         case "file", _, _:
-            replace_atomic(str(source), str(destination))  # must be `str`s
+            replace_atomic(str(src), str(dest))  # must be `str`s
         case "dir", "file" | "dir", False:
-            raise _MoveDirectoryExistsError(source=source, destination=destination)
+            raise _MoveDirectoryExistsError(src=src, dest=dest)
         case "dir", "dir", _:
-            rmtree(destination, ignore_errors=True)
-            _ = shutil.move(source, destination)
+            rmtree(dest, ignore_errors=True)
+            _ = shutil.move(src, dest)
         case "dir", _, _:
-            destination.unlink(missing_ok=True)
-            _ = shutil.move(source, destination)
+            dest.unlink(missing_ok=True)
+            _ = shutil.move(src, dest)
         case never:
             assert_never(never)
 
@@ -117,31 +114,31 @@ class MoveError(Exception): ...
 
 @dataclass(kw_only=True, slots=True)
 class _MoveSourceNotFoundError(MoveError):
-    source: Path
+    src: Path
 
     @override
     def __str__(self) -> str:
-        return f"Source {str(self.source)!r} does not exist"
+        return f"Source {str(self.src)!r} does not exist"
 
 
 @dataclass(kw_only=True, slots=True)
 class _MoveFileExistsError(MoveError):
-    source: Path
-    destination: Path
+    src: Path
+    dest: Path
 
     @override
     def __str__(self) -> str:
-        return f"Cannot move file {str(self.source)!r} as destination {str(self.destination)!r} already exists"
+        return f"Cannot move file {str(self.src)!r} as destination {str(self.dest)!r} already exists"
 
 
 @dataclass(kw_only=True, slots=True)
 class _MoveDirectoryExistsError(MoveError):
-    source: Path
-    destination: Path
+    src: Path
+    dest: Path
 
     @override
     def __str__(self) -> str:
-        return f"Cannot move directory {str(self.source)!r} as destination {str(self.destination)!r} already exists"
+        return f"Cannot move directory {str(self.src)!r} as destination {str(self.dest)!r} already exists"
 
 
 ##
@@ -149,13 +146,11 @@ class _MoveDirectoryExistsError(MoveError):
 
 def move_many(*paths: tuple[PathLike, PathLike], overwrite: bool = False) -> None:
     """Move a set of files concurrently."""
-    sources, destinations = transpose(paths)
+    srcs, dests = transpose(paths)
     with ExitStack() as stack:
-        temp_paths = [
-            stack.enter_context(writer(p, overwrite=overwrite)) for p in destinations
-        ]
-        for source, temp_path in zip(sources, temp_paths, strict=True):
-            move(source, temp_path, overwrite=overwrite)
+        temps = [stack.enter_context(writer(d, overwrite=overwrite)) for d in dests]
+        for src, temp in zip(srcs, temps, strict=True):
+            move(src, temp, overwrite=overwrite)
 
 
 ##
@@ -189,13 +184,11 @@ def writer(
             try:
                 move(temp_path2, path, overwrite=overwrite)
             except _MoveSourceNotFoundError as error:
-                raise _WriterTemporaryPathEmptyError(temp_path=error.source) from None
+                raise _WriterTemporaryPathEmptyError(temp_path=error.src) from None
             except _MoveFileExistsError as error:
-                raise _WriterFileExistsError(destination=error.destination) from None
+                raise _WriterFileExistsError(destination=error.dest) from None
             except _MoveDirectoryExistsError as error:
-                raise _WriterDirectoryExistsError(
-                    destination=error.destination
-                ) from None
+                raise _WriterDirectoryExistsError(destination=error.dest) from None
 
 
 @dataclass(kw_only=True, slots=True)
