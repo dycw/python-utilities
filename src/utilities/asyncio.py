@@ -36,6 +36,8 @@ from typing import (
     override,
 )
 
+from whenever import DateDelta, DateTimeDelta, TimeDelta
+
 from utilities.functions import ensure_int, ensure_not_none
 from utilities.os import is_pytest
 from utilities.random import SYSTEM_RANDOM
@@ -73,6 +75,7 @@ if TYPE_CHECKING:
         Delta,
         MaybeCallableBoolLike,
         MaybeType,
+        Number,
         PathLike,
         SupportsKeysAndGetItem,
     )
@@ -487,11 +490,18 @@ async def sleep_rounded(delta: Delta, /) -> None:
 ##
 
 
-async def sleep_td(delta: Delta | None = None, /) -> None:
+async def sleep_td(delta: Delta | Number | None = None, /) -> None:
     """Sleep which accepts deltas."""
-    if delta is None:
-        return
-    await sleep(to_nanoseconds(delta) / 1e9)
+    match delta:
+        case DateDelta() | TimeDelta() | DateTimeDelta():
+            seconds = to_nanoseconds(delta) / 1e9
+        case int() | float() as seconds:
+            ...
+        case None:
+            return
+        case never:
+            assert_never(never)
+    await sleep(seconds)
 
 
 ##

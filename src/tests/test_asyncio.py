@@ -416,6 +416,11 @@ class TestSleepTD:
             await sleep_td(self.delta)
         assert timer <= self.multiple * self.delta
 
+    async def test_number(self) -> None:
+        with Timer() as timer:
+            await sleep_td(self.delta.in_seconds())
+        assert timer <= self.multiple * self.delta
+
     async def test_none(self) -> None:
         with Timer() as timer:
             await sleep_td()

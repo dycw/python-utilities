@@ -239,7 +239,7 @@ type PatternLike = MaybeStr[Pattern[str]]
 
 
 # retry
-type Retry = tuple[int, Delta | None]
+type Retry = tuple[int, Delta | Number | None]
 
 
 # text
