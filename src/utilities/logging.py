@@ -36,8 +36,10 @@ from typing import (
 from whenever import ZonedDateTime
 
 from utilities.atomicwrites import move_many
+from utilities.constants import SECOND
 from utilities.dataclasses import replace_non_sentinel
 from utilities.errors import ImpossibleCaseError
+from utilities.functions import in_seconds
 from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.pathlib import ensure_suffix, to_path
 from utilities.re import (
@@ -60,6 +62,7 @@ if TYPE_CHECKING:
     from logging import _FilterType
 
     from utilities.types import (
+        Duration,
         LoggerLike,
         LogLevel,
         MaybeCallablePathLike,
@@ -356,7 +359,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         errors: Literal["strict", "ignore", "replace"] | None = None,
         maxBytes: int = _DEFAULT_MAX_BYTES,
         when: _When = _DEFAULT_WHEN,
-        interval: int = 1,
+        interval: Duration = SECOND,
         backupCount: int = _DEFAULT_BACKUP_COUNT,
         utc: bool = False,
         atTime: time | None = None,
@@ -374,7 +377,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         self._time_handler = TimedRotatingFileHandler(
             path,
             when=when,
-            interval=interval,
+            interval=cast("Any", in_seconds(interval)),  # float is OK
             backupCount=backupCount,
             encoding=encoding,
             delay=delay,

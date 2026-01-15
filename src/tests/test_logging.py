@@ -11,7 +11,7 @@ from hypothesis import given
 from hypothesis.strategies import integers
 from pytest import LogCaptureFixture, mark, param, raises
 
-from utilities.asyncio import sleep
+from utilities.constants import SECOND
 from utilities.hypothesis import pairs, temp_paths, zoned_date_times
 from utilities.iterables import one
 from utilities.logging import (
@@ -30,6 +30,7 @@ from utilities.logging import (
     to_logger,
 )
 from utilities.text import unique_str
+from utilities.time import sleep
 from utilities.types import LogLevel
 from utilities.typing import get_args
 from utilities.whenever import format_compact, get_now_local
@@ -39,7 +40,11 @@ if TYPE_CHECKING:
     from contextlib import AbstractContextManager
     from logging import _FilterType
 
-    from whenever import ZonedDateTime
+    from whenever import TimeDelta, ZonedDateTime
+
+
+_DURATION: TimeDelta = 0.5 * SECOND
+_MULTIPLE: int = 2
 
 
 class TestAddAdapter:
@@ -116,7 +121,7 @@ class TestBasicConfig:
 
 
 class TestComputeRolloverActions:
-    async def test_main(self, *, tmp_path: Path) -> None:
+    def test_main(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
 
         actions = _compute_rollover_actions(tmp_path, "log", ".txt")
@@ -128,7 +133,7 @@ class TestComputeRolloverActions:
         assert any(p for p in files if search(r"^log\.1\__.+?\.txt$", p.name))
 
         for _ in range(2):
-            await sleep(1)
+            sleep(_DURATION)
             tmp_path.joinpath("log.txt").touch()
             actions = _compute_rollover_actions(tmp_path, "log", ".txt")
             assert len(actions.deletions) == 1
@@ -138,7 +143,7 @@ class TestComputeRolloverActions:
             assert len(files) == 1
             assert any(p for p in files if search(r"^log\.1\__.+?__.+?\.txt$", p.name))
 
-    async def test_multiple_backups(self, *, tmp_path: Path) -> None:
+    def test_multiple_backups(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
 
         actions = _compute_rollover_actions(tmp_path, "log", ".txt", backup_count=3)
@@ -149,7 +154,7 @@ class TestComputeRolloverActions:
         assert len(files) == 1
         assert any(p for p in files if search(r"^log\.1\__.+\.txt$", p.name))
 
-        await sleep(1)
+        sleep(_DURATION)
         tmp_path.joinpath("log.txt").touch()
         actions = _compute_rollover_actions(tmp_path, "log", ".txt", backup_count=3)
         assert len(actions.deletions) == 0
@@ -160,7 +165,7 @@ class TestComputeRolloverActions:
         assert any(p for p in files if search(r"^log\.1\__.+?__.+?\.txt$", p.name))
         assert any(p for p in files if search(r"^log\.2\__.+?\.txt$", p.name))
 
-        await sleep(1)
+        sleep(_DURATION)
         tmp_path.joinpath("log.txt").touch()
         actions = _compute_rollover_actions(tmp_path, "log", ".txt", backup_count=3)
         assert len(actions.deletions) == 0
@@ -173,7 +178,7 @@ class TestComputeRolloverActions:
         assert all(p for p in files if search(r"^log\.3\__.+?\.txt$", p.name))
 
         for _ in range(2):
-            await sleep(1)
+            sleep(_DURATION)
             tmp_path.joinpath("log.txt").touch()
             actions = _compute_rollover_actions(tmp_path, "log", ".txt", backup_count=3)
             assert len(actions.deletions) == 1
@@ -185,7 +190,7 @@ class TestComputeRolloverActions:
             assert any(p for p in files if search(r"^log\.2\__.+?__.+?\.txt$", p.name))
             assert all(p for p in files if search(r"^log\.3\__.+?__.+?\.txt$", p.name))
 
-    async def test_deleting_old_files(self, *, tmp_path: Path) -> None:
+    def test_deleting_old_files(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("log.txt").touch()
 
         actions = _compute_rollover_actions(tmp_path, "log", ".txt")
@@ -196,7 +201,7 @@ class TestComputeRolloverActions:
         assert len(files) == 1
         assert any(p for p in files if search(r"^log\.1\__.+?\.txt$", p.name))
 
-        await sleep(1)
+        sleep(_DURATION)
         tmp_path.joinpath("log.txt").touch()
         now = format_compact(get_now_local(), path=True)
         tmp_path.joinpath(f"log.99__{now}__{now}.txt").touch()
@@ -389,7 +394,7 @@ class TestSizeAndTimeRotatingFileHandler:
         logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
         assert filename.exists()
 
-    async def test_size(self, *, tmp_path: Path) -> None:
+    def test_size(self, *, tmp_path: Path) -> None:
         logger = getLogger(unique_str())
         logger.addHandler(
             SizeAndTimeRotatingFileHandler(
@@ -433,9 +438,9 @@ class TestSizeAndTimeRotatingFileHandler:
                     assert any(
                         p for p in files if search(r"^log\.3__.+?__.+?\.txt$", p.name)
                     )
-                await sleep(0.1)
+                sleep(_DURATION)
 
-    async def test_time(self, *, tmp_path: Path) -> None:
+    def test_time(self, *, tmp_path: Path) -> None:
         logger = getLogger(unique_str())
         logger.addHandler(
             SizeAndTimeRotatingFileHandler(
@@ -446,12 +451,13 @@ class TestSizeAndTimeRotatingFileHandler:
             )
         )
 
-        await sleep(0.1)
+        sleep(_DURATION)
         files = list(tmp_path.iterdir())
         assert len(files) == 1
         assert any(p for p in files if search(r"^log\.txt$", p.name))
 
-        await sleep(1.1)
+        sleep(1.1)
+        sleep(_DURATION)
         for i in range(1, 3):
             logger.warning("message %d", i)
             files = list(tmp_path.iterdir())
@@ -459,7 +465,7 @@ class TestSizeAndTimeRotatingFileHandler:
             assert any(p for p in files if search(r"^log\.txt$", p.name))
             assert any(p for p in files if search(r"^log\.1__.+?\.txt$", p.name))
 
-        await sleep(1.1)
+        sleep(_MULTIPLE * _DURATION)
         for i in range(3, 5):
             logger.warning("message %d", i)
             files = list(tmp_path.iterdir())
@@ -468,7 +474,7 @@ class TestSizeAndTimeRotatingFileHandler:
             assert any(p for p in files if search(r"^log\.1__.+?__.+?\.txt$", p.name))
             assert any(p for p in files if search(r"^log\.2__.+?\.txt$", p.name))
 
-        await sleep(1.1)
+        sleep(_MULTIPLE * _DURATION)
         for i in range(5, 7):
             logger.warning("message %d", i)
             files = list(tmp_path.iterdir())
@@ -479,7 +485,7 @@ class TestSizeAndTimeRotatingFileHandler:
             assert any(p for p in files if search(r"^log\.3__.+?\.txt$", p.name))
 
         for _ in range(2):
-            await sleep(1.1)
+            sleep(_MULTIPLE * _DURATION)
             for i in range(7, 9):
                 logger.warning("message %d", i)
                 files = list(tmp_path.iterdir())
