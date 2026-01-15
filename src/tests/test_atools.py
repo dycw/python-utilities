@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from utilities.asyncio import sleep
 from utilities.atools import call_memoized, memoize
-from utilities.whenever import SECOND
+from utilities.constants import SECOND
 
 _DELTA = 0.1 * SECOND
 

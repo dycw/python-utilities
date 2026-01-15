@@ -6,13 +6,13 @@ from typing import TYPE_CHECKING, NoReturn
 from pytest import mark, param, raises
 
 from utilities.asyncio import sleep
+from utilities.constants import SECOND
 from utilities.os import temp_environ
 from utilities.throttle import (
     _ThrottleMarkerFileError,
     _ThrottleParseZonedDateTimeError,
     throttle,
 )
-from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from pathlib import Path

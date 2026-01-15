@@ -29,6 +29,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
+from utilities.constants import MILLISECOND
 from utilities.hypothesis import int32s, pairs, quadruples, urls
 from utilities.iterables import one
 from utilities.modules import is_installed
@@ -90,7 +91,7 @@ from utilities.sqlalchemy import (
 )
 from utilities.text import strip_and_dedent
 from utilities.typing import get_args
-from utilities.whenever import MILLISECOND, format_compact, get_now_local_plain
+from utilities.whenever import format_compact, get_now_local_plain
 
 if TYPE_CHECKING:
     from pathlib import Path

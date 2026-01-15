@@ -4,10 +4,10 @@ from aiohttp import InvalidUrlClientError
 from pytest import mark, raises
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
+from utilities.constants import MINUTE
 from utilities.os import get_env_var
 from utilities.pytest import throttle_test
 from utilities.slack_sdk import _get_async_client, send_to_slack, send_to_slack_async
-from utilities.whenever import MINUTE
 
 
 class TestGetClient:

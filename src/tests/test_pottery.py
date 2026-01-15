@@ -7,6 +7,7 @@ from pottery import AIORedlock
 from pytest import mark, param, raises
 
 from utilities.asyncio import sleep
+from utilities.constants import MILLISECOND, SECOND
 from utilities.pottery import (
     _YieldAccessNumLocksError,
     _YieldAccessUnableToAcquireLockError,
@@ -15,7 +16,6 @@ from utilities.pottery import (
 )
 from utilities.text import unique_str
 from utilities.timer import Timer
-from utilities.whenever import MILLISECOND, SECOND
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis

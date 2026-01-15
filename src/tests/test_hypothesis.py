@@ -38,6 +38,7 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.constants import DATE_TWO_DIGIT_YEAR_MAX, DATE_TWO_DIGIT_YEAR_MIN
 from utilities.functions import ensure_int
 from utilities.hypothesis import (
     _LINUX_DISALLOW_TIME_ZONES,
@@ -129,8 +130,6 @@ from utilities.platform import IS_LINUX, maybe_lower_case
 from utilities.sentinel import is_sentinel
 from utilities.version import Version
 from utilities.whenever import (
-    DATE_TWO_DIGIT_YEAR_MAX,
-    DATE_TWO_DIGIT_YEAR_MIN,
     DatePeriod,
     TimePeriod,
     ZonedDateTimePeriod,

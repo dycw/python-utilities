@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from ipaddress import IPv4Address
 
+from utilities.constants import MINUTE
 from utilities.http import get_public_ip, yield_connection
 from utilities.pytest import throttle_test
-from utilities.whenever import MINUTE
 
 
 class TestGetPublicIP:

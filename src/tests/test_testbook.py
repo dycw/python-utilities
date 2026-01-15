@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, ClassVar
 
 from pytest import mark, param
 
+from utilities.constants import HOUR
 from utilities.functions import get_class_name
 from utilities.testbook import build_notebook_tester
-from utilities.whenever import HOUR
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -10,6 +10,7 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from
 from pytest import CaptureFixture, mark, param, raises
 
+from utilities.constants import SECOND
 from utilities.iterables import one
 from utilities.traceback import (
     MakeExceptHookError,
@@ -19,7 +20,7 @@ from utilities.traceback import (
     make_except_hook,
 )
 from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
-from utilities.whenever import SECOND, format_compact, get_now
+from utilities.whenever import format_compact, get_now
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

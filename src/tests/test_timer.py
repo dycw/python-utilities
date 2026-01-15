@@ -8,8 +8,8 @@ from pytest import mark, param, raises
 from whenever import TimeDelta
 
 from utilities.asyncio import sleep
+from utilities.constants import SECOND, ZERO_TIME
 from utilities.timer import Timer
-from utilities.whenever import SECOND, ZERO_TIME
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -31,9 +31,10 @@ from utilities.asyncio import (
     timeout,
     yield_locked_shelf,
 )
+from utilities.constants import MILLISECOND, SECOND
 from utilities.hypothesis import pairs, text_ascii
 from utilities.timer import Timer
-from utilities.whenever import MILLISECOND, SECOND, get_now
+from utilities.whenever import get_now
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator

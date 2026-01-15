@@ -26,6 +26,7 @@ from hypothesis.strategies import (
 )
 from pytest import approx, mark, param, raises
 
+from utilities.constants import MILLISECOND, SECOND, ZERO_TIME
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     EnsureBoolError,
@@ -83,14 +84,7 @@ from utilities.functions import (
 )
 from utilities.sentinel import sentinel
 from utilities.text import parse_bool, strip_and_dedent
-from utilities.whenever import (
-    MILLISECOND,
-    NOW_UTC,
-    SECOND,
-    ZERO_TIME,
-    get_now,
-    get_today,
-)
+from utilities.whenever import NOW_UTC, get_now, get_today
 
 if TYPE_CHECKING:
     import datetime as dt

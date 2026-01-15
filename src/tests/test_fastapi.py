@@ -4,9 +4,9 @@ from re import search
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 from utilities.asyncio import sleep
+from utilities.constants import SECOND
 from utilities.fastapi import yield_ping_receiver
 from utilities.pytest import skipif_ci
-from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from whenever import TimeDelta
