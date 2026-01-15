@@ -52,7 +52,7 @@ if TYPE_CHECKING:
     from whenever import TimeDelta
 
 
-_PUB_SUB_SLEEP: TimeDelta = 0.1 * SECOND
+_DURATION: TimeDelta = 0.1 * SECOND
 
 
 @fixture
@@ -207,10 +207,10 @@ class TestPublish:
         channel = unique_str()
         queue: Queue[bytes] = Queue()
         async with subscribe(test_redis, channel, queue, output="bytes"):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep(_DURATION)
             for datum in data:
                 _ = await publish(test_redis, channel, datum)
-            await sleep(_PUB_SUB_SLEEP)  # remain in context
+            await sleep(_DURATION)  # remain in context
         assert queue.qsize() == len(data)
         results = get_items_nowait(queue)
         for result, datum in zip(results, data, strict=True):
@@ -230,10 +230,10 @@ class TestPublish:
         channel = unique_str()
         queue: Queue[Any] = Queue()
         async with subscribe(test_redis, channel, queue, output=deserialize):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep(_DURATION)
             for obj in objects:
                 _ = await publish(test_redis, channel, obj, serializer=serialize)
-            await sleep(_PUB_SUB_SLEEP)  # remain in context
+            await sleep(_DURATION)  # remain in context
         assert queue.qsize() == len(objects)
         results = get_items_nowait(queue)
         for result, obj in zip(results, objects, strict=True):
@@ -250,10 +250,10 @@ class TestPublish:
         channel = f"test_{unique_str()}"
         queue: Queue[str] = Queue()
         async with subscribe(test_redis, channel, queue):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep(_DURATION)
             for message in messages:
                 _ = await publish(test_redis, channel, message)
-            await sleep(_PUB_SUB_SLEEP)  # remain in context
+            await sleep(_DURATION)  # remain in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
         for result, message in zip(results, messages, strict=True):
@@ -641,10 +641,10 @@ class TestSubscribe:
         channel = unique_str()
         queue: Queue[bytes] = Queue()
         async with subscribe(test_redis, channel, queue, output="bytes"):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep(_DURATION)
             for message in messages:
                 await test_redis.publish(channel, message)
-            await sleep(_PUB_SUB_SLEEP)  # remain in context
+            await sleep(_DURATION)  # remain in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
         for result, message in zip(results, messages, strict=True):
@@ -662,10 +662,10 @@ class TestSubscribe:
         channel = unique_str()
         queue: Queue[Any] = Queue()
         async with subscribe(test_redis, channel, queue, output=deserialize):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep(_DURATION)
             for obj in objs:
                 await test_redis.publish(channel, serialize(obj))
-            await sleep(_PUB_SUB_SLEEP)  # remain in context
+            await sleep(_DURATION)  # remain in context
         assert queue.qsize() == len(objs)
         results = get_items_nowait(queue)
         for result, obj in zip(results, objs, strict=True):
@@ -696,10 +696,10 @@ class TestSubscribe:
         async with subscribe(
             test_redis, channel, queue, filter_=lambda text: len(text) >= 6
         ):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep(_DURATION)
             for message in messages:
                 await test_redis.publish(channel, message)
-            await sleep(_PUB_SUB_SLEEP)  # remain in context
+            await sleep(_DURATION)  # remain in context
         assert queue.qsize() == len(long_messages)
         results = get_items_nowait(queue)
         for result in results:
@@ -717,10 +717,10 @@ class TestSubscribe:
         channel = f"test_{unique_str()}"
         queue: Queue[_RedisMessage] = Queue()
         async with subscribe(test_redis, channel, queue, output="raw"):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep(_DURATION)
             for message in messages:
                 await test_redis.publish(channel, message)
-            await sleep(_PUB_SUB_SLEEP)  # remain in context
+            await sleep(_DURATION)  # remain in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
         for result, message in zip(results, messages, strict=True):
@@ -741,10 +741,10 @@ class TestSubscribe:
         channel = f"test_{unique_str()}"
         queue: Queue[_RedisMessage] = Queue()
         async with subscribe(test_redis, channel, queue, output="raw"):
-            await sleep(_PUB_SUB_SLEEP)
+            await sleep(_DURATION)
             for message in messages:
                 await test_redis.publish(channel, message)
-            await sleep(_PUB_SUB_SLEEP)  # remain in context
+            await sleep(_DURATION)  # remain in context
         assert queue.qsize() == len(messages)
         results = get_items_nowait(queue)
         for result, message in zip(results, messages, strict=True):
