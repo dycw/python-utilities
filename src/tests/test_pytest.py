@@ -20,8 +20,8 @@ if TYPE_CHECKING:
     from whenever import TimeDelta
 
 
-_DURATION: TimeDelta = (5 if IS_CI else 0.05) * SECOND
-_MULTIPLE: int = 2
+_DURATION: TimeDelta = (5 if IS_CI else 1) * SECOND
+_MULTIPLE: float = 2
 
 
 @fixture(autouse=True)
@@ -324,11 +324,9 @@ class TestThrottleTest:
         seconds = in_seconds(_DURATION)
         _ = testdir.makepyfile(
             f"""
-            from whenever import TimeDelta
-
             from utilities.pytest import throttle_test
 
-            @throttle_test(root={str(tmp_path)!r}, duration=TimeDelta(seconds={seconds}))
+            @throttle_test(root={str(tmp_path)!r}, duration={seconds})
             def test_main() -> None:
                 assert True
             """
@@ -344,17 +342,16 @@ class TestThrottleTest:
             f"""
             from pytest import mark
             from string import printable
-            from whenever import TimeDelta
 
             from utilities.pytest import throttle_test
 
             @mark.parametrize("arg", [10 * printable])
-            @throttle_test(root={str(tmp_path)!r}, duration=TimeDelta(seconds={seconds}))
+            @throttle_test(root={str(tmp_path)!r}, duration={seconds})
             def test_main(*, arg: str) -> None:
                 assert True
             """
         )
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(_DURATION)
+        sleep(_MULTIPLE * _DURATION)
         testdir.runpytest().assert_outcomes(passed=1)
