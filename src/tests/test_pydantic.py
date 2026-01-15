@@ -1,21 +1,37 @@
+# ruff: noqa: TC001
+
 from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, SecretStr
+from pytest import mark, param
 
-from utilities.pydantic import ExpandedPath
-
-_ = ExpandedPath
+from utilities.pydantic import ExpandedPath, SecretLike
+from utilities.types import PathLike
 
 
 class TestExpandedPath:
-    def test_main(self) -> None:
+    @mark.parametrize("path", [param(Path("~")), param("~")])
+    def test_main(self, *, path: PathLike) -> None:
         class Example(BaseModel):
             path: ExpandedPath
 
         _ = Example.model_rebuild()
 
-        result = Example(path=Path("~")).path
+        result = Example(path=path).path
         expected = Path.home()
+        assert result == expected
+
+
+class TestSecretLike:
+    @mark.parametrize("secret", [param(SecretStr("x")), param("x")])
+    def test_main(self, *, secret: SecretLike) -> None:
+        class Example(BaseModel):
+            secret: SecretLike
+
+        _ = Example.model_rebuild()
+
+        result = Example(secret=secret).secret
+        expected = SecretStr("x")
         assert result == expected
