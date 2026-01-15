@@ -1845,20 +1845,38 @@ def uv_run(
     )
 
 
-def uv_run_cmd(module: str, /, *args: str) -> list[str]:
+def uv_run_cmd(
+    module: str,
+    /,
+    *args: str,
+    extra: MaybeSequenceStr | None = None,
+    all_extras: bool = False,
+    group: MaybeSequenceStr | None = None,
+    all_groups: bool = False,
+    with_: MaybeSequenceStr | None = None,
+    index: MaybeSequenceStr | None = None,
+) -> list[str]:
     """Command to use 'uv' to run a command or script."""
-    return [
-        "uv",
-        "run",
-        "--no-dev",
-        "--active",
-        "--prerelease=disallow",
-        "--managed-python",
-        "python",
-        "-m",
-        module,
-        *args,
-    ]
+    parts: list[str] = ["uv", "run"]
+    if extra is not None:
+        for extra_i in always_iterable(extra):
+            parts.extend(["--extra", extra_i])
+    if all_extras:
+        parts.append("--all-extras")
+    parts.append("--no-dev")
+    if group is not None:
+        for group_i in always_iterable(group):
+            parts.extend(["--group", group_i])
+    if all_groups:
+        parts.append("--all-groups")
+    parts.append("--exact")
+    if with_ is not None:
+        for with_i in always_iterable(with_):
+            parts.extend(["--with", with_i])
+    parts.append("--isolated")
+    if index is not None:
+        parts.extend(["--index", ",".join(always_iterable(index))])
+    return [*parts, "--prerelease", "disallow", "python", "-m", module, *args]
 
 
 ##
@@ -2008,7 +2026,7 @@ def uv_tool_install_cmd(
             args.extend(["--with", with_i])
     if index is not None:
         args.extend(["--index", ",".join(always_iterable(index))])
-    args.extend(["--reinstall", "--managed-python"])
+    args.extend(["--prerelease", "disallow", "--reinstall", "--managed-python"])
     if native_tls:
         args.append("--native-tls")
     return [*args, package]
