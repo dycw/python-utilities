@@ -14,6 +14,9 @@ if TYPE_CHECKING:
     from whenever import TimeDelta
 
 
+_DURATION: TimeDelta = 0.05 * SECOND
+
+
 class TestCache:
     @example(max_size=None, max_duration=None)
     @example(max_size=None, max_duration=SECOND)
@@ -59,10 +62,9 @@ class TestTTLSet:
         assert len(set_) == 3
 
     async def test_max_duration(self) -> None:
-        delta = 0.1 * SECOND
-        set_ = TTLSet(range(3), max_duration=delta)
+        set_ = TTLSet(range(3), max_duration=_DURATION)
         assert set_ == {0, 1, 2}
-        await sleep(2 * delta)
+        await sleep(2 * _DURATION)
         assert set_ == set()
 
     def test_max_size(self) -> None:
