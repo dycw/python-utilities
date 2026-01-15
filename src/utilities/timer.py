@@ -3,6 +3,7 @@ from __future__ import annotations
 from operator import add, eq, ge, gt, le, lt, mul, ne, sub, truediv
 from typing import TYPE_CHECKING, Any, Self, override
 
+from utilities.functions import in_seconds
 from utilities.whenever import get_now_local
 
 if TYPE_CHECKING:
@@ -95,9 +96,8 @@ class Timer:
     # private
 
     def _apply_op(self, op: Callable[[Any, Any], Any], other: Any, /) -> Any:
-        if isinstance(other, Timer):
-            return op(self.timedelta, other.timedelta)
-        return op(self.timedelta, other)
+        other_use = other.timedelta if isinstance(other, Timer) else other
+        return op(float(self), in_seconds(other_use))
 
 
 __all__ = ["Timer"]

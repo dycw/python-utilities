@@ -215,7 +215,7 @@ class TestChainAsync:
 
 
 class TestEnhancedTaskGroup:
-    delta: ClassVar[TimeDelta] = 0.05 * SECOND
+    duration: ClassVar[TimeDelta] = 0.05 * SECOND
 
     async def test_create_task_context_coroutine(self) -> None:
         flag: bool = False
@@ -231,9 +231,9 @@ class TestEnhancedTaskGroup:
                 flag = False
 
         assert not flag
-        async with EnhancedTaskGroup(timeout=2 * self.delta) as tg:
+        async with EnhancedTaskGroup(timeout=2 * self.duration) as tg:
             _ = tg.create_task_context(yield_true())
-            await sleep(self.delta)
+            await sleep(self.duration)
             assert flag
         assert not flag
 
@@ -241,79 +241,81 @@ class TestEnhancedTaskGroup:
         with Timer() as timer:
             async with EnhancedTaskGroup() as tg:
                 for _ in range(10):
-                    _ = tg.create_task(sleep(self.delta))
-        assert timer <= 3 * self.delta
+                    _ = tg.create_task(sleep(self.duration))
+        assert timer <= 3 * self.duration
 
     async def test_max_tasks_enabled(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup(max_tasks=2) as tg:
                 for _ in range(10):
-                    _ = tg.create_task(sleep(self.delta))
-        assert timer >= 5 * self.delta
+                    _ = tg.create_task(sleep(self.duration))
+        assert timer >= 5 * self.duration
 
     async def test_run_or_create_many_tasks_parallel_with_max_tasks_two(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup(max_tasks=2) as tg:
                 assert not tg._is_debug()
                 for _ in range(10):
-                    _ = await tg.run_or_create_many_tasks(sleep, self.delta)
-        assert timer >= 5 * self.delta
+                    _ = await tg.run_or_create_many_tasks(sleep, self.duration)
+        assert timer >= 5 * self.duration
 
     async def test_run_or_create_many_tasks_serial_with_debug(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup(debug=True) as tg:
                 assert tg._is_debug()
                 for _ in range(10):
-                    _ = await tg.run_or_create_many_tasks(sleep, self.delta)
-        assert timer >= 10 * self.delta
+                    _ = await tg.run_or_create_many_tasks(sleep, self.duration)
+        assert timer >= 10 * self.duration
 
     async def test_run_or_create_task_parallel_with_max_tasks_none(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup() as tg:
                 assert not tg._is_debug()
                 for _ in range(10):
-                    _ = await tg.run_or_create_task(sleep(self.delta))
-        assert timer <= 3 * self.delta
+                    _ = await tg.run_or_create_task(sleep(self.duration))
+        assert timer <= 3 * self.duration
 
     async def test_run_or_create_task_parallel_with_max_tasks_two(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup(max_tasks=2) as tg:
                 assert not tg._is_debug()
                 for _ in range(10):
-                    _ = await tg.run_or_create_task(sleep(self.delta))
-        assert timer >= 5 * self.delta
+                    _ = await tg.run_or_create_task(sleep(self.duration))
+        assert timer >= 5 * self.duration
 
     async def test_run_or_create_task_serial_with_max_tasks_negative(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup(max_tasks=-1) as tg:
                 assert tg._is_debug()
                 for _ in range(10):
-                    _ = await tg.run_or_create_task(sleep(self.delta))
-        assert timer >= 10 * self.delta
+                    _ = await tg.run_or_create_task(sleep(self.duration))
+        assert timer >= 10 * self.duration
 
     async def test_run_or_create_task_serial_with_debug(self) -> None:
         with Timer() as timer:
             async with EnhancedTaskGroup(debug=True) as tg:
                 assert tg._is_debug()
                 for _ in range(10):
-                    _ = await tg.run_or_create_task(sleep(self.delta))
-        assert timer >= 10 * self.delta
+                    _ = await tg.run_or_create_task(sleep(self.duration))
+        assert timer >= 10 * self.duration
 
     async def test_timeout_pass(self) -> None:
-        async with EnhancedTaskGroup(timeout=2 * self.delta) as tg:
-            _ = tg.create_task(sleep(self.delta))
+        async with EnhancedTaskGroup(timeout=2 * self.duration) as tg:
+            _ = tg.create_task(sleep(self.duration))
 
     async def test_timeout_fail(self) -> None:
         with RaisesGroup(TimeoutError):
-            async with EnhancedTaskGroup(timeout=self.delta) as tg:
-                _ = tg.create_task(sleep(2 * self.delta))
+            async with EnhancedTaskGroup(timeout=self.duration) as tg:
+                _ = tg.create_task(sleep(2 * self.duration))
 
     async def test_custom_error(self) -> None:
         class CustomError(Exception): ...
 
         with RaisesGroup(CustomError):
-            async with EnhancedTaskGroup(timeout=self.delta, error=CustomError) as tg:
-                _ = tg.create_task(sleep(2 * self.delta))
+            async with EnhancedTaskGroup(
+                timeout=self.duration, error=CustomError
+            ) as tg:
+                _ = tg.create_task(sleep(2 * self.duration))
 
 
 class TestGetCoroutineName:
@@ -395,10 +397,10 @@ class TestPutItems:
 
 class TestSleep:
     async def test_main(self) -> None:
-        delta = 0.1
+        duration = 0.1
         with Timer() as timer:
-            await sleep(delta)
-        assert timer <= 10 * delta
+            await sleep(duration)
+        assert timer <= 10 * duration
 
     async def test_none(self) -> None:
         await sleep()
@@ -406,10 +408,10 @@ class TestSleep:
 
 class TestSleepMax:
     async def test_main(self) -> None:
-        delta = 0.1
+        duration = 0.1
         with Timer() as timer:
-            await sleep_max(delta)
-        assert timer <= 10 * delta
+            await sleep_max(duration)
+        assert timer <= 10 * duration
 
     async def test_none(self) -> None:
         await sleep_max()
@@ -426,20 +428,20 @@ class TestSleepUntilRounded:
 
 
 class TestStreamCommand:
-    delta: ClassVar[TimeDelta] = 0.05 * SECOND
+    duration: ClassVar[TimeDelta] = 0.05 * SECOND
 
     async def test_main(self) -> None:
         output = await stream_command(
             'echo "stdout message" && sleep 0.1 && echo "stderr message" >&2'
         )
-        await sleep(self.delta)
+        await sleep(self.duration)
         assert output.return_code == 0
         assert output.stdout == "stdout message\n"
         assert output.stderr == "stderr message\n"
 
     async def test_error(self) -> None:
         output = await stream_command("this-is-an-error")
-        await sleep(self.delta)
+        await sleep(self.duration)
         assert output.return_code == 127
         assert output.stdout == ""
         assert search(
@@ -448,23 +450,23 @@ class TestStreamCommand:
 
 
 class TestTimeout:
-    delta: ClassVar[TimeDelta] = 0.05 * SECOND
+    duration: ClassVar[TimeDelta] = 0.05 * SECOND
 
     async def test_pass(self) -> None:
-        async with timeout(2 * self.delta):
-            await sleep(self.delta)
+        async with timeout(2 * self.duration):
+            await sleep(self.duration)
 
     async def test_fail(self) -> None:
         with raises(TimeoutError):
-            async with timeout(self.delta):
-                await sleep(2 * self.delta)
+            async with timeout(self.duration):
+                await sleep(2 * self.duration)
 
     async def test_custom_error(self) -> None:
         class CustomError(Exception): ...
 
         with raises(CustomError):
-            async with timeout(self.delta, error=CustomError):
-                await sleep(2 * self.delta)
+            async with timeout(self.duration, error=CustomError):
+                await sleep(2 * self.duration)
 
 
 class TestYieldLockedShelf:
