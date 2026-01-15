@@ -53,6 +53,7 @@ if TYPE_CHECKING:
 
 
 _DURATION: TimeDelta = 0.1 * SECOND
+_MULTIPLE: int = 1
 
 
 @fixture
@@ -517,12 +518,11 @@ class TestRedisHashMapKey:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_ttl(self, *, test_redis: Redis, key: int, value: bool) -> None:
-        delta = 0.1 * SECOND
-        hm_key = redis_hash_map_key(unique_str(), int, bool, ttl=2 * delta)
+        hm_key = redis_hash_map_key(unique_str(), int, bool, ttl=_MULTIPLE * _DURATION)
         _ = await hm_key.set(test_redis, key, value)
-        await sleep(delta)  # else next line may not work
+        await sleep(_DURATION)  # else next line may not work
         assert await hm_key.exists(test_redis, key)
-        await sleep(2 * delta)
+        await sleep(_MULTIPLE * _DURATION)
         assert not await test_redis.exists(hm_key.name)
 
     @given(mapping=dictionaries(int64s(), booleans()))
@@ -620,12 +620,11 @@ class TestRedisKey:
         suppress_health_check={HealthCheck.function_scoped_fixture},
     )
     async def test_ttl(self, *, test_redis: Redis, value: bool) -> None:
-        delta = 0.1 * SECOND
-        key = redis_key(unique_str(), bool, ttl=2 * delta)
+        key = redis_key(unique_str(), bool, ttl=_MULTIPLE * _DURATION)
         _ = await key.set(test_redis, value)
-        await sleep(delta)  # else next line may not work
+        await sleep(_DURATION)  # else next line may not work
         assert await key.exists(test_redis)
-        await sleep(2 * delta)
+        await sleep(_MULTIPLE * _DURATION)
         assert not await key.exists(test_redis)
 
 
