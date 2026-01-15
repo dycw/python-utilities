@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from utilities.types import Duration, PathLike
 
 
-_DURATION: TimeDelta = 0.05 * SECOND
+_DURATION: TimeDelta = SECOND
 
 
 def _test_enhanced_context_manager(
@@ -228,7 +228,7 @@ class TestEnhancedContextManager:
     ) -> None:
         duration = SECOND
         marker = tmp_path.joinpath("marker")
-        proc = Process(target=target, args=(marker,), kwargs={"sleep": 4 * duration})
+        proc = Process(target=target, args=(marker,), kwargs={"sleep": 10 * duration})
         proc.start()
         assert proc.pid is not None
         assert proc.is_alive()
