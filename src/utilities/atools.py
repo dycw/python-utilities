@@ -6,21 +6,21 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast, overload
 
 import atools
-from whenever import TimeDelta
 
-from utilities.types import Coro, PathLike
+from utilities.functions import in_seconds
+from utilities.types import Coro, Duration, PathLike
 
 if TYPE_CHECKING:
     from atools._memoize_decorator import Keygen, Pickler
 
 
-type _Key[**P, T] = tuple[Callable[P, Coro[T]], TimeDelta]
+type _Key[**P, T] = tuple[Callable[P, Coro[T]], Duration]
 _MEMOIZED_FUNCS: dict[_Key, Callable[..., Coro[Any]]] = {}
 
 
 async def call_memoized[**P, T](
     func: Callable[P, Coro[T]],
-    refresh: TimeDelta | None = None,
+    refresh: Duration | None = None,
     /,
     *args: P.args,
     **kwargs: P.kwargs,
@@ -33,7 +33,7 @@ async def call_memoized[**P, T](
     try:
         memoized_func = _MEMOIZED_FUNCS[key]
     except KeyError:
-        memoized_func = _MEMOIZED_FUNCS[(key)] = memoize(duration=refresh.in_seconds())(
+        memoized_func = _MEMOIZED_FUNCS[(key)] = memoize(duration=in_seconds(refresh))(
             func
         )
     return await memoized_func(*args, **kwargs)
@@ -48,7 +48,7 @@ def memoize[F: Callable[..., Coro[Any]]](
     /,
     *,
     db_path: PathLike | None = None,
-    duration: float | TimeDelta | None = None,
+    duration: Duration | None = None,
     keygen: Keygen | None = None,
     pickler: Pickler | None = None,
     size: int | None = None,
@@ -59,7 +59,7 @@ def memoize[F: Callable[..., Coro[Any]]](
     /,
     *,
     db_path: PathLike | None = None,
-    duration: float | TimeDelta | None = None,
+    duration: Duration | None = None,
     keygen: Keygen | None = None,
     pickler: Pickler | None = None,
     size: int | None = None,
@@ -69,7 +69,7 @@ def memoize[F: Callable[..., Coro[Any]]](
     /,
     *,
     db_path: PathLike | None = None,
-    duration: float | TimeDelta | None = None,
+    duration: Duration | None = None,
     keygen: Keygen | None = None,
     pickler: Pickler | None = None,
     size: int | None = None,
@@ -87,9 +87,7 @@ def memoize[F: Callable[..., Coro[Any]]](
         return cast("Callable[[F], F]", result)
     return atools.memoize(
         db_path=None if db_path is None else Path(db_path),
-        duration=duration.py_timedelta()
-        if isinstance(duration, TimeDelta)
-        else duration,
+        duration=None if duration is None else in_seconds(duration),
         keygen=keygen,
         pickler=pickler,
         size=size,

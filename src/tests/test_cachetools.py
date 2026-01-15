@@ -11,7 +11,7 @@ from utilities.constants import SECOND
 from utilities.hypothesis import time_deltas
 
 if TYPE_CHECKING:
-    from utilities.types import Duration
+    from whenever import TimeDelta
 
 
 class TestCache:
@@ -24,7 +24,7 @@ class TestCache:
         max_duration=time_deltas(min_value=0.1 * SECOND, max_value=10.0 * SECOND)
         | none(),
     )
-    def test_main(self, *, max_size: int, max_duration: Duration) -> None:
+    def test_main(self, *, max_size: int, max_duration: TimeDelta) -> None:
         counter = 0
 
         @cache(max_size=max_size, max_duration=max_duration)

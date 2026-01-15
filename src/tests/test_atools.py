@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from utilities.asyncio import sleep
 from utilities.atools import call_memoized, memoize
 from utilities.constants import SECOND
 
-_DELTA = 0.1 * SECOND
+if TYPE_CHECKING:
+    from whenever import TimeDelta
+
+
+_DURATION: TimeDelta = 0.1 * SECOND
 
 
 class TestCallMemoized:
@@ -31,11 +37,11 @@ class TestCallMemoized:
             return counter
 
         for _ in range(2):
-            assert (await call_memoized(increment, _DELTA)) == 1
+            assert (await call_memoized(increment, _DURATION)) == 1
             assert counter == 1
-        await sleep(2 * _DELTA)
+        await sleep(2 * _DURATION)
         for _ in range(2):
-            assert (await call_memoized(increment, _DELTA)) == 2
+            assert (await call_memoized(increment, _DURATION)) == 2
             assert counter == 2
 
 
@@ -57,7 +63,7 @@ class TestMemoize:
     async def test_with_arguments(self) -> None:
         counter = 0
 
-        @memoize(duration=_DELTA)
+        @memoize(duration=_DURATION)
         async def increment() -> int:
             await sleep()
             nonlocal counter
@@ -66,6 +72,6 @@ class TestMemoize:
 
         assert await increment() == 1
         assert counter == 1
-        await sleep(2 * _DELTA)
+        await sleep(2 * _DURATION)
         assert await increment() == 2
         assert counter == 2
