@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, NoReturn, assert_never, cast, override
 from whenever import ZonedDateTime
 
 from utilities.atomicwrites import writer
-from utilities.functions import in_seconds
+from utilities.functions import in_timedelta
 from utilities.os import get_env_var
 from utilities.pathlib import to_path
 from utilities.types import Duration, MaybeCallablePathLike, MaybeCoro
@@ -117,7 +117,7 @@ def _is_throttle(
             last = ZonedDateTime.parse_iso(text)
         except ValueError:
             raise _ThrottleParseZonedDateTimeError(path=path, text=text) from None
-        threshold = get_now_local() - in_seconds(duration) * SECOND
+        threshold = get_now_local() - in_timedelta(duration)
         return threshold <= last
     if not path.exists():
         return False

@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, override
 
 from utilities.atomicwrites import writer
 from utilities.errors import repr_error
+from utilities.functions import in_timedelta
 from utilities.iterables import OneEmptyError, one
 from utilities.pathlib import module_path, to_path
 from utilities.reprlib import (
@@ -42,7 +43,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from utilities.types import (
-        Delta,
+        Duration,
         MaybeCallableBoolLike,
         MaybeCallablePathLike,
         MaybeCallableZonedDateTimeLike,
@@ -199,7 +200,7 @@ def make_except_hook(
     start: MaybeCallableZonedDateTimeLike = get_now,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
-    path_max_age: Delta | None = None,
+    path_max_age: Duration | None = None,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
     max_length: int | None = RICH_MAX_LENGTH,
@@ -238,7 +239,7 @@ def _make_except_hook_inner(
     start: MaybeCallableZonedDateTimeLike = get_now,
     version: MaybeCallableVersionLike | None = None,
     path: MaybeCallablePathLike | None = None,
-    path_max_age: Delta | None = None,
+    path_max_age: Duration | None = None,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
     max_length: int | None = RICH_MAX_LENGTH,
@@ -289,8 +290,8 @@ def _make_except_hook_inner(
         post_mortem(tb=traceback, e_type=exc_type, e_value=exc_val)
 
 
-def _make_except_hook_purge(path: PathLike, max_age: Delta, /) -> None:
-    threshold = get_now_local() - max_age
+def _make_except_hook_purge(path: PathLike, max_age: Duration, /) -> None:
+    threshold = get_now_local() - in_timedelta(max_age)
     paths: set[Path] = set()
     for p in Path(path).iterdir():
         if p.is_file():

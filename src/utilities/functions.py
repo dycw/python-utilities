@@ -36,6 +36,7 @@ from utilities.types import (
     SupportsRichComparison,
     TypeLike,
 )
+from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Container
@@ -600,6 +601,17 @@ def in_seconds(duration: Duration, /) -> float:
             assert_never(never)
 
 
+def in_timedelta(duration: Duration, /) -> TimeDelta:
+    """Convert a duration to a timedelta."""
+    match duration:
+        case int() | float():
+            return duration * SECOND
+        case TimeDelta():
+            return duration
+        case never:
+            assert_never(never)
+
+
 ##
 
 
@@ -826,6 +838,7 @@ __all__ = [
     "identity",
     "in_milli_seconds",
     "in_seconds",
+    "in_timedelta",
     "is_none",
     "is_not_none",
     "map_object",

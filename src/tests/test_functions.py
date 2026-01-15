@@ -69,6 +69,7 @@ from utilities.functions import (
     identity,
     in_milli_seconds,
     in_seconds,
+    in_timedelta,
     is_none,
     is_not_none,
     map_object,
@@ -583,6 +584,12 @@ class TestInSeconds:
     @mark.parametrize("duration", [param(1), param(1.0), param(SECOND)])
     def test_main(self, *, duration: Duration) -> None:
         assert in_seconds(duration) == 1.0
+
+
+class TestInTimeDelta:
+    @mark.parametrize("duration", [param(1), param(1.0), param(SECOND)])
+    def test_main(self, *, duration: Duration) -> None:
+        assert in_timedelta(duration) == SECOND
 
 
 class TestIsNoneAndIsNotNone:

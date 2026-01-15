@@ -11,11 +11,11 @@ from utilities.text import pascal_case
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from utilities.types import Delta, PathLike
+    from utilities.types import Duration, PathLike
 
 
 def build_notebook_tester(
-    path: PathLike, /, *, throttle: Delta | None = None, on_try: bool = False
+    path: PathLike, /, *, throttle: Duration | None = None, on_try: bool = False
 ) -> type[Any]:
     """Build the notebook tester class."""
     path = Path(path)
@@ -27,7 +27,7 @@ def build_notebook_tester(
     ]
     namespace = {
         f"test_{p.stem.replace('-', '_')}": _build_test_method(
-            p, delta=throttle, on_try=on_try
+            p, duration=throttle, on_try=on_try
         )
         for p in notebooks
     }
@@ -35,14 +35,14 @@ def build_notebook_tester(
 
 
 def _build_test_method(
-    path: Path, /, *, delta: Delta | None = None, on_try: bool = False
+    path: Path, /, *, duration: Duration | None = None, on_try: bool = False
 ) -> Callable[..., Any]:
     @testbook(path, execute=True)
     def method(self: Any, tb: Any) -> None:
         _ = (self, tb)  # pragma: no cover
 
-    if delta is not None:
-        method = throttle_test(duration=delta, on_try=on_try)(method)
+    if duration is not None:
+        method = throttle_test(duration=duration, on_try=on_try)(method)
 
     return method
 
