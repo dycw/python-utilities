@@ -14,8 +14,6 @@ if TYPE_CHECKING:
 def sleep_td(delta: Delta | Number | None = None, /) -> None:
     """Sleep which accepts deltas."""
     match delta:
-        case DateDelta():
-            seconds = to_nanoseconds(delta) / 1e9
         case DateDelta() | TimeDelta() | DateTimeDelta():
             seconds = to_nanoseconds(delta) / 1e9
         case int() | float() as seconds:
