@@ -10,26 +10,29 @@ from typing import TYPE_CHECKING, Any, NoReturn, assert_never, cast, override
 from whenever import ZonedDateTime
 
 from utilities.atomicwrites import writer
+from utilities.functions import in_seconds
 from utilities.os import get_env_var
 from utilities.pathlib import to_path
-from utilities.types import MaybeCallablePathLike, MaybeCoro
+from utilities.types import Duration, MaybeCallablePathLike, MaybeCoro
 from utilities.whenever import SECOND, get_now_local
 
 if TYPE_CHECKING:
-    from utilities.types import Coro, Delta
+    from utilities.types import Coro
 
 
 def throttle[F: Callable[..., MaybeCoro[None]]](
     *,
     on_try: bool = False,
-    delta: Delta = SECOND,
+    duration: Duration = SECOND,
     path: MaybeCallablePathLike = Path.cwd,
     raiser: Callable[[], NoReturn] | None = None,
 ) -> Callable[[F], F]:
     """Throttle a function. On success by default, on try otherwise."""
     return cast(
         "Any",
-        partial(_throttle_inner, on_try=on_try, delta=delta, path=path, raiser=raiser),
+        partial(
+            _throttle_inner, on_try=on_try, duration=duration, path=path, raiser=raiser
+        ),
     )
 
 
@@ -38,7 +41,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
     /,
     *,
     on_try: bool = False,
-    delta: Delta = SECOND,
+    duration: Duration = SECOND,
     path: MaybeCallablePathLike = Path.cwd,
     raiser: Callable[[], NoReturn] | None = None,
 ) -> F:
@@ -48,7 +51,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
             @wraps(func)
             def throttle_sync_on_pass(*args: Any, **kwargs: Any) -> None:
                 path_use = to_path(path)
-                if _is_throttle(path=path_use, delta=delta):
+                if _is_throttle(path=path_use, duration=duration):
                     _try_raise(raiser=raiser)
                 else:
                     cast("Callable[..., None]", func)(*args, **kwargs)
@@ -61,7 +64,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
             @wraps(func)
             def throttle_sync_on_try(*args: Any, **kwargs: Any) -> None:
                 path_use = to_path(path)
-                if _is_throttle(path=path_use, delta=delta):
+                if _is_throttle(path=path_use, duration=duration):
                     _try_raise(raiser=raiser)
                 else:
                     _write_throttle(path=path_use)
@@ -74,7 +77,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
             @wraps(func)
             async def throttle_async_on_pass(*args: Any, **kwargs: Any) -> None:
                 path_use = to_path(path)
-                if _is_throttle(path=path_use, delta=delta):
+                if _is_throttle(path=path_use, duration=duration):
                     _try_raise(raiser=raiser)
                 else:
                     await cast("Callable[..., Coro[None]]", func)(*args, **kwargs)
@@ -87,7 +90,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
             @wraps(func)
             async def throttle_async_on_try(*args: Any, **kwargs: Any) -> None:
                 path_use = to_path(path)
-                if _is_throttle(path=path_use, delta=delta):
+                if _is_throttle(path=path_use, duration=duration):
                     _try_raise(raiser=raiser)
                 else:
                     _write_throttle(path=path_use)
@@ -100,7 +103,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
 
 
 def _is_throttle(
-    *, path: MaybeCallablePathLike = Path.cwd, delta: Delta = SECOND
+    *, path: MaybeCallablePathLike = Path.cwd, duration: Duration = SECOND
 ) -> bool:
     if get_env_var("THROTTLE", nullable=True):
         return False
@@ -114,7 +117,7 @@ def _is_throttle(
             last = ZonedDateTime.parse_iso(text)
         except ValueError:
             raise _ThrottleParseZonedDateTimeError(path=path, text=text) from None
-        threshold = get_now_local() - delta
+        threshold = get_now_local() - in_seconds(duration) * SECOND
         return threshold <= last
     if not path.exists():
         return False
