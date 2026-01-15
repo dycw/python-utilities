@@ -1,3 +1,4 @@
+# ruff: noqa: TC001
 from __future__ import annotations
 
 from pathlib import Path
@@ -5,8 +6,6 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from utilities.pydantic import ExpandedPath
-
-_ = ExpandedPath
 
 
 class TestExpandedPath:
