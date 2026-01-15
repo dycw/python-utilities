@@ -43,8 +43,8 @@ if TYPE_CHECKING:
     from whenever import TimeDelta, ZonedDateTime
 
 
-_DURATION: TimeDelta = 0.5 * SECOND
-_MULTIPLE: int = 2
+_DURATION: TimeDelta = 0.05 * SECOND
+_MULTIPLE: int = 10
 
 
 class TestAddAdapter:
@@ -451,13 +451,12 @@ class TestSizeAndTimeRotatingFileHandler:
             )
         )
 
-        sleep(_DURATION)
+        sleep(_MULTIPLE * _DURATION)
         files = list(tmp_path.iterdir())
         assert len(files) == 1
         assert any(p for p in files if search(r"^log\.txt$", p.name))
 
-        sleep(1.1)
-        sleep(_DURATION)
+        sleep(_MULTIPLE * _DURATION)
         for i in range(1, 3):
             logger.warning("message %d", i)
             files = list(tmp_path.iterdir())
