@@ -8,8 +8,12 @@ from typing import TYPE_CHECKING, Any, cast, override
 import cachetools
 from cachetools.func import ttl_cache
 
+from utilities.functions import in_seconds
+
 if TYPE_CHECKING:
     from whenever import TimeDelta
+
+    from utilities.types import Duration
 
 
 class TTLCache[K: Hashable, V](cachetools.TTLCache[K, V]):
@@ -19,13 +23,13 @@ class TTLCache[K: Hashable, V](cachetools.TTLCache[K, V]):
         self,
         *,
         max_size: int | None = None,
-        max_duration: TimeDelta | None = None,
+        max_duration: Duration | None = None,
         timer: Callable[[], float] = monotonic,
         get_size_of: Callable[[Any], int] | None = None,
     ) -> None:
         super().__init__(
             maxsize=inf if max_size is None else max_size,
-            ttl=inf if max_duration is None else max_duration.in_seconds(),
+            ttl=inf if max_duration is None else in_seconds(max_duration),
             timer=timer,
             getsizeof=get_size_of,
         )
@@ -46,7 +50,7 @@ class TTLSet[T: Hashable](MutableSet[T]):
         /,
         *,
         max_size: int | None = None,
-        max_duration: TimeDelta | None = None,
+        max_duration: Duration | None = None,
         timer: Callable[[], float] = monotonic,
         get_size_of: Callable[[Any], int] | None = None,
     ) -> None:
