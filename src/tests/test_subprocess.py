@@ -1805,6 +1805,116 @@ class TestUvRunCmd:
         ]
         assert result == expected
 
+    def test_extra_single(self) -> None:
+        result = uv_run_cmd("foo.bar", extra="extra")
+        expected = [
+            "uv",
+            "run",
+            "--extra",
+            "extra",
+            "--no-dev",
+            "--exact",
+            "--isolated",
+            "--prerelease",
+            "disallow",
+            "python",
+            "-m",
+            "foo.bar",
+        ]
+        assert result == expected
+
+    def test_extra_multiple(self) -> None:
+        result = uv_run_cmd("foo.bar", extra=["extra1", "extra2"])
+        expected = [
+            "uv",
+            "run",
+            "--extra",
+            "extra1",
+            "--extra",
+            "extra2",
+            "--no-dev",
+            "--exact",
+            "--isolated",
+            "--prerelease",
+            "disallow",
+            "python",
+            "-m",
+            "foo.bar",
+        ]
+        assert result == expected
+
+    def test_all_extras(self) -> None:
+        result = uv_run_cmd("foo.bar", all_extras=True)
+        expected = [
+            "uv",
+            "run",
+            "--all-extras",
+            "--no-dev",
+            "--exact",
+            "--isolated",
+            "--prerelease",
+            "disallow",
+            "python",
+            "-m",
+            "foo.bar",
+        ]
+        assert result == expected
+
+    def test_group_single(self) -> None:
+        result = uv_run_cmd("foo.bar", group="group")
+        expected = [
+            "uv",
+            "run",
+            "--no-dev",
+            "--group",
+            "group",
+            "--exact",
+            "--isolated",
+            "--prerelease",
+            "disallow",
+            "python",
+            "-m",
+            "foo.bar",
+        ]
+        assert result == expected
+
+    def test_group_multiple(self) -> None:
+        result = uv_run_cmd("foo.bar", group=["group1", "group2"])
+        expected = [
+            "uv",
+            "run",
+            "--no-dev",
+            "--group",
+            "group1",
+            "--group",
+            "group2",
+            "--exact",
+            "--isolated",
+            "--prerelease",
+            "disallow",
+            "python",
+            "-m",
+            "foo.bar",
+        ]
+        assert result == expected
+
+    def test_all_groups(self) -> None:
+        result = uv_run_cmd("foo.bar", all_groups=True)
+        expected = [
+            "uv",
+            "run",
+            "--no-dev",
+            "--all-groups",
+            "--exact",
+            "--isolated",
+            "--prerelease",
+            "disallow",
+            "python",
+            "-m",
+            "foo.bar",
+        ]
+        assert result == expected
+
 
 class TestUvToolInstallCmd:
     def test_main(self) -> None:
