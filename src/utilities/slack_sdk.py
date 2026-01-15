@@ -7,23 +7,25 @@ from typing import TYPE_CHECKING, override
 from slack_sdk.webhook import WebhookClient
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
+import utilities.asyncio
+from utilities.functions import in_seconds
 from utilities.functools import cache
-from utilities.whenever import MINUTE, to_seconds
+from utilities.math import safe_round
+from utilities.whenever import MINUTE
 
 if TYPE_CHECKING:
     from slack_sdk.webhook import WebhookResponse
-    from whenever import TimeDelta
 
-    from utilities.types import Delta, MaybeType
+    from utilities.types import Duration, MaybeType
 
 
-_TIMEOUT: Delta = MINUTE
+_TIMEOUT: Duration = MINUTE
 
 
 ##
 
 
-def send_to_slack(url: str, text: str, /, *, timeout: TimeDelta = _TIMEOUT) -> None:
+def send_to_slack(url: str, text: str, /, *, timeout: Duration = _TIMEOUT) -> None:
     """Send a message via Slack synchronously."""
     client = _get_client(url, timeout=timeout)
     response = client.send(text=text)
@@ -32,9 +34,9 @@ def send_to_slack(url: str, text: str, /, *, timeout: TimeDelta = _TIMEOUT) -> N
 
 
 @cache
-def _get_client(url: str, /, *, timeout: Delta = _TIMEOUT) -> WebhookClient:
+def _get_client(url: str, /, *, timeout: Duration = _TIMEOUT) -> WebhookClient:
     """Get the Slack client."""
-    return WebhookClient(url, timeout=to_seconds(timeout))
+    return WebhookClient(url, timeout=safe_round(in_seconds(timeout)))
 
 
 async def send_to_slack_async(
@@ -42,12 +44,12 @@ async def send_to_slack_async(
     text: str,
     /,
     *,
-    timeout: TimeDelta = _TIMEOUT,
+    timeout: Duration = _TIMEOUT,
     error: MaybeType[BaseException] = TimeoutError,
 ) -> None:
     """Send a message via Slack."""
     client = _get_async_client(url, timeout=timeout)
-    async with timeout(timeout, error=error):
+    async with utilities.asyncio.timeout(timeout, error=error):
         response = await client.send(text=text)
     if response.status_code != HTTPStatus.OK:  # pragma: no cover
         raise SendToSlackError(text=text, response=response)
@@ -55,10 +57,10 @@ async def send_to_slack_async(
 
 @cache
 def _get_async_client(
-    url: str, /, *, timeout: TimeDelta = _TIMEOUT
+    url: str, /, *, timeout: Duration = _TIMEOUT
 ) -> AsyncWebhookClient:
     """Get the Slack client."""
-    return AsyncWebhookClient(url, timeout=to_seconds(timeout))
+    return AsyncWebhookClient(url, timeout=safe_round(in_seconds(timeout)))
 
 
 @dataclass(kw_only=True, slots=True)
