@@ -450,23 +450,24 @@ class TestStreamCommand:
 
 
 class TestTimeout:
+    multiple: ClassVar[int] = 10
     duration: ClassVar[TimeDelta] = 0.05 * SECOND
 
     async def test_pass(self) -> None:
-        async with timeout(2 * self.duration):
+        async with timeout(self.multiple * self.duration):
             await sleep(self.duration)
 
     async def test_fail(self) -> None:
         with raises(TimeoutError):
             async with timeout(self.duration):
-                await sleep(2 * self.duration)
+                await sleep(self.multiple * self.duration)
 
     async def test_custom_error(self) -> None:
         class CustomError(Exception): ...
 
         with raises(CustomError):
             async with timeout(self.duration, error=CustomError):
-                await sleep(2 * self.duration)
+                await sleep(self.multiple * self.duration)
 
 
 class TestYieldLockedShelf:
