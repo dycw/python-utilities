@@ -35,8 +35,6 @@ from typing import (
     override,
 )
 
-from whenever import TimeDelta
-
 from utilities.functions import ensure_int, ensure_not_none, in_seconds
 from utilities.os import is_pytest
 from utilities.random import SYSTEM_RANDOM
@@ -482,16 +480,8 @@ async def sleep_max(
     duration: Duration | None = None, /, *, random: Random = SYSTEM_RANDOM
 ) -> None:
     """Sleep which accepts deltas."""
-    match duration:
-        case int() | float() as max_seconds:
-            ...
-        case TimeDelta():
-            max_seconds = duration.in_seconds()
-        case None:
-            return
-        case never:
-            assert_never(never)
-    await sleep(random.uniform(0.0, max_seconds))
+    if duration is not None:
+        await sleep(random.uniform(0.0, in_seconds(duration)))
 
 
 ##
