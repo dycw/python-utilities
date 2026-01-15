@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from asyncio import sleep
-
-from utilities.asyncio import sleep_td
+from utilities.asyncio import sleep
 from utilities.atools import call_memoized, memoize
 from utilities.whenever import SECOND
 
@@ -14,7 +12,7 @@ class TestCallMemoized:
         counter = 0
 
         async def increment() -> int:
-            await sleep(0.0)
+            await sleep()
             nonlocal counter
             counter += 1
             return counter
@@ -27,7 +25,7 @@ class TestCallMemoized:
         counter = 0
 
         async def increment() -> int:
-            await sleep(0.0)
+            await sleep()
             nonlocal counter
             counter += 1
             return counter
@@ -35,7 +33,7 @@ class TestCallMemoized:
         for _ in range(2):
             assert (await call_memoized(increment, _DELTA)) == 1
             assert counter == 1
-        await sleep_td(2 * _DELTA)
+        await sleep(2 * _DELTA)
         for _ in range(2):
             assert (await call_memoized(increment, _DELTA)) == 2
             assert counter == 2
@@ -47,7 +45,7 @@ class TestMemoize:
 
         @memoize
         async def increment() -> int:
-            await sleep(0.0)
+            await sleep()
             nonlocal counter
             counter += 1
             return counter
@@ -61,13 +59,13 @@ class TestMemoize:
 
         @memoize(duration=_DELTA)
         async def increment() -> int:
-            await sleep(0.0)
+            await sleep()
             nonlocal counter
             counter += 1
             return counter
 
         assert await increment() == 1
         assert counter == 1
-        await sleep_td(2 * _DELTA)
+        await sleep(2 * _DELTA)
         assert await increment() == 2
         assert counter == 2

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
-from utilities.time import sleep_td
+from utilities.time import sleep
 from utilities.timer import Timer
 from utilities.whenever import SECOND
 
@@ -16,15 +16,15 @@ class TestSleepTD:
 
     def test_main(self) -> None:
         with Timer() as timer:
-            sleep_td(self.delta)
+            sleep(self.delta)
         assert timer <= self.multiple * self.delta
 
     def test_number(self) -> None:
         with Timer() as timer:
-            sleep_td(self.delta.in_seconds())
+            sleep(self.delta.in_seconds())
         assert timer <= self.multiple * self.delta
 
     def test_none(self) -> None:
         with Timer() as timer:
-            sleep_td()
+            sleep()
         assert timer <= self.multiple * self.delta

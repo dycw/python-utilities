@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from asyncio import sleep
 from dataclasses import dataclass, field
 from io import StringIO
 from logging import Formatter, LoggerAdapter, StreamHandler, getLogger
@@ -12,6 +11,7 @@ from hypothesis import given
 from hypothesis.strategies import integers
 from pytest import LogCaptureFixture, mark, param, raises
 
+from utilities.asyncio import sleep
 from utilities.hypothesis import pairs, temp_paths, zoned_date_times
 from utilities.iterables import one
 from utilities.logging import (

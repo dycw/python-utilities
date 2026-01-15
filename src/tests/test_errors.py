@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from asyncio import TaskGroup, sleep
+from asyncio import TaskGroup
 
 from pytest import RaisesGroup, raises
 
+from utilities.asyncio import sleep
 from utilities.errors import ImpossibleCaseError, is_instance_error, repr_error
 
 
@@ -27,7 +28,7 @@ class TestIsInstanceError:
         class CustomError(Exception): ...
 
         async def coroutine() -> None:
-            await sleep(0.0)
+            await sleep()
             raise CustomError
 
         with RaisesGroup(CustomError) as exc_info:
@@ -59,13 +60,13 @@ class TestReprError:
         class Custom1Error(Exception): ...
 
         async def coroutine1() -> None:
-            await sleep(0.0)
+            await sleep()
             raise Custom1Error
 
         class Custom2Error(Exception): ...
 
         async def coroutine2() -> None:
-            await sleep(0.0)
+            await sleep()
             msg = "message2"
             raise Custom2Error(msg)
 

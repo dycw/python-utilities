@@ -20,7 +20,7 @@ from typing import (
 
 from redis.asyncio import Redis
 
-from utilities.asyncio import sleep_td, timeout_td
+from utilities.asyncio import timeout_td
 from utilities.contextlib import enhanced_async_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, identity
@@ -783,7 +783,7 @@ async def _subscribe_core[T](
                     error_filter=error_filter,
                 )
             else:
-                await sleep_td(sleep)
+                await sleep(sleep)
 
 
 def _is_message(

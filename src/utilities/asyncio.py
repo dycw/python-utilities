@@ -10,7 +10,6 @@ from asyncio import (
     Task,
     TaskGroup,
     create_subprocess_shell,
-    sleep,
 )
 from contextlib import (
     AbstractAsyncContextManager,
@@ -36,7 +35,7 @@ from typing import (
     override,
 )
 
-from whenever import DateDelta, DateTimeDelta, TimeDelta
+from whenever import TimeDelta
 
 from utilities.functions import ensure_int, ensure_not_none
 from utilities.os import is_pytest
@@ -75,8 +74,8 @@ if TYPE_CHECKING:
         Delta,
         MaybeCallableBoolLike,
         MaybeType,
-        Number,
         PathLike,
+        SleepLike,
         SupportsKeysAndGetItem,
     )
 
@@ -470,13 +469,37 @@ def put_items_nowait[T](items: Iterable[T], queue: Queue[T], /) -> None:
 ##
 
 
+async def sleep(duration: SleepLike | None = None, /) -> None:
+    """Sleep which accepts deltas."""
+    match duration:
+        case int() | float() as seconds:
+            ...
+        case TimeDelta():
+            seconds = duration.in_seconds()
+        case None:
+            return
+        case never:
+            assert_never(never)
+    await asyncio.sleep(seconds)
+
+
+##
+
+
 async def sleep_max(
-    sleep: Delta | None = None, /, *, random: Random = SYSTEM_RANDOM
+    duration: SleepLike | None = None, /, *, random: Random = SYSTEM_RANDOM
 ) -> None:
     """Sleep which accepts deltas."""
-    if sleep is None:
-        return
-    await asyncio.sleep(random.uniform(0.0, to_nanoseconds(sleep) / 1e9))
+    match duration:
+        case int() | float() as max_seconds:
+            ...
+        case TimeDelta():
+            max_seconds = duration.in_seconds()
+        case None:
+            return
+        case never:
+            assert_never(never)
+    await sleep(random.uniform(0.0, max_seconds))
 
 
 ##
@@ -490,26 +513,9 @@ async def sleep_rounded(delta: Delta, /) -> None:
 ##
 
 
-async def sleep_td(delta: Delta | Number | None = None, /) -> None:
-    """Sleep which accepts deltas."""
-    match delta:
-        case DateDelta() | TimeDelta() | DateTimeDelta():
-            seconds = to_nanoseconds(delta) / 1e9
-        case int() | float() as seconds:
-            ...
-        case None:
-            return
-        case never:
-            assert_never(never)
-    await sleep(seconds)
-
-
-##
-
-
 async def sleep_until(datetime: ZonedDateTime, /) -> None:
     """Sleep until a given time."""
-    await sleep_td(datetime - get_now())
+    await sleep(datetime - get_now())
 
 
 ##
@@ -615,9 +621,9 @@ __all__ = [
     "one_async",
     "put_items",
     "put_items_nowait",
+    "sleep",
     "sleep_max",
     "sleep_rounded",
-    "sleep_td",
     "sleep_until",
     "stream_command",
     "timeout_td",

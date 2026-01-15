@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from asyncio import sleep
 from inspect import signature
 from typing import TYPE_CHECKING, NoReturn
 
 from pytest import mark, param, raises
 
-from utilities.asyncio import sleep_td
+from utilities.asyncio import sleep
 from utilities.os import temp_environ
 from utilities.throttle import (
     _ThrottleMarkerFileError,
@@ -38,7 +37,7 @@ class TestThrottle:
             func()
             assert counter == 1
             assert temp_file.is_file()
-        await sleep_td(2 * _DELTA)
+        await sleep(2 * _DELTA)
         for _ in range(2):
             func()
             assert counter == 2
@@ -100,7 +99,7 @@ class TestThrottle:
         assert temp_file.is_file()
         func()
         assert counter == 1
-        await sleep_td(2 * _DELTA)
+        await sleep(2 * _DELTA)
         with raises(CustomError):
             func()
         assert counter == 2
@@ -114,7 +113,7 @@ class TestThrottle:
 
         @throttle(on_try=on_try, delta=_DELTA, path=temp_file)
         async def func() -> None:
-            await sleep(0)
+            await sleep()
             nonlocal counter
             counter += 1
 
@@ -122,7 +121,7 @@ class TestThrottle:
             await func()
             assert counter == 1
             assert temp_file.is_file()
-        await sleep_td(2 * _DELTA)
+        await sleep(2 * _DELTA)
         for _ in range(2):
             await func()
             assert counter == 2
@@ -140,7 +139,7 @@ class TestThrottle:
 
         @throttle(on_try=on_try, delta=_DELTA, path=temp_file, raiser=raiser)
         async def func() -> None:
-            await sleep(0)
+            await sleep()
             nonlocal counter
             counter += 1
 
@@ -158,7 +157,7 @@ class TestThrottle:
 
         @throttle(delta=_DELTA, path=temp_file)
         async def func() -> None:
-            await sleep(0)
+            await sleep()
             nonlocal counter
             counter += 1
             raise CustomError
@@ -176,7 +175,7 @@ class TestThrottle:
 
         @throttle(on_try=True, delta=_DELTA, path=temp_file)
         async def func() -> None:
-            await sleep(0)
+            await sleep()
             nonlocal counter
             counter += 1
             raise CustomError
@@ -187,7 +186,7 @@ class TestThrottle:
         assert temp_file.is_file()
         await func()
         assert counter == 1
-        await sleep_td(2 * _DELTA)
+        await sleep(2 * _DELTA)
         with raises(CustomError):
             await func()
         assert counter == 2

@@ -1,28 +1,26 @@
 from __future__ import annotations
 
-from time import sleep
+import time
 from typing import TYPE_CHECKING, assert_never
 
-from whenever import DateDelta, DateTimeDelta, Delta, TimeDelta
-
-from utilities.whenever import to_nanoseconds
+from whenever import TimeDelta
 
 if TYPE_CHECKING:
-    from redis.typing import Number
+    from utilities.types import SleepLike
 
 
-def sleep_td(delta: Delta | Number | None = None, /) -> None:
+def sleep(duration: SleepLike | None = None, /) -> None:
     """Sleep which accepts deltas."""
-    match delta:
-        case DateDelta() | TimeDelta() | DateTimeDelta():
-            seconds = to_nanoseconds(delta) / 1e9
+    match duration:
         case int() | float() as seconds:
             ...
+        case TimeDelta():
+            seconds = duration.in_seconds()
         case None:
             return
         case never:
             assert_never(never)
-    sleep(seconds)
+    time.sleep(seconds)
 
 
-__all__ = ["sleep_td"]
+__all__ = ["sleep"]

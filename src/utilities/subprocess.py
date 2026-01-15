@@ -12,7 +12,6 @@ from shutil import copyfile, copytree, move, rmtree
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
-from time import sleep
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.contextlib import enhanced_context_manager
@@ -23,7 +22,8 @@ from utilities.pathlib import PWD, file_or_dir
 from utilities.permissions import Permissions, ensure_perms
 from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
-from utilities.whenever import SECOND, to_seconds
+from utilities.time import sleep
+from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -1218,9 +1218,9 @@ def run(
                     and (retry_skip is not None)
                     and retry_skip(return_code, stdout_text, stderr_text)
                 ):
-                    attempts = delta = None
+                    attempts = duration = None
                 else:
-                    attempts, delta = retry
+                    attempts, duration = retry
                 if logger is not None:
                     msg = strip_and_dedent(f"""
 'run' failed with:
@@ -1240,18 +1240,18 @@ def run(
 {stderr_text}-------------------------------------------------------------------------------
 """)
                     if (attempts is not None) and (attempts >= 1):
-                        if delta is None:
+                        if duration is None:
                             msg = f"{msg}\n\nRetrying {attempts} more time(s)..."
                         else:
-                            msg = f"{msg}\n\nRetrying {attempts} more time(s) after {delta}..."
+                            msg = f"{msg}\n\nRetrying {attempts} more time(s) after {duration}..."
                     to_logger(logger).error(msg)
                 error = CalledProcessError(
                     return_code, args, output=stdout_text, stderr=stderr_text
                 )
                 if (attempts is None) or (attempts <= 0):
                     raise error
-                if delta is not None:
-                    sleep(to_seconds(delta))
+                if duration is not None:
+                    sleep(duration)
                 return run(
                     cmd,
                     *cmds_or_args,
@@ -1267,7 +1267,7 @@ def run(
                     return_=return_,
                     return_stdout=return_stdout,
                     return_stderr=return_stderr,
-                    retry=(attempts - 1, delta),
+                    retry=(attempts - 1, duration),
                     logger=logger,
                 )
             case never:
@@ -1554,7 +1554,7 @@ def ssh_await(
         try:
             ssh(user, hostname, "true")
         except CalledProcessError:
-            sleep(to_seconds(delta))
+            sleep(delta)
         else:
             if logger is not None:
                 to_logger(logger).info("'%s' is up", hostname)

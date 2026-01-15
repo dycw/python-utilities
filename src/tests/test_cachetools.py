@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from hypothesis import example, given
 from hypothesis.strategies import integers, none
 
-from utilities.asyncio import sleep_td
+from utilities.asyncio import sleep
 from utilities.cachetools import TTLSet, cache
 from utilities.hypothesis import time_deltas
 from utilities.whenever import SECOND
@@ -62,7 +62,7 @@ class TestTTLSet:
         delta = 0.1 * SECOND
         set_ = TTLSet(range(3), max_duration=delta)
         assert set_ == {0, 1, 2}
-        await sleep_td(2 * delta)
+        await sleep(2 * delta)
         assert set_ == set()
 
     def test_max_size(self) -> None:

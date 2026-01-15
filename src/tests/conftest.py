@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from asyncio import sleep
 from contextlib import AbstractContextManager, suppress
 from logging import LogRecord, setLogRecordFactory
 from typing import TYPE_CHECKING
@@ -9,6 +8,7 @@ from hypothesis import HealthCheck
 from pytest import fixture, param, skip
 from whenever import PlainDateTime
 
+from utilities.asyncio import sleep
 from utilities.contextlib import enhanced_context_manager
 from utilities.pytest import IS_CI, IS_CI_AND_NOT_LINUX, skipif_ci
 from utilities.re import ExtractGroupError, extract_group
@@ -207,7 +207,7 @@ async def test_async_engine(
     test_async_sqlite_engine: AsyncEngine,
     test_async_postgres_engine: AsyncEngine,
 ) -> AsyncEngine:
-    await sleep(0.0)
+    await sleep()
     dialect = request.param
     match dialect:
         case "sqlite":
@@ -223,7 +223,7 @@ async def test_async_engine(
 async def test_async_sqlite_engine(*, tmp_path: Path) -> AsyncEngine:
     from utilities.sqlalchemy import create_engine
 
-    await sleep(0.0)
+    await sleep()
     db_path = tmp_path / "db.sqlite"
     return create_engine("sqlite+aiosqlite", database=str(db_path), async_=True)
 

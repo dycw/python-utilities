@@ -9,7 +9,7 @@ from pottery import AIORedlock
 from pottery.exceptions import ReleaseUnlockedLock
 from redis.asyncio import Redis
 
-from utilities.asyncio import sleep_td, timeout_td
+from utilities.asyncio import timeout_td
 from utilities.contextlib import enhanced_async_context_manager
 from utilities.iterables import always_iterable
 from utilities.whenever import MILLISECOND, SECOND, to_nanoseconds
@@ -75,7 +75,7 @@ async def yield_access(
         )
         yield lock
     finally:  # skipif-ci-and-not-linux
-        await sleep_td(throttle)
+        await sleep(throttle)
         if lock is not None:
             with suppress(ReleaseUnlockedLock):
                 await lock.release()
@@ -98,7 +98,7 @@ async def _get_first_available_lock(
         while True:
             if (result := await _get_first_available_lock_if_any(locks)) is not None:
                 return result
-            await sleep_td(sleep)
+            await sleep(sleep)
 
 
 async def _get_first_available_lock_if_any(

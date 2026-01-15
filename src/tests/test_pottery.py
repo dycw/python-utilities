@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 from pottery import AIORedlock
 from pytest import mark, param, raises
 
-from utilities.asyncio import sleep_td
+from utilities.asyncio import sleep
 from utilities.pottery import (
     _YieldAccessNumLocksError,
     _YieldAccessUnableToAcquireLockError,
@@ -87,7 +87,7 @@ class TestYieldAccess:
             async with yield_access(
                 test_redis, key, num=1, timeout_acquire=delta, throttle=5 * delta
             ):
-                await sleep_td(delta)
+                await sleep(delta)
 
         with raises(ExceptionGroup) as exc_info:
             async with TaskGroup() as tg:
@@ -103,7 +103,7 @@ class TestYieldAccess:
     ) -> None:
         async def coroutine() -> None:
             async with yield_access(redis, key, num=num_locks):
-                await sleep_td(self.delta)
+                await sleep(self.delta)
 
         async with TaskGroup() as tg:
             _ = [tg.create_task(coroutine()) for _ in range(num_tasks)]

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-import time
 from asyncio import run
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -14,20 +12,25 @@ from hypothesis import given
 from hypothesis.strategies import booleans
 from pytest import mark, param, raises
 
+import utilities.asyncio
+import utilities.time
 from utilities.contextlib import (
     enhanced_async_context_manager,
     enhanced_context_manager,
     suppress_super_object_attribute_error,
 )
 from utilities.pytest import skipif_ci
+from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Iterator
 
-    from utilities.types import PathLike
+    from utilities.types import PathLike, SleepLike
 
 
-def _test_enhanced_context_manager(path: PathLike, /, *, sleep: float = 0.1) -> None:
+def _test_enhanced_context_manager(
+    path: PathLike, /, *, duration: SleepLike = 0.1
+) -> None:
     path = Path(path)
     path.touch()
 
@@ -39,31 +42,31 @@ def _test_enhanced_context_manager(path: PathLike, /, *, sleep: float = 0.1) -> 
             path.unlink(missing_ok=True)
 
     with yield_marker():
-        time.sleep(sleep)
+        utilities.time.sleep(duration)
 
 
 def _test_enhanced_async_context_manager_entry(
-    path: PathLike, /, *, sleep: float = 0.1
+    path: PathLike, /, *, duration: SleepLike = 0.1
 ) -> None:
-    run(_test_enhanced_async_context_manager_core(path, sleep=sleep))
+    run(_test_enhanced_async_context_manager_core(path, duration=duration))
 
 
 async def _test_enhanced_async_context_manager_core(
-    path: PathLike, /, *, sleep: float = 0.1
+    path: PathLike, /, *, duration: SleepLike = 0.1
 ) -> None:
     path = Path(path)
     path.touch()
 
     @enhanced_async_context_manager
     async def yield_marker() -> AsyncIterator[None]:
-        await asyncio.sleep(0.0)
+        await utilities.asyncio.sleep()
         try:
             yield
         finally:
             path.unlink(missing_ok=True)
 
     async with yield_marker():
-        await asyncio.sleep(sleep)
+        await utilities.asyncio.sleep(duration)
 
 
 class TestEnhancedContextManager:
@@ -163,7 +166,7 @@ class TestEnhancedContextManager:
             sigterm=sigterm,
         )
         async def yield_marker() -> AsyncIterator[None]:
-            await asyncio.sleep(0.0)
+            await utilities.asyncio.sleep()
             try:
                 yield
             finally:
@@ -177,7 +180,7 @@ class TestEnhancedContextManager:
     def test_async_signature(self) -> None:
         @enhanced_async_context_manager
         async def yield_marker(x: int, y: int, /) -> AsyncIterator[int]:
-            await asyncio.sleep(0.0)
+            await utilities.asyncio.sleep()
             yield x + y
 
         sig = set(signature(yield_marker).parameters)
@@ -196,7 +199,7 @@ class TestEnhancedContextManager:
 
         @enhanced_async_context_manager
         async def yield_marker() -> AsyncIterator[None]:
-            await asyncio.sleep(0.0)
+            await utilities.asyncio.sleep()
             try:
                 yield
             finally:
@@ -218,18 +221,18 @@ class TestEnhancedContextManager:
     def test_multiprocessing_sigterm(
         self, *, tmp_path: Path, target: Callable[..., None]
     ) -> None:
-        sleep = 1.0
+        duration = SECOND
         marker = tmp_path.joinpath("marker")
-        proc = Process(target=target, args=(marker,), kwargs={"sleep": 4 * sleep})
+        proc = Process(target=target, args=(marker,), kwargs={"sleep": 4 * duration})
         proc.start()
         assert proc.pid is not None
         assert proc.is_alive()
         assert not marker.exists()
-        time.sleep(sleep)
+        utilities.time.sleep(duration)
         assert proc.is_alive()
         assert marker.is_file()
         proc.terminate()
-        time.sleep(sleep)
+        utilities.time.sleep(duration)
         assert proc.is_alive()
         assert not marker.exists()
 
