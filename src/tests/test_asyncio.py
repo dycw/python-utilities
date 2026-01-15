@@ -407,7 +407,7 @@ class TestSleepMaxDur:
         assert timer <= self.multiple * self.delta
 
 
-class TestSleepTD:
+class TestSleep:
     multiple: ClassVar[int] = 5
     delta: ClassVar[TimeDelta] = 0.05 * SECOND
 

@@ -37,7 +37,7 @@ from typing import (
 
 from whenever import TimeDelta
 
-from utilities.functions import ensure_int, ensure_not_none
+from utilities.functions import ensure_int, ensure_not_none, in_seconds
 from utilities.os import is_pytest
 from utilities.random import SYSTEM_RANDOM
 from utilities.reprlib import get_repr
@@ -471,16 +471,8 @@ def put_items_nowait[T](items: Iterable[T], queue: Queue[T], /) -> None:
 
 async def sleep(duration: Duration | None = None, /) -> None:
     """Sleep which accepts deltas."""
-    match duration:
-        case int() | float() as seconds:
-            ...
-        case TimeDelta():
-            seconds = duration.in_seconds()
-        case None:
-            return
-        case never:
-            assert_never(never)
-    await asyncio.sleep(seconds)
+    if duration is not None:
+        await asyncio.sleep(in_seconds(duration))
 
 
 ##
