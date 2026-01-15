@@ -42,7 +42,7 @@ def _build_test_method(
         _ = (self, tb)  # pragma: no cover
 
     if delta is not None:
-        method = throttle_test(delta=delta, on_try=on_try)(method)
+        method = throttle_test(duration=delta, on_try=on_try)(method)
 
     return method
 

@@ -26,7 +26,7 @@ class TestSendToSlack:
             await send_to_slack_async("url", "message")
 
     @mark.skipif(get_env_var("SLACK", nullable=True) is None, reason="'SLACK' not set")
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     async def test_real(self) -> None:
         url = get_env_var("SLACK")
         await send_to_slack_async(

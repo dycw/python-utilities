@@ -8,7 +8,7 @@ from utilities.whenever import MINUTE
 
 
 class TestGetPublicIP:
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_main(self) -> None:
         ip = get_public_ip(timeout=10.0)
         assert isinstance(ip, IPv4Address)

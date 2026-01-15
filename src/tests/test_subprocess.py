@@ -349,7 +349,7 @@ class TestCpCmd:
 
 class TestCurl:
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_main(self) -> None:
         curl("https://example.com")
 
@@ -423,7 +423,7 @@ class TestExpandPath:
 
 
 class TestGitBranchCurrent:
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_main(self, *, git_repo_url: str, tmp_path: Path) -> None:
         git_clone(git_repo_url, tmp_path)
         result = git_branch_current(tmp_path)
@@ -431,7 +431,7 @@ class TestGitBranchCurrent:
 
 
 class TestGitCheckout:
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_main(self, *, git_repo_url: str, tmp_path: Path) -> None:
         git_clone(git_repo_url, tmp_path)
         git_checkout("branch", tmp_path)
@@ -447,12 +447,12 @@ class TestGitCheckoutCmd:
 
 
 class TestGitClone:
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_main(self, *, git_repo_url: str, tmp_path: Path) -> None:
         git_clone(git_repo_url, tmp_path)
         assert (tmp_path / ".git").is_dir()
 
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_branch(self, *, git_repo_url: str, tmp_path: Path) -> None:
         git_clone(git_repo_url, tmp_path, branch="branch")
         result = git_branch_current(tmp_path)
@@ -681,7 +681,7 @@ class TestRmCmd:
 
 class TestRsync:
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_file(self, *, temp_file: Path, ssh_user: str, ssh_hostname: str) -> None:
         with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
             dest = temp_dest / temp_file.name
@@ -694,7 +694,7 @@ class TestRsync:
             )
 
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_dir_without_trailing_slash(
         self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
     ) -> None:
@@ -712,7 +712,7 @@ class TestRsync:
             )
 
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_dir_with_trailing_slash(
         self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
     ) -> None:
@@ -904,7 +904,7 @@ class TestRsyncCmd:
 
 class TestRsyncMany:
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_single_file(
         self, *, temp_file: Path, ssh_user: str, ssh_hostname: str
     ) -> None:
@@ -919,7 +919,7 @@ class TestRsyncMany:
             )
 
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_multiple_files(
         self, *, temp_files: tuple[Path, Path], ssh_user: str, ssh_hostname: str
     ) -> None:
@@ -938,7 +938,7 @@ class TestRsyncMany:
             )
 
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_single_directory(
         self, *, tmp_path: Path, temp_file: Path, ssh_user: str, ssh_hostname: str
     ) -> None:
@@ -957,7 +957,7 @@ class TestRsyncMany:
             )
 
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_file_and_directory(
         self, *, tmp_path: Path, ssh_user: str, ssh_hostname: str
     ) -> None:
@@ -1415,7 +1415,7 @@ class TestSSH:
         ],
     )
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_main(
         self,
         *,
@@ -1432,7 +1432,7 @@ class TestSSH:
         assert cap.err == ""
 
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_env(
         self, *, capsys: CaptureFixture, ssh_user: str, ssh_hostname: str
     ) -> None:
@@ -1448,12 +1448,12 @@ class TestSSH:
 
 class TestSSHAwait:
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_main(self, *, ssh_user: str, ssh_hostname: str) -> None:
         ssh_await(ssh_user, ssh_hostname)
 
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_logger(
         self, *, caplog: LogCaptureFixture, ssh_user: str, ssh_hostname: str
     ) -> None:
@@ -1983,7 +1983,7 @@ class TestUvWithCmd:
 
 
 class TestYieldGitRepo:
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_main(self, *, git_repo_url: str) -> None:
         with yield_git_repo(git_repo_url) as temp:
             assert (temp / "README.md").is_file()
@@ -1991,7 +1991,7 @@ class TestYieldGitRepo:
 
 class TestYieldSSHTempDir:
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_main(self, *, ssh_user: str, ssh_hostname: str) -> None:
         with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp:
             ssh(ssh_user, ssh_hostname, input=self._raise_missing(temp))
@@ -2002,14 +2002,14 @@ class TestYieldSSHTempDir:
             ssh(ssh_user, ssh_hostname, input=self._raise_missing(temp))
 
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_keep(self, *, ssh_user: str, ssh_hostname: str) -> None:
         with yield_ssh_temp_dir(ssh_user, ssh_hostname, keep=True) as temp:
             ...
         ssh(ssh_user, ssh_hostname, input=self._raise_missing(temp))
 
     @skipif_ci
-    @throttle_test(delta=5 * MINUTE)
+    @throttle_test(duration=5 * MINUTE)
     def test_keep_and_logger(
         self, *, caplog: LogCaptureFixture, ssh_user: str, ssh_hostname: str
     ) -> None:
