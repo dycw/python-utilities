@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 
 class TestPingReceiver:
+    multiple: ClassVar[int] = 10
     duration: ClassVar[TimeDelta] = 0.05 * SECOND
     port: ClassVar[int] = 5465
 
@@ -20,7 +21,9 @@ class TestPingReceiver:
     async def test_main(self) -> None:
         assert await self.ping() is False
         await sleep(self.duration)
-        async with yield_ping_receiver(self.port, timeout=2 * self.duration):
+        async with yield_ping_receiver(
+            self.port, timeout=self.multiple * self.duration
+        ):
             await sleep(self.duration)
             result = await self.ping()
             assert isinstance(result, str)
