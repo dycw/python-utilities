@@ -34,6 +34,13 @@ class TestSubstitute:
             result = substitute(self.template, environ=True, key=key, value=value)
         self._assert_equal(result, key, value)
 
+    def test_mapping(self) -> None:
+        key, value = unique_str(), unique_str()
+        result = substitute(
+            self.template, mapping={"TEMPLATE_KEY": key, "TEMPLATE_VALUE": value}
+        )
+        self._assert_equal(result, key, value)
+
     def _assert_equal(self, text: str, key: str, value: str) -> None:
         expected = strip_and_dedent(f"""
             This is a template string with:
