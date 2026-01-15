@@ -100,10 +100,9 @@ class TestTimer:
             _ = op(timer, "")
 
     def test_context_manager(self) -> None:
-        duration = 0.1
         with Timer() as timer:
-            sleep(2 * duration)
-        assert timer >= duration
+            sleep(_MULTIPLE * _DURATION)
+        assert timer >= _DURATION
 
     def test_float(self) -> None:
         with Timer() as timer:
