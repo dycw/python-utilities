@@ -1871,7 +1871,6 @@ def uv_tool_install(
     *,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
-    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -1891,7 +1890,6 @@ def uv_tool_install(
     *,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
-    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -1911,7 +1909,6 @@ def uv_tool_install(
     *,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
-    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -1931,7 +1928,6 @@ def uv_tool_install(
     *,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
-    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -1951,7 +1947,6 @@ def uv_tool_install(
     *,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
-    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -1970,7 +1965,6 @@ def uv_tool_install(
     *,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
-    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -1985,13 +1979,7 @@ def uv_tool_install(
 ) -> str | None:
     """Install commands provided by a Python package."""
     return run(  # pragma: no cover
-        *uv_tool_install_cmd(
-            package,
-            with_=with_,
-            index=index,
-            reinstall=reinstall,
-            native_tls=native_tls,
-        ),
+        *uv_tool_install_cmd(package, with_=with_, index=index, native_tls=native_tls),
         cwd=cwd,
         env=env,
         print=print,
@@ -2011,19 +1999,16 @@ def uv_tool_install_cmd(
     *,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
-    reinstall: bool = False,
     native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to install commands provided by a Python package."""
-    args: list[str] = ["uv", "tool"]
+    args: list[str] = ["uv", "tool", "install"]
     if with_ is not None:
         for with_i in always_iterable(with_):
             args.extend(["--with", with_i])
     if index is not None:
         args.extend(["--index", ",".join(always_iterable(index))])
-    if reinstall:
-        args.append("--reinstall")
-    args.append("--managed-python")
+    args.extend(["--reinstall", "--managed-python"])
     if native_tls:
         args.append("--native-tls")
     return [*args, package]

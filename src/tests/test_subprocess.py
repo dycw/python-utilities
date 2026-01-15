@@ -87,6 +87,7 @@ from utilities.subprocess import (
     touch_cmd,
     useradd_cmd,
     uv_run_cmd,
+    uv_tool_install_cmd,
     yield_git_repo,
     yield_ssh_temp_dir,
 )
@@ -1773,33 +1774,55 @@ class TestUvRunCmd:
 
 class TestUvToolInstallCmd:
     def test_main(self) -> None:
-        result = uv_run_cmd("package")
+        result = uv_tool_install_cmd("package")
         expected = [
             "uv",
-            "run",
-            "--no-dev",
-            "--active",
-            "--prerelease=disallow",
+            "tool",
+            "install",
+            "--reinstall",
             "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
+            "package",
         ]
         assert result == expected
 
-    def test_args(self) -> None:
-        result = uv_run_cmd("foo.bar", "--arg")
+    def test_with(self) -> None:
+        result = uv_tool_install_cmd("package", with_="with")
         expected = [
             "uv",
-            "run",
-            "--no-dev",
-            "--active",
-            "--prerelease=disallow",
+            "tool",
+            "install",
+            "--with",
+            "with",
+            "--reinstall",
             "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
-            "--arg",
+            "package",
+        ]
+        assert result == expected
+
+    def test_index(self) -> None:
+        result = uv_tool_install_cmd("package", index="index")
+        expected = [
+            "uv",
+            "tool",
+            "install",
+            "--index",
+            "index",
+            "--reinstall",
+            "--managed-python",
+            "package",
+        ]
+        assert result == expected
+
+    def test_native_tls(self) -> None:
+        result = uv_tool_install_cmd("package", native_tls=True)
+        expected = [
+            "uv",
+            "tool",
+            "install",
+            "--reinstall",
+            "--managed-python",
+            "--native-tls",
+            "package",
         ]
         assert result == expected
 
