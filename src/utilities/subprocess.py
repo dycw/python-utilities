@@ -14,6 +14,7 @@ from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
+from utilities.constants import SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import always_iterable
@@ -23,7 +24,6 @@ from utilities.permissions import Permissions, ensure_perms
 from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
 from utilities.time import sleep
-from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator

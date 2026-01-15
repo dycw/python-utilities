@@ -10,11 +10,12 @@ from typing import TYPE_CHECKING, Any, NoReturn, assert_never, cast, override
 from whenever import ZonedDateTime
 
 from utilities.atomicwrites import writer
+from utilities.constants import SECOND
 from utilities.functions import in_timedelta
 from utilities.os import get_env_var
 from utilities.pathlib import to_path
 from utilities.types import Duration, MaybeCallablePathLike, MaybeCoro
-from utilities.whenever import SECOND, get_now_local
+from utilities.whenever import get_now_local
 
 if TYPE_CHECKING:
     from utilities.types import Coro

@@ -9,6 +9,7 @@ from re import sub
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, NoReturn, override
 
+from utilities.constants import SECOND
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
 from utilities.pathlib import (
@@ -21,7 +22,6 @@ from utilities.pathlib import (
 from utilities.platform import IS_LINUX, IS_MAC, IS_NOT_LINUX, IS_NOT_MAC
 from utilities.throttle import throttle
 from utilities.types import Duration, MaybeCoro
-from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

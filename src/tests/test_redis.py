@@ -22,6 +22,7 @@ from redis.asyncio.client import PubSub
 
 from tests.test_objects.objects import objects
 from utilities.asyncio import get_items_nowait, sleep
+from utilities.constants import MICROSECOND, SECOND
 from utilities.functions import get_class_name, identity
 from utilities.hypothesis import int64s, pairs, text_ascii
 from utilities.iterables import one
@@ -44,7 +45,6 @@ from utilities.redis import (
 )
 from utilities.sentinel import SENTINEL_REPR, Sentinel, sentinel
 from utilities.text import unique_str
-from utilities.whenever import MICROSECOND, SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence

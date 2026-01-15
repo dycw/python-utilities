@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from pytest import CaptureFixture, LogCaptureFixture, mark, param, raises
 
+from utilities.constants import MINUTE
 from utilities.docker import (
     _docker_compose_cmd,
     docker_compose_down_cmd,
@@ -23,7 +24,6 @@ from utilities.iterables import one
 from utilities.pytest import skipif_ci, throttle_test
 from utilities.subprocess import BASH_LS, touch_cmd
 from utilities.text import unique_str
-from utilities.whenever import MINUTE
 
 if TYPE_CHECKING:
     from pathlib import Path

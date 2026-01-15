@@ -8,10 +8,10 @@ from slack_sdk.webhook import WebhookClient
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
 import utilities.asyncio
+from utilities.constants import MINUTE
 from utilities.functions import in_seconds
 from utilities.functools import cache
 from utilities.math import safe_round
-from utilities.whenever import MINUTE
 
 if TYPE_CHECKING:
     from slack_sdk.webhook import WebhookResponse

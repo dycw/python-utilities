@@ -14,13 +14,13 @@ from pytest import mark, param, raises
 
 import utilities.asyncio
 import utilities.time
+from utilities.constants import SECOND
 from utilities.contextlib import (
     enhanced_async_context_manager,
     enhanced_context_manager,
     suppress_super_object_attribute_error,
 )
 from utilities.pytest import skipif_ci
-from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Iterator

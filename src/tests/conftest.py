@@ -9,11 +9,12 @@ from pytest import fixture, param, skip
 from whenever import PlainDateTime
 
 from utilities.asyncio import sleep
+from utilities.constants import MINUTE
 from utilities.contextlib import enhanced_context_manager
 from utilities.pytest import IS_CI, IS_CI_AND_NOT_LINUX, skipif_ci
 from utilities.re import ExtractGroupError, extract_group
 from utilities.tempfile import TemporaryDirectory, TemporaryFile
-from utilities.whenever import MINUTE, get_now_local_plain
+from utilities.whenever import get_now_local_plain
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator

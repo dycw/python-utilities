@@ -36,7 +36,6 @@ from utilities.types import (
     SupportsRichComparison,
     TypeLike,
 )
-from utilities.whenever import SECOND
 
 if TYPE_CHECKING:
     from collections.abc import Container
@@ -605,7 +604,7 @@ def in_timedelta(duration: Duration, /) -> TimeDelta:
     """Convert a duration to a timedelta."""
     match duration:
         case int() | float():
-            return duration * SECOND
+            return duration * TimeDelta
         case TimeDelta():
             return duration
         case never:
