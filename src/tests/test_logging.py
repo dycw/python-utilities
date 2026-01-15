@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     from whenever import TimeDelta, ZonedDateTime
 
 
-_DURATION: TimeDelta = 0.05 * SECOND
+_DURATION: TimeDelta = 0.1 * SECOND
 _MULTIPLE: int = 10
 
 
@@ -447,7 +447,7 @@ class TestSizeAndTimeRotatingFileHandler:
                 filename=tmp_path.joinpath("log.txt"),
                 backupCount=3,
                 when="S",
-                interval=1,
+                interval=_DURATION,
             )
         )
 
