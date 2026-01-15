@@ -67,6 +67,7 @@ from utilities.functions import (
     get_func_name,
     get_func_qualname,
     identity,
+    in_milli_seconds,
     in_seconds,
     is_none,
     is_not_none,
@@ -81,7 +82,14 @@ from utilities.functions import (
 )
 from utilities.sentinel import sentinel
 from utilities.text import parse_bool, strip_and_dedent
-from utilities.whenever import NOW_UTC, SECOND, ZERO_TIME, get_now, get_today
+from utilities.whenever import (
+    MILLISECOND,
+    NOW_UTC,
+    SECOND,
+    ZERO_TIME,
+    get_now,
+    get_today,
+)
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -555,6 +563,20 @@ class TestIdentity:
     @given(x=integers())
     def test_main(self, *, x: int) -> None:
         assert identity(x) == x
+
+
+class TestInMilliSeconds:
+    @mark.parametrize(
+        ("duration", "expected"),
+        [
+            param(1, 1000),
+            param(1.0, 1000.0),
+            param(SECOND, 1000.0),
+            param(MILLISECOND, 1.0),
+        ],
+    )
+    def test_main(self, *, duration: Duration, expected: Number) -> None:
+        assert in_milli_seconds(duration) == expected
 
 
 class TestInSeconds:

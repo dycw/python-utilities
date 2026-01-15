@@ -43,7 +43,7 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.shelve import yield_shelf
 from utilities.text import to_bool
 from utilities.warnings import suppress_warnings
-from utilities.whenever import get_now, round_date_or_date_time, to_nanoseconds
+from utilities.whenever import get_now, round_date_or_date_time
 
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
@@ -229,7 +229,7 @@ class EnhancedTaskGroup(TaskGroup):
 
     _max_tasks: int | None
     _semaphore: Semaphore | None
-    _timeout: Delta | None
+    _timeout: Duration | None
     _error: MaybeType[BaseException]
     _debug: MaybeCallableBoolLike
     _stack: AsyncExitStack
@@ -240,7 +240,7 @@ class EnhancedTaskGroup(TaskGroup):
         self,
         *,
         max_tasks: int | None = None,
-        timeout: Delta | None = None,
+        timeout: Duration | None = None,
         error: MaybeType[BaseException] = TimeoutError,
         debug: MaybeCallableBoolLike = False,
     ) -> None:
@@ -342,7 +342,7 @@ class EnhancedTaskGroup(TaskGroup):
             return await coroutine
 
     async def _wrap_with_timeout[T](self, coroutine: _CoroutineLike[T], /) -> T:
-        async with timeout_td(self._timeout, error=self._error):
+        async with timeout(self._timeout, error=self._error):
             return await coroutine
 
 
@@ -548,13 +548,16 @@ async def _stream_one(
 
 
 @asynccontextmanager
-async def timeout_td(
-    timeout: Delta | None = None, /, *, error: MaybeType[BaseException] = TimeoutError
+async def timeout(
+    timeout: Duration | None = None,
+    /,
+    *,
+    error: MaybeType[BaseException] = TimeoutError,
 ) -> AsyncIterator[None]:
     """Timeout context manager which accepts deltas."""
-    timeout_use = None if timeout is None else (to_nanoseconds(timeout) / 1e9)
+    seconds = None if timeout is None else in_seconds(timeout)
     try:
-        async with asyncio.timeout(timeout_use):
+        async with asyncio.timeout(seconds):
             yield
     except TimeoutError:
         raise error from None
@@ -608,6 +611,6 @@ __all__ = [
     "sleep_rounded",
     "sleep_until",
     "stream_command",
-    "timeout_td",
+    "timeout",
     "yield_locked_shelf",
 ]

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, override
 from fastapi import FastAPI
 from uvicorn import Config, Server
 
-from utilities.asyncio import timeout_td
+from utilities.asyncio import timeout
 from utilities.contextlib import enhanced_async_context_manager
 from utilities.whenever import get_now_local
 
@@ -47,7 +47,7 @@ async def yield_ping_receiver(
     server = Server(Config(app, host=host, port=port))  # skipif-ci
     _TASKS.append(create_task(server.serve()))  # skipif-ci
     try:  # skipif-ci
-        async with timeout_td(timeout, error=error):
+        async with timeout(timeout, error=error):
             yield
     finally:  # skipif-ci
         await server.shutdown()

@@ -584,6 +584,11 @@ def identity[T](obj: T, /) -> T:
 ##
 
 
+def in_milli_seconds(duration: Duration, /) -> float:
+    """Convert a duration to milli-seconds."""
+    return 1e3 * in_seconds(duration)
+
+
 def in_seconds(duration: Duration, /) -> float:
     """Convert a duration to seconds."""
     match duration:
@@ -819,6 +824,7 @@ __all__ = [
     "get_func_name",
     "get_func_qualname",
     "identity",
+    "in_milli_seconds",
     "in_seconds",
     "is_none",
     "is_not_none",

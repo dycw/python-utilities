@@ -28,7 +28,7 @@ from utilities.asyncio import (
     sleep_rounded,
     sleep_until,
     stream_command,
-    timeout_td,
+    timeout,
     yield_locked_shelf,
 )
 from utilities.hypothesis import pairs, text_ascii
@@ -446,23 +446,23 @@ class TestStreamCommand:
         )
 
 
-class TestTimeoutTD:
+class TestTimeout:
     delta: ClassVar[TimeDelta] = 0.05 * SECOND
 
     async def test_pass(self) -> None:
-        async with timeout_td(2 * self.delta):
+        async with timeout(2 * self.delta):
             await sleep(self.delta)
 
     async def test_fail(self) -> None:
         with raises(TimeoutError):
-            async with timeout_td(self.delta):
+            async with timeout(self.delta):
                 await sleep(2 * self.delta)
 
     async def test_custom_error(self) -> None:
         class CustomError(Exception): ...
 
         with raises(CustomError):
-            async with timeout_td(self.delta, error=CustomError):
+            async with timeout(self.delta, error=CustomError):
                 await sleep(2 * self.delta)
 
 

@@ -65,7 +65,7 @@ from sqlalchemy.orm import (
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
-from utilities.asyncio import timeout_td
+from utilities.asyncio import timeout
 from utilities.functions import ensure_str, get_class_name, yield_object_attributes
 from utilities.iterables import (
     CheckLengthError,
@@ -133,7 +133,7 @@ async def check_connect_async(
 ) -> bool:
     """Check if an engine can connect."""
     try:
-        async with timeout_td(timeout, error=error), engine.connect() as conn:
+        async with timeout(timeout, error=error), engine.connect() as conn:
             return bool((await conn.execute(_SELECT)).scalar_one())
     except (gaierror, ConnectionRefusedError, DatabaseError, TimeoutError):
         return False
@@ -922,7 +922,7 @@ async def yield_connection(
 ) -> AsyncIterator[AsyncConnection]:
     """Yield an async connection."""
     try:
-        async with timeout_td(timeout, error=error), engine.begin() as conn:
+        async with timeout(timeout, error=error), engine.begin() as conn:
             yield conn
     except GeneratorExit:  # pragma: no cover
         if not is_pytest():

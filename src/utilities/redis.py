@@ -20,14 +20,16 @@ from typing import (
 
 from redis.asyncio import Redis
 
-from utilities.asyncio import timeout_td
+import utilities.asyncio
+from utilities.asyncio import timeout
 from utilities.contextlib import enhanced_async_context_manager
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import ensure_int, identity
+from utilities.functions import ensure_int, identity, in_milli_seconds, in_seconds
 from utilities.iterables import always_iterable, one
+from utilities.math import safe_round
 from utilities.os import is_pytest
 from utilities.typing import is_instance_gen
-from utilities.whenever import MILLISECOND, SECOND, to_milliseconds, to_nanoseconds
+from utilities.whenever import MILLISECOND, SECOND
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Awaitable, Collection, Iterable
@@ -37,10 +39,10 @@ if TYPE_CHECKING:
     from redis.typing import EncodableT
 
     from utilities.iterables import MaybeIterable
-    from utilities.types import Delta, MaybeSequence, MaybeType, TypeLike
+    from utilities.types import Duration, MaybeSequence, MaybeType, TypeLike
 
 
-_PUBLISH_TIMEOUT: Delta = SECOND
+_PUBLISH_TIMEOUT: Duration = SECOND
 
 
 ##
@@ -57,16 +59,16 @@ class RedisHashMapKey[K, V]:
     value: TypeLike[V]
     value_serializer: Callable[[V], bytes] | None = None
     value_deserializer: Callable[[bytes], V] | None = None
-    timeout: Delta | None = None
+    timeout: Duration | None = None
     error: MaybeType[BaseException] = TimeoutError
-    ttl: Delta | None = None
+    ttl: Duration | None = None
 
     async def delete(self, redis: Redis, key: K, /) -> int:
         """Delete a key from a hashmap in `redis`."""
         ser = _serialize(  # skipif-ci-and-not-linux
             key, serializer=self.key_serializer
         ).decode()
-        async with timeout_td(  # skipif-ci-and-not-linux
+        async with timeout(  # skipif-ci-and-not-linux
             self.timeout, error=self.error
         ):
             return await cast("Awaitable[int]", redis.hdel(self.name, ser))
@@ -77,7 +79,7 @@ class RedisHashMapKey[K, V]:
         ser = _serialize(  # skipif-ci-and-not-linux
             key, serializer=self.key_serializer
         ).decode()
-        async with timeout_td(  # skipif-ci-and-not-linux
+        async with timeout(  # skipif-ci-and-not-linux
             self.timeout, error=self.error
         ):
             return await cast("Awaitable[bool]", redis.hexists(self.name, ser))
@@ -91,7 +93,7 @@ class RedisHashMapKey[K, V]:
 
     async def get_all(self, redis: Redis, /) -> Mapping[K, V]:
         """Get a value from a hashmap in `redis`."""
-        async with timeout_td(  # skipif-ci-and-not-linux
+        async with timeout(  # skipif-ci-and-not-linux
             self.timeout, error=self.error
         ):
             result = await cast(  # skipif-ci-and-not-linux
@@ -112,7 +114,7 @@ class RedisHashMapKey[K, V]:
         ser = [  # skipif-ci-and-not-linux
             _serialize(key, serializer=self.key_serializer) for key in keys
         ]
-        async with timeout_td(  # skipif-ci-and-not-linux
+        async with timeout(  # skipif-ci-and-not-linux
             self.timeout, error=self.error
         ):
             result = await cast(  # skipif-ci-and-not-linux
@@ -127,7 +129,7 @@ class RedisHashMapKey[K, V]:
 
     async def keys(self, redis: Redis, /) -> Sequence[K]:
         """Get the keys of a hashmap in `redis`."""
-        async with timeout_td(  # skipif-ci-and-not-linux
+        async with timeout(  # skipif-ci-and-not-linux
             self.timeout, error=self.error
         ):
             result = await cast("Awaitable[Sequence[bytes]]", redis.hkeys(self.name))
@@ -137,7 +139,7 @@ class RedisHashMapKey[K, V]:
 
     async def length(self, redis: Redis, /) -> int:
         """Get the length of a hashmap in `redis`."""
-        async with timeout_td(  # skipif-ci-and-not-linux
+        async with timeout(  # skipif-ci-and-not-linux
             self.timeout, error=self.error
         ):
             return await cast("Awaitable[int]", redis.hlen(self.name))
@@ -156,19 +158,19 @@ class RedisHashMapKey[K, V]:
             )
             for key, value in mapping.items()
         }
-        async with timeout_td(  # skipif-ci-and-not-linux
+        async with timeout(  # skipif-ci-and-not-linux
             self.timeout, error=self.error
         ):
             result = await cast(
                 "Awaitable[int]", redis.hset(self.name, mapping=cast("Any", ser))
             )
             if self.ttl is not None:
-                await redis.pexpire(self.name, to_milliseconds(self.ttl))
+                await redis.pexpire(self.name, safe_round(in_milli_seconds(self.ttl)))
         return result  # skipif-ci-and-not-linux
 
     async def values(self, redis: Redis, /) -> Sequence[V]:
         """Get the values of a hashmap in `redis`."""
-        async with timeout_td(  # skipif-ci-and-not-linux
+        async with timeout(  # skipif-ci-and-not-linux
             self.timeout, error=self.error
         ):
             result = await cast("Awaitable[Sequence[bytes]]", redis.hvals(self.name))
@@ -188,9 +190,9 @@ def redis_hash_map_key[K, V](
     key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[V], bytes] | None = None,
     value_deserializer: Callable[[bytes], V] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[K, V]: ...
 @overload
 def redis_hash_map_key[K, V1, V2](
@@ -203,9 +205,9 @@ def redis_hash_map_key[K, V1, V2](
     key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[V1 | V2], bytes] | None = None,
     value_deserializer: Callable[[bytes], V1 | V2] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[K, V1 | V2]: ...
 @overload
 def redis_hash_map_key[K, V1, V2, V3](
@@ -218,9 +220,9 @@ def redis_hash_map_key[K, V1, V2, V3](
     key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[V1 | V2 | V3], bytes] | None = None,
     value_deserializer: Callable[[bytes], V1 | V2 | V3] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[K, V1 | V2 | V3]: ...
 @overload
 def redis_hash_map_key[K1, K2, V](
@@ -233,9 +235,9 @@ def redis_hash_map_key[K1, K2, V](
     key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[V], bytes] | None = None,
     value_deserializer: Callable[[bytes], V] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[K1 | K2, V]: ...
 @overload
 def redis_hash_map_key[K1, K2, V1, V2](
@@ -248,9 +250,9 @@ def redis_hash_map_key[K1, K2, V1, V2](
     key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[V1 | V2], bytes] | None = None,
     value_deserializer: Callable[[bytes], V1 | V2] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[K1 | K2, V1 | V2]: ...
 @overload
 def redis_hash_map_key[K1, K2, V1, V2, V3](
@@ -263,9 +265,9 @@ def redis_hash_map_key[K1, K2, V1, V2, V3](
     key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[V1 | V2 | V3], bytes] | None = None,
     value_deserializer: Callable[[bytes], V1 | V2 | V3] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[K1 | K2, V1 | V2 | V3]: ...
 @overload
 def redis_hash_map_key[K1, K2, K3, V](
@@ -278,9 +280,9 @@ def redis_hash_map_key[K1, K2, K3, V](
     key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[V], bytes] | None = None,
     value_deserializer: Callable[[bytes], V] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[K1 | K2 | K3, V]: ...
 @overload
 def redis_hash_map_key[K1, K2, K3, V1, V2](
@@ -293,9 +295,9 @@ def redis_hash_map_key[K1, K2, K3, V1, V2](
     key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[V1 | V2], bytes] | None = None,
     value_deserializer: Callable[[bytes], V1 | V2] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[K1 | K2 | K3, V1 | V2]: ...
 @overload
 def redis_hash_map_key[K1, K2, K3, V1, V2, V3](
@@ -308,9 +310,9 @@ def redis_hash_map_key[K1, K2, K3, V1, V2, V3](
     key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[V1 | V2 | V3], bytes] | None = None,
     value_deserializer: Callable[[bytes], V1 | V2 | V3] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[K1 | K2 | K3, V1 | V2 | V3]: ...
 @overload
 def redis_hash_map_key[K, K1, K2, K3, V, V1, V2, V3](
@@ -323,9 +325,9 @@ def redis_hash_map_key[K, K1, K2, K3, V, V1, V2, V3](
     key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[V1 | V2 | V3], bytes] | None = None,
     value_deserializer: Callable[[bytes], V1 | V2 | V3] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisHashMapKey[K, V]: ...
 def redis_hash_map_key[K, V](
     name: str,
@@ -337,8 +339,8 @@ def redis_hash_map_key[K, V](
     key_deserializer: Callable[[bytes], Any] | None = None,
     value_serializer: Callable[[Any], bytes] | None = None,
     value_deserializer: Callable[[bytes], Any] | None = None,
-    timeout: Delta | None = None,
-    ttl: Delta | None = None,
+    timeout: Duration | None = None,
+    ttl: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
 ) -> RedisHashMapKey[K, V]:
     """Create a redis key."""
@@ -367,23 +369,19 @@ class RedisKey[T]:
     type: TypeLike[T]
     serializer: Callable[[T], bytes] | None = None
     deserializer: Callable[[bytes], T] | None = None
-    timeout: Delta | None = None
+    timeout: Duration | None = None
     error: MaybeType[BaseException] = TimeoutError
-    ttl: Delta | None = None
+    ttl: Duration | None = None
 
     async def delete(self, redis: Redis, /) -> int:
         """Delete the key from `redis`."""
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
-        ):
+        async with timeout(self.timeout, error=self.error):  # skipif-ci-and-not-linux
             response = await redis.delete(self.name)
         return ensure_int(response)
 
     async def exists(self, redis: Redis, /) -> bool:
         """Check if the key exists in `redis`."""
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
-        ):
+        async with timeout(self.timeout, error=self.error):  # skipif-ci-and-not-linux
             result = cast("Literal[0, 1]", await redis.exists(self.name))
         match result:  # skipif-ci-and-not-linux
             case 0 | 1 as value:
@@ -393,9 +391,7 @@ class RedisKey[T]:
 
     async def get(self, redis: Redis, /) -> T:
         """Get a value from `redis`."""
-        async with timeout_td(  # skipif-ci-and-not-linux
-            self.timeout, error=self.error
-        ):
+        async with timeout(self.timeout, error=self.error):  # skipif-ci-and-not-linux
             result = cast("bytes | None", await redis.get(self.name))
         if result is None:  # skipif-ci-and-not-linux
             raise KeyError(self.name)
@@ -407,9 +403,9 @@ class RedisKey[T]:
         """Set a value in `redis`."""
         ser = _serialize(value, serializer=self.serializer)  # skipif-ci-and-not-linux
         ttl = (  # skipif-ci-and-not-linux
-            None if self.ttl is None else to_milliseconds(self.ttl)
+            None if self.ttl is None else safe_round(in_milli_seconds(self.ttl))
         )
-        async with timeout_td(  # skipif-ci-and-not-linux
+        async with timeout(  # skipif-ci-and-not-linux
             self.timeout, error=self.error
         ):
             response = await redis.set(  # skipif-ci-and-not-linux
@@ -426,9 +422,9 @@ def redis_key[T](
     *,
     serializer: Callable[[T], bytes] | None = None,
     deserializer: Callable[[bytes], T] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisKey[T]: ...
 @overload
 def redis_key[T1, T2](
@@ -438,9 +434,9 @@ def redis_key[T1, T2](
     *,
     serializer: Callable[[T1 | T2], bytes] | None = None,
     deserializer: Callable[[bytes], T1 | T2] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisKey[T1 | T2]: ...
 @overload
 def redis_key[T1, T2, T3](
@@ -450,9 +446,9 @@ def redis_key[T1, T2, T3](
     *,
     serializer: Callable[[T1 | T2 | T3], bytes] | None = None,
     deserializer: Callable[[bytes], T1 | T2 | T3] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisKey[T1 | T2 | T3]: ...
 @overload
 def redis_key[T1, T2, T3, T4](
@@ -462,9 +458,9 @@ def redis_key[T1, T2, T3, T4](
     *,
     serializer: Callable[[T1 | T2 | T3 | T4], bytes] | None = None,
     deserializer: Callable[[bytes], T1 | T2 | T3 | T4] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisKey[T1 | T2 | T3 | T4]: ...
 @overload
 def redis_key[T1, T2, T3, T4, T5](
@@ -474,9 +470,9 @@ def redis_key[T1, T2, T3, T4, T5](
     *,
     serializer: Callable[[T1 | T2 | T3 | T4 | T5], bytes] | None = None,
     deserializer: Callable[[bytes], T1 | T2 | T3 | T4 | T5] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisKey[T1 | T2 | T3 | T4 | T5]: ...
 @overload
 def redis_key[T, T1, T2, T3, T4, T5](
@@ -486,9 +482,9 @@ def redis_key[T, T1, T2, T3, T4, T5](
     *,
     serializer: Callable[[T1 | T2 | T3 | T4 | T5], bytes] | None = None,
     deserializer: Callable[[bytes], T1 | T2 | T3 | T4 | T5] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisKey[T]: ...
 def redis_key[T](
     name: str,
@@ -497,9 +493,9 @@ def redis_key[T](
     *,
     serializer: Callable[[Any], bytes] | None = None,
     deserializer: Callable[[bytes], Any] | None = None,
-    timeout: Delta | None = None,
+    timeout: Duration | None = None,
     error: MaybeType[BaseException] = TimeoutError,
-    ttl: Delta | None = None,
+    ttl: Duration | None = None,
 ) -> RedisKey[T]:
     """Create a redis key."""
     return RedisKey(  # skipif-ci-and-not-linux
@@ -524,7 +520,7 @@ async def publish[T](
     /,
     *,
     serializer: Callable[[T], EncodableT],
-    timeout: Delta | None = _PUBLISH_TIMEOUT,
+    timeout: Duration | None = _PUBLISH_TIMEOUT,
 ) -> int: ...
 @overload
 async def publish(
@@ -534,7 +530,7 @@ async def publish(
     /,
     *,
     serializer: None = None,
-    timeout: Delta | None = _PUBLISH_TIMEOUT,
+    timeout: Duration | None = _PUBLISH_TIMEOUT,
 ) -> int: ...
 @overload
 async def publish[T](
@@ -544,7 +540,7 @@ async def publish[T](
     /,
     *,
     serializer: Callable[[T], EncodableT] | None = None,
-    timeout: Delta | None = _PUBLISH_TIMEOUT,
+    timeout: Duration | None = _PUBLISH_TIMEOUT,
 ) -> int: ...
 async def publish[T](
     redis: Redis,
@@ -553,7 +549,7 @@ async def publish[T](
     /,
     *,
     serializer: Callable[[T], EncodableT] | None = None,
-    timeout: Delta | None = _PUBLISH_TIMEOUT,
+    timeout: Duration | None = _PUBLISH_TIMEOUT,
 ) -> int:
     """Publish an object to a channel."""
     match data, serializer:  # skipif-ci-and-not-linux
@@ -565,8 +561,8 @@ async def publish[T](
             data_use = serializer(data)
         case never:
             assert_never(never)
-    async with timeout_td(timeout):  # skipif-ci-and-not-linux
-        response = await redis.publish(channel, data_use)  # skipif-ci-and-not-linux
+    async with utilities.asyncio.timeout(timeout):  # skipif-ci-and-not-linux
+        response = await redis.publish(channel, data_use)
     return ensure_int(response)  # skipif-ci-and-not-linux
 
 
@@ -589,7 +585,7 @@ async def publish_many[T](
     /,
     *,
     serializer: Callable[[T], EncodableT] | None = None,
-    timeout: Delta | None = _PUBLISH_TIMEOUT,
+    timeout: Duration | None = _PUBLISH_TIMEOUT,
 ) -> Sequence[bool]:
     """Publish an object/multiple objects to a channel."""
     async with TaskGroup() as tg:
@@ -615,7 +611,7 @@ async def _try_publish[T](
     /,
     *,
     serializer: Callable[[T], EncodableT] | None = None,
-    timeout: Delta | None = _PUBLISH_TIMEOUT,
+    timeout: Duration | None = _PUBLISH_TIMEOUT,
 ) -> bool:
     try:
         _ = await publish(redis, channel, data, serializer=serializer, timeout=timeout)
@@ -627,8 +623,8 @@ async def _try_publish[T](
 ##
 
 
-_SUBSCRIBE_TIMEOUT: Delta = SECOND
-_SUBSCRIBE_SLEEP: Delta = MILLISECOND
+_SUBSCRIBE_TIMEOUT: Duration = SECOND
+_SUBSCRIBE_SLEEP: Duration = MILLISECOND
 
 
 @overload
@@ -639,12 +635,12 @@ def subscribe(
     queue: Queue[_RedisMessage],
     /,
     *,
-    timeout: Delta | None = _SUBSCRIBE_TIMEOUT,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     output: Literal["raw"],
     error_transform: Callable[[_RedisMessage, Exception], None] | None = None,
     filter_: Callable[[bytes], bool] | None = None,
     error_filter: Callable[[bytes, Exception], None] | None = None,
-    sleep: Delta = _SUBSCRIBE_SLEEP,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[Task[None]]: ...
 @overload
 @enhanced_async_context_manager
@@ -654,12 +650,12 @@ def subscribe(
     queue: Queue[bytes],
     /,
     *,
-    timeout: Delta | None = _SUBSCRIBE_TIMEOUT,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     output: Literal["bytes"],
     error_transform: Callable[[_RedisMessage, Exception], None] | None = None,
     filter_: Callable[[bytes], bool] | None = None,
     error_filter: Callable[[bytes, Exception], None] | None = None,
-    sleep: Delta = _SUBSCRIBE_SLEEP,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[Task[None]]: ...
 @overload
 @enhanced_async_context_manager
@@ -669,12 +665,12 @@ def subscribe(
     queue: Queue[str],
     /,
     *,
-    timeout: Delta | None = _SUBSCRIBE_TIMEOUT,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     output: Literal["text"] = "text",
     error_transform: Callable[[_RedisMessage, Exception], None] | None = None,
     filter_: Callable[[str], bool] | None = None,
     error_filter: Callable[[str, Exception], None] | None = None,
-    sleep: Delta = _SUBSCRIBE_SLEEP,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[Task[None]]: ...
 @overload
 @enhanced_async_context_manager
@@ -684,12 +680,12 @@ def subscribe[T](
     queue: Queue[T],
     /,
     *,
-    timeout: Delta | None = _SUBSCRIBE_TIMEOUT,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     output: Callable[[bytes], T],
     error_transform: Callable[[_RedisMessage, Exception], None] | None = None,
     filter_: Callable[[T], bool] | None = None,
     error_filter: Callable[[T, Exception], None] | None = None,
-    sleep: Delta = _SUBSCRIBE_SLEEP,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[Task[None]]: ...
 @enhanced_async_context_manager
 async def subscribe[T](
@@ -698,12 +694,12 @@ async def subscribe[T](
     queue: Queue[_RedisMessage] | Queue[bytes] | Queue[T],
     /,
     *,
-    timeout: Delta | None = _SUBSCRIBE_TIMEOUT,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     output: Literal["raw", "bytes", "text"] | Callable[[bytes], T] = "text",
     error_transform: Callable[[_RedisMessage, Exception], None] | None = None,
     filter_: Callable[[T], bool] | None = None,
     error_filter: Callable[[T, Exception], None] | None = None,
-    sleep: Delta = _SUBSCRIBE_SLEEP,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> AsyncIterator[Task[None]]:
     """Subscribe to the data of a given channel(s)."""
     channels = list(always_iterable(channels))  # skipif-ci-and-not-linux
@@ -758,14 +754,14 @@ async def _subscribe_core[T](
     queue: Queue[Any],
     /,
     *,
-    timeout: Delta | None = _SUBSCRIBE_TIMEOUT,
+    timeout: Duration | None = _SUBSCRIBE_TIMEOUT,
     error_transform: Callable[[_RedisMessage, Exception], None] | None = None,
     filter_: Callable[[T], bool] | None = None,
     error_filter: Callable[[T, Exception], None] | None = None,
-    sleep: Delta = _SUBSCRIBE_SLEEP,
+    sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> None:
     timeout_use = (  # skipif-ci-and-not-linux
-        None if timeout is None else (to_nanoseconds(timeout) / 1e9)
+        None if timeout is None else in_seconds(timeout)
     )
     is_subscribe_message = partial(  # skipif-ci-and-not-linux
         _is_message, channels={c.encode() for c in channels}
@@ -783,7 +779,7 @@ async def _subscribe_core[T](
                     error_filter=error_filter,
                 )
             else:
-                await sleep(sleep)
+                await utilities.asyncio.sleep(sleep)
 
 
 def _is_message(

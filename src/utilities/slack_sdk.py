@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, override
 from slack_sdk.webhook import WebhookClient
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
-from utilities.asyncio import timeout_td
+from utilities.asyncio import timeout
 from utilities.functools import cache
 from utilities.whenever import MINUTE, to_seconds
 
@@ -48,7 +48,7 @@ async def send_to_slack_async(
 ) -> None:
     """Send a message via Slack."""
     client = _get_async_client(url, timeout=timeout)
-    async with timeout_td(timeout, error=error):
+    async with timeout(timeout, error=error):
         response = await client.send(text=text)
     if response.status_code != HTTPStatus.OK:  # pragma: no cover
         raise SendToSlackError(text=text, response=response)
