@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from whenever import TimeDelta
 
 
-_DURATION: TimeDelta = 0.01 * SECOND
+_DURATION: TimeDelta = 0.05 * SECOND
 _MULTIPLE: int = 2
 
 
