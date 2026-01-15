@@ -27,6 +27,7 @@ from typing import (
 
 from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
+from utilities.constants import SECOND
 from utilities.reprlib import get_repr, get_repr_and_class
 from utilities.sentinel import Sentinel, is_sentinel, sentinel
 from utilities.types import (
@@ -604,7 +605,7 @@ def in_timedelta(duration: Duration, /) -> TimeDelta:
     """Convert a duration to a timedelta."""
     match duration:
         case int() | float():
-            return duration * TimeDelta
+            return duration * SECOND
         case TimeDelta():
             return duration
         case never:
