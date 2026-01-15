@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 
 _DURATION: TimeDelta = 0.05 * SECOND
+_MULTIPLE: int = 2
 
 
 class TestCallMemoized:
@@ -39,7 +40,7 @@ class TestCallMemoized:
         for _ in range(2):
             assert (await call_memoized(increment, _DURATION)) == 1
             assert counter == 1
-        await sleep(2 * _DURATION)
+        await sleep(_MULTIPLE * _DURATION)
         for _ in range(2):
             assert (await call_memoized(increment, _DURATION)) == 2
             assert counter == 2
@@ -72,6 +73,6 @@ class TestMemoize:
 
         assert await increment() == 1
         assert counter == 1
-        await sleep(2 * _DURATION)
+        await sleep(_MULTIPLE * _DURATION)
         assert await increment() == 2
         assert counter == 2
