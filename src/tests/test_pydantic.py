@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel, SecretStr
 from pytest import mark, param
 
-from utilities.pydantic import ExpandedPath, SecretLike
+from utilities.pydantic import ExpandedPath, SecretLike, extract_secret
 from utilities.types import PathLike
 
 
@@ -22,6 +22,13 @@ class TestExpandedPath:
         result = Example(path=path).path
         expected = Path.home()
         assert result == expected
+
+
+class TestExtractSecret:
+    @mark.parametrize("value", [param(SecretStr("x")), param("x")])
+    def test_main(self, *, value: SecretLike) -> None:
+        result = extract_secret(value)
+        assert result == "x"
 
 
 class TestSecretLike:
