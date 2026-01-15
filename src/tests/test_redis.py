@@ -53,7 +53,7 @@ if TYPE_CHECKING:
 
 
 _DURATION: TimeDelta = 0.1 * SECOND
-_MULTIPLE: int = 1
+_MULTIPLE: int = 2
 
 
 @fixture
