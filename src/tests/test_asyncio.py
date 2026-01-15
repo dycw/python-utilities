@@ -461,6 +461,10 @@ class TestTimeout:
             async with timeout(_DURATION, error=CustomError):
                 await sleep(_MULTIPLE * _DURATION)
 
+    async def test_none(self) -> None:
+        async with timeout():
+            ...
+
 
 class TestYieldLockedShelf:
     @given(key=text_ascii(), value=integers())

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 def sleep(duration: Duration | None = None, /) -> None:
-    """Sleep which accepts deltas."""
+    """Sleep which accepts durations."""
     if duration is not None:
         time.sleep(in_seconds(duration))
 

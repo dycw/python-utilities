@@ -468,7 +468,7 @@ def put_items_nowait[T](items: Iterable[T], queue: Queue[T], /) -> None:
 
 
 async def sleep(duration: Duration | None = None, /) -> None:
-    """Sleep which accepts deltas."""
+    """Sleep which accepts durations."""
     if duration is not None:
         await asyncio.sleep(in_seconds(duration))
 
@@ -479,7 +479,7 @@ async def sleep(duration: Duration | None = None, /) -> None:
 async def sleep_max(
     duration: Duration | None = None, /, *, random: Random = SYSTEM_RANDOM
 ) -> None:
-    """Sleep which accepts deltas."""
+    """Sleep up to a maximum duration."""
     if duration is not None:
         await sleep(random.uniform(0.0, in_seconds(duration)))
 
@@ -549,18 +549,20 @@ async def _stream_one(
 
 @asynccontextmanager
 async def timeout(
-    timeout: Duration | None = None,
+    duration: Duration | None = None,
     /,
     *,
     error: MaybeType[BaseException] = TimeoutError,
 ) -> AsyncIterator[None]:
-    """Timeout context manager which accepts deltas."""
-    seconds = None if timeout is None else in_seconds(timeout)
-    try:
-        async with asyncio.timeout(seconds):
-            yield
-    except TimeoutError:
-        raise error from None
+    """Timeout context manager which accepts durations."""
+    if duration is None:
+        yield
+    else:
+        try:
+            async with asyncio.timeout(in_seconds(duration)):
+                yield
+        except TimeoutError:
+            raise error from None
 
 
 ##
