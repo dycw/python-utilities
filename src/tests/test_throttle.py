@@ -17,10 +17,10 @@ from utilities.whenever import SECOND
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from whenever import TimeDelta
+    from utilities.types import Duration
 
 
-_DELTA: TimeDelta = 0.1 * SECOND
+_DURATION: Duration = 0.1 * SECOND
 
 
 class TestThrottle:
@@ -28,7 +28,7 @@ class TestThrottle:
     async def test_sync_func_passing(self, *, on_try: bool, temp_file: Path) -> None:
         counter = 0
 
-        @throttle(on_try=on_try, delta=_DELTA, path=temp_file)
+        @throttle(on_try=on_try, duration=_DURATION, path=temp_file)
         def func() -> None:
             nonlocal counter
             counter += 1
@@ -37,7 +37,7 @@ class TestThrottle:
             func()
             assert counter == 1
             assert temp_file.is_file()
-        await sleep(2 * _DELTA)
+        await sleep(2 * _DURATION)
         for _ in range(2):
             func()
             assert counter == 2
@@ -53,7 +53,7 @@ class TestThrottle:
         def raiser() -> NoReturn:
             raise CustomError
 
-        @throttle(on_try=on_try, delta=_DELTA, path=temp_file, raiser=raiser)
+        @throttle(on_try=on_try, duration=_DURATION, path=temp_file, raiser=raiser)
         def func() -> None:
             nonlocal counter
             counter += 1
@@ -70,7 +70,7 @@ class TestThrottle:
 
         counter = 0
 
-        @throttle(delta=_DELTA, path=temp_file)
+        @throttle(duration=_DURATION, path=temp_file)
         def func() -> None:
             nonlocal counter
             counter += 1
@@ -87,7 +87,7 @@ class TestThrottle:
 
         counter = 0
 
-        @throttle(on_try=True, delta=_DELTA, path=temp_file)
+        @throttle(on_try=True, duration=_DURATION, path=temp_file)
         def func() -> None:
             nonlocal counter
             counter += 1
@@ -99,7 +99,7 @@ class TestThrottle:
         assert temp_file.is_file()
         func()
         assert counter == 1
-        await sleep(2 * _DELTA)
+        await sleep(2 * _DURATION)
         with raises(CustomError):
             func()
         assert counter == 2
@@ -111,7 +111,7 @@ class TestThrottle:
     async def test_async_func_passing(self, *, on_try: bool, temp_file: Path) -> None:
         counter = 0
 
-        @throttle(on_try=on_try, delta=_DELTA, path=temp_file)
+        @throttle(on_try=on_try, duration=_DURATION, path=temp_file)
         async def func() -> None:
             await sleep()
             nonlocal counter
@@ -121,7 +121,7 @@ class TestThrottle:
             await func()
             assert counter == 1
             assert temp_file.is_file()
-        await sleep(2 * _DELTA)
+        await sleep(2 * _DURATION)
         for _ in range(2):
             await func()
             assert counter == 2
@@ -137,7 +137,7 @@ class TestThrottle:
         def raiser() -> NoReturn:
             raise CustomError
 
-        @throttle(on_try=on_try, delta=_DELTA, path=temp_file, raiser=raiser)
+        @throttle(on_try=on_try, duration=_DURATION, path=temp_file, raiser=raiser)
         async def func() -> None:
             await sleep()
             nonlocal counter
@@ -155,7 +155,7 @@ class TestThrottle:
 
         counter = 0
 
-        @throttle(delta=_DELTA, path=temp_file)
+        @throttle(duration=_DURATION, path=temp_file)
         async def func() -> None:
             await sleep()
             nonlocal counter
@@ -173,7 +173,7 @@ class TestThrottle:
 
         counter = 0
 
-        @throttle(on_try=True, delta=_DELTA, path=temp_file)
+        @throttle(on_try=True, duration=_DURATION, path=temp_file)
         async def func() -> None:
             await sleep()
             nonlocal counter
@@ -186,7 +186,7 @@ class TestThrottle:
         assert temp_file.is_file()
         await func()
         assert counter == 1
-        await sleep(2 * _DELTA)
+        await sleep(2 * _DURATION)
         with raises(CustomError):
             await func()
         assert counter == 2
@@ -197,7 +197,7 @@ class TestThrottle:
     def test_env_var(self, *, temp_file: Path) -> None:
         counter = 0
 
-        @throttle(delta=_DELTA, path=temp_file)
+        @throttle(duration=_DURATION, path=temp_file)
         def func() -> None:
             nonlocal counter
             counter += 1
@@ -221,7 +221,7 @@ class TestThrottle:
     def test_error_marker_file(self, *, temp_path_not_exist: Path) -> None:
         temp_path_not_exist.mkdir()
 
-        @throttle(delta=_DELTA, path=temp_path_not_exist)
+        @throttle(duration=_DURATION, path=temp_path_not_exist)
         def func() -> None: ...
 
         with raises(_ThrottleMarkerFileError, match=r"Invalid marker file '.*'"):
@@ -230,7 +230,7 @@ class TestThrottle:
     def test_error_parse_zoned_date_time(self, *, temp_file: Path) -> None:
         _ = temp_file.write_text("invalid")
 
-        @throttle(delta=_DELTA, path=temp_file)
+        @throttle(duration=_DURATION, path=temp_file)
         def func() -> None: ...
 
         with raises(
