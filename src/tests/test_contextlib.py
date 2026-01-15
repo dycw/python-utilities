@@ -25,11 +25,11 @@ from utilities.whenever import SECOND
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Iterator
 
-    from utilities.types import PathLike, SleepLike
+    from utilities.types import Duration, PathLike
 
 
 def _test_enhanced_context_manager(
-    path: PathLike, /, *, duration: SleepLike = 0.1
+    path: PathLike, /, *, duration: Duration = 0.1
 ) -> None:
     path = Path(path)
     path.touch()
@@ -46,13 +46,13 @@ def _test_enhanced_context_manager(
 
 
 def _test_enhanced_async_context_manager_entry(
-    path: PathLike, /, *, duration: SleepLike = 0.1
+    path: PathLike, /, *, duration: Duration = 0.1
 ) -> None:
     run(_test_enhanced_async_context_manager_core(path, duration=duration))
 
 
 async def _test_enhanced_async_context_manager_core(
-    path: PathLike, /, *, duration: SleepLike = 0.1
+    path: PathLike, /, *, duration: Duration = 0.1
 ) -> None:
     path = Path(path)
     path.touch()

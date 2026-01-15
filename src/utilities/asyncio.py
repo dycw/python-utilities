@@ -72,10 +72,10 @@ if TYPE_CHECKING:
     from utilities.types import (
         Coro,
         Delta,
+        Duration,
         MaybeCallableBoolLike,
         MaybeType,
         PathLike,
-        SleepLike,
         SupportsKeysAndGetItem,
     )
 
@@ -469,7 +469,7 @@ def put_items_nowait[T](items: Iterable[T], queue: Queue[T], /) -> None:
 ##
 
 
-async def sleep(duration: SleepLike | None = None, /) -> None:
+async def sleep(duration: Duration | None = None, /) -> None:
     """Sleep which accepts deltas."""
     match duration:
         case int() | float() as seconds:
@@ -487,7 +487,7 @@ async def sleep(duration: SleepLike | None = None, /) -> None:
 
 
 async def sleep_max(
-    duration: SleepLike | None = None, /, *, random: Random = SYSTEM_RANDOM
+    duration: Duration | None = None, /, *, random: Random = SYSTEM_RANDOM
 ) -> None:
     """Sleep which accepts deltas."""
     match duration:

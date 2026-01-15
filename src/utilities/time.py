@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING, assert_never
 from whenever import TimeDelta
 
 if TYPE_CHECKING:
-    from utilities.types import SleepLike
+    from utilities.types import Duration
 
 
-def sleep(duration: SleepLike | None = None, /) -> None:
+def sleep(duration: Duration | None = None, /) -> None:
     """Sleep which accepts deltas."""
     match duration:
         case int() | float() as seconds:

@@ -30,12 +30,12 @@ if TYPE_CHECKING:
 
     from utilities.permissions import PermissionsLike
     from utilities.types import (
+        Duration,
         LoggerLike,
         MaybeIterable,
         MaybeSequenceStr,
         PathLike,
         Retry,
-        SleepLike,
         StrMapping,
         StrStrMapping,
     )
@@ -1546,7 +1546,7 @@ def ssh_await(
     /,
     *,
     logger: LoggerLike | None = None,
-    duration: SleepLike = SECOND,
+    duration: Duration = SECOND,
 ) -> None:
     while True:  # skipif-ci
         if logger is not None:

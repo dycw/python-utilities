@@ -239,7 +239,7 @@ type PatternLike = MaybeStr[Pattern[str]]
 
 
 # retry
-type Retry = tuple[int, SleepLike | None]
+type Retry = tuple[int, Duration | None]
 
 
 # text
@@ -247,7 +247,7 @@ type MaybeCallableStr = MaybeCallable[str]
 
 
 # time
-type SleepLike = Number | TimeDelta
+type Duration = Number | TimeDelta
 
 
 # traceback
@@ -311,6 +311,7 @@ __all__ = [
     "DateTimeDeltaLike",
     "DateTimeRoundMode",
     "Delta",
+    "Duration",
     "EnumLike",
     "ExcInfo",
     "ExceptionTypeLike",
@@ -354,7 +355,6 @@ __all__ = [
     "SequenceStr",
     "SerializeObjectExtra",
     "Sign",
-    "SleepLike",
     "StrDict",
     "StrMapping",
     "StrStrMapping",
