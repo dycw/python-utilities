@@ -67,6 +67,7 @@ from utilities.functions import (
     get_func_name,
     get_func_qualname,
     identity,
+    in_seconds,
     is_none,
     is_not_none,
     map_object,
@@ -80,7 +81,7 @@ from utilities.functions import (
 )
 from utilities.sentinel import sentinel
 from utilities.text import parse_bool, strip_and_dedent
-from utilities.whenever import NOW_UTC, ZERO_TIME, get_now, get_today
+from utilities.whenever import NOW_UTC, SECOND, ZERO_TIME, get_now, get_today
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -88,7 +89,7 @@ if TYPE_CHECKING:
 
     from whenever import PlainDateTime, TimeDelta, ZonedDateTime
 
-    from utilities.types import Number
+    from utilities.types import Duration, Number
 
 
 class TestApplyDecorators:
@@ -554,6 +555,12 @@ class TestIdentity:
     @given(x=integers())
     def test_main(self, *, x: int) -> None:
         assert identity(x) == x
+
+
+class TestInSeconds:
+    @mark.parametrize("duration", [param(1), param(1.0), param(SECOND)])
+    def test_main(self, *, duration: Duration) -> None:
+        assert in_seconds(duration) == 1.0
 
 
 class TestIsNoneAndIsNotNone:

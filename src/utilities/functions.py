@@ -14,13 +14,28 @@ from types import (
     MethodWrapperType,
     WrapperDescriptorType,
 )
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, cast, overload, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypeGuard,
+    assert_never,
+    cast,
+    overload,
+    override,
+)
 
 from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
 from utilities.reprlib import get_repr, get_repr_and_class
 from utilities.sentinel import Sentinel, is_sentinel, sentinel
-from utilities.types import Dataclass, Number, SupportsRichComparison, TypeLike
+from utilities.types import (
+    Dataclass,
+    Duration,
+    Number,
+    SupportsRichComparison,
+    TypeLike,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Container
@@ -569,6 +584,20 @@ def identity[T](obj: T, /) -> T:
 ##
 
 
+def in_seconds(duration: Duration, /) -> float:
+    """Convert a duration to seconds."""
+    match duration:
+        case int() | float():
+            return duration
+        case TimeDelta():
+            return duration.in_seconds()
+        case never:
+            assert_never(never)
+
+
+##
+
+
 def is_none(obj: Any, /) -> TypeGuard[None]:
     """Check if an object is `None`."""
     return obj is None
@@ -790,6 +819,7 @@ __all__ = [
     "get_func_name",
     "get_func_qualname",
     "identity",
+    "in_seconds",
     "is_none",
     "is_not_none",
     "map_object",
