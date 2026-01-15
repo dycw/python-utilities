@@ -13,21 +13,21 @@ if TYPE_CHECKING:
 
 
 class TestPingReceiver:
-    delta: ClassVar[TimeDelta] = 0.1 * SECOND
+    duration: ClassVar[TimeDelta] = 0.1 * SECOND
     port: ClassVar[int] = 5465
 
     @skipif_ci
     async def test_main(self) -> None:
         assert await self.ping() is False
-        await sleep(self.delta)
-        async with yield_ping_receiver(self.port, timeout=2 * self.delta):
-            await sleep(self.delta)
+        await sleep(self.duration)
+        async with yield_ping_receiver(self.port, timeout=2 * self.duration):
+            await sleep(self.duration)
             result = await self.ping()
             assert isinstance(result, str)
             assert search(
                 r"pong @ \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,6}", result
             )
-        await sleep(self.delta)
+        await sleep(self.duration)
         assert await self.ping() is False
 
     async def ping(self) -> str | Literal[False]:

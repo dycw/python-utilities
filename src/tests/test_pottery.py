@@ -33,7 +33,7 @@ class TestExtendLock:
 
 
 class TestYieldAccess:
-    delta: ClassVar[TimeDelta] = 0.1 * SECOND
+    duration: ClassVar[TimeDelta] = 0.1 * SECOND
 
     @mark.parametrize(
         ("num_tasks", "num_locks", "min_multiple"),
@@ -63,7 +63,11 @@ class TestYieldAccess:
     ) -> None:
         with Timer() as timer:
             await self.func(test_redis, num_tasks, unique_str(), num_locks=num_locks)
-        assert (min_multiple * self.delta) <= timer <= (5 * min_multiple * self.delta)
+        assert (
+            (min_multiple * self.duration)
+            <= timer
+            <= (5 * min_multiple * self.duration)
+        )
 
     async def test_sub_second_timeout_release(self, *, test_redis: Redis) -> None:
         async with yield_access(
@@ -81,13 +85,13 @@ class TestYieldAccess:
 
     async def test_error_unable_to_acquire_lock(self, *, test_redis: Redis) -> None:
         key = unique_str()
-        delta = 0.1 * SECOND
+        duration = 0.1 * SECOND
 
         async def coroutine(key: str, /) -> None:
             async with yield_access(
-                test_redis, key, num=1, timeout_acquire=delta, throttle=5 * delta
+                test_redis, key, num=1, timeout_acquire=duration, throttle=5 * duration
             ):
-                await sleep(delta)
+                await sleep(duration)
 
         with raises(ExceptionGroup) as exc_info:
             async with TaskGroup() as tg:
@@ -103,7 +107,7 @@ class TestYieldAccess:
     ) -> None:
         async def coroutine() -> None:
             async with yield_access(redis, key, num=num_locks):
-                await sleep(self.delta)
+                await sleep(self.duration)
 
         async with TaskGroup() as tg:
             _ = [tg.create_task(coroutine()) for _ in range(num_tasks)]
