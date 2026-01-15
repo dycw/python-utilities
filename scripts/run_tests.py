@@ -4,7 +4,6 @@ from __future__ import annotations
 import datetime as dt
 from logging import getLogger
 from subprocess import CalledProcessError, check_call
-from time import sleep
 from tomllib import TOMLDecodeError, loads
 from typing import TYPE_CHECKING
 
@@ -12,9 +11,11 @@ from utilities.logging import basic_config
 from utilities.os import temp_environ
 from utilities.pathlib import get_repo_root
 from utilities.re import extract_group
+from utilities.time import sleep
 
 if TYPE_CHECKING:
     from pathlib import Path
+
 
 _LOGGER = getLogger(__name__)
 
