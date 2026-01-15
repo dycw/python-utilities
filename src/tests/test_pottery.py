@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING
 
 from pottery import AIORedlock
 from pytest import mark, param, raises
@@ -37,8 +37,6 @@ class TestExtendLock:
 
 
 class TestYieldAccess:
-    duration: ClassVar[TimeDelta] = 0.1 * SECOND
-
     @mark.parametrize(
         ("num_tasks", "num_locks", "min_multiple"),
         [
@@ -114,7 +112,7 @@ class TestYieldAccess:
     ) -> None:
         async def coroutine() -> None:
             async with yield_access(redis, key, num=num_locks):
-                await sleep(self.duration)
+                await sleep(_DURATION)
 
         async with TaskGroup() as tg:
             _ = [tg.create_task(coroutine()) for _ in range(num_tasks)]

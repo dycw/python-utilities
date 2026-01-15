@@ -17,10 +17,11 @@ from utilities.throttle import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from utilities.types import Duration
+    from whenever import TimeDelta
 
 
-_DURATION: Duration = 0.1 * SECOND
+_DURATION: TimeDelta = 0.01 * SECOND
+_MULTIPLE: int = 2
 
 
 class TestThrottle:
@@ -37,7 +38,7 @@ class TestThrottle:
             func()
             assert counter == 1
             assert temp_file.is_file()
-        await sleep(2 * _DURATION)
+        await sleep(_MULTIPLE * _DURATION)
         for _ in range(2):
             func()
             assert counter == 2
@@ -99,7 +100,7 @@ class TestThrottle:
         assert temp_file.is_file()
         func()
         assert counter == 1
-        await sleep(2 * _DURATION)
+        await sleep(_MULTIPLE * _DURATION)
         with raises(CustomError):
             func()
         assert counter == 2
@@ -121,7 +122,7 @@ class TestThrottle:
             await func()
             assert counter == 1
             assert temp_file.is_file()
-        await sleep(2 * _DURATION)
+        await sleep(_MULTIPLE * _DURATION)
         for _ in range(2):
             await func()
             assert counter == 2
@@ -186,7 +187,7 @@ class TestThrottle:
         assert temp_file.is_file()
         await func()
         assert counter == 1
-        await sleep(2 * _DURATION)
+        await sleep(_MULTIPLE * _DURATION)
         with raises(CustomError):
             await func()
         assert counter == 2

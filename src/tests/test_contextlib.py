@@ -25,11 +25,16 @@ from utilities.pytest import skipif_ci
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Iterator
 
+    from whenever import TimeDelta
+
     from utilities.types import Duration, PathLike
 
 
+_DURATION: TimeDelta = 0.05 * SECOND
+
+
 def _test_enhanced_context_manager(
-    path: PathLike, /, *, duration: Duration = 0.1
+    path: PathLike, /, *, duration: Duration = _DURATION
 ) -> None:
     path = Path(path)
     path.touch()
@@ -46,13 +51,13 @@ def _test_enhanced_context_manager(
 
 
 def _test_enhanced_async_context_manager_entry(
-    path: PathLike, /, *, duration: Duration = 0.1
+    path: PathLike, /, *, duration: Duration = _DURATION
 ) -> None:
     run(_test_enhanced_async_context_manager_core(path, duration=duration))
 
 
 async def _test_enhanced_async_context_manager_core(
-    path: PathLike, /, *, duration: Duration = 0.1
+    path: PathLike, /, *, duration: Duration = _DURATION
 ) -> None:
     path = Path(path)
     path.touch()

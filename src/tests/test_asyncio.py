@@ -31,7 +31,7 @@ from utilities.asyncio import (
     timeout,
     yield_locked_shelf,
 )
-from utilities.constants import MILLISECOND, SECOND
+from utilities.constants import SECOND
 from utilities.hypothesis import pairs, text_ascii
 from utilities.timer import Timer
 from utilities.whenever import get_now
@@ -396,10 +396,9 @@ class TestPutItems:
 
 class TestSleep:
     async def test_main(self) -> None:
-        duration = 0.1
         with Timer() as timer:
-            await sleep(duration)
-        assert timer <= 10 * duration
+            await sleep(_DURATION)
+        assert timer <= _MULTIPLE * _DURATION
 
     async def test_none(self) -> None:
         await sleep()
@@ -407,10 +406,9 @@ class TestSleep:
 
 class TestSleepMax:
     async def test_main(self) -> None:
-        duration = 0.1
         with Timer() as timer:
-            await sleep_max(duration)
-        assert timer <= 10 * duration
+            await sleep_max(_DURATION)
+        assert timer <= _MULTIPLE * _DURATION
 
     async def test_none(self) -> None:
         await sleep_max()
@@ -418,12 +416,12 @@ class TestSleepMax:
 
 class TestSleepUntil:
     async def test_main(self) -> None:
-        await sleep_until(get_now() + 0.05 * SECOND)
+        await sleep_until(get_now() + _DURATION)
 
 
 class TestSleepUntilRounded:
     async def test_main(self) -> None:
-        await sleep_rounded(10 * MILLISECOND)
+        await sleep_rounded(_DURATION)
 
 
 class TestStreamCommand:
