@@ -5,7 +5,9 @@ from typing import Annotated
 
 from pydantic import BeforeValidator, SecretStr
 
-type ExpandedPath = Annotated[Path, BeforeValidator(lambda p: Path(p).expanduser())]
+from utilities.types import PathLike
+
+type ExpandedPath = Annotated[PathLike, BeforeValidator(lambda p: Path(p).expanduser())]
 type SecretLike = SecretStr | str
 
 
