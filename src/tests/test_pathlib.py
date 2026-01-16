@@ -3,13 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from os import mkfifo
 from pathlib import Path
-from shutil import copytree
 from typing import TYPE_CHECKING, Self, assert_never
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import integers, sets
 from pytest import mark, param, raises
 
+from utilities.atomicwrites import copy
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import git_repos, pairs, paths, temp_paths
 from utilities.pathlib import (
@@ -238,7 +238,7 @@ class TestGetRoot:
         with TemporaryDirectory() as temp:
             temp.joinpath("pyproject.toml").touch()
             path = temp.joinpath(tail)
-            _ = copytree(repo, path)
+            copy(repo, path)
             root = get_root(path)
             expected = path.resolve()
             assert root == expected
