@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, NoReturn, assert_never, cast, override
 
 from whenever import ZonedDateTime
 
-from utilities.atomicwrites import writer
+from utilities.atomicwrites import write_text
 from utilities.constants import SECOND
 from utilities.functions import in_timedelta
 from utilities.os import get_env_var
@@ -131,9 +131,7 @@ def _try_raise(*, raiser: Callable[[], NoReturn] | None = None) -> None:
 
 
 def _write_throttle(*, path: MaybeCallablePathLike = Path.cwd) -> None:
-    path = to_path(path)
-    with writer(path, overwrite=True) as temp:
-        _ = temp.write_text(get_now_local().format_iso())
+    write_text(to_path(path), get_now_local().format_iso(), overwrite=True)
 
 
 @dataclass(kw_only=True, slots=True)

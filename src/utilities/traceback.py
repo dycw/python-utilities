@@ -13,7 +13,7 @@ from sys import stderr
 from traceback import TracebackException
 from typing import TYPE_CHECKING, override
 
-from utilities.atomicwrites import writer
+from utilities.atomicwrites import write_text
 from utilities.errors import repr_error
 from utilities.iterables import OneEmptyError, one
 from utilities.pathlib import module_path, to_path
@@ -272,8 +272,7 @@ def _make_except_hook_inner(
             max_depth=max_depth,
             expand_all=expand_all,
         )
-        with writer(path_log, overwrite=True) as temp:
-            _ = temp.write_text(full)
+        write_text(path_log, full, overwrite=True)
         if path_max_age is not None:
             _make_except_hook_purge(path, path_max_age)
     if slack_url is not None:  # pragma: no cover

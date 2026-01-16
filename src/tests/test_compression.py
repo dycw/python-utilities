@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, BinaryIO
 
 from pytest import fixture, raises
 
+from utilities.atomicwrites import write_text
 from utilities.compression import compress_paths, yield_compressed_contents
 from utilities.iterables import one
 
@@ -53,7 +54,7 @@ class TestCompressPaths:
         tmp_path: Path,
         temp_file: Path,
     ) -> None:
-        _ = temp_file.write_text("text")
+        write_text(temp_file, "text")
         dest = tmp_path / "dest"
         compress_paths(writer, temp_file, dest)
         with reader(dest) as buffer:
