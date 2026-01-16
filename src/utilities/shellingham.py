@@ -10,7 +10,7 @@ from shellingham import ShellDetectionFailure, detect_shell
 from utilities.iterables import OneEmptyError, one
 from utilities.typing import get_args
 
-type Shell = Literal["bash", "fish", "posix", "zsh"]
+type Shell = Literal["bash", "fish", "posix", "sh", "zsh"]
 
 
 def get_shell() -> Shell:
