@@ -334,9 +334,7 @@ class TestCp:
 
     def test_error(self, *, temp_path_not_exist: Path, tmp_path: Path) -> None:
         dest = tmp_path / temp_path_not_exist.name
-        with raises(
-            CpError, match=r"Unable to copy '.+' to '.+'; source does not exist"
-        ):
+        with raises(CpError, match=r"Source '.*' does not exist"):
             cp(temp_path_not_exist, dest)
 
 
@@ -599,9 +597,7 @@ class TestMv:
 
     def test_error(self, *, temp_path_not_exist: Path, tmp_path: Path) -> None:
         dest = tmp_path / temp_path_not_exist.name
-        with raises(
-            MvFileError, match=r"Unable to move '.+' to '.+'; source does not exist"
-        ):
+        with raises(MvFileError, match=r"Source '.*' does not exist"):
             mv(temp_path_not_exist, dest)
 
 

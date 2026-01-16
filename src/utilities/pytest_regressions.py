@@ -4,12 +4,12 @@ from contextlib import suppress
 from dataclasses import dataclass
 from json import loads
 from pathlib import Path
-from shutil import copytree
 from typing import TYPE_CHECKING, Any, assert_never, override
 
 from pytest_datadir.plugin import LazyDataDir
 from pytest_regressions.file_regression import FileRegressionFixture
 
+from utilities.atomicwrites import _CopySourceNotFoundError, copy
 from utilities.functions import ensure_str
 from utilities.operator import is_equal
 from utilities.reprlib import get_repr
@@ -34,8 +34,8 @@ class OrjsonRegressionFixture:
         path = Path(path)
         original_datadir = path.parent
         data_dir = tmp_path.joinpath(ensure_str(request.fixturename))
-        with suppress(FileNotFoundError):
-            _ = copytree(original_datadir, data_dir)
+        with suppress(_CopySourceNotFoundError):
+            copy(original_datadir, data_dir, overwrite=True)
         self._fixture = FileRegressionFixture(
             datadir=LazyDataDir(original_datadir=original_datadir, tmp_path=data_dir),
             original_datadir=original_datadir,

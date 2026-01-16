@@ -82,8 +82,14 @@ class TestTemporaryFile:
         with TemporaryFile(dir=tmp_path, name="name") as temp:
             assert temp.name == "name"
 
+    def test_data(self) -> None:
+        data = b"data"
+        with TemporaryFile(data=data) as temp:
+            current = temp.read_bytes()
+            assert current == data
+
     def test_text(self) -> None:
-        contents = "text"
-        with TemporaryFile(text=contents) as temp:
+        text = "text"
+        with TemporaryFile(text=text) as temp:
             current = temp.read_text()
-            assert current == contents
+            assert current == text

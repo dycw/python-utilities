@@ -8,12 +8,16 @@ from typing import TYPE_CHECKING
 from pytest import mark, param, raises
 
 from utilities.atomicwrites import (
+    _CopyDirectoryExistsError,
+    _CopyFileExistsError,
+    _CopySourceNotFoundError,
     _MoveDirectoryExistsError,
     _MoveFileExistsError,
     _MoveSourceNotFoundError,
     _WriterDirectoryExistsError,
     _WriterFileExistsError,
     _WriterTemporaryPathEmptyError,
+    copy,
     move,
     move_many,
     writer,
@@ -23,100 +27,178 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-class TestMove:
+class TestCopy:
     @mark.parametrize("overwrite", [param(True), param(False)])
     def test_file_destination_does_not_exist(
-        self, *, tmp_path: Path, overwrite: bool
+        self, *, tmp_path: Path, temp_file: Path, overwrite: bool
     ) -> None:
-        source = tmp_path.joinpath("source")
-        _ = source.write_text("text")
-        destination = tmp_path.joinpath("destination")
-        move(source, destination, overwrite=overwrite)
-        assert destination.is_file()
-        assert destination.read_text() == "text"
+        _ = temp_file.write_text("text")
+        dest = tmp_path.joinpath("dest")
+        copy(temp_file, dest, overwrite=overwrite)
+        assert temp_file.is_file()
+        assert dest.is_file()
+        assert dest.read_text() == "text"
 
-    def test_file_destination_file_exists(self, *, tmp_path: Path) -> None:
-        source = tmp_path.joinpath("source")
-        _ = source.write_text("source")
-        destination = tmp_path.joinpath("destination")
-        _ = destination.write_text("destination")
-        move(source, destination, overwrite=True)
-        assert destination.is_file()
-        assert destination.read_text() == "source"
+    def test_file_destination_file_exists(
+        self, *, tmp_path: Path, temp_file: Path
+    ) -> None:
+        _ = temp_file.write_text("init")
+        dest = tmp_path.joinpath("dest")
+        _ = dest.write_text("overwrite")
+        copy(temp_file, dest, overwrite=True)
+        assert temp_file.is_file()
+        assert dest.is_file()
+        assert dest.read_text() == "init"
 
-    def test_file_destination_directory_exists(self, *, tmp_path: Path) -> None:
-        source = tmp_path.joinpath("source")
-        _ = source.write_text("source")
-        destination = tmp_path.joinpath("destination")
-        destination.mkdir()
-        move(source, destination, overwrite=True)
-        assert destination.is_file()
-        assert destination.read_text() == "source"
+    def test_file_destination_directory_exists(
+        self, *, tmp_path: Path, temp_file: Path
+    ) -> None:
+        _ = temp_file.write_text("text")
+        dest = tmp_path.joinpath("dest")
+        dest.mkdir()
+        copy(temp_file, dest, overwrite=True)
+        assert temp_file.is_file()
+        assert dest.is_file()
+        assert dest.read_text() == "text"
 
     @mark.parametrize("overwrite", [param(True), param(False)])
     def test_directory_destination_does_not_exist(
-        self, *, tmp_path: Path, overwrite: bool
+        self, *, tmp_path: Path, temp_dir_with_file: Path, overwrite: bool
     ) -> None:
-        source = tmp_path.joinpath("source")
-        source.mkdir()
-        source.joinpath("file").touch()
-        destination = tmp_path.joinpath("destination")
-        move(source, destination, overwrite=overwrite)
-        assert destination.is_dir()
-        assert len(list(destination.iterdir())) == 1
+        dest = tmp_path.joinpath("dest")
+        copy(temp_dir_with_file, dest, overwrite=overwrite)
+        assert temp_dir_with_file.is_dir()
+        assert dest.is_dir()
+        assert len(list(dest.iterdir())) == 1
 
-    def test_directory_destination_file_exists(self, *, tmp_path: Path) -> None:
-        source = tmp_path.joinpath("source")
-        source.mkdir()
-        source.joinpath("file").touch()
-        destination = tmp_path.joinpath("destination")
-        destination.touch()
-        move(source, destination, overwrite=True)
-        assert destination.is_dir()
-        assert len(list(destination.iterdir())) == 1
+    def test_directory_destination_file_exists(
+        self, *, tmp_path: Path, temp_dir_with_file: Path
+    ) -> None:
+        dest = tmp_path.joinpath("dest")
+        dest.touch()
+        copy(temp_dir_with_file, dest, overwrite=True)
+        assert temp_dir_with_file.is_dir()
+        assert dest.is_dir()
+        assert len(list(dest.iterdir())) == 1
 
-    def test_directory_destination_directory_exists(self, *, tmp_path: Path) -> None:
-        source = tmp_path.joinpath("source")
-        source.mkdir()
-        source.joinpath("file").touch()
-        destination = tmp_path.joinpath("destination")
-        destination.mkdir()
+    def test_directory_destination_directory_exists(
+        self, *, tmp_path: Path, temp_dir_with_file: Path
+    ) -> None:
+        dest = tmp_path.joinpath("dest")
+        dest.mkdir()
         for i in range(2):
-            destination.joinpath(f"file{i}").touch()
-        move(source, destination, overwrite=True)
-        assert destination.is_dir()
-        assert len(list(destination.iterdir())) == 1
+            dest.joinpath(f"file{i}").touch()
+        copy(temp_dir_with_file, dest, overwrite=True)
+        assert temp_dir_with_file.is_dir()
+        assert dest.is_dir()
+        assert len(list(dest.iterdir())) == 1
+
+    def test_error_source_not_found(
+        self, *, tmp_path: Path, temp_path_not_exist: Path
+    ) -> None:
+        with raises(_CopySourceNotFoundError, match=r"Source '.*' does not exist"):
+            copy(temp_path_not_exist, tmp_path)
+
+    def test_error_file_exists(self, *, temp_file: Path) -> None:
+        with raises(
+            _CopyFileExistsError,
+            match=r"Cannot copy file '.*' as destination '.*' already exists",
+        ):
+            copy(temp_file, temp_file)
+
+    def test_error_directory_exists(self, *, tmp_path: Path) -> None:
+        with raises(
+            _CopyDirectoryExistsError,
+            match=r"Cannot copy directory '.*' as destination '.*' already exists",
+        ):
+            copy(tmp_path, tmp_path)
+
+
+class TestMove:
+    @mark.parametrize("overwrite", [param(True), param(False)])
+    def test_file_destination_does_not_exist(
+        self, *, tmp_path: Path, temp_file: Path, overwrite: bool
+    ) -> None:
+        _ = temp_file.write_text("text")
+        dest = tmp_path.joinpath("dest")
+        move(temp_file, dest, overwrite=overwrite)
+        assert not temp_file.exists()
+        assert dest.is_file()
+        assert dest.read_text() == "text"
+
+    def test_file_destination_file_exists(
+        self, *, tmp_path: Path, temp_file: Path
+    ) -> None:
+        _ = temp_file.write_text("init")
+        dest = tmp_path.joinpath("dest")
+        _ = dest.write_text("overwrite")
+        move(temp_file, dest, overwrite=True)
+        assert not temp_file.exists()
+        assert dest.is_file()
+        assert dest.read_text() == "init"
+
+    def test_file_destination_directory_exists(
+        self, *, tmp_path: Path, temp_file: Path
+    ) -> None:
+        _ = temp_file.write_text("text")
+        dest = tmp_path.joinpath("dest")
+        dest.mkdir()
+        move(temp_file, dest, overwrite=True)
+        assert not temp_file.exists()
+        assert dest.is_file()
+        assert dest.read_text() == "text"
 
     @mark.parametrize("overwrite", [param(True), param(False)])
-    def test_error_source_not_found(self, *, tmp_path: Path, overwrite: bool) -> None:
-        with raises(_MoveSourceNotFoundError, match=r"Source '.*' does not exist"):
-            move(
-                tmp_path.joinpath("source"),
-                tmp_path.joinpath("destination"),
-                overwrite=overwrite,
-            )
+    def test_directory_destination_does_not_exist(
+        self, *, tmp_path: Path, temp_dir_with_file: Path, overwrite: bool
+    ) -> None:
+        dest = tmp_path.joinpath("dest")
+        move(temp_dir_with_file, dest, overwrite=overwrite)
+        assert not temp_dir_with_file.exists()
+        assert dest.is_dir()
+        assert len(list(dest.iterdir())) == 1
 
-    def test_error_file_exists(self, *, tmp_path: Path) -> None:
-        source = tmp_path.joinpath("source")
-        source.touch()
-        destination = tmp_path.joinpath("destination")
-        destination.touch()
+    def test_directory_destination_file_exists(
+        self, *, tmp_path: Path, temp_dir_with_file: Path
+    ) -> None:
+        dest = tmp_path.joinpath("dest")
+        dest.touch()
+        move(temp_dir_with_file, dest, overwrite=True)
+        assert not temp_dir_with_file.exists()
+        assert dest.is_dir()
+        assert len(list(dest.iterdir())) == 1
+
+    def test_directory_destination_directory_exists(
+        self, *, tmp_path: Path, temp_dir_with_file: Path
+    ) -> None:
+        dest = tmp_path.joinpath("dest")
+        dest.mkdir()
+        for i in range(2):
+            dest.joinpath(f"file{i}").touch()
+        move(temp_dir_with_file, dest, overwrite=True)
+        assert not temp_dir_with_file.exists()
+        assert dest.is_dir()
+        assert len(list(dest.iterdir())) == 1
+
+    def test_error_source_not_found(
+        self, *, tmp_path: Path, temp_path_not_exist: Path
+    ) -> None:
+        with raises(_MoveSourceNotFoundError, match=r"Source '.*' does not exist"):
+            move(temp_path_not_exist, tmp_path)
+
+    def test_error_file_exists(self, *, temp_file: Path) -> None:
         with raises(
             _MoveFileExistsError,
             match=r"Cannot move file '.*' as destination '.*' already exists",
         ):
-            move(source, destination)
+            move(temp_file, temp_file)
 
     def test_error_directory_exists(self, *, tmp_path: Path) -> None:
-        source = tmp_path.joinpath("source")
-        source.mkdir()
-        destination = tmp_path.joinpath("destination")
-        destination.touch()
         with raises(
             _MoveDirectoryExistsError,
             match=r"Cannot move directory '.*' as destination '.*' already exists",
         ):
-            move(source, destination)
+            move(tmp_path, tmp_path)
 
 
 class TestMoveMany:
@@ -131,20 +213,18 @@ class TestMoveMany:
 
 
 class TestWriter:
-    def test_main(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("file.txt")
-        with writer(path) as temp:
-            _ = temp.write_text("contents")
-        assert path.is_file()
-        assert path.read_text() == "contents"
+    def test_main(self, *, temp_path_not_exist: Path) -> None:
+        with writer(temp_path_not_exist) as temp:
+            _ = temp.write_text("text")
+        assert temp_path_not_exist.is_file()
+        assert temp_path_not_exist.read_text() == "text"
 
-    def test_gzip(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("file.txt")
-        with writer(path, compress=True) as temp:
-            _ = temp.write_bytes(b"contents")
-        assert path.is_file()
-        with gzip.open(path) as gz:
-            assert gz.read() == b"contents"
+    def test_gzip(self, *, temp_path_not_exist: Path) -> None:
+        with writer(temp_path_not_exist, compress=True) as temp:
+            _ = temp.write_bytes(b"data")
+        assert temp_path_not_exist.is_file()
+        with gzip.open(temp_path_not_exist) as gz:
+            assert gz.read() == b"data"
 
     def test_error_temporary_path_empty(self, *, tmp_path: Path) -> None:
         with (
@@ -155,27 +235,23 @@ class TestWriter:
         ):
             pass
 
-    def test_error_file_exists(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("file.txt")
-        path.touch()
+    def test_error_file_exists(self, *, temp_file: Path) -> None:
         with (
             raises(
                 _WriterFileExistsError,
                 match=r"Cannot write to '.*' as file already exists",
             ),
-            writer(path) as temp,
+            writer(temp_file) as temp,
         ):
-            _ = temp.write_text("new contents")
+            _ = temp.write_text("text")
 
     def test_error_directory_exists(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("dir")
-        path.mkdir()
         with (
             raises(
                 _WriterDirectoryExistsError,
                 match=r"Cannot write to '.*' as directory already exists",
             ),
-            writer(path) as temp,
+            writer(tmp_path) as temp,
         ):
             temp.mkdir()
 
@@ -184,15 +260,15 @@ class TestWriter:
         [param(KeyboardInterrupt, False), param(ValueError, True)],
     )
     def test_error_during_write(
-        self, *, tmp_path: Path, error: type[Exception], expected: bool
+        self, *, temp_path_not_exist: Path, error: type[Exception], expected: bool
     ) -> None:
-        path = tmp_path.joinpath("file.txt")
-
         def raise_error() -> None:
             raise error
 
-        with writer(path) as temp, suppress(Exception):
-            _ = temp.write_text("contents")
+        with writer(temp_path_not_exist) as temp, suppress(Exception):
+            _ = temp.write_text("data")
             raise_error()
-        is_non_empty = len(list(tmp_path.iterdir())) >= 1
-        assert is_non_empty is expected
+        if expected:
+            assert temp_path_not_exist.is_file()
+        else:
+            assert not temp_path_not_exist.exists()

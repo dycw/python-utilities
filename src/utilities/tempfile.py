@@ -79,6 +79,7 @@ def TemporaryFile(  # noqa: N802
     ignore_cleanup_errors: bool = False,
     delete: bool = True,
     name: str | None = None,
+    data: bytes | None = None,
     text: str | None = None,
 ) -> Iterator[Path]:
     """Yield a temporary file."""
@@ -97,13 +98,20 @@ def TemporaryFile(  # noqa: N802
                 prefix=prefix,
                 delete=delete,
                 name=name,
+                data=data,
                 text=text,
             ) as temp,
         ):
             yield temp
     else:
         with _temporary_file_outer(
-            dir, suffix=suffix, prefix=prefix, delete=delete, name=name, text=text
+            dir,
+            suffix=suffix,
+            prefix=prefix,
+            delete=delete,
+            name=name,
+            data=data,
+            text=text,
         ) as temp:
             yield temp
 
@@ -117,11 +125,14 @@ def _temporary_file_outer(
     prefix: str | None = None,
     delete: bool = True,
     name: str | None = None,
+    data: bytes | None = None,
     text: str | None = None,
 ) -> Iterator[Path]:
     with _temporary_file_inner(
         path, suffix=suffix, prefix=prefix, delete=delete, name=name
     ) as temp:
+        if data is not None:
+            _ = temp.write_bytes(data)
         if text is not None:
             _ = temp.write_text(text)
         yield temp

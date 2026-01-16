@@ -8,12 +8,18 @@ from itertools import chain, repeat
 from pathlib import Path
 from re import MULTILINE, escape, search
 from shlex import join
-from shutil import copyfile, copytree, move, rmtree
+from shutil import rmtree
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
+from utilities.atomicwrites import (
+    _CopySourceNotFoundError,
+    _MoveSourceNotFoundError,
+    copy,
+    move,
+)
 from utilities.constants import SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
@@ -306,15 +312,10 @@ def cp(
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*cp_cmd(src, dest)))
     else:
-        match file_or_dir(src):
-            case "file":
-                _ = copyfile(src, dest)
-            case "dir":
-                _ = copytree(src, dest, dirs_exist_ok=True)
-            case None:
-                raise CpError(src=Path(src), dest=Path(dest))
-            case never:
-                assert_never(never)
+        try:
+            copy(src, dest, overwrite=True)
+        except _CopySourceNotFoundError as error:
+            raise CpError(src=error.src) from None
     if perms is not None:
         chmod(dest, perms, sudo=sudo)
     if (owner is not None) or (group is not None):
@@ -324,11 +325,10 @@ def cp(
 @dataclass(kw_only=True, slots=True)
 class CpError(Exception):
     src: Path
-    dest: Path
 
     @override
     def __str__(self) -> str:
-        return f"Unable to copy {str(self.src)!r} to {str(self.dest)!r}; source does not exist"
+        return f"Source {str(self.src)!r} does not exist"
 
 
 def cp_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
@@ -676,11 +676,10 @@ def mv(
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*cp_cmd(src, dest)))
     else:
-        src, dest = map(Path, [src, dest])
-        if src.exists():
-            _ = move(src, dest)
-        else:
-            raise MvFileError(src=src, dest=dest)
+        try:
+            move(src, dest, overwrite=True)
+        except _MoveSourceNotFoundError as error:
+            raise MvFileError(src=error.src) from None
     if perms is not None:
         chmod(dest, perms, sudo=sudo)
     if (owner is not None) or (group is not None):
@@ -690,11 +689,10 @@ def mv(
 @dataclass(kw_only=True, slots=True)
 class MvFileError(Exception):
     src: Path
-    dest: Path
 
     @override
     def __str__(self) -> str:
-        return f"Unable to move {str(self.src)!r} to {str(self.dest)!r}; source does not exist"
+        return f"Source {str(self.src)!r} does not exist"
 
 
 def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
