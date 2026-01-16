@@ -12,7 +12,7 @@ from shutil import rmtree
 from string import Template
 from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
-from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
+from typing import IO, TYPE_CHECKING, Literal, Self, assert_never, overload, override
 
 from utilities.atomicwrites import (
     _CopySourceNotFoundError,
@@ -543,6 +543,66 @@ def expand_path(
     if sudo:  # pragma: no cover
         return Path(run(*sudo_cmd(*echo_cmd(str(path))), return_=True))
     return Path(path).expanduser()
+
+
+##
+
+
+def getent(user: str, /) -> GetEntOutput:
+    """Get an entry from Name Service Switch libraries."""
+    text = run(*getent_cmd(user), return_=True)  # skipif-not-linux
+    return GetEntOutput.parse(text)  # skipif-not-linux
+
+
+def getent_cmd(user: str, /) -> list[str]:
+    """Command to use 'getent' to get entries from Name Service Switch libraries."""
+    return ["getent", "passwd", user]
+
+
+def getent_ssh(
+    ssh_user: str,
+    hostname: str,
+    /,
+    *,
+    user: str | None = None,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> GetEntOutput:
+    """Get an entry from Name Service Switch libraries."""
+    user_use = ssh_user if user is None else user  # skipif-ci
+    text = ssh(  # skipif-ci
+        ssh_user,
+        hostname,
+        *getent_cmd(user_use),
+        return_=True,
+        retry=retry,
+        logger=logger,
+    )
+    return GetEntOutput.parse(text)  # skipif-ci
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
+class GetEntOutput:
+    username: str
+    passwd: str
+    uid: int
+    gid: int
+    gecos: str
+    home: Path
+    shell: Path
+
+    @classmethod
+    def parse(cls, text: str, /) -> Self:
+        username, passwd, uid, gid, gecos, home, shell = text.split(":")
+        return cls(
+            username=username,
+            passwd=passwd,
+            uid=int(uid),
+            gid=int(gid),
+            gecos=gecos,
+            home=Path(home),
+            shell=Path(shell),
+        )
 
 
 ##
@@ -2317,9 +2377,10 @@ def yield_ssh_temp_dir(
     keep: bool = False,
 ) -> Iterator[Path]:
     """Yield a temporary directory on a remote machine."""
-    path = Path(  # skipif-ci
-        ssh(user, hostname, *MKTEMP_DIR_CMD, return_=True, retry=retry, logger=logger)
+    text = ssh(  # skipif-ci
+        user, hostname, *MKTEMP_DIR_CMD, return_=True, retry=retry, logger=logger
     )
+    path = Path(text)  # skipif-ci
     try:  # skipif-ci
         yield path
     finally:  # skipif-ci
@@ -2345,6 +2406,8 @@ __all__ = [
     "UPDATE_CA_CERTIFICATES",
     "ChownCmdError",
     "CpError",
+    "GetEntOutput",
+    "GetEntOutput",
     "MvFileError",
     "RsyncCmdError",
     "RsyncCmdNoSourcesError",
@@ -2372,6 +2435,9 @@ __all__ = [
     "echo_cmd",
     "env_cmds",
     "expand_path",
+    "getent",
+    "getent_cmd",
+    "getent_ssh",
     "git_branch_current",
     "git_checkout",
     "git_checkout_cmd",

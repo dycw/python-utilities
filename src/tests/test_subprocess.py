@@ -16,7 +16,7 @@ from utilities.iterables import one
 from utilities.pathlib import get_file_group, get_file_owner
 from utilities.permissions import Permissions
 from utilities.pwd import EFFECTIVE_USER_NAME
-from utilities.pytest import skipif_ci, skipif_mac, throttle_test
+from utilities.pytest import skipif_ci, skipif_mac, skipif_not_linux, throttle_test
 from utilities.shutil import which
 from utilities.subprocess import (
     BASH_LC,
@@ -24,6 +24,7 @@ from utilities.subprocess import (
     KNOWN_HOSTS,
     ChownCmdError,
     CpError,
+    GetEntOutput,
     MvFileError,
     RsyncCmdNoSourcesError,
     RsyncCmdSourcesNotFoundError,
@@ -48,6 +49,9 @@ from utilities.subprocess import (
     echo_cmd,
     env_cmds,
     expand_path,
+    getent,
+    getent_cmd,
+    getent_ssh,
     git_branch_current,
     git_checkout,
     git_checkout_cmd,
@@ -418,6 +422,28 @@ class TestExpandPath:
         result = expand_path("~/${dir}", subs={"dir": "foo"})
         expected = Path("~/foo").expanduser()
         assert result == expected
+
+
+class TestGetEnt:
+    @skipif_not_linux
+    def test_main(self) -> None:
+        result = getent("user")
+        assert isinstance(result, GetEntOutput)
+
+
+class TestGetEntCmd:
+    def test_main(self) -> None:
+        result = getent_cmd("user")
+        expected = ["getent", "passwd", "user"]
+        assert result == expected
+
+
+class TestGetEntSSH:
+    @skipif_ci
+    @throttle_test(duration=5 * MINUTE)
+    def test_main(self, *, ssh_user: str, ssh_hostname: str) -> None:
+        result = getent_ssh(ssh_user, ssh_hostname)
+        assert isinstance(result, GetEntOutput)
 
 
 class TestGitBranchCurrent:
