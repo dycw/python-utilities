@@ -99,7 +99,7 @@ class TestCopy:
         with raises(_CopySourceNotFoundError, match=r"Source '.*' does not exist"):
             copy(temp_path_not_exist, tmp_path)
 
-    def test_error_file_exists(self, *, tmp_path: Path, temp_file: Path) -> None:
+    def test_error_file_exists(self, *, temp_file: Path) -> None:
         with raises(
             _CopyFileExistsError,
             match=r"Cannot copy file '.*' as destination '.*' already exists",
