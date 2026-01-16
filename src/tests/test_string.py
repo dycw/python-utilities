@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
+from pytest import raises
+
 from utilities.os import temp_environ
-from utilities.string import substitute
+from utilities.string import SubstituteError, substitute
 from utilities.text import strip_and_dedent, unique_str
 
 if TYPE_CHECKING:
@@ -40,6 +42,14 @@ class TestSubstitute:
             self.template, mapping={"TEMPLATE_KEY": key, "TEMPLATE_VALUE": value}
         )
         self._assert_equal(result, key, value)
+
+    def test_safe(self) -> None:
+        result = substitute(self.template, safe=True)
+        assert result == self.template
+
+    def test_error(self) -> None:
+        with raises(SubstituteError, match=r"Missing key: 'TEMPLATE_KEY'"):
+            _ = substitute(self.template)
 
     def _assert_equal(self, text: str, key: str, value: str) -> None:
         expected = strip_and_dedent(f"""
