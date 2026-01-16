@@ -23,6 +23,7 @@ from utilities.atomicwrites import (
 from utilities.constants import SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
+from utilities.functions import in_timedelta
 from utilities.iterables import always_iterable
 from utilities.logging import to_logger
 from utilities.pathlib import PWD, file_or_dir
@@ -1242,7 +1243,7 @@ def run(
                         if duration is None:
                             msg = f"{msg}\n\nRetrying {attempts} more time(s)..."
                         else:
-                            msg = f"{msg}\n\nRetrying {attempts} more time(s) after {duration}..."
+                            msg = f"{msg}\n\nRetrying {attempts} more time(s) after {in_timedelta(duration)}..."
                     to_logger(logger).error(msg)
                 error = CalledProcessError(
                     return_code, args, output=stdout_text, stderr=stderr_text
