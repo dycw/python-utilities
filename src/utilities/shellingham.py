@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from os import environ, name
-from re import search
+from pathlib import Path
 from typing import Literal, override
 
 from shellingham import ShellDetectionFailure, detect_shell
@@ -25,11 +25,16 @@ def get_shell() -> Shell:
         else:
             raise _GetShellOSError(name=name) from None
     shells: tuple[Shell, ...] = get_args(Shell)
-    matches: list[Shell] = [s for s in shells if search(s, shell) is not None]
+    matches: list[Shell] = [s for s in shells if _get_shell_match(shell, s)]
     try:
         return one(matches)
     except OneEmptyError:  # pragma: no cover
         raise _GetShellUnsupportedError(shell=shell) from None
+
+
+def _get_shell_match(shell: str, candidate: Shell, /) -> bool:
+    *_, name = Path(shell).parts
+    return name == candidate
 
 
 @dataclass(kw_only=True, slots=True)
