@@ -7,6 +7,7 @@ from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from tempfile import gettempdir as _gettempdir
 from typing import TYPE_CHECKING, override
 
+from utilities.atomicwrites import write_text
 from utilities.contextlib import enhanced_context_manager
 from utilities.warnings import suppress_warnings
 
@@ -134,7 +135,7 @@ def _temporary_file_outer(
         if data is not None:
             _ = temp.write_bytes(data)
         if text is not None:
-            _ = temp.write_text(text)
+            write_text(temp, text)
         yield temp
 
 

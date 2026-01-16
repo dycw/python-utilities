@@ -156,6 +156,16 @@ def move_many(*paths: tuple[PathLike, PathLike], overwrite: bool = False) -> Non
 ##
 
 
+def write_text(path: PathLike, text: str, /, *, overwrite: bool = False) -> None:
+    """Write text to a file, ensuring there is exactly 1 trailing new line."""
+    text_use = text.rstrip("\n") + "\n"
+    with writer(path, overwrite=overwrite) as temp:
+        _ = temp.write_text(text_use)
+
+
+##
+
+
 @enhanced_context_manager
 def writer(
     path: PathLike, /, *, compress: bool = False, overwrite: bool = False
@@ -229,5 +239,6 @@ __all__ = [
     "copy",
     "move",
     "move_many",
+    "write_text",
     "writer",
 ]

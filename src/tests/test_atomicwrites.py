@@ -20,8 +20,10 @@ from utilities.atomicwrites import (
     copy,
     move,
     move_many,
+    write_text,
     writer,
 )
+from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -210,6 +212,30 @@ class TestMoveMany:
         move_many(*pairwise(files), overwrite=True)
         for i, file in enumerate(files[1:], start=1):
             assert file.read_text() == str(i - 1)
+
+
+class TestWriteText:
+    @mark.parametrize("tail", [param(""), param("\n"), param("\n\n"), param("\n\n\n")])
+    def test_main(self, *, temp_path_not_exist: Path, tail: str) -> None:
+        text = (
+            strip_and_dedent("""
+                a
+                b
+                c
+            """)
+            + tail
+        )
+        write_text(temp_path_not_exist, text)
+        result = temp_path_not_exist.read_text()
+        expected = strip_and_dedent(
+            """
+                a
+                b
+                c
+            """,
+            trailing=True,
+        )
+        assert result == expected
 
 
 class TestWriter:
