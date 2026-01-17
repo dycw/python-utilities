@@ -35,9 +35,9 @@ from typing import (
     override,
 )
 
+from utilities.constants import SYSTEM_RANDOM
 from utilities.functions import ensure_int, ensure_not_none, in_seconds
 from utilities.os import is_pytest
-from utilities.random import SYSTEM_RANDOM
 from utilities.reprlib import get_repr
 from utilities.sentinel import Sentinel, sentinel
 from utilities.shelve import yield_shelf
