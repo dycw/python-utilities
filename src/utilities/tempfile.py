@@ -5,7 +5,6 @@ from contextlib import contextmanager
 from pathlib import Path
 from shutil import move
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
-from tempfile import gettempdir as _gettempdir
 from typing import TYPE_CHECKING, override
 from warnings import catch_warnings, filterwarnings
 
@@ -162,17 +161,7 @@ def _temporary_file_inner(
 ##
 
 
-def gettempdir() -> Path:
-    """Get the name of the directory used for temporary files."""
-    return Path(_gettempdir())
-
-
-TEMP_DIR = gettempdir()
-
-
-##
-
-
+@contextmanager
 def yield_temp_dir_at(path: PathLike, /) -> Iterator[Path]:
     """Yield a temporary dir for a target path."""
 
@@ -181,6 +170,7 @@ def yield_temp_dir_at(path: PathLike, /) -> Iterator[Path]:
         yield temp
 
 
+@contextmanager
 def yield_temp_file_at(path: PathLike, /) -> Iterator[Path]:
     """Yield a temporary file for a target path."""
 
@@ -190,10 +180,8 @@ def yield_temp_file_at(path: PathLike, /) -> Iterator[Path]:
 
 
 __all__ = [
-    "TEMP_DIR",
     "TemporaryDirectory",
     "TemporaryFile",
-    "gettempdir",
     "yield_temp_dir_at",
     "yield_temp_file_at",
 ]

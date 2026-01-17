@@ -6,6 +6,7 @@ from os import cpu_count, environ
 from pathlib import Path
 from platform import system
 from random import SystemRandom
+from tempfile import gettempdir
 from typing import TYPE_CHECKING, assert_never, cast
 from zoneinfo import ZoneInfo
 
@@ -20,6 +21,21 @@ if TYPE_CHECKING:
 
 
 USER = getuser()
+
+
+# math
+
+
+MIN_FLOAT32, MAX_FLOAT32 = -3.4028234663852886e38, 3.4028234663852886e38
+MIN_FLOAT64, MAX_FLOAT64 = -1.7976931348623157e308, 1.7976931348623157e308
+MIN_INT8, MAX_INT8 = -(2 ** (8 - 1)), 2 ** (8 - 1) - 1
+MIN_INT16, MAX_INT16 = -(2 ** (16 - 1)), 2 ** (16 - 1) - 1
+MIN_INT32, MAX_INT32 = -(2 ** (32 - 1)), 2 ** (32 - 1) - 1
+MIN_INT64, MAX_INT64 = -(2 ** (64 - 1)), 2 ** (64 - 1) - 1
+MIN_UINT8, MAX_UINT8 = 0, 2**8 - 1
+MIN_UINT16, MAX_UINT16 = 0, 2**16 - 1
+MIN_UINT32, MAX_UINT32 = 0, 2**32 - 1
+MIN_UINT64, MAX_UINT64 = 0, 2**64 - 1
 
 
 # os
@@ -167,6 +183,12 @@ EFFECTIVE_USER_NAME = (
 SYSTEM_RANDOM = SystemRandom()
 
 
+# tempfile
+
+
+TEMP_DIR = Path(gettempdir())
+
+
 # tzlocal
 
 
@@ -235,16 +257,37 @@ __all__ = [
     "IS_WINDOWS",
     "LOCAL_TIME_ZONE",
     "LOCAL_TIME_ZONE_NAME",
+    "MAX_FLOAT32",
+    "MAX_FLOAT64",
+    "MAX_INT8",
+    "MAX_INT16",
+    "MAX_INT32",
+    "MAX_INT64",
     "MAX_PID",
+    "MAX_UINT8",
+    "MAX_UINT16",
+    "MAX_UINT32",
+    "MAX_UINT64",
     "MICROSECOND",
     "MILLISECOND",
     "MINUTE",
+    "MIN_FLOAT32",
+    "MIN_FLOAT64",
+    "MIN_INT8",
+    "MIN_INT16",
+    "MIN_INT32",
+    "MIN_INT64",
+    "MIN_UINT8",
+    "MIN_UINT16",
+    "MIN_UINT32",
+    "MIN_UINT64",
     "MONTH",
     "ROOT_GROUP_NAME",
     "ROOT_USER_NAME",
     "SECOND",
     "SYSTEM",
     "SYSTEM_RANDOM",
+    "TEMP_DIR",
     "USER",
     "UTC",
     "WEEK",

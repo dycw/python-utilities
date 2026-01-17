@@ -14,21 +14,6 @@ if TYPE_CHECKING:
     from utilities.types import MathRoundMode, Number, Sign
 
 
-MIN_FLOAT32, MAX_FLOAT32 = -3.4028234663852886e38, 3.4028234663852886e38
-MIN_FLOAT64, MAX_FLOAT64 = -1.7976931348623157e308, 1.7976931348623157e308
-MIN_INT8, MAX_INT8 = -(2 ** (8 - 1)), 2 ** (8 - 1) - 1
-MIN_INT16, MAX_INT16 = -(2 ** (16 - 1)), 2 ** (16 - 1) - 1
-MIN_INT32, MAX_INT32 = -(2 ** (32 - 1)), 2 ** (32 - 1) - 1
-MIN_INT64, MAX_INT64 = -(2 ** (64 - 1)), 2 ** (64 - 1) - 1
-MIN_UINT8, MAX_UINT8 = 0, 2**8 - 1
-MIN_UINT16, MAX_UINT16 = 0, 2**16 - 1
-MIN_UINT32, MAX_UINT32 = 0, 2**32 - 1
-MIN_UINT64, MAX_UINT64 = 0, 2**64 - 1
-
-
-##
-
-
 def check_integer(
     n: int,
     /,
@@ -893,26 +878,6 @@ def significant_figures(x: float, /, *, n: int = 2) -> str:
 
 __all__ = [
     "MAX_DECIMALS",
-    "MAX_FLOAT32",
-    "MAX_FLOAT64",
-    "MAX_INT8",
-    "MAX_INT16",
-    "MAX_INT32",
-    "MAX_INT64",
-    "MAX_UINT8",
-    "MAX_UINT16",
-    "MAX_UINT32",
-    "MAX_UINT64",
-    "MIN_FLOAT32",
-    "MIN_FLOAT64",
-    "MIN_INT8",
-    "MIN_INT16",
-    "MIN_INT32",
-    "MIN_INT64",
-    "MIN_UINT8",
-    "MIN_UINT16",
-    "MIN_UINT32",
-    "MIN_UINT64",
     "CheckIntegerError",
     "EWMParametersError",
     "ParseNumberError",
