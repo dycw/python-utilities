@@ -284,39 +284,6 @@ class GetEnvVarError(Exception):
 ##
 
 
-def get_effective_group_id() -> int | None:
-    """Get the effective group ID."""
-    match SYSTEM:
-        case "windows":  # skipif-not-windows
-            return None
-        case "mac" | "linux":  # skipif-windows
-            from os import getegid
-
-            return getegid()
-        case never:
-            assert_never(never)
-
-
-def get_effective_user_id() -> int | None:
-    """Get the effective user ID."""
-    match SYSTEM:
-        case "windows":  # skipif-not-windows
-            return None
-        case "mac" | "linux":  # skipif-windows
-            from os import geteuid
-
-            return geteuid()
-        case never:
-            assert_never(never)
-
-
-EFFECTIVE_USER_ID = get_effective_user_id()
-EFFECTIVE_GROUP_ID = get_effective_group_id()
-
-
-##
-
-
 def is_debug() -> bool:
     """Check if we are in `DEBUG` mode."""
     return get_env_var("DEBUG", nullable=True) is not None

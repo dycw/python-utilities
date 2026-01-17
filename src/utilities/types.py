@@ -230,6 +230,10 @@ type PathLike = MaybeStr[Path]
 type MaybeCallablePathLike = MaybeCallable[PathLike]
 
 
+# platform
+type System = Literal["windows", "mac", "linux"]
+
+
 # random
 type Seed = int | float | str | bytes | bytearray | Random
 
@@ -371,6 +375,7 @@ __all__ = [
     "SupportsLT",
     "SupportsRichComparison",
     "SupportsRound",
+    "System",
     "TimeDeltaLike",
     "TimeLike",
     "TimeOrDateTimeDelta",
