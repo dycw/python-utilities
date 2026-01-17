@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
-from shutil import move
+from shutil import copyfile, move
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from tempfile import gettempdir as _gettempdir
 from typing import TYPE_CHECKING, override
@@ -170,4 +170,30 @@ def gettempdir() -> Path:
 TEMP_DIR = gettempdir()
 
 
-__all__ = ["TEMP_DIR", "TemporaryDirectory", "TemporaryFile", "gettempdir"]
+##
+
+
+def yield_temp_dir_at(path: PathLike, /) -> Iterator[Path]:
+    """Yield a temporary dir for a target path."""
+
+    path = Path(path)
+    with TemporaryDirectory(suffix=".tmp", prefix=path.name, dir=path.parent) as temp:
+        yield temp
+
+
+def yield_temp_file_at(path: PathLike, /) -> Iterator[Path]:
+    """Yield a temporary file for a target path."""
+
+    path = Path(path)
+    with TemporaryFile(dir=path.parent, suffix=".tmp", prefix=path.name) as temp:
+        yield temp
+
+
+__all__ = [
+    "TEMP_DIR",
+    "TemporaryDirectory",
+    "TemporaryFile",
+    "gettempdir",
+    "yield_temp_dir_at",
+    "yield_temp_file_at",
+]

@@ -2,18 +2,50 @@ from __future__ import annotations
 
 from contextlib import suppress
 from dataclasses import dataclass
-from os import cpu_count, environ, getenv
+from os import cpu_count, environ, getenv, replace
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.contextlib import enhanced_context_manager
 from utilities.iterables import OneStrEmptyError, one_str
+from utilities.pathlib import file_or_dir
 from utilities.platform import SYSTEM
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
 
+    from utilities.types import PathLike
+
 
 type IntOrAll = int | Literal["all"]
+
+
+##
+
+
+def move(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
+    """Move/replace a file/directory atomically."""
+    src, dest = map(Path, [src, dest])
+    match file_or_dir(src), file_or_dir(dest), overwrite:
+        case None, _, _:
+            raise _MoveSourceNotFoundError(src=src)
+        case "file", "file" | "dir", False:
+            raise _MoveFileExistsError(src=src, dest=dest) from None
+        case "file", "dir", _:
+            rmtree(dest, ignore_errors=True)
+            replace_atomic(str(src), str(dest))  # must be `str`s
+        case "file", _, _:
+            replace_atomic(str(src), str(dest))  # must be `str`s
+        case "dir", "file" | "dir", False:
+            raise _MoveDirectoryExistsError(src=src, dest=dest)
+        case "dir", "dir", _:
+            rmtree(dest, ignore_errors=True)
+            _ = shutil.move(src, dest)
+        case "dir", _, _:
+            dest.unlink(missing_ok=True)
+            _ = shutil.move(src, dest)
+        case never:
+            assert_never(never)
 
 
 ##

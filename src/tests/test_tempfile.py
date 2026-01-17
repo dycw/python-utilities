@@ -93,3 +93,8 @@ class TestTemporaryFile:
         with TemporaryFile(text=text) as temp:
             current = temp.read_text()
             assert current == text
+
+
+class TestYieldTempAt:
+    def test_file(self, *, temp_path_not_exist: Path) -> None:
+        a
