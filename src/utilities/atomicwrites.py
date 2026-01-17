@@ -1,15 +1,11 @@
 from __future__ import annotations
 
 import gzip
-import shutil
 from contextlib import ExitStack
 from dataclasses import dataclass
-from os import rename
 from pathlib import Path
-from shutil import copyfile, copyfileobj, copytree, rmtree
-from typing import TYPE_CHECKING, Literal, assert_never, override
-
-from atomicwrites import replace_atomic
+from shutil import copyfileobj, copytree, rmtree
+from typing import TYPE_CHECKING, assert_never, override
 
 from utilities.contextlib import enhanced_context_manager
 from utilities.iterables import transpose
@@ -79,109 +75,6 @@ class _CopyDirectoryExistsError(CopyError):
     @override
     def __str__(self) -> str:
         return f"Cannot copy directory {str(self.src)!r} as destination {str(self.dest)!r} already exists"
-
-
-##
-
-
-def move(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
-    """Move/replace a file/directory atomically."""
-    src, dest = map(Path, [src, dest])
-    match file_or_dir(src), file_or_dir(dest), overwrite:
-        case None, _, _:
-            raise _MoveSourceNotFoundError(src=src)
-        case "file", "file" | "dir", False:
-            raise _MoveFileExistsError(src=src, dest=dest) from None
-        case "file", "dir", _:
-            rmtree(dest, ignore_errors=True)
-            replace_atomic(str(src), str(dest))  # must be `str`s
-        case "file", _, _:
-            replace_atomic(str(src), str(dest))  # must be `str`s
-        case "dir", "file" | "dir", False:
-            raise _MoveDirectoryExistsError(src=src, dest=dest)
-        case "dir", "dir", _:
-            rmtree(dest, ignore_errors=True)
-            _ = shutil.move(src, dest)
-        case "dir", _, _:
-            dest.unlink(missing_ok=True)
-            _ = shutil.move(src, dest)
-        case never:
-            assert_never(never)
-
-
-def _move_or_copy(
-    src: PathLike,
-    dest: PathLike,
-    /,
-    *,
-    overwrite: bool = False,
-    delete_src: bool = False,
-) -> None:
-    src, dest = map(Path, [src, dest])
-    match file_or_dir(src):
-        case None:
-            raise _MoveOrCopySourceNotFoundError(src=src)
-        case "file":
-            _move_or_copy_file(src, dest, overwrite=overwrite, delete_src=delete_src)
-        case "dir":
-            _move_or_copy_dir(src, dest, overwrite=overwrite, delete_src=delete_src)
-        case never:
-            assert_never(never)
-
-
-def _move_or_copy_file(
-    src: PathLike,
-    dest: PathLike,
-    /,
-    *,
-    overwrite: bool = False,
-    delete_src: bool = False,
-) -> None:
-    src, dest = map(Path, [src, dest])
-    dir_, name = dest.parent, dest.name
-    match file_or_dir(dest), overwrite:
-        case None, _:
-            dir_ = dest.parent
-            dir_.mkdir(parents=True, exist_ok=True)
-            name = dest.name
-            with TemporaryFile(dir=dir_, suffix=".tmp", prefix=name) as temp:
-                _ = shutil.copyfile(name, temp)
-        case "file" | "dir", False:
-            raise _MoveOrCopyFileExistsError(src=src, dest=dest)
-        case "file", True:
-            dir_ = dest.parent
-            dir_.mkdir(parents=True, exist_ok=True)
-            name = dest.name
-            with TemporaryFile(dir=dir_, suffix=".tmp", prefix=name) as temp:
-                _ = shutil.copyfile(name, temp)
-        case "dir", True:
-            rmtree(dest)
-            with TemporaryFile(dir=dir_, suffix=".tmp", prefix=name) as temp:
-                _ = shutil.copyfile(name, temp)
-                _ = temp.replace(dest)
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class _MoveOrCopyError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _MoveOrCopySourceNotFoundError(_MoveOrCopyError):
-    src: Path
-
-
-@dataclass(kw_only=True, slots=True)
-class _MoveOrCopyFileExistsError(_MoveOrCopyError):
-    src: Path
-    dest: Path
-
-
-@dataclass(kw_only=True, slots=True)
-class _MoveOrCopyDirectoryExistsError(_MoveOrCopyError):
-    src: Path
-    dest: Path
 
 
 ##

@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import shutil
 from contextlib import suppress
 from dataclasses import dataclass
 from os import cpu_count, environ, getenv, replace
 from pathlib import Path
+from shutil import rmtree
+from tempfile import TemporaryDirectory, TemporaryFile
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.constants import CPU_COUNT
 from utilities.contextlib import enhanced_context_manager
 from utilities.iterables import OneStrEmptyError, one_str
-from utilities.pathlib import file_or_dir
 from utilities.platform import SYSTEM
 
 if TYPE_CHECKING:
@@ -24,29 +26,154 @@ type IntOrAll = int | Literal["all"]
 ##
 
 
+def copy(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
+    """Copy/replace a file/directory atomically."""
+    try:
+        _move_or_copy(src, dest, overwrite=overwrite, delete_src=False)
+    except _MoveOrCopySourceNotFoundError as error:
+        raise _CopySourceNotFoundError(src=error.src) from None
+    except _MoveOrCopyDestinationExistsError as error:
+        raise _CopyDestinationExistsError(src=error.src, dest=error.dest) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class CopyError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _CopySourceNotFoundError(CopyError):
+    src: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Source {str(self.src)!r} does not exist"
+
+
+@dataclass(kw_only=True, slots=True)
+class _CopyDestinationExistsError(CopyError):
+    src: Path
+    dest: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot copy {str(self.src)!r} as destination {str(self.dest)!r} already exists"
+
+
 def move(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
     """Move/replace a file/directory atomically."""
+    try:
+        _move_or_copy(src, dest, overwrite=overwrite, delete_src=True)
+    except _MoveOrCopySourceNotFoundError as error:
+        raise _MoveSourceNotFoundError(src=error.src) from None
+    except _MoveOrCopyDestinationExistsError as error:
+        raise _MoveDestinationExistsError(src=error.src, dest=error.dest) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class MoveError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _MoveSourceNotFoundError(MoveError):
+    src: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Source {str(self.src)!r} does not exist"
+
+
+@dataclass(kw_only=True, slots=True)
+class _MoveDestinationExistsError(MoveError):
+    src: Path
+    dest: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot move {str(self.src)!r} as destination {str(self.dest)!r} already exists"
+
+
+def _move_or_copy(
+    src: PathLike,
+    dest: PathLike,
+    /,
+    *,
+    overwrite: bool = False,
+    delete_src: bool = False,
+) -> None:
     src, dest = map(Path, [src, dest])
-    match file_or_dir(src), file_or_dir(dest), overwrite:
-        case None, _, _:
-            raise _MoveSourceNotFoundError(src=src)
-        case "file", "file" | "dir", False:
-            raise _MoveFileExistsError(src=src, dest=dest) from None
-        case "file", "dir", _:
-            rmtree(dest, ignore_errors=True)
-            replace_atomic(str(src), str(dest))  # must be `str`s
-        case "file", _, _:
-            replace_atomic(str(src), str(dest))  # must be `str`s
-        case "dir", "file" | "dir", False:
-            raise _MoveDirectoryExistsError(src=src, dest=dest)
-        case "dir", "dir", _:
-            rmtree(dest, ignore_errors=True)
-            _ = shutil.move(src, dest)
-        case "dir", _, _:
-            dest.unlink(missing_ok=True)
-            _ = shutil.move(src, dest)
-        case never:
-            assert_never(never)
+    if not src.exists():
+        raise _MoveOrCopySourceNotFoundError(src=src)
+    if dest.exists() and not overwrite:
+        raise _MoveOrCopyDestinationExistsError(src=src, dest=dest)
+    if src.is_file():
+        _move_or_copy_file(src, dest, overwrite=overwrite, delete_src=delete_src)
+    elif src.is_dir():
+        _move_or_copy_dir(src, dest, overwrite=overwrite, delete_src=delete_src)
+    else:  # pragma: no cover
+        raise TypeError(src)
+
+
+def _move_or_copy_file(
+    src: PathLike,
+    dest: PathLike,
+    /,
+    *,
+    overwrite: bool = False,
+    delete_src: bool = False,
+) -> None:
+    src, dest = map(Path, [src, dest])
+    name, dir_ = dest.name, dest.parent
+    if (not dest.exists()) or (dest.is_file() and overwrite):
+        ...
+    elif dest.is_dir() and overwrite:
+        rmtree(dest, ignore_errors=True)
+    else:  # pragma: no cover
+        raise RuntimeError(dest, overwrite)
+    with TemporaryDirectory(suffix=".tmp", prefix=name, dir=dir_) as temp_dir:
+        temp_file = Path(temp_dir, src.name)
+        _ = shutil.copyfile(src, temp_file)
+        _ = temp_file.replace(dest)
+    if delete_src:
+        src.unlink(missing_ok=True)
+
+
+def _move_or_copy_dir(
+    src: PathLike,
+    dest: PathLike,
+    /,
+    *,
+    overwrite: bool = False,
+    delete_src: bool = False,
+) -> None:
+    src, dest = map(Path, [src, dest])
+    name, dir_ = dest.name, dest.parent
+    if (not dest.exists()) or (dest.is_dir() and overwrite):
+        ...
+    elif dest.is_file() and overwrite:
+        dest.unlink(missing_ok=True)
+    else:  # pragma: no cover
+        raise RuntimeError(dest, overwrite)
+    with TemporaryDirectory(suffix=".tmp", prefix=name, dir=dir_) as temp_dir:
+        temp_file = Path(temp_dir, src.name)
+        _ = shutil.copyfile(src, temp_file)
+        _ = temp_file.replace(dest)
+    if delete_src:
+        rmtree(src, ignore_errors=True)
+
+
+@dataclass(kw_only=True, slots=True)
+class _MoveOrCopyError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _MoveOrCopySourceNotFoundError(_MoveOrCopyError):
+    src: Path
+
+
+@dataclass(kw_only=True, slots=True)
+class _MoveOrCopyDestinationExistsError(_MoveOrCopyError):
+    src: Path
+    dest: Path
 
 
 ##
@@ -198,10 +325,20 @@ def temp_environ(
 
 
 __all__ = [
+    "CPU_COUNT",
+    "EFFECTIVE_GROUP_ID",
+    "EFFECTIVE_USER_ID",
+    "CopyError",
+    "GetCPUCountError",
     "GetCPUUseError",
+    "IntOrAll",
+    "MoveError",
+    "copy",
+    "get_cpu_count",
     "get_cpu_use",
     "get_env_var",
     "is_debug",
     "is_pytest",
+    "move",
     "temp_environ",
 ]
