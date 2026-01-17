@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from utilities.tempfile import TEMP_DIR, TemporaryDirectory, TemporaryFile, gettempdir
+from utilities.tempfile import (
+    TEMP_DIR,
+    TemporaryDirectory,
+    TemporaryFile,
+    gettempdir,
+    yield_temp_file_at,
+)
 
 
 class TestGetTempDir:
@@ -97,4 +103,5 @@ class TestTemporaryFile:
 
 class TestYieldTempAt:
     def test_file(self, *, temp_path_not_exist: Path) -> None:
-        a
+        with yield_temp_file_at(temp_path_not_exist):
+            assert 0, 1

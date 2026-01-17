@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
-from shutil import copyfile, move
+from shutil import move
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from tempfile import gettempdir as _gettempdir
 from typing import TYPE_CHECKING, override
-
-from utilities.contextlib import enhanced_context_manager
-from utilities.warnings import suppress_warnings
+from warnings import catch_warnings, filterwarnings
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -61,7 +60,8 @@ class _TemporaryDirectoryNoResourceWarning(tempfile.TemporaryDirectory):
         ignore_errors: bool = False,
         delete: bool = True,
     ) -> None:
-        with suppress_warnings(category=ResourceWarning):
+        with catch_warnings():
+            filterwarnings("ignore", category=ResourceWarning)
             return super()._cleanup(  # pyright: ignore[reportAttributeAccessIssue]
                 name, warn_message, ignore_errors=ignore_errors, delete=delete
             )
@@ -70,7 +70,7 @@ class _TemporaryDirectoryNoResourceWarning(tempfile.TemporaryDirectory):
 ##
 
 
-@enhanced_context_manager
+@contextmanager
 def TemporaryFile(  # noqa: N802
     *,
     dir: PathLike | None = None,  # noqa: A002
@@ -116,7 +116,7 @@ def TemporaryFile(  # noqa: N802
             yield temp
 
 
-@enhanced_context_manager
+@contextmanager
 def _temporary_file_outer(
     path: PathLike,
     /,
@@ -138,7 +138,7 @@ def _temporary_file_outer(
         yield temp
 
 
-@enhanced_context_manager
+@contextmanager
 def _temporary_file_inner(
     path: PathLike,
     /,
