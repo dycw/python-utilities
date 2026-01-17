@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/dycw/actions
-    rev: 0.15.1
+    rev: 0.15.5
     hooks:
       - args:
           - --ci--pull-request--pre-commit
@@ -34,11 +34,17 @@ repos:
           - --repo-name=python-utilities
           - --ruff
         id: conformalize-repo
+        priority: 10
       - id: format-requirements
+        priority: 10
       - id: replace-sequence-strs
+        priority: 10
       - id: touch-empty-py
+        priority: 10
       - id: touch-py-typed
+        priority: 10
       - id: update-requirements
+        priority: 10
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -46,6 +52,7 @@ repos:
       - id: check-merge-conflict
       - id: check-symlinks
       - id: destroyed-symlinks
+        priority: 20
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: mixed-line-ending
@@ -55,7 +62,10 @@ repos:
       - id: pretty-format-json
         args:
           - --autofix
+        priority: 10
       - id: trailing-whitespace
+      - id: check-illegal-windows-names
+        priority: 20
   - repo: local
     hooks:
       - id: prettier
@@ -65,21 +75,26 @@ repos:
         types_or:
           - markdown
           - yaml
+        priority: 10
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.14.13
     hooks:
       - id: ruff-check
         args:
           - --fix
+        priority: 20
       - id: ruff-format
+        priority: 10
   - repo: https://github.com/scop/pre-commit-shfmt
     rev: v3.12.0-2
     hooks:
       - id: shfmt
+        priority: 10
   - repo: https://github.com/koalaman/shellcheck-precommit
     rev: v0.11.0
     hooks:
       - id: shellcheck
+        priority: 20
   - repo: https://github.com/compwa/taplo-pre-commit
     rev: v0.9.3
     hooks:
@@ -91,6 +106,7 @@ repos:
           - indent_entries=true
           - --option
           - reorder_keys=true
+        priority: 10
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 0.9.26
     hooks:
@@ -101,3 +117,40 @@ repos:
           - highest
           - --prerelease
           - disallow
+        priority: 10
+  - repo: builtin
+    hooks:
+      - id: check-added-large-files
+        priority: 20
+      - id: check-case-conflict
+        priority: 20
+      - id: check-executables-have-shebangs
+        priority: 20
+      - id: check-json
+        priority: 20
+      - id: check-json5
+        priority: 20
+      - id: check-merge-conflict
+        priority: 20
+      - id: check-symlinks
+        priority: 20
+      - id: check-toml
+        priority: 20
+      - id: check-xml
+        priority: 20
+      - id: check-yaml
+        priority: 20
+      - id: detect-private-key
+        priority: 20
+      - id: end-of-file-fixer
+        priority: 10
+      - id: fix-byte-order-marker
+        priority: 10
+      - id: mixed-line-ending
+        args:
+          - --fix=lf
+        priority: 10
+      - id: no-commit-to-branch
+        priority: 20
+      - id: trailing-whitespace
+        priority: 10
