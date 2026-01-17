@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 from getpass import getuser
+from logging import getLogger
 from os import cpu_count, environ
 from pathlib import Path
 from platform import system
 from random import SystemRandom
-from typing import TYPE_CHECKING, assert_never
+from typing import TYPE_CHECKING, assert_never, cast
+from zoneinfo import ZoneInfo
 
+from tzlocal import get_localzone
 from whenever import DateDelta, TimeDelta
 
 if TYPE_CHECKING:
-    from utilities.types import System
+    from utilities.types import System, TimeZone
 
 
 # getpass
@@ -164,6 +167,22 @@ EFFECTIVE_USER_NAME = (
 SYSTEM_RANDOM = SystemRandom()
 
 
+# tzlocal
+
+
+def _get_local_time_zone() -> ZoneInfo:
+    logger = getLogger("tzlocal")  # avoid import cycle
+    init_disabled = logger.disabled
+    logger.disabled = True
+    time_zone = get_localzone()
+    logger.disabled = init_disabled
+    return time_zone
+
+
+LOCAL_TIME_ZONE = _get_local_time_zone()
+LOCAL_TIME_ZONE_NAME = cast("TimeZone", LOCAL_TIME_ZONE.key)
+
+
 # whenever
 
 
@@ -178,6 +197,12 @@ DAY = DateDelta(days=1)
 WEEK = DateDelta(weeks=1)
 MONTH = DateDelta(months=1)
 YEAR = DateDelta(years=1)
+
+
+# zoneinfo
+
+
+UTC = ZoneInfo("UTC")
 
 
 __all__ = [
@@ -201,6 +226,8 @@ __all__ = [
     "IS_NOT_MAC",
     "IS_NOT_WINDOWS",
     "IS_WINDOWS",
+    "LOCAL_TIME_ZONE",
+    "LOCAL_TIME_ZONE_NAME",
     "MAX_PID",
     "MICROSECOND",
     "MILLISECOND",
@@ -222,6 +249,7 @@ __all__ = [
     "SYSTEM",
     "SYSTEM_RANDOM",
     "USER",
+    "UTC",
     "WEEK",
     "YEAR",
     "ZERO_DAYS",

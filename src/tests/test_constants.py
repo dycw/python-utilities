@@ -15,6 +15,8 @@ from utilities.constants import (
     IS_NOT_MAC,
     IS_NOT_WINDOWS,
     IS_WINDOWS,
+    LOCAL_TIME_ZONE,
+    LOCAL_TIME_ZONE_NAME,
     MAX_PID,
     ROOT_GROUP_NAME,
     ROOT_USER_NAME,
@@ -22,8 +24,8 @@ from utilities.constants import (
     USER,
 )
 from utilities.platform import SYSTEM
-from utilities.types import System
-from utilities.typing import get_args
+from utilities.types import System, TimeZone
+from utilities.typing import get_literal_elements
 
 
 class TestCPUCount:
@@ -50,6 +52,12 @@ class TestGroupName:
                 assert_never(never)
 
 
+class TestLocalTimeZone:
+    def test_main(self) -> None:
+        assert isinstance(LOCAL_TIME_ZONE, ZoneInfo)
+        assert LOCAL_TIME_ZONE_NAME in get_literal_elements(TimeZone)
+
+
 class TestMaxPID:
     def test_main(self) -> None:
         match SYSTEM:
@@ -71,7 +79,7 @@ class TestSystemRandom:
 class TestSystem:
     def test_main(self) -> None:
         assert isinstance(SYSTEM, str)
-        assert SYSTEM in get_args(System)
+        assert SYSTEM in get_literal_elements(System)
 
     @mark.parametrize(
         "predicate",
