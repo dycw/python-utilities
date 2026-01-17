@@ -21,15 +21,18 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.constants import (
+    BRACKETS,
+    LIST_SEPARATOR,
+    PAIR_SEPARATOR,
+    Sentinel,
+    SentinelParseError,
+)
 from utilities.enum import ParseEnumError, parse_enum
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one, one_str
 from utilities.math import ParseNumberError, parse_number
 from utilities.re import ExtractGroupError, extract_group
-from utilities.sentinel import ParseSentinelError, Sentinel, parse_sentinel
 from utilities.text import (
-    BRACKETS,
-    LIST_SEPARATOR,
-    PAIR_SEPARATOR,
     ParseBoolError,
     ParseNoneError,
     join_strs,
@@ -211,8 +214,8 @@ def _parse_object_type(
         return Path(text).expanduser()
     if issubclass(cls, Sentinel):
         try:
-            return parse_sentinel(text)
-        except ParseSentinelError:
+            return Sentinel.parse(text)
+        except SentinelParseError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
     if issubclass(cls, Version):
         try:

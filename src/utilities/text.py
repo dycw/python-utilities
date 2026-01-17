@@ -21,17 +21,14 @@ from typing import (
 )
 from uuid import uuid4
 
+from utilities.constants import BRACKETS, LIST_SEPARATOR, PAIR_SEPARATOR, Sentinel
 from utilities.iterables import CheckDuplicatesError, check_duplicates, transpose
 from utilities.reprlib import get_repr
-from utilities.sentinel import Sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
     from utilities.types import MaybeCallableBoolLike, MaybeCallableStr, StrStrMapping
-
-
-_DEFAULT_SEPARATOR = ","
 
 
 ##
@@ -133,17 +130,12 @@ def split_f_str_equals(text: str, /) -> tuple[str, str]:
 ##
 
 
-LIST_SEPARATOR = _DEFAULT_SEPARATOR
-PAIR_SEPARATOR = "="
-BRACKETS = [("(", ")"), ("[", "]"), ("{", "}")]
-
-
 @overload
 def split_key_value_pairs(
     text: str,
     /,
     *,
-    list_separator: str = _DEFAULT_SEPARATOR,
+    list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     mapping: Literal[True],
@@ -153,7 +145,7 @@ def split_key_value_pairs(
     text: str,
     /,
     *,
-    list_separator: str = _DEFAULT_SEPARATOR,
+    list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     mapping: Literal[False] = False,
@@ -163,7 +155,7 @@ def split_key_value_pairs(
     text: str,
     /,
     *,
-    list_separator: str = _DEFAULT_SEPARATOR,
+    list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     mapping: bool = False,
@@ -172,7 +164,7 @@ def split_key_value_pairs(
     text: str,
     /,
     *,
-    list_separator: str = _DEFAULT_SEPARATOR,
+    list_separator: str = LIST_SEPARATOR,
     pair_separator: str = PAIR_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = BRACKETS,
     mapping: bool = False,
@@ -231,7 +223,7 @@ def split_str(
     text: str,
     /,
     *,
-    separator: str = _DEFAULT_SEPARATOR,
+    separator: str = LIST_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: Literal[1],
 ) -> tuple[str]: ...
@@ -240,7 +232,7 @@ def split_str(
     text: str,
     /,
     *,
-    separator: str = _DEFAULT_SEPARATOR,
+    separator: str = LIST_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: Literal[2],
 ) -> tuple[str, str]: ...
@@ -249,7 +241,7 @@ def split_str(
     text: str,
     /,
     *,
-    separator: str = _DEFAULT_SEPARATOR,
+    separator: str = LIST_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: Literal[3],
 ) -> tuple[str, str, str]: ...
@@ -258,7 +250,7 @@ def split_str(
     text: str,
     /,
     *,
-    separator: str = _DEFAULT_SEPARATOR,
+    separator: str = LIST_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: Literal[4],
 ) -> tuple[str, str, str, str]: ...
@@ -267,7 +259,7 @@ def split_str(
     text: str,
     /,
     *,
-    separator: str = _DEFAULT_SEPARATOR,
+    separator: str = LIST_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: Literal[5],
 ) -> tuple[str, str, str, str, str]: ...
@@ -276,7 +268,7 @@ def split_str(
     text: str,
     /,
     *,
-    separator: str = _DEFAULT_SEPARATOR,
+    separator: str = LIST_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: int | None = None,
 ) -> tuple[str, ...]: ...
@@ -284,7 +276,7 @@ def split_str(
     text: str,
     /,
     *,
-    separator: str = _DEFAULT_SEPARATOR,
+    separator: str = LIST_SEPARATOR,
     brackets: Iterable[tuple[str, str]] | None = None,
     n: int | None = None,
 ) -> tuple[str, ...]:
@@ -309,7 +301,7 @@ def _split_str_brackets(
     brackets: Iterable[tuple[str, str]],
     /,
     *,
-    separator: str = _DEFAULT_SEPARATOR,
+    separator: str = LIST_SEPARATOR,
 ) -> list[str]:
     brackets = list(brackets)
     opens, closes = transpose(brackets)
@@ -400,7 +392,7 @@ class _SplitStrOpeningBracketUnmatchedError(SplitStrError):
 
 
 def join_strs(
-    texts: Iterable[str], /, *, sort: bool = False, separator: str = _DEFAULT_SEPARATOR
+    texts: Iterable[str], /, *, sort: bool = False, separator: str = LIST_SEPARATOR
 ) -> str:
     """Join a collection of strings, with a special provision for the empty list."""
     texts = list(texts)
@@ -413,7 +405,7 @@ def join_strs(
     return separator.join(texts)
 
 
-def _escape_separator(*, separator: str = _DEFAULT_SEPARATOR) -> str:
+def _escape_separator(*, separator: str = LIST_SEPARATOR) -> str:
     return f"\\{separator}"
 
 
@@ -547,9 +539,6 @@ _SPLIT_TEXT = re.compile(
 )
 
 __all__ = [
-    "BRACKETS",
-    "LIST_SEPARATOR",
-    "PAIR_SEPARATOR",
     "ParseBoolError",
     "ParseNoneError",
     "SplitKeyValuePairsError",

@@ -10,11 +10,11 @@ from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_output
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
+from utilities.constants import Sentinel
 from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.grp import get_gid_name
 from utilities.pwd import get_uid_name
-from utilities.sentinel import Sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

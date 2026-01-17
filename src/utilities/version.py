@@ -6,7 +6,7 @@ from dataclasses import dataclass, field, replace
 from functools import total_ordering
 from typing import Any, Self, assert_never, overload, override
 
-from utilities.sentinel import Sentinel
+from utilities.constants import Sentinel
 from utilities.types import MaybeCallable, MaybeStr
 
 type VersionLike = MaybeStr[Version]

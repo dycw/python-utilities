@@ -86,9 +86,9 @@ from tests.test_typing_funcs.with_future import (
     TypedDictFutureIntFloat,
     TypedDictFutureIntFloatOptional,
 )
+from utilities.constants import Sentinel
 from utilities.hypothesis import text_ascii
 from utilities.pytest import make_ids
-from utilities.sentinel import Sentinel
 from utilities.types import LogLevel, Number, Parallelism, Seed, StrMapping
 from utilities.typing import (
     IsInstanceGenError,

@@ -32,6 +32,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 
 from tests.test_objects.objects import objects
+from utilities.constants import Sentinel, sentinel
 from utilities.hypothesis import pairs, sentinels, sets_fixed_length, text_ascii
 from utilities.iterables import (
     CheckBijectionError,
@@ -116,7 +117,6 @@ from utilities.iterables import (
     transpose,
     unique_everseen,
 )
-from utilities.sentinel import Sentinel, sentinel
 from utilities.typing import is_sequence_of
 
 if TYPE_CHECKING:

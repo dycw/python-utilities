@@ -38,6 +38,8 @@ from utilities.constants import (
     TODAY_UTC,
     UTC,
     ZERO_DAYS,
+    Sentinel,
+    sentinel,
 )
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import (
@@ -55,7 +57,6 @@ from utilities.hypothesis import (
     zoned_date_times,
     zoned_date_times_2000,
 )
-from utilities.sentinel import Sentinel, sentinel
 from utilities.types import TIME_ZONES, MaybeCallableTimeLike
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
 from utilities.whenever import (
@@ -149,7 +150,7 @@ if TYPE_CHECKING:
 
     from _pytest.mark import ParameterSet
 
-    from utilities.sentinel import Sentinel
+    from utilities.constants import Sentinel
     from utilities.types import (
         DateOrDateTimeDelta,
         DateTimeRoundMode,

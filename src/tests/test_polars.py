@@ -70,7 +70,7 @@ from whenever import (
 
 import tests.test_math
 import utilities.polars
-from utilities.constants import NOW_UTC, PWD, TODAY_UTC, UTC
+from utilities.constants import NOW_UTC, PWD, TODAY_UTC, UTC, Sentinel, sentinel
 from utilities.hypothesis import (
     assume_does_not_raise,
     date_deltas,
@@ -229,7 +229,6 @@ from utilities.polars import (
     zoned_date_time_dtype,
     zoned_date_time_period_dtype,
 )
-from utilities.sentinel import Sentinel, sentinel
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
 from utilities.whenever import (
     DatePeriod,

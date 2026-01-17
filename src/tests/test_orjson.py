@@ -57,6 +57,8 @@ from utilities.constants import (
     MINUTE,
     SECOND,
     UTC,
+    Sentinel,
+    sentinel,
 )
 from utilities.hypothesis import (
     date_periods,
@@ -90,7 +92,6 @@ from utilities.orjson import (
     write_object,
 )
 from utilities.polars import check_polars_dataframe, zoned_date_time_dtype
-from utilities.sentinel import Sentinel, sentinel
 from utilities.types import LogLevel, MaybeIterable, PathLike
 from utilities.typing import get_args, is_sequence_of
 from utilities.whenever import DatePeriod, TimePeriod, ZonedDateTimePeriod, get_now

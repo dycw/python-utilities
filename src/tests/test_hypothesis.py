@@ -61,7 +61,7 @@ from utilities.constants import (
     MIN_UINT32,
     MIN_UINT64,
 )
-from utilities.functions import ensure_int
+from utilities.functions import ensure_int, is_sentinel
 from utilities.hypothesis import (
     _LINUX_DISALLOW_TIME_ZONES,
     Shape,
@@ -127,7 +127,6 @@ from utilities.hypothesis import (
 from utilities.iterables import one
 from utilities.libcst import parse_import
 from utilities.platform import maybe_lower_case
-from utilities.sentinel import is_sentinel
 from utilities.version import Version
 from utilities.whenever import (
     DATE_TWO_DIGIT_YEAR_MAX,
@@ -144,7 +143,7 @@ from utilities.whenever import (
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
 
-    from utilities.sentinel import Sentinel
+    from utilities.constants import Sentinel
     from utilities.tempfile import TemporaryDirectory
     from utilities.types import Number
 

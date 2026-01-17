@@ -32,13 +32,19 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.constants import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME, UTC, _get_now
+from utilities.constants import (
+    LOCAL_TIME_ZONE,
+    LOCAL_TIME_ZONE_NAME,
+    UTC,
+    Sentinel,
+    _get_now,
+    sentinel,
+)
 from utilities.constants import _get_now_local as get_now_local
 from utilities.dataclasses import replace_non_sentinel
 from utilities.functions import get_class_name
 from utilities.math import sign
 from utilities.platform import get_strftime
-from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import to_time_zone_name
 
 if TYPE_CHECKING:

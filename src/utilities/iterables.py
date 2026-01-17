@@ -30,7 +30,9 @@ from typing import (
     override,
 )
 
+from utilities.constants import Sentinel, sentinel
 from utilities.errors import ImpossibleCaseError
+from utilities.functions import is_sentinel
 from utilities.math import (
     _CheckIntegerEqualError,
     _CheckIntegerEqualOrApproxError,
@@ -39,7 +41,6 @@ from utilities.math import (
     check_integer,
 )
 from utilities.reprlib import get_repr
-from utilities.sentinel import Sentinel, is_sentinel, sentinel
 from utilities.types import SupportsAdd, SupportsLT
 
 if TYPE_CHECKING:

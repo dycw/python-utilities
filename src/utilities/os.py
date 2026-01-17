@@ -8,10 +8,11 @@ from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 from utilities.constants import CPU_COUNT
 from utilities.contextlib import enhanced_context_manager
 from utilities.iterables import OneStrEmptyError, one_str
-from utilities.types import IntOrAll
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
+
+    from utilities.types import IntOrAll
 
 
 def get_cpu_use(*, n: IntOrAll = "all") -> int:
@@ -140,7 +141,6 @@ def temp_environ(
 
 __all__ = [
     "GetCPUUseError",
-    "IntOrAll",
     "get_cpu_use",
     "get_env_var",
     "is_debug",
