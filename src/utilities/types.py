@@ -219,6 +219,10 @@ class SupportsRound(Protocol[_T_co]):
     def __round__(self, ndigits: int, /) -> _T_co: ...
 
 
+# os
+type IntOrAll = int | Literal["all"]
+
+
 # parse
 type ParseObjectExtra = Mapping[Any, Callable[[str], Any]]
 type SerializeObjectExtra = Mapping[Any, Callable[[Any], str]]
@@ -322,6 +326,7 @@ __all__ = [
     "FileOrDir",
     "IPv4AddressLike",
     "IPv6AddressLike",
+    "IntOrAll",
     "LogLevel",
     "LoggerLike",
     "MathRoundMode",

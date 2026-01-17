@@ -16,8 +16,7 @@ if TYPE_CHECKING:
 
     from tqdm import tqdm as tqdm_type
 
-    from utilities.os import IntOrAll
-    from utilities.types import Parallelism
+    from utilities.types import IntOrAll, Parallelism
 
 
 type _ExceptionBehaviour = Literal["ignore", "immediate", "deferred"]

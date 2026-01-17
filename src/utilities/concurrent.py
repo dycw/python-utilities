@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
     from multiprocessing.context import BaseContext
 
-    from utilities.os import IntOrAll
+    from utilities.types import IntOrAll
 
 
 def concurrent_map[T](
