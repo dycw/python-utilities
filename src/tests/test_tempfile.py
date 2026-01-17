@@ -3,22 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 
 from utilities.tempfile import (
-    TEMP_DIR,
     TemporaryDirectory,
     TemporaryFile,
-    gettempdir,
+    yield_temp_dir_at,
     yield_temp_file_at,
 )
-
-
-class TestGetTempDir:
-    def test_main(self) -> None:
-        assert isinstance(gettempdir(), Path)
-
-
-class TestTempDir:
-    def test_main(self) -> None:
-        assert isinstance(TEMP_DIR, Path)
 
 
 class TestTemporaryDirectory:
@@ -102,6 +91,14 @@ class TestTemporaryFile:
 
 
 class TestYieldTempAt:
+    def test_dir(self, *, temp_path_not_exist: Path) -> None:
+        with yield_temp_dir_at(temp_path_not_exist) as temp:
+            assert temp.is_dir()
+            assert temp.parent == temp_path_not_exist.parent
+            assert temp.name.startswith(temp_path_not_exist.name)
+
     def test_file(self, *, temp_path_not_exist: Path) -> None:
-        with yield_temp_file_at(temp_path_not_exist):
-            assert 0, 1
+        with yield_temp_file_at(temp_path_not_exist) as temp:
+            assert temp.is_file()
+            assert temp.parent == temp_path_not_exist.parent
+            assert temp.name.startswith(temp_path_not_exist.name)
