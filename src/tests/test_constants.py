@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from random import SystemRandom
 from typing import assert_never
 from zoneinfo import ZoneInfo
@@ -22,6 +23,7 @@ from utilities.constants import (
     ROOT_GROUP_NAME,
     ROOT_USER_NAME,
     SYSTEM_RANDOM,
+    TEMP_DIR,
     USER,
 )
 from utilities.platform import SYSTEM
@@ -100,6 +102,11 @@ class TestSystem:
     )
     def test_predicates(self, *, predicate: bool) -> None:
         assert isinstance(predicate, bool)
+
+
+class TestTempDir:
+    def test_main(self) -> None:
+        assert isinstance(TEMP_DIR, Path)
 
 
 class TestUser:
