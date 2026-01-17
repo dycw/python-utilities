@@ -7,13 +7,8 @@ from typing import TYPE_CHECKING
 from hypothesis import given
 from hypothesis.strategies import integers, iterables, just, sampled_from
 
-from utilities.random import (
-    SYSTEM_RANDOM,
-    bernoulli,
-    get_docker_name,
-    get_state,
-    shuffle,
-)
+from utilities.constants import SYSTEM_RANDOM
+from utilities.random import bernoulli, get_docker_name, get_state, shuffle
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -78,8 +73,3 @@ class TestShuffle:
         for exp in expected:
             result = shuffle(range(5), seed=TestShuffle.test_deterministic.__qualname__)
             assert result == exp
-
-
-class TestSystemRandom:
-    def test_main(self) -> None:
-        assert isinstance(SYSTEM_RANDOM, SystemRandom)

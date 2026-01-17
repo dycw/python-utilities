@@ -11,12 +11,6 @@ if TYPE_CHECKING:
     from utilities.types import Seed
 
 
-SYSTEM_RANDOM = SystemRandom()
-
-
-##
-
-
 def bernoulli(*, true: float = 0.5, seed: Seed | None = None) -> bool:
     """Return a Bernoulli random variate."""
     state = get_state(seed)
@@ -66,4 +60,4 @@ def shuffle[T](iterable: Iterable[T], /, *, seed: Seed | None = None) -> list[T]
     return copy
 
 
-__all__ = ["SYSTEM_RANDOM", "bernoulli", "get_docker_name", "get_state", "shuffle"]
+__all__ = ["bernoulli", "get_docker_name", "get_state", "shuffle"]
