@@ -59,6 +59,7 @@ CPU_COUNT: int = _get_cpu_count()
 
 
 def _get_system() -> System:
+    """Get the system/OS name."""
     sys = system()
     if sys == "Windows":  # skipif-not-windows
         return "windows"
@@ -85,6 +86,7 @@ IS_CI_AND_NOT_LINUX: bool = IS_CI and IS_NOT_LINUX
 
 
 def _get_max_pid() -> int | None:
+    """Get the system max process ID."""
     match SYSTEM:
         case "windows":  # skipif-not-windows
             return None
@@ -130,6 +132,7 @@ EFFECTIVE_GROUP_ID: int | None = _get_effective_group_id()
 
 
 def _get_effective_user_id() -> int | None:
+    """Get the effective user ID."""
     match SYSTEM:
         case "windows":  # skipif-not-windows
             return None
@@ -148,6 +151,7 @@ EFFECTIVE_USER_ID: int | None = _get_effective_user_id()
 
 
 def _get_gid_name(gid: int, /) -> str | None:
+    """Get the name of a group ID."""
     match SYSTEM:
         case "windows":  # skipif-not-windows
             return None
@@ -169,6 +173,7 @@ EFFECTIVE_GROUP_NAME: str | None = (
 
 
 def _get_uid_name(uid: int, /) -> str | None:
+    """Get the name of a user ID."""
     match SYSTEM:
         case "windows":  # skipif-not-windows
             return None
@@ -213,6 +218,7 @@ TEMP_DIR: Path = Path(gettempdir())
 
 
 def _get_local_time_zone() -> ZoneInfo:
+    """Get the local time zone, with the logging disabled."""
     logger = getLogger("tzlocal")  # avoid import cycle
     init_disabled = logger.disabled
     logger.disabled = True
