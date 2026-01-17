@@ -49,7 +49,15 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureTypeLiteral,
     DataClassFutureTypeLiteralNullable,
 )
-from utilities.constants import HOUR, LOCAL_TIME_ZONE, MINUTE, SECOND, UTC
+from utilities.constants import (
+    HOUR,
+    LOCAL_TIME_ZONE,
+    MAX_INT64,
+    MIN_INT64,
+    MINUTE,
+    SECOND,
+    UTC,
+)
 from utilities.hypothesis import (
     date_periods,
     dates,
@@ -64,7 +72,6 @@ from utilities.hypothesis import (
 )
 from utilities.iterables import always_iterable, one
 from utilities.logging import get_logging_level_number
-from utilities.math import MAX_INT64, MIN_INT64
 from utilities.operator import is_equal
 from utilities.orjson import (
     _LOG_RECORD_DEFAULT_ATTRS,
