@@ -22,6 +22,7 @@ from utilities.constants import (
     LOCAL_TIME_ZONE,
     LOCAL_TIME_ZONE_NAME,
     MAX_PID,
+    PWD,
     ROOT_GROUP_NAME,
     ROOT_USER_NAME,
     SYSTEM_RANDOM,
@@ -92,6 +93,11 @@ class TestMaxPID:
                 assert isinstance(MAX_PID, int)
             case never:
                 assert_never(never)
+
+
+class TestPwd:
+    def test_main(self) -> None:
+        assert isinstance(PWD, Path)
 
 
 class TestSystemRandom:
