@@ -26,13 +26,15 @@ def copy(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
     src, dest = map(Path, [src, dest])
     match file_or_dir(src):
         case "file":
-            with TemporaryFile(data=src.read_bytes()) as temp:
+            with TemporaryFile(
+                suffix=".tmp", prefix=name, dir=parent, data=src.read_bytes()
+            ) as temp:
                 try:
                     move(temp, dest, overwrite=overwrite)
                 except _MoveFileExistsError as error:
                     raise _CopyFileExistsError(src=error.src, dest=error.dest) from None
         case "dir":
-            with TemporaryDirectory() as temp:
+            with TemporaryDirectory(suffix=".tmp", prefix=name, dir=parent) as temp:
                 temp_sub_dir = temp / "sub_dir"
                 _ = copytree(src, temp_sub_dir)
                 try:
