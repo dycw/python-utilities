@@ -24,10 +24,12 @@ if TYPE_CHECKING:
 def copy(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
     """Copy a file/directory atomically."""
     src, dest = map(Path, [src, dest])
+    name, parent = dest.name, dest.parent
+    parent.mkdir(parents=True, exist_ok=True)
     match file_or_dir(src):
         case "file":
             with TemporaryFile(
-                suffix=".tmp", prefix=name, dir=parent, data=src.read_bytes()
+                dir=parent, suffix=".tmp", prefix=name, data=src.read_bytes()
             ) as temp:
                 try:
                     move(temp, dest, overwrite=overwrite)
@@ -164,9 +166,8 @@ def writer(
 ) -> Iterator[Path]:
     """Yield a path for atomically writing files to disk."""
     path = Path(path)
-    parent = path.parent
+    name, parent = path.name, path.parent
     parent.mkdir(parents=True, exist_ok=True)
-    name = path.name
     with TemporaryDirectory(suffix=".tmp", prefix=name, dir=parent) as temp_dir:
         temp_path1 = Path(temp_dir, name)
         try:
