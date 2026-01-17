@@ -105,6 +105,27 @@ EFFECTIVE_GROUP_NAME = (
 )
 
 
+# platform -> os -> pwd
+
+
+def _get_uid_name(uid: int, /) -> str | None:
+    match SYSTEM:
+        case "windows":  # skipif-not-windows
+            return None
+        case "mac" | "linux":  # skipif-windows
+            from pwd import getpwuid
+
+            return getpwuid(uid).pw_name
+        case never:
+            assert_never(never)
+
+
+ROOT_USER_NAME = _get_uid_name(0)
+EFFECTIVE_USER_NAME = (
+    None if EFFECTIVE_USER_ID is None else _get_uid_name(EFFECTIVE_USER_ID)
+)
+
+
 # whenever
 
 
@@ -132,6 +153,7 @@ __all__ = [
     "EFFECTIVE_GROUP_ID",
     "EFFECTIVE_GROUP_NAME",
     "EFFECTIVE_USER_ID",
+    "EFFECTIVE_USER_NAME",
     "HOUR",
     "IS_LINUX",
     "IS_MAC",
@@ -155,6 +177,7 @@ __all__ = [
     "MIN_UINT64",
     "MONTH",
     "ROOT_GROUP_NAME",
+    "ROOT_USER_NAME",
     "SECOND",
     "SYSTEM",
     "WEEK",

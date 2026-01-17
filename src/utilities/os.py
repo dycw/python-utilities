@@ -3,16 +3,15 @@ from __future__ import annotations
 import shutil
 from contextlib import suppress
 from dataclasses import dataclass
-from os import cpu_count, environ, getenv, replace
+from os import cpu_count, environ, getenv
 from pathlib import Path
 from shutil import rmtree
-from tempfile import TemporaryDirectory, TemporaryFile
+from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.constants import CPU_COUNT
 from utilities.contextlib import enhanced_context_manager
 from utilities.iterables import OneStrEmptyError, one_str
-from utilities.platform import SYSTEM
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
