@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 from random import SystemRandom
-from typing import assert_never
+from typing import TYPE_CHECKING, assert_never
 from zoneinfo import ZoneInfo
 
+from hypothesis import given
+from hypothesis.strategies import sampled_from
 from pytest import mark, param, raises
 from whenever import (
     Date,
@@ -17,6 +19,7 @@ from whenever import (
 )
 
 from utilities.constants import (
+    _SENTINEL_REPR,
     CPU_COUNT,
     DATE_DELTA_MAX,
     DATE_DELTA_MIN,
@@ -53,10 +56,16 @@ from utilities.constants import (
     USER,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
+    Sentinel,
+    SentinelParseError,
+    sentinel,
 )
 from utilities.platform import SYSTEM
 from utilities.types import System, TimeZone
 from utilities.typing import get_literal_elements
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class TestCPUCount:
@@ -165,6 +174,36 @@ class TestPaths:
     def test_main(self, *, path: Path) -> None:
         assert isinstance(path, Path)
         assert path.is_dir()
+
+
+class TestSentinel:
+    def test_isinstance(self) -> None:
+        assert isinstance(sentinel, Sentinel)
+
+    @mark.parametrize(
+        "text",
+        [
+            param("", id="blank"),
+            param(_SENTINEL_REPR, id="default"),
+            param(_SENTINEL_REPR.lower(), id="lower"),
+            param(_SENTINEL_REPR.upper(), id="upper"),
+        ],
+    )
+    def test_parse(self, *, text: str) -> None:
+        result = Sentinel.parse(text)
+        assert result is sentinel
+
+    @mark.parametrize("method", [param(repr), param(str)])
+    def test_repr_and_str(self, method: Callable[..., str]) -> None:
+        assert method(sentinel) == _SENTINEL_REPR
+
+    def test_singleton(self) -> None:
+        assert Sentinel() is sentinel
+
+    @given(text=sampled_from(["invalid", "ssentinell"]))
+    def test_error_parse(self, *, text: str) -> None:
+        with raises(SentinelParseError, match=r"Unable to parse sentinel; got '.*'"):
+            _ = Sentinel.parse(text)
 
 
 class TestSystemRandom:

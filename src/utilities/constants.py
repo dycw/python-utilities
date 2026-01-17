@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from getpass import getuser
 from logging import getLogger
 from os import cpu_count, environ
 from pathlib import Path
 from platform import system
 from random import SystemRandom
+from re import IGNORECASE, search
 from tempfile import gettempdir
-from typing import TYPE_CHECKING, assert_never, cast
+from typing import TYPE_CHECKING, Any, assert_never, cast, override
 from zoneinfo import ZoneInfo
 
 from tzlocal import get_localzone
@@ -206,6 +208,55 @@ RICH_MAX_LENGTH: int | None = 20
 RICH_MAX_STRING: int | None = None
 RICH_MAX_DEPTH: int | None = None
 RICH_EXPAND_ALL: bool = False
+
+
+# sentinel
+
+
+class _Meta(type):
+    """Metaclass for the sentinel."""
+
+    instance: Any = None
+
+    @override
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
+        if cls.instance is None:
+            cls.instance = super().__call__(*args, **kwargs)
+        return cls.instance
+
+
+_SENTINEL_REPR = "<sentinel>"
+
+
+class Sentinel(metaclass=_Meta):
+    """Base class for the sentinel object."""
+
+    @override
+    def __repr__(self) -> str:
+        return _SENTINEL_REPR
+
+    @override
+    def __str__(self) -> str:
+        return repr(self)
+
+    @classmethod
+    def parse(cls, text: str, /) -> Sentinel:
+        """Parse text into the Sentinel value."""
+        if search("^(|sentinel|<sentinel>)$", text, flags=IGNORECASE):
+            return sentinel
+        raise SentinelParseError(text=text)
+
+
+@dataclass(kw_only=True, slots=True)
+class SentinelParseError(Exception):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse sentinel; got {self.text!r}"
+
+
+sentinel = Sentinel()
 
 
 # tempfile
