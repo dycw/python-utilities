@@ -586,8 +586,8 @@ class TestInTimeDelta:
 
 
 class TestIsNoneAndIsNotNone:
-    @mark.parameter(
-        "func, obj, expected",
+    @mark.parametrize(
+        ("func", "obj", "expected"),
         [
             param(is_none, None, True),
             param(is_none, 0, False),
