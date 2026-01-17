@@ -565,7 +565,7 @@ class TestParseObject:
     def test_error_sentinel(self) -> None:
         with raises(
             _ParseObjectParseError,
-            match=r"Unable to parse <class 'utilities\.sentinel\.Sentinel'>; got 'invalid'",
+            match=r"Unable to parse <class 'utilities\.constants\.Sentinel'>; got 'invalid'",
         ):
             _ = parse_object(Sentinel, "invalid")
 
