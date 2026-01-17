@@ -9,9 +9,9 @@ from uuid import uuid4
 
 from pytest import LogCaptureFixture, mark, param, raises
 from pytest_lazy_fixtures import lf
+from utilities.grp import EFFECTIVE_GROUP_NAME
 
 from utilities.constants import MINUTE, SECOND
-from utilities.grp import EFFECTIVE_GROUP_NAME
 from utilities.iterables import one
 from utilities.pathlib import get_file_group, get_file_owner
 from utilities.permissions import Permissions
