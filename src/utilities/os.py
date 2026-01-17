@@ -3,7 +3,7 @@ from __future__ import annotations
 import shutil
 from contextlib import suppress
 from dataclasses import dataclass
-from os import cpu_count, environ, getenv
+from os import environ, getenv
 from pathlib import Path
 from shutil import rmtree
 from tempfile import TemporaryDirectory

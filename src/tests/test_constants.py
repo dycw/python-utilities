@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from random import SystemRandom
 from typing import assert_never
 
 from pytest import mark, param
@@ -16,6 +17,7 @@ from utilities.constants import (
     MAX_PID,
     ROOT_GROUP_NAME,
     ROOT_USER_NAME,
+    SYSTEM_RANDOM,
 )
 from utilities.platform import SYSTEM
 from utilities.types import System
@@ -51,6 +53,11 @@ class TestMaxPID:
                 assert isinstance(MAX_PID, int)
             case never:
                 assert_never(never)
+
+
+class TestSystemRandom:
+    def test_main(self) -> None:
+        assert isinstance(SYSTEM_RANDOM, SystemRandom)
 
 
 class TestSystem:
