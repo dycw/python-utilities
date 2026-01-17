@@ -56,6 +56,11 @@ class TestGroupName:
 class TestLocalTimeZone:
     def test_main(self) -> None:
         assert isinstance(LOCAL_TIME_ZONE, ZoneInfo)
+
+
+class TestLocalTimeZoneName:
+    def test_main(self) -> None:
+        assert isinstance(LOCAL_TIME_ZONE_NAME, str)
         assert LOCAL_TIME_ZONE_NAME in get_literal_elements(TimeZone)
 
 
