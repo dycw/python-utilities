@@ -10,7 +10,7 @@ from hypothesis.strategies import integers, sets
 from pytest import mark, param, raises
 
 from utilities.atomicwrites import copy
-from utilities.constants import SYSTEM
+from utilities.constants import HOME, SYSTEM
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import git_repos, pairs, paths, temp_paths
 from utilities.pathlib import (
@@ -69,10 +69,10 @@ class TestExpandPath:
         ("path", "expected"),
         [
             param("foo", Path("foo")),
-            param("~", Path.home()),
-            param("~/foo", Path.home().joinpath("foo")),
-            param("$HOME", Path.home()),
-            param("$HOME/foo", Path.home().joinpath("foo")),
+            param("~", HOME),
+            param("~/foo", HOME / "foo"),
+            param("$HOME", HOME),
+            param("$HOME/foo", HOME / "foo"),
         ],
         ids=str,
     )

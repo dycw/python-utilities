@@ -26,7 +26,7 @@ from hypothesis.strategies import (
 )
 from pytest import approx, mark, param, raises
 
-from utilities.constants import MILLISECOND, SECOND, ZERO_TIME
+from utilities.constants import HOME, MILLISECOND, SECOND, ZERO_TIME
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     EnsureBoolError,
@@ -296,7 +296,7 @@ class TestEnsureNumber:
 
 
 class TestEnsurePath:
-    @given(case=sampled_from([(Path.home(), False), (Path.home(), True), (None, True)]))
+    @given(case=sampled_from([(HOME, False), (HOME, True), (None, True)]))
     def test_main(self, *, case: tuple[int | None, bool]) -> None:
         obj, nullable = case
         _ = ensure_path(obj, nullable=nullable)

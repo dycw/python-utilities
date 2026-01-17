@@ -20,7 +20,7 @@ from utilities.atomicwrites import (
     copy,
     move,
 )
-from utilities.constants import PWD, SECOND
+from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
@@ -55,7 +55,7 @@ BASH_LS = ["bash", "-ls"]
 CHPASSWD = "chpasswd"
 GIT_BRANCH_SHOW_CURRENT = ["git", "branch", "--show-current"]
 ISOLATED = "--isolated"
-KNOWN_HOSTS = Path.home() / ".ssh/known_hosts"
+KNOWN_HOSTS = HOME / ".ssh/known_hosts"
 MANAGED_PYTHON = "--managed-python"
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
 PRERELEASE_DISALLOW = ["--prerelease", "disallow"]

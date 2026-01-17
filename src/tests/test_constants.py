@@ -13,6 +13,7 @@ from utilities.constants import (
     EFFECTIVE_GROUP_NAME,
     EFFECTIVE_USER_ID,
     EFFECTIVE_USER_NAME,
+    HOME,
     IS_LINUX,
     IS_MAC,
     IS_NOT_LINUX,
@@ -95,9 +96,11 @@ class TestMaxPID:
                 assert_never(never)
 
 
-class TestPwd:
-    def test_main(self) -> None:
-        assert isinstance(PWD, Path)
+class TestPaths:
+    @mark.parametrize("path", [param(HOME), param(PWD)])
+    def test_main(self, *, path: Path) -> None:
+        assert isinstance(path, Path)
+        assert path.is_dir()
 
 
 class TestSystemRandom:

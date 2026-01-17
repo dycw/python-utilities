@@ -7,6 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel, SecretStr
 from pytest import mark, param
 
+from utilities.constants import HOME
 from utilities.pydantic import ExpandedPath, SecretLike, extract_secret
 from utilities.types import PathLike
 
@@ -20,8 +21,7 @@ class TestExpandedPath:
         _ = Example.model_rebuild()
 
         result = Example(path=path).path
-        expected = Path.home()
-        assert result == expected
+        assert result == HOME
 
 
 class TestExtractSecret:
