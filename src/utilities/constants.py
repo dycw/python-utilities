@@ -231,6 +231,20 @@ LOCAL_TIME_ZONE: ZoneInfo = _get_local_time_zone()
 LOCAL_TIME_ZONE_NAME: TimeZone = cast("TimeZone", LOCAL_TIME_ZONE.key)
 
 
+# tzlocal -> whenever
+
+
+def _get_now_local() -> ZonedDateTime:
+    """Get the current zoned date-time in the local time-zone."""
+    return ZonedDateTime.now(LOCAL_TIME_ZONE_NAME)
+
+
+NOW_LOCAL = _get_now_local()
+TODAY_LOCAL = NOW_LOCAL.date()
+TIME_LOCAL = NOW_LOCAL.time()
+NOW_LOCAL_PLAIN = NOW_LOCAL.to_plain()
+
+
 # whenever
 
 
@@ -292,6 +306,17 @@ ZONED_DATE_TIME_MIN: ZonedDateTime = PlainDateTime.MIN.assume_tz(UTC.key)
 ZONED_DATE_TIME_MAX: ZonedDateTime = PlainDateTime.MAX.assume_tz(UTC.key)
 
 
+def _get_now(time_zone: str = UTC.key, /) -> ZonedDateTime:
+    """Get the current zoned date-time."""
+    return ZonedDateTime.now(time_zone)
+
+
+NOW_UTC = _get_now()
+TODAY_UTC = NOW_UTC.date()
+TIME_UTC = NOW_UTC.time()
+NOW_UTC_PLAIN = NOW_UTC.to_plain()
+
+
 __all__ = [
     "BRACKETS",
     "CPU_COUNT",
@@ -349,6 +374,10 @@ __all__ = [
     "NANOSECOND",
     "NANOSECONDS_PER_DAY",
     "NANOSECONDS_PER_SECOND",
+    "NOW_LOCAL",
+    "NOW_LOCAL_PLAIN",
+    "NOW_UTC",
+    "NOW_UTC_PLAIN",
     "PWD",
     "ROOT_GROUP_NAME",
     "ROOT_USER_NAME",
@@ -359,6 +388,10 @@ __all__ = [
     "TEMP_DIR",
     "TIME_DELTA_MAX",
     "TIME_DELTA_MIN",
+    "TIME_LOCAL",
+    "TIME_UTC",
+    "TODAY_LOCAL",
+    "TODAY_UTC",
     "USER",
     "UTC",
     "WEEK",
