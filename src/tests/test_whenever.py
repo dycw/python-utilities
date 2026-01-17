@@ -23,7 +23,16 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.constants import DAY, MICROSECOND, MINUTE, MONTH, SECOND, ZERO_DAYS
+from utilities.constants import (
+    DAY,
+    LOCAL_TIME_ZONE_NAME,
+    MICROSECOND,
+    MINUTE,
+    MONTH,
+    SECOND,
+    UTC,
+    ZERO_DAYS,
+)
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -43,7 +52,6 @@ from utilities.hypothesis import (
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import TIME_ZONES, MaybeCallableTimeLike
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
-from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.whenever import (
     DATE_DELTA_MAX,
     DATE_DELTA_MIN,
@@ -63,8 +71,6 @@ from utilities.whenever import (
     TIME_UTC,
     TODAY_LOCAL,
     TODAY_UTC,
-    ZONED_DATE_TIME_MAX,
-    ZONED_DATE_TIME_MIN,
     DatePeriod,
     DatePeriodError,
     MeanDateTimeError,
@@ -145,7 +151,6 @@ from utilities.whenever import (
     to_zoned_date_time,
     two_digit_year_month,
 )
-from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -721,14 +726,6 @@ class TestMinMax:
         nanos = TIME_DELTA_MAX.in_nanoseconds()
         with raises(ValueError, match=r"TimeDelta out of range"):
             _ = to_time_delta(nanos + 1)
-
-    def test_zoned_date_time_min(self) -> None:
-        with raises(ValueError, match=r"Instant is out of range"):
-            _ = ZONED_DATE_TIME_MIN.subtract(nanoseconds=1)
-
-    def test_zoned_date_time_max(self) -> None:
-        with raises(ValueError, match=r"Instant is out of range"):
-            _ = ZONED_DATE_TIME_MAX.add(microseconds=1)
 
     def _format_parse_date_delta(self, delta: DateDelta, /) -> None:
         _ = DateDelta.parse_iso(delta.format_iso())

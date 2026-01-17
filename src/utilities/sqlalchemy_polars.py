@@ -27,6 +27,7 @@ from sqlalchemy import Column, Select, select
 from sqlalchemy.exc import DuplicateColumnError
 
 import utilities.asyncio
+from utilities.constants import UTC
 from utilities.functions import identity
 from utilities.iterables import (
     CheckDuplicatesError,
@@ -47,7 +48,6 @@ from utilities.sqlalchemy import (
 )
 from utilities.text import snake_case
 from utilities.typing import is_subclass_gen
-from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import (

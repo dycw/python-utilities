@@ -34,6 +34,7 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureTypeLiteral,
     DataClassFutureTypeLiteralNullable,
 )
+from utilities.constants import MAX_INT64, MIN_INT64
 from utilities.hypothesis import (
     assume_does_not_raise,
     date_deltas,
@@ -55,7 +56,6 @@ from utilities.hypothesis import (
     zoned_date_time_periods,
     zoned_date_times,
 )
-from utilities.math import MAX_INT64, MIN_INT64
 
 
 def objects(
