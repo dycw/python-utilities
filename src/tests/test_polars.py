@@ -70,7 +70,7 @@ from whenever import (
 
 import tests.test_math
 import utilities.polars
-from utilities.constants import NOW_UTC, PWD, TODAY_UTC, UTC
+from utilities.constants import UTC
 from utilities.hypothesis import (
     assume_does_not_raise,
     date_deltas,
