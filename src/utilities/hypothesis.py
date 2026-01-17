@@ -53,6 +53,8 @@ from whenever import (
 from utilities.constants import (
     DATE_DELTA_MAX,
     DATE_DELTA_MIN,
+    DATE_TIME_DELTA_MAX,
+    DATE_TIME_DELTA_MIN,
     DAY,
     IS_LINUX,
     MAX_FLOAT32,
@@ -76,6 +78,8 @@ from utilities.constants import (
     MIN_UINT32,
     MIN_UINT64,
     TEMP_DIR,
+    TIME_DELTA_MAX,
+    TIME_DELTA_MIN,
     UTC,
     Sentinel,
     sentinel,

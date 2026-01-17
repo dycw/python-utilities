@@ -24,12 +24,16 @@ from whenever import (
 )
 
 from utilities.constants import (
+    DATE_TIME_DELTA_MAX,
+    DATE_TIME_DELTA_MIN,
     DAY,
     LOCAL_TIME_ZONE_NAME,
     MICROSECOND,
     MINUTE,
     MONTH,
     SECOND,
+    TIME_DELTA_MAX,
+    TIME_DELTA_MIN,
     UTC,
     ZERO_DAYS,
     Sentinel,
@@ -62,8 +66,6 @@ from utilities.whenever import (
     NOW_LOCAL_PLAIN,
     NOW_PLAIN,
     NOW_UTC,
-    TIME_DELTA_MAX,
-    TIME_DELTA_MIN,
     TIME_LOCAL,
     TIME_UTC,
     TODAY_LOCAL,
