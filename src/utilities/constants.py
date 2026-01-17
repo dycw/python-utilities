@@ -3,6 +3,7 @@ from __future__ import annotations
 from os import cpu_count
 from pathlib import Path
 from platform import system
+from random import SystemRandom
 from typing import TYPE_CHECKING, assert_never
 
 from whenever import DateDelta, TimeDelta
@@ -12,9 +13,6 @@ if TYPE_CHECKING:
 
 
 # os
-
-
-##
 
 
 def _get_cpu_count() -> int:
@@ -144,6 +142,12 @@ EFFECTIVE_USER_NAME = (
 )
 
 
+# random
+
+
+SYSTEM_RANDOM = SystemRandom()
+
+
 # whenever
 
 
@@ -193,6 +197,7 @@ __all__ = [
     "ROOT_USER_NAME",
     "SECOND",
     "SYSTEM",
+    "SYSTEM_RANDOM",
     "WEEK",
     "YEAR",
     "ZERO_DAYS",
