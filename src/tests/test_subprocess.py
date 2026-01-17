@@ -1789,7 +1789,7 @@ class TestUvRunCmd:
         assert result == expected
 
     def test_args(self) -> None:
-        result = uv_run_cmd("foo.bar", "--arg")
+        result = uv_run_cmd("foo.bar", "arg1", "arg2")
         expected = [
             "uv",
             "run",
@@ -1804,7 +1804,8 @@ class TestUvRunCmd:
             "python",
             "-m",
             "foo.bar",
-            "--arg",
+            "arg1",
+            "arg2",
         ]
         assert result == expected
 
@@ -1967,6 +1968,24 @@ class TestUvToolRunCmd:
             "disallow",
             "--managed-python",
             "command",
+        ]
+        assert result == expected
+
+    def test_args(self) -> None:
+        result = uv_tool_run_cmd("command", "arg1", "arg2")
+        expected = [
+            "uv",
+            "tool",
+            "run",
+            "--isolated",
+            "--resolution",
+            "highest",
+            "--prerelease",
+            "disallow",
+            "--managed-python",
+            "command",
+            "arg1",
+            "arg2",
         ]
         assert result == expected
 
