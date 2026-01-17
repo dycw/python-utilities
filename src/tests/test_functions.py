@@ -25,7 +25,7 @@ from hypothesis.strategies import (
 )
 from pytest import approx, mark, param, raises
 
-from utilities.constants import HOME, MILLISECOND, SECOND, ZERO_TIME
+from utilities.constants import HOME, MILLISECOND, NOW_UTC, SECOND, ZERO_TIME
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     EnsureBoolError,
