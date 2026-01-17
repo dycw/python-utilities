@@ -4,9 +4,10 @@ import gzip
 import shutil
 from contextlib import ExitStack
 from dataclasses import dataclass
+from os import rename
 from pathlib import Path
-from shutil import copyfileobj, copytree, rmtree
-from typing import TYPE_CHECKING, assert_never, override
+from shutil import copyfile, copyfileobj, copytree, rmtree
+from typing import TYPE_CHECKING, Literal, assert_never, override
 
 from atomicwrites import replace_atomic
 
@@ -24,19 +25,15 @@ if TYPE_CHECKING:
 def copy(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
     """Copy a file/directory atomically."""
     src, dest = map(Path, [src, dest])
-    name, parent = dest.name, dest.parent
-    parent.mkdir(parents=True, exist_ok=True)
     match file_or_dir(src):
         case "file":
-            with TemporaryFile(
-                dir=parent, suffix=".tmp", prefix=name, data=src.read_bytes()
-            ) as temp:
+            with TemporaryFile(data=src.read_bytes()) as temp:
                 try:
                     move(temp, dest, overwrite=overwrite)
                 except _MoveFileExistsError as error:
                     raise _CopyFileExistsError(src=error.src, dest=error.dest) from None
         case "dir":
-            with TemporaryDirectory(suffix=".tmp", prefix=name, dir=parent) as temp:
+            with TemporaryDirectory() as temp:
                 temp_sub_dir = temp / "sub_dir"
                 _ = copytree(src, temp_sub_dir)
                 try:
@@ -112,37 +109,79 @@ def move(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
             assert_never(never)
 
 
-@dataclass(kw_only=True, slots=True)
-class MoveError(Exception): ...
+def _move_or_copy(
+    src: PathLike,
+    dest: PathLike,
+    /,
+    *,
+    overwrite: bool = False,
+    delete_src: bool = False,
+) -> None:
+    src, dest = map(Path, [src, dest])
+    match file_or_dir(src):
+        case None:
+            raise _MoveOrCopySourceNotFoundError(src=src)
+        case "file":
+            _move_or_copy_file(src, dest, overwrite=overwrite, delete_src=delete_src)
+        case "dir":
+            _move_or_copy_dir(src, dest, overwrite=overwrite, delete_src=delete_src)
+        case never:
+            assert_never(never)
+
+
+def _move_or_copy_file(
+    src: PathLike,
+    dest: PathLike,
+    /,
+    *,
+    overwrite: bool = False,
+    delete_src: bool = False,
+) -> None:
+    src, dest = map(Path, [src, dest])
+    dir_, name = dest.parent, dest.name
+    match file_or_dir(dest), overwrite:
+        case None, _:
+            dir_ = dest.parent
+            dir_.mkdir(parents=True, exist_ok=True)
+            name = dest.name
+            with TemporaryFile(dir=dir_, suffix=".tmp", prefix=name) as temp:
+                _ = shutil.copyfile(name, temp)
+        case "file" | "dir", False:
+            raise _MoveOrCopyFileExistsError(src=src, dest=dest)
+        case "file", True:
+            dir_ = dest.parent
+            dir_.mkdir(parents=True, exist_ok=True)
+            name = dest.name
+            with TemporaryFile(dir=dir_, suffix=".tmp", prefix=name) as temp:
+                _ = shutil.copyfile(name, temp)
+        case "dir", True:
+            rmtree(dest)
+            with TemporaryFile(dir=dir_, suffix=".tmp", prefix=name) as temp:
+                _ = shutil.copyfile(name, temp)
+                _ = temp.replace(dest)
+        case never:
+            assert_never(never)
 
 
 @dataclass(kw_only=True, slots=True)
-class _MoveSourceNotFoundError(MoveError):
+class _MoveOrCopyError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _MoveOrCopySourceNotFoundError(_MoveOrCopyError):
     src: Path
 
-    @override
-    def __str__(self) -> str:
-        return f"Source {str(self.src)!r} does not exist"
-
 
 @dataclass(kw_only=True, slots=True)
-class _MoveFileExistsError(MoveError):
+class _MoveOrCopyFileExistsError(_MoveOrCopyError):
     src: Path
     dest: Path
 
-    @override
-    def __str__(self) -> str:
-        return f"Cannot move file {str(self.src)!r} as destination {str(self.dest)!r} already exists"
-
 
 @dataclass(kw_only=True, slots=True)
-class _MoveDirectoryExistsError(MoveError):
+class _MoveOrCopyDirectoryExistsError(_MoveOrCopyError):
     src: Path
     dest: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot move directory {str(self.src)!r} as destination {str(self.dest)!r} already exists"
 
 
 ##
@@ -166,8 +205,9 @@ def writer(
 ) -> Iterator[Path]:
     """Yield a path for atomically writing files to disk."""
     path = Path(path)
-    name, parent = path.name, path.parent
+    parent = path.parent
     parent.mkdir(parents=True, exist_ok=True)
+    name = path.name
     with TemporaryDirectory(suffix=".tmp", prefix=name, dir=parent) as temp_dir:
         temp_path1 = Path(temp_dir, name)
         try:
