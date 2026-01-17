@@ -73,6 +73,8 @@ DATE_TIME_DELTA_MAX = DateTimeDelta(
     microseconds=999,
     nanoseconds=999,
 )
+TIME_DELTA_MIN = TimeDelta(hours=-87831216)
+TIME_DELTA_MAX = TimeDelta(hours=87831216)
 
 
 DATE_TIME_DELTA_PARSABLE_MIN = DateTimeDelta(
