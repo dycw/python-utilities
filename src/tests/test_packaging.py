@@ -40,10 +40,17 @@ class TestCustomRequirement:
         ("req", "expected"),
         [
             param("package", "package"),
-            param("package>=1.2.3", "package>=1.2.3"),
-            param("package<1.3", "package<1.3"),
-            param("package>=1.2.3,<1.3", "package>=1.2.3, <1.3"),
-            param("package<1.3,>=1.2.3", "package>=1.2.3, <1.3"),
+            param("package  ==  1.2.3", "package==1.2.3"),
+            param("package  !=  1.2.3", "package!=1.2.3"),
+            param("package  ~=  1.2.3", "package~=1.2.3"),
+            param("package  >  1.2.3", "package>1.2.3"),
+            param("package  >=  1.2.3", "package>=1.2.3"),
+            param("package  <  1.3", "package<1.3"),
+            param("package  <=  1.3", "package<=1.3"),
+            param("package  >=  1.2.3  ,  <  1.3", "package>=1.2.3, <1.3"),
+            param("package  <  1.3,  >=  1.2.3", "package>=1.2.3, <1.3"),
+            param("package  >  1.2.3,  <=  1.3", "package>1.2.3, <=1.3"),
+            param("package  <=  1.3,  >  1.2.3", "package>1.2.3, <=1.3"),
         ],
     )
     def test_str(self, *, req: str, expected: str) -> None:

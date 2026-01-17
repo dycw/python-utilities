@@ -123,7 +123,7 @@ class _CustomSpecifierSet(SpecifierSet):
         return type(self)(specifiers)
 
     def _sort_key(self, spec: Specifier, /) -> int:
-        return [">=", "<"].index(spec.operator)
+        return ["==", "!=", "~=", ">", ">=", "<", "<="].index(spec.operator)
 
 
 __all__ = ["Requirement"]
