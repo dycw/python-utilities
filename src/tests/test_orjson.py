@@ -49,17 +49,7 @@ from tests.test_typing_funcs.with_future import (
     DataClassFutureTypeLiteral,
     DataClassFutureTypeLiteralNullable,
 )
-from utilities.constants import (
-    HOUR,
-    LOCAL_TIME_ZONE,
-    MAX_INT64,
-    MIN_INT64,
-    MINUTE,
-    SECOND,
-    UTC,
-    Sentinel,
-    sentinel,
-)
+from utilities.constants import HOUR, LOCAL_TIME_ZONE, MINUTE, SECOND, UTC
 from utilities.hypothesis import (
     date_periods,
     dates,

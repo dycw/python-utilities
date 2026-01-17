@@ -5,7 +5,7 @@ from random import SystemRandom
 from typing import assert_never
 from zoneinfo import ZoneInfo
 
-from pytest import mark, param
+from pytest import mark, param, raises
 
 from utilities.constants import (
     CPU_COUNT,
@@ -25,6 +25,8 @@ from utilities.constants import (
     SYSTEM_RANDOM,
     TEMP_DIR,
     USER,
+    ZONED_DATE_TIME_MAX,
+    ZONED_DATE_TIME_MIN,
 )
 from utilities.platform import SYSTEM
 from utilities.types import System, TimeZone
@@ -127,3 +129,13 @@ class TestUserName:
                 assert isinstance(user, str)
             case never:
                 assert_never(never)
+
+
+class TestZonedDateTimeMinMax:
+    def test_min(self) -> None:
+        with raises(ValueError, match=r"Instant is out of range"):
+            _ = ZONED_DATE_TIME_MAX.add(microseconds=1)
+
+    def test_max(self) -> None:
+        with raises(ValueError, match=r"Instant is out of range"):
+            _ = ZONED_DATE_TIME_MIN.subtract(nanoseconds=1)
