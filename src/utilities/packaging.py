@@ -31,6 +31,9 @@ class Requirement:
     def __str__(self) -> str:
         return str(self._custom_req)
 
+    def drop(self, operator: str, /) -> Self:
+        return type(self)(str(self._custom_req.drop(operator)))
+
     @property
     def extras(self) -> list[str]:
         return self._parsed_req.extras
@@ -50,7 +53,7 @@ class Requirement:
     def name(self) -> str:
         return self._parsed_req.name
 
-    def replace(self, operator: str, version: str, /) -> Self:
+    def replace(self, operator: str, version: str | None, /) -> Self:
         return type(self)(str(self._custom_req.replace(operator, version)))
 
     @property
@@ -75,7 +78,12 @@ class _CustomRequirement(packaging.requirements.Requirement):
         parsed = _parse_requirement(requirement_string)
         self.specifier = _CustomSpecifierSet(parsed.specifier)  # pyright: ignore[reportIncompatibleVariableOverride]
 
-    def replace(self, operator: str, version: str, /) -> Self:
+    def drop(self, operator: str, /) -> Self:
+        new = type(self)(super().__str__())
+        new.specifier = self.specifier.drop(operator)
+        return new
+
+    def replace(self, operator: str, version: str | None, /) -> Self:
         new = type(self)(super().__str__())
         new.specifier = self.specifier.replace(operator, version)
         return new
@@ -93,6 +101,11 @@ class _CustomSpecifierSet(SpecifierSet):
         specs = sorted(self._specs, key=self._sort_key)
         return ", ".join(map(str, specs))
 
+    def drop(self, operator: str, /) -> Self:
+        if any(s.operator == operator for s in self):
+            return type(self)(s for s in self if s.operator != operator)
+        raise KeyError(operator)
+
     @overload
     def get(self, operator: str, default: str, /) -> str: ...
     @overload
@@ -103,10 +116,11 @@ class _CustomSpecifierSet(SpecifierSet):
         except KeyError:
             return default
 
-    def replace(self, operator: str, version: str, /) -> Self:
-        new = Specifier(spec=f"{operator}{version}")
-        remainder = (s for s in self if s.operator != operator)
-        return type(self)([new, *remainder])
+    def replace(self, operator: str, version: str | None, /) -> Self:
+        specifiers = [s for s in self if s.operator != operator]
+        if version is not None:
+            specifiers.append(Specifier(spec=f"{operator}{version}"))
+        return type(self)(specifiers)
 
     def _sort_key(self, spec: Specifier, /) -> int:
         return [">=", "<"].index(spec.operator)
