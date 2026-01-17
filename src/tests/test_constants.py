@@ -6,7 +6,15 @@ from typing import assert_never
 from zoneinfo import ZoneInfo
 
 from pytest import mark, param, raises
-from whenever import DateDelta, DateTimeDelta, TimeDelta
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 from utilities.constants import (
     CPU_COUNT,
@@ -27,6 +35,10 @@ from utilities.constants import (
     LOCAL_TIME_ZONE_NAME,
     MAX_PID,
     NANOSECOND,
+    NOW_LOCAL,
+    NOW_LOCAL_PLAIN,
+    NOW_UTC,
+    NOW_UTC_PLAIN,
     PWD,
     ROOT_GROUP_NAME,
     ROOT_USER_NAME,
@@ -34,6 +46,10 @@ from utilities.constants import (
     TEMP_DIR,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
+    TIME_LOCAL,
+    TIME_UTC,
+    TODAY_LOCAL,
+    TODAY_UTC,
     USER,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
@@ -124,6 +140,24 @@ class TestMaxPID:
                 assert isinstance(MAX_PID, int)
             case never:
                 assert_never(never)
+
+
+class TestNow:
+    @mark.parametrize("date_time", [param(NOW_LOCAL), param(NOW_UTC)])
+    def test_now(self, *, date_time: ZonedDateTime) -> None:
+        assert isinstance(date_time, ZonedDateTime)
+
+    @mark.parametrize("date", [param(TODAY_LOCAL), param(TODAY_UTC)])
+    def test_today(self, *, date: Date) -> None:
+        assert isinstance(date, Date)
+
+    @mark.parametrize("time", [param(TIME_LOCAL), param(TIME_UTC)])
+    def test_time(self, *, time: Time) -> None:
+        assert isinstance(time, Time)
+
+    @mark.parametrize("date_time", [param(NOW_LOCAL_PLAIN), param(NOW_UTC_PLAIN)])
+    def test_plain(self, *, date_time: PlainDateTime) -> None:
+        assert isinstance(date_time, PlainDateTime)
 
 
 class TestPaths:
