@@ -53,6 +53,8 @@ from whenever import (
 from utilities.constants import (
     DATE_DELTA_MAX,
     DATE_DELTA_MIN,
+    DATE_TIME_DELTA_MAX,
+    DATE_TIME_DELTA_MIN,
     DAY,
     IS_LINUX,
     MAX_FLOAT32,
@@ -76,6 +78,8 @@ from utilities.constants import (
     MIN_UINT32,
     MIN_UINT64,
     TEMP_DIR,
+    TIME_DELTA_MAX,
+    TIME_DELTA_MIN,
     UTC,
 )
 from utilities.contextlib import enhanced_context_manager
@@ -90,14 +94,10 @@ from utilities.version import Version
 from utilities.whenever import (
     DATE_DELTA_PARSABLE_MAX,
     DATE_DELTA_PARSABLE_MIN,
-    DATE_TIME_DELTA_MAX,
-    DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
     DATE_TIME_DELTA_PARSABLE_MIN,
     DATE_TWO_DIGIT_YEAR_MAX,
     DATE_TWO_DIGIT_YEAR_MIN,
-    TIME_DELTA_MAX,
-    TIME_DELTA_MIN,
     DatePeriod,
     TimePeriod,
     ZonedDateTimePeriod,
