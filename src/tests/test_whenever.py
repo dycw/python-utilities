@@ -27,13 +27,15 @@ from utilities.constants import (
     DATE_TIME_DELTA_MAX,
     DATE_TIME_DELTA_MIN,
     DAY,
-    LOCAL_TIME_ZONE_NAME,
     MICROSECOND,
     MINUTE,
     MONTH,
+    NOW_UTC,
     SECOND,
     TIME_DELTA_MAX,
     TIME_DELTA_MIN,
+    TODAY_LOCAL,
+    TODAY_UTC,
     UTC,
     ZERO_DAYS,
 )
@@ -61,14 +63,6 @@ from utilities.whenever import (
     DATE_DELTA_PARSABLE_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
     DATE_TIME_DELTA_PARSABLE_MIN,
-    NOW_LOCAL,
-    NOW_LOCAL_PLAIN,
-    NOW_PLAIN,
-    NOW_UTC,
-    TIME_LOCAL,
-    TIME_UTC,
-    TODAY_LOCAL,
-    TODAY_UTC,
     DatePeriod,
     DatePeriodError,
     MeanDateTimeError,
@@ -431,11 +425,6 @@ class TestGetNow:
         assert isinstance(now, ZonedDateTime)
         assert now.tz == time_zone.key
 
-    def test_constant(self) -> None:
-        assert isinstance(NOW_UTC, ZonedDateTime)
-        expected = UTC.key
-        assert NOW_UTC.tz == expected
-
 
 class TestGetNowLocal:
     def test_function(self) -> None:
@@ -445,18 +434,11 @@ class TestGetNowLocal:
         time_zones = {ETC, HongKong, Tokyo, UTC}
         assert any(now.tz == time_zone.key for time_zone in time_zones)
 
-    def test_constant(self) -> None:
-        assert isinstance(NOW_LOCAL, ZonedDateTime)
-        assert NOW_LOCAL.tz == LOCAL_TIME_ZONE_NAME
-
 
 class TestGetNowLocalPlain:
     def test_function(self) -> None:
         now = get_now_local_plain()
         assert isinstance(now, PlainDateTime)
-
-    def test_constant(self) -> None:
-        assert isinstance(NOW_LOCAL_PLAIN, PlainDateTime)
 
 
 class TestGetNowPlain:
@@ -465,9 +447,6 @@ class TestGetNowPlain:
         now = get_now_plain(time_zone)
         assert isinstance(now, PlainDateTime)
 
-    def test_constant(self) -> None:
-        assert isinstance(NOW_PLAIN, PlainDateTime)
-
 
 class TestGetTime:
     @given(time_zone=zone_infos())
@@ -475,17 +454,11 @@ class TestGetTime:
         now = get_time(time_zone)
         assert isinstance(now, Time)
 
-    def test_constant(self) -> None:
-        assert isinstance(TIME_UTC, Time)
-
 
 class TestGetTimeLocal:
     def test_function(self) -> None:
         now = get_time_local()
         assert isinstance(now, Time)
-
-    def test_constant(self) -> None:
-        assert isinstance(TIME_LOCAL, Time)
 
 
 class TestGetToday:
@@ -493,17 +466,11 @@ class TestGetToday:
         today = get_today()
         assert isinstance(today, Date)
 
-    def test_constant(self) -> None:
-        assert isinstance(TODAY_UTC, Date)
-
 
 class TestGetTodayLocal:
     def test_function(self) -> None:
         today = get_today_local()
         assert isinstance(today, Date)
-
-    def test_constant(self) -> None:
-        assert isinstance(TODAY_LOCAL, Date)
 
 
 class TestIsWeekend:

@@ -32,7 +32,8 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.constants import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME, UTC
+from utilities.constants import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME, UTC, _get_now
+from utilities.constants import _get_now_local as get_now_local
 from utilities.dataclasses import replace_non_sentinel
 from utilities.functions import get_class_name
 from utilities.math import sign
@@ -335,18 +336,7 @@ def from_timestamp_nanos(i: int, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDa
 
 def get_now(time_zone: TimeZoneLike = UTC, /) -> ZonedDateTime:
     """Get the current zoned date-time."""
-    return ZonedDateTime.now(to_time_zone_name(time_zone))
-
-
-NOW_UTC = get_now(UTC)
-
-
-def get_now_local() -> ZonedDateTime:
-    """Get the current zoned date-time in the local time-zone."""
-    return get_now(LOCAL_TIME_ZONE)
-
-
-NOW_LOCAL = get_now_local()
+    return _get_now(to_time_zone_name(time_zone))
 
 
 def get_now_plain(time_zone: TimeZoneLike = UTC, /) -> PlainDateTime:
@@ -354,15 +344,9 @@ def get_now_plain(time_zone: TimeZoneLike = UTC, /) -> PlainDateTime:
     return get_now(time_zone).to_plain()
 
 
-NOW_PLAIN = get_now_plain()
-
-
 def get_now_local_plain() -> PlainDateTime:
     """Get the current plain date-time in the local time-zone."""
     return get_now_local().to_plain()
-
-
-NOW_LOCAL_PLAIN = get_now_local_plain()
 
 
 ##
@@ -373,15 +357,9 @@ def get_time(time_zone: TimeZoneLike = UTC, /) -> Time:
     return get_now(time_zone).time()
 
 
-TIME_UTC = get_time(UTC)
-
-
 def get_time_local() -> Time:
     """Get the current time in the local time-zone."""
     return get_time(LOCAL_TIME_ZONE)
-
-
-TIME_LOCAL = get_time_local()
 
 
 ##
@@ -392,15 +370,9 @@ def get_today(time_zone: TimeZoneLike = UTC, /) -> Date:
     return get_now(time_zone).date()
 
 
-TODAY_UTC = get_today(UTC)
-
-
 def get_today_local() -> Date:
     """Get the current, timezone-aware local date."""
     return get_today(LOCAL_TIME_ZONE)
-
-
-TODAY_LOCAL = get_today_local()
 
 
 ##
@@ -1976,13 +1948,6 @@ __all__ = [
     "DATE_TIME_DELTA_PARSABLE_MIN",
     "DATE_TWO_DIGIT_YEAR_MAX",
     "DATE_TWO_DIGIT_YEAR_MIN",
-    "NOW_LOCAL",
-    "NOW_LOCAL_PLAIN",
-    "NOW_PLAIN",
-    "TIME_LOCAL",
-    "TIME_UTC",
-    "TODAY_LOCAL",
-    "TODAY_UTC",
     "DatePeriod",
     "DatePeriodError",
     "MeanDateTimeError",
