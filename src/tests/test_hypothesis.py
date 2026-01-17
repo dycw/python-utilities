@@ -39,7 +39,6 @@ from whenever import (
 )
 
 from utilities.constants import (
-    IS_LINUX,
     MAX_FLOAT32,
     MAX_FLOAT64,
     MAX_INT8,
@@ -126,7 +125,7 @@ from utilities.hypothesis import (
 )
 from utilities.iterables import one
 from utilities.libcst import parse_import
-from utilities.platform import maybe_lower_case
+from utilities.platform import IS_LINUX, maybe_lower_case
 from utilities.sentinel import is_sentinel
 from utilities.version import Version
 from utilities.whenever import (
