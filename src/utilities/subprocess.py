@@ -2120,7 +2120,7 @@ def uv_tool_install_cmd(
 def uv_tool_run(
     command: str,
     /,
-    *,
+    *args: str,
     from_: str | None = None,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
@@ -2140,7 +2140,7 @@ def uv_tool_run(
 def uv_tool_run(
     command: str,
     /,
-    *,
+    *args: str,
     from_: str | None = None,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
@@ -2160,7 +2160,7 @@ def uv_tool_run(
 def uv_tool_run(
     command: str,
     /,
-    *,
+    *args: str,
     from_: str | None = None,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
@@ -2200,7 +2200,7 @@ def uv_tool_run(
 def uv_tool_run(
     command: str,
     /,
-    *,
+    *args: str,
     from_: str | None = None,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
@@ -2219,7 +2219,7 @@ def uv_tool_run(
 def uv_tool_run(
     command: str,
     /,
-    *,
+    *args: str,
     from_: str | None = None,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
@@ -2238,7 +2238,7 @@ def uv_tool_run(
     """Run a command provided by a Python package."""
     return run(  # pragma: no cover
         *uv_tool_run_cmd(
-            command, from_=from_, with_=with_, index=index, native_tls=native_tls
+            command, *args, from_=from_, with_=with_, index=index, native_tls=native_tls
         ),
         cwd=cwd,
         env=env,
@@ -2256,7 +2256,7 @@ def uv_tool_run(
 def uv_tool_run_cmd(
     command: str,
     /,
-    *,
+    *args: str,
     from_: str | None = None,
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
@@ -2264,12 +2264,12 @@ def uv_tool_run_cmd(
     native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to run a command provided by a Python package."""
-    args: list[str] = ["uv", "tool", "run"]
+    parts: list[str] = ["uv", "tool", "run"]
     if from_ is not None:
         from_use = f"{from_}@latest" if latest else from_
-        args.extend(["--from", from_use])
+        parts.extend(["--from", from_use])
     return [
-        *args,
+        *parts,
         *uv_with_cmd(with_=with_),
         ISOLATED,
         *uv_index_cmd(index=index),
@@ -2278,6 +2278,7 @@ def uv_tool_run_cmd(
         MANAGED_PYTHON,
         *uv_native_tls_cmd(native_tls=native_tls),
         command,
+        *args,
     ]
 
 
