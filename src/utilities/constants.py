@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from getpass import getuser
-from os import cpu_count
+from os import cpu_count, environ
 from pathlib import Path
 from platform import system
 from random import SystemRandom
@@ -20,6 +20,9 @@ USER = getuser()
 
 
 # os
+
+
+IS_CI = "CI" in environ
 
 
 def _get_cpu_count() -> int:
@@ -54,6 +57,12 @@ IS_LINUX = SYSTEM == "linux"
 IS_NOT_WINDOWS = not IS_WINDOWS
 IS_NOT_MAC = not IS_MAC
 IS_NOT_LINUX = not IS_LINUX
+IS_CI_AND_WINDOWS = IS_CI and IS_WINDOWS
+IS_CI_AND_MAC = IS_CI and IS_MAC
+IS_CI_AND_LINUX = IS_CI and IS_LINUX
+IS_CI_AND_NOT_WINDOWS = IS_CI and IS_NOT_WINDOWS
+IS_CI_AND_NOT_MAC = IS_CI and IS_NOT_MAC
+IS_CI_AND_NOT_LINUX = IS_CI and IS_NOT_LINUX
 
 
 def _get_max_pid() -> int | None:
@@ -179,6 +188,13 @@ __all__ = [
     "EFFECTIVE_USER_ID",
     "EFFECTIVE_USER_NAME",
     "HOUR",
+    "IS_CI",
+    "IS_CI_AND_LINUX",
+    "IS_CI_AND_MAC",
+    "IS_CI_AND_NOT_LINUX",
+    "IS_CI_AND_NOT_MAC",
+    "IS_CI_AND_NOT_WINDOWS",
+    "IS_CI_AND_WINDOWS",
     "IS_LINUX",
     "IS_MAC",
     "IS_NOT_LINUX",
