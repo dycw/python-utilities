@@ -9,7 +9,9 @@ from pytest import mark, param, raises
 
 from utilities.constants import (
     CPU_COUNT,
+    EFFECTIVE_GROUP_ID,
     EFFECTIVE_GROUP_NAME,
+    EFFECTIVE_USER_ID,
     EFFECTIVE_USER_NAME,
     IS_LINUX,
     IS_MAC,
@@ -37,6 +39,17 @@ class TestCPUCount:
     def test_main(self) -> None:
         assert isinstance(CPU_COUNT, int)
         assert CPU_COUNT >= 1
+
+
+class TestGroupId:
+    def test_main(self) -> None:
+        match SYSTEM:
+            case "windows":  # skipif-not-windows
+                assert EFFECTIVE_GROUP_ID is None
+            case "mac" | "linux":  # skipif-windows
+                assert isinstance(EFFECTIVE_GROUP_ID, int)
+            case never:
+                assert_never(never)
 
 
 class TestGroupName:
@@ -114,6 +127,17 @@ class TestTempDir:
 class TestUser:
     def test_main(self) -> None:
         assert isinstance(USER, str)
+
+
+class TestUserId:
+    def test_main(self) -> None:
+        match SYSTEM:
+            case "windows":  # skipif-not-windows
+                assert EFFECTIVE_USER_ID is None
+            case "mac" | "linux":  # skipif-windows
+                assert isinstance(EFFECTIVE_USER_ID, int)
+            case never:
+                assert_never(never)
 
 
 class TestUserName:

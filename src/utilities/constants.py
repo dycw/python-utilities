@@ -119,6 +119,9 @@ def _get_effective_group_id() -> int | None:
             assert_never(never)
 
 
+EFFECTIVE_GROUP_ID = _get_effective_group_id()
+
+
 def _get_effective_user_id() -> int | None:
     match SYSTEM:
         case "windows":  # skipif-not-windows
@@ -132,7 +135,6 @@ def _get_effective_user_id() -> int | None:
 
 
 EFFECTIVE_USER_ID = _get_effective_user_id()
-EFFECTIVE_GROUP_ID = _get_effective_group_id()
 
 
 # platform -> os -> grp
