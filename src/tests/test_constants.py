@@ -6,6 +6,7 @@ from typing import assert_never
 from pytest import mark, param
 
 from utilities.constants import (
+    CPU_COUNT,
     EFFECTIVE_GROUP_NAME,
     EFFECTIVE_USER_NAME,
     IS_LINUX,
@@ -18,10 +19,17 @@ from utilities.constants import (
     ROOT_GROUP_NAME,
     ROOT_USER_NAME,
     SYSTEM_RANDOM,
+    USER,
 )
 from utilities.platform import SYSTEM
 from utilities.types import System
 from utilities.typing import get_args
+
+
+class TestCPUCount:
+    def test_main(self) -> None:
+        assert isinstance(CPU_COUNT, int)
+        assert CPU_COUNT >= 1
 
 
 class TestGroupName:
@@ -62,6 +70,7 @@ class TestSystemRandom:
 
 class TestSystem:
     def test_main(self) -> None:
+        assert isinstance(SYSTEM, str)
         assert SYSTEM in get_args(System)
 
     @mark.parametrize(
@@ -77,6 +86,11 @@ class TestSystem:
     )
     def test_predicates(self, *, predicate: bool) -> None:
         assert isinstance(predicate, bool)
+
+
+class TestUser:
+    def test_main(self) -> None:
+        assert isinstance(USER, str)
 
 
 class TestUserName:

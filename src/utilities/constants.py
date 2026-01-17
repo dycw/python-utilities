@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from getpass import getuser
 from os import cpu_count
 from pathlib import Path
 from platform import system
@@ -10,6 +11,12 @@ from whenever import DateDelta, TimeDelta
 
 if TYPE_CHECKING:
     from utilities.types import System
+
+
+# getpass
+
+
+USER = getuser()
 
 
 # os
@@ -198,6 +205,7 @@ __all__ = [
     "SECOND",
     "SYSTEM",
     "SYSTEM_RANDOM",
+    "USER",
     "WEEK",
     "YEAR",
     "ZERO_DAYS",
