@@ -21,7 +21,7 @@
     "coloredlogs>=15.0.1",
     "coverage-conditional-plugin>=0.9.0",
     "dycw-pytest-only>=2.1.1",
-    "dycw-utilities[test]>=0.183.3",
+    "dycw-utilities[test]>=0.183.4",
     "pyright>=1.1.408",
     "pytest-cov>=7.0.0",
     "pytest-timeout>=2.4.0",
