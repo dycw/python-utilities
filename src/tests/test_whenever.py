@@ -53,8 +53,6 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.types import TIME_ZONES, MaybeCallableTimeLike
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
 from utilities.whenever import (
-    DATE_DELTA_MAX,
-    DATE_DELTA_MIN,
     DATE_DELTA_PARSABLE_MAX,
     DATE_DELTA_PARSABLE_MIN,
     DATE_TIME_DELTA_MAX,
@@ -669,14 +667,6 @@ class TestMeanDateTime:
 
 
 class TestMinMax:
-    def test_date_delta_min(self) -> None:
-        with raises(ValueError, match=r"Addition result out of bounds"):
-            _ = DATE_DELTA_MIN - DateDelta(days=1)
-
-    def test_date_delta_max(self) -> None:
-        with raises(ValueError, match=r"Addition result out of bounds"):
-            _ = DATE_DELTA_MAX + DateDelta(days=1)
-
     def test_date_delta_parsable_min(self) -> None:
         self._format_parse_date_delta(DATE_DELTA_PARSABLE_MIN)
         with raises(ValueError, match=r"Invalid format: '.*'"):

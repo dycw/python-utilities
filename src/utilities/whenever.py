@@ -73,8 +73,6 @@ DATE_TIME_DELTA_MAX = DateTimeDelta(
     microseconds=999,
     nanoseconds=999,
 )
-DATE_DELTA_MIN = DATE_TIME_DELTA_MIN.date_part()
-DATE_DELTA_MAX = DATE_TIME_DELTA_MAX.date_part()
 TIME_DELTA_MIN = TimeDelta(hours=-87831216)
 TIME_DELTA_MAX = TimeDelta(hours=87831216)
 
@@ -1974,8 +1972,6 @@ class _ZonedDateTimePeriodExactEqError(ZonedDateTimePeriodError):
 
 
 __all__ = [
-    "DATE_DELTA_MAX",
-    "DATE_DELTA_MIN",
     "DATE_DELTA_PARSABLE_MAX",
     "DATE_DELTA_PARSABLE_MIN",
     "DATE_TIME_DELTA_MAX",

@@ -51,6 +51,8 @@ from whenever import (
 )
 
 from utilities.constants import (
+    DATE_DELTA_MAX,
+    DATE_DELTA_MIN,
     DAY,
     IS_LINUX,
     MAX_FLOAT32,
@@ -86,8 +88,6 @@ from utilities.sentinel import Sentinel, is_sentinel, sentinel
 from utilities.tempfile import TemporaryDirectory
 from utilities.version import Version
 from utilities.whenever import (
-    DATE_DELTA_MAX,
-    DATE_DELTA_MIN,
     DATE_DELTA_PARSABLE_MAX,
     DATE_DELTA_PARSABLE_MIN,
     DATE_TIME_DELTA_MAX,

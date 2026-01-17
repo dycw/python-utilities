@@ -6,9 +6,12 @@ from typing import assert_never
 from zoneinfo import ZoneInfo
 
 from pytest import mark, param, raises
+from whenever import DateDelta
 
 from utilities.constants import (
     CPU_COUNT,
+    DATE_DELTA_MAX,
+    DATE_DELTA_MIN,
     EFFECTIVE_GROUP_ID,
     EFFECTIVE_GROUP_NAME,
     EFFECTIVE_USER_ID,
@@ -23,11 +26,14 @@ from utilities.constants import (
     LOCAL_TIME_ZONE,
     LOCAL_TIME_ZONE_NAME,
     MAX_PID,
+    NANOSECOND,
     PWD,
     ROOT_GROUP_NAME,
     ROOT_USER_NAME,
     SYSTEM_RANDOM,
     TEMP_DIR,
+    TIME_DELTA_MAX,
+    TIME_DELTA_MIN,
     USER,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
@@ -41,6 +47,16 @@ class TestCPUCount:
     def test_main(self) -> None:
         assert isinstance(CPU_COUNT, int)
         assert CPU_COUNT >= 1
+
+
+class TestDateDeltaMinMax:
+    def test_min(self) -> None:
+        with raises(ValueError, match=r"Addition result out of bounds"):
+            _ = DATE_DELTA_MIN - DateDelta(days=1)
+
+    def test_date_delta_max(self) -> None:
+        with raises(ValueError, match=r"Addition result out of bounds"):
+            _ = DATE_DELTA_MAX + DateDelta(days=1)
 
 
 class TestGroupId:
@@ -131,6 +147,16 @@ class TestSystem:
 class TestTempDir:
     def test_main(self) -> None:
         assert isinstance(TEMP_DIR, Path)
+
+
+class TestTimeDeltaMinMax:
+    def test_min(self) -> None:
+        with raises(ValueError, match=r"Addition result out of range"):
+            _ = TIME_DELTA_MIN - NANOSECOND
+
+    def test_max(self) -> None:
+        with raises(ValueError, match=r"Addition result out of range"):
+            _ = TIME_DELTA_MAX + NANOSECOND
 
 
 class TestUser:
