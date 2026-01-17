@@ -20,7 +20,7 @@ from utilities.atomicwrites import (
     copy,
     move,
 )
-from utilities.constants import PWD, SECOND
+from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
