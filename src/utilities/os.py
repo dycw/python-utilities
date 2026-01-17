@@ -9,6 +9,7 @@ from shutil import rmtree
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
+from utilities.constants import CPU_COUNT
 from utilities.contextlib import enhanced_context_manager
 from utilities.iterables import OneStrEmptyError, one_str
 
@@ -16,9 +17,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
 
     from utilities.types import PathLike
-
-
-type IntOrAll = int | Literal["all"]
 
 
 ##
@@ -177,25 +175,7 @@ class _MoveOrCopyDestinationExistsError(_MoveOrCopyError):
 ##
 
 
-def get_cpu_count() -> int:
-    """Get the CPU count."""
-    count = cpu_count()
-    if count is None:  # pragma: no cover
-        raise GetCPUCountError
-    return count
-
-
-@dataclass(kw_only=True, slots=True)
-class GetCPUCountError(Exception):
-    @override
-    def __str__(self) -> str:
-        return "CPU count must not be None"  # pragma: no cover
-
-
-CPU_COUNT = get_cpu_count()
-
-
-##
+type IntOrAll = int | Literal["all"]
 
 
 def get_cpu_use(*, n: IntOrAll = "all") -> int:
@@ -323,19 +303,12 @@ def temp_environ(
 
 
 __all__ = [
-    "CPU_COUNT",
-    "EFFECTIVE_GROUP_ID",
-    "EFFECTIVE_USER_ID",
     "CopyError",
-    "GetCPUCountError",
     "GetCPUUseError",
     "IntOrAll",
     "MoveError",
     "copy",
-    "get_cpu_count",
     "get_cpu_use",
-    "get_effective_group_id",
-    "get_effective_user_id",
     "get_env_var",
     "is_debug",
     "is_pytest",

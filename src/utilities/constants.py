@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from os import cpu_count
 from pathlib import Path
 from platform import system
 from typing import TYPE_CHECKING, assert_never
@@ -8,6 +9,23 @@ from whenever import DateDelta, TimeDelta
 
 if TYPE_CHECKING:
     from utilities.types import System
+
+
+# os
+
+
+##
+
+
+def _get_cpu_count() -> int:
+    """Get the CPU count."""
+    count = cpu_count()
+    if count is None:  # pragma: no cover
+        raise ValueError(count)
+    return count
+
+
+CPU_COUNT = _get_cpu_count()
 
 
 # platform
@@ -143,6 +161,7 @@ YEAR = DateDelta(years=1)
 
 
 __all__ = [
+    "CPU_COUNT",
     "DAY",
     "EFFECTIVE_GROUP_ID",
     "EFFECTIVE_GROUP_NAME",
