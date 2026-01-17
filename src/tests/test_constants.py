@@ -6,7 +6,7 @@ from typing import assert_never
 from zoneinfo import ZoneInfo
 
 from pytest import mark, param, raises
-from whenever import DateDelta
+from whenever import DateDelta, DateTimeDelta, TimeDelta
 
 from utilities.constants import (
     CPU_COUNT,
@@ -51,12 +51,26 @@ class TestCPUCount:
 
 class TestDateDeltaMinMax:
     def test_min(self) -> None:
+        with raises(ValueError, match=r"days out of range"):
+            _ = DateDelta(weeks=-521722, days=-6)
         with raises(ValueError, match=r"Addition result out of bounds"):
             _ = DATE_DELTA_MIN - DateDelta(days=1)
 
     def test_date_delta_max(self) -> None:
+        with raises(ValueError, match=r"days out of range"):
+            _ = DateDelta(weeks=521722, days=6)
         with raises(ValueError, match=r"Addition result out of bounds"):
             _ = DATE_DELTA_MAX + DateDelta(days=1)
+
+
+class TestDateTimeDeltaMinMax:
+    def test_min(self) -> None:
+        with raises(ValueError, match=r"Out of range"):
+            _ = DateTimeDelta(weeks=-521722, days=-6)
+
+    def test_max(self) -> None:
+        with raises(ValueError, match=r"Out of range"):
+            _ = DateTimeDelta(weeks=521722, days=6)
 
 
 class TestGroupId:
@@ -151,12 +165,19 @@ class TestTempDir:
 
 class TestTimeDeltaMinMax:
     def test_min(self) -> None:
+        with raises(ValueError, match=r"hours out of range"):
+            _ = TimeDelta(hours=-87831217)
+        with raises(ValueError, match=r"TimeDelta out of range"):
+            _ = TimeDelta(nanoseconds=TIME_DELTA_MIN.in_nanoseconds() - 1)
         with raises(ValueError, match=r"Addition result out of range"):
             _ = TIME_DELTA_MIN - NANOSECOND
 
     def test_max(self) -> None:
-        with raises(ValueError, match=r"Addition result out of range"):
-            _ = TIME_DELTA_MAX + NANOSECOND
+        with raises(ValueError, match=r"hours out of range"):
+            _ = TimeDelta(hours=87831217)
+        with raises(ValueError, match=r"TimeDelta out of range"):
+            _ = TimeDelta(nanoseconds=TIME_DELTA_MAX.in_nanoseconds() + 1)
+        _ = TIME_DELTA_MAX + NANOSECOND
 
 
 class TestUser:

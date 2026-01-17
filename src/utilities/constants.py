@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, assert_never, cast
 from zoneinfo import ZoneInfo
 
 from tzlocal import get_localzone
-from whenever import DateDelta, PlainDateTime, TimeDelta, ZonedDateTime
+from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 if TYPE_CHECKING:
     from utilities.types import System, TimeZone
@@ -246,6 +246,31 @@ DATE_DELTA_MIN: DateDelta = DateDelta(weeks=-521722, days=-5)
 DATE_DELTA_MAX: DateDelta = DateDelta(weeks=521722, days=5)
 TIME_DELTA_MIN: TimeDelta = TimeDelta(hours=-87831216)
 TIME_DELTA_MAX: TimeDelta = TimeDelta(hours=87831216)
+DATE_TIME_DELTA_MIN: DateTimeDelta = DateTimeDelta(
+    weeks=-521722,
+    days=-5,
+    hours=-23,
+    minutes=-59,
+    seconds=-59,
+    milliseconds=-999,
+    microseconds=-999,
+    nanoseconds=-999,
+)
+DATE_TIME_DELTA_MAX: DateTimeDelta = DateTimeDelta(
+    weeks=521722,
+    days=5,
+    hours=23,
+    minutes=59,
+    seconds=59,
+    milliseconds=999,
+    microseconds=999,
+    nanoseconds=999,
+)
+
+
+SECONDS_PER_DAY = 24 * 60 * 60
+NANOSECONDS_PER_SECOND = 1_000_000_000
+NANOSECONDS_PER_DAY = SECONDS_PER_DAY * NANOSECONDS_PER_SECOND
 
 
 # zoneinfo
@@ -265,6 +290,8 @@ __all__ = [
     "CPU_COUNT",
     "DATE_DELTA_MAX",
     "DATE_DELTA_MIN",
+    "DATE_TIME_DELTA_MAX",
+    "DATE_TIME_DELTA_MIN",
     "DAY",
     "EFFECTIVE_GROUP_ID",
     "EFFECTIVE_GROUP_NAME",
@@ -313,10 +340,13 @@ __all__ = [
     "MIN_UINT64",
     "MONTH",
     "NANOSECOND",
+    "NANOSECONDS_PER_DAY",
+    "NANOSECONDS_PER_SECOND",
     "PWD",
     "ROOT_GROUP_NAME",
     "ROOT_USER_NAME",
     "SECOND",
+    "SECONDS_PER_DAY",
     "SYSTEM",
     "SYSTEM_RANDOM",
     "TEMP_DIR",
