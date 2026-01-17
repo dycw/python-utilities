@@ -19,14 +19,6 @@ if TYPE_CHECKING:
     from utilities.types import StrMapping
 
 
-RICH_MAX_WIDTH: int = 80
-RICH_INDENT_SIZE: int = 4
-RICH_MAX_LENGTH: int | None = 20
-RICH_MAX_STRING: int | None = None
-RICH_MAX_DEPTH: int | None = None
-RICH_EXPAND_ALL: bool = False
-
-
 ##
 
 

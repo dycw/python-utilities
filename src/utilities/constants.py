@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, assert_never, cast
 from zoneinfo import ZoneInfo
 
 from tzlocal import get_localzone
-from whenever import DateDelta, PlainDateTime, TimeDelta
+from whenever import DateDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 if TYPE_CHECKING:
     from utilities.types import System, TimeZone
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 # getpass
 
 
-USER = getuser()
+USER: str = getuser()
 
 
 # math
@@ -41,7 +41,7 @@ MIN_UINT64, MAX_UINT64 = 0, 2**64 - 1
 # os
 
 
-IS_CI = "CI" in environ
+IS_CI: bool = "CI" in environ
 
 
 def _get_cpu_count() -> int:
@@ -52,7 +52,7 @@ def _get_cpu_count() -> int:
     return count
 
 
-CPU_COUNT = _get_cpu_count()
+CPU_COUNT: int = _get_cpu_count()
 
 
 # platform
@@ -69,19 +69,19 @@ def _get_system() -> System:
     raise ValueError(sys)  # pragma: no cover
 
 
-SYSTEM = _get_system()
-IS_WINDOWS = SYSTEM == "windows"
-IS_MAC = SYSTEM == "mac"
-IS_LINUX = SYSTEM == "linux"
-IS_NOT_WINDOWS = not IS_WINDOWS
-IS_NOT_MAC = not IS_MAC
-IS_NOT_LINUX = not IS_LINUX
-IS_CI_AND_WINDOWS = IS_CI and IS_WINDOWS
-IS_CI_AND_MAC = IS_CI and IS_MAC
-IS_CI_AND_LINUX = IS_CI and IS_LINUX
-IS_CI_AND_NOT_WINDOWS = IS_CI and IS_NOT_WINDOWS
-IS_CI_AND_NOT_MAC = IS_CI and IS_NOT_MAC
-IS_CI_AND_NOT_LINUX = IS_CI and IS_NOT_LINUX
+SYSTEM: System = _get_system()
+IS_WINDOWS: bool = SYSTEM == "windows"
+IS_MAC: bool = SYSTEM == "mac"
+IS_LINUX: bool = SYSTEM == "linux"
+IS_NOT_WINDOWS: bool = not IS_WINDOWS
+IS_NOT_MAC: bool = not IS_MAC
+IS_NOT_LINUX: bool = not IS_LINUX
+IS_CI_AND_WINDOWS: bool = IS_CI and IS_WINDOWS
+IS_CI_AND_MAC: bool = IS_CI and IS_MAC
+IS_CI_AND_LINUX: bool = IS_CI and IS_LINUX
+IS_CI_AND_NOT_WINDOWS: bool = IS_CI and IS_NOT_WINDOWS
+IS_CI_AND_NOT_MAC: bool = IS_CI and IS_NOT_MAC
+IS_CI_AND_NOT_LINUX: bool = IS_CI and IS_NOT_LINUX
 
 
 def _get_max_pid() -> int | None:
@@ -100,14 +100,14 @@ def _get_max_pid() -> int | None:
             assert_never(never)
 
 
-MAX_PID = _get_max_pid()
+MAX_PID: int | None = _get_max_pid()
 
 
 # pathlib
 
 
-HOME = Path.home()
-PWD = Path.cwd()
+HOME: Path = Path.home()
+PWD: Path = Path.cwd()
 
 
 # platform -> os
@@ -126,7 +126,7 @@ def _get_effective_group_id() -> int | None:
             assert_never(never)
 
 
-EFFECTIVE_GROUP_ID = _get_effective_group_id()
+EFFECTIVE_GROUP_ID: int | None = _get_effective_group_id()
 
 
 def _get_effective_user_id() -> int | None:
@@ -141,7 +141,7 @@ def _get_effective_user_id() -> int | None:
             assert_never(never)
 
 
-EFFECTIVE_USER_ID = _get_effective_user_id()
+EFFECTIVE_USER_ID: int | None = _get_effective_user_id()
 
 
 # platform -> os -> grp
@@ -159,8 +159,8 @@ def _get_gid_name(gid: int, /) -> str | None:
             assert_never(never)
 
 
-ROOT_GROUP_NAME = _get_gid_name(0)
-EFFECTIVE_GROUP_NAME = (
+ROOT_GROUP_NAME: str | None = _get_gid_name(0)
+EFFECTIVE_GROUP_NAME: str | None = (
     None if EFFECTIVE_GROUP_ID is None else _get_gid_name(EFFECTIVE_GROUP_ID)
 )
 
@@ -180,8 +180,8 @@ def _get_uid_name(uid: int, /) -> str | None:
             assert_never(never)
 
 
-ROOT_USER_NAME = _get_uid_name(0)
-EFFECTIVE_USER_NAME = (
+ROOT_USER_NAME: str | None = _get_uid_name(0)
+EFFECTIVE_USER_NAME: str | None = (
     None if EFFECTIVE_USER_ID is None else _get_uid_name(EFFECTIVE_USER_ID)
 )
 
@@ -189,13 +189,24 @@ EFFECTIVE_USER_NAME = (
 # random
 
 
-SYSTEM_RANDOM = SystemRandom()
+SYSTEM_RANDOM: SystemRandom = SystemRandom()
+
+
+# reprlib
+
+
+RICH_MAX_WIDTH: int = 80
+RICH_INDENT_SIZE: int = 4
+RICH_MAX_LENGTH: int | None = 20
+RICH_MAX_STRING: int | None = None
+RICH_MAX_DEPTH: int | None = None
+RICH_EXPAND_ALL: bool = False
 
 
 # tempfile
 
 
-TEMP_DIR = Path(gettempdir())
+TEMP_DIR: Path = Path(gettempdir())
 
 
 # tzlocal
@@ -210,37 +221,37 @@ def _get_local_time_zone() -> ZoneInfo:
     return time_zone
 
 
-LOCAL_TIME_ZONE = _get_local_time_zone()
-LOCAL_TIME_ZONE_NAME = cast("TimeZone", LOCAL_TIME_ZONE.key)
+LOCAL_TIME_ZONE: ZoneInfo = _get_local_time_zone()
+LOCAL_TIME_ZONE_NAME: TimeZone = cast("TimeZone", LOCAL_TIME_ZONE.key)
 
 
 # whenever
 
 
-ZERO_DAYS = DateDelta()
-ZERO_TIME = TimeDelta()
-MICROSECOND = TimeDelta(microseconds=1)
-MILLISECOND = TimeDelta(milliseconds=1)
-SECOND = TimeDelta(seconds=1)
-MINUTE = TimeDelta(minutes=1)
-HOUR = TimeDelta(hours=1)
-DAY = DateDelta(days=1)
-WEEK = DateDelta(weeks=1)
-MONTH = DateDelta(months=1)
-YEAR = DateDelta(years=1)
+ZERO_DAYS: DateDelta = DateDelta()
+ZERO_TIME: TimeDelta = TimeDelta()
+MICROSECOND: TimeDelta = TimeDelta(microseconds=1)
+MILLISECOND: TimeDelta = TimeDelta(milliseconds=1)
+SECOND: TimeDelta = TimeDelta(seconds=1)
+MINUTE: TimeDelta = TimeDelta(minutes=1)
+HOUR: TimeDelta = TimeDelta(hours=1)
+DAY: DateDelta = DateDelta(days=1)
+WEEK: DateDelta = DateDelta(weeks=1)
+MONTH: DateDelta = DateDelta(months=1)
+YEAR: DateDelta = DateDelta(years=1)
 
 
 # zoneinfo
 
 
-UTC = ZoneInfo("UTC")
+UTC: ZoneInfo = ZoneInfo("UTC")
 
 
 # zoneinfo -> whenever
 
 
-ZONED_DATE_TIME_MIN = PlainDateTime.MIN.assume_tz(UTC.key)
-ZONED_DATE_TIME_MAX = PlainDateTime.MAX.assume_tz(UTC.key)
+ZONED_DATE_TIME_MIN: ZonedDateTime = PlainDateTime.MIN.assume_tz(UTC.key)
+ZONED_DATE_TIME_MAX: ZonedDateTime = PlainDateTime.MAX.assume_tz(UTC.key)
 
 
 __all__ = [
