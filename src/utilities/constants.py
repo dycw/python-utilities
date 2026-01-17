@@ -103,6 +103,12 @@ def _get_max_pid() -> int | None:
 MAX_PID = _get_max_pid()
 
 
+# pathlib
+
+
+PWD = Path.cwd()
+
+
 # platform -> os
 
 
@@ -284,6 +290,7 @@ __all__ = [
     "MIN_UINT32",
     "MIN_UINT64",
     "MONTH",
+    "PWD",
     "ROOT_GROUP_NAME",
     "ROOT_USER_NAME",
     "SECOND",

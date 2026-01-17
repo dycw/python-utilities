@@ -10,6 +10,7 @@ from hypothesis.strategies import integers, sets
 from pytest import mark, param, raises
 
 from utilities.atomicwrites import copy
+from utilities.constants import SYSTEM
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import git_repos, pairs, paths, temp_paths
 from utilities.pathlib import (
@@ -37,7 +38,6 @@ from utilities.pathlib import (
     temp_cwd,
     to_path,
 )
-from utilities.platform import SYSTEM
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TemporaryDirectory
 
@@ -333,7 +333,7 @@ class TestModulePath:
         assert module == expected
 
 
-class TestTempCWD:
+class TestTempCwd:
     def test_main(self, *, tmp_path: Path) -> None:
         assert Path.cwd() != tmp_path
         with temp_cwd(tmp_path):

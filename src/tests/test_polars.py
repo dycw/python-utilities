@@ -70,7 +70,7 @@ from whenever import (
 
 import tests.test_math
 import utilities.polars
-from utilities.constants import UTC
+from utilities.constants import PWD, UTC
 from utilities.hypothesis import (
     assume_does_not_raise,
     date_deltas,
@@ -90,7 +90,6 @@ from utilities.hypothesis import (
     zoned_date_times,
 )
 from utilities.numpy import DEFAULT_RNG
-from utilities.pathlib import PWD
 from utilities.polars import (
     BooleanValueCountsError,
     ColumnsToDictError,
