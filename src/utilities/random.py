@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from random import Random, SystemRandom
+from random import Random
 from typing import TYPE_CHECKING
 
 from utilities.functools import cache
