@@ -31,6 +31,11 @@ class TestCustomRequirement:
         expected = _CustomRequirement("package>=1.2.3, <1.3")
         assert req == expected
 
+    def test_replace_remove(self) -> None:
+        req = _CustomRequirement("package>=1.2.3, <1.3").replace("<", None)
+        expected = _CustomRequirement("package>=1.2.3")
+        assert req == expected
+
     @mark.parametrize(
         ("req", "expected"),
         [
@@ -95,6 +100,11 @@ class TestRequirement:
     def test_replace_new(self) -> None:
         req = Requirement("package>=1.2.3").replace("<", "1.3")
         expected = Requirement("package>=1.2.3, <1.3")
+        assert req == expected
+
+    def test_replace_remove(self) -> None:
+        req = Requirement("package>=1.2.3, <1.3").replace("<", None)
+        expected = Requirement("package>=1.2.3")
         assert req == expected
 
     def test_specifier(self) -> None:
@@ -163,6 +173,11 @@ class TestCustomSpecifierSet:
     def test_replace_new(self) -> None:
         set_ = _CustomSpecifierSet(">=1.2.3").replace("<", "1.3")
         expected = _CustomSpecifierSet(">=1.2.3, <1.3")
+        assert set_ == expected
+
+    def test_replace_remove(self) -> None:
+        set_ = _CustomSpecifierSet(">=1.2.3, <1.3").replace("<", None)
+        expected = _CustomSpecifierSet(">=1.2.3")
         assert set_ == expected
 
     @mark.parametrize(
