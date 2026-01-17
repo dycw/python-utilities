@@ -230,6 +230,7 @@ LOCAL_TIME_ZONE_NAME: TimeZone = cast("TimeZone", LOCAL_TIME_ZONE.key)
 
 ZERO_DAYS: DateDelta = DateDelta()
 ZERO_TIME: TimeDelta = TimeDelta()
+NANOSECOND: TimeDelta = TimeDelta(nanoseconds=1)
 MICROSECOND: TimeDelta = TimeDelta(microseconds=1)
 MILLISECOND: TimeDelta = TimeDelta(milliseconds=1)
 SECOND: TimeDelta = TimeDelta(seconds=1)
@@ -239,6 +240,12 @@ DAY: DateDelta = DateDelta(days=1)
 WEEK: DateDelta = DateDelta(weeks=1)
 MONTH: DateDelta = DateDelta(months=1)
 YEAR: DateDelta = DateDelta(years=1)
+
+
+DATE_DELTA_MIN: DateDelta = DateDelta(weeks=-521722, days=-5)
+DATE_DELTA_MAX: DateDelta = DateDelta(weeks=521722, days=5)
+TIME_DELTA_MIN: TimeDelta = TimeDelta(hours=-87831216)
+TIME_DELTA_MAX: TimeDelta = TimeDelta(hours=87831216)
 
 
 # zoneinfo
@@ -257,6 +264,8 @@ ZONED_DATE_TIME_MAX: ZonedDateTime = PlainDateTime.MAX.assume_tz(UTC.key)
 __all__ = [
     "BRACKETS",
     "CPU_COUNT",
+    "DATE_DELTA_MAX",
+    "DATE_DELTA_MIN",
     "DAY",
     "EFFECTIVE_GROUP_ID",
     "EFFECTIVE_GROUP_NAME",
@@ -304,6 +313,7 @@ __all__ = [
     "MIN_UINT32",
     "MIN_UINT64",
     "MONTH",
+    "NANOSECOND",
     "PWD",
     "ROOT_GROUP_NAME",
     "ROOT_USER_NAME",
@@ -311,6 +321,8 @@ __all__ = [
     "SYSTEM",
     "SYSTEM_RANDOM",
     "TEMP_DIR",
+    "TIME_DELTA_MAX",
+    "TIME_DELTA_MIN",
     "USER",
     "UTC",
     "WEEK",
