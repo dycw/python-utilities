@@ -5,8 +5,6 @@ from random import SystemRandom
 from typing import TYPE_CHECKING, assert_never
 from zoneinfo import ZoneInfo
 
-from hypothesis import given
-from hypothesis.strategies import sampled_from
 from pytest import mark, param, raises
 from whenever import (
     Date,
@@ -200,7 +198,7 @@ class TestSentinel:
     def test_singleton(self) -> None:
         assert Sentinel() is sentinel
 
-    @given(text=sampled_from(["invalid", "ssentinell"]))
+    @mark.parametrize("text", [param("invalid"), param("ssentinell")])
     def test_error_parse(self, *, text: str) -> None:
         with raises(SentinelParseError, match=r"Unable to parse sentinel; got '.*'"):
             _ = Sentinel.parse(text)

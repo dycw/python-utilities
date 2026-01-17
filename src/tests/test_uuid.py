@@ -8,15 +8,15 @@ from uuid import UUID
 from hypothesis import given
 from hypothesis.strategies import none, randoms, uuids
 
+from utilities.constants import Sentinel, sentinel
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import pairs
-from utilities.sentinel import Sentinel, sentinel
 from utilities.uuid import UUID_EXACT_PATTERN, UUID_PATTERN, get_uuid, to_uuid
 
 if TYPE_CHECKING:
     from random import Random
 
-    from utilities.sentinel import Sentinel
+    from utilities.constants import Sentinel
     from utilities.types import MaybeCallableUUIDLike
 
 

@@ -36,7 +36,7 @@ from typing import (
 from whenever import ZonedDateTime
 
 from utilities.atomicwrites import move_many
-from utilities.constants import SECOND
+from utilities.constants import SECOND, Sentinel, sentinel
 from utilities.dataclasses import replace_non_sentinel
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_seconds
@@ -48,7 +48,6 @@ from utilities.re import (
     extract_group,
     extract_groups,
 )
-from utilities.sentinel import Sentinel, sentinel
 from utilities.whenever import (
     WheneverLogRecord,
     format_compact,

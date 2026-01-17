@@ -18,7 +18,7 @@ if TYPE_CHECKING:
         ZonedDateTime,
     )
 
-    from utilities.sentinel import Sentinel
+    from utilities.constants import Sentinel
     from utilities.whenever import DatePeriod, TimePeriod, ZonedDateTimePeriod
 
 

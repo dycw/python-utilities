@@ -7,6 +7,7 @@ from hypothesis import given
 from hypothesis.strategies import booleans
 from pytest import mark, param, raises
 
+from utilities.constants import Sentinel
 from utilities.hypothesis import permissions, sentinels, temp_paths
 from utilities.permissions import (
     Permissions,
@@ -16,7 +17,6 @@ from utilities.permissions import (
     PermissionsFromTextError,
     ensure_perms,
 )
-from utilities.sentinel import Sentinel
 
 if TYPE_CHECKING:
     from pathlib import Path

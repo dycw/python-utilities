@@ -18,10 +18,10 @@ from typing import (
 from more_itertools import bucket, partition, split_into
 from more_itertools import peekable as _peekable
 
-from utilities.functions import get_class_name
+from utilities.constants import Sentinel, sentinel
+from utilities.functions import get_class_name, is_sentinel
 from utilities.iterables import OneNonUniqueError, one
 from utilities.reprlib import get_repr
-from utilities.sentinel import Sentinel, is_sentinel, sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping, Sequence

@@ -39,8 +39,8 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.constants import Sentinel
 from utilities.iterables import unique_everseen
-from utilities.sentinel import Sentinel
 from utilities.types import (
     Dataclass,
     StrDict,

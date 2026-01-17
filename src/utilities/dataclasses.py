@@ -5,8 +5,9 @@ from contextlib import suppress
 from dataclasses import MISSING, dataclass, field, fields, replace
 from typing import TYPE_CHECKING, Any, Literal, assert_never, overload, override
 
+from utilities.constants import Sentinel, sentinel
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import get_class_name
+from utilities.functions import get_class_name, is_sentinel
 from utilities.iterables import (
     OneStrEmptyError,
     OneStrNonUniqueError,
@@ -21,7 +22,6 @@ from utilities.parse import (
     serialize_object,
 )
 from utilities.re import ExtractGroupError, extract_group
-from utilities.sentinel import Sentinel, is_sentinel, sentinel
 from utilities.text import (
     BRACKETS,
     LIST_SEPARATOR,

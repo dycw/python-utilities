@@ -21,9 +21,9 @@ from typing import (
 )
 from uuid import uuid4
 
+from utilities.constants import Sentinel
 from utilities.iterables import CheckDuplicatesError, check_duplicates, transpose
 from utilities.reprlib import get_repr
-from utilities.sentinel import Sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence

@@ -22,7 +22,7 @@ from redis.asyncio.client import PubSub
 
 from tests.test_objects.objects import objects
 from utilities.asyncio import get_items_nowait, sleep
-from utilities.constants import MICROSECOND, SECOND
+from utilities.constants import _SENTINEL_REPR, MICROSECOND, SECOND, Sentinel, sentinel
 from utilities.functions import get_class_name, identity
 from utilities.hypothesis import int64s, pairs, text_ascii
 from utilities.iterables import one
@@ -43,7 +43,6 @@ from utilities.redis import (
     yield_pubsub,
     yield_redis,
 )
-from utilities.sentinel import SENTINEL_REPR, Sentinel, sentinel
 from utilities.text import unique_str
 
 if TYPE_CHECKING:
@@ -376,7 +375,7 @@ class TestRedisHashMapKey:
             return repr(sentinel).encode()
 
         def deserializer(data: bytes, /) -> Sentinel:
-            assert data == SENTINEL_REPR.encode()
+            assert data == _SENTINEL_REPR.encode()
             return sentinel
 
         hm_key = redis_hash_map_key(
@@ -575,7 +574,7 @@ class TestRedisKey:
             return repr(sentinel).encode()
 
         def deserializer(data: bytes, /) -> Sentinel:
-            assert data == SENTINEL_REPR.encode()
+            assert data == _SENTINEL_REPR.encode()
             return sentinel
 
         red_key = redis_key(

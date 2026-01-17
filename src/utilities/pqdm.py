@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING, Any, Literal, assert_never
 from pqdm import processes, threads
 from tqdm.auto import tqdm as tqdm_auto
 
-from utilities.functions import get_func_name
+from utilities.constants import Sentinel, sentinel
+from utilities.functions import get_func_name, is_sentinel
 from utilities.iterables import apply_to_varargs
 from utilities.os import get_cpu_use
-from utilities.sentinel import Sentinel, is_sentinel, sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable

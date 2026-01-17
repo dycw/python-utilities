@@ -5,8 +5,8 @@ from random import Random
 from typing import TYPE_CHECKING, assert_never, overload
 from uuid import UUID, uuid4
 
+from utilities.constants import Sentinel
 from utilities.random import get_state
-from utilities.sentinel import Sentinel
 
 if TYPE_CHECKING:
     from utilities.types import MaybeCallableUUIDLike, Seed

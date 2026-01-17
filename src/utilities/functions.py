@@ -14,22 +14,13 @@ from types import (
     MethodWrapperType,
     WrapperDescriptorType,
 )
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    TypeGuard,
-    assert_never,
-    cast,
-    overload,
-    override,
-)
+from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 
+from typing_extensions import TypeIs
 from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
-from utilities.constants import SECOND
+from utilities.constants import SECOND, Sentinel, sentinel
 from utilities.reprlib import get_repr, get_repr_and_class
-from utilities.sentinel import Sentinel, is_sentinel, sentinel
 from utilities.types import (
     Dataclass,
     Duration,
@@ -615,17 +606,22 @@ def in_timedelta(duration: Duration, /) -> TimeDelta:
 ##
 
 
-def is_none(obj: Any, /) -> TypeGuard[None]:
+def is_none(obj: Any, /) -> TypeIs[None]:
     """Check if an object is `None`."""
     return obj is None
-
-
-##
 
 
 def is_not_none(obj: Any, /) -> bool:
     """Check if an object is not `None`."""
     return obj is not None
+
+
+##
+
+
+def is_sentinel(obj: Any, /) -> TypeIs[Sentinel]:
+    """Check if an object is the sentinel."""
+    return obj is sentinel
 
 
 ##
@@ -841,6 +837,7 @@ __all__ = [
     "in_timedelta",
     "is_none",
     "is_not_none",
+    "is_sentinel",
     "map_object",
     "max_nullable",
     "min_nullable",

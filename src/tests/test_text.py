@@ -49,7 +49,7 @@ from utilities.text import (
 )
 
 if TYPE_CHECKING:
-    from utilities.sentinel import Sentinel
+    from utilities.constants import Sentinel
 
 
 class TestParseBool:

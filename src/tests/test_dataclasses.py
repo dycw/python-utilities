@@ -41,6 +41,7 @@ from tests.test_typing_funcs.with_future import (
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
 )
+from utilities.constants import sentinel
 from utilities.dataclasses import (
     YieldFieldsError,
     _MappingToDataClassEmptyError,
@@ -75,7 +76,6 @@ from utilities.functions import get_class_name
 from utilities.iterables import one
 from utilities.orjson import OrjsonLogRecord
 from utilities.polars import are_frames_equal
-from utilities.sentinel import sentinel
 from utilities.types import Dataclass, StrMapping
 from utilities.typing import get_args, is_list_type, is_literal_type, is_optional_type
 

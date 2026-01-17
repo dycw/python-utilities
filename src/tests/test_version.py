@@ -21,7 +21,7 @@ from utilities.version import (
 )
 
 if TYPE_CHECKING:
-    from utilities.sentinel import Sentinel
+    from utilities.constants import Sentinel
 
 
 class TestParseVersion:

@@ -10,7 +10,7 @@ from hypothesis.strategies import integers, sets
 from pytest import mark, param, raises
 
 from utilities.atomicwrites import copy
-from utilities.constants import HOME, SYSTEM
+from utilities.constants import HOME, SYSTEM, Sentinel, sentinel
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import git_repos, pairs, paths, temp_paths
 from utilities.pathlib import (
@@ -38,7 +38,6 @@ from utilities.pathlib import (
     temp_cwd,
     to_path,
 )
-from utilities.sentinel import Sentinel, sentinel
 from utilities.tempfile import TemporaryDirectory
 
 if TYPE_CHECKING:

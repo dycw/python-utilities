@@ -18,9 +18,9 @@ from stat import (
 )
 from typing import TYPE_CHECKING, Literal, Self, assert_never, override
 
+from utilities.constants import Sentinel, sentinel
 from utilities.dataclasses import replace_non_sentinel
 from utilities.re import ExtractGroupsError, extract_groups
-from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
     from utilities.types import PathLike

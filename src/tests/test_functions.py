@@ -25,7 +25,7 @@ from hypothesis.strategies import (
 )
 from pytest import approx, mark, param, raises
 
-from utilities.constants import HOME, MILLISECOND, NOW_UTC, SECOND, ZERO_TIME
+from utilities.constants import HOME, MILLISECOND, NOW_UTC, SECOND, ZERO_TIME, sentinel
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     EnsureBoolError,
@@ -72,6 +72,7 @@ from utilities.functions import (
     in_timedelta,
     is_none,
     is_not_none,
+    is_sentinel,
     map_object,
     max_nullable,
     min_nullable,
@@ -81,7 +82,6 @@ from utilities.functions import (
     yield_object_cached_properties,
     yield_object_properties,
 )
-from utilities.sentinel import sentinel
 from utilities.text import parse_bool, strip_and_dedent
 from utilities.whenever import get_now, get_today
 
@@ -586,18 +586,25 @@ class TestInTimeDelta:
 
 
 class TestIsNoneAndIsNotNone:
-    @given(
-        case=sampled_from([
-            (is_none, None, True),
-            (is_none, 0, False),
-            (is_not_none, None, False),
-            (is_not_none, 0, True),
-        ])
+    @mark.parameter(
+        "func, obj, expected",
+        [
+            param(is_none, None, True),
+            param(is_none, 0, False),
+            param(is_not_none, None, False),
+            param(is_not_none, 0, True),
+        ],
     )
-    def test_main(self, *, case: tuple[Callable[[Any], bool], Any, bool]) -> None:
-        func, obj, expected = case
-        result = func(obj)
-        assert result is expected
+    def test_main(
+        self, *, func: Callable[[Any], bool], obj: Any, expected: bool
+    ) -> None:
+        assert func(obj) is expected
+
+
+class TestIsSentinel:
+    @mark.parametrize(("obj", "expected"), [param(None, False), param(sentinel, True)])
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        assert is_sentinel(obj) is expected
 
 
 class TestMapObject:
