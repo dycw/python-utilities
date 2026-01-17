@@ -106,6 +106,7 @@ MAX_PID = _get_max_pid()
 # pathlib
 
 
+HOME = Path.home()
 PWD = Path.cwd()
 
 
@@ -249,6 +250,7 @@ __all__ = [
     "EFFECTIVE_GROUP_NAME",
     "EFFECTIVE_USER_ID",
     "EFFECTIVE_USER_NAME",
+    "HOME",
     "HOUR",
     "IS_CI",
     "IS_CI_AND_LINUX",
