@@ -127,7 +127,6 @@ from utilities.hypothesis import (
 from utilities.iterables import one
 from utilities.libcst import parse_import
 from utilities.platform import maybe_lower_case
-from utilities.sentinel import is_sentinel
 from utilities.version import Version
 from utilities.whenever import (
     DATE_TWO_DIGIT_YEAR_MAX,

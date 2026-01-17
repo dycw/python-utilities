@@ -25,7 +25,7 @@ from hypothesis.strategies import (
 )
 from pytest import approx, mark, param, raises
 
-from utilities.constants import HOME, MILLISECOND, NOW_UTC, SECOND, ZERO_TIME
+from utilities.constants import HOME, MILLISECOND, NOW_UTC, SECOND, ZERO_TIME, sentinel
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     EnsureBoolError,
@@ -586,8 +586,8 @@ class TestInTimeDelta:
 
 
 class TestIsNoneAndIsNotNone:
-    @mark.parametrize(
-        ("func", "obj", "expected"),
+    @mark.parameter(
+        "func, obj, expected",
         [
             param(is_none, None, True),
             param(is_none, 0, False),

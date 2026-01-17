@@ -21,7 +21,7 @@ from typing import (
 )
 from uuid import uuid4
 
-from utilities.constants import BRACKETS, LIST_SEPARATOR, PAIR_SEPARATOR, Sentinel
+from utilities.constants import Sentinel
 from utilities.iterables import CheckDuplicatesError, check_duplicates, transpose
 from utilities.reprlib import get_repr
 
