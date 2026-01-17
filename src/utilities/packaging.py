@@ -102,8 +102,9 @@ class _CustomSpecifierSet(SpecifierSet):
         return ", ".join(map(str, specs))
 
     def drop(self, operator: str, /) -> Self:
-        is_operator = [s for s in self if s.operator == operator]
-        return type(self)(s for s in self if s.operator != operator)
+        if any(s.operator == operator for s in self):
+            return type(self)(s for s in self if s.operator != operator)
+        raise KeyError(operator)
 
     @overload
     def get(self, operator: str, default: str, /) -> str: ...

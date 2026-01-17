@@ -11,10 +11,15 @@ class TestCustomRequirement:
         req = _CustomRequirement("package>=1.2.3, <2")
         assert isinstance(req.specifier, _CustomSpecifierSet)
 
-    def test_drop(self) -> None:
+    def test_drop_existing(self) -> None:
         req = _CustomRequirement("package>=1.2.3, <2").drop("<")
         expected = _CustomRequirement("package>=1.2.3")
         assert req == expected
+
+    def test_drop_missing(self) -> None:
+        req = _CustomRequirement("package>=1.2.3")
+        with raises(KeyError):
+            _ = req.drop("<")
 
     def test_replace_existing(self) -> None:
         req = _CustomRequirement("package>=1.2.3, <1.3").replace(">=", "1.2.4")
@@ -42,10 +47,15 @@ class TestCustomRequirement:
 
 
 class TestRequirement:
-    def test_drop(self) -> None:
+    def test_drop_existing(self) -> None:
         req = Requirement("package>=1.2.3, <1.3").drop("<")
         expected = Requirement("package>=1.2.3")
         assert req == expected
+
+    def test_drop_missing(self) -> None:
+        req = Requirement("package>=1.2.3")
+        with raises(KeyError):
+            _ = req.drop("<")
 
     def test_extra(self) -> None:
         extra = "extra"
