@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from random import SystemRandom
 from typing import assert_never
+from zoneinfo import ZoneInfo
 
 from pytest import mark, param
 
