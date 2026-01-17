@@ -7,9 +7,8 @@ from zoneinfo import ZoneInfo
 
 from whenever import ZonedDateTime
 
-from utilities.constants import UTC
+from utilities.constants import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME, UTC
 from utilities.types import TIME_ZONES
-from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 
 if TYPE_CHECKING:
     from utilities.types import TimeZone, TimeZoneLike

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, assert_never, cast
 from zoneinfo import ZoneInfo
 
 from tzlocal import get_localzone
-from whenever import DateDelta, TimeDelta
+from whenever import DateDelta, PlainDateTime, TimeDelta
 
 if TYPE_CHECKING:
     from utilities.types import System, TimeZone
@@ -205,6 +205,13 @@ YEAR = DateDelta(years=1)
 UTC = ZoneInfo("UTC")
 
 
+# zoneinfo -> whenever
+
+
+ZONED_DATE_TIME_MIN = PlainDateTime.MIN.assume_tz(UTC.key)
+ZONED_DATE_TIME_MAX = PlainDateTime.MAX.assume_tz(UTC.key)
+
+
 __all__ = [
     "CPU_COUNT",
     "DAY",
@@ -244,4 +251,6 @@ __all__ = [
     "YEAR",
     "ZERO_DAYS",
     "ZERO_TIME",
+    "ZONED_DATE_TIME_MAX",
+    "ZONED_DATE_TIME_MIN",
 ]

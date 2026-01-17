@@ -32,13 +32,13 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.constants import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME, UTC
 from utilities.dataclasses import replace_non_sentinel
 from utilities.functions import get_class_name
 from utilities.math import sign
 from utilities.platform import get_strftime
 from utilities.sentinel import Sentinel, sentinel
-from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
-from utilities.zoneinfo import UTC, to_time_zone_name
+from utilities.zoneinfo import to_time_zone_name
 
 if TYPE_CHECKING:
     from utilities.types import (
@@ -51,10 +51,6 @@ if TYPE_CHECKING:
         TimeOrDateTimeDelta,
         TimeZoneLike,
     )
-
-
-ZONED_DATE_TIME_MIN = PlainDateTime.MIN.assume_tz(UTC.key)
-ZONED_DATE_TIME_MAX = PlainDateTime.MAX.assume_tz(UTC.key)
 
 
 DATE_TIME_DELTA_MIN = DateTimeDelta(
@@ -1997,8 +1993,6 @@ __all__ = [
     "TIME_UTC",
     "TODAY_LOCAL",
     "TODAY_UTC",
-    "ZONED_DATE_TIME_MAX",
-    "ZONED_DATE_TIME_MIN",
     "DatePeriod",
     "DatePeriodError",
     "MeanDateTimeError",
