@@ -26,6 +26,7 @@ from utilities.constants import (
     EFFECTIVE_USER_ID,
     EFFECTIVE_USER_NAME,
     HOME,
+    HOSTNAME,
     IS_LINUX,
     IS_MAC,
     IS_NOT_LINUX,
@@ -123,6 +124,11 @@ class TestGroupName:
                 assert isinstance(group, str)
             case never:
                 assert_never(never)
+
+
+class TestHostname:
+    def test_main(self) -> None:
+        assert isinstance(HOSTNAME, str)
 
 
 class TestLocalTimeZone:

@@ -96,7 +96,6 @@ from utilities.math import is_zero
 from utilities.os import get_env_var
 from utilities.pathlib import module_path, temp_cwd
 from utilities.permissions import Permissions
-from utilities.sentinel import is_sentinel
 from utilities.tempfile import TemporaryDirectory
 from utilities.version import Version
 from utilities.whenever import (

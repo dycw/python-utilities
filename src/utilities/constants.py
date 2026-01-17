@@ -8,6 +8,7 @@ from pathlib import Path
 from platform import system
 from random import SystemRandom
 from re import IGNORECASE, search
+from socket import gethostname
 from tempfile import gettempdir
 from typing import TYPE_CHECKING, Any, assert_never, cast, override
 from zoneinfo import ZoneInfo
@@ -259,10 +260,24 @@ class SentinelParseError(Exception):
 sentinel = Sentinel()
 
 
+# socket
+
+
+HOSTNAME = gethostname()
+
+
 # tempfile
 
 
 TEMP_DIR: Path = Path(gettempdir())
+
+
+# text
+
+
+LIST_SEPARATOR: str = ","
+PAIR_SEPARATOR: str = "="
+BRACKETS: set[tuple[str, str]] = {("(", ")"), ("[", "]"), ("{", "}")}
 
 
 # tzlocal
@@ -381,6 +396,7 @@ __all__ = [
     "EFFECTIVE_USER_ID",
     "EFFECTIVE_USER_NAME",
     "HOME",
+    "HOSTNAME",
     "HOUR",
     "IS_CI",
     "IS_CI_AND_LINUX",
@@ -395,6 +411,7 @@ __all__ = [
     "IS_NOT_MAC",
     "IS_NOT_WINDOWS",
     "IS_WINDOWS",
+    "LIST_SEPARATOR",
     "LOCAL_TIME_ZONE",
     "LOCAL_TIME_ZONE_NAME",
     "MAX_FLOAT32",
@@ -429,6 +446,7 @@ __all__ = [
     "NOW_LOCAL_PLAIN",
     "NOW_UTC",
     "NOW_UTC_PLAIN",
+    "PAIR_SEPARATOR",
     "PWD",
     "ROOT_GROUP_NAME",
     "ROOT_USER_NAME",
