@@ -30,7 +30,8 @@ if TYPE_CHECKING:
     from utilities.types import Duration, PathLike
 
 
-_DURATION: TimeDelta = SECOND
+_DURATION: TimeDelta = 0.5 * SECOND
+_MULTIPLE: int = 10
 
 
 def _test_enhanced_context_manager(
@@ -226,18 +227,19 @@ class TestEnhancedContextManager:
     def test_multiprocessing_sigterm(
         self, *, tmp_path: Path, target: Callable[..., None]
     ) -> None:
-        duration = SECOND
         marker = tmp_path.joinpath("marker")
-        proc = Process(target=target, args=(marker,), kwargs={"sleep": 10 * duration})
+        proc = Process(
+            target=target, args=(marker,), kwargs={"duration": _MULTIPLE * _DURATION}
+        )
         proc.start()
         assert proc.pid is not None
         assert proc.is_alive()
         assert not marker.exists()
-        utilities.time.sleep(duration)
+        utilities.time.sleep(_DURATION)
         assert proc.is_alive()
         assert marker.is_file()
         proc.terminate()
-        utilities.time.sleep(duration)
+        utilities.time.sleep(_DURATION)
         assert proc.is_alive()
         assert not marker.exists()
 
