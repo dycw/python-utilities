@@ -3,7 +3,7 @@ from __future__ import annotations
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from shutil import copyfile, move
+from shutil import move
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from typing import TYPE_CHECKING, override
 from warnings import catch_warnings, filterwarnings
