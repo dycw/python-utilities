@@ -5,10 +5,9 @@ from typing import TYPE_CHECKING
 
 from pytest import fixture, mark, param, raises
 
-from utilities.constants import SECOND
+from utilities.constants import IS_CI, SECOND
 from utilities.functions import in_seconds
 from utilities.pytest import (
-    IS_CI,
     _NodeIdToPathNotGetTailError,
     _NodeIdToPathNotPythonFileError,
     node_id_path,
