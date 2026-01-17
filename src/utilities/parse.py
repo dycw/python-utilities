@@ -21,15 +21,18 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.constants import Sentinel, SentinelParseError
+from utilities.constants import (
+    BRACKETS,
+    LIST_SEPARATOR,
+    PAIR_SEPARATOR,
+    Sentinel,
+    SentinelParseError,
+)
 from utilities.enum import ParseEnumError, parse_enum
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one, one_str
 from utilities.math import ParseNumberError, parse_number
 from utilities.re import ExtractGroupError, extract_group
 from utilities.text import (
-    BRACKETS,
-    LIST_SEPARATOR,
-    PAIR_SEPARATOR,
     ParseBoolError,
     ParseNoneError,
     join_strs,

@@ -85,12 +85,17 @@ from utilities.constants import (
     sentinel,
 )
 from utilities.contextlib import enhanced_context_manager
-from utilities.functions import ensure_int, ensure_str, max_nullable, min_nullable
+from utilities.functions import (
+    ensure_int,
+    ensure_str,
+    is_sentinel,
+    max_nullable,
+    min_nullable,
+)
 from utilities.math import is_zero
 from utilities.os import get_env_var
 from utilities.pathlib import module_path, temp_cwd
 from utilities.permissions import Permissions
-from utilities.sentinel import is_sentinel
 from utilities.tempfile import TemporaryDirectory
 from utilities.version import Version
 from utilities.whenever import (
