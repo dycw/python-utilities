@@ -31,6 +31,9 @@ class Requirement:
     def __str__(self) -> str:
         return str(self._custom_req)
 
+    def drop(self, operator: str, /) -> Self:
+        return type(self)(str(self._custom_req.drop(operator)))
+
     @property
     def extras(self) -> list[str]:
         return self._parsed_req.extras
@@ -75,6 +78,11 @@ class _CustomRequirement(packaging.requirements.Requirement):
         parsed = _parse_requirement(requirement_string)
         self.specifier = _CustomSpecifierSet(parsed.specifier)  # pyright: ignore[reportIncompatibleVariableOverride]
 
+    def drop(self, operator: str, /) -> Self:
+        new = type(self)(super().__str__())
+        new.specifier = self.specifier.drop(operator)
+        return new
+
     def replace(self, operator: str, version: str, /) -> Self:
         new = type(self)(super().__str__())
         new.specifier = self.specifier.replace(operator, version)
@@ -92,6 +100,10 @@ class _CustomSpecifierSet(SpecifierSet):
     def __str__(self) -> str:
         specs = sorted(self._specs, key=self._sort_key)
         return ", ".join(map(str, specs))
+
+    def drop(self, operator: str, /) -> Self:
+        is_operator = [s for s in self if s.operator == operator]
+        return type(self)(s for s in self if s.operator != operator)
 
     @overload
     def get(self, operator: str, default: str, /) -> str: ...

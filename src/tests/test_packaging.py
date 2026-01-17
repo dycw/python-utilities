@@ -11,6 +11,11 @@ class TestCustomRequirement:
         req = _CustomRequirement("package>=1.2.3, <2")
         assert isinstance(req.specifier, _CustomSpecifierSet)
 
+    def test_drop(self) -> None:
+        req = _CustomRequirement("package>=1.2.3, <2").drop("<")
+        expected = _CustomRequirement("package>=1.2.3")
+        assert req == expected
+
     def test_replace_existing(self) -> None:
         req = _CustomRequirement("package>=1.2.3, <1.3").replace(">=", "1.2.4")
         expected = _CustomRequirement("package>=1.2.4, <1.3")
@@ -37,6 +42,11 @@ class TestCustomRequirement:
 
 
 class TestRequirement:
+    def test_drop(self) -> None:
+        req = Requirement("package>=1.2.3, <1.3").drop("<")
+        expected = Requirement("package>=1.2.3")
+        assert req == expected
+
     def test_extra(self) -> None:
         extra = "extra"
         req = Requirement(f"package[{extra}]")
@@ -111,6 +121,17 @@ class TestRequirement:
 
 
 class TestCustomSpecifierSet:
+    def test_drop_existing(self) -> None:
+        set_ = _CustomSpecifierSet(">=1.2.3, <1.3").drop("<")
+        assert set_[">="] == "1.2.3"
+        with raises(KeyError):
+            set_["<"]
+
+    def test_drop_missing(self) -> None:
+        set_ = _CustomSpecifierSet(">=1.2.3")
+        with raises(KeyError):
+            _ = set_.drop("<")
+
     def test_get(self) -> None:
         set_ = _CustomSpecifierSet(">=1.2.3, <1.3")
         assert set_.get(">=") == "1.2.3"
