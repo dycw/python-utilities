@@ -38,6 +38,29 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.constants import (
+    IS_LINUX,
+    MAX_FLOAT32,
+    MAX_FLOAT64,
+    MAX_INT8,
+    MAX_INT16,
+    MAX_INT32,
+    MAX_INT64,
+    MAX_UINT8,
+    MAX_UINT16,
+    MAX_UINT32,
+    MAX_UINT64,
+    MIN_FLOAT32,
+    MIN_FLOAT64,
+    MIN_INT8,
+    MIN_INT16,
+    MIN_INT32,
+    MIN_INT64,
+    MIN_UINT8,
+    MIN_UINT16,
+    MIN_UINT32,
+    MIN_UINT64,
+)
 from utilities.functions import ensure_int
 from utilities.hypothesis import (
     _LINUX_DISALLOW_TIME_ZONES,
@@ -103,29 +126,7 @@ from utilities.hypothesis import (
 )
 from utilities.iterables import one
 from utilities.libcst import parse_import
-from utilities.math import (
-    MAX_FLOAT32,
-    MAX_FLOAT64,
-    MAX_INT8,
-    MAX_INT16,
-    MAX_INT32,
-    MAX_INT64,
-    MAX_UINT8,
-    MAX_UINT16,
-    MAX_UINT32,
-    MAX_UINT64,
-    MIN_FLOAT32,
-    MIN_FLOAT64,
-    MIN_INT8,
-    MIN_INT16,
-    MIN_INT32,
-    MIN_INT64,
-    MIN_UINT8,
-    MIN_UINT16,
-    MIN_UINT32,
-    MIN_UINT64,
-)
-from utilities.platform import IS_LINUX, maybe_lower_case
+from utilities.platform import maybe_lower_case
 from utilities.sentinel import is_sentinel
 from utilities.version import Version
 from utilities.whenever import (

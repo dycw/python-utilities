@@ -16,9 +16,7 @@ from hypothesis.strategies import (
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, mark, param, raises
 
-from utilities.errors import ImpossibleCaseError
-from utilities.hypothesis import assume_does_not_raise, int32s, numbers, pairs
-from utilities.math import (
+from utilities.constants import (
     MAX_INT8,
     MAX_INT16,
     MAX_INT32,
@@ -35,6 +33,10 @@ from utilities.math import (
     MIN_UINT16,
     MIN_UINT32,
     MIN_UINT64,
+)
+from utilities.errors import ImpossibleCaseError
+from utilities.hypothesis import assume_does_not_raise, int32s, numbers, pairs
+from utilities.math import (
     CheckIntegerError,
     NumberOfDecimalsError,
     ParseNumberError,

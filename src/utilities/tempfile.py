@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 from shutil import move
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
-from tempfile import gettempdir as _gettempdir
 from typing import TYPE_CHECKING, override
-
-from utilities.contextlib import enhanced_context_manager
-from utilities.warnings import suppress_warnings
+from warnings import catch_warnings, filterwarnings
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -61,7 +59,8 @@ class _TemporaryDirectoryNoResourceWarning(tempfile.TemporaryDirectory):
         ignore_errors: bool = False,
         delete: bool = True,
     ) -> None:
-        with suppress_warnings(category=ResourceWarning):
+        with catch_warnings():
+            filterwarnings("ignore", category=ResourceWarning)
             return super()._cleanup(  # pyright: ignore[reportAttributeAccessIssue]
                 name, warn_message, ignore_errors=ignore_errors, delete=delete
             )
@@ -70,7 +69,7 @@ class _TemporaryDirectoryNoResourceWarning(tempfile.TemporaryDirectory):
 ##
 
 
-@enhanced_context_manager
+@contextmanager
 def TemporaryFile(  # noqa: N802
     *,
     dir: PathLike | None = None,  # noqa: A002
@@ -116,7 +115,7 @@ def TemporaryFile(  # noqa: N802
             yield temp
 
 
-@enhanced_context_manager
+@contextmanager
 def _temporary_file_outer(
     path: PathLike,
     /,
@@ -138,7 +137,7 @@ def _temporary_file_outer(
         yield temp
 
 
-@enhanced_context_manager
+@contextmanager
 def _temporary_file_inner(
     path: PathLike,
     /,
@@ -162,12 +161,27 @@ def _temporary_file_inner(
 ##
 
 
-def gettempdir() -> Path:
-    """Get the name of the directory used for temporary files."""
-    return Path(_gettempdir())
+@contextmanager
+def yield_temp_dir_at(path: PathLike, /) -> Iterator[Path]:
+    """Yield a temporary dir for a target path."""
+
+    path = Path(path)
+    with TemporaryDirectory(suffix=".tmp", prefix=path.name, dir=path.parent) as temp:
+        yield temp
 
 
-TEMP_DIR = gettempdir()
+@contextmanager
+def yield_temp_file_at(path: PathLike, /) -> Iterator[Path]:
+    """Yield a temporary file for a target path."""
+
+    path = Path(path)
+    with TemporaryFile(dir=path.parent, suffix=".tmp", prefix=path.name) as temp:
+        yield temp
 
 
-__all__ = ["TEMP_DIR", "TemporaryDirectory", "TemporaryFile", "gettempdir"]
+__all__ = [
+    "TemporaryDirectory",
+    "TemporaryFile",
+    "yield_temp_dir_at",
+    "yield_temp_file_at",
+]

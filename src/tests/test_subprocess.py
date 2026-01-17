@@ -10,12 +10,16 @@ from uuid import uuid4
 from pytest import LogCaptureFixture, mark, param, raises
 from pytest_lazy_fixtures import lf
 
-from utilities.constants import MINUTE, SECOND
-from utilities.grp import EFFECTIVE_GROUP_NAME
+from utilities.constants import (
+    EFFECTIVE_GROUP_NAME,
+    EFFECTIVE_USER_NAME,
+    HOME,
+    MINUTE,
+    SECOND,
+)
 from utilities.iterables import one
 from utilities.pathlib import get_file_group, get_file_owner
 from utilities.permissions import Permissions
-from utilities.pwd import EFFECTIVE_USER_NAME
 from utilities.pytest import skipif_ci, skipif_mac, throttle_test
 from utilities.shutil import which
 from utilities.subprocess import (
@@ -411,8 +415,7 @@ class TestEnvCmds:
 class TestExpandPath:
     def test_main(self) -> None:
         result = expand_path("~")
-        expected = Path.home()
-        assert result == expected
+        assert result == HOME
 
     def test_subs(self) -> None:
         result = expand_path("~/${dir}", subs={"dir": "foo"})

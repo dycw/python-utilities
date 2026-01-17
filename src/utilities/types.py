@@ -219,6 +219,10 @@ class SupportsRound(Protocol[_T_co]):
     def __round__(self, ndigits: int, /) -> _T_co: ...
 
 
+# os
+type IntOrAll = int | Literal["all"]
+
+
 # parse
 type ParseObjectExtra = Mapping[Any, Callable[[str], Any]]
 type SerializeObjectExtra = Mapping[Any, Callable[[Any], str]]
@@ -228,6 +232,10 @@ type SerializeObjectExtra = Mapping[Any, Callable[[Any], str]]
 type FileOrDir = Literal["file", "dir"]
 type PathLike = MaybeStr[Path]
 type MaybeCallablePathLike = MaybeCallable[PathLike]
+
+
+# platform
+type System = Literal["windows", "mac", "linux"]
 
 
 # random
@@ -318,6 +326,7 @@ __all__ = [
     "FileOrDir",
     "IPv4AddressLike",
     "IPv6AddressLike",
+    "IntOrAll",
     "LogLevel",
     "LoggerLike",
     "MathRoundMode",
@@ -371,6 +380,7 @@ __all__ = [
     "SupportsLT",
     "SupportsRichComparison",
     "SupportsRound",
+    "System",
     "TimeDeltaLike",
     "TimeLike",
     "TimeOrDateTimeDelta",

@@ -23,7 +23,22 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.constants import DAY, MICROSECOND, MINUTE, MONTH, SECOND, ZERO_DAYS
+from utilities.constants import (
+    DATE_TIME_DELTA_MAX,
+    DATE_TIME_DELTA_MIN,
+    DAY,
+    MICROSECOND,
+    MINUTE,
+    MONTH,
+    NOW_UTC,
+    SECOND,
+    TIME_DELTA_MAX,
+    TIME_DELTA_MIN,
+    TODAY_LOCAL,
+    TODAY_UTC,
+    UTC,
+    ZERO_DAYS,
+)
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -43,28 +58,11 @@ from utilities.hypothesis import (
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import TIME_ZONES, MaybeCallableTimeLike
 from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
-from utilities.tzlocal import LOCAL_TIME_ZONE_NAME
 from utilities.whenever import (
-    DATE_DELTA_MAX,
-    DATE_DELTA_MIN,
     DATE_DELTA_PARSABLE_MAX,
     DATE_DELTA_PARSABLE_MIN,
-    DATE_TIME_DELTA_MAX,
-    DATE_TIME_DELTA_MIN,
     DATE_TIME_DELTA_PARSABLE_MAX,
     DATE_TIME_DELTA_PARSABLE_MIN,
-    NOW_LOCAL,
-    NOW_LOCAL_PLAIN,
-    NOW_PLAIN,
-    NOW_UTC,
-    TIME_DELTA_MAX,
-    TIME_DELTA_MIN,
-    TIME_LOCAL,
-    TIME_UTC,
-    TODAY_LOCAL,
-    TODAY_UTC,
-    ZONED_DATE_TIME_MAX,
-    ZONED_DATE_TIME_MIN,
     DatePeriod,
     DatePeriodError,
     MeanDateTimeError,
@@ -145,7 +143,6 @@ from utilities.whenever import (
     to_zoned_date_time,
     two_digit_year_month,
 )
-from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -428,11 +425,6 @@ class TestGetNow:
         assert isinstance(now, ZonedDateTime)
         assert now.tz == time_zone.key
 
-    def test_constant(self) -> None:
-        assert isinstance(NOW_UTC, ZonedDateTime)
-        expected = UTC.key
-        assert NOW_UTC.tz == expected
-
 
 class TestGetNowLocal:
     def test_function(self) -> None:
@@ -442,18 +434,11 @@ class TestGetNowLocal:
         time_zones = {ETC, HongKong, Tokyo, UTC}
         assert any(now.tz == time_zone.key for time_zone in time_zones)
 
-    def test_constant(self) -> None:
-        assert isinstance(NOW_LOCAL, ZonedDateTime)
-        assert NOW_LOCAL.tz == LOCAL_TIME_ZONE_NAME
-
 
 class TestGetNowLocalPlain:
     def test_function(self) -> None:
         now = get_now_local_plain()
         assert isinstance(now, PlainDateTime)
-
-    def test_constant(self) -> None:
-        assert isinstance(NOW_LOCAL_PLAIN, PlainDateTime)
 
 
 class TestGetNowPlain:
@@ -462,9 +447,6 @@ class TestGetNowPlain:
         now = get_now_plain(time_zone)
         assert isinstance(now, PlainDateTime)
 
-    def test_constant(self) -> None:
-        assert isinstance(NOW_PLAIN, PlainDateTime)
-
 
 class TestGetTime:
     @given(time_zone=zone_infos())
@@ -472,17 +454,11 @@ class TestGetTime:
         now = get_time(time_zone)
         assert isinstance(now, Time)
 
-    def test_constant(self) -> None:
-        assert isinstance(TIME_UTC, Time)
-
 
 class TestGetTimeLocal:
     def test_function(self) -> None:
         now = get_time_local()
         assert isinstance(now, Time)
-
-    def test_constant(self) -> None:
-        assert isinstance(TIME_LOCAL, Time)
 
 
 class TestGetToday:
@@ -490,17 +466,11 @@ class TestGetToday:
         today = get_today()
         assert isinstance(today, Date)
 
-    def test_constant(self) -> None:
-        assert isinstance(TODAY_UTC, Date)
-
 
 class TestGetTodayLocal:
     def test_function(self) -> None:
         today = get_today_local()
         assert isinstance(today, Date)
-
-    def test_constant(self) -> None:
-        assert isinstance(TODAY_LOCAL, Date)
 
 
 class TestIsWeekend:
@@ -664,14 +634,6 @@ class TestMeanDateTime:
 
 
 class TestMinMax:
-    def test_date_delta_min(self) -> None:
-        with raises(ValueError, match=r"Addition result out of bounds"):
-            _ = DATE_DELTA_MIN - DateDelta(days=1)
-
-    def test_date_delta_max(self) -> None:
-        with raises(ValueError, match=r"Addition result out of bounds"):
-            _ = DATE_DELTA_MAX + DateDelta(days=1)
-
     def test_date_delta_parsable_min(self) -> None:
         self._format_parse_date_delta(DATE_DELTA_PARSABLE_MIN)
         with raises(ValueError, match=r"Invalid format: '.*'"):
@@ -721,14 +683,6 @@ class TestMinMax:
         nanos = TIME_DELTA_MAX.in_nanoseconds()
         with raises(ValueError, match=r"TimeDelta out of range"):
             _ = to_time_delta(nanos + 1)
-
-    def test_zoned_date_time_min(self) -> None:
-        with raises(ValueError, match=r"Instant is out of range"):
-            _ = ZONED_DATE_TIME_MIN.subtract(nanoseconds=1)
-
-    def test_zoned_date_time_max(self) -> None:
-        with raises(ValueError, match=r"Instant is out of range"):
-            _ = ZONED_DATE_TIME_MAX.add(microseconds=1)
 
     def _format_parse_date_delta(self, delta: DateDelta, /) -> None:
         _ = DateDelta.parse_iso(delta.format_iso())

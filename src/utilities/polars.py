@@ -54,6 +54,7 @@ from polars.testing import assert_frame_equal, assert_series_equal
 from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 import utilities.math
+from utilities.constants import UTC
 from utilities.dataclasses import yield_fields
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
@@ -101,7 +102,7 @@ from utilities.whenever import (
     ZonedDateTimePeriod,
     to_py_time_delta,
 )
-from utilities.zoneinfo import UTC, to_time_zone_name
+from utilities.zoneinfo import to_time_zone_name
 
 if TYPE_CHECKING:
     import datetime as dt

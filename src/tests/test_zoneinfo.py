@@ -8,11 +8,10 @@ from hypothesis import given
 from hypothesis.strategies import DataObject, data, datetimes, just, sampled_from
 from pytest import mark, param, raises
 
+from utilities.constants import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME, UTC
 from utilities.hypothesis import zone_infos, zoned_date_times
 from utilities.tzdata import HongKong, Tokyo
-from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
 from utilities.zoneinfo import (
-    UTC,
     _ToTimeZoneNameInvalidKeyError,
     _ToTimeZoneNameInvalidTZInfoError,
     _ToTimeZoneNamePlainDateTimeError,

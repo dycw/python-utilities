@@ -37,6 +37,7 @@ from whenever import (
 )
 
 from utilities.concurrent import concurrent_map
+from utilities.constants import LOCAL_TIME_ZONE, MAX_INT64, MIN_INT64
 from utilities.dataclasses import dataclass_to_dict
 from utilities.functions import ensure_class
 from utilities.gzip import read_binary
@@ -49,10 +50,8 @@ from utilities.iterables import (
 )
 from utilities.json import write_formatted_json
 from utilities.logging import get_logging_level_number
-from utilities.math import MAX_INT64, MIN_INT64
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
 from utilities.typing import is_str_mapping
-from utilities.tzlocal import LOCAL_TIME_ZONE
 from utilities.version import Version, parse_version
 from utilities.whenever import (
     DatePeriod,

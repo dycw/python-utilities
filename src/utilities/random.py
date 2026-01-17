@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from random import Random, SystemRandom
+from random import Random
 from typing import TYPE_CHECKING
 
 from utilities.functools import cache
@@ -9,12 +9,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from utilities.types import Seed
-
-
-SYSTEM_RANDOM = SystemRandom()
-
-
-##
 
 
 def bernoulli(*, true: float = 0.5, seed: Seed | None = None) -> bool:
@@ -66,4 +60,4 @@ def shuffle[T](iterable: Iterable[T], /, *, seed: Seed | None = None) -> list[T]
     return copy
 
 
-__all__ = ["SYSTEM_RANDOM", "bernoulli", "get_docker_name", "get_state", "shuffle"]
+__all__ = ["bernoulli", "get_docker_name", "get_state", "shuffle"]

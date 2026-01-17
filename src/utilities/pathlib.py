@@ -22,9 +22,6 @@ if TYPE_CHECKING:
     from utilities.types import FileOrDir, MaybeCallablePathLike, PathLike
 
 
-PWD = Path.cwd()
-
-
 def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
     """Ensure a path has a given suffix."""
     path = Path(path)
@@ -378,7 +375,6 @@ def to_path(
 
 
 __all__ = [
-    "PWD",
     "FileOrDirError",
     "GetPackageRootError",
     "GetRepoRootError",

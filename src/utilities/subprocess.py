@@ -20,13 +20,13 @@ from utilities.atomicwrites import (
     copy,
     move,
 )
-from utilities.constants import SECOND
+from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
 from utilities.iterables import always_iterable
 from utilities.logging import to_logger
-from utilities.pathlib import PWD, file_or_dir
+from utilities.pathlib import file_or_dir
 from utilities.permissions import Permissions, ensure_perms
 from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
@@ -55,7 +55,7 @@ BASH_LS = ["bash", "-ls"]
 CHPASSWD = "chpasswd"
 GIT_BRANCH_SHOW_CURRENT = ["git", "branch", "--show-current"]
 ISOLATED = "--isolated"
-KNOWN_HOSTS = Path.home() / ".ssh/known_hosts"
+KNOWN_HOSTS = HOME / ".ssh/known_hosts"
 MANAGED_PYTHON = "--managed-python"
 MKTEMP_DIR_CMD = ["mktemp", "-d"]
 PRERELEASE_DISALLOW = ["--prerelease", "disallow"]

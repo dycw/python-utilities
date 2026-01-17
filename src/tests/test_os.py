@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from os import getenv
-from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -16,37 +15,20 @@ from pytest import mark, param, raises
 
 from utilities.hypothesis import text_ascii
 from utilities.os import (
-    CPU_COUNT,
-    EFFECTIVE_GROUP_ID,
-    EFFECTIVE_USER_ID,
     GetCPUUseError,
     GetEnvVarError,
-    get_cpu_count,
     get_cpu_use,
-    get_effective_group_id,
-    get_effective_user_id,
     get_env_var,
     is_debug,
     is_pytest,
     temp_environ,
 )
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
 text = text_ascii(min_size=1, max_size=10)
 
 
 def _prefix(text: str, /) -> str:
     return f"_TEST_OS_{text}"
-
-
-class TestGetCPUCount:
-    def test_function(self) -> None:
-        assert isinstance(get_cpu_count(), int)
-
-    def test_constant(self) -> None:
-        assert isinstance(CPU_COUNT, int)
 
 
 class TestGetCPUUse:
@@ -64,22 +46,6 @@ class TestGetCPUUse:
     def test_error(self, *, n: int) -> None:
         with raises(GetCPUUseError, match=r"Invalid number of CPUs to use: -?\d+"):
             _ = get_cpu_use(n=n)
-
-
-class TestGetEffectiveIDs:
-    @mark.parametrize(
-        "func", [param(get_effective_user_id), param(get_effective_group_id)]
-    )
-    def test_function(self, *, func: Callable[[], int | None]) -> None:
-        id_ = func()
-        assert isinstance(id_, int) or (id_ is None)
-
-    @mark.parametrize(
-        "id_",
-        [param(EFFECTIVE_USER_ID, id="user"), param(EFFECTIVE_GROUP_ID, id="group")],
-    )
-    def test_constant(self, *, id_: int | None) -> None:
-        assert isinstance(id_, int) or (id_ is None)
 
 
 class TestGetEnvVar:

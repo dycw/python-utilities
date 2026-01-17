@@ -32,13 +32,14 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.constants import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME, UTC, _get_now
+from utilities.constants import _get_now_local as get_now_local
 from utilities.dataclasses import replace_non_sentinel
 from utilities.functions import get_class_name
 from utilities.math import sign
 from utilities.platform import get_strftime
 from utilities.sentinel import Sentinel, sentinel
-from utilities.tzlocal import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME
-from utilities.zoneinfo import UTC, to_time_zone_name
+from utilities.zoneinfo import to_time_zone_name
 
 if TYPE_CHECKING:
     from utilities.types import (
@@ -51,10 +52,6 @@ if TYPE_CHECKING:
         TimeOrDateTimeDelta,
         TimeZoneLike,
     )
-
-
-ZONED_DATE_TIME_MIN = PlainDateTime.MIN.assume_tz(UTC.key)
-ZONED_DATE_TIME_MAX = PlainDateTime.MAX.assume_tz(UTC.key)
 
 
 DATE_TIME_DELTA_MIN = DateTimeDelta(
@@ -77,10 +74,6 @@ DATE_TIME_DELTA_MAX = DateTimeDelta(
     microseconds=999,
     nanoseconds=999,
 )
-DATE_DELTA_MIN = DATE_TIME_DELTA_MIN.date_part()
-DATE_DELTA_MAX = DATE_TIME_DELTA_MAX.date_part()
-TIME_DELTA_MIN = TimeDelta(hours=-87831216)
-TIME_DELTA_MAX = TimeDelta(hours=87831216)
 
 
 DATE_TIME_DELTA_PARSABLE_MIN = DateTimeDelta(
@@ -343,18 +336,7 @@ def from_timestamp_nanos(i: int, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDa
 
 def get_now(time_zone: TimeZoneLike = UTC, /) -> ZonedDateTime:
     """Get the current zoned date-time."""
-    return ZonedDateTime.now(to_time_zone_name(time_zone))
-
-
-NOW_UTC = get_now(UTC)
-
-
-def get_now_local() -> ZonedDateTime:
-    """Get the current zoned date-time in the local time-zone."""
-    return get_now(LOCAL_TIME_ZONE)
-
-
-NOW_LOCAL = get_now_local()
+    return _get_now(to_time_zone_name(time_zone))
 
 
 def get_now_plain(time_zone: TimeZoneLike = UTC, /) -> PlainDateTime:
@@ -362,15 +344,9 @@ def get_now_plain(time_zone: TimeZoneLike = UTC, /) -> PlainDateTime:
     return get_now(time_zone).to_plain()
 
 
-NOW_PLAIN = get_now_plain()
-
-
 def get_now_local_plain() -> PlainDateTime:
     """Get the current plain date-time in the local time-zone."""
     return get_now_local().to_plain()
-
-
-NOW_LOCAL_PLAIN = get_now_local_plain()
 
 
 ##
@@ -381,15 +357,9 @@ def get_time(time_zone: TimeZoneLike = UTC, /) -> Time:
     return get_now(time_zone).time()
 
 
-TIME_UTC = get_time(UTC)
-
-
 def get_time_local() -> Time:
     """Get the current time in the local time-zone."""
     return get_time(LOCAL_TIME_ZONE)
-
-
-TIME_LOCAL = get_time_local()
 
 
 ##
@@ -400,15 +370,9 @@ def get_today(time_zone: TimeZoneLike = UTC, /) -> Date:
     return get_now(time_zone).date()
 
 
-TODAY_UTC = get_today(UTC)
-
-
 def get_today_local() -> Date:
     """Get the current, timezone-aware local date."""
     return get_today(LOCAL_TIME_ZONE)
-
-
-TODAY_LOCAL = get_today_local()
 
 
 ##
@@ -1978,27 +1942,12 @@ class _ZonedDateTimePeriodExactEqError(ZonedDateTimePeriodError):
 
 
 __all__ = [
-    "DATE_DELTA_MAX",
-    "DATE_DELTA_MIN",
     "DATE_DELTA_PARSABLE_MAX",
     "DATE_DELTA_PARSABLE_MIN",
-    "DATE_TIME_DELTA_MAX",
-    "DATE_TIME_DELTA_MIN",
     "DATE_TIME_DELTA_PARSABLE_MAX",
     "DATE_TIME_DELTA_PARSABLE_MIN",
     "DATE_TWO_DIGIT_YEAR_MAX",
     "DATE_TWO_DIGIT_YEAR_MIN",
-    "NOW_LOCAL",
-    "NOW_LOCAL_PLAIN",
-    "NOW_PLAIN",
-    "TIME_DELTA_MAX",
-    "TIME_DELTA_MIN",
-    "TIME_LOCAL",
-    "TIME_UTC",
-    "TODAY_LOCAL",
-    "TODAY_UTC",
-    "ZONED_DATE_TIME_MAX",
-    "ZONED_DATE_TIME_MIN",
     "DatePeriod",
     "DatePeriodError",
     "MeanDateTimeError",

@@ -10,7 +10,15 @@ from re import sub
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, NoReturn, assert_never, cast, override
 
-from utilities.constants import SECOND
+from utilities.constants import (
+    IS_CI,
+    IS_CI_AND_NOT_LINUX,
+    IS_LINUX,
+    IS_MAC,
+    IS_NOT_LINUX,
+    IS_NOT_MAC,
+    SECOND,
+)
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
 from utilities.pathlib import (
@@ -20,7 +28,6 @@ from utilities.pathlib import (
     get_tail,
     module_path,
 )
-from utilities.platform import IS_LINUX, IS_MAC, IS_NOT_LINUX, IS_NOT_MAC
 from utilities.random import bernoulli
 from utilities.text import to_bool
 from utilities.throttle import throttle
@@ -41,10 +48,6 @@ if TYPE_CHECKING:
     from _pytest.python import Function
 
     from utilities.types import PathLike
-
-
-IS_CI = "CI" in environ
-IS_CI_AND_NOT_LINUX = IS_CI and IS_NOT_LINUX
 
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports

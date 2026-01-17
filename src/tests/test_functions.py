@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from functools import cache, cached_property, lru_cache, partial, wraps
 from itertools import chain
 from operator import neg
-from pathlib import Path
 from subprocess import check_output
 from sys import executable
 from types import NoneType
@@ -26,7 +25,7 @@ from hypothesis.strategies import (
 )
 from pytest import approx, mark, param, raises
 
-from utilities.constants import MILLISECOND, SECOND, ZERO_TIME
+from utilities.constants import HOME, MILLISECOND, NOW_UTC, SECOND, ZERO_TIME
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     EnsureBoolError,
@@ -84,7 +83,7 @@ from utilities.functions import (
 )
 from utilities.sentinel import sentinel
 from utilities.text import parse_bool, strip_and_dedent
-from utilities.whenever import NOW_UTC, get_now, get_today
+from utilities.whenever import get_now, get_today
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -296,7 +295,7 @@ class TestEnsureNumber:
 
 
 class TestEnsurePath:
-    @given(case=sampled_from([(Path.home(), False), (Path.home(), True), (None, True)]))
+    @given(case=sampled_from([(HOME, False), (HOME, True), (None, True)]))
     def test_main(self, *, case: tuple[int | None, bool]) -> None:
         obj, nullable = case
         _ = ensure_path(obj, nullable=nullable)

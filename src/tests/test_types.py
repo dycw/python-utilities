@@ -8,7 +8,7 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from
 from pytest import mark, param
 
-from utilities.platform import SYSTEM
+from utilities.constants import HOME, SYSTEM
 from utilities.types import TIME_ZONES, Dataclass, Number, PathLike
 
 
@@ -34,7 +34,7 @@ class TestNumber:
 
 
 class TestPathLike:
-    @mark.parametrize("path", [param(Path.home()), param("~")])
+    @mark.parametrize("path", [param(HOME), param("~")])
     def test_main(self, *, path: PathLike) -> None:
         assert isinstance(path, Path | str)
 
