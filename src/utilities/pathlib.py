@@ -19,7 +19,7 @@ from utilities.pwd import get_uid_name
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
-    from utilities.types import FileOrDir, MaybeCallablePathLike, PathLike
+    from utilities.types import MaybeCallablePathLike, PathLike
 
 
 def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
@@ -46,48 +46,6 @@ def expand_path(path: PathLike, /) -> Path:
     path = str(path)
     path = expandvars(path)
     return Path(path).expanduser()
-
-
-##
-
-
-@overload
-def file_or_dir(path: PathLike, /, *, exists: Literal[True]) -> FileOrDir: ...
-@overload
-def file_or_dir(path: PathLike, /, *, exists: bool = False) -> FileOrDir | None: ...
-def file_or_dir(path: PathLike, /, *, exists: bool = False) -> FileOrDir | None:
-    """Classify a path as a file, directory or non-existent."""
-    path = Path(path)
-    match path.exists(), path.is_file(), path.is_dir(), exists:
-        case True, True, False, _:
-            return "file"
-        case True, False, True, _:
-            return "dir"
-        case False, False, False, True:
-            raise _FileOrDirMissingError(path=path)
-        case False, False, False, False:
-            return None
-        case _:
-            raise _FileOrDirTypeError(path=path)
-
-
-@dataclass(kw_only=True, slots=True)
-class FileOrDirError(Exception):
-    path: Path
-
-
-@dataclass(kw_only=True, slots=True)
-class _FileOrDirMissingError(FileOrDirError):
-    @override
-    def __str__(self) -> str:
-        return f"Path does not exist: {str(self.path)!r}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _FileOrDirTypeError(FileOrDirError):
-    @override
-    def __str__(self) -> str:
-        return f"Path is neither a file nor a directory: {str(self.path)!r}"
 
 
 ##
@@ -375,13 +333,11 @@ def to_path(
 
 
 __all__ = [
-    "FileOrDirError",
     "GetPackageRootError",
     "GetRepoRootError",
     "GetTailError",
     "ensure_suffix",
     "expand_path",
-    "file_or_dir",
     "get_file_group",
     "get_file_owner",
     "get_package_root",
