@@ -1745,6 +1745,14 @@ def uv_index_cmd(*, index: MaybeSequenceStr | None = None) -> list[str]:
 ##
 
 
+def uv_pip_list_cmd(*, index: MaybeSequenceStr | None = None) -> list[str]:
+    """Generate the `--index` command if necessary."""
+    return [] if index is None else ["--index", ",".join(always_iterable(index))]
+
+
+##
+
+
 def uv_native_tls_cmd(*, native_tls: bool = False) -> list[str]:
     """Generate the `--native-tls` command if necessary."""
     return ["--native-tls"] if native_tls else []
