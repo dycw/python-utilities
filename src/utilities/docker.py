@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal, overload
 
 from utilities.contextlib import enhanced_context_manager
+from utilities.core import always_iterable
 from utilities.errors import ImpossibleCaseError
-from utilities.iterables import always_iterable
 from utilities.logging import to_logger
 from utilities.subprocess import (
     MKTEMP_DIR_CMD,

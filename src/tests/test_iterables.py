@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
-    binary,
     booleans,
     data,
     dictionaries,
@@ -26,7 +25,6 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
     sets,
-    text,
     tuples,
 )
 from pytest import mark, param, raises
@@ -50,8 +48,6 @@ from utilities.iterables import (
     EnsureIterableNotStrError,
     MergeStrMappingsError,
     OneEmptyError,
-    OneMaybeEmptyError,
-    OneMaybeNonUniqueError,
     OneNonUniqueError,
     OneStrEmptyError,
     OneStrNonUniqueError,
@@ -67,12 +63,10 @@ from utilities.iterables import (
     _RangePartitionsStopError,
     _RangePartitionsTotalError,
     _sort_iterable_cmp_floats,
-    always_iterable,
     apply_bijection,
     apply_to_tuple,
     apply_to_varargs,
     chain_mappings,
-    chain_maybe_iterables,
     chain_nullable,
     check_bijection,
     check_duplicates,
@@ -103,7 +97,6 @@ from utilities.iterables import (
     merge_sets,
     merge_str_mappings,
     one,
-    one_maybe,
     one_str,
     one_unique,
     pairwise_tail,
@@ -120,46 +113,9 @@ from utilities.iterables import (
 from utilities.typing import is_sequence_of
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Mapping, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
 
-    from utilities.types import MaybeIterable, StrMapping
-
-
-class TestAlwaysIterable:
-    @given(x=binary())
-    def test_bytes(self, *, x: bytes) -> None:
-        assert list(always_iterable(x)) == [x]
-
-    @given(x=dictionaries(text(), integers()))
-    def test_dict(self, *, x: dict[str, int]) -> None:
-        assert list(always_iterable(x)) == list(x)
-
-    @given(x=integers())
-    def test_integer(self, *, x: int) -> None:
-        assert list(always_iterable(x)) == [x]
-
-    @given(x=lists(binary()))
-    def test_list_of_bytes(self, *, x: list[bytes]) -> None:
-        assert list(always_iterable(x)) == x
-
-    @given(x=text())
-    def test_string(self, *, x: str) -> None:
-        assert list(always_iterable(x)) == [x]
-
-    @given(x=lists(integers()))
-    def test_list_of_integers(self, *, x: list[int]) -> None:
-        assert list(always_iterable(x)) == x
-
-    @given(x=lists(text()))
-    def test_list_of_strings(self, *, x: list[str]) -> None:
-        assert list(always_iterable(x)) == x
-
-    def test_generator(self) -> None:
-        def yield_ints() -> Iterator[int]:
-            yield 0
-            yield 1
-
-        assert list(always_iterable(yield_ints())) == [0, 1]
+    from utilities.types import StrMapping
 
 
 class TestApplyBijection:
@@ -218,19 +174,6 @@ class TestChainMappings:
             assert result == expected
         else:
             assert set(result) == set(expected)
-
-
-class TestChainMaybeIterables:
-    @given(values=lists(integers() | lists(integers())))
-    def test_main(self, *, values: list[int | list[int]]) -> None:
-        result = list(chain_maybe_iterables(*values))
-        expected = []
-        for val in values:
-            if isinstance(val, int):
-                expected.append(val)
-            else:
-                expected.extend(v for v in val)
-        assert result == expected
 
 
 class TestChainNullable:
@@ -906,38 +849,6 @@ class TestOne:
             ),
         ):
             _ = one(iterable)
-
-
-class TestOneMaybe:
-    @mark.parametrize(
-        "args",
-        [
-            param((None,)),
-            param(([None],)),
-            param((None, [])),
-            param(([None], [])),
-            param((None, [], [])),
-            param(([None], [], [])),
-        ],
-    )
-    def test_main(self, *, args: tuple[MaybeIterable[Any], ...]) -> None:
-        assert one_maybe(*args) is None
-
-    @mark.parametrize("args", [param([]), param(([], [])), param(([], [], []))])
-    def test_error_empty(self, *, args: tuple[MaybeIterable[Any], ...]) -> None:
-        with raises(OneMaybeEmptyError, match=r"Object\(s\) must not be empty"):
-            _ = one_maybe(*args)
-
-    @given(iterable=sets(integers(), min_size=2))
-    def test_error_non_unique(self, *, iterable: set[int]) -> None:
-        with raises(
-            OneMaybeNonUniqueError,
-            match=re.compile(
-                r"Object\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
-                flags=DOTALL,
-            ),
-        ):
-            _ = one_maybe(iterable)
 
 
 class TestOneStr:

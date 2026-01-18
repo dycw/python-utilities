@@ -37,10 +37,11 @@ from whenever import ZonedDateTime
 
 from utilities.atomicwrites import move_many
 from utilities.constants import SECOND, Sentinel, sentinel
+from utilities.core import always_iterable
 from utilities.dataclasses import replace_non_sentinel
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_seconds
-from utilities.iterables import OneEmptyError, always_iterable, one
+from utilities.iterables import OneEmptyError, one
 from utilities.pathlib import ensure_suffix, to_path
 from utilities.re import (
     ExtractGroupError,

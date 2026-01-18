@@ -12,8 +12,8 @@ from redis.asyncio import Redis
 import utilities.asyncio
 from utilities.constants import MILLISECOND, SECOND
 from utilities.contextlib import enhanced_async_context_manager
+from utilities.core import always_iterable
 from utilities.functions import in_seconds
-from utilities.iterables import always_iterable
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterable

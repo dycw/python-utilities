@@ -16,8 +16,8 @@ from pydantic_settings import (
 )
 from pydantic_settings.sources import DEFAULT_PATH
 
+from utilities.core import always_iterable
 from utilities.errors import ImpossibleCaseError
-from utilities.iterables import always_iterable
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
