@@ -28,7 +28,7 @@ from utilities.iterables import OneEmptyError, one
 from utilities.pathlib import module_path, to_path
 from utilities.reprlib import yield_mapping_repr
 from utilities.text import to_bool
-from utilities.version import to_version
+from utilities.version import to_version3
 from utilities.whenever import (
     format_compact,
     get_now,
@@ -48,7 +48,7 @@ if TYPE_CHECKING:
         MaybeCallableZonedDateTimeLike,
         PathLike,
     )
-    from utilities.version import MaybeCallableVersionLike
+    from utilities.version import MaybeCallableVersion3Like
 
 
 ##
@@ -60,7 +60,7 @@ def format_exception_stack(
     *,
     header: bool = False,
     start: MaybeCallableZonedDateTimeLike = get_now,
-    version: MaybeCallableVersionLike | None = None,
+    version: MaybeCallableVersion3Like | None = None,
     capture_locals: bool = False,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
@@ -91,7 +91,7 @@ def format_exception_stack(
 def _yield_header_lines(
     *,
     start: MaybeCallableZonedDateTimeLike = get_now,
-    version: MaybeCallableVersionLike | None = None,
+    version: MaybeCallableVersion3Like | None = None,
 ) -> Iterator[str]:
     """Yield the header lines."""
     now = get_now_local()
@@ -102,7 +102,7 @@ def _yield_header_lines(
     yield f"User       | {getuser()}"
     yield f"Host       | {gethostname()}"
     yield f"Process ID | {getpid()}"
-    version_use = "" if version is None else to_version(version)
+    version_use = "" if version is None else to_version3(version)
     yield f"Version    | {version_use}"
     yield ""
 
@@ -197,7 +197,7 @@ def _trim_path(path: PathLike, pattern: str, /) -> Path | None:
 def make_except_hook(
     *,
     start: MaybeCallableZonedDateTimeLike = get_now,
-    version: MaybeCallableVersionLike | None = None,
+    version: MaybeCallableVersion3Like | None = None,
     path: MaybeCallablePathLike | None = None,
     path_max_age: Delta | None = None,
     max_width: int = RICH_MAX_WIDTH,
@@ -236,7 +236,7 @@ def _make_except_hook_inner(
     /,
     *,
     start: MaybeCallableZonedDateTimeLike = get_now,
-    version: MaybeCallableVersionLike | None = None,
+    version: MaybeCallableVersion3Like | None = None,
     path: MaybeCallablePathLike | None = None,
     path_max_age: Delta | None = None,
     max_width: int = RICH_MAX_WIDTH,

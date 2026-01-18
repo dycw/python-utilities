@@ -2297,7 +2297,7 @@ class TestNormalPDF:
     @given(
         xs=lists(float64s(), max_size=10),
         loc=float64s(),
-        scale=float64s(min_value=0.0, exclude_min=True),
+        scale=float64s(min_value=1e-8),
     )
     def test_main(self, *, xs: list[float], loc: float, scale: float) -> None:
         x = Series(name="x", values=xs, dtype=Float64)

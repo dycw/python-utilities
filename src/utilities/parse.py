@@ -55,7 +55,12 @@ from utilities.typing import (
     is_tuple_type,
     is_union_type,
 )
-from utilities.version import ParseVersionError, Version, parse_version
+from utilities.version import (
+    Version2,
+    Version3,
+    _Version2ParseError,
+    _Version3ParseError,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -217,10 +222,15 @@ def _parse_object_type(
             return Sentinel.parse(text)
         except SentinelParseError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
-    if issubclass(cls, Version):
+    if issubclass(cls, Version2):
         try:
-            return parse_version(text)
-        except ParseVersionError:
+            return Version2.parse(text)
+        except _Version2ParseError:
+            raise _ParseObjectParseError(type_=cls, text=text) from None
+    if issubclass(cls, Version3):
+        try:
+            return Version3.parse(text)
+        except _Version3ParseError:
             raise _ParseObjectParseError(type_=cls, text=text) from None
     raise _ParseObjectParseError(type_=cls, text=text)
 
@@ -463,7 +473,8 @@ def serialize_object(
         | IPv6Address
         | Path
         | Sentinel
-        | Version,
+        | Version2
+        | Version3,
     ):
         return str(obj)
     if isinstance(

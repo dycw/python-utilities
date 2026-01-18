@@ -118,7 +118,8 @@ from utilities.hypothesis import (
     uint32s,
     uint64s,
     urls,
-    versions,
+    version2s,
+    version3s,
     year_months,
     zone_infos,
     zoned_date_time_periods,
@@ -127,7 +128,7 @@ from utilities.hypothesis import (
 from utilities.iterables import one
 from utilities.libcst import parse_import
 from utilities.platform import maybe_lower_case
-from utilities.version import Version
+from utilities.version import Version2, Version3
 from utilities.whenever import (
     DATE_TWO_DIGIT_YEAR_MAX,
     DATE_TWO_DIGIT_YEAR_MIN,
@@ -1223,11 +1224,22 @@ class TestURLs:
             assert url.database is not None
 
 
-class TestVersions:
+class TestVersion2s:
     @given(data=data(), suffix=booleans())
     def test_main(self, *, data: DataObject, suffix: bool) -> None:
-        version = data.draw(versions(suffix=suffix))
-        assert isinstance(version, Version)
+        version = data.draw(version2s(suffix=suffix))
+        assert isinstance(version, Version2)
+        if suffix:
+            assert version.suffix is not None
+        else:
+            assert version.suffix is None
+
+
+class TestVersion3s:
+    @given(data=data(), suffix=booleans())
+    def test_main(self, *, data: DataObject, suffix: bool) -> None:
+        version = data.draw(version3s(suffix=suffix))
+        assert isinstance(version, Version3)
         if suffix:
             assert version.suffix is not None
         else:

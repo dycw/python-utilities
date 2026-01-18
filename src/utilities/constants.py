@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from getpass import getuser
 from logging import getLogger
@@ -7,7 +8,7 @@ from os import cpu_count, environ
 from pathlib import Path
 from platform import system
 from random import SystemRandom
-from re import IGNORECASE, search
+from re import IGNORECASE
 from socket import gethostname
 from tempfile import gettempdir
 from typing import TYPE_CHECKING, Any, assert_never, cast, override
@@ -226,6 +227,7 @@ class _Meta(type):
         return cls.instance
 
 
+_SENTINEL_PATTERN = re.compile("^(|sentinel|<sentinel>)$", flags=IGNORECASE)
 _SENTINEL_REPR = "<sentinel>"
 
 
@@ -242,8 +244,8 @@ class Sentinel(metaclass=_Meta):
 
     @classmethod
     def parse(cls, text: str, /) -> Sentinel:
-        """Parse text into the Sentinel value."""
-        if search("^(|sentinel|<sentinel>)$", text, flags=IGNORECASE):
+        """Parse a string into the Sentinel value."""
+        if _SENTINEL_PATTERN.search(text):
             return sentinel
         raise SentinelParseError(text=text)
 

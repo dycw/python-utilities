@@ -52,7 +52,7 @@ from utilities.json import write_formatted_json
 from utilities.logging import get_logging_level_number
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
 from utilities.typing import is_str_mapping
-from utilities.version import Version, parse_version
+from utilities.version import Version2, Version3
 from utilities.whenever import (
     DatePeriod,
     TimePeriod,
@@ -98,7 +98,8 @@ class _Prefixes(StrEnum):
     tuple_ = "tu"
     unserializable = "un"
     uuid = "uu"
-    version = "v"
+    version2 = "v2"
+    version3 = "v3"
     year_month = "ym"
     zoned_date_time = "zd"
     zoned_date_time_period = "zp"
@@ -212,8 +213,10 @@ def _pre_process(
             return f"[{_Prefixes.exception_class.value}|{error_cls.__qualname__}]"
         case UUID() as uuid:
             return f"[{_Prefixes.uuid.value}]{uuid}"
-        case Version() as version:
-            return f"[{_Prefixes.version.value}]{version}"
+        case Version2() as version:
+            return f"[{_Prefixes.version2.value}]{version}"
+        case Version3() as version:
+            return f"[{_Prefixes.version3.value}]{version}"
         case YearMonth() as year_month:
             return f"[{_Prefixes.year_month.value}]{year_month}"
         case ZonedDateTime() as date_time:
@@ -408,7 +411,8 @@ class DeerializeError(Exception):
     _TIME_DELTA_PATTERN,
     _TIME_PERIOD_PATTERN,
     _UUID_PATTERN,
-    _VERSION_PATTERN,
+    _VERSION2_PATTERN,
+    _VERSION3_PATTERN,
     _YEAR_MONTH_PATTERN,
     _ZONED_DATE_TIME_PATTERN,
     _ZONED_DATE_TIME_PERIOD_PATTERN,
@@ -432,7 +436,8 @@ class DeerializeError(Exception):
         _Prefixes.time_delta,
         _Prefixes.time_period,
         _Prefixes.uuid,
-        _Prefixes.version,
+        _Prefixes.version2,
+        _Prefixes.version3,
         _Prefixes.year_month,
         _Prefixes.zoned_date_time,
         _Prefixes.zoned_date_time_period,
@@ -513,8 +518,10 @@ def _object_hook(
                 return TimePeriod(start, end)
             if match := _UUID_PATTERN.search(text):
                 return UUID(match.group(1))
-            if match := _VERSION_PATTERN.search(text):
-                return parse_version(match.group(1))
+            if match := _VERSION2_PATTERN.search(text):
+                return Version2.parse(match.group(1))
+            if match := _VERSION3_PATTERN.search(text):
+                return Version3.parse(match.group(1))
             if match := _YEAR_MONTH_PATTERN.search(text):
                 return YearMonth.parse_iso(match.group(1))
             if match := _ZONED_DATE_TIME_PATTERN.search(text):

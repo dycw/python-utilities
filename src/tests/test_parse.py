@@ -55,7 +55,8 @@ from utilities.hypothesis import (
     text_ascii,
     time_deltas,
     times,
-    versions,
+    version2s,
+    version3s,
     year_months,
     zoned_date_times,
 )
@@ -70,7 +71,7 @@ from utilities.parse import (
 )
 from utilities.text import parse_bool
 from utilities.types import Number
-from utilities.version import Version
+from utilities.version import Version2, Version3
 
 
 class TestSerializeAndParseObject:
@@ -312,10 +313,16 @@ class TestSerializeAndParseObject:
                 raise ImpossibleCaseError(case=[f"{int_=}"])
         assert result == expected
 
-    @given(version=versions())
-    def test_version(self, *, version: Version) -> None:
+    @given(version=version2s())
+    def test_version2(self, *, version: Version2) -> None:
         serialized = serialize_object(version)
-        result = parse_object(Version, serialized)
+        result = parse_object(Version2, serialized)
+        assert result == version
+
+    @given(version=version3s())
+    def test_version3(self, *, version: Version3) -> None:
+        serialized = serialize_object(version)
+        result = parse_object(Version3, serialized)
         assert result == version
 
     @given(year_month=year_months())
@@ -631,12 +638,19 @@ class TestParseObject:
         ):
             _ = parse_object(DataClassFutureIntEvenOrOddUnion, "invalid")
 
-    def test_error_version(self) -> None:
+    def test_error_version2(self) -> None:
         with raises(
             _ParseObjectParseError,
-            match=r"Unable to parse <class 'utilities\.version\.Version'>; got 'invalid'",
+            match=r"Unable to parse <class 'utilities\.version\.Version2'>; got 'invalid'",
         ):
-            _ = parse_object(Version, "invalid")
+            _ = parse_object(Version2, "invalid")
+
+    def test_error_version3(self) -> None:
+        with raises(
+            _ParseObjectParseError,
+            match=r"Unable to parse <class 'utilities\.version\.Version3'>; got 'invalid'",
+        ):
+            _ = parse_object(Version3, "invalid")
 
     def test_error_year_month(self) -> None:
         with raises(

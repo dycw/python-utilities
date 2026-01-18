@@ -9,16 +9,139 @@ from typing import Any, Self, assert_never, overload, override
 from utilities.constants import Sentinel
 from utilities.types import MaybeCallable, MaybeStr
 
-type VersionLike = MaybeStr[Version]
-type MaybeCallableVersionLike = MaybeCallable[VersionLike]
+type Version2Like = MaybeStr[Version2]
+type Version3Like = MaybeStr[Version3]
+type MaybeCallableVersion3Like = MaybeCallable[Version3Like]
 
 
 ##
 
 
+_PARSE_VERSION2_PATTERN = re.compile(r"^(\d+)\.(\d+)(?:-(\w+))?")
+
+
 @dataclass(repr=False, frozen=True, slots=True)
 @total_ordering
-class Version:
+class Version2:
+    """A version identifier."""
+
+    major: int = 0
+    minor: int = 0
+    suffix: str | None = field(default=None, kw_only=True)
+
+    def __post_init__(self) -> None:
+        if (self.major == 0) and (self.minor == 0):
+            raise _Version2ZeroError(major=self.major, minor=self.minor)
+        if self.major < 0:
+            raise _Version2NegativeMajorVersionError(major=self.major)
+        if self.minor < 0:
+            raise _Version2NegativeMinorVersionError(minor=self.minor)
+        if (self.suffix is not None) and (len(self.suffix) == 0):
+            raise _Version2EmptySuffixError(suffix=self.suffix)
+
+    def __le__(self, other: Any, /) -> bool:
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        self_as_tuple = (
+            self.major,
+            self.minor,
+            "" if self.suffix is None else self.suffix,
+        )
+        other_as_tuple = (
+            other.major,
+            other.minor,
+            "" if other.suffix is None else other.suffix,
+        )
+        return self_as_tuple <= other_as_tuple
+
+    @override
+    def __repr__(self) -> str:
+        version = f"{self.major}.{self.minor}"
+        if self.suffix is not None:
+            version = f"{version}-{self.suffix}"
+        return version
+
+    @classmethod
+    def parse(cls, text: str, /) -> Self:
+        """Parse a string into a Version2 object."""
+        try:
+            ((major, minor, suffix),) = _PARSE_VERSION2_PATTERN.findall(text)
+        except ValueError:
+            raise _Version2ParseError(text=text) from None
+        return cls(int(major), int(minor), suffix=None if suffix == "" else suffix)
+
+    def bump_major(self) -> Self:
+        """Bump the major component."""
+        return type(self)(self.major + 1, 0)
+
+    def bump_minor(self) -> Self:
+        """Bump the minor component."""
+        return type(self)(self.major, self.minor + 1)
+
+    def with_suffix(self, *, suffix: str | None = None) -> Self:
+        """Replace the suffix."""
+        return replace(self, suffix=suffix)
+
+
+@dataclass(kw_only=True, slots=True)
+class Version2Error(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _Version2ZeroError(Version2Error):
+    major: int
+    minor: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Version must be greater than zero; got {self.major}.{self.minor}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _Version2NegativeMajorVersionError(Version2Error):
+    major: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Major version must be non-negative; got {self.major}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _Version2NegativeMinorVersionError(Version2Error):
+    minor: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Minor version must be non-negative; got {self.minor}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _Version2EmptySuffixError(Version2Error):
+    suffix: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Suffix must be non-empty; got {self.suffix!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _Version2ParseError(Version2Error):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse version; got {self.text!r}"
+
+
+##
+
+
+_PARSE_VERSION3_PATTERN = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-(\w+))?")
+
+
+@dataclass(repr=False, frozen=True, slots=True)
+@total_ordering
+class Version3:
     """A version identifier."""
 
     major: int = 0
@@ -28,17 +151,17 @@ class Version:
 
     def __post_init__(self) -> None:
         if (self.major == 0) and (self.minor == 0) and (self.patch == 0):
-            raise _VersionZeroError(
+            raise _Version3ZeroError(
                 major=self.major, minor=self.minor, patch=self.patch
             )
         if self.major < 0:
-            raise _VersionNegativeMajorVersionError(major=self.major)
+            raise _Version3NegativeMajorVersionError(major=self.major)
         if self.minor < 0:
-            raise _VersionNegativeMinorVersionError(minor=self.minor)
+            raise _Version3NegativeMinorVersionError(minor=self.minor)
         if self.patch < 0:
-            raise _VersionNegativePatchVersionError(patch=self.patch)
+            raise _Version3NegativePatchVersionError(patch=self.patch)
         if (self.suffix is not None) and (len(self.suffix) == 0):
-            raise _VersionEmptySuffixError(suffix=self.suffix)
+            raise _Version3EmptySuffixError(suffix=self.suffix)
 
     def __le__(self, other: Any, /) -> bool:
         if not isinstance(other, type(self)):
@@ -64,25 +187,40 @@ class Version:
             version = f"{version}-{self.suffix}"
         return version
 
+    @classmethod
+    def parse(cls, text: str, /) -> Self:
+        """Parse a string into a Version3 object."""
+        try:
+            ((major, minor, patch, suffix),) = _PARSE_VERSION3_PATTERN.findall(text)
+        except ValueError:
+            raise _Version3ParseError(text=text) from None
+        return cls(
+            int(major), int(minor), int(patch), suffix=None if suffix == "" else suffix
+        )
+
     def bump_major(self) -> Self:
+        """Bump the major component."""
         return type(self)(self.major + 1, 0, 0)
 
     def bump_minor(self) -> Self:
+        """Bump the minor component."""
         return type(self)(self.major, self.minor + 1, 0)
 
     def bump_patch(self) -> Self:
+        """Bump the patch component."""
         return type(self)(self.major, self.minor, self.patch + 1)
 
     def with_suffix(self, *, suffix: str | None = None) -> Self:
+        """Replace the suffix."""
         return replace(self, suffix=suffix)
 
 
 @dataclass(kw_only=True, slots=True)
-class VersionError(Exception): ...
+class Version3Error(Exception): ...
 
 
 @dataclass(kw_only=True, slots=True)
-class _VersionZeroError(VersionError):
+class _Version3ZeroError(Version3Error):
     major: int
     minor: int
     patch: int
@@ -93,7 +231,7 @@ class _VersionZeroError(VersionError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _VersionNegativeMajorVersionError(VersionError):
+class _Version3NegativeMajorVersionError(Version3Error):
     major: int
 
     @override
@@ -102,7 +240,7 @@ class _VersionNegativeMajorVersionError(VersionError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _VersionNegativeMinorVersionError(VersionError):
+class _Version3NegativeMinorVersionError(Version3Error):
     minor: int
 
     @override
@@ -111,7 +249,7 @@ class _VersionNegativeMinorVersionError(VersionError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _VersionNegativePatchVersionError(VersionError):
+class _Version3NegativePatchVersionError(Version3Error):
     patch: int
 
     @override
@@ -120,7 +258,7 @@ class _VersionNegativePatchVersionError(VersionError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _VersionEmptySuffixError(VersionError):
+class _Version3EmptySuffixError(Version3Error):
     suffix: str
 
     @override
@@ -128,63 +266,47 @@ class _VersionEmptySuffixError(VersionError):
         return f"Suffix must be non-empty; got {self.suffix!r}"
 
 
-##
-
-
-def parse_version(version: str, /) -> Version:
-    """Parse a string into a version object."""
-    try:
-        ((major, minor, patch, suffix),) = _PARSE_VERSION_PATTERN.findall(version)
-    except ValueError:
-        raise ParseVersionError(version=version) from None
-    return Version(
-        int(major), int(minor), int(patch), suffix=None if suffix == "" else suffix
-    )
-
-
-_PARSE_VERSION_PATTERN = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-(\w+))?")
-
-
 @dataclass(kw_only=True, slots=True)
-class ParseVersionError(Exception):
-    version: str
+class _Version3ParseError(Version3Error):
+    text: str
 
     @override
     def __str__(self) -> str:
-        return f"Invalid version string: {self.version!r}"
+        return f"Unable to parse version; got {self.text!r}"
 
 
 ##
 
 
 @overload
-def to_version(version: MaybeCallableVersionLike, /) -> Version: ...
+def to_version3(version: MaybeCallableVersion3Like, /) -> Version3: ...
 @overload
-def to_version(version: None, /) -> None: ...
+def to_version3(version: None, /) -> None: ...
 @overload
-def to_version(version: Sentinel, /) -> Sentinel: ...
-def to_version(
-    version: MaybeCallableVersionLike | None | Sentinel, /
-) -> Version | None | Sentinel:
+def to_version3(version: Sentinel, /) -> Sentinel: ...
+def to_version3(
+    version: MaybeCallableVersion3Like | None | Sentinel, /
+) -> Version3 | None | Sentinel:
     """Convert to a version."""
     match version:
-        case Version() | None | Sentinel():
+        case Version3() | None | Sentinel():
             return version
         case str():
-            return parse_version(version)
+            return Version3.parse(version)
         case Callable() as func:
-            return to_version(func())
+            return to_version3(func())
         case never:
             assert_never(never)
 
 
 ##
 __all__ = [
-    "MaybeCallableVersionLike",
-    "ParseVersionError",
-    "Version",
-    "VersionError",
-    "VersionLike",
-    "parse_version",
-    "to_version",
+    "MaybeCallableVersion3Like",
+    "Version2",
+    "Version2Error",
+    "Version2Like",
+    "Version3",
+    "Version3Error",
+    "Version3Like",
+    "to_version3",
 ]
