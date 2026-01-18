@@ -93,6 +93,7 @@ from utilities.subprocess import (
     useradd_cmd,
     uv_index_cmd,
     uv_native_tls_cmd,
+    uv_pip_list_cmd,
     uv_run_cmd,
     uv_tool_install_cmd,
     uv_tool_run_cmd,
@@ -1760,19 +1761,72 @@ class TestUvIndexCmd:
 
 
 class TestUvPipListCmd:
-    def test_none(self) -> None:
-        result = uv_index_cmd()
-        expected = []
+    def test_main(self) -> None:
+        result = uv_pip_list_cmd()
+        expected = [
+            "uv",
+            "pip",
+            "list",
+            "--format",
+            "columns",
+            "--strict",
+            "--managed-python",
+        ]
         assert result == expected
 
-    def test_single(self) -> None:
-        result = uv_index_cmd(index="index")
-        expected = ["--index", "index"]
+    def test_editable(self) -> None:
+        result = uv_pip_list_cmd(editable=True)
+        expected = [
+            "uv",
+            "pip",
+            "list",
+            "--editable",
+            "--format",
+            "columns",
+            "--strict",
+            "--managed-python",
+        ]
         assert result == expected
 
-    def test_multiple(self) -> None:
-        result = uv_index_cmd(index=["index1", "index2"])
-        expected = ["--index", "index1,index2"]
+    def test_exclude_editable(self) -> None:
+        result = uv_pip_list_cmd(exclude_editable=True)
+        expected = [
+            "uv",
+            "pip",
+            "list",
+            "--exclude-editable",
+            "--format",
+            "columns",
+            "--strict",
+            "--managed-python",
+        ]
+        assert result == expected
+
+    def test_format_(self) -> None:
+        result = uv_pip_list_cmd(format_="json")
+        expected = [
+            "uv",
+            "pip",
+            "list",
+            "--format",
+            "json",
+            "--strict",
+            "--managed-python",
+        ]
+        assert result == expected
+
+    def test_outdated(self) -> None:
+        result = uv_pip_list_cmd(outdated=True)
+        expected = [
+            "uv",
+            "pip",
+            "list",
+            "--format",
+            "columns",
+            "--outdated",
+            "--strict",
+            "--managed-python",
+        ]
         assert result == expected
 
 

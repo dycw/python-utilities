@@ -1752,7 +1752,7 @@ def uv_pip_list_cmd(
     *,
     editable: bool = False,
     exclude_editable: bool = False,
-    format_: _UVPipListFormat = "json",
+    format_: _UVPipListFormat = "columns",
     outdated: bool = False,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
