@@ -1,13 +1,95 @@
 from __future__ import annotations
 
+from os import mkfifo
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from utilities.tempfile import (
+from hypothesis import given
+from hypothesis.strategies import binary, dictionaries, integers, lists, text
+from pytest import raises
+
+from utilities.core import (
     TemporaryDirectory,
     TemporaryFile,
+    _FileOrDirMissingError,
+    _FileOrDirTypeError,
+    always_iterable,
+    file_or_dir,
     yield_temp_dir_at,
     yield_temp_file_at,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+
+class TestAlwaysIterable:
+    @given(x=binary())
+    def test_bytes(self, *, x: bytes) -> None:
+        assert list(always_iterable(x)) == [x]
+
+    @given(x=dictionaries(text(), integers()))
+    def test_dict(self, *, x: dict[str, int]) -> None:
+        assert list(always_iterable(x)) == list(x)
+
+    @given(x=integers())
+    def test_integer(self, *, x: int) -> None:
+        assert list(always_iterable(x)) == [x]
+
+    @given(x=lists(binary()))
+    def test_list_of_bytes(self, *, x: list[bytes]) -> None:
+        assert list(always_iterable(x)) == x
+
+    @given(x=text())
+    def test_string(self, *, x: str) -> None:
+        assert list(always_iterable(x)) == [x]
+
+    @given(x=lists(integers()))
+    def test_list_of_integers(self, *, x: list[int]) -> None:
+        assert list(always_iterable(x)) == x
+
+    @given(x=lists(text()))
+    def test_list_of_strings(self, *, x: list[str]) -> None:
+        assert list(always_iterable(x)) == x
+
+    def test_generator(self) -> None:
+        def yield_ints() -> Iterator[int]:
+            yield 0
+            yield 1
+
+        assert list(always_iterable(yield_ints())) == [0, 1]
+
+
+class TestFileOrDir:
+    def test_file(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        path.touch()
+        result = file_or_dir(path)
+        assert result == "file"
+
+    def test_dir(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "dir"
+        path.mkdir()
+        result = file_or_dir(path)
+        assert result == "dir"
+
+    def test_empty(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "non-existent"
+        result = file_or_dir(path)
+        assert result is None
+
+    def test_error_missing(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "non-existent"
+        with raises(_FileOrDirMissingError, match=r"Path does not exist: '.*'"):
+            _ = file_or_dir(path, exists=True)
+
+    def test_error_type(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "fifo"
+        mkfifo(path)
+        with raises(
+            _FileOrDirTypeError, match=r"Path is neither a file nor a directory: '.*'"
+        ):
+            _ = file_or_dir(path)
 
 
 class TestTemporaryDirectory:

@@ -22,13 +22,11 @@ from utilities.atomicwrites import (
 )
 from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
+from utilities.core import TemporaryDirectory, always_iterable, file_or_dir
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
-from utilities.iterables import always_iterable
 from utilities.logging import to_logger
-from utilities.pathlib import file_or_dir
 from utilities.permissions import Permissions, ensure_perms
-from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
 from utilities.time import sleep
 

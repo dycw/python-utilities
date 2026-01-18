@@ -1,18 +1,78 @@
 from __future__ import annotations
 
+import shutil
 import tempfile
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
-from shutil import move
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
 from warnings import catch_warnings, filterwarnings
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
     from types import TracebackType
 
-    from utilities.types import PathLike
+    from utilities.types import FileOrDir, MaybeIterable, PathLike
+
+
+# itertools
+
+
+def always_iterable[T](obj: MaybeIterable[T], /) -> Iterable[T]:
+    """Typed version of `always_iterable`."""
+    obj = cast("Any", obj)
+    if isinstance(obj, str | bytes):
+        return cast("list[T]", [obj])
+    try:
+        return iter(cast("Iterable[T]", obj))
+    except TypeError:
+        return cast("list[T]", [obj])
+
+
+# pathlib
+
+
+@overload
+def file_or_dir(path: PathLike, /, *, exists: Literal[True]) -> FileOrDir: ...
+@overload
+def file_or_dir(path: PathLike, /, *, exists: bool = False) -> FileOrDir | None: ...
+def file_or_dir(path: PathLike, /, *, exists: bool = False) -> FileOrDir | None:
+    """Classify a path as a file, directory or non-existent."""
+    path = Path(path)
+    match path.exists(), path.is_file(), path.is_dir(), exists:
+        case True, True, False, _:
+            return "file"
+        case True, False, True, _:
+            return "dir"
+        case False, False, False, True:
+            raise _FileOrDirMissingError(path=path)
+        case False, False, False, False:
+            return None
+        case _:
+            raise _FileOrDirTypeError(path=path)
+
+
+@dataclass(kw_only=True, slots=True)
+class FileOrDirError(Exception):
+    path: Path
+
+
+@dataclass(kw_only=True, slots=True)
+class _FileOrDirMissingError(FileOrDirError):
+    @override
+    def __str__(self) -> str:
+        return f"Path does not exist: {str(self.path)!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _FileOrDirTypeError(FileOrDirError):
+    @override
+    def __str__(self) -> str:
+        return f"Path is neither a file nor a directory: {str(self.path)!r}"
+
+
+# tempfile
 
 
 class TemporaryDirectory:
@@ -148,14 +208,14 @@ def _temporary_file_inner(
     name: str | None = None,
 ) -> Iterator[Path]:
     path = Path(path)
-    temp = _NamedTemporaryFile(  # noqa: SIM115
+    with _NamedTemporaryFile(
         suffix=suffix, prefix=prefix, dir=path, delete=delete, delete_on_close=False
-    )
-    if name is None:
-        yield path / temp.name
-    else:
-        _ = move(path / temp.name, path / name)
-        yield path / name
+    ) as temp:
+        if name is None:
+            yield Path(path, temp.name)
+        else:
+            _ = shutil.move(path / temp.name, path / name)
+            yield path / name
 
 
 ##
@@ -180,8 +240,11 @@ def yield_temp_file_at(path: PathLike, /) -> Iterator[Path]:
 
 
 __all__ = [
+    "FileOrDirError",
     "TemporaryDirectory",
     "TemporaryFile",
+    "always_iterable",
+    "file_or_dir",
     "yield_temp_dir_at",
     "yield_temp_file_at",
 ]

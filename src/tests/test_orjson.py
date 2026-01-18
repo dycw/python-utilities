@@ -60,6 +60,7 @@ from utilities.constants import (
     Sentinel,
     sentinel,
 )
+from utilities.core import always_iterable
 from utilities.hypothesis import (
     date_periods,
     dates,
@@ -72,7 +73,7 @@ from utilities.hypothesis import (
     zoned_date_time_periods,
     zoned_date_times,
 )
-from utilities.iterables import always_iterable, one
+from utilities.iterables import one
 from utilities.logging import get_logging_level_number
 from utilities.operator import is_equal
 from utilities.orjson import (
