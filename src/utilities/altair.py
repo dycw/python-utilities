@@ -24,9 +24,9 @@ from altair import (
 from altair.utils.schemapi import Undefined
 
 from utilities.atomicwrites import writer
+from utilities.core import TemporaryDirectory
 from utilities.functions import ensure_bytes, ensure_number
 from utilities.iterables import always_iterable
-from utilities.tempfile import TemporaryDirectory
 
 if TYPE_CHECKING:
     from polars import DataFrame

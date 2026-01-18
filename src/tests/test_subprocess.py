@@ -18,6 +18,7 @@ from utilities.constants import (
     PWD,
     SECOND,
 )
+from utilities.core import TemporaryDirectory, TemporaryFile
 from utilities.iterables import one
 from utilities.pathlib import get_file_group, get_file_owner
 from utilities.permissions import Permissions
@@ -109,7 +110,6 @@ from utilities.subprocess import (
     yield_git_repo,
     yield_ssh_temp_dir,
 )
-from utilities.tempfile import TemporaryDirectory, TemporaryFile
 from utilities.text import strip_and_dedent, unique_str
 from utilities.typing import is_sequence_of
 from utilities.version import Version3

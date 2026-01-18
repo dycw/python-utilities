@@ -145,7 +145,7 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
 
     from utilities.constants import Sentinel
-    from utilities.tempfile import TemporaryDirectory
+    from utilities.core import TemporaryDirectory
     from utilities.types import Number
 
 
