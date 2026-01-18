@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING, assert_never, override
 from atomicwrites import replace_atomic
 
 from utilities.contextlib import enhanced_context_manager
+from utilities.core import file_or_dir
 from utilities.iterables import transpose
-from utilities.pathlib import file_or_dir
 from utilities.tempfile import TemporaryDirectory, TemporaryFile
 
 if TYPE_CHECKING:
