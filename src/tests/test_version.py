@@ -1,15 +1,32 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+from hypothesis import HealthCheck, Phase, given, reproduce_failure, settings
+from pytest import RaisesGroup, approx, fixture, mark, param, raises, skip
+
+from utilities.contextvars import set_global_breakpoint
+
+if TYPE_CHECKING:
+    from pytest_benchmark.fixture import BenchmarkFixture
+    from pytest_lazy_fixtures import lf
+    from pytest_regressions.dataframe_regression import DataFrameRegressionFixture
+
+
 from re import search
 from typing import TYPE_CHECKING
 
-from hypothesis import given
 from hypothesis.strategies import booleans, integers, none
-from pytest import raises
 
-from utilities.hypothesis import sentinels, text_ascii, version3s
+from utilities.hypothesis import sentinels, text_ascii, version2s, version3s
 from utilities.version import (
+    Version2,
     Version3,
+    _Version2EmptySuffixError,
+    _Version2NegativeMajorVersionError,
+    _Version2NegativeMinorVersionError,
+    _Version2ParseError,
+    _Version2ZeroError,
     _Version3EmptySuffixError,
     _Version3NegativeMajorVersionError,
     _Version3NegativeMinorVersionError,
@@ -23,7 +40,88 @@ if TYPE_CHECKING:
     from utilities.constants import Sentinel
 
 
-class TestVersion:
+class TestVersion2:
+    @given(version=version2s())
+    def test_hashable(self, *, version: Version2) -> None:
+        _ = hash(version)
+
+    @given(version1=version2s(), version2=version2s())
+    def test_orderable(self, *, version1: Version2, version2: Version2) -> None:
+        assert (version1 <= version2) or (version1 >= version2)
+
+    @given(version=version2s())
+    def test_parse(self, *, version: Version2) -> None:
+        parsed = Version2.parse(str(version))
+        assert parsed == version
+
+    @given(version=version2s(suffix=booleans()))
+    def test_repr(self, *, version: Version2) -> None:
+        result = repr(version)
+        assert search(r"^\d+.\d+", result)
+
+    @given(version=version2s())
+    def test_bump_major(self, *, version: Version2) -> None:
+        bumped = version.bump_major()
+        assert version < bumped
+        assert bumped.major == version.major + 1
+        assert bumped.minor == 0
+        assert bumped.suffix is None
+
+    @given(version=version2s())
+    def test_bump_minor(self, *, version: Version2) -> None:
+        bumped = version.bump_minor()
+        assert version < bumped
+        assert bumped.major == version.major
+        assert bumped.minor == version.minor + 1
+        assert bumped.suffix is None
+
+    @given(version=version2s(), suffix=text_ascii(min_size=1) | none())
+    def test_with_suffix(self, *, version: Version2, suffix: str | None) -> None:
+        new = version.with_suffix(suffix=suffix)
+        assert new.major == version.major
+        assert new.minor == version.minor
+        assert new.suffix == suffix
+
+    @given(version=version2s())
+    def test_error_order(self, *, version: Version2) -> None:
+        with raises(TypeError):
+            _ = version <= None
+
+    def test_error_zero(self) -> None:
+        with raises(
+            _Version2ZeroError, match=r"Version must be greater than zero; got 0\.0"
+        ):
+            _ = Version2(0, 0)
+
+    @given(major=integers(max_value=-1))
+    def test_error_negative_major_version(self, *, major: int) -> None:
+        with raises(
+            _Version2NegativeMajorVersionError,
+            match=r"Major version must be non-negative; got .*",
+        ):
+            _ = Version2(major=major)
+
+    @given(minor=integers(max_value=-1))
+    def test_error_negative_minor_version(self, *, minor: int) -> None:
+        with raises(
+            _Version2NegativeMinorVersionError,
+            match=r"Minor version must be non-negative; got .*",
+        ):
+            _ = Version2(minor=minor)
+
+    def test_error_empty_suffix(self) -> None:
+        with raises(
+            _Version2EmptySuffixError, match=r"Suffix must be non-empty; got .*"
+        ):
+            _ = Version2(suffix="")
+
+    @mark.parametrize("text", [param("invalid"), param("0.0.1")])
+    def test_error_parse(self, *, text: str) -> None:
+        with raises(_Version2ParseError, match=r"Unable to parse version; got '.*'"):
+            _ = Version2.parse(text)
+
+
+class TestVersion3:
     @given(version=version3s())
     def test_hashable(self, *, version: Version3) -> None:
         _ = hash(version)

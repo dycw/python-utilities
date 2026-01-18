@@ -17,7 +17,7 @@ type MaybeCallableVersion3Like = MaybeCallable[Version3Like]
 ##
 
 
-_PARSE_VERSION2_PATTERN = re.compile(r"^(\d+)\.(\d+)(?:-(\w+))?")
+_PARSE_VERSION2_PATTERN = re.compile(r"^(\d+)\.(\d+)(?!\.\d)(?:-(\w+))?")
 
 
 @dataclass(repr=False, frozen=True, slots=True)
@@ -26,7 +26,7 @@ class Version2:
     """A version identifier."""
 
     major: int = 0
-    minor: int = 0
+    minor: int = 1
     suffix: str | None = field(default=None, kw_only=True)
 
     def __post_init__(self) -> None:

@@ -72,7 +72,7 @@ class GenerateImportFromError(Exception):
 ##
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
 class _ParseImportOutput:
     module: str
     name: str | None = None

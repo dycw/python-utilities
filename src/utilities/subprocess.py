@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import shutil
 import sys
+from contextlib import suppress
 from dataclasses import dataclass
 from io import StringIO
 from itertools import chain, repeat
@@ -31,6 +33,13 @@ from utilities.permissions import Permissions, ensure_perms
 from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
 from utilities.time import sleep
+from utilities.version import (
+    Version2,
+    Version2Error,
+    Version3,
+    _Version2ParseError,
+    _Version3ParseError,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -1745,14 +1754,80 @@ def uv_index_cmd(*, index: MaybeSequenceStr | None = None) -> list[str]:
 ##
 
 
-type _UVPipListFormat = Literal["columns", "freeze", "json"]
+type _UvPipListFormat = Literal["columns", "freeze", "json"]
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
+class _UvPipListOutput:
+    name: str
+    version: Version2 | Version3
+    editable_project_location: Path | None = None
+    latest_version: Version2 | Version3 | None = None
+    latest_filetype: str | None = None
+
+
+def uv_pip_list(
+    *,
+    editable: bool = False,
+    exclude_editable: bool = False,
+    format_: _UvPipListFormat = "columns",
+    outdated: bool = False,
+    index: MaybeSequenceStr | None = None,
+    native_tls: bool = False,
+) -> list[_UvPipListOutput]:
+    """List packages installed in an environment."""
+    text = run(
+        *uv_pip_list_cmd(
+            editable=editable,
+            exclude_editable=exclude_editable,
+            format_="json",
+            index=index,
+            native_tls=native_tls,
+        ),
+        return_=True,
+    )
+    dicts = json.loads(text)
+    outputs: list[_UvPipListOutput] = []
+    for dict_ in dicts:
+        try:
+            version = Version2.parse(dict_["version"])
+        except _Version2ParseError:
+            try:
+                version = Version3.parse(dict_["version"])
+            except _Version3ParseError:
+                raise _UvPipListError(data=dict_)
+        try:
+            location = Path(dict_["editable_project_location"])
+        except KeyError:
+            location = None
+        outputs.append(
+            _UvPipListOutput(
+                name=dict_["name"], version=version, editable_project_location=location
+            )
+        )
+    assert 0, dicts_[:3]
+    args: list[str] = ["uv", "pip", "list"]
+    if editable:
+        args.append("--editable")
+    if exclude_editable:
+        args.append("--exclude-editable")
+    args.extend(["--format", format_])
+    if outdated:
+        args.append("--outdated")
+    return [
+        *args,
+        "--strict",
+        *uv_index_cmd(index=index),
+        MANAGED_PYTHON,
+        *uv_native_tls_cmd(native_tls=native_tls),
+    ]
 
 
 def uv_pip_list_cmd(
     *,
     editable: bool = False,
     exclude_editable: bool = False,
-    format_: _UVPipListFormat = "columns",
+    format_: _UvPipListFormat = "columns",
     outdated: bool = False,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
