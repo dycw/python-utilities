@@ -6,9 +6,8 @@ from zipfile import ZipFile
 
 from utilities.atomicwrites import writer
 from utilities.contextlib import enhanced_context_manager
-from utilities.core import file_or_dir
+from utilities.core import TemporaryDirectory, file_or_dir
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one
-from utilities.tempfile import TemporaryDirectory
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
