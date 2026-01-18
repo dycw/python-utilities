@@ -51,6 +51,7 @@ from utilities.hypothesis import (
     time_deltas,
     time_periods,
     times,
+    version2s,
     version3s,
     year_months,
     zoned_date_time_periods,
@@ -101,6 +102,7 @@ def objects(
         | times()
         | hypothesis.strategies.times()
         | uuids()
+        | version2s()
         | version3s()
         | year_months()
         | zoned_date_time_periods()
