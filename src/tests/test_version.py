@@ -7,50 +7,43 @@ from hypothesis import given
 from hypothesis.strategies import booleans, integers, none
 from pytest import raises
 
-from utilities.hypothesis import sentinels, text_ascii, versions
+from utilities.hypothesis import sentinels, text_ascii, version3s
 from utilities.version import (
-    ParseVersionError,
-    Version,
-    _VersionEmptySuffixError,
-    _VersionNegativeMajorVersionError,
-    _VersionNegativeMinorVersionError,
-    _VersionNegativePatchVersionError,
-    _VersionZeroError,
-    parse_version,
-    to_version,
+    Version3,
+    _Version3EmptySuffixError,
+    _Version3NegativeMajorVersionError,
+    _Version3NegativeMinorVersionError,
+    _Version3NegativePatchVersionError,
+    _Version3ParseError,
+    _Version3ZeroError,
+    to_version3,
 )
 
 if TYPE_CHECKING:
     from utilities.constants import Sentinel
 
 
-class TestParseVersion:
-    @given(version=versions())
-    def test_main(self, *, version: Version) -> None:
-        parsed = parse_version(str(version))
-        assert parsed == version
-
-    def test_error(self) -> None:
-        with raises(ParseVersionError, match=r"Invalid version string: 'invalid'"):
-            _ = parse_version("invalid")
-
-
 class TestVersion:
-    @given(version=versions())
-    def test_hashable(self, *, version: Version) -> None:
+    @given(version=version3s())
+    def test_hashable(self, *, version: Version3) -> None:
         _ = hash(version)
 
-    @given(version1=versions(), version2=versions())
-    def test_orderable(self, *, version1: Version, version2: Version) -> None:
+    @given(version1=version3s(), version2=version3s())
+    def test_orderable(self, *, version1: Version3, version2: Version3) -> None:
         assert (version1 <= version2) or (version1 >= version2)
 
-    @given(version=versions(suffix=booleans()))
-    def test_repr(self, *, version: Version) -> None:
+    @given(version=version3s())
+    def test_parse(self, *, version: Version3) -> None:
+        parsed = Version3.parse(str(version))
+        assert parsed == version
+
+    @given(version=version3s(suffix=booleans()))
+    def test_repr(self, *, version: Version3) -> None:
         result = repr(version)
         assert search(r"^\d+\.\d+\.\d+", result)
 
-    @given(version=versions())
-    def test_bump_major(self, *, version: Version) -> None:
+    @given(version=version3s())
+    def test_bump_major(self, *, version: Version3) -> None:
         bumped = version.bump_major()
         assert version < bumped
         assert bumped.major == version.major + 1
@@ -58,8 +51,8 @@ class TestVersion:
         assert bumped.patch == 0
         assert bumped.suffix is None
 
-    @given(version=versions())
-    def test_bump_minor(self, *, version: Version) -> None:
+    @given(version=version3s())
+    def test_bump_minor(self, *, version: Version3) -> None:
         bumped = version.bump_minor()
         assert version < bumped
         assert bumped.major == version.major
@@ -67,8 +60,8 @@ class TestVersion:
         assert bumped.patch == 0
         assert bumped.suffix is None
 
-    @given(version=versions())
-    def test_bump_patch(self, *, version: Version) -> None:
+    @given(version=version3s())
+    def test_bump_patch(self, *, version: Version3) -> None:
         bumped = version.bump_patch()
         assert version < bumped
         assert bumped.major == version.major
@@ -76,69 +69,75 @@ class TestVersion:
         assert bumped.patch == version.patch + 1
         assert bumped.suffix is None
 
-    @given(version=versions(), suffix=text_ascii(min_size=1) | none())
-    def test_with_suffix(self, *, version: Version, suffix: str | None) -> None:
+    @given(version=version3s(), suffix=text_ascii(min_size=1) | none())
+    def test_with_suffix(self, *, version: Version3, suffix: str | None) -> None:
         new = version.with_suffix(suffix=suffix)
         assert new.major == version.major
         assert new.minor == version.minor
         assert new.patch == version.patch
         assert new.suffix == suffix
 
-    @given(version=versions())
-    def test_error_order(self, *, version: Version) -> None:
+    @given(version=version3s())
+    def test_error_order(self, *, version: Version3) -> None:
         with raises(TypeError):
             _ = version <= None
 
     def test_error_zero(self) -> None:
         with raises(
-            _VersionZeroError, match=r"Version must be greater than zero; got 0\.0\.0"
+            _Version3ZeroError, match=r"Version must be greater than zero; got 0\.0\.0"
         ):
-            _ = Version(0, 0, 0)
+            _ = Version3(0, 0, 0)
 
     @given(major=integers(max_value=-1))
     def test_error_negative_major_version(self, *, major: int) -> None:
         with raises(
-            _VersionNegativeMajorVersionError,
+            _Version3NegativeMajorVersionError,
             match=r"Major version must be non-negative; got .*",
         ):
-            _ = Version(major=major)
+            _ = Version3(major=major)
 
     @given(minor=integers(max_value=-1))
     def test_error_negative_minor_version(self, *, minor: int) -> None:
         with raises(
-            _VersionNegativeMinorVersionError,
+            _Version3NegativeMinorVersionError,
             match=r"Minor version must be non-negative; got .*",
         ):
-            _ = Version(minor=minor)
+            _ = Version3(minor=minor)
 
     @given(patch=integers(max_value=-1))
     def test_error_negative_patch_version(self, *, patch: int) -> None:
         with raises(
-            _VersionNegativePatchVersionError,
+            _Version3NegativePatchVersionError,
             match=r"Patch version must be non-negative; got .*",
         ):
-            _ = Version(patch=patch)
+            _ = Version3(patch=patch)
 
     def test_error_empty_suffix(self) -> None:
         with raises(
-            _VersionEmptySuffixError, match=r"Suffix must be non-empty; got .*"
+            _Version3EmptySuffixError, match=r"Suffix must be non-empty; got .*"
         ):
-            _ = Version(suffix="")
+            _ = Version3(suffix="")
+
+    def test_error_parse(self) -> None:
+        with raises(
+            _Version3ParseError, match=r"Unable to parse version; got 'invalid'"
+        ):
+            _ = Version3.parse("invalid")
 
 
-class TestGetVersion:
-    @given(version=versions())
-    def test_version(self, *, version: Version) -> None:
-        assert to_version(version) == version
+class TestToVersion3:
+    @given(version=version3s())
+    def test_version(self, *, version: Version3) -> None:
+        assert to_version3(version) == version
 
-    @given(version=versions())
-    def test_str(self, *, version: Version) -> None:
-        assert to_version(str(version)) == version
+    @given(version=version3s())
+    def test_str(self, *, version: Version3) -> None:
+        assert to_version3(str(version)) == version
 
     @given(version=none() | sentinels())
     def test_none_or_sentinel(self, *, version: None | Sentinel) -> None:
-        assert to_version(version) is version
+        assert to_version3(version) is version
 
-    @given(version=versions())
-    def test_callable(self, *, version: Version) -> None:
-        assert to_version(lambda: version) == version
+    @given(version=version3s())
+    def test_callable(self, *, version: Version3) -> None:
+        assert to_version3(lambda: version) == version

@@ -45,7 +45,7 @@
   jupyter-test = ["pandas>=2.3.3", "polars>=1.37.1"]
   libcst = ["libcst>=1.8.6"]
   lightweight-charts = ["lightweight-charts>=2.1"]
-  lightweight-charts-test = ["polars>=1.37.1", "pyarrow>=22.0.0"]
+  lightweight-charts-test = ["polars>=1.37.1", "pyarrow>=23.0.0"]
   math-test = ["numpy>=2.4.1"]
   memory-profiler = ["memory-profiler>=0.61.0"]
   more-itertools = ["more-itertools>=10.8.0"]
@@ -116,7 +116,7 @@
   name = "dycw-utilities"
   readme = "README.md"
   requires-python = ">= 3.12"
-  version = "0.183.5"
+  version = "0.183.6"
 
   [project.entry-points.pytest11]
     pytest-randomly = "utilities.pytest_plugins.pytest_randomly"

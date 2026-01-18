@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/dycw/actions
-    rev: 0.15.5
+    rev: 0.15.8
     hooks:
       - args:
           - --ci--pull-request--pyright

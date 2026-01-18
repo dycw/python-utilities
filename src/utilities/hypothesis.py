@@ -97,7 +97,7 @@ from utilities.os import get_env_var
 from utilities.pathlib import module_path, temp_cwd
 from utilities.permissions import Permissions
 from utilities.tempfile import TemporaryDirectory
-from utilities.version import Version
+from utilities.version import Version2, Version3
 from utilities.whenever import (
     DATE_DELTA_PARSABLE_MAX,
     DATE_DELTA_PARSABLE_MIN,
@@ -1493,12 +1493,25 @@ def urls(
 
 
 @composite
-def versions(draw: DrawFn, /, *, suffix: MaybeSearchStrategy[bool] = False) -> Version:
-    """Strategy for generating versions."""
+def version2s(
+    draw: DrawFn, /, *, suffix: MaybeSearchStrategy[bool] = False
+) -> Version2:
+    """Strategy for generating Version2 objects."""
+    major, minor = draw(pairs(integers(min_value=0)))
+    _ = assume((major >= 1) or (minor >= 1))
+    suffix_use = draw(text_ascii(min_size=1)) if draw2(draw, suffix) else None
+    return Version2(major=major, minor=minor, suffix=suffix_use)
+
+
+@composite
+def version3s(
+    draw: DrawFn, /, *, suffix: MaybeSearchStrategy[bool] = False
+) -> Version3:
+    """Strategy for generating Version3 objects."""
     major, minor, patch = draw(triples(integers(min_value=0)))
     _ = assume((major >= 1) or (minor >= 1) or (patch >= 1))
     suffix_use = draw(text_ascii(min_size=1)) if draw2(draw, suffix) else None
-    return Version(major=major, minor=minor, patch=patch, suffix=suffix_use)
+    return Version3(major=major, minor=minor, patch=patch, suffix=suffix_use)
 
 
 ##
@@ -1680,7 +1693,8 @@ __all__ = [
     "uint32s",
     "uint64s",
     "urls",
-    "versions",
+    "version2s",
+    "version3s",
     "year_months",
     "zone_infos",
     "zoned_date_time_periods",
