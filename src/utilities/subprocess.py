@@ -1745,9 +1745,34 @@ def uv_index_cmd(*, index: MaybeSequenceStr | None = None) -> list[str]:
 ##
 
 
-def uv_pip_list_cmd(*, index: MaybeSequenceStr | None = None) -> list[str]:
-    """Generate the `--index` command if necessary."""
-    return [] if index is None else ["--index", ",".join(always_iterable(index))]
+type _UVPipListFormat = Literal["columns", "freeze", "json"]
+
+
+def uv_pip_list_cmd(
+    *,
+    editable: bool = False,
+    exclude_editable: bool = False,
+    format_: _UVPipListFormat = "json",
+    outdated: bool = False,
+    index: MaybeSequenceStr | None = None,
+    native_tls: bool = False,
+) -> list[str]:
+    """Command to use 'uv' to list packages installed in an environment."""
+    args: list[str] = ["uv", "pip", "list"]
+    if editable:
+        args.append("--editable")
+    if exclude_editable:
+        args.append("--exclude-editable")
+    args.extend(["--format", format_])
+    if outdated:
+        args.append("--outdated")
+    return [
+        *args,
+        "--strict",
+        *uv_index_cmd(index=index),
+        MANAGED_PYTHON,
+        *uv_native_tls_cmd(native_tls=native_tls),
+    ]
 
 
 ##
@@ -2424,6 +2449,7 @@ __all__ = [
     "useradd",
     "useradd_cmd",
     "uv_native_tls_cmd",
+    "uv_pip_list_cmd",
     "uv_run",
     "uv_run_cmd",
     "uv_tool_install",

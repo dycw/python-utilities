@@ -1759,6 +1759,23 @@ class TestUvIndexCmd:
         assert result == expected
 
 
+class TestUvPipListCmd:
+    def test_none(self) -> None:
+        result = uv_index_cmd()
+        expected = []
+        assert result == expected
+
+    def test_single(self) -> None:
+        result = uv_index_cmd(index="index")
+        expected = ["--index", "index"]
+        assert result == expected
+
+    def test_multiple(self) -> None:
+        result = uv_index_cmd(index=["index1", "index2"])
+        expected = ["--index", "index1,index2"]
+        assert result == expected
+
+
 class TestUvNativeTLSCmd:
     def test_none(self) -> None:
         result = uv_native_tls_cmd()
