@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass, field, replace
 from functools import total_ordering
 from typing import Any, Self, assert_never, overload, override
@@ -11,6 +12,7 @@ from utilities.types import MaybeCallable, MaybeStr
 
 type Version2Like = MaybeStr[Version2]
 type Version3Like = MaybeStr[Version3]
+type Version2Or3 = Version2 | Version3
 type MaybeCallableVersion3Like = MaybeCallable[Version3Like]
 
 
@@ -278,6 +280,27 @@ class _Version3ParseError(Version3Error):
 ##
 
 
+def parse_version_2_or_3(text: str, /) -> Version2Or3:
+    """Parse a string into a Version2 or Version3 object."""
+    with suppress(_Version2ParseError):
+        return Version2.parse(text)
+    with suppress(_Version3ParseError):
+        return Version3.parse(text)
+    raise ParseVersion2Or3Error(text=text)
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseVersion2Or3Error(Exception):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse Version2 or Version3; got {self.text!r}"
+
+
+##
+
+
 @overload
 def to_version3(version: MaybeCallableVersion3Like, /) -> Version3: ...
 @overload
@@ -302,11 +325,14 @@ def to_version3(
 ##
 __all__ = [
     "MaybeCallableVersion3Like",
+    "ParseVersion2Or3Error",
     "Version2",
     "Version2Error",
     "Version2Like",
+    "Version2Or3",
     "Version3",
     "Version3Error",
     "Version3Like",
+    "parse_version_2_or_3",
     "to_version3",
 ]

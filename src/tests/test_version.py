@@ -20,7 +20,9 @@ from hypothesis.strategies import booleans, integers, none
 
 from utilities.hypothesis import sentinels, text_ascii, version2s, version3s
 from utilities.version import (
+    ParseVersion2Or3Error,
     Version2,
+    Version2Or3,
     Version3,
     _Version2EmptySuffixError,
     _Version2NegativeMajorVersionError,
@@ -33,11 +35,29 @@ from utilities.version import (
     _Version3NegativePatchVersionError,
     _Version3ParseError,
     _Version3ZeroError,
+    parse_version_2_or_3,
     to_version3,
 )
 
 if TYPE_CHECKING:
     from utilities.constants import Sentinel
+
+
+class TestParseVersion2Or3Error:
+    @mark.parametrize(
+        ("text", "expected"),
+        [param("0.1", Version2(0, 1)), param("0.0.1", Version3(0, 0, 1))],
+    )
+    def test_main(self, *, text: str, expected: Version2Or3) -> None:
+        result = parse_version_2_or_3(text)
+        assert result == expected
+
+    def test_error(self) -> None:
+        with raises(
+            ParseVersion2Or3Error,
+            match=r"Unable to parse Version2 or Version3; got '.*'",
+        ):
+            _ = parse_version_2_or_3("invalid")
 
 
 class TestVersion2:

@@ -26,7 +26,7 @@ from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
-from utilities.iterables import always_iterable
+from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.logging import to_logger
 from utilities.pathlib import file_or_dir
 from utilities.permissions import Permissions, ensure_perms
@@ -1776,19 +1776,26 @@ def uv_pip_list(
     native_tls: bool = False,
 ) -> list[_UvPipListOutput]:
     """List packages installed in an environment."""
-    text = run(
-        *uv_pip_list_cmd(
+    cmds_base, cmds_outdated = [
+        uv_pip_list_cmd(
             editable=editable,
             exclude_editable=exclude_editable,
             format_="json",
+            outdated=outdated,
             index=index,
             native_tls=native_tls,
-        ),
-        return_=True,
-    )
-    dicts = json.loads(text)
+        )
+        for outdated in [False, True]
+    ]
+    text_base, text_outdated = [
+        run(*cmds, return_=True) for cmds in [cmds_base, cmds_outdated]
+    ]
+    dicts_base, dicts_outdated = [
+        json.loads(text) for text in [text_base, text_outdated]
+    ]
     outputs: list[_UvPipListOutput] = []
-    for dict_ in dicts:
+    for dict_ in dicts_base:
+        name = dict_["name"]
         try:
             version = Version2.parse(dict_["version"])
         except _Version2ParseError:
@@ -1800,12 +1807,17 @@ def uv_pip_list(
             location = Path(dict_["editable_project_location"])
         except KeyError:
             location = None
-        outputs.append(
-            _UvPipListOutput(
-                name=dict_["name"], version=version, editable_project_location=location
-            )
+        try:
+            latest = one(d for d in dicts_outdated if d["name"] == name)
+        except OneEmptyError:
+            latest_version = latest_filetype = None
+        else:
+            z
+        output_i = _UvPipListOutput(
+            name=dict_["name"], version=version, editable_project_location=location
         )
-    assert 0, dicts_[:3]
+        outputs.append(output_i)
+    assert 0, outputs[:3]
     args: list[str] = ["uv", "pip", "list"]
     if editable:
         args.append("--editable")
