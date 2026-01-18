@@ -51,8 +51,6 @@ from utilities.iterables import (
     OneNonUniqueError,
     OneStrEmptyError,
     OneStrNonUniqueError,
-    OneUniqueEmptyError,
-    OneUniqueNonUniqueError,
     ResolveIncludeAndExcludeError,
     SortIterableError,
     _ApplyBijectionDuplicateKeysError,
@@ -98,7 +96,6 @@ from utilities.iterables import (
     merge_str_mappings,
     one,
     one_str,
-    one_unique,
     pairwise_tail,
     product_dicts,
     range_partitions,
@@ -930,28 +927,6 @@ class TestOneStr:
             match=r"Iterable .* must contain exactly one string starting with 'ab'; got 'abc', 'abd' and perhaps more",
         ):
             _ = one_str(["abc", "abd"], "ab", head=True, case_sensitive=True)
-
-
-class TestOneUnique:
-    @given(args=sampled_from([([None],), ([None], [None]), ([None], [None], [None])]))
-    def test_main(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        assert one_unique(*args) is None
-
-    @given(args=sampled_from([([],), ([], []), ([], [], [])]))
-    def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        with raises(OneUniqueEmptyError, match=r"Iterable\(s\) must not be empty"):
-            _ = one_unique(*args)
-
-    @given(iterable=sets(integers(), min_size=2))
-    def test_error_non_unique(self, *, iterable: set[int]) -> None:
-        with raises(
-            OneUniqueNonUniqueError,
-            match=re.compile(
-                r"Iterable\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
-                flags=DOTALL,
-            ),
-        ):
-            _ = one_unique(iterable)
 
 
 class TestPairwiseTail:

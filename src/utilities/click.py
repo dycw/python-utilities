@@ -13,7 +13,7 @@ from click.types import IntParamType, StringParamType
 
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import EnsureStrError, ensure_str, get_class, get_class_name
-from utilities.iterables import is_iterable_not_str, one_unique
+from utilities.iterables import is_iterable_not_str, one
 from utilities.parse import ParseObjectError, parse_object
 from utilities.text import split_str
 
@@ -187,7 +187,7 @@ class EnumPartial[E: enum.Enum](ParamType):
         case_sensitive: bool = False,
     ) -> None:
         self._members = list(members)
-        self._enum = one_unique(get_class(e) for e in self._members)
+        self._enum = one({get_class(e) for e in self._members})
         cls = get_class_name(self._enum)
         self.name = f"enum-partial[{cls}]"
         self._value = issubclass(self._enum, StrEnum) or value
