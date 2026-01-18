@@ -1417,7 +1417,6 @@ __all__ = [
     "merge_str_mappings",
     "one",
     "one_str",
-    "one_unique",
     "pairwise_tail",
     "product_dicts",
     "range_partitions",

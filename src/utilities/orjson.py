@@ -42,7 +42,7 @@ from utilities.core import always_iterable
 from utilities.dataclasses import dataclass_to_dict
 from utilities.functions import ensure_class
 from utilities.gzip import read_binary
-from utilities.iterables import OneEmptyError, merge_sets, one, one_unique
+from utilities.iterables import OneEmptyError, merge_sets, one
 from utilities.json import write_formatted_json
 from utilities.logging import get_logging_level_number
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
@@ -954,7 +954,7 @@ class GetLogRecordsOutput:
             for r in self.records
         ]
         if len(records) >= 1:
-            time_zone = one_unique(ZoneInfo(r.datetime.tz) for r in records)
+            time_zone = one({ZoneInfo(r.datetime.tz) for r in records})
         else:
             time_zone = LOCAL_TIME_ZONE
         return DataFrame(
