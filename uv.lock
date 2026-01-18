@@ -625,7 +625,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.183.6"
+version = "0.184.0"
 source = { editable = "." }
 dependencies = [
     { name = "atomicwrites" },
