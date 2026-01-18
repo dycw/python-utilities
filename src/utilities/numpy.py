@@ -39,7 +39,8 @@ from numpy.linalg import det, eig
 from numpy.random import default_rng
 from numpy.typing import NDArray
 
-from utilities.iterables import always_iterable, is_iterable_not_str
+from utilities.core import always_iterable
+from utilities.iterables import is_iterable_not_str
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable

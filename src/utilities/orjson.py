@@ -38,16 +38,11 @@ from whenever import (
 
 from utilities.concurrent import concurrent_map
 from utilities.constants import LOCAL_TIME_ZONE, MAX_INT64, MIN_INT64
+from utilities.core import always_iterable
 from utilities.dataclasses import dataclass_to_dict
 from utilities.functions import ensure_class
 from utilities.gzip import read_binary
-from utilities.iterables import (
-    OneEmptyError,
-    always_iterable,
-    merge_sets,
-    one,
-    one_unique,
-)
+from utilities.iterables import OneEmptyError, merge_sets, one, one_unique
 from utilities.json import write_formatted_json
 from utilities.logging import get_logging_level_number
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping

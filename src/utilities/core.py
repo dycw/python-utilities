@@ -6,14 +6,28 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
-from typing import TYPE_CHECKING, Literal, overload, override
+from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
 from warnings import catch_warnings, filterwarnings
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
     from types import TracebackType
 
-    from utilities.types import FileOrDir, PathLike
+    from utilities.types import FileOrDir, MaybeIterable, PathLike
+
+
+# itertools
+
+
+def always_iterable[T](obj: MaybeIterable[T], /) -> Iterable[T]:
+    """Typed version of `always_iterable`."""
+    obj = cast("Any", obj)
+    if isinstance(obj, str | bytes):
+        return cast("list[T]", [obj])
+    try:
+        return iter(cast("Iterable[T]", obj))
+    except TypeError:
+        return cast("list[T]", [obj])
 
 
 # pathlib
@@ -229,6 +243,7 @@ __all__ = [
     "FileOrDirError",
     "TemporaryDirectory",
     "TemporaryFile",
+    "always_iterable",
     "file_or_dir",
     "yield_temp_dir_at",
     "yield_temp_file_at",

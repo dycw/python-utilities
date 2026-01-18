@@ -31,6 +31,7 @@ from typing import (
 )
 
 from utilities.constants import Sentinel, sentinel
+from utilities.core import always_iterable
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import is_sentinel
 from utilities.math import (
@@ -47,23 +48,6 @@ if TYPE_CHECKING:
     from types import NoneType
 
     from utilities.types import MaybeIterable, Sign, StrMapping
-
-
-##
-
-
-def always_iterable[T](obj: MaybeIterable[T], /) -> Iterable[T]:
-    """Typed version of `always_iterable`."""
-    obj = cast("Any", obj)
-    if isinstance(obj, str | bytes):
-        return cast("list[T]", [obj])
-    try:
-        return iter(cast("Iterable[T]", obj))
-    except TypeError:
-        return cast("list[T]", [obj])
-
-
-##
 
 
 def apply_bijection[T, U](
@@ -160,15 +144,6 @@ def _chain_mappings_one[K, V](
     for key, value in el.items():
         out[key] = chain(out.get(key, []), [value])
     return out
-
-
-##
-
-
-def chain_maybe_iterables[T](*maybe_iterables: MaybeIterable[T]) -> Iterable[T]:
-    """Chain a set of maybe iterables."""
-    iterables = map(always_iterable, maybe_iterables)
-    return chain.from_iterable(iterables)
 
 
 ##
@@ -971,43 +946,6 @@ class OneNonUniqueError[T](OneError):
 ##
 
 
-def one_maybe[T](*objs: MaybeIterable[T]) -> T:
-    """Return the unique value in a set of values/iterables."""
-    try:
-        return one(chain_maybe_iterables(*objs))
-    except OneEmptyError:
-        raise OneMaybeEmptyError from None
-    except OneNonUniqueError as error:
-        raise OneMaybeNonUniqueError(
-            objs=objs, first=error.first, second=error.second
-        ) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class OneMaybeError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class OneMaybeEmptyError(OneMaybeError):
-    @override
-    def __str__(self) -> str:
-        return "Object(s) must not be empty"
-
-
-@dataclass(kw_only=True, slots=True)
-class OneMaybeNonUniqueError[T](OneMaybeError):
-    objs: tuple[MaybeIterable[T], ...]
-    first: T
-    second: T
-
-    @override
-    def __str__(self) -> str:
-        return f"Object(s) {get_repr(self.objs)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
-
-
-##
-
-
 def one_str(
     iterable: Iterable[str],
     text: str,
@@ -1434,9 +1372,6 @@ __all__ = [
     "MergeStrMappingsError",
     "OneEmptyError",
     "OneError",
-    "OneMaybeEmptyError",
-    "OneMaybeError",
-    "OneMaybeNonUniqueError",
     "OneNonUniqueError",
     "OneStrEmptyError",
     "OneStrError",
@@ -1452,7 +1387,6 @@ __all__ = [
     "apply_to_tuple",
     "apply_to_varargs",
     "chain_mappings",
-    "chain_maybe_iterables",
     "chain_nullable",
     "check_bijection",
     "check_duplicates",
@@ -1482,7 +1416,6 @@ __all__ = [
     "merge_sets",
     "merge_str_mappings",
     "one",
-    "one_maybe",
     "one_str",
     "one_unique",
     "pairwise_tail",

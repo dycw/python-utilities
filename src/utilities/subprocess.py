@@ -24,10 +24,9 @@ from utilities.atomicwrites import (
 )
 from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
-from utilities.core import TemporaryDirectory, file_or_dir
+from utilities.core import TemporaryDirectory, always_iterable, file_or_dir
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
-from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.logging import to_logger
 from utilities.permissions import Permissions, ensure_perms
 from utilities.text import strip_and_dedent

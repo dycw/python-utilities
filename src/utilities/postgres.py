@@ -9,8 +9,8 @@ from sqlalchemy import Table
 from sqlalchemy.orm import DeclarativeBase
 
 from utilities.asyncio import stream_command
+from utilities.core import always_iterable
 from utilities.docker import docker_exec_cmd
-from utilities.iterables import always_iterable
 from utilities.logging import to_logger
 from utilities.os import temp_environ
 from utilities.pathlib import ensure_suffix

@@ -55,6 +55,7 @@ from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDa
 
 import utilities.math
 from utilities.constants import UTC
+from utilities.core import always_iterable
 from utilities.dataclasses import yield_fields
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
@@ -65,7 +66,6 @@ from utilities.iterables import (
     CheckSuperMappingError,
     OneEmptyError,
     OneNonUniqueError,
-    always_iterable,
     check_iterables_equal,
     check_mappings_equal,
     check_supermapping,
