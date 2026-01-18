@@ -1036,43 +1036,6 @@ class OneStrNonUniqueError(OneStrError):
 ##
 
 
-def one_unique[T: Hashable](*iterables: Iterable[T]) -> T:
-    """Return the set-unique value in a set of iterables."""
-    try:
-        return one(set(chain(*iterables)))
-    except OneEmptyError:
-        raise OneUniqueEmptyError from None
-    except OneNonUniqueError as error:
-        raise OneUniqueNonUniqueError(
-            iterables=iterables, first=error.first, second=error.second
-        ) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class OneUniqueError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class OneUniqueEmptyError(OneUniqueError):
-    @override
-    def __str__(self) -> str:
-        return "Iterable(s) must not be empty"
-
-
-@dataclass(kw_only=True, slots=True)
-class OneUniqueNonUniqueError[THashable](OneUniqueError):
-    iterables: tuple[MaybeIterable[THashable], ...]
-    first: THashable
-    second: THashable
-
-    @override
-    def __str__(self) -> str:
-        return f"Iterable(s) {get_repr(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
-
-
-##
-
-
 def pairwise_tail[T](iterable: Iterable[T], /) -> Iterator[tuple[T, T | Sentinel]]:
     """Return pairwise elements, with the last paired with the sentinel."""
     return pairwise(chain(iterable, [sentinel]))
@@ -1376,9 +1339,6 @@ __all__ = [
     "OneStrEmptyError",
     "OneStrError",
     "OneStrNonUniqueError",
-    "OneUniqueEmptyError",
-    "OneUniqueError",
-    "OneUniqueNonUniqueError",
     "RangePartitionsError",
     "ResolveIncludeAndExcludeError",
     "SortIterableError",
