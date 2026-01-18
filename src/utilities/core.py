@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import shutil
 import tempfile
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from shutil import move
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from typing import TYPE_CHECKING, Literal, overload, override
 from warnings import catch_warnings, filterwarnings
@@ -198,9 +198,9 @@ def _temporary_file_inner(
         suffix=suffix, prefix=prefix, dir=path, delete=delete, delete_on_close=False
     ) as temp:
         if name is None:
-            yield path / temp.name
+            yield Path(path, temp.name)
         else:
-            _ = move(path / temp.name, path / name)
+            _ = shutil.move(path / temp.name, path / name)
             yield path / name
 
 
