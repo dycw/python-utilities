@@ -202,7 +202,7 @@ class TestVersion3:
 
     @given(version=version3s())
     def test_version2(self, *, version: Version3) -> None:
-        assume((version.major > 0) or (version.minor > 0))
+        _ = assume((version.major > 0) or (version.minor > 0))
         new = version.version2.version3(patch=version.patch)
         assert new == version
 
