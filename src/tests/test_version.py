@@ -84,6 +84,11 @@ class TestVersion2:
         assert bumped.minor == version.minor + 1
         assert bumped.suffix is None
 
+    @given(version=version2s(), patch=integers(min_value=0))
+    def test_version3(self, *, version: Version2, patch: int) -> None:
+        new = version.version3(patch=patch).version2
+        assert new == version
+
     @given(version=version2s(), suffix=text_ascii(min_size=1) | none())
     def test_with_suffix(self, *, version: Version2, suffix: str | None) -> None:
         new = version.with_suffix(suffix=suffix)
@@ -183,6 +188,11 @@ class TestVersion3:
         assert new.minor == version.minor
         assert new.patch == version.patch
         assert new.suffix == suffix
+
+    @given(version=version3s())
+    def test_version2(self, *, version: Version3) -> None:
+        new = version.version2.version3(patch=version.patch)
+        assert new == version
 
     @given(version=version3s())
     def test_error_order(self, *, version: Version3) -> None:
