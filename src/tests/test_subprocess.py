@@ -7,7 +7,7 @@ from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from pytest import LogCaptureFixture, mark, param, raises
+from pytest import LogCaptureFixture, approx, mark, param, raises
 from pytest_lazy_fixtures import lf
 
 from utilities.constants import (
@@ -15,6 +15,7 @@ from utilities.constants import (
     EFFECTIVE_USER_NAME,
     HOME,
     MINUTE,
+    PWD,
     SECOND,
 )
 from utilities.iterables import one
@@ -33,6 +34,10 @@ from utilities.subprocess import (
     RsyncCmdSourcesNotFoundError,
     _rsync_many_prepare,
     _ssh_is_strict_checking_error,
+    _uv_pip_list_assemble_output,
+    _UvPipListBaseError,
+    _UvPipListOutdatedError,
+    _UvPipListOutput,
     append_text,
     apt_install_cmd,
     apt_remove_cmd,
@@ -93,6 +98,8 @@ from utilities.subprocess import (
     useradd_cmd,
     uv_index_cmd,
     uv_native_tls_cmd,
+    uv_pip_list,
+    uv_pip_list_cmd,
     uv_run_cmd,
     uv_tool_install_cmd,
     uv_tool_run_cmd,
@@ -102,6 +109,8 @@ from utilities.subprocess import (
 )
 from utilities.tempfile import TemporaryDirectory, TemporaryFile
 from utilities.text import strip_and_dedent, unique_str
+from utilities.typing import is_sequence_of
+from utilities.version import Version3
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
@@ -1756,6 +1765,137 @@ class TestUvIndexCmd:
     def test_multiple(self) -> None:
         result = uv_index_cmd(index=["index1", "index2"])
         expected = ["--index", "index1,index2"]
+        assert result == expected
+
+
+class TestUvPipList:
+    @skipif_ci
+    def test_main(self) -> None:
+        result = uv_pip_list()
+        assert len(result) == approx(159, rel=0.1)
+        assert is_sequence_of(result, _UvPipListOutput)
+
+
+class TestUvPipListAssembleOutput:
+    def test_main(self) -> None:
+        dict_ = {"name": "name", "version": "0.0.1"}
+        outdated = []
+        result = _uv_pip_list_assemble_output(dict_, outdated)
+        expected = _UvPipListOutput(name="name", version=Version3(0, 0, 1))
+        assert result == expected
+
+    def test_editable(self) -> None:
+        dict_ = {
+            "name": "name",
+            "version": "0.0.1",
+            "editable_project_location": str(PWD),
+        }
+        outdated = []
+        result = _uv_pip_list_assemble_output(dict_, outdated)
+        expected = _UvPipListOutput(
+            name="name", version=Version3(0, 0, 1), editable_project_location=PWD
+        )
+        assert result == expected
+
+    def test_outdated(self) -> None:
+        dict_ = {"name": "name", "version": "0.0.1"}
+        outdated = [
+            {
+                "name": "name",
+                "version": "0.0.1",
+                "latest_version": "0.0.2",
+                "latest_filetype": "wheel",
+            }
+        ]
+        result = _uv_pip_list_assemble_output(dict_, outdated)
+        expected = _UvPipListOutput(
+            name="name",
+            version=Version3(0, 0, 1),
+            latest_version=Version3(0, 0, 2),
+            latest_filetype="wheel",
+        )
+        assert result == expected
+
+    def test_error_base(self) -> None:
+        dict_ = {"name": "name", "version": "invalid"}
+        outdated = []
+        with raises(_UvPipListBaseError, match=r"Unable to parse version; got .*"):
+            _ = _uv_pip_list_assemble_output(dict_, outdated)
+
+    def test_error_outdated(self) -> None:
+        dict_ = {"name": "name", "version": "0.0.1"}
+        outdated = [{"name": "name", "latest_version": "invalid"}]
+        with raises(_UvPipListOutdatedError, match=r"Unable to parse version; got .*"):
+            _ = _uv_pip_list_assemble_output(dict_, outdated)
+
+
+class TestUvPipListCmd:
+    def test_main(self) -> None:
+        result = uv_pip_list_cmd()
+        expected = [
+            "uv",
+            "pip",
+            "list",
+            "--format",
+            "columns",
+            "--strict",
+            "--managed-python",
+        ]
+        assert result == expected
+
+    def test_editable(self) -> None:
+        result = uv_pip_list_cmd(editable=True)
+        expected = [
+            "uv",
+            "pip",
+            "list",
+            "--editable",
+            "--format",
+            "columns",
+            "--strict",
+            "--managed-python",
+        ]
+        assert result == expected
+
+    def test_exclude_editable(self) -> None:
+        result = uv_pip_list_cmd(exclude_editable=True)
+        expected = [
+            "uv",
+            "pip",
+            "list",
+            "--exclude-editable",
+            "--format",
+            "columns",
+            "--strict",
+            "--managed-python",
+        ]
+        assert result == expected
+
+    def test_format(self) -> None:
+        result = uv_pip_list_cmd(format_="json")
+        expected = [
+            "uv",
+            "pip",
+            "list",
+            "--format",
+            "json",
+            "--strict",
+            "--managed-python",
+        ]
+        assert result == expected
+
+    def test_outdated(self) -> None:
+        result = uv_pip_list_cmd(outdated=True)
+        expected = [
+            "uv",
+            "pip",
+            "list",
+            "--format",
+            "columns",
+            "--outdated",
+            "--strict",
+            "--managed-python",
+        ]
         assert result == expected
 
 

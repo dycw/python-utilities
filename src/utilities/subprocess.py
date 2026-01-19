@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 import sys
 from dataclasses import dataclass
@@ -24,16 +25,22 @@ from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
-from utilities.iterables import always_iterable
+from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.logging import to_logger
 from utilities.pathlib import file_or_dir
 from utilities.permissions import Permissions, ensure_perms
 from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
 from utilities.time import sleep
+from utilities.version import (
+    ParseVersion2Or3Error,
+    Version2,
+    Version3,
+    parse_version_2_or_3,
+)
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterable, Iterator
 
     from utilities.permissions import PermissionsLike
     from utilities.types import (
@@ -1745,6 +1752,123 @@ def uv_index_cmd(*, index: MaybeSequenceStr | None = None) -> list[str]:
 ##
 
 
+type _UvPipListFormat = Literal["columns", "freeze", "json"]
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
+class _UvPipListOutput:
+    name: str
+    version: Version2 | Version3
+    editable_project_location: Path | None = None
+    latest_version: Version2 | Version3 | None = None
+    latest_filetype: str | None = None
+
+
+def uv_pip_list(
+    *,
+    editable: bool = False,
+    exclude_editable: bool = False,
+    index: MaybeSequenceStr | None = None,
+    native_tls: bool = False,
+) -> list[_UvPipListOutput]:
+    """List packages installed in an environment."""
+    cmds_base, cmds_outdated = [
+        uv_pip_list_cmd(
+            editable=editable,
+            exclude_editable=exclude_editable,
+            format_="json",
+            outdated=outdated,
+            index=index,
+            native_tls=native_tls,
+        )
+        for outdated in [False, True]
+    ]
+    text_base, text_outdated = [
+        run(*cmds, return_=True) for cmds in [cmds_base, cmds_outdated]
+    ]
+    dicts_base, dicts_outdated = [
+        json.loads(text) for text in [text_base, text_outdated]
+    ]
+    return [_uv_pip_list_assemble_output(d, dicts_outdated) for d in dicts_base]
+
+
+def _uv_pip_list_assemble_output(
+    dict_: StrMapping, outdated: Iterable[StrMapping], /
+) -> _UvPipListOutput:
+    name = dict_["name"]
+    try:
+        version = parse_version_2_or_3(dict_["version"])
+    except ParseVersion2Or3Error:
+        raise _UvPipListBaseError(data=dict_) from None
+    try:
+        location = Path(dict_["editable_project_location"])
+    except KeyError:
+        location = None
+    try:
+        outdated_i = one(d for d in outdated if d["name"] == name)
+    except OneEmptyError:
+        latest_version = latest_filetype = None
+    else:
+        try:
+            latest_version = parse_version_2_or_3(outdated_i["latest_version"])
+        except ParseVersion2Or3Error:
+            raise _UvPipListOutdatedError(data=outdated_i) from None
+        latest_filetype = outdated_i["latest_filetype"]
+    return _UvPipListOutput(
+        name=dict_["name"],
+        version=version,
+        editable_project_location=location,
+        latest_version=latest_version,
+        latest_filetype=latest_filetype,
+    )
+
+
+@dataclass(kw_only=True, slots=True)
+class UvPipListError(Exception):
+    data: StrMapping
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse version; got {self.data}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _UvPipListBaseError(UvPipListError): ...
+
+
+class _UvPipListOutdatedError(UvPipListError): ...
+
+
+def uv_pip_list_cmd(
+    *,
+    editable: bool = False,
+    exclude_editable: bool = False,
+    format_: _UvPipListFormat = "columns",
+    outdated: bool = False,
+    index: MaybeSequenceStr | None = None,
+    native_tls: bool = False,
+) -> list[str]:
+    """Command to use 'uv' to list packages installed in an environment."""
+    args: list[str] = ["uv", "pip", "list"]
+    if editable:
+        args.append("--editable")
+    if exclude_editable:
+        args.append("--exclude-editable")
+    args.extend(["--format", format_])
+    if outdated:
+        args.append("--outdated")
+    return [
+        *args,
+        "--strict",
+        *uv_index_cmd(index=index),
+        MANAGED_PYTHON,
+        *uv_native_tls_cmd(native_tls=native_tls),
+    ]
+
+
+##
+
+
 def uv_native_tls_cmd(*, native_tls: bool = False) -> list[str]:
     """Generate the `--native-tls` command if necessary."""
     return ["--native-tls"] if native_tls else []
@@ -2351,6 +2475,7 @@ __all__ = [
     "RsyncCmdError",
     "RsyncCmdNoSourcesError",
     "RsyncCmdSourcesNotFoundError",
+    "UvPipListError",
     "append_text",
     "apt_install",
     "apt_install_cmd",
@@ -2416,6 +2541,8 @@ __all__ = [
     "useradd",
     "useradd_cmd",
     "uv_native_tls_cmd",
+    "uv_pip_list",
+    "uv_pip_list_cmd",
     "uv_run",
     "uv_run_cmd",
     "uv_tool_install",
