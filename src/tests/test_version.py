@@ -1,22 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from hypothesis import HealthCheck, Phase, given, reproduce_failure, settings
-from pytest import RaisesGroup, approx, fixture, mark, param, raises, skip
-
-from utilities.contextvars import set_global_breakpoint
-
-if TYPE_CHECKING:
-    from pytest_benchmark.fixture import BenchmarkFixture
-    from pytest_lazy_fixtures import lf
-    from pytest_regressions.dataframe_regression import DataFrameRegressionFixture
-
-
 from re import search
 from typing import TYPE_CHECKING
 
+from hypothesis import given
 from hypothesis.strategies import booleans, integers, none
+from pytest import mark, param, raises
 
 from utilities.hypothesis import sentinels, text_ascii, version2s, version3s
 from utilities.version import (
