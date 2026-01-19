@@ -6,6 +6,7 @@ import sys
 from dataclasses import dataclass
 from io import StringIO
 from itertools import chain, repeat
+from json import JSONDecodeError
 from pathlib import Path
 from re import MULTILINE, escape, search
 from shlex import join
@@ -1784,12 +1785,19 @@ def uv_pip_list(
         for outdated in [False, True]
     ]
     text_base, text_outdated = [
-        run(*cmds, return_=True) for cmds in [cmds_base, cmds_outdated]
+        run(*cmds, return_stdout=True) for cmds in [cmds_base, cmds_outdated]
     ]
-    dicts_base, dicts_outdated = [
-        json.loads(text) for text in [text_base, text_outdated]
-    ]
+    dicts_base, dicts_outdated = list(
+        map(_uv_pip_list_loads, [text_base, text_outdated])
+    )
     return [_uv_pip_list_assemble_output(d, dicts_outdated) for d in dicts_base]
+
+
+def _uv_pip_list_loads(text: str, /) -> list[StrMapping]:
+    try:
+        return json.loads(text)
+    except JSONDecodeError:
+        raise _UvPipListJsonError(text=text) from None
 
 
 def _uv_pip_list_assemble_output(
@@ -1799,7 +1807,7 @@ def _uv_pip_list_assemble_output(
     try:
         version = parse_version_2_or_3(dict_["version"])
     except ParseVersion2Or3Error:
-        raise _UvPipListBaseError(data=dict_) from None
+        raise _UvPipListBaseVersionError(data=dict_) from None
     try:
         location = Path(dict_["editable_project_location"])
     except KeyError:
@@ -1812,7 +1820,7 @@ def _uv_pip_list_assemble_output(
         try:
             latest_version = parse_version_2_or_3(outdated_i["latest_version"])
         except ParseVersion2Or3Error:
-            raise _UvPipListOutdatedError(data=outdated_i) from None
+            raise _UvPipListOutdatedVersionError(data=outdated_i) from None
         latest_filetype = outdated_i["latest_filetype"]
     return _UvPipListOutput(
         name=dict_["name"],
@@ -1824,7 +1832,20 @@ def _uv_pip_list_assemble_output(
 
 
 @dataclass(kw_only=True, slots=True)
-class UvPipListError(Exception):
+class UvPipListError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _UvPipListJsonError(UvPipListError):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse JSON; got {self.text!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _UvPipListBaseVersionError(UvPipListError):
     data: StrMapping
 
     @override
@@ -1833,10 +1854,12 @@ class UvPipListError(Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class _UvPipListBaseError(UvPipListError): ...
+class _UvPipListOutdatedVersionError(UvPipListError):
+    data: StrMapping
 
-
-class _UvPipListOutdatedError(UvPipListError): ...
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse version; got {self.data}"
 
 
 def uv_pip_list_cmd(
