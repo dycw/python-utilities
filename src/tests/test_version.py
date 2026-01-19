@@ -35,7 +35,18 @@ if TYPE_CHECKING:
 class TestParseVersion2Or3:
     @mark.parametrize(
         ("text", "expected"),
-        [param("0.1", Version2(0, 1)), param("0.0.1", Version3(0, 0, 1))],
+        [
+            param("0.1", Version2(0, 1)),
+            param("0.12", Version2(0, 12)),
+            param("1.23", Version2(1, 23)),
+            param("12.34", Version2(12, 34)),
+            param("0.0.1", Version3(0, 0, 1)),
+            param("0.0.12", Version3(0, 0, 12)),
+            param("0.1.23", Version3(0, 1, 23)),
+            param("0.12.34", Version3(0, 12, 34)),
+            param("1.23.45", Version3(1, 23, 45)),
+            param("12.34.56", Version3(12, 34, 56)),
+        ],
     )
     def test_main(self, *, text: str, expected: Version2Or3) -> None:
         result = parse_version_2_or_3(text)
