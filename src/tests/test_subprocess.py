@@ -1871,7 +1871,7 @@ class TestUvPipListCmd:
         ]
         assert result == expected
 
-    def test_format_(self) -> None:
+    def test_format(self) -> None:
         result = uv_pip_list_cmd(format_="json")
         expected = [
             "uv",
