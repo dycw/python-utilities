@@ -80,6 +80,10 @@ class Version2:
         """Bump the minor component."""
         return type(self)(self.major, self.minor + 1)
 
+    def version3(self, *, patch: int = 0) -> Version3:
+        """Convert to a Version3 object."""
+        return Version3(self.major, self.minor, patch, suffix=self.suffix)
+
     def with_suffix(self, *, suffix: str | None = None) -> Self:
         """Replace the suffix."""
         return replace(self, suffix=suffix)
@@ -211,6 +215,11 @@ class Version3:
     def bump_patch(self) -> Self:
         """Bump the patch component."""
         return type(self)(self.major, self.minor, self.patch + 1)
+
+    @property
+    def version2(self) -> Version2:
+        """Return the major/minor components only."""
+        return Version2(self.major, self.minor, suffix=self.suffix)
 
     def with_suffix(self, *, suffix: str | None = None) -> Self:
         """Replace the suffix."""
