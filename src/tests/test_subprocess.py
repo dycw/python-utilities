@@ -35,8 +35,10 @@ from utilities.subprocess import (
     _rsync_many_prepare,
     _ssh_is_strict_checking_error,
     _uv_pip_list_assemble_output,
-    _UvPipListBaseError,
-    _UvPipListOutdatedError,
+    _uv_pip_list_loads,
+    _UvPipListBaseVersionError,
+    _UvPipListJsonError,
+    _UvPipListOutdatedVersionError,
     _UvPipListOutput,
     append_text,
     apt_install_cmd,
@@ -1776,6 +1778,24 @@ class TestUvPipList:
         assert is_sequence_of(result, _UvPipListOutput)
 
 
+class TestUvPipListLoadsOutput:
+    def test_main(self) -> None:
+        text = strip_and_dedent("""
+            [{"name":"name","version":"0.0.1"}]
+        """)
+        result = _uv_pip_list_loads(text)
+        expected = [{"name": "name", "version": "0.0.1"}]
+        assert result == expected
+
+    def test_error(self) -> None:
+        text = strip_and_dedent("""
+            [{"name":"name","version":"0.0.1"}]
+            # warning: The package `name` requires `dep>=1.2.3`, but `1.2.2` is installed
+        """)
+        with raises(_UvPipListJsonError, match=r"Unable to parse JSON; got '.*'"):
+            _ = _uv_pip_list_loads(text)
+
+
 class TestUvPipListAssembleOutput:
     def test_main(self) -> None:
         dict_ = {"name": "name", "version": "0.0.1"}
@@ -1819,13 +1839,17 @@ class TestUvPipListAssembleOutput:
     def test_error_base(self) -> None:
         dict_ = {"name": "name", "version": "invalid"}
         outdated = []
-        with raises(_UvPipListBaseError, match=r"Unable to parse version; got .*"):
+        with raises(
+            _UvPipListBaseVersionError, match=r"Unable to parse version; got .*"
+        ):
             _ = _uv_pip_list_assemble_output(dict_, outdated)
 
     def test_error_outdated(self) -> None:
         dict_ = {"name": "name", "version": "0.0.1"}
         outdated = [{"name": "name", "latest_version": "invalid"}]
-        with raises(_UvPipListOutdatedError, match=r"Unable to parse version; got .*"):
+        with raises(
+            _UvPipListOutdatedVersionError, match=r"Unable to parse version; got .*"
+        ):
             _ = _uv_pip_list_assemble_output(dict_, outdated)
 
 
