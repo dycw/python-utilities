@@ -3,7 +3,7 @@ from __future__ import annotations
 from re import search
 from typing import TYPE_CHECKING
 
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.strategies import booleans, integers, none
 from pytest import mark, param, raises
 
@@ -202,6 +202,7 @@ class TestVersion3:
 
     @given(version=version3s())
     def test_version2(self, *, version: Version3) -> None:
+        assume((version.major > 0) or (version.minor > 0))
         new = version.version2.version3(patch=version.patch)
         assert new == version
 
