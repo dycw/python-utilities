@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from utilities.constants import Sentinel
 
 
-class TestParseVersion2Or3Error:
+class TestParseVersion2Or3:
     @mark.parametrize(
         ("text", "expected"),
         [param("0.1", Version2(0, 1)), param("0.0.1", Version3(0, 0, 1))],
