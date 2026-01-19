@@ -291,10 +291,10 @@ class _Version3ParseError(Version3Error):
 
 def parse_version_2_or_3(text: str, /) -> Version2Or3:
     """Parse a string into a Version2 or Version3 object."""
-    with suppress(_Version2ParseError):
-        return Version2.parse(text)
     with suppress(_Version3ParseError):
         return Version3.parse(text)
+    with suppress(_Version2ParseError):
+        return Version2.parse(text)
     raise ParseVersion2Or3Error(text=text)
 
 
