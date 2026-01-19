@@ -1776,7 +1776,7 @@ class TestUvPipList:
         assert is_sequence_of(result, _UvPipListOutput)
 
 
-class TestUvPipListAsembleOutput:
+class TestUvPipListAssembleOutput:
     def test_main(self) -> None:
         dict_ = {"name": "name", "version": "0.0.1"}
         outdated = []
