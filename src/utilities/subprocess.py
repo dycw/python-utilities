@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import shutil
 import sys
-from contextlib import suppress
 from dataclasses import dataclass
 from io import StringIO
 from itertools import chain, repeat
@@ -34,15 +33,14 @@ from utilities.tempfile import TemporaryDirectory
 from utilities.text import strip_and_dedent
 from utilities.time import sleep
 from utilities.version import (
+    ParseVersion2Or3Error,
     Version2,
-    Version2Error,
     Version3,
-    _Version2ParseError,
-    _Version3ParseError,
+    parse_version_2_or_3,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterable, Iterator
 
     from utilities.permissions import PermissionsLike
     from utilities.types import (
@@ -1770,8 +1768,6 @@ def uv_pip_list(
     *,
     editable: bool = False,
     exclude_editable: bool = False,
-    format_: _UvPipListFormat = "columns",
-    outdated: bool = False,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
 ) -> list[_UvPipListOutput]:
@@ -1793,46 +1789,54 @@ def uv_pip_list(
     dicts_base, dicts_outdated = [
         json.loads(text) for text in [text_base, text_outdated]
     ]
-    outputs: list[_UvPipListOutput] = []
-    for dict_ in dicts_base:
-        name = dict_["name"]
+    return [_uv_pip_list_assemble_output(d, dicts_outdated) for d in dicts_base]
+
+
+def _uv_pip_list_assemble_output(
+    dict_: StrMapping, outdated: Iterable[StrMapping], /
+) -> _UvPipListOutput:
+    name = dict_["name"]
+    try:
+        version = parse_version_2_or_3(dict_["version"])
+    except ParseVersion2Or3Error:
+        raise _UvPipListBaseError(data=dict_) from None
+    try:
+        location = Path(dict_["editable_project_location"])
+    except KeyError:
+        location = None
+    try:
+        outdated_i = one(d for d in outdated if d["name"] == name)
+    except OneEmptyError:
+        latest_version = latest_filetype = None
+    else:
         try:
-            version = Version2.parse(dict_["version"])
-        except _Version2ParseError:
-            try:
-                version = Version3.parse(dict_["version"])
-            except _Version3ParseError:
-                raise _UvPipListError(data=dict_)
-        try:
-            location = Path(dict_["editable_project_location"])
-        except KeyError:
-            location = None
-        try:
-            latest = one(d for d in dicts_outdated if d["name"] == name)
-        except OneEmptyError:
-            latest_version = latest_filetype = None
-        else:
-            z
-        output_i = _UvPipListOutput(
-            name=dict_["name"], version=version, editable_project_location=location
-        )
-        outputs.append(output_i)
-    assert 0, outputs[:3]
-    args: list[str] = ["uv", "pip", "list"]
-    if editable:
-        args.append("--editable")
-    if exclude_editable:
-        args.append("--exclude-editable")
-    args.extend(["--format", format_])
-    if outdated:
-        args.append("--outdated")
-    return [
-        *args,
-        "--strict",
-        *uv_index_cmd(index=index),
-        MANAGED_PYTHON,
-        *uv_native_tls_cmd(native_tls=native_tls),
-    ]
+            latest_version = parse_version_2_or_3(outdated_i["latest_version"])
+        except ParseVersion2Or3Error:
+            raise _UvPipListOutdatedError(data=outdated_i) from None
+        latest_filetype = outdated_i["latest_filetype"]
+    return _UvPipListOutput(
+        name=dict_["name"],
+        version=version,
+        editable_project_location=location,
+        latest_version=latest_version,
+        latest_filetype=latest_filetype,
+    )
+
+
+@dataclass(kw_only=True, slots=True)
+class UvPipListError(Exception):
+    data: StrMapping
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse version; got {self.data}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _UvPipListBaseError(UvPipListError): ...
+
+
+class _UvPipListOutdatedError(UvPipListError): ...
 
 
 def uv_pip_list_cmd(
@@ -2471,6 +2475,7 @@ __all__ = [
     "RsyncCmdError",
     "RsyncCmdNoSourcesError",
     "RsyncCmdSourcesNotFoundError",
+    "UvPipListError",
     "append_text",
     "apt_install",
     "apt_install_cmd",
@@ -2536,6 +2541,7 @@ __all__ = [
     "useradd",
     "useradd_cmd",
     "uv_native_tls_cmd",
+    "uv_pip_list",
     "uv_pip_list_cmd",
     "uv_run",
     "uv_run_cmd",
