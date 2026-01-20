@@ -25,6 +25,12 @@ jobs:
         with:
           python-version: ${{matrix.python-version}}
           resolution: ${{matrix.resolution}}
+    services:
+      redis:
+        image: ${{ matrix.os == 'ubuntu-latest' && 'redis/redis-stack:latest' ||
+          '' }}
+        ports:
+          - 6379:6379
     strategy:
       fail-fast: false
       matrix:
