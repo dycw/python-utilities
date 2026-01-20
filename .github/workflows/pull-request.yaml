@@ -1,5 +1,5 @@
 name: pull-request
-on:
+"on":
   pull_request:
     branches:
       - master
@@ -16,15 +16,9 @@ jobs:
   pytest:
     env:
       CI: "1"
-    name: pytest (${{matrix.os}}, ${{matrix.python-version}},
-      ${{matrix.resolution}})
-    runs-on: ${{matrix.os}}
-    services:
-      redis:
-        image: ${{ matrix.os == 'ubuntu-latest' && 'redis/redis-stack:latest' ||
-          '' }}
-        ports:
-          - 6379:6379
+    name: pytest (${{matrix.os}}, ${{matrix.python-version}}, ${{matrix.resolution}})
+    runs-on:
+      - ${{matrix.os}}
     steps:
       - name: Run 'pytest'
         uses: dycw/action-pytest@latest

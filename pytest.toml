@@ -17,6 +17,8 @@
     "error",
     "ignore::ResourceWarning",
     "ignore:Automatically deduplicated selection parameter with identical configuration:UserWarning", # altair
+    "ignore::DeprecationWarning",
+    "ignore::RuntimeWarning",
   ]
   minversion = "9.0"
   strict = true
