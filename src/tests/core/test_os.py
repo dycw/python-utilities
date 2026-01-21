@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 
 class TestCopyOrMove:
+    @mark.parametrize("argname", [param(argvalue)])
     def test_copy_file_to_file(self, tmp_path: Path) -> None:
         src = tmp_path / "src"
         dest = tmp_path / "src"
