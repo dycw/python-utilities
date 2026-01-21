@@ -1052,6 +1052,7 @@ def write_text(path: PathLike, text: str, /) -> None:
 @contextmanager
 def yield_write_path(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
     """Yield a temporary path for atomically writing files to disk."""
+    with yield_adjacent_temp_file(path)
     path = Path(path)
     parent = path.parent
     parent.mkdir(parents=True, exist_ok=True)
