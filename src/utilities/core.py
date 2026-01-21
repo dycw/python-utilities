@@ -1054,7 +1054,7 @@ def yield_write_path(path: PathLike, /, *, overwrite: bool = False) -> Iterator[
     """Yield a temporary path for atomically writing files to disk."""
     with yield_adjacent_temp_file(path) as temp:
         yield temp
-        move(temp)
+        move(temp, path, overwrite=overwrite)
     path = Path(path)
     parent = path.parent
     parent.mkdir(parents=True, exist_ok=True)
