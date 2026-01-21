@@ -9,7 +9,7 @@ from utilities.hypothesis import pairs, quadruples, triples
 
 class TestFirst:
     @given(x=integers())
-    def test_main(self, *, x: int) -> None:
+    def test_single(self, *, x: int) -> None:
         assert first((x,)) == x
 
     @given(x=pairs(integers()))
@@ -32,21 +32,21 @@ class TestIdentity:
 
 
 class TestLast:
-    @given(x=integers(), y=integers())
-    def test_main(self, *, x: int, y: int) -> None:
-        assert last((x, y)) == y
+    @given(x=integers())
+    def test_single(self, *, x: int) -> None:
+        assert last((x,)) == x
 
     @given(x=pairs(integers()))
     def test_pair(self, *, x: tuple[int, int]) -> None:
-        assert second(x) == x[1]
+        assert last(x) == x[-1]
 
     @given(x=triples(integers()))
     def test_triple(self, *, x: tuple[int, int, int]) -> None:
-        assert second(x) == x[1]
+        assert last(x) == x[-1]
 
     @given(x=quadruples(integers()))
     def test_quadruple(self, *, x: tuple[int, int, int, int]) -> None:
-        assert second(x) == x[1]
+        assert last(x) == x[-1]
 
 
 class TestSecond:
