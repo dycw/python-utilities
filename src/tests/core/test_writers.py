@@ -17,19 +17,18 @@ if TYPE_CHECKING:
 
 
 class TestWriteBytes:
-    def test_main(self, *, temp_file: Path) -> None:
-        write_bytes(temp_file, b"data")
-        assert temp_file.is_file()
-        assert temp_file.read_bytes() == b"data"
+    def test_main(self, *, temp_path_not_exist: Path) -> None:
+        write_bytes(temp_path_not_exist, b"data")
+        assert temp_path_not_exist.is_file()
+        assert temp_path_not_exist.read_bytes() == b"data"
 
 
 class TestWriteText:
     @mark.parametrize("text", [param("text"), param("text\n")])
-    def test_main(self, *, tmp_path: Path, text: str) -> None:
-        path = tmp_path / "file.txt"
-        write_text(path, text)
-        assert path.is_file()
-        assert path.read_text() == "text\n"
+    def test_main(self, *, temp_path_not_exist: Path, text: str) -> None:
+        write_text(temp_path_not_exist, text)
+        assert temp_path_not_exist.is_file()
+        assert temp_path_not_exist.read_text() == "text\n"
 
 
 class TestYieldWritePath:
@@ -53,12 +52,13 @@ class TestYieldWritePath:
             _ = temp.write_text("post")
         assert temp_file.read_text() == "post"
 
-    def test_error(self, *, temp_file: Path) -> None:
+    @mark.parametrize("compress", [param(False), param(True, marks=mark.xfail)])
+    def test_error(self, *, temp_file: Path, compress: bool) -> None:
         with (
             raises(
                 YieldWritePathError,
                 match=r"Cannot write to '.*' since it already exists",
             ),
-            yield_write_path(temp_file),
+            yield_write_path(temp_file, compress=compress),
         ):
             ...

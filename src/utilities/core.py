@@ -204,7 +204,20 @@ def compress_bz2(
         return BZ2File(path, mode="wb")
 
     func2 = cast("PathToBinaryIO", func)
-    _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
+    try:
+        _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
+    except _CompressFilesError as error:
+        raise CompressBZ2Error(srcs=error.srcs, dest=error.dest) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class CompressBZ2Error(Exception):
+    srcs: list[Path]
+    dest: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot compress source(s) {repr_(list(map(str, self.srcs)))} since destination {repr_str(self.dest)} already exists"
 
 
 def compress_gzip(
@@ -216,7 +229,20 @@ def compress_gzip(
         return GzipFile(path, mode="wb")
 
     func2 = cast("PathToBinaryIO", func)
-    _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
+    try:
+        _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
+    except _CompressFilesError as error:
+        raise CompressGzipError(srcs=error.srcs, dest=error.dest) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class CompressGzipError(Exception):
+    srcs: list[Path]
+    dest: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot compress source(s) {repr_(list(map(str, self.srcs)))} since destination {repr_str(self.dest)} already exists"
 
 
 def compress_lzma(
@@ -228,7 +254,20 @@ def compress_lzma(
         return LZMAFile(path, mode="wb")
 
     func2 = cast("PathToBinaryIO", func)
-    _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
+    try:
+        _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
+    except _CompressFilesError as error:
+        raise CompressLZMAError(srcs=error.srcs, dest=error.dest) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class CompressLZMAError(Exception):
+    srcs: list[Path]
+    dest: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot compress source(s) {repr_(list(map(str, self.srcs)))} since destination {repr_str(self.dest)} already exists"
 
 
 def _compress_files(
@@ -239,32 +278,45 @@ def _compress_files(
     overwrite: bool = False,
 ) -> None:
     *srcs, dest = map(Path, [src_or_dest, *srcs_or_dest])
-    with yield_write_path(dest, overwrite=overwrite) as temp, func(temp) as buffer:
-        match srcs:
-            case [src]:
-                match file_or_dir(src):
-                    case "file":
-                        with src.open(mode="rb") as fh:
-                            copyfileobj(fh, buffer)
-                    case "dir":
-                        with TarFile(mode="w", fileobj=buffer) as tar:
-                            _compress_files_add_dir(src, tar)
-                    case None:
-                        ...
-                    case never:
-                        assert_never(never)
-            case _:
-                with TarFile(mode="w", fileobj=buffer) as tar:
-                    for src_i in sorted(srcs):
-                        match file_or_dir(src_i):
-                            case "file":
-                                tar.add(src_i, src_i.name)
-                            case "dir":
-                                _compress_files_add_dir(src_i, tar)
-                            case None:
-                                ...
-                            case never:
-                                assert_never(never)
+    try:
+        with yield_write_path(dest, overwrite=overwrite) as temp, func(temp) as buffer:
+            match srcs:
+                case [src]:
+                    match file_or_dir(src):
+                        case "file":
+                            with src.open(mode="rb") as fh:
+                                copyfileobj(fh, buffer)
+                        case "dir":
+                            with TarFile(mode="w", fileobj=buffer) as tar:
+                                _compress_files_add_dir(src, tar)
+                        case None:
+                            ...
+                        case never:
+                            assert_never(never)
+                case _:
+                    with TarFile(mode="w", fileobj=buffer) as tar:
+                        for src_i in sorted(srcs):
+                            match file_or_dir(src_i):
+                                case "file":
+                                    tar.add(src_i, src_i.name)
+                                case "dir":
+                                    _compress_files_add_dir(src_i, tar)
+                                case None:
+                                    ...
+                                case never:
+                                    assert_never(never)
+    except YieldWritePathError as error:
+        raise _CompressFilesError(srcs=srcs, dest=error.path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class _CompressFilesError(Exception):
+    srcs: list[Path]
+    dest: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot compress source(s) {repr_str(self.srcs)} since destination {repr_str(self.dest)} already exists"
 
 
 def _compress_files_add_dir(path: PathLike, tar: TarFile, /) -> None:
@@ -1653,6 +1705,9 @@ class _ToTimeZoneNamePlainDateTimeError(ToTimeZoneNameError):
 
 
 __all__ = [
+    "CompressBZ2Error",
+    "CompressGzipError",
+    "CompressLZMAError",
     "ExtractGroupError",
     "ExtractGroupsError",
     "FileOrDirError",

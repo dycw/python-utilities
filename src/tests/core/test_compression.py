@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+import re
 from bz2 import BZ2File
 from gzip import GzipFile
 from lzma import LZMAFile
+from re import DOTALL
 from tarfile import ReadError, TarFile
 from typing import TYPE_CHECKING, BinaryIO
 
 from pytest import fixture, mark, param, raises
 
 from utilities.core import (
+    CompressBZ2Error,
+    CompressGzipError,
+    CompressLZMAError,
     _compress_files,
     _yield_uncompressed,
     compress_bz2,
@@ -55,7 +60,7 @@ def writer(*, reader_writer: tuple[PathToBinaryIO, PathToBinaryIO]) -> PathToBin
     return writer
 
 
-class TestPairs:
+class TestCompressAndYieldUncompressed:
     @mark.parametrize(
         ("compress", "yield_uncompressed"),
         [
@@ -67,17 +72,41 @@ class TestPairs:
     def test_main(
         self,
         *,
-        tmp_path: Path,
         temp_file: Path,
+        temp_path_not_exist: Path,
         compress: Callable[[PathLike, PathLike], None],
         yield_uncompressed: Callable[[PathLike], AbstractContextManager[Path]],
     ) -> None:
         _ = temp_file.write_text("text")
-        dest = tmp_path / "dest"
-        compress(temp_file, dest)
-        with yield_uncompressed(dest) as temp:
+        compress(temp_file, temp_path_not_exist)
+        with yield_uncompressed(temp_path_not_exist) as temp:
             assert temp.is_file()
             assert temp.read_text() == "text"
+
+    @mark.parametrize(
+        ("compress", "error"),
+        [
+            param(compress_bz2, CompressBZ2Error),
+            param(compress_gzip, CompressGzipError),
+            param(compress_lzma, CompressLZMAError),
+        ],
+    )
+    def test_error(
+        self,
+        *,
+        temp_files: tuple[Path, Path],
+        compress: Callable[[PathLike, PathLike], None],
+        error: type[Exception],
+    ) -> None:
+        src, dest = temp_files
+        with raises(
+            error,
+            match=re.compile(
+                r"Cannot compress source\(s\) .* since destination '.*' already exists",
+                flags=DOTALL,
+            ),
+        ):
+            compress(src, dest)
 
 
 class TestCompressFiles:
