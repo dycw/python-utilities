@@ -58,6 +58,7 @@ class TestGetEnv:
 
 class TestYieldTempEnviron:
     def test_set(self) -> None:
+        key, value = self._generate()
         assert getenv(key) is None
         with yield_temp_environ({key: value}):
             assert getenv(key) == value
