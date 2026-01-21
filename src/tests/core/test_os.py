@@ -17,7 +17,8 @@ if TYPE_CHECKING:
 
 class TestCopyOrMove:
     def test_copy_file_to_file(self, tmp_path: Path) -> None:
-        a
+        src = tmp_path / "src"
+        src = tmp_path / "src"
 
 
 class TestGetEnv:
