@@ -149,6 +149,20 @@ class TestCopyOrMove:
             _ = (dest / "dest3.txt").write_text("dest3")
         return dest
 
+    def _assert_post_file(self, src: Path, dest: Path, /) -> None:
+        match mode:
+            case "copy":
+                copy(src, dest, overwrite=True)
+                assert src.is_file()
+                assert src.read_text() == "src"
+            case "move":
+                move(src, dest, overwrite=True)
+                assert not src.exists()
+            case never:
+                assert_never(never)
+        assert dest.is_file()
+        assert dest.read_text() == "src"
+
 
 class TestGetEnv:
     def test_main(self) -> None:
