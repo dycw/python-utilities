@@ -34,7 +34,7 @@ class TestCopyOrMove:
             _ = dest.write_text("dest")
         match mode:
             case "copy":
-                copy(src, dest)
+                copy(src, dest, overwrite=overwrite)
             case "move":
                 move(src, dest)
             case never:
