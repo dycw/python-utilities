@@ -34,6 +34,8 @@ class TestCopyOrMove:
                 copy(src, dest)
             case "move":
                 move(src, dest)
+            case never:
+                assert_never(never)
 
 
 class TestGetEnv:
