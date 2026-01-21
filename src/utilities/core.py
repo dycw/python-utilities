@@ -205,11 +205,6 @@ _suppress_super_attribute_error_pattern = re.compile(
 ###############################################################################
 
 
-def identity[T](obj: T, /) -> T:
-    """Return the object itself."""
-    return obj
-##
-
 @overload
 def first[T](tup: tuple[T], /) -> T: ...
 @overload
@@ -242,9 +237,17 @@ def last[T](tup: tuple[Any, T], /) -> T: ...
 def last[T](tup: tuple[Any, Any, T], /) -> T: ...
 @overload
 def last[T](tup: tuple[Any, Any, Any, T], /) -> T: ...
-def last(objtupuple[Any, ...], /) -> Any:
+def last(tup: tuple[Any, ...], /) -> Any:
     """Get the last element in a tuple."""
     return tup[-1]
+
+
+##
+
+
+def identity[T](obj: T, /) -> T:
+    """Return the object itself."""
+    return obj
 
 
 ###############################################################################
