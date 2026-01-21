@@ -486,7 +486,7 @@ def move(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
 
 
 @dataclass(kw_only=True, slots=True)
-class MoveError(Exception): ...
+class CopyOrMoveError(Exception): ...
 
 
 def _copy_or_move(
@@ -510,7 +510,7 @@ def _copy_or_move(
 
 
 @dataclass(kw_only=True, slots=True)
-class _MoveSourceNotFoundError(MoveError):
+class _MoveSourceNotFoundError(CopyOrMoveError):
     src: Path
 
     @override
@@ -519,7 +519,7 @@ class _MoveSourceNotFoundError(MoveError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _MoveFileExistsError(MoveError):
+class _MoveFileExistsError(CopyOrMoveError):
     src: Path
     dest: Path
 
