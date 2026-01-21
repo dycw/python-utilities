@@ -55,7 +55,7 @@ class TestCopyOrMove:
     def test_file_to_dir(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
         src = tmp_path / "src.txt"
         _ = src.write_text("src")
-        dest = tmp_path / "dest.txt"
+        dest = tmp_path / "dest"
         if dest_exists:
             _ = dest.write_text("dest")
         match mode:
