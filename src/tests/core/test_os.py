@@ -103,6 +103,39 @@ class TestCopyOrMove:
         assert (dest / "src1.txt").read_text() == "src1"
         assert (dest / "src2.txt").read_text() == "src2"
 
+    @mark.parametrize("mode", [param("copy"), param("move")])
+    @mark.parametrize(
+        ("dest_exists", "overwrite"),
+        [param(False, False), param(False, True), param(True, True)],
+    )
+    def test_dir_to_dir(
+        self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool, overwrite: bool
+    ) -> None:
+        src = tmp_path / "src"
+        src.mkdir()
+        _ = (src / "src1.txt").write_text("src1")
+        _ = (src / "src2.txt").write_text("src2")
+        dest = tmp_path / "dest"
+        if dest_exists:
+            dest.mkdir()
+            _ = (dest / "dest1.txt").write_text("dest1")
+            _ = (dest / "dest2.txt").write_text("dest2")
+            _ = (dest / "dest3.txt").write_text("dest3")
+        match mode:
+            case "copy":
+                copy(src, dest, overwrite=overwrite)
+                assert src.is_dir()
+                assert {f.name for f in src.iterdir()} == {"src1.txt", "src2.txt"}
+            case "move":
+                move(src, dest, overwrite=overwrite)
+                assert not src.exists()
+            case never:
+                assert_never(never)
+        assert dest.is_dir()
+        assert {f.name for f in dest.iterdir()} == {"src1.txt", "src2.txt"}
+        assert (dest / "src1.txt").read_text() == "src1"
+        assert (dest / "src2.txt").read_text() == "src2"
+
 
 class TestGetEnv:
     def test_main(self) -> None:
