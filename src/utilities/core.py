@@ -1063,7 +1063,7 @@ class YieldWritePathError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Cannot write to {repr_str(self.src)} since destination {repr_str(self.dest)} already exists"
+        return f"Cannot write to {repr_str(self.src)} since it already exists"
 
 
 __all__ = [
