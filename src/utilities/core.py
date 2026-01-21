@@ -542,18 +542,13 @@ def _copy_or_move__copy_file(src: Path, dest: Path, /) -> None:
 
 
 def _copy_or_move__move_dir(src: Path, dest: Path, /, *, delete: bool = False) -> None:
-    try:
         with (
             yield_adjacent_temp_dir(dest) as temp1,
             yield_adjacent_temp_dir(dest) as temp2,
         ):
-            breakpoint()
             _ = dest.replace(temp1)
-            breakpoint()
             _ = shutil.copytree(src, temp2, dirs_exist_ok=True)
-            breakpoint()
             _ = temp2.replace(dest)
-            breakpoint()
     except OSError as error:  # pragma: no cover
         raise
         if not _is_invalid_cross_device_link_error(error):
