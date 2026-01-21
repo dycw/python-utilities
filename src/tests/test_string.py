@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from pytest import raises
 
-from utilities.os import yield_temp_environ
+from utilities.core import yield_temp_environ
 from utilities.string import SubstituteError, substitute
 from utilities.text import strip_and_dedent, unique_str
 

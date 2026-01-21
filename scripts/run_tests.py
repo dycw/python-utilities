@@ -7,6 +7,7 @@ from subprocess import CalledProcessError, check_call
 from tomllib import TOMLDecodeError, loads
 from typing import TYPE_CHECKING
 
+from utilities.core import yield_temp_environ
 from utilities.logging import basic_config
 from utilities.pathlib import get_repo_root
 from utilities.re import extract_group

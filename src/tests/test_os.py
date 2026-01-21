@@ -4,13 +4,8 @@ from hypothesis import given
 from hypothesis.strategies import integers
 from pytest import mark, param, raises
 
-from utilities.os import (
-    GetCPUUseError,
-    get_cpu_use,
-    is_debug,
-    is_pytest,
-    yield_temp_environ,
-)
+from utilities.core import yield_temp_environ
+from utilities.os import GetCPUUseError, get_cpu_use, is_debug, is_pytest
 
 
 class TestGetCPUUse:

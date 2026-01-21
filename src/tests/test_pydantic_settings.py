@@ -10,7 +10,7 @@ import yaml
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pytest import mark, param
 
-from utilities.os import yield_temp_environ
+from utilities.core import yield_temp_environ
 from utilities.pydantic_settings import (
     CustomBaseSettings,
     HashableBaseSettings,

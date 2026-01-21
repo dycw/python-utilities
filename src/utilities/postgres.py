@@ -9,10 +9,9 @@ from sqlalchemy import Table
 from sqlalchemy.orm import DeclarativeBase
 
 from utilities.asyncio import stream_command
-from utilities.core import always_iterable
+from utilities.core import always_iterable, yield_temp_environ
 from utilities.docker import docker_exec_cmd
 from utilities.logging import to_logger
-from utilities.os import yield_temp_environ
 from utilities.pathlib import ensure_suffix
 from utilities.sqlalchemy import extract_url, get_table_name
 from utilities.timer import Timer
