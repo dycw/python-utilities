@@ -138,7 +138,9 @@ class TestCopyOrMove:
             _ = (dest / "dest3.txt").write_text("dest3")
         return dest
 
-    def _assert_post_file(self, mode: CopyOrMove, src: Path, dest: Path, /) -> None:
+    def _assert_post_file(
+        self, mode: CopyOrMove, src: Path, dest: Path, /, *, overwrite: bool = False
+    ) -> None:
         match mode:
             case "copy":
                 copy(src, dest, overwrite=True)
