@@ -10,7 +10,6 @@ from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
 from utilities.constants import SECOND
 from utilities.core import get_class_name, repr_
-from utilities.reprlib import get_repr_and_class
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Container, Iterable, Iterator
@@ -529,7 +528,7 @@ def yield_object_attributes(
 
 
 def _make_error_msg(obj: Any, desc: str, /, *, nullable: bool = False) -> str:
-    msg = f"{get_repr_and_class(obj)} must be {desc}"
+    msg = f"Object {repr_(obj)} of type {get_class_name(obj)!r} must be {desc}"
     if nullable:
         msg += " or None"
     return msg

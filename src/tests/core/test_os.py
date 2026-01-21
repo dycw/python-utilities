@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import pairwise
 from os import getenv
 from typing import TYPE_CHECKING, assert_never
 
@@ -12,6 +13,7 @@ from utilities.core import (
     copy,
     get_env,
     move,
+    move_many,
     unique_str,
     yield_temp_environ,
 )
@@ -176,6 +178,17 @@ class TestGetEnv:
         key = f"_TEST_OS_{unique_str()}"
         value = unique_str()
         return key, value
+
+
+class TestMoveMany:
+    def test_many(self, *, tmp_path: Path) -> None:
+        n = 5
+        files = [tmp_path.joinpath(f"file{i}") for i in range(n + 2)]
+        for i, file in enumerate(files[:-1]):
+            _ = file.write_text(str(i))
+        move_many(*pairwise(files), overwrite=True)
+        for i, file in enumerate(files[1:], start=1):
+            assert file.read_text() == str(i - 1)
 
 
 class TestYieldTempEnviron:

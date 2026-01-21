@@ -142,7 +142,7 @@ def apt_remove_cmd(package: str, /, *packages: str) -> list[str]:
 
 def apt_update(*, sudo: bool = False) -> None:
     """Update 'apt'."""
-    run(*maybe_sudo_cmd(*APT_UPDATE, sudo=sudo))
+    run(*maybe_sudo_cmd(*APT_UPDATE, sudo=sudo))  # pragma: no cover
 
 
 ##
@@ -880,10 +880,10 @@ def rsync_cmd(
         args.extend(["--rsync-path", join(sudo_cmd("rsync"))])
     srcs = list(always_iterable(src_or_srcs))  # do not Path()
     if len(srcs) == 0:
-        raise RsyncCmdNoSourcesError(user=user, hostname=hostname, dest=dest)
+        raise _RsyncCmdNoSourcesError(user=user, hostname=hostname, dest=dest)
     missing = [s for s in srcs if not Path(s).exists()]
     if len(missing) >= 1:
-        raise RsyncCmdSourcesNotFoundError(
+        raise _RsyncCmdSourcesNotFoundError(
             sources=missing, user=user, hostname=hostname, dest=dest
         )
     return [*args, *map(str, srcs), f"{user}@{hostname}:{dest}"]
@@ -895,20 +895,16 @@ class RsyncCmdError(Exception):
     hostname: str
     dest: PathLike
 
+
+@dataclass(kw_only=True, slots=True)
+class _RsyncCmdNoSourcesError(RsyncCmdError):
     @override
     def __str__(self) -> str:
         return f"No sources selected to send to {self.user}@{self.hostname}:{self.dest}"
 
 
 @dataclass(kw_only=True, slots=True)
-class RsyncCmdNoSourcesError(RsyncCmdError):
-    @override
-    def __str__(self) -> str:
-        return f"No sources selected to send to {self.user}@{self.hostname}:{self.dest}"
-
-
-@dataclass(kw_only=True, slots=True)
-class RsyncCmdSourcesNotFoundError(RsyncCmdError):
+class _RsyncCmdSourcesNotFoundError(RsyncCmdError):
     sources: list[PathLike]
 
     @override
@@ -1465,7 +1461,7 @@ def ssh(
             retry_skip=_ssh_retry_skip,
             logger=logger,
         )
-    except CalledProcessError as error:  # skipif-ci
+    except CalledProcessError as error:  # pragma: no cover
         if not _ssh_is_strict_checking_error(error.stderr):
             raise
         ssh_keyscan(hostname, port=port)
@@ -1562,7 +1558,7 @@ def ssh_await(
             to_logger(logger).info("Waiting for '%s'...", hostname)
         try:
             ssh(user, hostname, "true")
-        except CalledProcessError:
+        except CalledProcessError:  # pragma: no cover
             sleep(duration)
         else:
             if logger is not None:
@@ -2522,8 +2518,6 @@ __all__ = [
     "CpError",
     "MvFileError",
     "RsyncCmdError",
-    "RsyncCmdNoSourcesError",
-    "RsyncCmdSourcesNotFoundError",
     "UvPipListError",
     "append_text",
     "apt_install",

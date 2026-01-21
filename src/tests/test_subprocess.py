@@ -36,10 +36,11 @@ from utilities.subprocess import (
     ChownCmdError,
     CpError,
     MvFileError,
-    RsyncCmdNoSourcesError,
-    RsyncCmdSourcesNotFoundError,
     _rsync_many_prepare,
+    _RsyncCmdNoSourcesError,
+    _RsyncCmdSourcesNotFoundError,
     _ssh_is_strict_checking_error,
+    _ssh_retry_skip,
     _uv_pip_list_assemble_output,
     _uv_pip_list_loads,
     _UvPipListBaseVersionError,
@@ -102,6 +103,7 @@ from utilities.subprocess import (
     symlink_cmd,
     tee,
     tee_cmd,
+    touch,
     touch_cmd,
     useradd_cmd,
     uv_index_cmd,
@@ -314,6 +316,13 @@ class TestChOwnCmd:
 
 class TestCopyText:
     def test_main(self, *, temp_files: tuple[Path, Path]) -> None:
+        src, dest = temp_files
+        _ = src.write_text("text")
+        copy_text(src, dest)
+        result = dest.read_text()
+        assert result == "text"
+
+    def test_substitutions(self, *, temp_files: tuple[Path, Path]) -> None:
         src, dest = temp_files
         _ = src.write_text("${KEY}")
         copy_text(src, dest, substitutions={"KEY": "value"})
@@ -742,6 +751,19 @@ class TestRsync:
                 """),
             )
 
+    @skipif_ci
+    @throttle_test(duration=5 * MINUTE)
+    def test_chmod(self, *, temp_file: Path, ssh_user: str, ssh_hostname: str) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
+            dest = temp_dest / temp_file.name
+            rsync(temp_file, ssh_user, ssh_hostname, dest, chmod="u=rwx,g=r,o=r")
+            ssh(
+                ssh_user,
+                ssh_hostname,
+                *BASH_LS,
+                input=f"if ! [ -f {dest} ]; then exit 1; fi",
+            )
+
 
 class TestRsyncCmd:
     def test_main(self, *, temp_file: Path) -> None:
@@ -903,14 +925,14 @@ class TestRsyncCmd:
 
     def test_error_no_sources(self) -> None:
         with raises(
-            RsyncCmdNoSourcesError,
+            _RsyncCmdNoSourcesError,
             match=r"No sources selected to send to user@hostname:dest",
         ):
             _ = rsync_cmd([], "user", "hostname", "dest")
 
     def test_error_sources_not_found(self, *, temp_path_not_exist: Path) -> None:
         with raises(
-            RsyncCmdSourcesNotFoundError,
+            _RsyncCmdSourcesNotFoundError,
             match=r"Sources selected to send to user@hostname:dest but not found: '.*'",
         ):
             _ = rsync_cmd(temp_path_not_exist, "user", "hostname", "dest")
@@ -1542,6 +1564,11 @@ Host key verification failed.
         assert _ssh_is_strict_checking_error(text)
 
 
+class TestSSHRetrySkip:
+    def test_main(self) -> None:
+        assert not _ssh_retry_skip(0, "stdout", "stderr")
+
+
 class TestSSHKeyScan:
     @skipif_ci
     def test_missing(
@@ -1719,6 +1746,12 @@ class TestTeeCmd:
         result = tee_cmd("path", append=True)
         expected = ["tee", "-a", "path"]
         assert result == expected
+
+
+class TestTouch:
+    def test_main(self, *, temp_path_not_exist: Path) -> None:
+        touch(temp_path_not_exist)
+        assert temp_path_not_exist.is_file()
 
 
 class TestTouchCmd:

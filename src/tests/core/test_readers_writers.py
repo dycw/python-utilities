@@ -24,7 +24,7 @@ class TestReadWriteBytes:
     def test_main(self, *, temp_path_not_exist: Path, compress: bool) -> None:
         write_bytes(temp_path_not_exist, b"data", compress=compress)
         assert temp_path_not_exist.is_file()
-        assert read_bytes(temp_path_not_exist, uncompress=compress) == b"data"
+        assert read_bytes(temp_path_not_exist, decompress=compress) == b"data"
 
     def test_json(self, *, temp_path_not_exist: Path) -> None:
         write_bytes(temp_path_not_exist, b"""{"foo":0,"bar":[1,2,3]}""", json=True)
@@ -36,7 +36,7 @@ class TestReadWriteBytes:
         with raises(
             ReadBytesError, match=r"Cannot read from '.*' since it does not exist"
         ):
-            _ = read_bytes(temp_path_not_exist, uncompress=uncompress)
+            _ = read_bytes(temp_path_not_exist, decompress=uncompress)
 
     def test_error_write(self, *, temp_file: Path) -> None:
         with raises(
@@ -53,14 +53,14 @@ class TestWriteText:
     ) -> None:
         write_text(temp_path_not_exist, text, compress=compress)
         assert temp_path_not_exist.is_file()
-        assert read_text(temp_path_not_exist, uncompress=compress) == "text\n"
+        assert read_text(temp_path_not_exist, decompress=compress) == "text\n"
 
     @mark.parametrize("uncompress", [param(False), param(True)])
     def test_error_read(self, *, temp_path_not_exist: Path, uncompress: bool) -> None:
         with raises(
             ReadTextError, match=r"Cannot read from '.*' since it does not exist"
         ):
-            _ = read_text(temp_path_not_exist, uncompress=uncompress)
+            _ = read_text(temp_path_not_exist, decompress=uncompress)
 
     def test_error_write(self, *, temp_file: Path) -> None:
         with raises(

@@ -8,7 +8,7 @@ from pytest import mark, param
 from utilities.core import repr_, repr_str
 
 
-class TestGetRepr:
+class TestRepr:
     @mark.parametrize(
         ("obj", "expected"),
         [
@@ -26,5 +26,4 @@ class TestGetRepr:
 
 class TestReprStr:
     def test_main(self) -> None:
-        s = repr_str(Path("path"))
-        assert s == "'path'"
+        assert repr_str(Path("path")) == "'path'"

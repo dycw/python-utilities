@@ -8,7 +8,7 @@ import shutil
 import tempfile
 from bz2 import BZ2File
 from collections.abc import Callable, Iterable, Iterator
-from contextlib import contextmanager, suppress
+from contextlib import ExitStack, contextmanager, suppress
 from dataclasses import dataclass
 from functools import _lru_cache_wrapper, partial, wraps
 from gzip import GzipFile
@@ -996,6 +996,17 @@ class GetEnvError(Exception):
 ##
 
 
+def move_many(*paths: tuple[PathLike, PathLike], overwrite: bool = False) -> None:
+    """Move a set of files concurrently."""
+    with ExitStack() as stack:
+        for src, dest in paths:
+            temp = stack.enter_context(yield_write_path(dest, overwrite=overwrite))
+            move(src, temp, overwrite=overwrite)
+
+
+##
+
+
 @contextmanager
 def yield_temp_environ(
     env: Mapping[str, str | None] | None = None, **env_kwargs: str | None
@@ -1962,6 +1973,7 @@ __all__ = [
     "is_sentinel",
     "max_nullable",
     "min_nullable",
+    "move_many",
     "normalize_multi_line_str",
     "normalize_str",
     "not_func",
