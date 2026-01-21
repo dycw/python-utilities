@@ -11,9 +11,12 @@ from utilities.contextvars import set_global_breakpoint
 from utilities.core import GetEnvError, get_env, unique_str, yield_temp_environ
 from utilities.hypothesis import text_ascii
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 
 class TestCopyOrMove:
-    def test_main(self) -> None:
+    def test_main(self, tmp_path: Path) -> None:
         a
 
 
