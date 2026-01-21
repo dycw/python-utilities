@@ -195,38 +195,51 @@ class MaxNullableError[T: SupportsRichComparison](Exception):
 ###############################################################################
 
 
-def compress_bz2(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
+def compress_bz2(
+    src_or_dest: PathLike, /, *srcs_or_dest: PathLike, overwrite: bool = False
+) -> None:
     """Create a BZ2 file."""
 
     def func(path: PathLike, /) -> BZ2File:
         return BZ2File(path, mode="wb")
 
-    _compress_files(cast("PathToBinaryIO", func), src_or_dest, *srcs_or_dest)
+    func2 = cast("PathToBinaryIO", func)
+    _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
 
 
-def compress_gzip(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
+def compress_gzip(
+    src_or_dest: PathLike, /, *srcs_or_dest: PathLike, overwrite: bool = False
+) -> None:
     """Create a Gzip file."""
 
     def func(path: PathLike, /) -> GzipFile:
         return GzipFile(path, mode="wb")
 
-    _compress_files(cast("PathToBinaryIO", func), src_or_dest, *srcs_or_dest)
+    func2 = cast("PathToBinaryIO", func)
+    _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
 
 
-def compress_lzma(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
+def compress_lzma(
+    src_or_dest: PathLike, /, *srcs_or_dest: PathLike, overwrite: bool = False
+) -> None:
     """Create an LZMA file."""
 
     def func(path: PathLike, /) -> LZMAFile:
         return LZMAFile(path, mode="wb")
 
-    _compress_files(cast("PathToBinaryIO", func), src_or_dest, *srcs_or_dest)
+    func2 = cast("PathToBinaryIO", func)
+    _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
 
 
 def _compress_files(
-    func: PathToBinaryIO, src_or_dest: PathLike, /, *srcs_or_dest: PathLike
+    func: PathToBinaryIO,
+    src_or_dest: PathLike,
+    /,
+    *srcs_or_dest: PathLike,
+    overwrite: bool = False,
 ) -> None:
     *srcs, dest = map(Path, [src_or_dest, *srcs_or_dest])
-    with yield_write_path(dest, overwrite=True) as temp, func(temp) as buffer:
+    with yield_write_path(dest, overwrite=overwrite) as temp, func(temp) as buffer:
         match srcs:
             case [src]:
                 match file_or_dir(src):
@@ -1506,12 +1519,17 @@ def write_text(path: PathLike, text: str, /, *, overwrite: bool = False) -> None
 
 
 @contextmanager
-def yield_write_path(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
+def yield_write_path(
+    path: PathLike, /, *, compress: bool = False, overwrite: bool = False
+) -> Iterator[Path]:
     """Yield a temporary path for atomically writing files to disk."""
     with yield_adjacent_temp_file(path) as temp:
         yield temp
         try:
-            move(temp, path, overwrite=overwrite)
+            if compress:
+                compress_gzip(temp, path, overwrite=overwrite)
+            else:
+                move(temp, path, overwrite=overwrite)
         except _CopyOrMoveDestinationExistsError as error:
             raise YieldWritePathError(path=error.dest) from None
 

@@ -8,6 +8,7 @@ from utilities.core import (
     YieldWritePathError,
     write_bytes,
     write_text,
+    yield_gzip,
     yield_write_path,
 )
 
@@ -33,29 +34,32 @@ class TestWriteText:
 
 
 class TestYieldWritePath:
-    def test_main(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        with yield_write_path(path) as temp:
+    def test_main(self, *, temp_path_not_exist: Path) -> None:
+        with yield_write_path(temp_path_not_exist) as temp:
             _ = temp.write_text("text")
-            assert not path.exists()
-        assert path.is_file()
-        assert path.read_text() == "text"
+            assert not temp_path_not_exist.exists()
+        assert temp_path_not_exist.is_file()
+        assert temp_path_not_exist.read_text() == "text"
 
-    def test_overwrite(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        _ = path.write_text("init")
-        with yield_write_path(path, overwrite=True) as temp:
+    def test_compress(self, *, temp_path_not_exist: Path) -> None:
+        with yield_write_path(temp_path_not_exist, compress=True) as temp:
+            _ = temp.write_bytes(b"data")
+        assert temp_path_not_exist.is_file()
+        with yield_gzip(temp_path_not_exist) as temp:
+            assert temp.read_bytes() == b"data"
+
+    def test_overwrite(self, *, temp_file: Path) -> None:
+        _ = temp_file.write_text("init")
+        with yield_write_path(temp_file, overwrite=True) as temp:
             _ = temp.write_text("post")
-        assert path.read_text() == "post"
+        assert temp_file.read_text() == "post"
 
-    def test_error(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
+    def test_error(self, *, temp_file: Path) -> None:
         with (
             raises(
                 YieldWritePathError,
                 match=r"Cannot write to '.*' since it already exists",
             ),
-            yield_write_path(path),
+            yield_write_path(temp_file),
         ):
             ...
