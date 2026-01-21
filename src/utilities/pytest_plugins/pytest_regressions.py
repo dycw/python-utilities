@@ -40,7 +40,7 @@ else:
 
 
 def _get_path(request: FixtureRequest, /) -> Path:
-    from utilities.pathlib import get_root
+    from utilities.pathlib import get_repo_root
     from utilities.pytest import _NodeIdToPathNotGetTailError, node_id_path
 
     path = Path(cast("Any", request).fspath)
@@ -50,7 +50,7 @@ def _get_path(request: FixtureRequest, /) -> Path:
     except _NodeIdToPathNotGetTailError:
         root = Path("tests")
         tail = node_id_path(request.node.nodeid, root=root)
-    return get_root(path).joinpath(root, "regressions", tail)
+    return get_repo_root(path).joinpath(root, "regressions", tail)
 
 
 __all__ = ["orjson_regression", "polars_regression"]

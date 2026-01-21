@@ -24,7 +24,7 @@ from utilities.hashlib import md5_hash
 from utilities.pathlib import (
     _GetTailEmptyError,
     ensure_suffix,
-    get_root,
+    get_repo_root,
     get_tail,
     module_path,
 )
@@ -291,7 +291,9 @@ def _md5_hash_cached(text: str, /) -> str:
 
 def _get_test_path(*, root: PathLike | None = None) -> Path:
     if root is None:
-        root_use = get_root().joinpath(".pytest_cache", "throttle")  # pragma: no cover
+        root_use = get_repo_root().joinpath(
+            ".pytest_cache", "throttle"
+        )  # pragma: no cover
     else:
         root_use = root
     return Path(root_use, _md5_hash_cached(_get_name()))

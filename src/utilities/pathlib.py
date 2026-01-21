@@ -9,7 +9,6 @@ from subprocess import PIPE, CalledProcessError, check_output
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.constants import Sentinel
-from utilities.errors import ImpossibleCaseError
 from utilities.grp import get_gid_name
 from utilities.pwd import get_uid_name
 
@@ -46,33 +45,6 @@ def get_file_group(path: PathLike, /) -> str | None:
 def get_file_owner(path: PathLike, /) -> str | None:
     """Get the owner of a file."""
     return get_uid_name(to_path(path).stat().st_uid)
-
-
-##
-
-
-def get_package_root(path: MaybeCallablePathLike = Path.cwd, /) -> Path:
-    """Get the package root."""
-    path = to_path(path)
-    path_dir = path.parent if path.is_file() else path
-    all_paths = list(chain([path_dir], path_dir.parents))
-    try:
-        return next(
-            p.resolve()
-            for p in all_paths
-            if any(p_i.name == "pyproject.toml" for p_i in p.iterdir())
-        )
-    except StopIteration:
-        raise GetPackageRootError(path=path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class GetPackageRootError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Path is not part of a package: {str(self.path)!r}"
 
 
 ##
@@ -121,50 +93,6 @@ class _GetRepoRootNotARepoError(GetRepoRootError):
     @override
     def __str__(self) -> str:
         return f"Path is not part of a `git` repository: {self.path}"
-
-
-##
-
-
-def get_root(path: MaybeCallablePathLike = Path.cwd, /) -> Path:
-    """Get the root of a path."""
-    path = to_path(path)
-    try:
-        repo = get_repo_root(path)
-    except GetRepoRootError:
-        repo = None
-    try:
-        package = get_package_root(path)
-    except GetPackageRootError:
-        package = None
-    match repo, package:
-        case None, None:
-            raise GetRootError(path=path)
-        case Path(), None:
-            return repo
-        case None, Path():
-            return package
-        case Path(), Path():
-            if repo == package:
-                return repo
-            if is_sub_path(repo, package, strict=True):
-                return repo
-            if is_sub_path(package, repo, strict=True):
-                return package
-            raise ImpossibleCaseError(  # pragma: no cover
-                case=[f"{repo=}", f"{package=}"]
-            )
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class GetRootError(Exception):
-    path: PathLike
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to determine root from {str(self.path)!r}"
 
 
 ##
@@ -267,15 +195,6 @@ def module_path(
 ##
 
 
-def is_sub_path(x: PathLike, y: PathLike, /, *, strict: bool = False) -> bool:
-    """Check if a path is a sub path of another."""
-    x, y = [Path(i).resolve() for i in [x, y]]
-    return x.is_relative_to(y) and not (strict and y.is_relative_to(x))
-
-
-##
-
-
 def list_dir(path: PathLike, /) -> Sequence[Path]:
     """List the contents of a directory."""
     return sorted(Path(path).iterdir())
@@ -306,17 +225,13 @@ def to_path(
 
 
 __all__ = [
-    "GetPackageRootError",
     "GetRepoRootError",
     "GetTailError",
     "ensure_suffix",
-    "expand_path",
     "get_file_group",
     "get_file_owner",
-    "get_package_root",
     "get_repo_root",
     "get_tail",
-    "is_sub_path",
     "list_dir",
     "module_path",
     "to_path",
