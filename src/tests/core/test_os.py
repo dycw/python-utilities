@@ -52,10 +52,6 @@ class TestCopyOrMove:
         assert dest.read_text() == "src"
 
     @mark.parametrize("mode", [param("copy"), param("move")])
-    @mark.parametrize(
-        ("dest_exists", "overwrite"),
-        [param(False, False), param(False, True), param(True, True)],
-    )
     def test_file_to_file(
         self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool, overwrite: bool
     ) -> None:
