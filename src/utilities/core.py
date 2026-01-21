@@ -1057,6 +1057,17 @@ def yield_write_path(path: PathLike, /, *, overwrite: bool = False) -> Iterator[
         move(temp, path, overwrite=overwrite)
 
 
+@dataclass(kw_only=True, slots=True)
+class _CopyOrMoveDestinationExistsError(CopyOrMoveError):
+    mode: CopyOrMove
+    src: Path
+    dest: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot {self.mode} source {repr_str(self.src)} since destination {repr_str(self.dest)} already exists"
+
+
 __all__ = [
     "FileOrDirError",
     "GetEnvError",
