@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-class TestYieldAdjacentTempFile:
+class TestYieldWritePath:
     def test_main(self, *, tmp_path: Path) -> None:
         with yield_adjacent_temp_file(tmp_path) as temp:
             self._run_test(tmp_path, temp)
