@@ -26,7 +26,7 @@ class TestGetEnv:
 
     def test_case_sensitive(self) -> None:
         key, value = [unique_str() for _ in range(2)]
-        with yield_temp_environ({key: value}):
+        with yield_temp_environ({key.lower(): value}):
             assert get_env(key) == value
 
     @given(
