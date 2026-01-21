@@ -75,8 +75,8 @@ class TestCopyOrMove:
         ("dest_exists", "overwrite"),
         [
             param(False, False, marks=mark.only),
-            param(False, True, marks=mark.skip),
-            param(True, True, marks=mark.skip),
+            param(False, True, marks=mark.only),
+            param(True, True, marks=mark.only),
         ],
     )
     def test_dir_to_dir(
