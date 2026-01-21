@@ -35,8 +35,7 @@ class TestGetEnv:
 
     def test_nullable(self) -> None:
         key, _ = self._generate()
-        assert get_env(key, case_sensitive=case_sensitive, nullable=True)
-        assert value is None
+        assert get_env(key, nullable=True) is None
 
     def test_error_case_insensitive(self) -> None:
         key1, value = self._generate()
