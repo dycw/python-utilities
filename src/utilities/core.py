@@ -530,7 +530,7 @@ def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
 
 def _copy_or_move__copy_file(src: Path, dest: Path, /) -> None:
     try:
-        _ = src.replace(dest)
+        _ = src.replace(dest)  # pragma: no cover
     except OSError as error:
         if not _is_invalid_cross_device_link_error(error):
             raise
