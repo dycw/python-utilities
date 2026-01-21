@@ -946,7 +946,7 @@ def _temporary_file_inner(
 
 @contextmanager
 def yield_adjacent_temp_dir(path: PathLike, /) -> Iterator[Path]:
-    """Yield a temporary dir for a target path."""
+    """Yield a temporary directory adjacent to target path."""
 
     path = Path(path)
     with TemporaryDirectory(suffix=".tmp", prefix=path.name, dir=path.parent) as temp:
