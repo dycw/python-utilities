@@ -4,12 +4,23 @@ import re
 import reprlib
 import shutil
 import tempfile
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
+from functools import _lru_cache_wrapper, partial
 from itertools import chain
 from os import chdir, environ, getenv
 from pathlib import Path
+from re import findall
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
+from types import (
+    BuiltinFunctionType,
+    FunctionType,
+    MethodDescriptorType,
+    MethodType,
+    MethodWrapperType,
+    WrapperDescriptorType,
+)
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 from warnings import catch_warnings, filterwarnings
 
@@ -25,10 +36,11 @@ from utilities.constants import (
     Sentinel,
     sentinel,
 )
+from utilities.core import get_class_name, repr_
 from utilities.types import SupportsRichComparison
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Mapping
+    from collections.abc import Callable, Iterable, Iterator, Mapping
     from types import TracebackType
 
     from utilities.types import FileOrDir, MaybeIterable, PathLike
@@ -52,6 +64,35 @@ def get_class_name(obj: Any, /, *, qual: bool = False) -> str:
     """Get the name of the class of an object, unless it is already a class."""
     cls = get_class(obj)
     return f"{cls.__module__}.{cls.__qualname__}" if qual else cls.__name__
+
+
+##
+
+
+def get_func_name(obj: Callable[..., Any], /) -> str:
+    """Get the name of a callable."""
+    if isinstance(obj, BuiltinFunctionType):
+        return obj.__name__
+    if isinstance(obj, FunctionType):
+        name = obj.__name__
+        pattern = r"^.+\.([A-Z]\w+\." + name + ")$"
+        try:
+            (full_name,) = findall(pattern, obj.__qualname__)
+        except ValueError:
+            return name
+        return full_name
+    if isinstance(obj, MethodType):
+        return f"{get_class_name(obj.__self__)}.{obj.__name__}"
+    if isinstance(
+        obj,
+        MethodType | MethodDescriptorType | MethodWrapperType | WrapperDescriptorType,
+    ):
+        return obj.__qualname__
+    if isinstance(obj, _lru_cache_wrapper):
+        return cast("Any", obj).__name__
+    if isinstance(obj, partial):
+        return get_func_name(obj.func)
+    return get_class_name(obj)
 
 
 ##
@@ -699,6 +740,7 @@ __all__ = [
     "get_class",
     "get_class_name",
     "get_env",
+    "get_func_name",
     "is_none",
     "is_not_none",
     "is_sentinel",

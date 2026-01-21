@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import sys
 from dataclasses import dataclass
-from functools import cache, cached_property, lru_cache, partial, wraps
+from functools import cached_property
 from operator import neg
 from subprocess import check_output
 from sys import executable
@@ -54,7 +53,6 @@ from utilities.functions import (
     ensure_time_delta,
     ensure_zoned_date_time,
     first,
-    get_func_name,
     identity,
     in_milli_seconds,
     in_seconds,
@@ -71,7 +69,6 @@ from utilities.whenever import get_now, get_today
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import Callable
 
     from whenever import PlainDateTime, TimeDelta, ZonedDateTime
 
@@ -379,111 +376,6 @@ class TestFirst:
         pair = x, y
         result = first(pair)
         assert result == x
-
-
-class TestGetFuncName:
-    @given(
-        case=sampled_from([
-            (identity, "identity", "utilities.functions.identity"),
-            (
-                lambda x: x,  # pyright: ignore[reportUnknownLambdaType]
-                "<lambda>",
-                "tests.test_functions.TestGetFuncNameAndGetFuncQualName.<lambda>",
-            ),
-            (len, "len", "builtins.len"),
-            (neg, "neg", "_operator.neg"),
-            (object.__init__, "object.__init__", "builtins.object.__init__"),
-            (object.__str__, "object.__str__", "builtins.object.__str__"),
-            (repr, "repr", "builtins.repr"),
-            (str, "str", "builtins.str"),
-            (str.join, "str.join", "builtins.str.join"),
-            (sys.exit, "exit", "sys.exit"),
-        ])
-    )
-    def test_main(self, *, case: tuple[Callable[..., Any], str, str]) -> None:
-        func, exp_name, exp_qual_name = case
-        assert get_func_name(func) == exp_name
-        assert get_func_qualname(func) == exp_qual_name
-
-    def test_cache(self) -> None:
-        @cache
-        def cache_func(x: int, /) -> int:
-            return x
-
-        assert get_func_name(cache_func) == "cache_func"
-        assert (
-            get_func_qualname(cache_func)
-            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_cache.<locals>.cache_func"
-        )
-
-    def test_decorated(self) -> None:
-        @wraps(identity)
-        def wrapped[T](x: T, /) -> T:
-            return identity(x)
-
-        assert get_func_name(wrapped) == "identity"
-        assert get_func_qualname(wrapped) == "utilities.functions.identity"
-
-    def test_lru_cache(self) -> None:
-        @lru_cache
-        def lru_cache_func(x: int, /) -> int:
-            return x
-
-        assert get_func_name(lru_cache_func) == "lru_cache_func"
-        assert (
-            get_func_qualname(lru_cache_func)
-            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_lru_cache.<locals>.lru_cache_func"
-        )
-
-    def test_object(self) -> None:
-        class Example:
-            def __call__[T](self, x: T, /) -> T:
-                return identity(x)
-
-        obj = Example()
-        assert get_func_name(obj) == "Example"
-        assert get_func_qualname(obj) == "tests.test_functions.Example"
-
-    def test_obj_method(self) -> None:
-        class Example:
-            def obj_method[T](self, x: T) -> T:
-                return identity(x)
-
-        obj = Example()
-        assert get_func_name(obj.obj_method) == "Example.obj_method"
-        assert (
-            get_func_qualname(obj.obj_method)
-            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_obj_method.<locals>.Example.obj_method"
-        )
-
-    def test_obj_classmethod(self) -> None:
-        class Example:
-            @classmethod
-            def obj_classmethod[T](cls: T) -> T:
-                return identity(cls)
-
-        assert get_func_name(Example.obj_classmethod) == "Example.obj_classmethod"
-        assert (
-            get_func_qualname(Example.obj_classmethod)
-            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_obj_classmethod.<locals>.Example.obj_classmethod"
-        )
-
-    def test_obj_staticmethod(self) -> None:
-        class Example:
-            @staticmethod
-            def obj_staticmethod[T](x: T) -> T:
-                return identity(x)
-
-        assert get_func_name(Example.obj_staticmethod) == "Example.obj_staticmethod"
-        assert (
-            get_func_qualname(Example.obj_staticmethod)
-            == "tests.test_functions.TestGetFuncNameAndGetFuncQualName.test_obj_staticmethod.<locals>.Example.obj_staticmethod"
-        )
-
-    def test_partial(self) -> None:
-        part = partial(identity)
-        assert get_func_name(part) == "identity"
-        assert get_func_qualname(part) == "utilities.functions.identity"
 
 
 class TestIdentity:

@@ -1,19 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from functools import _lru_cache_wrapper, cached_property, partial, wraps
+from functools import cached_property, wraps
 from inspect import getattr_static
 from pathlib import Path
-from re import findall
-from types import (
-    BuiltinFunctionType,
-    FunctionType,
-    MethodDescriptorType,
-    MethodType,
-    MethodWrapperType,
-    WrapperDescriptorType,
-)
-from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
+from typing import TYPE_CHECKING, Any, Literal, assert_never, overload, override
 
 from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
@@ -479,35 +470,6 @@ def first[T](pair: tuple[T, Any], /) -> T:
 ##
 
 
-def get_func_name(obj: Callable[..., Any], /) -> str:
-    """Get the name of a callable."""
-    if isinstance(obj, BuiltinFunctionType):
-        return obj.__name__
-    if isinstance(obj, FunctionType):
-        name = obj.__name__
-        pattern = r"^.+\.([A-Z]\w+\." + name + ")$"
-        try:
-            (full_name,) = findall(pattern, obj.__qualname__)
-        except ValueError:
-            return name
-        return full_name
-    if isinstance(obj, MethodType):
-        return f"{get_class_name(obj.__self__)}.{obj.__name__}"
-    if isinstance(
-        obj,
-        MethodType | MethodDescriptorType | MethodWrapperType | WrapperDescriptorType,
-    ):
-        return obj.__qualname__
-    if isinstance(obj, _lru_cache_wrapper):
-        return cast("Any", obj).__name__
-    if isinstance(obj, partial):
-        return get_func_name(obj.func)
-    return get_class_name(obj)
-
-
-##
-
-
 def identity[T](obj: T, /) -> T:
     """Return the object itself."""
     return obj
@@ -683,7 +645,6 @@ __all__ = [
     "ensure_time_delta",
     "ensure_zoned_date_time",
     "first",
-    "get_func_name",
     "identity",
     "in_milli_seconds",
     "in_seconds",
