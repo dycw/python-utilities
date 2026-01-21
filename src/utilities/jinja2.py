@@ -20,7 +20,7 @@ from jinja2.defaults import (
 )
 
 from utilities.atomicwrites import writer
-from utilities.text import kebab_case, pascal_case, snake_case
+from utilities.core import kebab_case, pascal_case, snake_case
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

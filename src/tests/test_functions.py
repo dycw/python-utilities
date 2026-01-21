@@ -11,6 +11,7 @@ from hypothesis.strategies import booleans, integers, sampled_from
 from pytest import approx, mark, param, raises
 
 from utilities.constants import HOME, MILLISECOND, NOW_UTC, SECOND, ZERO_TIME, sentinel
+from utilities.core import strip_dedent
 from utilities.functions import (
     EnsureBoolError,
     EnsureBytesError,
@@ -50,7 +51,7 @@ from utilities.functions import (
     yield_object_cached_properties,
     yield_object_properties,
 )
-from utilities.text import parse_bool, strip_dedent
+from utilities.text import parse_bool
 from utilities.whenever import get_now, get_today
 
 if TYPE_CHECKING:

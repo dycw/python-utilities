@@ -30,12 +30,12 @@ from utilities.core import (
     always_iterable,
     file_or_dir,
     one,
+    strip_dedent,
 )
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
 from utilities.logging import to_logger
 from utilities.permissions import Permissions, ensure_perms
-from utilities.text import strip_dedent
 from utilities.time import sleep
 from utilities.version import (
     ParseVersion2Or3Error,
