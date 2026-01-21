@@ -114,3 +114,8 @@ class TestYieldAdjacentTempFile:
             assert temp.is_file()
             assert temp.parent == tmp_path.parent
             assert temp.name.startswith(tmp_path.name)
+
+    def _run_test(self, path: Path, temp: Path, /) -> None:
+        assert temp.is_file()
+        assert temp.parent == path.parent
+        assert temp.name.startswith(path.name)
