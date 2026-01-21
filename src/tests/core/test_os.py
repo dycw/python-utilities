@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class TestCopyOrMove:
-    def test_main(self, tmp_path: Path) -> None:
+    def test_copy_file_to_file(self, tmp_path: Path) -> None:
         a
 
 
