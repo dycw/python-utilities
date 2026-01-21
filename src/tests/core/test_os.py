@@ -79,7 +79,8 @@ class TestGetEnv:
 
     def _generate(self) -> tuple[str, str]:
         key = f"_TEST_OS_{unique_str()}"
-        return f"_TEST_OS_{text}"
+        value = unique_str()
+        return key, value
 
     def _prefix(self, text: str, /) -> str:
         return f"_TEST_OS_{text}"
