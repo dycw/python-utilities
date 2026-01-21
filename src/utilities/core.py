@@ -543,7 +543,10 @@ def _copy_or_move__copy_file(src: Path, dest: Path, /) -> None:
 
 def _copy_or_move__move_dir(src: Path, dest: Path, /, *, delete: bool = False) -> None:
     try:
-        with yield_adjacent_temp_dir(dest) as temp:
+        with (
+            yield_adjacent_temp_dir(dest) as temp1,
+            yield_adjacent_temp_dir(dest) as temp2,
+        ):
             breakpoint()
             _ = shutil.copytree(src, temp, dirs_exist_ok=True)
             breakpoint()
