@@ -52,7 +52,7 @@ class TestYieldWritePath:
             _ = temp.write_text("post")
         assert temp_file.read_text() == "post"
 
-    @mark.parametrize("compress", [param(False), param(True, marks=mark.xfail)])
+    @mark.parametrize("compress", [param(False), param(True)])
     def test_error(self, *, temp_file: Path, compress: bool) -> None:
         with (
             raises(
