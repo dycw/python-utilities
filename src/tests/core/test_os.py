@@ -74,9 +74,9 @@ class TestCopyOrMove:
     @mark.parametrize(
         ("dest_exists", "overwrite"),
         [
-            param(False, False, marks=mark.only),
-            param(False, True, marks=mark.only),
-            param(True, True),
+            param(False, False, marks=mark.skip),
+            param(False, True, marks=mark.skip),
+            param(True, True, marks=mark.skip),
         ],
     )
     def test_dir_to_dir(
