@@ -537,8 +537,8 @@ def _copy_or_move__move_file_to_dir(src: Path, dest: Path, /) -> None:
         yield_adjacent_temp_dir(dest) as temp_file,
     ):
         _ = dest.replace(temp_dir)
-        _ = shutil.move(src, temp)
-        _ = temp.replace(dest)
+        _ = shutil.move(src, temp_file)
+        _ = temp_file.replace(dest)
 
 
 def _copy_or_move__move_dir(src: Path, dest: Path, /) -> None:
