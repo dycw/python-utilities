@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from tabulate import tabulate
 
-from utilities.functions import get_func_name
+from utilities.core import get_func_name
 from utilities.text import split_f_str_equals
 
 if TYPE_CHECKING:
