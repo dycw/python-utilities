@@ -143,6 +143,22 @@ class TestCopyOrMove:
         assert dest.is_file()
         assert dest.read_text() == "src"
 
+    def _run_test_dir(
+        self, mode: CopyOrMove, src: Path, dest: Path, /, *, overwrite: bool = False
+    ) -> None:
+        match mode:
+            case "copy":
+                copy(src, dest, overwrite=overwrite)
+                assert src.is_file()
+                assert src.read_text() == "src"
+            case "move":
+                move(src, dest, overwrite=overwrite)
+                assert not src.exists()
+            case never:
+                assert_never(never)
+        assert dest.is_file()
+        assert dest.read_text() == "src"
+
 
 class TestGetEnv:
     def test_main(self) -> None:
