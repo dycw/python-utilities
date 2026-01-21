@@ -539,7 +539,7 @@ def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
             _ = temp.replace(dest)
 
 
-def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
+def _is_invalid_cross_device_link_erorr(src: Path, dest: Path, /) -> None:
     try:
         _ = src.replace(dest)
     except OSError as error:
