@@ -36,6 +36,7 @@ from types import (
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 from uuid import uuid4
 from warnings import catch_warnings, filterwarnings
+from zipfile import ZipFile
 from zoneinfo import ZoneInfo
 
 from typing_extensions import TypeIs
@@ -325,6 +326,44 @@ def _compress_files_add_dir(path: PathLike, tar: TarFile, /) -> None:
 ##
 
 
+def compress_zip(
+    src_or_dest: PathLike, /, *srcs_or_dest: PathLike, overwrite: bool = False
+) -> None:
+    """Create a Zip file."""
+    *srcs, dest = map(Path, [src_or_dest, *srcs_or_dest])
+    try:
+        with (
+            yield_write_path(dest, overwrite=overwrite) as temp,
+            ZipFile(temp, mode="w") as zf,
+        ):
+            for src_i in sorted(srcs):
+                match file_or_dir(src_i):
+                    case "file":
+                        zf.write(src_i, src_i.name)
+                    case "dir":
+                        for p in sorted(src_i.rglob("**/*")):
+                            zf.write(p, p.relative_to(src_i))
+                    case None:
+                        ...
+                    case never:
+                        assert_never(never)
+    except YieldWritePathError as error:
+        raise CompressZipError(srcs=srcs, dest=error.path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class CompressZipError(Exception):
+    srcs: list[Path]
+    dest: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot compress source(s) {repr_(list(map(str, self.srcs)))} since destination {repr_str(self.dest)} already exists"
+
+
+##
+
+
 @contextmanager
 def yield_bz2(path: PathLike, /) -> Iterator[Path]:
     """Yield the contents of a BZ2 file."""
@@ -426,6 +465,33 @@ def _yield_uncompressed(path: PathLike, func: PathToBinaryIO, /) -> Iterator[Pat
 @dataclass(kw_only=True, slots=True)
 class _YieldUncompressedError(Exception):
     path: Path
+
+
+##
+
+
+@contextmanager
+def yield_zip(path: PathLike, /) -> Iterator[Path]:
+    """Yield the contents of a Zip file."""
+    path = Path(path)
+    try:
+        with ZipFile(path) as zf, TemporaryDirectory() as temp:
+            zf.extractall(path=temp)
+            try:
+                yield one(temp.iterdir())
+            except (OneEmptyError, OneNonUniqueError):
+                yield temp
+    except FileNotFoundError:
+        raise YieldZipError(path=path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class YieldZipError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot uncompress {repr_str(self.path)} since it does not exist"
 
 
 ###############################################################################
@@ -1842,6 +1908,7 @@ __all__ = [
     "CompressBZ2Error",
     "CompressGzipError",
     "CompressLZMAError",
+    "CompressZipError",
     "ExtractGroupError",
     "ExtractGroupsError",
     "FileOrDirError",
@@ -1868,11 +1935,13 @@ __all__ = [
     "YieldBZ2Error",
     "YieldGzipError",
     "YieldLZMAError",
+    "YieldZipError",
     "always_iterable",
     "chunked",
     "compress_bz2",
     "compress_gzip",
     "compress_lzma",
+    "compress_zip",
     "extract_group",
     "extract_groups",
     "file_or_dir",
@@ -1921,4 +1990,5 @@ __all__ = [
     "yield_temp_cwd",
     "yield_temp_environ",
     "yield_warnings_as_errors",
+    "yield_zip",
 ]
