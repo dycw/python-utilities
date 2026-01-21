@@ -546,8 +546,8 @@ def _copy_or_move__move_dir(src: Path, dest: Path, /) -> None:
         if not _is_invalid_cross_device_link_error(error):
             raise
         with yield_adjacent_temp_dir(dest) as temp:
-            inner = temp / src.name
-            _ = shutil.copytree(src, temp)
+            inner = temp / temp.name
+            _ = shutil.copytree(src, inner)
             _ = temp.replace(dest)
 
 
