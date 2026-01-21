@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from functools import cached_property, wraps
 from inspect import getattr_static
 from pathlib import Path
@@ -11,10 +11,11 @@ from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 from utilities.constants import SECOND
 from utilities.core import get_class_name, repr_
 from utilities.reprlib import get_repr_and_class
-from utilities.types import Dataclass, Duration, Number, TypeLike
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Container, Iterable, Iterator
+
+    from utilities.types import Duration, Number, TypeLike
 
 
 @overload
@@ -498,28 +499,6 @@ def in_timedelta(duration: Duration, /) -> TimeDelta:
 ##
 
 
-def map_object[T](
-    func: Callable[[Any], Any], obj: T, /, *, before: Callable[[Any], Any] | None = None
-) -> T:
-    """Map a function over an object, across a variety of structures."""
-    if before is not None:
-        obj = before(obj)
-    match obj:
-        case dict():
-            return type(obj)({
-                k: map_object(func, v, before=before) for k, v in obj.items()
-            })
-        case frozenset() | list() | set() | tuple():
-            return type(obj)(map_object(func, i, before=before) for i in obj)
-        case Dataclass():
-            return map_object(func, asdict(obj), before=before)
-        case _:
-            return func(obj)
-
-
-##
-
-
 def not_func[**P](func: Callable[P, bool], /) -> Callable[P, bool]:
     """Lift a boolean-valued function to return its conjugation."""
 
@@ -623,14 +602,10 @@ __all__ = [
     "ensure_time",
     "ensure_time_delta",
     "ensure_zoned_date_time",
-    "first",
-    "identity",
     "in_milli_seconds",
     "in_seconds",
     "in_timedelta",
-    "map_object",
     "not_func",
-    "second",
     "skip_if_optimize",
     "yield_object_attributes",
     "yield_object_cached_properties",

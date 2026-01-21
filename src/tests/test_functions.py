@@ -2,22 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import cached_property
-from operator import neg
 from subprocess import check_output
 from sys import executable
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from hypothesis import given
-from hypothesis.strategies import (
-    DataObject,
-    booleans,
-    builds,
-    data,
-    dictionaries,
-    integers,
-    lists,
-    sampled_from,
-)
+from hypothesis.strategies import booleans, integers, sampled_from
 from pytest import approx, mark, param, raises
 
 from utilities.constants import HOME, MILLISECOND, NOW_UTC, SECOND, ZERO_TIME, sentinel
@@ -55,7 +45,6 @@ from utilities.functions import (
     in_milli_seconds,
     in_seconds,
     in_timedelta,
-    map_object,
     not_func,
     yield_object_attributes,
     yield_object_cached_properties,
@@ -391,52 +380,6 @@ class TestInTimeDelta:
     @mark.parametrize("duration", [param(1), param(1.0), param(SECOND)])
     def test_main(self, *, duration: Duration) -> None:
         assert in_timedelta(duration) == SECOND
-
-
-class TestMapObject:
-    @given(x=integers())
-    def test_int(self, *, x: int) -> None:
-        result = map_object(neg, x)
-        expected = -x
-        assert result == expected
-
-    @given(x=dictionaries(integers(), integers()))
-    def test_dict(self, *, x: dict[int, int]) -> None:
-        result = map_object(neg, x)
-        expected = {k: -v for k, v in x.items()}
-        assert result == expected
-
-    @given(x=lists(integers()))
-    def test_sequences(self, *, x: list[int]) -> None:
-        result = map_object(neg, x)
-        expected = list(map(neg, x))
-        assert result == expected
-
-    @given(data=data())
-    def test_dataclasses(self, *, data: DataObject) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int = 0
-
-        obj = data.draw(builds(Example))
-        result = map_object(neg, obj)
-        expected = {"x": -obj.x}
-        assert result == expected
-
-    @given(x=lists(dictionaries(integers(), integers())))
-    def test_nested(self, *, x: list[dict[int, int]]) -> None:
-        result = map_object(neg, x)
-        expected = [{k: -v for k, v in x_i.items()} for x_i in x]
-        assert result == expected
-
-    @given(x=lists(integers()))
-    def test_before(self, *, x: list[int]) -> None:
-        def before(x: Any, /) -> Any:
-            return x + 1 if isinstance(x, int) else x
-
-        result = map_object(neg, x, before=before)
-        expected = [-(i + 1) for i in x]
-        assert result == expected
 
 
 class TestNotFunc:

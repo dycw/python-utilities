@@ -238,6 +238,7 @@ def datetime_utc(
     month: int,
     day: int,
     /,
+    *,
     hour: int = 0,
     minute: int = 0,
     second: int = 0,
