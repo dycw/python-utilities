@@ -28,7 +28,7 @@ from sqlalchemy.exc import DuplicateColumnError
 
 import utilities.asyncio
 from utilities.constants import UTC
-from utilities.core import OneError, chunked, identity, one, repr_
+from utilities.core import OneError, chunked, identity, one, repr_, snake_case
 from utilities.iterables import CheckDuplicatesError, check_duplicates
 from utilities.polars import zoned_date_time_dtype
 from utilities.sqlalchemy import (
@@ -39,7 +39,6 @@ from utilities.sqlalchemy import (
     get_columns,
     insert_items,
 )
-from utilities.text import snake_case
 from utilities.typing import is_subclass_gen
 
 if TYPE_CHECKING:
