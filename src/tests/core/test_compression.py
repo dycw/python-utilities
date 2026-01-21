@@ -146,6 +146,19 @@ class TestCompressAndYieldUncompressed:
             expected = {p.name for p in temp_files}
             assert result == expected
 
+    def test_single_dir_empty(
+        self,
+        *,
+        reader: PathToBinaryIO,
+        writer: PathToBinaryIO,
+        tmp_path: Path,
+        temp_dir_with_nothing: Path,
+    ) -> None:
+        dest = tmp_path / "dest"
+        _compress_files(writer, temp_dir_with_nothing, dest)
+        with reader(dest) as buffer, TarFile(fileobj=buffer) as tar:
+            assert tar.getnames() == []
+
     def test_error_compress(
         self,
         *,
@@ -181,19 +194,6 @@ class TestCompressAndYieldUncompressed:
 
 
 class TestCompressFiles:
-    def test_single_dir_empty(
-        self,
-        *,
-        reader: PathToBinaryIO,
-        writer: PathToBinaryIO,
-        tmp_path: Path,
-        temp_dir_with_nothing: Path,
-    ) -> None:
-        dest = tmp_path / "dest"
-        _compress_files(writer, temp_dir_with_nothing, dest)
-        with reader(dest) as buffer, TarFile(fileobj=buffer) as tar:
-            assert tar.getnames() == []
-
     def test_single_dir_single_file(
         self,
         *,
