@@ -92,6 +92,7 @@ class SupportsKeysAndGetItem(Protocol[_T, _T_co]):
 
 
 # compression
+type Compression = Literal["bz2", "gzip", "lzma"]
 type PathToBinaryIO = Callable[[PathLike], BinaryIO]
 
 
@@ -317,6 +318,7 @@ type TimeZoneLike = (
 
 __all__ = [
     "TIME_ZONES",
+    "Compression",
     "CopyOrMove",
     "Coro",
     "Dataclass",

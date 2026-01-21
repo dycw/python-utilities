@@ -560,4 +560,5 @@ class TestCLIHelp:
 
         result = CliRunner().invoke(cli, ["--help"])
         assert result.exit_code == 0
-        assert result.stdout == normalize_multi_line_str(expected)
+        expected = normalize_multi_line_str(expected)
+        assert result.stdout == expected

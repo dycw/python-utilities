@@ -6,12 +6,23 @@ from lzma import LZMAFile
 from tarfile import ReadError, TarFile
 from typing import TYPE_CHECKING, BinaryIO
 
-from pytest import fixture, raises
+from pytest import fixture, mark, param, raises
 
-from utilities.compression import compress_paths, yield_compressed_contents
+from utilities.core import (
+    _compress_files,
+    _yield_uncompressed,
+    compress_bz2,
+    compress_gzip,
+    compress_lzma,
+    yield_bz2,
+    yield_gzip,
+    yield_lzma,
+)
 from utilities.iterables import one
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from contextlib import AbstractContextManager
     from pathlib import Path
 
     from _pytest.fixtures import SubRequest
@@ -44,7 +55,32 @@ def writer(*, reader_writer: tuple[PathToBinaryIO, PathToBinaryIO]) -> PathToBin
     return writer
 
 
-class TestCompressPaths:
+class TestPairs:
+    @mark.parametrize(
+        ("compress", "yield_uncompressed"),
+        [
+            param(compress_bz2, yield_bz2),
+            param(compress_gzip, yield_gzip),
+            param(compress_lzma, yield_lzma),
+        ],
+    )
+    def test_main(
+        self,
+        *,
+        tmp_path: Path,
+        temp_file: Path,
+        compress: Callable[[PathLike, PathLike], None],
+        yield_uncompressed: Callable[[PathLike], AbstractContextManager[Path]],
+    ) -> None:
+        _ = temp_file.write_text("text")
+        dest = tmp_path / "dest"
+        compress(temp_file, dest)
+        with yield_uncompressed(dest) as temp:
+            assert temp.is_file()
+            assert temp.read_text() == "text"
+
+
+class TestCompressFiles:
     def test_single_file(
         self,
         *,
@@ -55,7 +91,7 @@ class TestCompressPaths:
     ) -> None:
         _ = temp_file.write_text("text")
         dest = tmp_path / "dest"
-        compress_paths(writer, temp_file, dest)
+        _compress_files(writer, temp_file, dest)
         with reader(dest) as buffer:
             assert buffer.read() == b"text"
 
@@ -69,7 +105,7 @@ class TestCompressPaths:
     ) -> None:
         path1, path2 = temp_files
         dest = tmp_path / "dest"
-        compress_paths(writer, path1, path2, dest)
+        _compress_files(writer, path1, path2, dest)
         with reader(dest) as buffer, TarFile(fileobj=buffer) as tar:
             result = set(tar.getnames())
         expected = {p.name for p in temp_files}
@@ -84,7 +120,7 @@ class TestCompressPaths:
         temp_dir_with_nothing: Path,
     ) -> None:
         dest = tmp_path / "dest"
-        compress_paths(writer, temp_dir_with_nothing, dest)
+        _compress_files(writer, temp_dir_with_nothing, dest)
         with reader(dest) as buffer, TarFile(fileobj=buffer) as tar:
             assert tar.getnames() == []
 
@@ -97,7 +133,7 @@ class TestCompressPaths:
         temp_dir_with_file: Path,
     ) -> None:
         dest = tmp_path / "dest"
-        compress_paths(writer, temp_dir_with_file, dest)
+        _compress_files(writer, temp_dir_with_file, dest)
         with reader(dest) as buffer, TarFile(fileobj=buffer) as tar:
             result = tar.getnames()
         expected = [one(temp_dir_with_file.iterdir()).name]
@@ -112,7 +148,7 @@ class TestCompressPaths:
         temp_dir_with_files: Path,
     ) -> None:
         dest = tmp_path / "dest"
-        compress_paths(writer, temp_dir_with_files, dest)
+        _compress_files(writer, temp_dir_with_files, dest)
         with reader(dest) as buffer, TarFile(fileobj=buffer) as tar:
             result = set(tar.getnames())
         expected = {p.name for p in temp_dir_with_files.iterdir()}
@@ -127,7 +163,7 @@ class TestCompressPaths:
         temp_dir_with_dir_and_file: Path,
     ) -> None:
         dest = tmp_path / "dest"
-        compress_paths(writer, temp_dir_with_dir_and_file, dest)
+        _compress_files(writer, temp_dir_with_dir_and_file, dest)
         with reader(dest) as buffer, TarFile(fileobj=buffer) as tar:
             result = set(tar.getnames())
         inner = one(temp_dir_with_dir_and_file.iterdir())
@@ -143,7 +179,7 @@ class TestCompressPaths:
         temp_path_not_exist: Path,
     ) -> None:
         dest = tmp_path / "dest"
-        compress_paths(writer, temp_path_not_exist, dest)
+        _compress_files(writer, temp_path_not_exist, dest)
         with (
             reader(dest) as buffer,
             raises(ReadError, match="empty file"),
@@ -152,7 +188,7 @@ class TestCompressPaths:
             ...
 
 
-class TestYieldCompressedContents:
+class TestYieldUncompressed:
     def test_single_file(
         self,
         *,
@@ -163,8 +199,8 @@ class TestYieldCompressedContents:
     ) -> None:
         _ = temp_file.write_text("text")
         dest = tmp_path / "dest"
-        compress_paths(writer, temp_file, dest)
-        with yield_compressed_contents(dest, reader) as temp:
+        _compress_files(writer, temp_file, dest)
+        with _yield_uncompressed(dest, reader) as temp:
             assert temp.is_file()
             assert temp.read_text() == "text"
 
@@ -178,8 +214,8 @@ class TestYieldCompressedContents:
     ) -> None:
         path1, path2 = temp_files
         dest = tmp_path / "dest"
-        compress_paths(writer, path1, path2, dest)
-        with yield_compressed_contents(dest, reader) as temp:
+        _compress_files(writer, path1, path2, dest)
+        with _yield_uncompressed(dest, reader) as temp:
             assert temp.is_dir()
             result = {p.name for p in temp.iterdir()}
             expected = {p.name for p in temp_files}
@@ -194,8 +230,8 @@ class TestYieldCompressedContents:
         temp_dir_with_nothing: Path,
     ) -> None:
         dest = tmp_path / "dest"
-        compress_paths(writer, temp_dir_with_nothing, dest)
-        with yield_compressed_contents(dest, reader) as temp:
+        _compress_files(writer, temp_dir_with_nothing, dest)
+        with _yield_uncompressed(dest, reader) as temp:
             assert temp.is_dir()
             assert list(temp.iterdir()) == []
 
@@ -208,8 +244,8 @@ class TestYieldCompressedContents:
         temp_dir_with_file: Path,
     ) -> None:
         dest = tmp_path / "dest"
-        compress_paths(writer, temp_dir_with_file, dest)
-        with yield_compressed_contents(dest, reader) as temp:
+        _compress_files(writer, temp_dir_with_file, dest)
+        with _yield_uncompressed(dest, reader) as temp:
             assert temp.is_file()
             expected = one(temp_dir_with_file.iterdir()).name
             assert temp.name == expected
@@ -223,8 +259,8 @@ class TestYieldCompressedContents:
         temp_dir_with_files: Path,
     ) -> None:
         dest = tmp_path / "dest"
-        compress_paths(writer, temp_dir_with_files, dest)
-        with yield_compressed_contents(dest, reader) as temp:
+        _compress_files(writer, temp_dir_with_files, dest)
+        with _yield_uncompressed(dest, reader) as temp:
             assert temp.is_dir()
             result = {p.name for p in temp.iterdir()}
             expected = {p.name for p in temp_dir_with_files.iterdir()}
@@ -239,8 +275,8 @@ class TestYieldCompressedContents:
         temp_dir_with_dir_and_file: Path,
     ) -> None:
         dest = tmp_path / "dest"
-        compress_paths(writer, temp_dir_with_dir_and_file, dest)
-        with yield_compressed_contents(dest, reader) as temp:
+        _compress_files(writer, temp_dir_with_dir_and_file, dest)
+        with _yield_uncompressed(dest, reader) as temp:
             assert temp.is_dir()
             assert one(temp.iterdir()).is_file()
 
@@ -254,8 +290,8 @@ class TestYieldCompressedContents:
     ) -> None:
         path1, path2 = temp_dirs_with_files
         dest = tmp_path / "dest"
-        compress_paths(writer, path1, path2, dest)
-        with yield_compressed_contents(dest, reader) as temp:
+        _compress_files(writer, path1, path2, dest)
+        with _yield_uncompressed(dest, reader) as temp:
             result = {p.name for p in temp.iterdir()}
         expected = {one(path1.iterdir()).name, one(path2.iterdir()).name}
         assert result == expected
@@ -269,8 +305,8 @@ class TestYieldCompressedContents:
         temp_path_not_exist: Path,
     ) -> None:
         dest = tmp_path / "dest"
-        compress_paths(writer, temp_path_not_exist, dest)
-        with yield_compressed_contents(dest, reader) as temp:
+        _compress_files(writer, temp_path_not_exist, dest)
+        with _yield_uncompressed(dest, reader) as temp:
             assert temp.is_dir()
             assert list(temp.iterdir()) == []
 
@@ -283,7 +319,7 @@ class TestYieldCompressedContents:
         temp_path_not_exist: Path,
     ) -> None:
         dest = tmp_path / "dest"
-        compress_paths(writer, temp_path_not_exist, temp_path_not_exist, dest)
-        with yield_compressed_contents(dest, reader) as temp:
+        _compress_files(writer, temp_path_not_exist, temp_path_not_exist, dest)
+        with _yield_uncompressed(dest, reader) as temp:
             assert temp.is_dir()
             assert list(temp.iterdir()) == []

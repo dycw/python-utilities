@@ -1,29 +1,11 @@
 from __future__ import annotations
 
 import gzip
-from contextlib import contextmanager
-from gzip import GzipFile
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
-
-from utilities.compression import compress_paths, yield_compressed_contents
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-    from utilities.types import PathLike, PathToBinaryIO
-
-
-def gzip_paths(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
-    """Create a Gzip file."""
-
-    def func(path: PathLike, /) -> GzipFile:
-        return GzipFile(path, mode="wb")
-
-    compress_paths(cast("PathToBinaryIO", func), src_or_dest, *srcs_or_dest)
-
-
-##
+    from utilities.types import PathLike
 
 
 def read_binary(path: PathLike, /, *, decompress: bool = False) -> bytes:
@@ -44,18 +26,4 @@ def write_binary(
         _ = temp.write_bytes(data)
 
 
-##
-
-
-@contextmanager
-def yield_gzip_contents(path: PathLike, /) -> Iterator[Path]:
-    """Yield the contents of a Gzip file."""
-
-    def func(path: PathLike, /) -> GzipFile:
-        return GzipFile(path, mode="rb")
-
-    with yield_compressed_contents(path, cast("PathToBinaryIO", func)) as temp:
-        yield temp
-
-
-__all__ = ["gzip_paths", "read_binary", "write_binary", "yield_gzip_contents"]
+__all__ = ["read_binary", "write_binary"]

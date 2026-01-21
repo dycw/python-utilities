@@ -6,16 +6,20 @@ import re
 import reprlib
 import shutil
 import tempfile
+from bz2 import BZ2File
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from functools import _lru_cache_wrapper, partial, wraps
+from gzip import GzipFile
 from itertools import chain, islice
+from lzma import LZMAFile
 from os import chdir, environ, getenv, getpid
 from pathlib import Path
 from re import VERBOSE, Pattern, findall
-from shutil import copytree
+from shutil import copyfileobj, copytree
 from string import Template
+from tarfile import ReadError, TarFile
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from textwrap import dedent
 from threading import get_ident
@@ -55,6 +59,7 @@ from utilities.types import (
     TIME_ZONES,
     CopyOrMove,
     FilterWarningsAction,
+    PathToBinaryIO,
     PatternLike,
     StrDict,
     StrMapping,
@@ -183,6 +188,137 @@ class MaxNullableError[T: SupportsRichComparison](Exception):
     @override
     def __str__(self) -> str:
         return f"Maximum of {repr_(self.iterable)} is undefined"
+
+
+###############################################################################
+#### compression ##############################################################
+###############################################################################
+
+
+def compress_bz2(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
+    """Create a BZ2 file."""
+
+    def func(path: PathLike, /) -> BZ2File:
+        return BZ2File(path, mode="wb")
+
+    _compress_files(cast("PathToBinaryIO", func), src_or_dest, *srcs_or_dest)
+
+
+def compress_gzip(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
+    """Create a Gzip file."""
+
+    def func(path: PathLike, /) -> GzipFile:
+        return GzipFile(path, mode="wb")
+
+    _compress_files(cast("PathToBinaryIO", func), src_or_dest, *srcs_or_dest)
+
+
+def compress_lzma(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
+    """Create an LZMA file."""
+
+    def func(path: PathLike, /) -> LZMAFile:
+        return LZMAFile(path, mode="wb")
+
+    _compress_files(cast("PathToBinaryIO", func), src_or_dest, *srcs_or_dest)
+
+
+def _compress_files(
+    func: PathToBinaryIO, src_or_dest: PathLike, /, *srcs_or_dest: PathLike
+) -> None:
+    *srcs, dest = map(Path, [src_or_dest, *srcs_or_dest])
+    with yield_write_path(dest, overwrite=True) as temp, func(temp) as buffer:
+        match srcs:
+            case [src]:
+                match file_or_dir(src):
+                    case "file":
+                        with src.open(mode="rb") as fh:
+                            copyfileobj(fh, buffer)
+                    case "dir":
+                        with TarFile(mode="w", fileobj=buffer) as tar:
+                            _compress_files_add_dir(src, tar)
+                    case None:
+                        ...
+                    case never:
+                        assert_never(never)
+            case _:
+                with TarFile(mode="w", fileobj=buffer) as tar:
+                    for src_i in sorted(srcs):
+                        match file_or_dir(src_i):
+                            case "file":
+                                tar.add(src_i, src_i.name)
+                            case "dir":
+                                _compress_files_add_dir(src_i, tar)
+                            case None:
+                                ...
+                            case never:
+                                assert_never(never)
+
+
+def _compress_files_add_dir(path: PathLike, tar: TarFile, /) -> None:
+    path = Path(path)
+    for p in sorted(path.rglob("**/*")):
+        tar.add(p, p.relative_to(path))
+
+
+##
+
+
+@contextmanager
+def yield_bz2(path: PathLike, /) -> Iterator[Path]:
+    """Yield the contents of a BZ2 file."""
+
+    def func(path: PathLike, /) -> BZ2File:
+        return BZ2File(path, mode="rb")
+
+    with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
+        yield temp
+
+
+@contextmanager
+def yield_gzip(path: PathLike, /) -> Iterator[Path]:
+    """Yield the contents of a Gzip file."""
+
+    def func(path: PathLike, /) -> GzipFile:
+        return GzipFile(path, mode="rb")
+
+    with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
+        yield temp
+
+
+@contextmanager
+def yield_lzma(path: PathLike, /) -> Iterator[Path]:
+    """Yield the contents of an LZMA file."""
+
+    def func(path: PathLike, /) -> LZMAFile:
+        return LZMAFile(path, mode="rb")
+
+    with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
+        yield temp
+
+
+@contextmanager
+def _yield_uncompressed(path: PathLike, func: PathToBinaryIO, /) -> Iterator[Path]:
+    with func(path) as buffer:
+        try:
+            with TarFile(fileobj=buffer) as tf, TemporaryDirectory() as temp:
+                tf.extractall(path=temp, filter="data")
+                try:
+                    yield one(temp.iterdir())
+                except (OneEmptyError, OneNonUniqueError):
+                    yield temp
+        except ReadError as error:
+            (arg,) = error.args
+            if arg == "empty file":
+                with TemporaryDirectory() as temp:
+                    yield temp
+            elif arg in {"bad checksum", "invalid header", "truncated header"}:
+                _ = buffer.seek(0)
+                with TemporaryFile() as temp, temp.open(mode="wb") as fh:
+                    copyfileobj(buffer, fh)
+                    _ = fh.seek(0)
+                    yield temp
+            else:  # pragma: no cover
+                raise NotImplementedError(arg) from None
 
 
 ###############################################################################
@@ -1518,6 +1654,9 @@ __all__ = [
     "ToTimeZoneNameError",
     "always_iterable",
     "chunked",
+    "compress_bz2",
+    "compress_gzip",
+    "compress_lzma",
     "extract_group",
     "extract_groups",
     "file_or_dir",
@@ -1558,6 +1697,9 @@ __all__ = [
     "write_text",
     "yield_adjacent_temp_dir",
     "yield_adjacent_temp_file",
+    "yield_bz2",
+    "yield_gzip",
+    "yield_lzma",
     "yield_temp_cwd",
     "yield_temp_environ",
     "yield_warnings_as_errors",
