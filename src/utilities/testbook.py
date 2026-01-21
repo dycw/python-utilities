@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any
 
 from testbook import testbook
 
+from utilities.core import pascal_case
 from utilities.pytest import throttle_test
-from utilities.text import pascal_case
 
 if TYPE_CHECKING:
     from collections.abc import Callable
