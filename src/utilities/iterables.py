@@ -1028,7 +1028,6 @@ __all__ = [
     "EnsureIterableError",
     "EnsureIterableNotStrError",
     "MergeStrMappingsError",
-    "RangePartitionsError",
     "ResolveIncludeAndExcludeError",
     "SortIterableError",
     "always_iterable",
@@ -1063,8 +1062,6 @@ __all__ = [
     "merge_mappings",
     "merge_sets",
     "merge_str_mappings",
-    "product_dicts",
-    "range_partitions",
     "resolve_include_and_exclude",
     "sort_iterable",
 ]
