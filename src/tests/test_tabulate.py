@@ -18,7 +18,7 @@ class TestFuncParamDesc:
               │ x │ 1 │
               │ y │ 2 │
               ╰───┴───╯
-        """)
+            """)
         assert result == expected
 
     def test_main(self) -> None:
@@ -36,9 +36,7 @@ class TestFuncParamDesc:
 
 class TestParamsTable:
     def test_empty(self) -> None:
-        result = params_table()
-        expected = ""
-        assert result == expected
+        assert params_table() == "\n"
 
     def test_main(self) -> None:
         x = 1
