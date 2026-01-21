@@ -940,6 +940,7 @@ __all__ = [
     "one_str",
     "repr_",
     "repr_str",
+    "strip_and_dedent",
     "suppress_super_attribute_error",
     "take",
     "transpose",
