@@ -146,9 +146,7 @@ class TestCopyOrMove:
         dest = tmp_path / "dest.txt"
         if exists:
             _ = dest.write_text("dest")
-        src = tmp_path / "src.txt"
-        _ = src.write_text("src")
-        return src
+        return dest
 
 
 class TestGetEnv:
