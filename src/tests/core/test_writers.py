@@ -19,6 +19,16 @@ class TestWriteBytes:
 
 
 class TestWriteText:
+    @mark.parametrize(
+        "text",
+        [
+            param("text"),
+            param("\ntext"),
+            param("text\n"),
+            param("\ntext\n"),
+            param("\n\ntext\n\n"),
+        ],
+    )
     def test_main(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file"
         write_bytes(path, b"data")
