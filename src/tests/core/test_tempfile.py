@@ -97,7 +97,6 @@ class TestYieldAdjacentTempDir:
         with yield_adjacent_temp_dir(tmp_path) as temp:
             self._run_test(tmp_path, temp)
 
-    @mark.skip
     def test_deep(self, *, tmp_path: Path) -> None:
         path = tmp_path / "a/b/c/file.txt"
         with yield_adjacent_temp_dir(path) as temp:
