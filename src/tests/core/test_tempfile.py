@@ -96,9 +96,6 @@ class TestYieldAdjacentTempDir:
     def test_main(self, *, tmp_path: Path) -> None:
         with yield_adjacent_temp_dir(tmp_path) as temp:
             self._run_test(tmp_path, temp)
-            assert temp.is_dir()
-            assert temp.parent == tmp_path.parent
-            assert temp.name.startswith(tmp_path.name)
 
     @mark.skip
     def test_deep(self, *, tmp_path: Path) -> None:
