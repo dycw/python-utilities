@@ -34,18 +34,6 @@ class TestCopyOrMove:
         src = self._setup_src_file(tmp_path)
         dest = self._setup_dest_file(tmp_path, exists=dest_exists)
         self._assert_post_file(mode, src, dest)
-        match mode:
-            case "copy":
-                copy(src, dest, overwrite=overwrite)
-                assert src.is_file()
-                assert src.read_text() == "src"
-            case "move":
-                move(src, dest, overwrite=overwrite)
-                assert not src.exists()
-            case never:
-                assert_never(never)
-        assert dest.is_file()
-        assert dest.read_text() == "src"
 
     @mark.parametrize("mode", [param("copy"), param("move")])
     def test_file_to_dir(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
