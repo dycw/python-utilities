@@ -495,8 +495,6 @@ def _copy_or_move(
             raise _CopyOrMoveDestinationExistsError(src=src, dest=dest)
         case ("file", None, _) | ("file", "file", True):
             _copy_or_move__file_to_file(src, dest, mode)
-        case ("file", None, "copy", _) | ("file", "file", "copy", True):
-            _copy_or_move__copy_file(src, dest)
         case "file", "dir", "move", True:
             _copy_or_move__move_file_to_dir(src, dest)
         case "file", "dir", "copy", True:
