@@ -538,10 +538,6 @@ def _copy_or_move__move_dir(src: Path, dest: Path, /) -> None:
         _ = temp2.replace(dest)
 
 
-def _is_invalid_cross_device_link_error(error: OSError, /) -> bool:
-    return (error.errno == 18) and (error.strerror == "Invalid cross-device link")
-
-
 ##
 
 
