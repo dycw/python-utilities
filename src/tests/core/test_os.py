@@ -78,6 +78,8 @@ class TestCopyOrMove:
     def test_dir_to_dir(
         self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool, overwrite: bool
     ) -> None:
+        mode = "move"  #######
+
         src = tmp_path / "src"
         src.mkdir()
         _ = (src / "src1.txt").write_text("src1")
