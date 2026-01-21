@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from itertools import chain
-from os.path import expandvars
 from pathlib import Path
 from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_output
@@ -34,16 +33,6 @@ def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
         add = suffixes[i:]
     name = ".".join(chain(parts, add))
     return path.with_name(name)
-
-
-##
-
-
-def expand_path(path: PathLike, /) -> Path:
-    """Expand a path."""
-    path = str(path)
-    path = expandvars(path)
-    return Path(path).expanduser()
 
 
 ##

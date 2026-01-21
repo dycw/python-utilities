@@ -9,7 +9,7 @@ from hypothesis.strategies import integers, sets
 from pytest import mark, param, raises
 
 from utilities.atomicwrites import copy
-from utilities.constants import HOME, SYSTEM, Sentinel, sentinel
+from utilities.constants import SYSTEM, Sentinel, sentinel
 from utilities.core import TemporaryDirectory
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import git_repos, pairs, paths, temp_paths
@@ -22,7 +22,6 @@ from utilities.pathlib import (
     _GetTailLengthError,
     _GetTailNonUniqueError,
     ensure_suffix,
-    expand_path,
     get_file_group,
     get_file_owner,
     get_package_root,
@@ -55,23 +54,6 @@ class TestEnsureSuffix:
     )
     def test_main(self, *, path: Path, suffix: str, expected: str) -> None:
         result = str(ensure_suffix(path, suffix))
-        assert result == expected
-
-
-class TestExpandPath:
-    @mark.parametrize(
-        ("path", "expected"),
-        [
-            param("foo", Path("foo")),
-            param("~", HOME),
-            param("~/foo", HOME / "foo"),
-            param("$HOME", HOME),
-            param("$HOME/foo", HOME / "foo"),
-        ],
-        ids=str,
-    )
-    def test_main(self, *, path: Path, expected: Path) -> None:
-        result = expand_path(path)
         assert result == expected
 
 
