@@ -314,7 +314,7 @@ class Split[T]:
         tail_first = indent("tail=", spaces)
         tail_rest = indent(repr(self.tail), 2 * spaces)
         joined = f"{head_first}\n{head_rest}\n{tail_first}\n{tail_rest}"
-        return f"{cls}(\n{joined}\n)"
+        return f"{cls}(\n{joined}\n)\n"
 
 
 def yield_splits[T](
