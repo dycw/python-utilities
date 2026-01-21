@@ -61,6 +61,14 @@ class TestGetEnv:
         ):
             _ = get_env(key.upper(), case_sensitive=True)
 
+    def test_error_case_sensitive(self) -> None:
+        key, value = [unique_str() for _ in range(2)]
+        with (
+            yield_temp_environ({key.lower(): value}),
+            raises(GetEnvError, match=r"No environment variable '.*'"),
+        ):
+            _ = get_env(key.upper(), case_sensitive=True)
+
     def _generate(self) -> tuple[str, str]:
         key = f"_TEST_OS_{unique_str()}"
         value = unique_str()
