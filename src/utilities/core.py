@@ -6,6 +6,7 @@ import tempfile
 from contextlib import contextmanager
 from dataclasses import dataclass
 from itertools import chain
+from os import chdir
 from pathlib import Path
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
@@ -316,6 +317,20 @@ class _FileOrDirTypeError(FileOrDirError):
         return f"Path is neither a file nor a directory: {str(self.path)!r}"
 
 
+##
+
+
+@contextmanager
+def yield_temp_cwd(path: PathLike, /) -> Iterator[None]:
+    """Context manager with temporary current working directory set."""
+    prev = Path.cwd()
+    chdir(path)
+    try:
+        yield
+    finally:
+        chdir(prev)
+
+
 #### reprlib ################################################################
 
 
@@ -537,6 +552,7 @@ __all__ = [
     "one",
     "one_str",
     "repr_",
+    "yield_temp_cwd",
     "yield_temp_dir_at",
     "yield_temp_file_at",
 ]

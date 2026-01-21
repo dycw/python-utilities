@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from enum import Enum, StrEnum
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
+from utilities.core import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.functions import ensure_str
-from utilities.iterables import OneStrEmptyError, OneStrNonUniqueError, one_str
 
 if TYPE_CHECKING:
     from utilities.types import EnumLike

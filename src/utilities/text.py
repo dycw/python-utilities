@@ -23,7 +23,7 @@ from uuid import uuid4
 
 from utilities.constants import BRACKETS, LIST_SEPARATOR, PAIR_SEPARATOR, Sentinel
 from utilities.iterables import CheckDuplicatesError, check_duplicates, transpose
-from utilities.reprlib import get_repr
+from utilities.reprlib import repr_
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -212,7 +212,7 @@ class _SplitKeyValuePairsDuplicateKeysError(SplitKeyValuePairsError):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to split {self.text!r} into a mapping since there are duplicate keys; got {get_repr(self.counts)}"
+        return f"Unable to split {self.text!r} into a mapping since there are duplicate keys; got {repr_(self.counts)}"
 
 
 ##

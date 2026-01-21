@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, assert_never, override
 
 if TYPE_CHECKING:
-    from utilities.types import ExceptionTypeLike, MaybeType
+    from utilities.types import MaybeType
 
 
 @dataclass(kw_only=True, slots=True)
@@ -16,20 +16,6 @@ class ImpossibleCaseError(Exception):
         desc = ", ".join(self.case)
         return f"Case must be possible: {desc}."
         ##
-
-
-##
-
-
-def is_instance_error(
-    error: BaseException, class_or_tuple: ExceptionTypeLike[Exception], /
-) -> bool:
-    """Check if an instance relationship holds, allowing for groups."""
-    if isinstance(error, class_or_tuple):
-        return True
-    if not isinstance(error, BaseExceptionGroup):
-        return False
-    return any(is_instance_error(e, class_or_tuple) for e in error.exceptions)
 
 
 ##

@@ -32,7 +32,6 @@ from utilities.pathlib import (
     is_sub_path,
     list_dir,
     module_path,
-    temp_cwd,
     to_path,
 )
 
@@ -294,14 +293,6 @@ class TestModulePath:
     def test_main(self, *, root: PathLike | None, expected: Path) -> None:
         module = module_path("foo/bar/baz.py", root=root)
         assert module == expected
-
-
-class TestTempCwd:
-    def test_main(self, *, tmp_path: Path) -> None:
-        assert Path.cwd() != tmp_path
-        with temp_cwd(tmp_path):
-            assert Path.cwd() == tmp_path
-        assert Path.cwd() != tmp_path
 
 
 class TestToPath:

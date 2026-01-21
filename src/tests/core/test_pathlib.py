@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from os import mkfifo
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 from pytest import raises
 
-from utilities.core import _FileOrDirMissingError, _FileOrDirTypeError, file_or_dir
-
-if TYPE_CHECKING:
-    from pathlib import Path
+from utilities.core import (
+    _FileOrDirMissingError,
+    _FileOrDirTypeError,
+    file_or_dir,
+    yield_temp_cwd,
+)
 
 
 class TestFileOrDir:
@@ -41,3 +43,11 @@ class TestFileOrDir:
             _FileOrDirTypeError, match=r"Path is neither a file nor a directory: '.*'"
         ):
             _ = file_or_dir(path)
+
+
+class TestYieldTempCwd:
+    def test_main(self, *, tmp_path: Path) -> None:
+        assert Path.cwd() != tmp_path
+        with yield_temp_cwd(tmp_path):
+            assert Path.cwd() == tmp_path
+        assert Path.cwd() != tmp_path

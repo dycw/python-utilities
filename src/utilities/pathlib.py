@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from itertools import chain
-from os import chdir
 from os.path import expandvars
 from pathlib import Path
 from re import IGNORECASE, search
@@ -11,13 +10,12 @@ from subprocess import PIPE, CalledProcessError, check_output
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.constants import Sentinel
-from utilities.contextlib import enhanced_context_manager
 from utilities.errors import ImpossibleCaseError
 from utilities.grp import get_gid_name
 from utilities.pwd import get_uid_name
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Sequence
 
     from utilities.types import MaybeCallablePathLike, PathLike
 
@@ -297,20 +295,6 @@ def list_dir(path: PathLike, /) -> Sequence[Path]:
 ##
 
 
-@enhanced_context_manager
-def temp_cwd(path: PathLike, /) -> Iterator[None]:
-    """Context manager with temporary current working directory set."""
-    prev = Path.cwd()
-    chdir(path)
-    try:
-        yield
-    finally:
-        chdir(prev)
-
-
-##
-
-
 @overload
 def to_path(path: Sentinel, /) -> Sentinel: ...
 @overload
@@ -346,6 +330,5 @@ __all__ = [
     "is_sub_path",
     "list_dir",
     "module_path",
-    "temp_cwd",
     "to_path",
 ]

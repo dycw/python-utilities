@@ -12,14 +12,15 @@ from utilities.constants import (
     Sentinel,
     sentinel,
 )
-from utilities.errors import ImpossibleCaseError
-from utilities.functions import get_class_name, is_sentinel
-from utilities.iterables import (
+from utilities.core import (
     OneStrEmptyError,
     OneStrNonUniqueError,
-    cmp_nullable,
+    get_class_name,
+    is_sentinel,
     one_str,
 )
+from utilities.errors import ImpossibleCaseError
+from utilities.iterables import cmp_nullable
 from utilities.operator import is_equal
 from utilities.parse import (
     _ParseObjectExtraNonUniqueError,
