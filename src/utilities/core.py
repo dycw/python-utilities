@@ -500,9 +500,7 @@ def _copy_or_move(
         case "file", "dir", "move", True:
             _copy_or_move__move_file_to_dir(src, dest)
         case "file", "dir", "copy", True:
-            _copy_or_move__move_file_to_dir(src, dest)
-            rmtree(dest, ignore_errors=True)
-            _copy_or_move__copy_file(src, dest)
+            _copy_or_move__copy_file_to_dir(src, dest)
         case ("dir", None, "move", _):
             _copy_or_move__move_dir(src, dest)
         case ("dir", "dir", "move", True):
