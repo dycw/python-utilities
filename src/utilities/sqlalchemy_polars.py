@@ -28,8 +28,8 @@ from sqlalchemy.exc import DuplicateColumnError
 
 import utilities.asyncio
 from utilities.constants import UTC
-from utilities.core import OneError, identity, one, repr_
-from utilities.iterables import CheckDuplicatesError, check_duplicates, chunked
+from utilities.core import OneError, chunked, identity, one, repr_
+from utilities.iterables import CheckDuplicatesError, check_duplicates
 from utilities.polars import zoned_date_time_dtype
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
