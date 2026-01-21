@@ -105,7 +105,7 @@ class TestCompressAndYieldUncompressed:
             raises(error, match=r"Cannot uncompress '.*' since it does not exist"),
             yield_uncompressed(temp_path_not_exist),
         ):
-            _
+            ...
 
     @mark.parametrize(
         ("compress", "error"),
