@@ -14,7 +14,6 @@
     "tzlocal>=5.3.1",
     "whenever>=0.9.5",
   ]
-  cryptography = ["cryptography>=46.0.3"]
   cvxpy = ["cvxpy>=1.7.5"]
   dataclasses-test = ["orjson>=3.11.5", "polars>=1.37.1"]
   dev = [
