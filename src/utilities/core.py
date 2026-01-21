@@ -511,7 +511,7 @@ def _copy_or_move__file_to_file(src: Path, dest: Path, mode: CopyOrMove, /) -> N
         _ = temp.replace(dest)
 
 
-def _copy_or_move__file_to_dir(src: Path, dest: Path, /) -> None:
+def _copy_or_move__file_to_dir(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
     with (
         yield_adjacent_temp_dir(dest) as temp_dir,
         yield_adjacent_temp_dir(dest) as temp_file,
