@@ -338,7 +338,7 @@ def get_env(
     except OneStrEmptyError:
         match default, nullable:
             case None, False:
-                raise GetEnvVarError(key=key, case_sensitive=case_sensitive) from None
+                raise GetEnvError(key=key, case_sensitive=case_sensitive) from None
             case None, True:
                 return None
             case str(), _:
@@ -349,7 +349,7 @@ def get_env(
 
 
 @dataclass(kw_only=True, slots=True)
-class GetEnvVarError(Exception):
+class GetEnvError(Exception):
     key: str
     case_sensitive: bool = False
 
@@ -620,7 +620,7 @@ def yield_temp_file_at(path: PathLike, /) -> Iterator[Path]:
 
 __all__ = [
     "FileOrDirError",
-    "GetEnvVarError",
+    "GetEnvError",
     "MaxNullableError",
     "MinNullableError",
     "OneEmptyError",
