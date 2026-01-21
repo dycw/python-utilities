@@ -29,7 +29,15 @@ class TestGetEnv:
         with yield_temp_environ({key.lower(): value}):
             assert get_env(key.upper()) == value
 
-    def test_case_sensitive(self) -> None:
+    def test_case_sensitive_success(self) -> None:
+        key, value = [unique_str() for _ in range(2)]
+        with (
+            yield_temp_environ({key.lower(): value}),
+            raises(GetEnvError, match=r"No environment variable '.*'"),
+        ):
+            _ = get_env(key.upper(), case_sensitive=True)
+
+    def test_case_sensitive_success(self) -> None:
         key, value = [unique_str() for _ in range(2)]
         with (
             yield_temp_environ({key.lower(): value}),
