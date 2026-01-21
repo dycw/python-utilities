@@ -552,6 +552,8 @@ def _copy_or_move__move_dir(src: Path, dest: Path, /, *, delete: bool = False) -
             breakpoint()
             _ = temp.replace(dest)
             breakpoint()
+            _ = temp.replace(dest)
+            breakpoint()
     except OSError as error:  # pragma: no cover
         raise
         if not _is_invalid_cross_device_link_error(error):
