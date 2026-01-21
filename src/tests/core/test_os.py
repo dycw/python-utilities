@@ -25,6 +25,8 @@ class TestCopyOrMove:
     ) -> None:
         src = tmp_path / "src"
         dest = tmp_path / "dest"
+        if dest_exists:
+            dest.touch()
 
 
 class TestGetEnv:
