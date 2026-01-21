@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, ov
 from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
 from utilities.constants import SECOND
-from utilities.core import repr_
+from utilities.core import get_class_name, repr_
 from utilities.reprlib import get_repr_and_class
 from utilities.types import Dataclass, Duration, Number, TypeLike
 
@@ -479,24 +479,6 @@ def first[T](pair: tuple[T, Any], /) -> T:
 ##
 
 
-@overload
-def get_class[T](obj: type[T], /) -> type[T]: ...
-@overload
-def get_class[T](obj: T, /) -> type[T]: ...
-def get_class[T](obj: T | type[T], /) -> type[T]:
-    """Get the class of an object, unless it is already a class."""
-    return obj if isinstance(obj, type) else type(obj)
-
-
-##
-
-
-def get_class_name(obj: Any, /, *, qual: bool = False) -> str:
-    """Get the name of the class of an object, unless it is already a class."""
-    cls = get_class(obj)
-    return f"{cls.__module__}.{cls.__qualname__}" if qual else cls.__name__
-
-
 ##
 
 
@@ -722,8 +704,6 @@ __all__ = [
     "ensure_time_delta",
     "ensure_zoned_date_time",
     "first",
-    "get_class",
-    "get_class_name",
     "get_func_name",
     "get_func_qualname",
     "identity",

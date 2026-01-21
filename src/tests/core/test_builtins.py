@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from itertools import chain
-from typing import TYPE_CHECKING
+from types import NoneType
+from typing import TYPE_CHECKING, Any
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -13,17 +14,46 @@ from hypothesis.strategies import (
     permutations,
     sampled_from,
 )
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.core import (
     MaxNullableError,
     MinNullableError,
+    get_class,
+    get_class_name,
     max_nullable,
     min_nullable,
 )
+from utilities.errors import ImpossibleCaseError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
+
+
+class TestGetClass:
+    @mark.parametrize(
+        ("obj", "expected"), [param(None, NoneType), param(NoneType, NoneType)]
+    )
+    def test_main(self, *, obj: Any, expected: type[Any]) -> None:
+        assert get_class(obj) is expected
+
+
+class TestGetClassName:
+    def test_class(self) -> None:
+        class Example: ...
+
+        assert get_class_name(Example) == "Example"
+
+    def test_instance(self) -> None:
+        class Example: ...
+
+        assert get_class_name(Example()) == "Example"
+
+    def test_qual(self) -> None:
+        assert (
+            get_class_name(ImpossibleCaseError, qual=True)
+            == "utilities.errors.ImpossibleCaseError"
+        )
 
 
 class TestMinMaxNullable:

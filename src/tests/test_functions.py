@@ -6,7 +6,6 @@ from functools import cache, cached_property, lru_cache, partial, wraps
 from operator import neg
 from subprocess import check_output
 from sys import executable
-from types import NoneType
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from hypothesis import given
@@ -23,7 +22,6 @@ from hypothesis.strategies import (
 from pytest import approx, mark, param, raises
 
 from utilities.constants import HOME, MILLISECOND, NOW_UTC, SECOND, ZERO_TIME, sentinel
-from utilities.errors import ImpossibleCaseError
 from utilities.functions import (
     EnsureBoolError,
     EnsureBytesError,
@@ -56,8 +54,6 @@ from utilities.functions import (
     ensure_time_delta,
     ensure_zoned_date_time,
     first,
-    get_class,
-    get_class_name,
     get_func_name,
     get_func_qualname,
     identity,
@@ -384,32 +380,6 @@ class TestFirst:
         pair = x, y
         result = first(pair)
         assert result == x
-
-
-class TestGetClass:
-    @given(case=sampled_from([(None, NoneType), (NoneType, NoneType)]))
-    def test_main(self, *, case: tuple[Any, type[Any]]) -> None:
-        obj, expected = case
-        result = get_class(obj)
-        assert result is expected
-
-
-class TestGetClassName:
-    def test_class(self) -> None:
-        class Example: ...
-
-        assert get_class_name(Example) == "Example"
-
-    def test_instance(self) -> None:
-        class Example: ...
-
-        assert get_class_name(Example()) == "Example"
-
-    def test_qual(self) -> None:
-        assert (
-            get_class_name(ImpossibleCaseError, qual=True)
-            == "utilities.errors.ImpossibleCaseError"
-        )
 
 
 class TestGetFuncNameAndGetFuncQualName:

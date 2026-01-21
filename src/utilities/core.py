@@ -36,6 +36,24 @@ if TYPE_CHECKING:
 
 
 @overload
+def get_class[T](obj: type[T], /) -> type[T]: ...
+@overload
+def get_class[T](obj: T, /) -> type[T]: ...
+def get_class[T](obj: T | type[T], /) -> type[T]:
+    """Get the class of an object, unless it is already a class."""
+    return obj if isinstance(obj, type) else type(obj)
+
+
+def get_class_name(obj: Any, /, *, qual: bool = False) -> str:
+    """Get the name of the class of an object, unless it is already a class."""
+    cls = get_class(obj)
+    return f"{cls.__module__}.{cls.__qualname__}" if qual else cls.__name__
+
+
+##
+
+
+@overload
 def min_nullable[T: SupportsRichComparison](
     iterable: Iterable[T | None], /, *, default: Sentinel = ...
 ) -> T: ...
@@ -509,6 +527,8 @@ __all__ = [
     "TemporaryFile",
     "always_iterable",
     "file_or_dir",
+    "get_class",
+    "get_class_name",
     "is_none",
     "is_not_none",
     "is_sentinel",
