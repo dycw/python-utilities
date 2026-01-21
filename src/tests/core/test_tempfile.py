@@ -90,7 +90,7 @@ class TestTemporaryFile:
             assert current == text
 
 
-class TestYieldTempAt:
+class TestYieldAdjacentTempAt:
     def test_dir(self, *, temp_path_not_exist: Path) -> None:
         with yield_adjacent_temp_dir(temp_path_not_exist) as temp:
             assert temp.is_dir()
