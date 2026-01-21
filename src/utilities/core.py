@@ -167,7 +167,7 @@ class OneStrNonUniqueError(OneStrError):
         return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
 
 
-#### pathlib
+#### pathlib #################################################
 
 
 @overload
