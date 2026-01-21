@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 from pytest import mark, param, raises
 
 from utilities.core import (
+    ReadBytesError,
+    ReadTextError,
     WriteBytesError,
     WriteTextError,
     read_bytes,
@@ -24,7 +26,14 @@ class TestReadWriteBytes:
         assert temp_path_not_exist.is_file()
         assert read_bytes(temp_path_not_exist, uncompress=compress) == b"data"
 
-    def test_error(self, *, temp_file: Path) -> None:
+    @mark.parametrize("uncompress", [param(False), param(True)])
+    def test_error_read(self, *, temp_path_not_exist: Path, uncompress: bool) -> None:
+        with raises(
+            ReadBytesError, match=r"Cannot read from '.*' since it does not exist"
+        ):
+            _ = read_bytes(temp_path_not_exist, uncompress=uncompress)
+
+    def test_error_write(self, *, temp_file: Path) -> None:
         with raises(
             WriteBytesError, match=r"Cannot write to '.*' since it already exists"
         ):
@@ -41,7 +50,14 @@ class TestWriteText:
         assert temp_path_not_exist.is_file()
         assert read_text(temp_path_not_exist, uncompress=compress) == "text\n"
 
-    def test_error(self, *, temp_file: Path) -> None:
+    @mark.parametrize("uncompress", [param(False), param(True)])
+    def test_error_read(self, *, temp_path_not_exist: Path, uncompress: bool) -> None:
+        with raises(
+            ReadTextError, match=r"Cannot read from '.*' since it does not exist"
+        ):
+            _ = read_text(temp_path_not_exist, uncompress=uncompress)
+
+    def test_error_write(self, *, temp_file: Path) -> None:
         with raises(
             WriteTextError, match=r"Cannot write to '.*' since it already exists"
         ):

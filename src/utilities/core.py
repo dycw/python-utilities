@@ -314,10 +314,6 @@ class _CompressFilesError(Exception):
     srcs: list[Path]
     dest: Path
 
-    @override
-    def __str__(self) -> str:
-        return f"Cannot compress source(s) {repr_str(self.srcs)} since destination {repr_str(self.dest)} already exists"
-
 
 def _compress_files_add_dir(path: PathLike, tar: TarFile, /) -> None:
     path = Path(path)
@@ -335,8 +331,20 @@ def yield_bz2(path: PathLike, /) -> Iterator[Path]:
     def func(path: PathLike, /) -> BZ2File:
         return BZ2File(path, mode="rb")
 
-    with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
-        yield temp
+    try:
+        with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
+            yield temp
+    except _YieldUncompressedError as error:
+        raise YieldGzipError(path=error.path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class YieldBZ2Error(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot uncompress {repr_str(self.path)} since it does not exist"
 
 
 @contextmanager
@@ -346,8 +354,20 @@ def yield_gzip(path: PathLike, /) -> Iterator[Path]:
     def func(path: PathLike, /) -> GzipFile:
         return GzipFile(path, mode="rb")
 
-    with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
-        yield temp
+    try:
+        with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
+            yield temp
+    except _YieldUncompressedError as error:
+        raise YieldGzipError(path=error.path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class YieldGzipError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot uncompress {repr_str(self.path)} since it does not exist"
 
 
 @contextmanager
@@ -357,33 +377,54 @@ def yield_lzma(path: PathLike, /) -> Iterator[Path]:
     def func(path: PathLike, /) -> LZMAFile:
         return LZMAFile(path, mode="rb")
 
-    with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
-        yield temp
+    try:
+        with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
+            yield temp
+    except _YieldUncompressedError as error:
+        raise YieldLZMAError(path=error.path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class YieldLZMAError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot uncompress {repr_str(self.path)} since it does not exist"
 
 
 @contextmanager
 def _yield_uncompressed(path: PathLike, func: PathToBinaryIO, /) -> Iterator[Path]:
-    with func(path) as buffer:
-        try:
-            with TarFile(fileobj=buffer) as tf, TemporaryDirectory() as temp:
-                tf.extractall(path=temp, filter="data")
-                try:
-                    yield one(temp.iterdir())
-                except (OneEmptyError, OneNonUniqueError):
-                    yield temp
-        except ReadError as error:
-            (arg,) = error.args
-            if arg == "empty file":
-                with TemporaryDirectory() as temp:
-                    yield temp
-            elif arg in {"bad checksum", "invalid header", "truncated header"}:
-                _ = buffer.seek(0)
-                with TemporaryFile() as temp, temp.open(mode="wb") as fh:
-                    copyfileobj(buffer, fh)
-                    _ = fh.seek(0)
-                    yield temp
-            else:  # pragma: no cover
-                raise NotImplementedError(arg) from None
+    path = Path(path)
+    try:
+        with func(path) as buffer:
+            try:
+                with TarFile(fileobj=buffer) as tf, TemporaryDirectory() as temp:
+                    tf.extractall(path=temp, filter="data")
+                    try:
+                        yield one(temp.iterdir())
+                    except (OneEmptyError, OneNonUniqueError):
+                        yield temp
+            except ReadError as error:
+                (arg,) = error.args
+                if arg == "empty file":
+                    with TemporaryDirectory() as temp:
+                        yield temp
+                elif arg in {"bad checksum", "invalid header", "truncated header"}:
+                    _ = buffer.seek(0)
+                    with TemporaryFile() as temp, temp.open(mode="wb") as fh:
+                        copyfileobj(buffer, fh)
+                        _ = fh.seek(0)
+                        yield temp
+                else:  # pragma: no cover
+                    raise NotImplementedError(arg) from None
+    except FileNotFoundError:
+        raise _YieldUncompressedError(path=path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class _YieldUncompressedError(Exception):
+    path: Path
 
 
 ###############################################################################
@@ -1118,11 +1159,27 @@ def _to_pattern(pattern: PatternLike, /, *, flags: int = 0) -> Pattern[str]:
 
 def read_bytes(path: PathLike, /, *, uncompress: bool = False) -> bytes:
     """Read data from a file."""
+    path = Path(path)
     if uncompress:
-        with yield_gzip(path) as temp:
-            return temp.read_bytes()
+        try:
+            with yield_gzip(path) as temp:
+                return temp.read_bytes()
+        except YieldGzipError as error:
+            raise ReadBytesError(path=error.path) from None
     else:
-        return Path(path).read_bytes()
+        try:
+            return path.read_bytes()
+        except FileNotFoundError:
+            raise ReadBytesError(path=path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadBytesError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot read from {repr_str(self.path)} since it does not exist"
 
 
 def write_bytes(
@@ -1150,11 +1207,27 @@ class WriteBytesError(Exception):
 
 def read_text(path: PathLike, /, *, uncompress: bool = False) -> str:
     """Read text from a file."""
+    path = Path(path)
     if uncompress:
-        with yield_gzip(path) as temp:
-            return temp.read_text()
+        try:
+            with yield_gzip(path) as temp:
+                return temp.read_text()
+        except YieldGzipError as error:
+            raise ReadTextError(path=error.path) from None
     else:
-        return Path(path).read_text()
+        try:
+            return path.read_text()
+        except FileNotFoundError:
+            raise ReadTextError(path=path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadTextError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot read from {repr_str(self.path)} since it does not exist"
 
 
 def write_text(
@@ -1773,13 +1846,20 @@ __all__ = [
     "OneStrEmptyError",
     "OneStrError",
     "OneStrNonUniqueError",
+    "ReadBytesError",
+    "ReadTextError",
     "SubstituteError",
     "TemporaryDirectory",
     "TemporaryFile",
     "ToTimeZoneError",
     "ToTimeZoneNameError",
     "WriteBytesError",
+    "WriteBytesError",
     "WriteTextError",
+    "WriteTextError",
+    "YieldBZ2Error",
+    "YieldGzipError",
+    "YieldLZMAError",
     "always_iterable",
     "chunked",
     "compress_bz2",
