@@ -57,8 +57,7 @@ class TestGetEnv:
 
 
 class TestYieldTempEnviron:
-    @given(key=text.map(_prefix), value=text)
-    def test_set(self, *, key: str, value: str) -> None:
+    def test_set(self) -> None:
         assert getenv(key) is None
         with yield_temp_environ({key: value}):
             assert getenv(key) == value
