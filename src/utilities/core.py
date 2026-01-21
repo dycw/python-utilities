@@ -570,9 +570,10 @@ def _copy_or_move__shutil_dir(
     match mode:
         case "copy":
             _ = copytree(src, temp, dirs_exist_ok=True)
+            _ = temp.replace(dest)
         case "move":
             _ = shutil.move(src, temp)
-                _ = temp_dir.replace(dest)
+                _ = (temp_dir / src.name).replace(dest)
         case never:
             assert_never(never)
 
