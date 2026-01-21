@@ -91,7 +91,7 @@ class TestCopyOrMove:
         match mode:
             case "copy":
                 copy(src, dest, overwrite=overwrite)
-                assert src.is_file()
+                assert src.is_dir()
                 assert src.read_text() == "src"
             case "move":
                 move(src, dest, overwrite=overwrite)
