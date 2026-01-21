@@ -142,7 +142,7 @@ class TestCopyOrMove:
         _ = src.write_text("src")
         return src
 
-    def _setup_dest_file(self, tmp_path: Path, /) -> Path:
+    def _setup_dest_file(self, tmp_path: Path, /, *, exists: bool = False) -> Path:
         src = tmp_path / "src.txt"
         _ = src.write_text("src")
         return src
