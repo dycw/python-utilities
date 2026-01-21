@@ -220,6 +220,7 @@ class SupportsRound(Protocol[_T_co]):
 
 
 # os
+type Copy
 type IntOrAll = int | Literal["all"]
 
 
