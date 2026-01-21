@@ -22,7 +22,7 @@ class TestGetEnv:
     @given(
         key=text.map(_prefix), value=text, default=text | none(), nullable=booleans()
     )
-    @mark.parametrize("argname", [param(argvalue)])
+    @mark.parametrize("nullabe", [param(argvalue)])
     def test_case_sensitive(
         self, *, key: str, value: str, default: str | None, nullable: bool
     ) -> None:
