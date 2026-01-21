@@ -31,8 +31,7 @@ class TestGetEnv:
 
     def test_default(self) -> None:
         key, value = self._generate()
-        assert get_env(key, default=default, nullable=nullable)
-        assert value == default
+        assert get_env(key, default=value) == value
 
     @given(key=text.map(_prefix), case_sensitive=booleans())
     def test_nullable(self, *, key: str, case_sensitive: bool) -> None:
