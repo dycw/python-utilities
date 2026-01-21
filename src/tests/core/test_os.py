@@ -29,9 +29,7 @@ class TestGetEnv:
         with yield_temp_environ({key.lower(): value}):
             assert get_env(key.upper()) == value
 
-    def test_default(
-        self, *, key: str, case_sensitive: bool, default: str, nullable: bool
-    ) -> None:
+    def test_default(self) -> None:
         value = get_env(
             key, case_sensitive=case_sensitive, default=default, nullable=nullable
         )
