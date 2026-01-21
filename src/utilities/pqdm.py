@@ -7,8 +7,7 @@ from pqdm import processes, threads
 from tqdm.auto import tqdm as tqdm_auto
 
 from utilities.constants import Sentinel, sentinel
-from utilities.core import is_sentinel
-from utilities.functions import get_func_name
+from utilities.core import get_func_name, is_sentinel
 from utilities.iterables import apply_to_varargs
 from utilities.os import get_cpu_use
 
