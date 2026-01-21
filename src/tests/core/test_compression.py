@@ -19,12 +19,12 @@ from utilities.core import (
     compress_gzip,
     compress_lzma,
     compress_zip,
+    one,
     yield_bz2,
     yield_gzip,
     yield_lzma,
     yield_zip,
 )
-from utilities.iterables import one
 
 if TYPE_CHECKING:
     from collections.abc import Callable

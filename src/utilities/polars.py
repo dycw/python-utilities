@@ -60,6 +60,7 @@ from utilities.core import (
     OneNonUniqueError,
     always_iterable,
     one,
+    read_bytes,
     repr_,
     suppress_warnings,
     to_time_zone_name,
@@ -68,7 +69,6 @@ from utilities.core import (
 from utilities.dataclasses import yield_fields
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
-from utilities.gzip import read_binary
 from utilities.iterables import (
     CheckIterablesEqualError,
     CheckMappingsEqualError,
@@ -2428,7 +2428,7 @@ def _replace_time_zone_one(
 
 def read_series(path: PathLike, /, *, decompress: bool = False) -> Series:
     """Read a Series from disk."""
-    data = read_binary(path, decompress=decompress)
+    data = read_bytes(path, decompress=decompress)
     return deserialize_series(data)
 
 
@@ -2447,7 +2447,7 @@ def write_series(
 
 def read_dataframe(path: PathLike, /, *, decompress: bool = False) -> DataFrame:
     """Read a DataFrame from disk."""
-    data = read_binary(path, decompress=decompress)
+    data = read_bytes(path, decompress=decompress)
     return deserialize_dataframe(data)
 
 

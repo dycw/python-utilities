@@ -24,10 +24,9 @@ import utilities.asyncio
 from utilities.asyncio import timeout
 from utilities.constants import MILLISECOND, SECOND
 from utilities.contextlib import enhanced_async_context_manager
-from utilities.core import always_iterable, identity
+from utilities.core import always_iterable, identity, one
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_int, in_milli_seconds, in_seconds
-from utilities.iterables import one
 from utilities.math import safe_round
 from utilities.os import is_pytest
 from utilities.typing import is_instance_gen
@@ -39,8 +38,13 @@ if TYPE_CHECKING:
     from redis.asyncio.client import PubSub
     from redis.typing import EncodableT
 
-    from utilities.iterables import MaybeIterable
-    from utilities.types import Duration, MaybeSequence, MaybeType, TypeLike
+    from utilities.types import (
+        Duration,
+        MaybeIterable,
+        MaybeSequence,
+        MaybeType,
+        TypeLike,
+    )
 
 
 _PUBLISH_TIMEOUT: Duration = SECOND

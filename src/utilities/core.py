@@ -1224,10 +1224,10 @@ def _to_pattern(pattern: PatternLike, /, *, flags: int = 0) -> Pattern[str]:
 ###############################################################################
 
 
-def read_bytes(path: PathLike, /, *, uncompress: bool = False) -> bytes:
+def read_bytes(path: PathLike, /, *, decompress: bool = False) -> bytes:
     """Read data from a file."""
     path = Path(path)
-    if uncompress:
+    if decompress:
         try:
             with yield_gzip(path) as temp:
                 return temp.read_bytes()
@@ -1281,10 +1281,10 @@ class WriteBytesError(Exception):
 ##
 
 
-def read_text(path: PathLike, /, *, uncompress: bool = False) -> str:
+def read_text(path: PathLike, /, *, decompress: bool = False) -> str:
     """Read text from a file."""
     path = Path(path)
-    if uncompress:
+    if decompress:
         try:
             with yield_gzip(path) as temp:
                 return temp.read_text()

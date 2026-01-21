@@ -22,9 +22,9 @@ from utilities.core import (
     TemporaryDirectory,
     TemporaryFile,
     normalize_multi_line_str,
+    one,
     unique_str,
 )
-from utilities.iterables import one
 from utilities.pathlib import get_file_group, get_file_owner
 from utilities.permissions import Permissions
 from utilities.pytest import skipif_ci, skipif_mac, throttle_test
@@ -1139,7 +1139,7 @@ class TestRun:
             foo
             bar
             baz
-        """)
+        """).rstrip("\n")
         result = run("cat", input=input_, return_=True)
         assert result == input_
         cap = capsys.readouterr()

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from pytest import CaptureFixture, LogCaptureFixture, mark, param, raises
 
 from utilities.constants import MINUTE
-from utilities.core import unique_str
+from utilities.core import one, unique_str
 from utilities.docker import (
     _docker_compose_cmd,
     docker_compose_down_cmd,
@@ -21,7 +21,6 @@ from utilities.docker import (
     docker_exec_cmd,
     yield_docker_temp_dir,
 )
-from utilities.iterables import one
 from utilities.pytest import skipif_ci, throttle_test
 from utilities.subprocess import BASH_LS, touch_cmd
 
