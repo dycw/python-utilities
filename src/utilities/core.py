@@ -52,10 +52,12 @@ from utilities.constants import _get_now_local as get_now_local
 from utilities.types import (
     TIME_ZONES,
     CopyOrMove,
+    FilterWarningsAction,
     PatternLike,
     SupportsRichComparison,
     TimeZone,
     TimeZoneLike,
+    TypeLike,
 )
 
 if TYPE_CHECKING:
@@ -1011,8 +1013,7 @@ class _TemporaryDirectoryNoResourceWarning(tempfile.TemporaryDirectory):
         ignore_errors: bool = False,
         delete: bool = True,
     ) -> None:
-        with catch_warnings():
-            filterwarnings("ignore", category=ResourceWarning)
+        with suppress_warnings(category=ResourceWarning):
             return super()._cleanup(  # pyright: ignore[reportAttributeAccessIssue]
                 name, warn_message, ignore_errors=ignore_errors, delete=delete
             )
@@ -1212,6 +1213,46 @@ def unique_str() -> str:
 ###############################################################################
 #### warnings #################################################################
 ###############################################################################
+
+
+@contextmanager
+def suppress_warnings(
+    *, message: str = "", category: TypeLike[Warning] | None = None
+) -> Iterator[None]:
+    """Suppress warnings."""
+    with _yield_caught_warnings("ignore", message=message, category=category):
+        yield
+
+
+@contextmanager
+def yield_warnings_as_errors(
+    *, message: str = "", category: TypeLike[Warning] | None = None
+) -> Iterator[None]:
+    """Catch warnings as errors."""
+    with _yield_caught_warnings("error", message=message, category=category):
+        yield
+
+
+@contextmanager
+def _yield_caught_warnings(
+    action: FilterWarningsAction,
+    /,
+    *,
+    message: str = "",
+    category: TypeLike[Warning] | None = None,
+) -> Iterator[None]:
+    with catch_warnings():
+        match category:
+            case None:
+                filterwarnings(action, message=message)
+            case type():
+                filterwarnings(action, message=message, category=category)
+            case tuple():
+                for c in category:
+                    filterwarnings(action, message=message, category=c)
+            case never:
+                assert_never(never)
+        yield
 
 
 ###############################################################################
@@ -1459,6 +1500,7 @@ __all__ = [
     "repr_",
     "repr_str",
     "suppress_super_attribute_error",
+    "suppress_warnings",
     "take",
     "to_time_zone_name",
     "to_zone_info",
@@ -1471,4 +1513,5 @@ __all__ = [
     "yield_adjacent_temp_file",
     "yield_temp_cwd",
     "yield_temp_environ",
+    "yield_warnings_as_errors",
 ]

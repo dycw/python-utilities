@@ -61,6 +61,7 @@ from utilities.core import (
     always_iterable,
     one,
     repr_,
+    suppress_warnings,
     to_time_zone_name,
 )
 from utilities.dataclasses import yield_fields
@@ -98,7 +99,6 @@ from utilities.typing import (
     is_set_type,
     make_isinstance,
 )
-from utilities.warnings import suppress_warnings
 from utilities.whenever import (
     DatePeriod,
     TimePeriod,

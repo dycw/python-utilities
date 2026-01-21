@@ -269,6 +269,11 @@ type UUIDLike = MaybeStr[UUID]
 type MaybeCallableUUIDLike = MaybeCallable[UUIDLike | Seed]
 
 
+# warnings
+type FilterWarningsAction = Literal[
+    "error", "ignore", "always", "default", "module", "once"
+]
+
 # whenever
 type DateDeltaLike = MaybeStr[DateDelta]
 type DateLike = MaybeStr[Date]
@@ -326,6 +331,7 @@ __all__ = [
     "ExcInfo",
     "ExceptionTypeLike",
     "FileOrDir",
+    "FilterWarningsAction",
     "IPv4AddressLike",
     "IPv6AddressLike",
     "IntOrAll",
