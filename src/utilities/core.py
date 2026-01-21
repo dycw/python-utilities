@@ -563,6 +563,7 @@ def _copy_or_move__shutil_file2(
             _ = shutil.move(src, temp)
         case never:
             assert_never(never)
+    _ = temp.replace(dest)
 
 
 def _copy_or_move__shutil_file(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
