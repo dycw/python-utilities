@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import reprlib
 import shutil
 import tempfile
@@ -8,7 +9,6 @@ from dataclasses import dataclass
 from itertools import chain
 from os import chdir, environ, getenv
 from pathlib import Path
-from re import search
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 from warnings import catch_warnings, filterwarnings
@@ -84,7 +84,7 @@ class MinNullableError[T: SupportsRichComparison](Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Minimum of an all-None iterable {repr_(self.iterable)} is undefined"
+        return f"Minimum of {repr_(self.iterable)} is undefined"
 
 
 @overload
@@ -114,7 +114,7 @@ class MaxNullableError[T: SupportsRichComparison](Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Maximum of an all-None iterable {repr_(self.iterable)} is undefined"
+        return f"Maximum of {repr_(self.iterable)} is undefined"
 
 
 ###############################################################################
@@ -151,8 +151,13 @@ def suppress_super_attribute_error() -> Iterator[None]:
     try:
         yield
     except AttributeError as error:
-        if not search(r"'super' object has no attribute '\w+'", error.args[0]):
+        if not _suppress_super_attribute_error_pattern.search(error.args[0]):
             raise
+
+
+_suppress_super_attribute_error_pattern = re.compile(
+    r"'super' object has no attribute '\w+'"
+)
 
 
 ###############################################################################
@@ -477,6 +482,9 @@ def repr_(
     )
 
 
+##
+
+
 def repr_str(
     obj: Any,
     /,
@@ -498,9 +506,6 @@ def repr_str(
         max_depth=max_depth,
         expand_all=expand_all,
     )
-
-
-##
 
 
 ###############################################################################
@@ -671,6 +676,10 @@ def yield_temp_file_at(path: PathLike, /) -> Iterator[Path]:
     with TemporaryFile(dir=path.parent, suffix=".tmp", prefix=path.name) as temp:
         yield temp
 
+
+###############################################################################
+#### text #####################################################################
+###############################################################################
 
 __all__ = [
     "FileOrDirError",

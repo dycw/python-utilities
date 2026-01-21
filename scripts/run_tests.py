@@ -8,7 +8,6 @@ from tomllib import TOMLDecodeError, loads
 from typing import TYPE_CHECKING
 
 from utilities.logging import basic_config
-from utilities.os import temp_environ
 from utilities.pathlib import get_repo_root
 from utilities.re import extract_group
 from utilities.time import sleep
@@ -71,7 +70,7 @@ def _run_command(path: Path, /) -> bool:
     if (test := f"{group}-test") in groups:
         cmd.append(f"--only-group={test}")
     cmd.extend(["pytest", "-nauto", str(path)])
-    with temp_environ(PYTEST_ADDOPTS=None):
+    with yield_temp_environ(PYTEST_ADDOPTS=None):
         try:
             code = check_call(cmd)
         except CalledProcessError:

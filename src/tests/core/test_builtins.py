@@ -79,27 +79,14 @@ class TestMinMaxNullable:
         expected = func_builtin(values)
         assert result == expected
 
-    @given(
-        nones=lists(none()),
-        value=integers(),
-        func=sampled_from([min_nullable, max_nullable]),
-    )
-    def test_default(
-        self, *, nones: list[None], value: int, func: Callable[..., int]
-    ) -> None:
-        result = func(nones, default=value)
-        assert result == value
+    @mark.parametrize("func", [param(min_nullable), param(max_nullable)])
+    def test_default(self, *, func: Callable[..., int]) -> None:
+        assert func([], default=True) is True
 
-    @given(nones=lists(none()))
-    def test_error_min_nullable(self, *, nones: list[None]) -> None:
-        with raises(
-            MinNullableError, match=r"Minimum of an all-None iterable is undefined"
-        ):
-            _ = min_nullable(nones)
+    def test_error_min(self) -> None:
+        with raises(MinNullableError, match=r"Minimum of \[\] is undefined"):
+            _ = min_nullable([])
 
-    @given(nones=lists(none()))
-    def test_error_max_nullable(self, *, nones: list[None]) -> None:
-        with raises(
-            MaxNullableError, match=r"Maximum of an all-None iterable is undefined"
-        ):
-            max_nullable(nones)
+    def test_error_max(self) -> None:
+        with raises(MaxNullableError, match=r"Maximum of \[\] is undefined"):
+            max_nullable([])

@@ -6,7 +6,7 @@ from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data, none, sampled_from
 from pytest import raises
 
-from utilities.core import GetEnvError, get_env, temp_environ
+from utilities.core import GetEnvError, get_env, yield_temp_environ
 from utilities.hypothesis import text_ascii
 
 text = text_ascii(min_size=1, max_size=10)
@@ -23,7 +23,7 @@ class TestGetEnv:
     def test_case_sensitive(
         self, *, key: str, value: str, default: str | None, nullable: bool
     ) -> None:
-        with temp_environ({key: value}):
+        with yield_temp_environ({key: value}):
             result = get_env(key, default=default, nullable=nullable)
         assert result == value
 
@@ -44,7 +44,7 @@ class TestGetEnv:
         nullable: bool,
     ) -> None:
         key_use = data.draw(sampled_from([key, key.lower(), key.upper()]))
-        with temp_environ({key: value}):
+        with yield_temp_environ({key: value}):
             result = get_env(key_use, default=default, nullable=nullable)
         assert result == value
 
@@ -77,22 +77,22 @@ class TestYieldTempEnviron:
     @given(key=text.map(_prefix), value=text)
     def test_set(self, *, key: str, value: str) -> None:
         assert getenv(key) is None
-        with temp_environ({key: value}):
+        with yield_temp_environ({key: value}):
             assert getenv(key) == value
         assert getenv(key) is None
 
     @given(key=text.map(_prefix), prev=text, new=text)
     def test_override(self, *, key: str, prev: str, new: str) -> None:
-        with temp_environ({key: prev}):
+        with yield_temp_environ({key: prev}):
             assert getenv(key) == prev
-            with temp_environ({key: new}):
+            with yield_temp_environ({key: new}):
                 assert getenv(key) == new
             assert getenv(key) == prev
 
     @given(key=text.map(_prefix), value=text)
     def test_unset(self, *, key: str, value: str) -> None:
-        with temp_environ({key: value}):
+        with yield_temp_environ({key: value}):
             assert getenv(key) == value
-            with temp_environ({key: None}):
+            with yield_temp_environ({key: None}):
                 assert getenv(key) is None
             assert getenv(key) == value
