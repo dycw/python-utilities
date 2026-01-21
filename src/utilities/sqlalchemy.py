@@ -66,14 +66,19 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
 import utilities.asyncio
-from utilities.core import OneEmptyError, OneNonUniqueError, get_class_name, repr_
+from utilities.core import (
+    OneEmptyError,
+    OneNonUniqueError,
+    chunked,
+    get_class_name,
+    repr_,
+)
 from utilities.functions import ensure_str, yield_object_attributes
 from utilities.iterables import (
     CheckLengthError,
     CheckSubSetError,
     check_length,
     check_subset,
-    chunked,
     merge_sets,
     merge_str_mappings,
     one,
