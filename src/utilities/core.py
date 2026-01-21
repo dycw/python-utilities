@@ -515,6 +515,33 @@ def _copy_or_move(
             _copy_or_move__copy_dir(src, dest)
         case never:
             assert_never(never)
+    match file_or_dir(src), file_or_dir(dest), mode, overwrite:
+        case None, _, _, _:
+            raise _CopyOrMoveSourceNotFoundError(src=src)
+        case "file" | "dir", "file" | "dir", _, False:
+            raise _CopyOrMoveDestinationExistsError(src=src, dest=dest)
+        case ("file", None, "move", _) | ("file", "file", "move", True):
+            _copy_or_move__move_file(src, dest)
+        case ("file", None, "copy", _) | ("file", "file", "copy", True):
+            _copy_or_move__copy_file(src, dest)
+        case "file", "dir", "move", True:
+            _copy_or_move__move_file_to_dir(src, dest)
+        case "file", "dir", "copy", True:
+            _copy_or_move__copy_file_to_dir(src, dest)
+        case ("dir", None, "move", _):
+            _copy_or_move__move_dir(src, dest)
+        case ("dir", "dir", "move", True):
+            _copy_or_move__move_dir(src, dest)
+        case ("dir", None, "copy", _) | ("dir", "dir", "copy", True):
+            _copy_or_move__copy_dir(src, dest)
+        case "dir", "file", "move", True:
+            dest.unlink(missing_ok=True)
+            _copy_or_move__move_dir(src, dest)
+        case "dir", "file", "copy", True:
+            dest.unlink(missing_ok=True)
+            _copy_or_move__copy_dir(src, dest)
+        case never:
+            assert_never(never)
 
 
 def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
