@@ -4,15 +4,17 @@ import re
 import reprlib
 import shutil
 import tempfile
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from functools import _lru_cache_wrapper, partial
 from itertools import chain, islice
-from os import chdir, environ, getenv
+from os import chdir, environ, getenv, getpid
 from pathlib import Path
 from re import VERBOSE, findall
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
+from threading import get_ident
+from time import time_ns
 from types import (
     BuiltinFunctionType,
     FunctionType,
@@ -22,6 +24,7 @@ from types import (
     WrapperDescriptorType,
 )
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
+from uuid import uuid4
 from warnings import catch_warnings, filterwarnings
 
 from typing_extensions import TypeIs
@@ -886,6 +889,19 @@ _kebab_pascal_pattern = re.compile(
     flags=VERBOSE,
 )
 
+
+##
+
+
+def unique_str() -> str:
+    """Generate at unique string."""
+    now = time_ns()
+    pid = getpid()
+    ident = get_ident()
+    key = str(uuid4()).replace("-", "")
+    return f"{now}_{pid}_{ident}_{key}"
+
+
 __all__ = [
     "FileOrDirError",
     "GetEnvError",
@@ -919,6 +935,7 @@ __all__ = [
     "take",
     "transpose",
     "unique_everseen",
+    "unique_str",
     "yield_temp_cwd",
     "yield_temp_dir_at",
     "yield_temp_environ",

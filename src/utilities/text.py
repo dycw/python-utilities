@@ -5,11 +5,8 @@ from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
 from itertools import chain
-from os import getpid
 from re import IGNORECASE, escape, search
 from textwrap import dedent
-from threading import get_ident
-from time import time_ns
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,7 +16,6 @@ from typing import (
     overload,
     override,
 )
-from uuid import uuid4
 
 from utilities.constants import BRACKETS, LIST_SEPARATOR, PAIR_SEPARATOR, Sentinel
 from utilities.core import repr_, transpose
@@ -29,9 +25,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
     from utilities.types import MaybeCallableBoolLike, MaybeCallableStr, StrStrMapping
-
-
-##
 
 
 ##
@@ -80,14 +73,6 @@ class ParseNoneError(Exception):
 def prompt_bool(prompt: object = "", /, *, confirm: bool = False) -> bool:
     """Prompt for a boolean."""
     return True if confirm else parse_bool(input(prompt))
-
-
-##
-
-
-def repr_encode(obj: Any, /) -> bytes:
-    """Return the representation of the object encoded as bytes."""
-    return repr(obj).encode()
 
 
 ##
@@ -471,32 +456,16 @@ def to_str(text: MaybeCallableStr | None | Sentinel, /) -> str | None | Sentinel
 ##
 
 
-def unique_str() -> str:
-    """Generate at unique string."""
-    now = time_ns()
-    pid = getpid()
-    ident = get_ident()
-    key = str(uuid4()).replace("-", "")
-    return f"{now}_{pid}_{ident}_{key}"
-
-
-##
-
-
 __all__ = [
     "ParseBoolError",
     "ParseNoneError",
     "SplitKeyValuePairsError",
     "SplitStrError",
     "join_strs",
-    "kebab_case",
     "parse_bool",
     "parse_none",
-    "pascal_case",
     "prompt_bool",
-    "repr_encode",
     "secret_str",
-    "snake_case",
     "split_f_str_equals",
     "split_key_value_pairs",
     "split_str",

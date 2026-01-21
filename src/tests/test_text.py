@@ -31,7 +31,6 @@ from utilities.text import (
     parse_bool,
     parse_none,
     prompt_bool,
-    repr_encode,
     secret_str,
     split_f_str_equals,
     split_key_value_pairs,
@@ -40,7 +39,6 @@ from utilities.text import (
     strip_and_dedent,
     to_bool,
     to_str,
-    unique_str,
 )
 
 if TYPE_CHECKING:
@@ -100,14 +98,6 @@ class TestParseNone:
     def test_error(self, *, text: str) -> None:
         with raises(ParseNoneError, match=r"Unable to parse null value; got '.*'"):
             _ = parse_none(text)
-
-
-class TestReprEncode:
-    @given(n=integers())
-    def test_main(self, *, n: int) -> None:
-        result = repr_encode(n)
-        expected = repr(n).encode()
-        assert result == expected
 
 
 class TestPromptBool:
@@ -335,9 +325,3 @@ class TestToStr:
     @given(text=none() | sentinels())
     def test_none_or_sentinel(self, *, text: None | Sentinel) -> None:
         assert to_str(text) is text
-
-
-class TestUniqueStrs:
-    def test_main(self) -> None:
-        first, second = [unique_str() for _ in range(2)]
-        assert first != second

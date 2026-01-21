@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pytest import mark, param
 
-from utilities.core import kebab_case, pascal_case, snake_case
+from utilities.core import kebab_case, pascal_case, snake_case, unique_str
 
 
 class TestPascalSnakeAndKebabCase:
@@ -85,3 +85,9 @@ class TestPascalSnakeAndKebabCase:
         assert pascal_case(text) == exp_pascal
         assert snake_case(text) == exp_snake
         assert kebab_case(text) == exp_kebab
+
+
+class TestUniqueStrs:
+    def test_main(self) -> None:
+        first, second = [unique_str() for _ in range(2)]
+        assert first != second
