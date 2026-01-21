@@ -6,14 +6,14 @@ from pytest import raises
 
 from utilities.core import yield_temp_environ
 from utilities.string import SubstituteError, substitute
-from utilities.text import strip_and_dedent, unique_str
+from utilities.text import strip_dedent, unique_str
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 
 class TestSubstitute:
-    template: ClassVar[str] = strip_and_dedent("""
+    template: ClassVar[str] = strip_dedent("""
         This is a template string with:
          - key   = '$TEMPLATE_KEY'
          - value = '$TEMPLATE_VALUE'
@@ -52,7 +52,7 @@ class TestSubstitute:
             _ = substitute(self.template)
 
     def _assert_equal(self, text: str, key: str, value: str) -> None:
-        expected = strip_and_dedent(f"""
+        expected = strip_dedent(f"""
             This is a template string with:
              - key   = {key!r}
              - value = {value!r}

@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from pytest import mark, param
 
-from utilities.core import kebab_case, pascal_case, snake_case, unique_str
-from utilities.text import strip_and_dedent
+from utilities.core import kebab_case, pascal_case, snake_case, strip_dedent, unique_str
 
 
 class TestPascalSnakeAndKebabCase:
@@ -88,16 +87,19 @@ class TestPascalSnakeAndKebabCase:
         assert kebab_case(text) == exp_kebab
 
 
-class TestStripAndDedent:
-    def test_main(self) -> None:
-        result = strip_and_dedent(
-            """
-            This is line 1.
-            This is line 2.
-            """
-        )
-        expected = "This is line 1.\nThis is line 2.\n"
-        assert result == expected
+class TestStripDedent:
+    @mark.parametrize(
+        "text",
+        [
+            param("text"),
+            param("\ntext"),
+            param("text\n"),
+            param("\ntext\n"),
+            param("\n\ntext\n\n"),
+        ],
+    )
+    def test_main(self, *, text: str) -> None:
+        assert strip_dedent(text) == "text\n"
 
 
 class TestUniqueStrs:

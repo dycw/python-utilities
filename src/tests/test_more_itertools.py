@@ -15,7 +15,7 @@ from utilities.more_itertools import (
     peekable,
     yield_splits,
 )
-from utilities.text import strip_and_dedent
+from utilities.text import strip_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -341,7 +341,7 @@ class TestYieldSplits:
     def test_repr(self) -> None:
         split = Split(head=["a", "b", "c"], tail=["d"])
         result = repr(split)
-        expected = strip_and_dedent(
+        expected = strip_dedent(
             """
             Split(
                 head=

@@ -50,7 +50,7 @@ from utilities.functions import (
     yield_object_cached_properties,
     yield_object_properties,
 )
-from utilities.text import parse_bool, strip_and_dedent
+from utilities.text import parse_bool, strip_dedent
 from utilities.whenever import get_now, get_today
 
 if TYPE_CHECKING:
@@ -397,7 +397,7 @@ class TestNotFunc:
 class TestSkipIfOptimize:
     @mark.parametrize("optimize", [param(True), param(False)])
     def test_main(self, *, optimize: bool) -> None:
-        code = strip_and_dedent("""
+        code = strip_dedent("""
             from utilities.functions import skip_if_optimize
 
             is_run = False

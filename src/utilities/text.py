@@ -402,9 +402,6 @@ def str_encode(obj: Any, /) -> bytes:
 ##
 
 
-##
-
-
 @overload
 def to_bool(bool_: MaybeCallableBoolLike, /) -> bool: ...
 @overload
@@ -463,7 +460,7 @@ __all__ = [
     "split_key_value_pairs",
     "split_str",
     "str_encode",
-    "strip_and_dedent",
+    "strip_dedent",
     "to_bool",
     "to_str",
     "unique_str",

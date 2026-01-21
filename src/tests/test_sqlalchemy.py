@@ -89,7 +89,7 @@ from utilities.sqlalchemy import (
     selectable_to_string,
     yield_primary_key_columns,
 )
-from utilities.text import strip_and_dedent
+from utilities.text import strip_dedent
 from utilities.typing import get_args
 from utilities.whenever import format_compact, get_now_local_plain
 
@@ -1399,7 +1399,7 @@ class TestSelectableToString:
         )
         sel = select(table).where(table.c.value >= 1)
         result = selectable_to_string(sel, test_async_engine)
-        expected = strip_and_dedent(
+        expected = strip_dedent(
             """
                 SELECT example.id_, example.value *
                 FROM example *

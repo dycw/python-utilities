@@ -35,7 +35,7 @@ from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
 from utilities.logging import to_logger
 from utilities.permissions import Permissions, ensure_perms
-from utilities.text import strip_and_dedent
+from utilities.text import strip_dedent
 from utilities.time import sleep
 from utilities.version import (
     ParseVersion2Or3Error,
@@ -1234,7 +1234,7 @@ def run(
                 else:
                     attempts, duration = retry
                 if logger is not None:
-                    msg = strip_and_dedent(f"""
+                    msg = strip_dedent(f"""
 'run' failed with:
  - cmd          = {cmd}
  - cmds_or_args = {cmds_or_args}

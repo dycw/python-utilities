@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from utilities.tabulate import func_param_desc, params_table
-from utilities.text import strip_and_dedent
+from utilities.text import strip_dedent
 
 
 class TestFuncParamDesc:
@@ -12,7 +12,7 @@ class TestFuncParamDesc:
         def func() -> None: ...
 
         result = func_param_desc(func, "0.0.1", f"{x=}", f"{y=}")
-        expected = strip_and_dedent("""
+        expected = strip_dedent("""
             Running 'func' (version 0.0.1) with:
               ╭───┬───╮
               │ x │ 1 │
@@ -25,7 +25,7 @@ class TestFuncParamDesc:
         x = 1
         y = 2
         result = params_table(f"{x=}", f"{y=}")
-        expected = strip_and_dedent("""
+        expected = strip_dedent("""
             ╭───┬───╮
             │ x │ 1 │
             │ y │ 2 │
@@ -44,7 +44,7 @@ class TestParamsTable:
         x = 1
         y = 2
         result = params_table(f"{x=}", f"{y=}")
-        expected = strip_and_dedent("""
+        expected = strip_dedent("""
             ╭───┬───╮
             │ x │ 1 │
             │ y │ 2 │

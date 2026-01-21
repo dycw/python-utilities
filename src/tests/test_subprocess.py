@@ -110,7 +110,7 @@ from utilities.subprocess import (
     yield_git_repo,
     yield_ssh_temp_dir,
 )
-from utilities.text import strip_and_dedent
+from utilities.text import strip_dedent
 from utilities.typing import is_sequence_of
 from utilities.version import Version3
 
@@ -714,7 +714,7 @@ class TestRsync:
                 ssh_user,
                 ssh_hostname,
                 *BASH_LS,
-                input=strip_and_dedent(f"""
+                input=strip_dedent(f"""
                     if ! [ -d {dest} ]; then exit 1; fi
                     if ! [ -d {dest}/{tmp_path.name} ]; then exit 1; fi
                     if ! [ -f {dest}/{tmp_path.name}/{temp_file.name} ]; then exit 1; fi
@@ -732,7 +732,7 @@ class TestRsync:
                 ssh_user,
                 ssh_hostname,
                 *BASH_LS,
-                input=strip_and_dedent(f"""
+                input=strip_dedent(f"""
                     if ! [ -d {dest} ]; then exit 1; fi
                     if ! [ -f {dest}/{temp_file.name} ]; then exit 1; fi
                 """),
@@ -941,7 +941,7 @@ class TestRsyncMany:
                 ssh_user,
                 ssh_hostname,
                 *BASH_LS,
-                input=strip_and_dedent(f"""
+                input=strip_dedent(f"""
                     if ! [ -f {dest1} ]; then exit 1; fi
                     if ! [ -f {dest2} ]; then exit 1; fi
                 """),
@@ -1107,7 +1107,7 @@ class TestRun:
         assert cap.err == ""
 
     def test_input_bash(self, *, capsys: CaptureFixture) -> None:
-        input_ = strip_and_dedent("""
+        input_ = strip_dedent("""
             key=value
             echo ${key}@stdout
             echo ${key}@stderr 1>&2
@@ -1119,7 +1119,7 @@ class TestRun:
         assert cap.err == "value@stderr\n"
 
     def test_input_cat(self, *, capsys: CaptureFixture) -> None:
-        input_ = strip_and_dedent("""
+        input_ = strip_dedent("""
             foo
             bar
             baz
@@ -1131,7 +1131,7 @@ class TestRun:
         assert cap.err == ""
 
     def test_input_and_return(self, *, capsys: CaptureFixture) -> None:
-        input_ = strip_and_dedent("""
+        input_ = strip_dedent("""
             foo
             bar
             baz
@@ -1336,7 +1336,7 @@ class TestRun:
         with raises(CalledProcessError):
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, logger=name)  # noqa: S604
         record = one(r for r in caplog.records if r.name == name)
-        expected = strip_and_dedent("""
+        expected = strip_dedent("""
 'run' failed with:
  - cmd          = echo stdout; echo stderr 1>&2; exit 1
  - cmds_or_args = ()
@@ -1359,7 +1359,7 @@ stderr
 
     def test_logger_and_input(self, *, caplog: LogCaptureFixture) -> None:
         name = unique_str()
-        input_ = strip_and_dedent(
+        input_ = strip_dedent(
             """
             key=value
             echo ${key}@stdout
@@ -1371,7 +1371,7 @@ stderr
         with raises(CalledProcessError):
             _ = run(*BASH_LS, input=input_, logger=name)
         record = one(r for r in caplog.records if r.name == name)
-        expected = strip_and_dedent("""
+        expected = strip_dedent("""
 'run' failed with:
  - cmd          = bash
  - cmds_or_args = ('-ls',)
@@ -1397,7 +1397,7 @@ value@stderr
         assert record.message == expected
 
     def _test_retry_cmd(self, path: PathLike, attempts: int, /) -> str:
-        return strip_and_dedent(
+        return strip_dedent(
             f"""
             count=$(ls -1A "{path}" 2>/dev/null | wc -l)
             if [ "${{count}}" -lt {attempts} ]; then
@@ -1516,13 +1516,13 @@ class TestSSHIsStrictCheckingError:
         "text",
         [
             param(
-                strip_and_dedent("""
+                strip_dedent("""
 No ED25519 host key is known for XXX and you have requested strict checking.
 Host key verification failed.
 """)
             ),
             param(
-                strip_and_dedent("""
+                strip_dedent("""
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1780,7 +1780,7 @@ class TestUvPipList:
 
 class TestUvPipListLoadsOutput:
     def test_main(self) -> None:
-        text = strip_and_dedent("""
+        text = strip_dedent("""
             [{"name":"name","version":"0.0.1"}]
         """)
         result = _uv_pip_list_loads(text)
@@ -1788,7 +1788,7 @@ class TestUvPipListLoadsOutput:
         assert result == expected
 
     def test_error(self) -> None:
-        text = strip_and_dedent("""
+        text = strip_dedent("""
             [{"name":"name","version":"0.0.1"}]
             # warning: The package `name` requires `dep>=1.2.3`, but `1.2.2` is installed
         """)

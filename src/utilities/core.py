@@ -894,7 +894,7 @@ _kebab_pascal_pattern = re.compile(
 ##
 
 
-def strip_and_dedent(text: str, /) -> str:
+def strip_dedent(text: str, /) -> str:
     """Strip and dedent a string."""
     return dedent(text.strip("\n")).strip("\n") + "\n"
 
@@ -903,7 +903,7 @@ def strip_and_dedent(text: str, /) -> str:
 
 
 def unique_str() -> str:
-    """Generate at unique string."""
+    """Generate a unique string."""
     now = time_ns()
     pid = getpid()
     ident = get_ident()
@@ -940,7 +940,7 @@ __all__ = [
     "one_str",
     "repr_",
     "repr_str",
-    "strip_and_dedent",
+    "strip_dedent",
     "suppress_super_attribute_error",
     "take",
     "transpose",
