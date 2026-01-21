@@ -547,7 +547,7 @@ def _copy_or_move__move_dir(src: Path, dest: Path, /, *, delete: bool = False) -
             _ = shutil.copytree(src, temp)
             # if delete:
             #     rmtree(dest, ignore_errors=True)
-            _ = inner.replace(dest)
+            _ = temp.replace(dest)
     except OSError as error:  # pragma: no cover
         raise
         if not _is_invalid_cross_device_link_error(error):
