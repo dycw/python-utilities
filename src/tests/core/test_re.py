@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import re
 from re import DOTALL
 
 from pytest import mark, param, raises
 
-from utilities.re import (
+from utilities.core import (
     _ExtractGroupMultipleCaptureGroupsError,
     _ExtractGroupMultipleMatchesError,
     _ExtractGroupNoCaptureGroupsError,
@@ -13,20 +12,9 @@ from utilities.re import (
     _ExtractGroupsMultipleMatchesError,
     _ExtractGroupsNoCaptureGroupsError,
     _ExtractGroupsNoMatchesError,
-    ensure_pattern,
     extract_group,
     extract_groups,
 )
-
-
-class TestEnsurePattern:
-    def test_pattern(self) -> None:
-        pattern = re.compile(r"\d")
-        assert ensure_pattern(pattern) == pattern
-
-    def test_str(self) -> None:
-        pattern = r"\d"
-        assert ensure_pattern(pattern) == re.compile(pattern)
 
 
 class TestExtractGroup:
