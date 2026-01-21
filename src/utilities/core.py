@@ -510,7 +510,7 @@ def _copy_or_move(
 
 
 @dataclass(kw_only=True, slots=True)
-class _MoveSourceNotFoundError(CopyOrMoveError):
+class _CopyOrMoveSourceNotFoundError(CopyOrMoveError):
     src: Path
 
     @override
@@ -1071,7 +1071,7 @@ def yield_temp_path(path: PathLike, /, *, overwrite: bool = False) -> Iterator[P
                 temp_path2 = temp_path1
             try:
                 move(temp_path2, path, overwrite=overwrite)
-            except _MoveSourceNotFoundError as error:
+            except _CopyOrMoveSourceNotFoundError as error:
                 raise _WriterTemporaryPathEmptyError(temp_path=error.src) from None
             except _MoveFileExistsError as error:
                 raise _WriterFileExistsError(destination=error.dest) from None
