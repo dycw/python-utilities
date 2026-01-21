@@ -573,7 +573,7 @@ def _copy_or_move__shutil_dir(
             _ = temp.replace(dest)
         case "move":
             _ = shutil.move(src, temp)
-                _ = (temp_dir / src.name).replace(dest)
+            _ = (temp / src.name).replace(dest)
         case never:
             assert_never(never)
 
