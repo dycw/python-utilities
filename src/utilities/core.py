@@ -551,9 +551,7 @@ def _copy_or_move__move_dir(src: Path, dest: Path, /, *, delete: bool = False) -
             breakpoint()
             _ = shutil.copytree(src, temp2, dirs_exist_ok=True)
             breakpoint()
-            _ = temp.replace(dest)
-            breakpoint()
-            _ = temp.replace(dest)
+            _ = temp2.replace(dest)
             breakpoint()
     except OSError as error:  # pragma: no cover
         raise
