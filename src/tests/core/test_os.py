@@ -78,6 +78,7 @@ class TestGetEnv:
             _ = get_env(key, case_sensitive=case_sensitive)
 
     def _generate(self) -> tuple[str, str]:
+        key = f"_TEST_OS_{unique_str()}"
         return f"_TEST_OS_{text}"
 
     def _prefix(self, text: str, /) -> str:
