@@ -8,7 +8,7 @@ from hypothesis.strategies import DataObject, booleans, data, none, sampled_from
 from pytest import RaisesGroup, approx, fixture, mark, param, raises, skip
 
 from utilities.contextvars import set_global_breakpoint
-from utilities.core import GetEnvError, get_env, unique_str, yield_temp_environ
+from utilities.core import GetEnvError, copy, get_env, unique_str, yield_temp_environ
 from utilities.hypothesis import text_ascii
 
 if TYPE_CHECKING:
@@ -28,6 +28,9 @@ class TestCopyOrMove:
         dest = tmp_path / "dest.txt"
         if dest_exists:
             _ = dest.write_text("dest")
+        match mode:
+            case "copy":
+                copy(src, dest)
 
 
 class TestGetEnv:
