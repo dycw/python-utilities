@@ -14,7 +14,6 @@ from collections.abc import (
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import dataclass
-from enum import Enum
 from functools import cmp_to_key, reduce
 from itertools import accumulate, chain, groupby, islice
 from math import isnan
@@ -812,14 +811,6 @@ def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     except TypeError:
         return False
     return True
-
-
-##
-
-
-def is_iterable_not_enum(obj: Any, /) -> TypeGuard[Iterable[Any]]:
-    """Check if an object is iterable, but not an Enum."""
-    return is_iterable(obj) and not (isinstance(obj, type) and issubclass(obj, Enum))
 
 
 ##

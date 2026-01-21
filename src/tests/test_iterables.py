@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from enum import Enum, auto
 from functools import cmp_to_key
 from itertools import chain, repeat
 from math import isfinite, isinf, isnan, nan
@@ -78,7 +77,6 @@ from utilities.iterables import (
     groupby_lists,
     hashable_to_iterable,
     is_iterable,
-    is_iterable_not_enum,
     is_iterable_not_str,
     map_mapping,
     merge_mappings,
@@ -671,34 +669,6 @@ class TestIsIterable:
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         assert is_iterable(obj) is expected
-
-
-class TestIsIterableNotEnum:
-    def test_single(self) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        assert not is_iterable_not_enum(Truth)
-
-    def test_union(self) -> None:
-        class Truth1(Enum):
-            true = auto()
-            false = auto()
-
-        class Truth2(Enum):
-            true = auto()
-            false = auto()
-
-        assert is_iterable_not_enum((Truth1, Truth2))
-
-    @mark.parametrize(
-        ("obj", "expected"),
-        [param(None, False), param([], True), param((), True), param("", True)],
-    )
-    def test_others(self, *, obj: Any, expected: bool) -> None:
-        result = is_iterable_not_enum(obj)
-        assert result is expected
 
 
 class TestIsIterableNotStr:
