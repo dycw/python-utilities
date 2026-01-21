@@ -514,7 +514,7 @@ def _copy_or_move__file_to_file(src: Path, dest: Path, mode: CopyOrMove, /) -> N
 def _copy_or_move__file_to_dir(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
     with (
         yield_adjacent_temp_dir(dest) as temp_dir,
-        yield_adjacent_temp_dir(dest) as temp_file,
+        yield_adjacent_temp_file(dest) as temp_file,
     ):
         _ = dest.replace(temp_dir)
         _copy_or_move__shutil_file(src, temp_file, mode)
