@@ -476,7 +476,7 @@ def unique_everseen[T](
 def copy(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
     """Copy a file atomically."""
     src, dest = map(Path, [src, dest])
-    _copy_or_move(src, dest, mode="copy", overwrite=overwrite)
+    _copy_or_move(src, dest, "copy", overwrite=overwrite)
 
 
 def move(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
@@ -505,7 +505,7 @@ def _copy_or_move(
             assert_never(never)
 
 
-def _copy_or_move__file_to_file(src: Path, dest: Path, /) -> None:
+def _copy_or_move__file_to_file(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
     with yield_adjacent_temp_file(dest) as temp:
         _ = shutil.move(src, temp)
         _ = temp.replace(dest)
