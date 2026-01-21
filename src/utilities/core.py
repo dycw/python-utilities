@@ -12,7 +12,7 @@ from itertools import chain, islice
 from os import chdir, environ, getenv, getpid
 from pathlib import Path
 from re import VERBOSE, findall
-from shutil import rmtree
+from shutil import rmtree, vmov
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from textwrap import dedent
 from threading import get_ident
