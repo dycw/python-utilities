@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from itertools import chain
 from os import chdir
 from pathlib import Path
+from re import search
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 from warnings import catch_warnings, filterwarnings
@@ -133,6 +134,19 @@ def is_not_none(obj: Any, /) -> bool:
 def is_sentinel(obj: Any, /) -> TypeIs[Sentinel]:
     """Check if an object is the sentinel."""
     return obj is sentinel
+
+
+#### contextlib ###############################################################
+
+
+@contextmanager
+def suppress_super_object_attribute_error() -> Iterator[None]:
+    """Suppress the super() attribute error, for mix-ins."""
+    try:
+        yield
+    except AttributeError as error:
+        if not search(r"'super' object has no attribute '\w+'", error.args[0]):
+            raise
 
 
 #### itertools ################################################################
@@ -275,7 +289,7 @@ class OneStrNonUniqueError(OneStrError):
         return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
 
 
-#### pathlib #################################################
+#### pathlib ##################################################################
 
 
 @overload
@@ -331,7 +345,7 @@ def yield_temp_cwd(path: PathLike, /) -> Iterator[None]:
         chdir(prev)
 
 
-#### reprlib ################################################################
+#### reprlib ##################################################################
 
 
 def repr_(
@@ -361,7 +375,7 @@ def repr_(
     )
 
 
-#### tempfile ###############################################################
+#### tempfile #################################################################
 
 
 class TemporaryDirectory:
@@ -552,6 +566,7 @@ __all__ = [
     "one",
     "one_str",
     "repr_",
+    "suppress_super_object_attribute_error",
     "yield_temp_cwd",
     "yield_temp_dir_at",
     "yield_temp_file_at",

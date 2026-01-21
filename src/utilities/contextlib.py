@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from asyncio import create_task, get_event_loop
 from contextlib import (
     _AsyncGeneratorContextManager,
@@ -237,21 +236,4 @@ def _suppress_signal_error() -> Iterator[None]:
 ##
 
 
-_SUPER_OBJECT_HAS_NO_ATTRIBUTE = re.compile(r"'super' object has no attribute '\w+'")
-
-
-@enhanced_context_manager
-def suppress_super_object_attribute_error() -> Iterator[None]:
-    """Suppress the super() attribute error, for mix-ins."""
-    try:
-        yield
-    except AttributeError as error:
-        if not _SUPER_OBJECT_HAS_NO_ATTRIBUTE.search(error.args[0]):
-            raise
-
-
-__all__ = [
-    "enhanced_async_context_manager",
-    "enhanced_context_manager",
-    "suppress_super_object_attribute_error",
-]
+__all__ = ["enhanced_async_context_manager", "enhanced_context_manager"]
