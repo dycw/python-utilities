@@ -8,13 +8,13 @@ from pytest import mark, param, raises
 
 from utilities.asyncio import sleep
 from utilities.constants import MILLISECOND, SECOND
+from utilities.core import unique_str
 from utilities.pottery import (
     _YieldAccessNumLocksError,
     _YieldAccessUnableToAcquireLockError,
     extend_lock,
     yield_access,
 )
-from utilities.text import unique_str
 from utilities.timer import Timer
 
 if TYPE_CHECKING:

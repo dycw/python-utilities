@@ -12,6 +12,7 @@ from hypothesis.strategies import integers
 from pytest import LogCaptureFixture, mark, param, raises
 
 from utilities.constants import SECOND
+from utilities.core import unique_str
 from utilities.hypothesis import pairs, temp_paths, zoned_date_times
 from utilities.iterables import one
 from utilities.logging import (
@@ -29,7 +30,6 @@ from utilities.logging import (
     setup_logging,
     to_logger,
 )
-from utilities.text import unique_str
 from utilities.time import sleep
 from utilities.types import LogLevel
 from utilities.typing import get_args

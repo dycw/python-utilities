@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING
 
 from hypothesis import assume, given
 
+from utilities.core import unique_str
 from utilities.hypothesis import text_clean
 from utilities.platform import get_strftime, maybe_lower_case
-from utilities.text import unique_str
 
 if TYPE_CHECKING:
     from pathlib import Path
