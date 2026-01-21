@@ -40,7 +40,7 @@ class TestWriteText:
         path = tmp_path / "file.txt"
         write_text(path, text)
         assert path.is_file()
-        assert path.read_bytes() == b"data"
+        assert path.read_text() == "text\n"
 
 
 class TestYieldWritePath:
