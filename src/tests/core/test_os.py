@@ -11,8 +11,6 @@ from utilities.contextvars import set_global_breakpoint
 from utilities.core import GetEnvError, get_env, unique_str, yield_temp_environ
 from utilities.hypothesis import text_ascii
 
-text = text_ascii(min_size=1, max_size=10)
-
 
 class TestGetEnv:
     def test_main(self) -> None:
