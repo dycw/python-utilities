@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from utilities.core import strip_dedent
 from utilities.tabulate import func_param_desc, params_table
-from utilities.text import strip_dedent
 
 
 class TestFuncParamDesc:

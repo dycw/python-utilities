@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING
 from jinja2 import DictLoader
 from pytest import raises
 
+from utilities.core import strip_dedent
 from utilities.jinja2 import (
     EnhancedEnvironment,
     TemplateJob,
     _TemplateJobTargetDoesNotExistError,
     _TemplateJobTemplateDoesNotExistError,
 )
-from utilities.text import strip_dedent
 
 if TYPE_CHECKING:
     from pathlib import Path

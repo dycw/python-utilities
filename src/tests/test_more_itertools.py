@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, TypeGuard
 
 from pytest import mark, param, raises
 
+from utilities.core import strip_dedent
 from utilities.more_itertools import (
     BucketMappingError,
     Split,
@@ -15,7 +16,6 @@ from utilities.more_itertools import (
     peekable,
     yield_splits,
 )
-from utilities.text import strip_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

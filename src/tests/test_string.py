@@ -4,9 +4,8 @@ from typing import TYPE_CHECKING, ClassVar
 
 from pytest import raises
 
-from utilities.core import yield_temp_environ
+from utilities.core import strip_dedent, unique_str, yield_temp_environ
 from utilities.string import SubstituteError, substitute
-from utilities.text import strip_dedent, unique_str
 
 if TYPE_CHECKING:
     from pathlib import Path

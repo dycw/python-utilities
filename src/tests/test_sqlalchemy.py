@@ -30,6 +30,7 @@ from sqlalchemy.orm import (
 )
 
 from utilities.constants import MILLISECOND
+from utilities.core import strip_dedent
 from utilities.hypothesis import int32s, pairs, quadruples, urls
 from utilities.iterables import one
 from utilities.modules import is_installed
@@ -89,7 +90,6 @@ from utilities.sqlalchemy import (
     selectable_to_string,
     yield_primary_key_columns,
 )
-from utilities.text import strip_dedent
 from utilities.typing import get_args
 from utilities.whenever import format_compact, get_now_local_plain
 
