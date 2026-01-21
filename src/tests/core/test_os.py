@@ -55,9 +55,6 @@ class TestGetEnv:
         value = unique_str()
         return key, value
 
-    def _prefix(self, text: str, /) -> str:
-        return f"_TEST_OS_{text}"
-
 
 class TestYieldTempEnviron:
     @given(key=text.map(_prefix), value=text)
