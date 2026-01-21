@@ -31,8 +31,7 @@ class TestCopyOrMove:
     def test_file_to_file(
         self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool, overwrite: bool
     ) -> None:
-        src = tmp_path / "src.txt"
-        _ = src.write_text("src")
+        self._setup_src_file(tmp_path)
         dest = tmp_path / "dest.txt"
         if dest_exists:
             _ = dest.write_text("dest")
