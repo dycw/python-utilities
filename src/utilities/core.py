@@ -953,6 +953,7 @@ def yield_adjacent_temp_file(path: PathLike, /) -> Iterator[Path]:
     """Yield a temporary file adjacent to target path."""
 
     path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
     with TemporaryFile(dir=path.parent, suffix=".tmp", prefix=path.name) as temp:
         yield temp
 
