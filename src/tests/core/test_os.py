@@ -148,14 +148,10 @@ class TestCopyOrMove:
     def _setup_dest_dir(self, tmp_path: Path, /, *, exists: bool = False) -> Path:
         dest = tmp_path / "dest"
         if exists:
-            _ = dest.write_text("dest")
-        dest = tmp_path / "dest"
-        if dest_exists:
             dest.mkdir()
             _ = (dest / "dest1.txt").write_text("dest1")
             _ = (dest / "dest2.txt").write_text("dest2")
             _ = (dest / "dest3.txt").write_text("dest3")
-        match mode:
         return dest
 
 
