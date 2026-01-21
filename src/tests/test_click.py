@@ -53,6 +53,7 @@ from utilities.click import (
     YearMonth,
     ZonedDateTime,
 )
+from utilities.core import strip_dedent
 from utilities.hypothesis import (
     date_deltas,
     date_time_deltas,
@@ -66,7 +67,7 @@ from utilities.hypothesis import (
     year_months,
     zoned_date_times,
 )
-from utilities.text import join_strs, strip_dedent
+from utilities.text import join_strs
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
