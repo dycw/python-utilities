@@ -539,6 +539,17 @@ def _copy_or_move__copy_file(src: Path, dest: Path, /) -> None:
             _ = temp.replace(dest)
 
 
+def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
+    try:
+        _ = src.replace(dest)
+    except OSError as error:  # pragma: no cover
+        if not _is_invalid_cross_device_link_error(error):
+            raise
+        with yield_temp_file_at(dest) as temp:
+            _ = shutil.move(src, temp)
+            _ = temp.replace(dest)
+
+
 def _is_invalid_cross_device_link_error(error: OSError, /) -> bool:
     return (error.errno == 18) and (error.strerror == "Invalid cross-device link")
 
