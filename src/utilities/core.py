@@ -541,7 +541,7 @@ def _copy_or_move__copy_file(src: Path, dest: Path, /) -> None:
             _ = temp.replace(dest)
 
 
-def _copy_or_move__move_dir(src: Path, dest: Path, /, *, delete: bool = False) -> None:
+def _copy_or_move__move_dir(src: Path, dest: Path, /) -> None:
     with yield_adjacent_temp_dir(dest) as temp1, yield_adjacent_temp_dir(dest) as temp2:
         _ = dest.replace(temp1)
         _ = shutil.copytree(src, temp2, dirs_exist_ok=True)
