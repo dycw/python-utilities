@@ -21,5 +21,5 @@ class TestYieldWritePath:
         path = tmp_path / "file.txt"
         _ = path.write_text("init")
         with yield_write_path(path, overwrite=True) as temp:
-            _ = temp.write_text("text")
-        assert path.read_text() == "text"
+            _ = temp.write_text("post")
+        assert path.read_text() == "post"
