@@ -72,10 +72,6 @@ class TestCopyOrMove:
         self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool, overwrite: bool
     ) -> None:
         src = self._setup_src_dir(tmp_path)
-        src = tmp_path / "src"
-        src.mkdir()
-        _ = (src / "src1.txt").write_text("src1")
-        _ = (src / "src2.txt").write_text("src2")
         dest = self._setup_dest_dir(tmp_path, exists=dest_exists)
         match mode:
             case "copy":
