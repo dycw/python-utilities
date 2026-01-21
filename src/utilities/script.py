@@ -8,7 +8,7 @@ from utilities.core import move
 src = Path("/tmp/foo")
 rmtree(src, ignore_errors=True)
 src.mkdir()
-(dest / "orig1.txt").touch()
+(src / "src1.txt").touch()
 (dest / "orig2.txt").touch()
 dest = Path("/usr/local/bin/test-bar")
 dest.mkdir()
