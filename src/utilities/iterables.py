@@ -16,7 +16,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
 from functools import cmp_to_key, reduce
-from itertools import accumulate, chain, groupby, islice, product
+from itertools import accumulate, chain, groupby, islice
 from math import isnan
 from operator import or_
 from typing import (
@@ -893,66 +893,6 @@ class MergeStrMappingsError(Exception):
     @override
     def __str__(self) -> str:
         return f"Mapping {repr_(self.mapping)} keys must not contain duplicates (modulo case); got {repr_(self.counts)}"
-
-
-##
-
-
-def product_dicts[K, V](mapping: Mapping[K, Iterable[V]], /) -> Iterator[Mapping[K, V]]:
-    """Return the cartesian product of the values in a mapping, as mappings."""
-    keys = list(mapping)
-    for values in product(*mapping.values()):
-        yield cast("Mapping[K, V]", dict(zip(keys, values, strict=True)))
-
-
-##
-
-
-def range_partitions(stop: int, num: int, total: int, /) -> range:
-    """Partition a range."""
-    if stop <= 0:
-        raise _RangePartitionsStopError(stop=stop)
-    if not (1 <= total <= stop):
-        raise _RangePartitionsTotalError(stop=stop, total=total)
-    if not (0 <= num < total):
-        raise _RangePartitionsNumError(num=num, total=total)
-    q, r = divmod(stop, total)
-    start = num * q + min(num, r)
-    end = start + q + (1 if num < r else 0)
-    return range(start, end)
-
-
-@dataclass(kw_only=True, slots=True)
-class RangePartitionsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _RangePartitionsStopError(RangePartitionsError):
-    stop: int
-
-    @override
-    def __str__(self) -> str:
-        return f"'stop' must be positive; got {self.stop}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _RangePartitionsTotalError(RangePartitionsError):
-    stop: int
-    total: int
-
-    @override
-    def __str__(self) -> str:
-        return f"'total' must be in [1, {self.stop}]; got {self.total}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _RangePartitionsNumError(RangePartitionsError):
-    num: int
-    total: int
-
-    @override
-    def __str__(self) -> str:
-        return f"'num' must be in [0, {self.total - 1}]; got {self.num}"
 
 
 ##
