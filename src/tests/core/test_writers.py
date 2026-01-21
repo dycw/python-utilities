@@ -14,4 +14,4 @@ class TestYieldWritePath:
         with yield_write_path(path) as temp:
             _ = temp.write_text("text")
             assert not path.exists()
-            assert not path.exists()
+        assert path.is_file()
