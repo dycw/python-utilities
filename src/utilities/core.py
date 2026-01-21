@@ -489,25 +489,6 @@ def move(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
 class MoveError(Exception): ...
 
 
-@dataclass(kw_only=True, slots=True)
-class _MoveSourceNotFoundError(MoveError):
-    src: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Source {str(self.src)!r} does not exist"
-
-
-@dataclass(kw_only=True, slots=True)
-class _MoveFileExistsError(MoveError):
-    src: Path
-    dest: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot move file {str(self.src)!r} as destination {str(self.dest)!r} already exists"
-
-
 def _copy_or_move(
     src: Path, dest: Path, mode: CopyOrMove, /, *, overwrite: bool = False
 ) -> None:
