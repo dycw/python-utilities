@@ -56,8 +56,7 @@ class TestCopyOrMove:
         src = tmp_path / "src.txt"
         _ = src.write_text("src")
         dest = tmp_path / "dest"
-        if dest_exists:
-            _ = dest.write_text("dest")
+        dest.mkdir()
         match mode:
             case "copy":
                 copy(src, dest, overwrite=overwrite)
