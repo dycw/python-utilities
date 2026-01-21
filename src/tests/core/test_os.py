@@ -76,6 +76,7 @@ class TestCopyOrMove:
         src.mkdir()
         _ = (src / "src1.txt").write_text("src1")
         _ = (src / "src2.txt").write_text("src2")
+        dest = self._setup_dest_dir()
         dest = tmp_path / "dest"
         if dest_exists:
             dest.mkdir()
