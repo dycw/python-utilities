@@ -42,7 +42,7 @@ class TestCopyOrMove:
             case "copy":
                 copy(src, dest, overwrite=overwrite)
             case "move":
-                move(src, dest)
+                move(src, dest, overwrite=overwrite)
             case never:
                 assert_never(never)
 
