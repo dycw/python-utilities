@@ -9,7 +9,6 @@ class TestYieldWritePath:
         with yield_write_path(path) as temp:
             assert not path.exists()
             _ = temp.write_text("text")
-        ass
 
     def test_deep(self, *, tmp_path: Path) -> None:
         path = tmp_path / "a/b/c/file.txt"
