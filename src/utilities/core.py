@@ -528,6 +528,7 @@ def _copy_or_move__dir_to_dir(src: Path, dest: Path, mode: CopyOrMove, /) -> Non
         match mode:
             case "copy":
                 _ = copytree(src, temp2, dirs_exist_ok=True)
+                _ = temp2.replace(dest)
             case "move":
                 _ = shutil.move(src, temp2)
                 _ = (temp2 / src.name).replace(dest)
