@@ -335,7 +335,7 @@ def yield_bz2(path: PathLike, /) -> Iterator[Path]:
         with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
             yield temp
     except _YieldUncompressedError as error:
-        raise YieldGzipError(path=error.path) from None
+        raise YieldBZ2Error(path=error.path) from None
 
 
 @dataclass(kw_only=True, slots=True)

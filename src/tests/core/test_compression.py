@@ -14,6 +14,9 @@ from utilities.core import (
     CompressBZ2Error,
     CompressGzipError,
     CompressLZMAError,
+    YieldBZ2Error,
+    YieldGzipError,
+    YieldLZMAError,
     _compress_files,
     _yield_uncompressed,
     compress_bz2,
@@ -84,6 +87,27 @@ class TestCompressAndYieldUncompressed:
             assert temp.read_text() == "text"
 
     @mark.parametrize(
+        ("yield_uncompressed", "error"),
+        [
+            param(yield_bz2, YieldBZ2Error),
+            param(yield_gzip, YieldGzipError),
+            param(yield_lzma, YieldLZMAError),
+        ],
+    )
+    def test_error_read(
+        self,
+        *,
+        temp_path_not_exist: Path,
+        yield_uncompressed: Callable[[PathLike], AbstractContextManager[Path]],
+        error: type[Exception],
+    ) -> None:
+        with (
+            raises(error, match=r"Cannot uncompress '.*' since it does not exist"),
+            yield_uncompressed(temp_path_not_exist),
+        ):
+            _
+
+    @mark.parametrize(
         ("compress", "error"),
         [
             param(compress_bz2, CompressBZ2Error),
@@ -91,7 +115,7 @@ class TestCompressAndYieldUncompressed:
             param(compress_lzma, CompressLZMAError),
         ],
     )
-    def test_error(
+    def test_error_write(
         self,
         *,
         temp_files: tuple[Path, Path],
