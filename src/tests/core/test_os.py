@@ -46,6 +46,7 @@ class TestCopyOrMove:
             case never:
                 assert_never(never)
         assert dest.is_file()
+        assert dest.read_text() == "src"
 
 
 class TestGetEnv:
