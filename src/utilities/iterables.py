@@ -31,7 +31,7 @@ from typing import (
 )
 
 from utilities.constants import Sentinel, sentinel
-from utilities.core import always_iterable
+from utilities.core import OneStrEmptyError, always_iterable, one, one_str
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import is_sentinel
 from utilities.math import (
@@ -907,135 +907,6 @@ class MergeStrMappingsError(Exception):
 ##
 
 
-def one[T](*iterables: Iterable[T]) -> T:
-    """Return the unique value in a set of iterables."""
-    it = chain(*iterables)
-    try:
-        first = next(it)
-    except StopIteration:
-        raise OneEmptyError(iterables=iterables) from None
-    try:
-        second = next(it)
-    except StopIteration:
-        return first
-    raise OneNonUniqueError(iterables=iterables, first=first, second=second)
-
-
-@dataclass(kw_only=True, slots=True)
-class OneError[T](Exception):
-    iterables: tuple[Iterable[T], ...]
-
-
-@dataclass(kw_only=True, slots=True)
-class OneEmptyError[T](OneError[T]):
-    @override
-    def __str__(self) -> str:
-        return f"Iterable(s) {get_repr(self.iterables)} must not be empty"
-
-
-@dataclass(kw_only=True, slots=True)
-class OneNonUniqueError[T](OneError):
-    first: T
-    second: T
-
-    @override
-    def __str__(self) -> str:
-        return f"Iterable(s) {get_repr(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
-
-
-##
-
-
-def one_str(
-    iterable: Iterable[str],
-    text: str,
-    /,
-    *,
-    head: bool = False,
-    case_sensitive: bool = False,
-) -> str:
-    """Find the unique string in an iterable."""
-    as_list = list(iterable)
-    match head, case_sensitive:
-        case False, True:
-            it = (t for t in as_list if t == text)
-        case False, False:
-            it = (t for t in as_list if t.lower() == text.lower())
-        case True, True:
-            it = (t for t in as_list if t.startswith(text))
-        case True, False:
-            it = (t for t in as_list if t.lower().startswith(text.lower()))
-        case never:
-            assert_never(never)
-    try:
-        return one(it)
-    except OneEmptyError:
-        raise OneStrEmptyError(
-            iterable=as_list, text=text, head=head, case_sensitive=case_sensitive
-        ) from None
-    except OneNonUniqueError as error:
-        raise OneStrNonUniqueError(
-            iterable=as_list,
-            text=text,
-            head=head,
-            case_sensitive=case_sensitive,
-            first=error.first,
-            second=error.second,
-        ) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class OneStrError(Exception):
-    iterable: Iterable[str]
-    text: str
-    head: bool = False
-    case_sensitive: bool = False
-
-
-@dataclass(kw_only=True, slots=True)
-class OneStrEmptyError(OneStrError):
-    @override
-    def __str__(self) -> str:
-        head = f"Iterable {get_repr(self.iterable)} does not contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                tail = repr(self.text)
-            case False, False:
-                tail = f"{self.text!r} (modulo case)"
-            case True, True:
-                tail = f"any string starting with {self.text!r}"
-            case True, False:
-                tail = f"any string starting with {self.text!r} (modulo case)"
-            case never:
-                assert_never(never)
-        return f"{head} {tail}"
-
-
-@dataclass(kw_only=True, slots=True)
-class OneStrNonUniqueError(OneStrError):
-    first: str
-    second: str
-
-    @override
-    def __str__(self) -> str:
-        head = f"Iterable {get_repr(self.iterable)} must contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                mid = f"{self.text!r} exactly once"
-            case False, False:
-                mid = f"{self.text!r} exactly once (modulo case)"
-            case True, True:
-                mid = f"exactly one string starting with {self.text!r}"
-            case True, False:
-                mid = f"exactly one string starting with {self.text!r} (modulo case)"
-            case never:
-                assert_never(never)
-        return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
-
-
-##
-
-
 def pairwise_tail[T](iterable: Iterable[T], /) -> Iterator[tuple[T, T | Sentinel]]:
     """Return pairwise elements, with the last paired with the sentinel."""
     return pairwise(chain(iterable, [sentinel]))
@@ -1333,12 +1204,6 @@ __all__ = [
     "EnsureIterableError",
     "EnsureIterableNotStrError",
     "MergeStrMappingsError",
-    "OneEmptyError",
-    "OneError",
-    "OneNonUniqueError",
-    "OneStrEmptyError",
-    "OneStrError",
-    "OneStrNonUniqueError",
     "RangePartitionsError",
     "ResolveIncludeAndExcludeError",
     "SortIterableError",
@@ -1375,8 +1240,6 @@ __all__ = [
     "merge_mappings",
     "merge_sets",
     "merge_str_mappings",
-    "one",
-    "one_str",
     "pairwise_tail",
     "product_dicts",
     "range_partitions",

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import reprlib
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
@@ -12,6 +11,7 @@ from utilities.constants import (
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
 )
+from utilities.core import repr_
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -32,36 +32,6 @@ def get_call_args_mapping(*args: Any, **kwargs: Any) -> StrMapping:
 ##
 
 
-def get_repr(
-    obj: Any,
-    /,
-    *,
-    max_width: int = RICH_MAX_WIDTH,
-    indent_size: int = RICH_INDENT_SIZE,
-    max_length: int | None = RICH_MAX_LENGTH,
-    max_string: int | None = RICH_MAX_STRING,
-    max_depth: int | None = RICH_MAX_DEPTH,
-    expand_all: bool = RICH_EXPAND_ALL,
-) -> str:
-    """Get the representation of an object."""
-    try:
-        from rich.pretty import pretty_repr
-    except ModuleNotFoundError:  # pragma: no cover
-        return reprlib.repr(obj)
-    return pretty_repr(
-        obj,
-        max_width=max_width,
-        indent_size=indent_size,
-        max_length=max_length,
-        max_string=max_string,
-        max_depth=max_depth,
-        expand_all=expand_all,
-    )
-
-
-##
-
-
 def get_repr_and_class(
     obj: Any,
     /,
@@ -74,7 +44,7 @@ def get_repr_and_class(
     expand_all: bool = RICH_EXPAND_ALL,
 ) -> str:
     """Get the `reprlib`-representation & class of an object."""
-    repr_use = get_repr(
+    repr_use = repr_(
         obj,
         max_width=max_width,
         indent_size=indent_size,
@@ -153,7 +123,6 @@ __all__ = [
     "RICH_MAX_STRING",
     "RICH_MAX_WIDTH",
     "get_call_args_mapping",
-    "get_repr",
     "get_repr_and_class",
     "yield_call_args_repr",
     "yield_mapping_repr",

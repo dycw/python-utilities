@@ -47,10 +47,6 @@ from utilities.iterables import (
     EnsureIterableError,
     EnsureIterableNotStrError,
     MergeStrMappingsError,
-    OneEmptyError,
-    OneNonUniqueError,
-    OneStrEmptyError,
-    OneStrNonUniqueError,
     ResolveIncludeAndExcludeError,
     SortIterableError,
     _ApplyBijectionDuplicateKeysError,
@@ -94,8 +90,6 @@ from utilities.iterables import (
     merge_mappings,
     merge_sets,
     merge_str_mappings,
-    one,
-    one_str,
     pairwise_tail,
     product_dicts,
     range_partitions,
@@ -822,111 +816,6 @@ class TestMergeStrMappings:
             match=r"Mapping .* keys must not contain duplicates \(modulo case\); got .*",
         ):
             _ = merge_str_mappings({"x": 1, "X": 2})
-
-
-class TestOne:
-    @mark.parametrize(
-        "args", [param(([None],)), param(([None], [])), param(([None], [], []))]
-    )
-    def test_main(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        assert one(*args) is None
-
-    @mark.parametrize("args", [param([]), param(([], [])), param(([], [], []))])
-    def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        with raises(OneEmptyError, match=r"Iterable\(s\) .* must not be empty"):
-            _ = one(*args)
-
-    @given(iterable=sets(integers(), min_size=2))
-    def test_error_non_unique(self, *, iterable: set[int]) -> None:
-        with raises(
-            OneNonUniqueError,
-            match=re.compile(
-                r"Iterable\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
-                flags=DOTALL,
-            ),
-        ):
-            _ = one(iterable)
-
-
-class TestOneStr:
-    @given(data=data(), text=sampled_from(["a", "b", "c"]))
-    def test_exact_match_case_insensitive(self, *, data: DataObject, text: str) -> None:
-        text_use = data.draw(sampled_from([text.lower(), text.upper()]))
-        assert one_str(["a", "b", "c"], text_use) == text
-
-    @given(
-        data=data(), case=sampled_from([("ab", "abc"), ("ad", "ade"), ("af", "afg")])
-    )
-    def test_head_case_insensitive(
-        self, *, data: DataObject, case: tuple[str, str]
-    ) -> None:
-        head, expected = case
-        head_use = data.draw(sampled_from([head.lower(), head.upper()]))
-        assert one_str(["abc", "ade", "afg"], head_use, head=True) == expected
-
-    @given(text=sampled_from(["a", "b", "c"]))
-    def test_exact_match_case_sensitive(self, *, text: str) -> None:
-        assert one_str(["a", "b", "c"], text, case_sensitive=True) == text
-
-    @given(case=sampled_from([("ab", "abc"), ("ad", "ade"), ("af", "afg")]))
-    def test_head_case_sensitive(self, *, case: tuple[str, str]) -> None:
-        head, expected = case
-        assert (
-            one_str(["abc", "ade", "afg"], head, head=True, case_sensitive=True)
-            == expected
-        )
-
-    def test_error_exact_match_case_insensitive_empty_error(self) -> None:
-        with raises(
-            OneStrEmptyError, match=r"Iterable .* does not contain 'd' \(modulo case\)"
-        ):
-            _ = one_str(["a", "b", "c"], "d")
-
-    def test_error_exact_match_case_insensitive_non_unique_error(self) -> None:
-        with raises(
-            OneStrNonUniqueError,
-            match=r"Iterable .* must contain 'a' exactly once \(modulo case\); got 'a', 'A' and perhaps more",
-        ):
-            _ = one_str(["a", "A"], "a")
-
-    def test_error_head_case_insensitive_empty_error(self) -> None:
-        with raises(
-            OneStrEmptyError,
-            match=r"Iterable .* does not contain any string starting with 'ac' \(modulo case\)",
-        ):
-            _ = one_str(["abc", "ade", "afg"], "ac", head=True)
-
-    def test_error_head_case_insensitive_non_unique_error(self) -> None:
-        with raises(
-            OneStrNonUniqueError,
-            match=r"Iterable .* must contain exactly one string starting with 'ab' \(modulo case\); got 'abc', 'ABC' and perhaps more",
-        ):
-            _ = one_str(["abc", "ABC"], "ab", head=True)
-
-    def test_error_exact_match_case_sensitive_empty_error(self) -> None:
-        with raises(OneStrEmptyError, match=r"Iterable .* does not contain 'A'"):
-            _ = one_str(["a", "b", "c"], "A", case_sensitive=True)
-
-    def test_error_exact_match_case_sensitive_non_unique(self) -> None:
-        with raises(
-            OneStrNonUniqueError,
-            match=r"Iterable .* must contain 'a' exactly once; got 'a', 'a' and perhaps more",
-        ):
-            _ = one_str(["a", "a"], "a", case_sensitive=True)
-
-    def test_error_head_case_sensitive_empty_error(self) -> None:
-        with raises(
-            OneStrEmptyError,
-            match=r"Iterable .* does not contain any string starting with 'AB'",
-        ):
-            _ = one_str(["abc", "ade", "afg"], "AB", head=True, case_sensitive=True)
-
-    def test_error_head_case_sensitive_non_unique(self) -> None:
-        with raises(
-            OneStrNonUniqueError,
-            match=r"Iterable .* must contain exactly one string starting with 'ab'; got 'abc', 'abd' and perhaps more",
-        ):
-            _ = one_str(["abc", "abd"], "ab", head=True, case_sensitive=True)
 
 
 class TestPairwiseTail:

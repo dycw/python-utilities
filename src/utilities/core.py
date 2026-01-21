@@ -1,13 +1,24 @@
 from __future__ import annotations
 
+import reprlib
 import shutil
 import tempfile
 from contextlib import contextmanager
 from dataclasses import dataclass
+from itertools import chain
 from pathlib import Path
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
-from typing import TYPE_CHECKING, Any, Literal, cast, overload, override
+from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 from warnings import catch_warnings, filterwarnings
+
+from utilities.constants import (
+    RICH_EXPAND_ALL,
+    RICH_INDENT_SIZE,
+    RICH_MAX_DEPTH,
+    RICH_MAX_LENGTH,
+    RICH_MAX_STRING,
+    RICH_MAX_WIDTH,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -16,7 +27,7 @@ if TYPE_CHECKING:
     from utilities.types import FileOrDir, MaybeIterable, PathLike
 
 
-# itertools
+#### itertools ##############################################################
 
 
 def always_iterable[T](obj: MaybeIterable[T], /) -> Iterable[T]:
@@ -30,7 +41,133 @@ def always_iterable[T](obj: MaybeIterable[T], /) -> Iterable[T]:
         return cast("list[T]", [obj])
 
 
-# pathlib
+def one[T](*iterables: Iterable[T]) -> T:
+    """Return the unique value in a set of iterables."""
+    it = chain(*iterables)
+    try:
+        first = next(it)
+    except StopIteration:
+        raise OneEmptyError(iterables=iterables) from None
+    try:
+        second = next(it)
+    except StopIteration:
+        return first
+    raise OneNonUniqueError(iterables=iterables, first=first, second=second)
+
+
+@dataclass(kw_only=True, slots=True)
+class OneError[T](Exception):
+    iterables: tuple[Iterable[T], ...]
+
+
+@dataclass(kw_only=True, slots=True)
+class OneEmptyError[T](OneError[T]):
+    @override
+    def __str__(self) -> str:
+        return f"Iterable(s) {repr_(self.iterables)} must not be empty"
+
+
+@dataclass(kw_only=True, slots=True)
+class OneNonUniqueError[T](OneError):
+    first: T
+    second: T
+
+    @override
+    def __str__(self) -> str:
+        return f"Iterable(s) {repr_(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+
+
+##
+
+
+def one_str(
+    iterable: Iterable[str],
+    text: str,
+    /,
+    *,
+    head: bool = False,
+    case_sensitive: bool = False,
+) -> str:
+    """Find the unique string in an iterable."""
+    as_list = list(iterable)
+    match head, case_sensitive:
+        case False, True:
+            it = (t for t in as_list if t == text)
+        case False, False:
+            it = (t for t in as_list if t.lower() == text.lower())
+        case True, True:
+            it = (t for t in as_list if t.startswith(text))
+        case True, False:
+            it = (t for t in as_list if t.lower().startswith(text.lower()))
+        case never:
+            assert_never(never)
+    try:
+        return one(it)
+    except OneEmptyError:
+        raise OneStrEmptyError(
+            iterable=as_list, text=text, head=head, case_sensitive=case_sensitive
+        ) from None
+    except OneNonUniqueError as error:
+        raise OneStrNonUniqueError(
+            iterable=as_list,
+            text=text,
+            head=head,
+            case_sensitive=case_sensitive,
+            first=error.first,
+            second=error.second,
+        ) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class OneStrError(Exception):
+    iterable: Iterable[str]
+    text: str
+    head: bool = False
+    case_sensitive: bool = False
+
+
+@dataclass(kw_only=True, slots=True)
+class OneStrEmptyError(OneStrError):
+    @override
+    def __str__(self) -> str:
+        head = f"Iterable {repr_(self.iterable)} does not contain"
+        match self.head, self.case_sensitive:
+            case False, True:
+                tail = repr(self.text)
+            case False, False:
+                tail = f"{self.text!r} (modulo case)"
+            case True, True:
+                tail = f"any string starting with {self.text!r}"
+            case True, False:
+                tail = f"any string starting with {self.text!r} (modulo case)"
+            case never:
+                assert_never(never)
+        return f"{head} {tail}"
+
+
+@dataclass(kw_only=True, slots=True)
+class OneStrNonUniqueError(OneStrError):
+    first: str
+    second: str
+
+    @override
+    def __str__(self) -> str:
+        head = f"Iterable {repr_(self.iterable)} must contain"
+        match self.head, self.case_sensitive:
+            case False, True:
+                mid = f"{self.text!r} exactly once"
+            case False, False:
+                mid = f"{self.text!r} exactly once (modulo case)"
+            case True, True:
+                mid = f"exactly one string starting with {self.text!r}"
+            case True, False:
+                mid = f"exactly one string starting with {self.text!r} (modulo case)"
+            case never:
+                assert_never(never)
+        return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
+
+
+#### pathlib
 
 
 @overload
@@ -72,7 +209,37 @@ class _FileOrDirTypeError(FileOrDirError):
         return f"Path is neither a file nor a directory: {str(self.path)!r}"
 
 
-# tempfile
+#### reprlib ################################################################
+
+
+def repr_(
+    obj: Any,
+    /,
+    *,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+) -> str:
+    """Get the representation of an object."""
+    try:
+        from rich.pretty import pretty_repr
+    except ModuleNotFoundError:  # pragma: no cover
+        return reprlib.repr(obj)
+    return pretty_repr(
+        obj,
+        max_width=max_width,
+        indent_size=indent_size,
+        max_length=max_length,
+        max_string=max_string,
+        max_depth=max_depth,
+        expand_all=expand_all,
+    )
+
+
+#### tempfile ###############################################################
 
 
 class TemporaryDirectory:
@@ -241,10 +408,19 @@ def yield_temp_file_at(path: PathLike, /) -> Iterator[Path]:
 
 __all__ = [
     "FileOrDirError",
+    "OneEmptyError",
+    "OneError",
+    "OneNonUniqueError",
+    "OneStrEmptyError",
+    "OneStrError",
+    "OneStrNonUniqueError",
     "TemporaryDirectory",
     "TemporaryFile",
     "always_iterable",
     "file_or_dir",
+    "one",
+    "one_str",
+    "repr_",
     "yield_temp_dir_at",
     "yield_temp_file_at",
 ]
