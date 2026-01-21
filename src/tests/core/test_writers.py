@@ -26,6 +26,6 @@ class TestYieldWritePath:
 
     def test_error(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file.txt"
-        _ = path.write_text("init")
+        path.touch()
         with yield_write_path(path):
             ...
