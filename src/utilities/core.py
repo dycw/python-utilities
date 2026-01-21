@@ -653,8 +653,7 @@ class GetEnvError(Exception):
 def yield_temp_environ(
     env: Mapping[str, str | None] | None = None, **env_kwargs: str | None
 ) -> Iterator[None]:
-    """Yield a temporary directory adjacent to target path."""
-    """Context manager with temporary environment variable set."""
+    """Yield a temporary environment."""
     mapping: dict[str, str | None] = ({} if env is None else dict(env)) | env_kwargs
     prev = {key: getenv(key) for key in mapping}
     _yield_temp_environ_apply(mapping)
