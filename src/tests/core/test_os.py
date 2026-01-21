@@ -80,7 +80,8 @@ class TestCopyOrMove:
     ) -> None:
         src = tmp_path / "src"
         src.mkdir()
-        (src / "src1.txt").touch()
+        _ = (src / "src1.txt").write_text("src1")
+        (src / "src1.txt").write_text("src1")
         _ = src.write_text("src")
         dest = tmp_path / "dest.txt"
         if dest_exists:
