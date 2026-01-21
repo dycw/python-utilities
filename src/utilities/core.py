@@ -1058,9 +1058,7 @@ def yield_write_path(path: PathLike, /, *, overwrite: bool = False) -> Iterator[
 
 
 @dataclass(kw_only=True, slots=True)
-class YieldWritePathError(CopyOrMoveError):
-    mode: CopyOrMove
-    src: Path
+class YieldWritePathError(Exception):
     dest: Path
 
     @override
