@@ -12,6 +12,7 @@ from itertools import chain, islice
 from os import chdir, environ, getenv, getpid
 from pathlib import Path
 from re import VERBOSE, findall
+from shutil import rmtree
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from textwrap import dedent
 from threading import get_ident
@@ -472,6 +473,95 @@ def unique_everseen[T](
 ###############################################################################
 
 
+def copy(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
+    """Copy a file atomically."""
+    src, dest = map(Path, [src, dest])
+    _copy_or_move(src, dest, mode="copy", overwrite=overwrite)
+
+
+def move(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
+    """Move a file atomically."""
+    src, dest = map(Path, [src, dest])
+    _copy_or_move(src, dest, mode="move", overwrite=overwrite)
+
+
+def _copy_or_move(
+    src: Path, dest: Path, /, *, mode: Literal["copy", "move"], overwrite: bool = False
+) -> None:
+    match file_or_dir(src), file_or_dir(dest), mode, overwrite:
+        case None, _, _, _:
+            raise _CopyOrMoveSourceNotFoundError(src=src)
+        case "file" | "dir", "file" | "dir", _, False:
+            raise _CopyOrMoveDestinationExistsError(src=src, dest=dest)
+        case ("file", None, "move", _) | ("file", "file", "move", True):
+            _copy_or_move__move_file(src, dest)
+        case ("file", None, "copy", _) | ("file", "file", "copy", True):
+            _copy_or_move__copy_file(src, dest)
+        case "file", "dir", "move", True:
+            rmtree(dest, ignore_errors=True)
+            _copy_or_move__move_file(src, dest)
+        case "file", "dir", "copy", True:
+            rmtree(dest, ignore_errors=True)
+            _copy_or_move__copy_file(src, dest)
+        case ("dir", None, "move", _) | ("dir", "dir", "move", True):
+            _copy_or_move__move_dir(src, dest)
+        case ("dir", None, "copy", _) | ("dir", "dir", "copy", True):
+            _copy_or_move__copy_dir(src, dest)
+        case "dir", "file", "move", True:
+            dest.unlink(missing_ok=True)
+            _copy_or_move__move_dir(src, dest)
+        case "dir", "file", "copy", True:
+            dest.unlink(missing_ok=True)
+            _copy_or_move__copy_dir(src, dest)
+        case never:
+            assert_never(never)
+
+
+def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
+    p
+
+
+##
+
+
+@enhanced_context_manager
+def writer(
+    path: PathLike, /, *, compress: bool = False, overwrite: bool = False
+) -> Iterator[Path]:
+    """Yield a path for atomically writing files to disk."""
+    path = Path(path)
+    parent = path.parent
+    parent.mkdir(parents=True, exist_ok=True)
+    name = path.name
+    with TemporaryDirectory(suffix=".tmp", prefix=name, dir=parent) as temp_dir:
+        temp_path1 = Path(temp_dir, name)
+        try:
+            yield temp_path1
+        except KeyboardInterrupt:
+            rmtree(temp_dir)
+        else:
+            if compress:
+                temp_path2 = Path(temp_dir, f"{name}.gz")
+                with (
+                    temp_path1.open("rb") as source,
+                    gzip.open(temp_path2, mode="wb") as dest,
+                ):
+                    copyfileobj(source, dest)
+            else:
+                temp_path2 = temp_path1
+            try:
+                move(temp_path2, path, overwrite=overwrite)
+            except _MoveSourceNotFoundError as error:
+                raise _WriterTemporaryPathEmptyError(temp_path=error.src) from None
+            except _MoveFileExistsError as error:
+                raise _WriterFileExistsError(destination=error.dest) from None
+            except _MoveDirectoryExistsError as error:
+                raise _WriterDirectoryExistsError(destination=error.dest) from None
+
+
+##
+
+
 @overload
 def get_env(
     key: str, /, *, case_sensitive: bool = False, default: str, nullable: bool = False
@@ -789,7 +879,7 @@ def _temporary_file_outer(
     text: str | None = None,
 ) -> Iterator[Path]:
     with _temporary_file_inner(
-        path, suffix=suffix, prefix=prefix, delete=delete, name=name
+        Path(path), suffix=suffix, prefix=prefix, delete=delete, name=name
     ) as temp:
         if data is not None:
             _ = temp.write_bytes(data)
@@ -800,7 +890,7 @@ def _temporary_file_outer(
 
 @contextmanager
 def _temporary_file_inner(
-    path: PathLike,
+    path: Path,
     /,
     *,
     suffix: str | None = None,
@@ -808,7 +898,6 @@ def _temporary_file_inner(
     delete: bool = True,
     name: str | None = None,
 ) -> Iterator[Path]:
-    path = Path(path)
     with _NamedTemporaryFile(
         suffix=suffix, prefix=prefix, dir=path, delete=delete, delete_on_close=False
     ) as temp:
@@ -896,7 +985,8 @@ _kebab_pascal_pattern = re.compile(
 
 def normalize_multi_line_str(text: str, /) -> str:
     """Normalize a multi-line string."""
-    return dedent(text.strip("\n")).strip("\n") + "\n"
+    stripped = text.strip("\n")
+    return normalize_str(dedent(stripped))
 
 
 def normalize_str(text: str, /) -> str:
