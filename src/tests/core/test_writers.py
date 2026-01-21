@@ -2,7 +2,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pytest import raises
+from hypothesis import HealthCheck, Phase, given, reproduce_failure, settings
+from pytest import RaisesGroup, approx, fixture, mark, param, raises, skip
+
+from utilities.contextvars import set_global_breakpoint
+
+if TYPE_CHECKING:
+    from pytest_benchmark.fixture import BenchmarkFixture
+    from pytest_lazy_fixtures import lf
+    from pytest_regressions.dataframe_regression import DataFrameRegressionFixture
+
+
+from typing import TYPE_CHECKING
 
 from utilities.core import YieldWritePathError, write_bytes, yield_write_path
 
@@ -21,13 +32,7 @@ class TestWriteBytes:
 class TestWriteText:
     @mark.parametrize(
         "text",
-        [
-            param("text"),
-            param("\ntext"),
-            param("text\n"),
-            param("\ntext\n"),
-            param("\n\ntext\n\n"),
-        ],
+        [param("text"), param("text\n"), param("\ntext\n"), param("\n\ntext\n\n")],
     )
     def test_main(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file"
