@@ -537,11 +537,17 @@ def _copy_or_move__move_file_to_dir(src: Path, dest: Path, /) -> None:
         _ = dest.replace(temp_dir)
         _ = shutil.move(src, temp_file)
         _ = temp_file.replace(dest)
-def _copy_or_move__copy_file_to_dir(src:Path, dest:Path,/)->None:
+
+
+def _copy_or_move__copy_file_to_dir(src: Path, dest: Path, /) -> None:
     with (
         yield_adjacent_temp_dir(dest) as temp_dir,
         yield_adjacent_temp_dir(dest) as temp_file,
     ):
+        _ = dest.replace(temp_dir)
+        _ = shutil.move(src, temp_file)
+        _ = temp_file.replace(dest)
+
 
 def _copy_or_move__move_dir(src: Path, dest: Path, /) -> None:
     with yield_adjacent_temp_dir(dest) as temp1, yield_adjacent_temp_dir(dest) as temp2:
