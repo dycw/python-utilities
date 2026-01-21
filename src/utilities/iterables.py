@@ -796,14 +796,6 @@ def groupby_lists[T, U](
 ##
 
 
-def hashable_to_iterable[T: Hashable](obj: T | None, /) -> tuple[T, ...] | None:
-    """Lift a hashable singleton to an iterable of hashables."""
-    return None if obj is None else (obj,)
-
-
-##
-
-
 def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     """Check if an object is iterable."""
     try:
@@ -1045,9 +1037,7 @@ __all__ = [
     "expanding_window",
     "filter_include_and_exclude",
     "groupby_lists",
-    "hashable_to_iterable",
     "is_iterable",
-    "is_iterable_not_enum",
     "is_iterable_not_str",
     "map_mapping",
     "merge_mappings",
