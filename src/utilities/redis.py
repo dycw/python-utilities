@@ -24,9 +24,9 @@ import utilities.asyncio
 from utilities.asyncio import timeout
 from utilities.constants import MILLISECOND, SECOND
 from utilities.contextlib import enhanced_async_context_manager
-from utilities.core import always_iterable
+from utilities.core import always_iterable, identity
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import ensure_int, identity, in_milli_seconds, in_seconds
+from utilities.functions import ensure_int, in_milli_seconds, in_seconds
 from utilities.iterables import one
 from utilities.math import safe_round
 from utilities.os import is_pytest
