@@ -6,7 +6,7 @@ from pathlib import Path
 from subprocess import check_output
 from typing import TYPE_CHECKING, assert_never, overload, override
 
-from utilities.atomicwrites import writer
+from utilities.core import write_bytes
 from utilities.gzip import write_binary
 
 if TYPE_CHECKING:
@@ -32,9 +32,8 @@ def run_prettier(source: bytes | str | Path, /) -> bytes | str | None:
                 return run_prettier(path)
             return _run_prettier_core(text, text=True)
         case Path() as path:
-            result = run_prettier(path.read_bytes())
-            with writer(path, overwrite=True) as temp:
-                _ = temp.write_bytes(result)
+            data = run_prettier(path.read_bytes())
+            write_bytes(path, data, overwrite=True)
             return None
         case never:
             assert_never(never)

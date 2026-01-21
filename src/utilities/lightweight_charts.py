@@ -3,9 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
 
-from utilities.atomicwrites import writer  # pragma: no cover
 from utilities.contextlib import enhanced_async_context_manager
-from utilities.core import OneEmptyError, OneNonUniqueError, one, repr_
+from utilities.core import OneEmptyError, OneNonUniqueError, one, repr_, write_bytes
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -24,8 +23,8 @@ if TYPE_CHECKING:
 def save_chart(chart: Chart, path: PathLike, /, *, overwrite: bool = False) -> None:
     """Atomically save a chart to disk."""
     chart.show(block=False)  # pragma: no cover
-    with writer(path, overwrite=overwrite) as temp:  # pragma: no cover
-        _ = temp.write_bytes(chart.screenshot())
+    data = chart.screenshot()  # pragma: no cover
+    write_bytes(path, data, overwrite=overwrite)  # pragma: no cover
     chart.exit()  # pragma: no cover
 
 

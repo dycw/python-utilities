@@ -18,8 +18,7 @@ from jinja2.defaults import (
     VARIABLE_START_STRING,
 )
 
-from utilities.atomicwrites import writer
-from utilities.core import kebab_case, pascal_case, snake_case
+from utilities.core import kebab_case, pascal_case, snake_case, write_text
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -107,8 +106,7 @@ class TemplateJob:
         """Run the job."""
         match self.mode:
             case "write":
-                with writer(self.target, overwrite=True) as temp:
-                    _ = temp.write_text(self.rendered)
+                write_text(self.target, self.rendered, overwrite=True)
             case "append":
                 with self.target.open(mode="a") as fh:
                     _ = fh.write(self.rendered)

@@ -1363,15 +1363,12 @@ stderr
 
     def test_logger_and_input(self, *, caplog: LogCaptureFixture) -> None:
         name = unique_str()
-        input_ = normalize_multi_line_str(
-            """
+        input_ = normalize_multi_line_str("""
             key=value
             echo ${key}@stdout
             echo ${key}@stderr 1>&2
             exit 1
-            """,
-            trailing=True,
-        )
+        """)
         with raises(CalledProcessError):
             _ = run(*BASH_LS, input=input_, logger=name)
         record = one(r for r in caplog.records if r.name == name)
@@ -1401,16 +1398,13 @@ value@stderr
         assert record.message == expected
 
     def _test_retry_cmd(self, path: PathLike, attempts: int, /) -> str:
-        return normalize_multi_line_str(
-            f"""
+        return normalize_multi_line_str(f"""
             count=$(ls -1A "{path}" 2>/dev/null | wc -l)
             if [ "${{count}}" -lt {attempts} ]; then
                 mktemp "{path}/XXX"
                 exit 1
             fi
-        """,
-            trailing=True,
-        )
+        """)
 
 
 class TestSetHostnameCmd:

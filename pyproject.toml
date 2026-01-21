@@ -8,12 +8,6 @@
   atools = ["atools>=0.14.2"]
   cachetools = ["cachetools>=6.2.4"]
   click = ["click>=8.3.1"]
-  core = [
-    "atomicwrites>=1.4.1",
-    "typing-extensions>=4.15.0",
-    "tzlocal>=5.3.1",
-    "whenever>=0.9.5",
-  ]
   cvxpy = ["cvxpy>=1.7.5"]
   dataclasses-test = ["orjson>=3.11.5", "polars>=1.37.1"]
   dev = [

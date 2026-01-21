@@ -16,19 +16,16 @@ from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
-from utilities.atomicwrites import (
-    _CopySourceNotFoundError,
-    _MoveSourceNotFoundError,
-    copy,
-    move,
-)
 from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
     OneEmptyError,
     TemporaryDirectory,
+    _CopyOrMoveSourceNotFoundError,
     always_iterable,
+    copy,
     file_or_dir,
+    move,
     normalize_multi_line_str,
     one,
 )
@@ -327,7 +324,7 @@ def cp(
     else:
         try:
             copy(src, dest, overwrite=True)
-        except _CopySourceNotFoundError as error:
+        except _CopyOrMoveSourceNotFoundError as error:
             raise CpError(src=error.src) from None
     if perms is not None:
         chmod(dest, perms, sudo=sudo)
@@ -691,7 +688,7 @@ def mv(
     else:
         try:
             move(src, dest, overwrite=True)
-        except _MoveSourceNotFoundError as error:
+        except _CopyOrMoveSourceNotFoundError as error:
             raise MvFileError(src=error.src) from None
     if perms is not None:
         chmod(dest, perms, sudo=sudo)

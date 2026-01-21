@@ -5,13 +5,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, assert_never
 from zipfile import ZipFile
 
-from utilities.atomicwrites import writer
 from utilities.core import (
     OneEmptyError,
     OneNonUniqueError,
     TemporaryDirectory,
     file_or_dir,
     one,
+    yield_write_path,
 )
 
 if TYPE_CHECKING:
@@ -37,7 +37,7 @@ def yield_zip_file_contents(path: PathLike, /) -> Iterator[Path]:
 def zip_paths(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
     """Create a Zip file."""
     *srcs, dest = map(Path, [src_or_dest, *srcs_or_dest])
-    with writer(dest, overwrite=True) as temp, ZipFile(temp, mode="w") as zf:
+    with yield_write_path(dest, overwrite=True) as temp, ZipFile(temp, mode="w") as zf:
         for src_i in sorted(srcs):
             match file_or_dir(src_i):
                 case "file":

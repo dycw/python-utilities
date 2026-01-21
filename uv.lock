@@ -234,12 +234,6 @@ wheels = [
 ]
 
 [[package]]
-name = "atomicwrites"
-version = "1.4.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/87/c6/53da25344e3e3a9c01095a89f16dbcda021c609ddb42dd6d7c0528236fb2/atomicwrites-1.4.1.tar.gz", hash = "sha256:81b2c9071a49367a7f770170e5eec8cb66567cfbbc8c73d20ce5ca4a8d71cf11", size = 14227, upload-time = "2022-07-08T18:31:40.459Z" }
-
-[[package]]
 name = "atools"
 version = "0.14.2"
 source = { registry = "https://pypi.org/simple" }
@@ -623,12 +617,6 @@ cachetools = [
 click = [
     { name = "click" },
 ]
-core = [
-    { name = "atomicwrites" },
-    { name = "typing-extensions" },
-    { name = "tzlocal" },
-    { name = "whenever" },
-]
 cvxpy = [
     { name = "cvxpy" },
 ]
@@ -872,12 +860,6 @@ altair-test = [
 atools = [{ name = "atools", specifier = ">=0.14.2" }]
 cachetools = [{ name = "cachetools", specifier = ">=6.2.4" }]
 click = [{ name = "click", specifier = ">=8.3.1" }]
-core = [
-    { name = "atomicwrites", specifier = ">=1.4.1" },
-    { name = "typing-extensions", specifier = ">=4.15.0" },
-    { name = "tzlocal", specifier = ">=5.3.1" },
-    { name = "whenever", specifier = ">=0.9.5" },
-]
 cvxpy = [{ name = "cvxpy", specifier = ">=1.7.5" }]
 dataclasses-test = [
     { name = "orjson", specifier = ">=3.11.5" },

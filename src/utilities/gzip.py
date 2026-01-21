@@ -6,7 +6,6 @@ from gzip import GzipFile
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from utilities.atomicwrites import writer
 from utilities.compression import compress_paths, yield_compressed_contents
 
 if TYPE_CHECKING:

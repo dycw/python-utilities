@@ -6,7 +6,6 @@ from shutil import copyfileobj
 from tarfile import ReadError, TarFile
 from typing import TYPE_CHECKING, assert_never
 
-from utilities.atomicwrites import writer
 from utilities.core import (
     OneEmptyError,
     OneNonUniqueError,
@@ -14,6 +13,7 @@ from utilities.core import (
     TemporaryFile,
     file_or_dir,
     one,
+    yield_write_path,
 )
 from utilities.errors import ImpossibleCaseError
 
@@ -28,7 +28,7 @@ def compress_paths(
 ) -> None:
     """Compress a set of files and/or directories."""
     *srcs, dest = map(Path, [src_or_dest, *srcs_or_dest])
-    with writer(dest, overwrite=True) as temp, func(temp) as buffer:
+    with yield_write_path(dest, overwrite=True) as temp, func(temp) as buffer:
         match srcs:
             case [src]:
                 match file_or_dir(src):
