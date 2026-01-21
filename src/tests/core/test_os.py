@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 class TestCopyOrMove:
     @mark.parametrize("mode", [param("copy"), param("move")])
-    @mark.parametrize("case", [param(True), param(False)])
+    @mark.parametrize("dest_exists", [param(True), param(False)])
     def test_file_to_file(
         self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool
     ) -> None:
