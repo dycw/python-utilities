@@ -10,6 +10,8 @@ from pytest import RaisesGroup, approx, fixture, mark, param, raises, skip
 from utilities.contextvars import set_global_breakpoint
 from utilities.core import (
     GetEnvError,
+    _CopyOrMoveDestinationExistsError,
+    _CopyOrMoveSourceNotFoundError,
     copy,
     get_env,
     move,
@@ -129,7 +131,9 @@ class TestCopyOrMove:
     def test_error_source_not_found(
         self, *, tmp_path: Path, temp_path_not_exist: Path
     ) -> None:
-        with raises(_MoveSourceNotFoundError, match=r"Source '.*' does not exist"):
+        with raises(
+            _CopyOrMoveSourceNotFoundError, match=r"Source '.*' does not exist"
+        ):
             move(temp_path_not_exist, tmp_path)
 
     def test_error_file_exists(self, *, temp_file: Path) -> None:
