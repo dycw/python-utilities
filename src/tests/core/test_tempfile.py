@@ -111,9 +111,7 @@ class TestYieldAdjacentTempDir:
 class TestYieldAdjacentTempFile:
     def test_main(self, *, tmp_path: Path) -> None:
         with yield_adjacent_temp_file(tmp_path) as temp:
-            assert temp.is_file()
-            assert temp.parent == tmp_path.parent
-            assert temp.name.startswith(tmp_path.name)
+            self._run_test(tmp_path, temp)
 
     def _run_test(self, path: Path, temp: Path, /) -> None:
         assert temp.is_file()
