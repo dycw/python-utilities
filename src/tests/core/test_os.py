@@ -149,6 +149,20 @@ class TestCopyOrMove:
         match mode:
             case "copy":
                 copy(src, dest, overwrite=overwrite)
+                assert src.is_dir()
+                assert {f.name for f in src.iterdir()} == {"src1.txt", "src2.txt"}
+            case "move":
+                move(src, dest, overwrite=overwrite)
+                assert not src.exists()
+            case never:
+                assert_never(never)
+        assert dest.is_dir()
+        assert {f.name for f in dest.iterdir()} == {"src1.txt", "src2.txt"}
+        assert (dest / "src1.txt").read_text() == "src1"
+        assert (dest / "src2.txt").read_text() == "src2"
+        match mode:
+            case "copy":
+                copy(src, dest, overwrite=overwrite)
                 assert src.is_file()
                 assert src.read_text() == "src"
             case "move":
