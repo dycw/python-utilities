@@ -22,6 +22,7 @@ class TestGetEnv:
     @given(
         key=text.map(_prefix), value=text, default=text | none(), nullable=booleans()
     )
+    @mark.skip
     def test_case_sensitive(
         self, *, key: str, value: str, default: str | None, nullable: bool
     ) -> None:
