@@ -14,6 +14,7 @@ class TestWriteBytes:
     def test_main(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file"
         write_bytes(path, b"data")
+        assert path.is_file()
         with yield_write_path(path) as temp:
             _ = temp.write_text("text")
             assert not path.exists()
