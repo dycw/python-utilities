@@ -520,6 +520,7 @@ class _CopyOrMoveSourceNotFoundError(CopyOrMoveError):
 
 @dataclass(kw_only=True, slots=True)
 class _CopyOrMoveDestinationExistsError(CopyOrMoveError):
+    mode: CopyOrMove
     src: Path
     dest: Path
 
