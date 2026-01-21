@@ -41,7 +41,7 @@ from utilities.constants import (
     Sentinel,
     sentinel,
 )
-from utilities.types import SupportsRichComparison
+from utilities.types import CopyOrMove, SupportsRichComparison
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
@@ -486,7 +486,7 @@ def move(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
 
 
 def _copy_or_move(
-    src: Path, dest: Path, /, *, mode: Literal["copy", "move"], overwrite: bool = False
+    src: Path, dest: Path, mode: CopyOrMove, /, *, overwrite: bool = False
 ) -> None:
     match file_or_dir(src), file_or_dir(dest), mode, overwrite:
         case None, _, _, _:
