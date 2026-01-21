@@ -22,8 +22,8 @@ from typing import (
 from uuid import uuid4
 
 from utilities.constants import BRACKETS, LIST_SEPARATOR, PAIR_SEPARATOR, Sentinel
-from utilities.iterables import CheckDuplicatesError, check_duplicates, transpose
-from utilities.reprlib import repr_
+from utilities.core import repr_, transpose
+from utilities.iterables import CheckDuplicatesError, check_duplicates
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence

@@ -8,7 +8,7 @@ from collections.abc import Iterable, Iterator
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from functools import _lru_cache_wrapper, partial
-from itertools import chain
+from itertools import chain, islice
 from os import chdir, environ, getenv
 from pathlib import Path
 from re import findall
@@ -39,7 +39,7 @@ from utilities.constants import (
 from utilities.types import SupportsRichComparison
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Mapping
+    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
     from types import TracebackType
 
     from utilities.types import FileOrDir, MaybeIterable, PathLike
@@ -266,6 +266,17 @@ def always_iterable[T](obj: MaybeIterable[T], /) -> Iterable[T]:
         return cast("list[T]", [obj])
 
 
+##
+
+
+def chunked[T](iterable: Iterable[T], n: int, /) -> Iterator[Sequence[T]]:
+    """Break an iterable into lists of length n."""
+    return iter(partial(take, n, iter(iterable)), [])
+
+
+##
+
+
 def one[T](*iterables: Iterable[T]) -> T:
     """Return the unique value in a set of iterables."""
     it = chain(*iterables)
@@ -394,6 +405,64 @@ class OneStrNonUniqueError(OneStrError):
         return f"{head} {mid}; got {repr_(self.first)}, {repr_(self.second)} and perhaps more"
 
 
+##
+
+
+def take[T](n: int, iterable: Iterable[T], /) -> Sequence[T]:
+    """Return first n items of the iterable as a list."""
+    return list(islice(iterable, n))
+
+
+##
+
+
+@overload
+def transpose[T1](iterable: Iterable[tuple[T1]], /) -> tuple[list[T1]]: ...
+@overload
+def transpose[T1, T2](
+    iterable: Iterable[tuple[T1, T2]], /
+) -> tuple[list[T1], list[T2]]: ...
+@overload
+def transpose[T1, T2, T3](
+    iterable: Iterable[tuple[T1, T2, T3]], /
+) -> tuple[list[T1], list[T2], list[T3]]: ...
+@overload
+def transpose[T1, T2, T3, T4](
+    iterable: Iterable[tuple[T1, T2, T3, T4]], /
+) -> tuple[list[T1], list[T2], list[T3], list[T4]]: ...
+@overload
+def transpose[T1, T2, T3, T4, T5](
+    iterable: Iterable[tuple[T1, T2, T3, T4, T5]], /
+) -> tuple[list[T1], list[T2], list[T3], list[T4], list[T5]]: ...
+def transpose(iterable: Iterable[tuple[Any]]) -> tuple[list[Any], ...]:  # pyright: ignore[reportInconsistentOverload]
+    """Typed verison of `transpose`."""
+    return tuple(map(list, zip(*iterable, strict=True)))
+
+
+##
+
+
+def unique_everseen[T](
+    iterable: Iterable[T], /, *, key: Callable[[T], Any] | None = None
+) -> Iterator[T]:
+    """Yield unique elements, preserving order."""
+    seenset = set()
+    seenset_add = seenset.add
+    seenlist = []
+    seenlist_add = seenlist.append
+    use_key = key is not None
+    for element in iterable:
+        k = key(element) if use_key else element
+        try:
+            if k not in seenset:
+                seenset_add(k)
+                yield element
+        except TypeError:
+            if k not in seenlist:
+                seenlist_add(k)
+                yield element
+
+
 ###############################################################################
 #### os #######################################################################
 ###############################################################################
@@ -516,14 +585,14 @@ class FileOrDirError(Exception):
 class _FileOrDirMissingError(FileOrDirError):
     @override
     def __str__(self) -> str:
-        return f"Path does not exist: {str(self.path)!r}"
+        return f"Path does not exist: {repr_str(self.path)}"
 
 
 @dataclass(kw_only=True, slots=True)
 class _FileOrDirTypeError(FileOrDirError):
     @override
     def __str__(self) -> str:
-        return f"Path is neither a file nor a directory: {str(self.path)!r}"
+        return f"Path is neither a file nor a directory: {repr_str(self.path)}"
 
 
 ##
@@ -785,6 +854,7 @@ __all__ = [
     "TemporaryDirectory",
     "TemporaryFile",
     "always_iterable",
+    "chunked",
     "file_or_dir",
     "get_class",
     "get_class_name",
@@ -800,6 +870,9 @@ __all__ = [
     "repr_",
     "repr_str",
     "suppress_super_attribute_error",
+    "take",
+    "transpose",
+    "unique_everseen",
     "yield_temp_cwd",
     "yield_temp_dir_at",
     "yield_temp_environ",

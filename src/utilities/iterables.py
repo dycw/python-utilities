@@ -15,7 +15,7 @@ from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
-from functools import cmp_to_key, partial, reduce
+from functools import cmp_to_key, reduce
 from itertools import accumulate, chain, groupby, islice, pairwise, product
 from math import isnan
 from operator import or_
@@ -661,14 +661,6 @@ def cmp_nullable[T: SupportsLT](x: T | None, y: T | None, /) -> Sign:
 ##
 
 
-def chunked[T](iterable: Iterable[T], n: int, /) -> Iterator[Sequence[T]]:
-    """Break an iterable into lists of length n."""
-    return iter(partial(take, n, iter(iterable)), [])
-
-
-##
-
-
 def ensure_iterable(obj: Any, /) -> Iterable[Any]:
     """Ensure an object is iterable."""
     if is_iterable(obj):
@@ -1089,64 +1081,6 @@ def _sort_iterable_cmp_floats(x: float, y: float, /) -> Sign:
 ##
 
 
-def take[T](n: int, iterable: Iterable[T], /) -> Sequence[T]:
-    """Return first n items of the iterable as a list."""
-    return list(islice(iterable, n))
-
-
-##
-
-
-@overload
-def transpose[T1](iterable: Iterable[tuple[T1]], /) -> tuple[list[T1]]: ...
-@overload
-def transpose[T1, T2](
-    iterable: Iterable[tuple[T1, T2]], /
-) -> tuple[list[T1], list[T2]]: ...
-@overload
-def transpose[T1, T2, T3](
-    iterable: Iterable[tuple[T1, T2, T3]], /
-) -> tuple[list[T1], list[T2], list[T3]]: ...
-@overload
-def transpose[T1, T2, T3, T4](
-    iterable: Iterable[tuple[T1, T2, T3, T4]], /
-) -> tuple[list[T1], list[T2], list[T3], list[T4]]: ...
-@overload
-def transpose[T1, T2, T3, T4, T5](
-    iterable: Iterable[tuple[T1, T2, T3, T4, T5]], /
-) -> tuple[list[T1], list[T2], list[T3], list[T4], list[T5]]: ...
-def transpose(iterable: Iterable[tuple[Any]]) -> tuple[list[Any], ...]:  # pyright: ignore[reportInconsistentOverload]
-    """Typed verison of `transpose`."""
-    return tuple(map(list, zip(*iterable, strict=True)))
-
-
-##
-
-
-def unique_everseen[T](
-    iterable: Iterable[T], /, *, key: Callable[[T], Any] | None = None
-) -> Iterator[T]:
-    """Yield unique elements, preserving order."""
-    seenset = set()
-    seenset_add = seenset.add
-    seenlist = []
-    seenlist_add = seenlist.append
-    use_key = key is not None
-    for element in iterable:
-        k = key(element) if use_key else element
-        try:
-            if k not in seenset:
-                seenset_add(k)
-                yield element
-        except TypeError:
-            if k not in seenlist:
-                seenlist_add(k)
-                yield element
-
-
-##
-
-
 __all__ = [
     "ApplyBijectionError",
     "CheckBijectionError",
@@ -1183,7 +1117,6 @@ __all__ = [
     "check_supermapping",
     "check_superset",
     "check_unique_modulo_case",
-    "chunked",
     "cmp_nullable",
     "ensure_iterable",
     "ensure_iterable_not_str",
@@ -1204,7 +1137,4 @@ __all__ = [
     "range_partitions",
     "resolve_include_and_exclude",
     "sort_iterable",
-    "take",
-    "transpose",
-    "unique_everseen",
 ]

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from re import DOTALL
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -15,6 +15,7 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
     text,
+    tuples,
 )
 from pytest import mark, param, raises
 
@@ -24,12 +25,18 @@ from utilities.core import (
     OneStrEmptyError,
     OneStrNonUniqueError,
     always_iterable,
+    chunked,
     one,
     one_str,
+    take,
+    transpose,
+    unique_everseen,
 )
+from utilities.hypothesis import text_ascii
+from utilities.typing import is_sequence_of
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterable, Iterator, Sequence
 
 
 class TestAlwaysIterable:
@@ -67,6 +74,23 @@ class TestAlwaysIterable:
             yield 1
 
         assert list(always_iterable(yield_ints())) == [0, 1]
+
+
+class TestChunked:
+    @mark.parametrize(
+        ("iterable", "expected"),
+        [
+            param("ABCDEF", [["A", "B", "C"], ["D", "E", "F"]]),
+            param("ABCDE", [["A", "B", "C"], ["D", "E"]]),
+        ],
+    )
+    def test_main(
+        self, *, iterable: Iterable[str], expected: Sequence[list[str]]
+    ) -> None:
+        assert list(chunked(iterable, 3)) == expected
+
+    def test_odd(self) -> None:
+        assert list(chunked("ABCDE", 3)) == [["A", "B", "C"], ["D", "E"]]
 
 
 class TestOne:
@@ -172,3 +196,128 @@ class TestOneStr:
             match=r"Iterable .* must contain exactly one string starting with 'ab'; got 'abc', 'abd' and perhaps more",
         ):
             _ = one_str(["abc", "abd"], "ab", head=True, case_sensitive=True)
+
+
+class TestTake:
+    def test_simple(self) -> None:
+        result = take(5, range(10))
+        expected = list(range(5))
+        assert result == expected
+
+    def test_null(self) -> None:
+        result = take(0, range(10))
+        expected = []
+        assert result == expected
+
+    def test_negative(self) -> None:
+        with raises(
+            ValueError,
+            match=r"Indices for islice\(\) must be None or an integer: 0 <= x <= sys.maxsize\.",
+        ):
+            _ = take(-3, range(10))
+
+    def test_too_much(self) -> None:
+        result = take(10, range(5))
+        expected = list(range(5))
+        assert result == expected
+
+
+class TestTranspose:
+    @given(sequence=lists(tuples(integers()), min_size=1))
+    def test_singles(self, *, sequence: Sequence[tuple[int]]) -> None:
+        result = transpose(sequence)
+        assert isinstance(result, tuple)
+        for list_i in result:
+            assert isinstance(list_i, list)
+            assert len(list_i) == len(sequence)
+        (first,) = result
+        assert is_sequence_of(first, int)
+        zipped = list(zip(*result, strict=True))
+        assert zipped == sequence
+
+    @given(sequence=lists(tuples(integers(), text_ascii()), min_size=1))
+    def test_pairs(self, *, sequence: Sequence[tuple[int, str]]) -> None:
+        result = transpose(sequence)
+        assert isinstance(result, tuple)
+        for list_i in result:
+            assert isinstance(list_i, list)
+            assert len(list_i) == len(sequence)
+        first, second = result
+        assert is_sequence_of(first, int)
+        assert is_sequence_of(second, str)
+        zipped = list(zip(*result, strict=True))
+        assert zipped == sequence
+
+    @given(sequence=lists(tuples(integers(), text_ascii(), integers()), min_size=1))
+    def test_triples(self, *, sequence: Sequence[tuple[int, str, int]]) -> None:
+        result = transpose(sequence)
+        assert isinstance(result, tuple)
+        for list_i in result:
+            assert isinstance(list_i, list)
+            assert len(list_i) == len(sequence)
+        first, second, third = result
+        assert is_sequence_of(first, int)
+        assert is_sequence_of(second, str)
+        assert is_sequence_of(third, int)
+        zipped = list(zip(*result, strict=True))
+        assert zipped == sequence
+
+    @given(
+        sequence=lists(
+            tuples(integers(), text_ascii(), integers(), text_ascii()), min_size=1
+        )
+    )
+    def test_quadruples(self, *, sequence: Sequence[tuple[int, str, int, str]]) -> None:
+        result = transpose(sequence)
+        assert isinstance(result, tuple)
+        for list_i in result:
+            assert isinstance(list_i, list)
+            assert len(list_i) == len(sequence)
+        first, second, third, fourth = result
+        assert is_sequence_of(first, int)
+        assert is_sequence_of(second, str)
+        assert is_sequence_of(third, int)
+        assert is_sequence_of(fourth, str)
+        zipped = list(zip(*result, strict=True))
+        assert zipped == sequence
+
+    @given(
+        sequence=lists(
+            tuples(integers(), text_ascii(), integers(), text_ascii(), integers()),
+            min_size=1,
+        )
+    )
+    def test_quintuples(
+        self, *, sequence: Sequence[tuple[int, str, int, str, int]]
+    ) -> None:
+        result = transpose(sequence)
+        assert isinstance(result, tuple)
+        for list_i in result:
+            assert isinstance(list_i, list)
+            assert len(list_i) == len(sequence)
+        first, second, third, fourth, fifth = result
+        assert is_sequence_of(first, int)
+        assert is_sequence_of(second, str)
+        assert is_sequence_of(third, int)
+        assert is_sequence_of(fourth, str)
+        assert is_sequence_of(fifth, int)
+        zipped = list(zip(*result, strict=True))
+        assert zipped == sequence
+
+
+class TestUniqueEverseen:
+    text: ClassVar[str] = "AAAABBBCCDAABBB"
+    expected: ClassVar[list[str]] = ["A", "B", "C", "D"]
+
+    def test_main(self) -> None:
+        result = list(unique_everseen("AAAABBBCCDAABBB"))
+        assert result == self.expected
+
+    def test_key(self) -> None:
+        result = list(unique_everseen("ABBCcAD", key=str.lower))
+        assert result == self.expected
+
+    def test_non_hashable(self) -> None:
+        result = list(unique_everseen([[1, 2], [2, 3], [1, 2]]))
+        expected = [[1, 2], [2, 3]]
+        assert result == expected
