@@ -30,7 +30,7 @@ from sqlalchemy.orm import (
 )
 
 from utilities.constants import MILLISECOND
-from utilities.core import strip_dedent
+from utilities.core import normalize_multi_line_str
 from utilities.hypothesis import int32s, pairs, quadruples, urls
 from utilities.iterables import one
 from utilities.modules import is_installed
@@ -1399,7 +1399,7 @@ class TestSelectableToString:
         )
         sel = select(table).where(table.c.value >= 1)
         result = selectable_to_string(sel, test_async_engine)
-        expected = strip_dedent(
+        expected = normalize_multi_line_str(
             """
                 SELECT example.id_, example.value *
                 FROM example *

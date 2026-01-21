@@ -29,8 +29,8 @@ from utilities.core import (
     TemporaryDirectory,
     always_iterable,
     file_or_dir,
+    normalize_multi_line_str,
     one,
-    strip_dedent,
 )
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
@@ -1234,7 +1234,7 @@ def run(
                 else:
                     attempts, duration = retry
                 if logger is not None:
-                    msg = strip_dedent(f"""
+                    msg = normalize_multi_line_str(f"""
 'run' failed with:
  - cmd          = {cmd}
  - cmds_or_args = {cmds_or_args}

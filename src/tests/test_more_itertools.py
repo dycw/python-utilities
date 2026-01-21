@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, TypeGuard
 
 from pytest import mark, param, raises
 
-from utilities.core import strip_dedent
+from utilities.core import normalize_multi_line_str
 from utilities.more_itertools import (
     BucketMappingError,
     Split,
@@ -341,7 +341,7 @@ class TestYieldSplits:
     def test_repr(self) -> None:
         split = Split(head=["a", "b", "c"], tail=["d"])
         result = repr(split)
-        expected = strip_dedent(
+        expected = normalize_multi_line_str(
             """
             Split(
                 head=

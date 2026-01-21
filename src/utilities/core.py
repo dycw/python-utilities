@@ -894,9 +894,14 @@ _kebab_pascal_pattern = re.compile(
 ##
 
 
-def strip_dedent(text: str, /) -> str:
-    """Strip and dedent a string."""
+def normalize_multi_line_str(text: str, /) -> str:
+    """Normalize a multi-line string."""
     return dedent(text.strip("\n")).strip("\n") + "\n"
+
+
+def normalize_str(text: str, /) -> str:
+    """Normalize a string."""
+    return text.strip("\n") + "\n"
 
 
 ##
@@ -909,6 +914,17 @@ def unique_str() -> str:
     ident = get_ident()
     key = str(uuid4()).replace("-", "")
     return f"{now}_{pid}_{ident}_{key}"
+
+
+###############################################################################
+#### writers ##################################################################
+###############################################################################
+
+
+def write_text(path: PathLike, text: str, /) -> None:
+    """Write text to a file."""
+    with writer(path, overwrite=overwrite) as temp:
+        _ = temp.write_text(normalize_str(text))
 
 
 __all__ = [
@@ -936,16 +952,19 @@ __all__ = [
     "is_sentinel",
     "max_nullable",
     "min_nullable",
+    "normalize_multi_line_str",
+    "normalize_str",
     "one",
     "one_str",
     "repr_",
     "repr_str",
-    "strip_dedent",
     "suppress_super_attribute_error",
     "take",
     "transpose",
     "unique_everseen",
     "unique_str",
+    "write_bytes",
+    "write_text",
     "yield_temp_cwd",
     "yield_temp_dir_at",
     "yield_temp_environ",

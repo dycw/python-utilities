@@ -11,7 +11,7 @@ from hypothesis.strategies import booleans, integers, sampled_from
 from pytest import approx, mark, param, raises
 
 from utilities.constants import HOME, MILLISECOND, NOW_UTC, SECOND, ZERO_TIME, sentinel
-from utilities.core import strip_dedent
+from utilities.core import normalize_multi_line_str
 from utilities.functions import (
     EnsureBoolError,
     EnsureBytesError,
@@ -398,7 +398,7 @@ class TestNotFunc:
 class TestSkipIfOptimize:
     @mark.parametrize("optimize", [param(True), param(False)])
     def test_main(self, *, optimize: bool) -> None:
-        code = strip_dedent("""
+        code = normalize_multi_line_str("""
             from utilities.functions import skip_if_optimize
 
             is_run = False

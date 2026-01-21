@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from pytest import raises
 
-from utilities.core import strip_dedent, unique_str, yield_temp_environ
+from utilities.core import normalize_multi_line_str, unique_str, yield_temp_environ
 from utilities.string import SubstituteError, substitute
 
 if TYPE_CHECKING:
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class TestSubstitute:
-    template: ClassVar[str] = strip_dedent("""
+    template: ClassVar[str] = normalize_multi_line_str("""
         This is a template string with:
          - key   = '$TEMPLATE_KEY'
          - value = '$TEMPLATE_VALUE'
@@ -51,7 +51,7 @@ class TestSubstitute:
             _ = substitute(self.template)
 
     def _assert_equal(self, text: str, key: str, value: str) -> None:
-        expected = strip_dedent(f"""
+        expected = normalize_multi_line_str(f"""
             This is a template string with:
              - key   = {key!r}
              - value = {value!r}

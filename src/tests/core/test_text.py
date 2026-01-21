@@ -2,7 +2,65 @@ from __future__ import annotations
 
 from pytest import mark, param
 
-from utilities.core import kebab_case, pascal_case, snake_case, strip_dedent, unique_str
+from utilities.core import (
+    kebab_case,
+    normalize_multi_line_str,
+    normalize_str,
+    pascal_case,
+    snake_case,
+    unique_str,
+)
+
+
+class TestNormalizeMultiLineStr:
+    @mark.parametrize(
+        ("text", "expected"),
+        [
+            param(
+                """
+                text
+                """,
+                "text\n",
+            ),
+            param(
+                """
+                    text
+                """,
+                "text\n",
+            ),
+            param(
+                """
+                text1
+                text2
+                """,
+                "text1\ntext2\n",
+            ),
+            param(
+                """
+                    text1
+                    text2
+                """,
+                "text1\ntext2\n",
+            ),
+        ],
+    )
+    def test_main(self, *, text: str, expected: str) -> None:
+        assert normalize_multi_line_str(text) == expected
+
+
+class TestNormalizeStr:
+    @mark.parametrize(
+        "text",
+        [
+            param("text"),
+            param("\ntext"),
+            param("text\n"),
+            param("\ntext\n"),
+            param("\n\ntext\n\n"),
+        ],
+    )
+    def test_main(self, *, text: str) -> None:
+        assert normalize_str(text) == "text\n"
 
 
 class TestPascalSnakeAndKebabCase:
@@ -85,21 +143,6 @@ class TestPascalSnakeAndKebabCase:
         assert pascal_case(text) == exp_pascal
         assert snake_case(text) == exp_snake
         assert kebab_case(text) == exp_kebab
-
-
-class TestStripDedent:
-    @mark.parametrize(
-        "text",
-        [
-            param("text"),
-            param("\ntext"),
-            param("text\n"),
-            param("\ntext\n"),
-            param("\n\ntext\n\n"),
-        ],
-    )
-    def test_main(self, *, text: str) -> None:
-        assert strip_dedent(text) == "text\n"
 
 
 class TestUniqueStrs:
