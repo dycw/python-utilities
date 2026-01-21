@@ -101,7 +101,7 @@ class TestCopyOrMove:
         assert dest.is_dir()
         assert {f.name for f in dest.iterdir()} == {"src1.txt", "src2.txt"}
         assert (dest / "src1.txt").read_text() == "src1"
-        assert (dest / "src2.txt").read_text() == "src1"
+        assert (dest / "src2.txt").read_text() == "src2"
 
 
 class TestGetEnv:
