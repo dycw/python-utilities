@@ -1024,9 +1024,7 @@ def write_text(path: PathLike, text: str, /) -> None:
 
 
 @contextmanager
-def yield_temp_path(
-    path: PathLike, /, *, compress: bool = False, overwrite: bool = False
-) -> Iterator[Path]:
+def yield_temp_path(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
     """Yield a path for atomically writing files to disk."""
     path = Path(path)
     parent = path.parent
