@@ -87,7 +87,6 @@ from utilities.iterables import (
     merge_mappings,
     merge_sets,
     merge_str_mappings,
-    pairwise_tail,
     product_dicts,
     range_partitions,
     resolve_include_and_exclude,
@@ -787,14 +786,6 @@ class TestMergeStrMappings:
             match=r"Mapping .* keys must not contain duplicates \(modulo case\); got .*",
         ):
             _ = merge_str_mappings({"x": 1, "X": 2})
-
-
-class TestPairwiseTail:
-    def test_main(self) -> None:
-        iterable = range(5)
-        result = list(pairwise_tail(iterable))
-        expected = [(0, 1), (1, 2), (2, 3), (3, 4), (4, sentinel)]
-        assert result == expected
 
 
 class TestProductDicts:

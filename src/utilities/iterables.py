@@ -16,7 +16,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
 from functools import cmp_to_key, reduce
-from itertools import accumulate, chain, groupby, islice, pairwise, product
+from itertools import accumulate, chain, groupby, islice, product
 from math import isnan
 from operator import or_
 from typing import (
@@ -30,7 +30,6 @@ from typing import (
     override,
 )
 
-from utilities.constants import Sentinel, sentinel
 from utilities.core import OneStrEmptyError, always_iterable, one, one_str, repr_
 from utilities.errors import ImpossibleCaseError
 from utilities.math import (
@@ -899,14 +898,6 @@ class MergeStrMappingsError(Exception):
 ##
 
 
-def pairwise_tail[T](iterable: Iterable[T], /) -> Iterator[tuple[T, T | Sentinel]]:
-    """Return pairwise elements, with the last paired with the sentinel."""
-    return pairwise(chain(iterable, [sentinel]))
-
-
-##
-
-
 def product_dicts[K, V](mapping: Mapping[K, Iterable[V]], /) -> Iterator[Mapping[K, V]]:
     """Return the cartesian product of the values in a mapping, as mappings."""
     keys = list(mapping)
@@ -1132,7 +1123,6 @@ __all__ = [
     "merge_mappings",
     "merge_sets",
     "merge_str_mappings",
-    "pairwise_tail",
     "product_dicts",
     "range_partitions",
     "resolve_include_and_exclude",
