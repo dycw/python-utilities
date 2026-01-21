@@ -15,7 +15,12 @@ if TYPE_CHECKING:
 
 from typing import TYPE_CHECKING
 
-from utilities.core import YieldWritePathError, write_bytes, yield_write_path
+from utilities.core import (
+    YieldWritePathError,
+    write_bytes,
+    write_text,
+    yield_write_path,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -33,7 +38,7 @@ class TestWriteText:
     @mark.parametrize("text", [param("text"), param("text\n")])
     def test_main(self, *, tmp_path: Path, text: str) -> None:
         path = tmp_path / "file.txt"
-        write_bytes(path, b"data")
+        write_text(path, b"data")
         assert path.is_file()
         assert path.read_bytes() == b"data"
 
