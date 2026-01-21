@@ -33,8 +33,7 @@ class TestGetEnv:
         key, value = self._generate()
         assert get_env(key, default=value) == value
 
-    @given(key=text.map(_prefix), case_sensitive=booleans())
-    def test_nullable(self, *, key: str, case_sensitive: bool) -> None:
+    def test_nullable(self) -> None:
         value = get_env(key, case_sensitive=case_sensitive, nullable=True)
         assert value is None
 
