@@ -488,10 +488,10 @@ def move(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
 def _copy_or_move(
     src: Path, dest: Path, mode: CopyOrMove, /, *, overwrite: bool = False
 ) -> None:
-    match file_or_dir(src), file_or_dir(dest), mode, overwrite:
-        case None, _, _, _:
+    match file_or_dir(src), file_or_dir(dest), overwrite:
+        case None, _, _:
             raise _CopyOrMoveSourceNotFoundError(src=src)
-        case "file" | "dir", "file" | "dir", _, False:
+        case "file" | "dir", "file" | "dir", False:
             raise _CopyOrMoveDestinationExistsError(src=src, dest=dest)
         case ("file", None, "move", _) | ("file", "file", "move", True):
             _copy_or_move__move_file(src, dest)
