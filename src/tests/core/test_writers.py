@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from utilities.core import yield_write_path
+
 
 class TestYieldWritePath:
     def test_main(self, *, tmp_path: Path) -> None:
-        with yield_adjacent_temp_file(tmp_path) as temp:
+        with yield_write_path(tmp_path) as temp:
             self._run_test(tmp_path, temp)
 
     def test_deep(self, *, tmp_path: Path) -> None:
