@@ -5,7 +5,7 @@ from sys import executable
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from hypothesis import given
-from hypothesis.strategies import booleans, integers, sampled_from
+from hypothesis.strategies import integers, sampled_from
 from pytest import approx, mark, param, raises
 
 from utilities.constants import HOME, MILLISECOND, NOW_UTC, SECOND, ZERO_TIME, sentinel
@@ -44,7 +44,6 @@ from utilities.functions import (
     in_milli_seconds,
     in_seconds,
     in_timedelta,
-    not_func,
     yield_object_attributes,
 )
 from utilities.text import parse_bool
@@ -377,18 +376,6 @@ class TestInTimeDelta:
     @mark.parametrize("duration", [param(1), param(1.0), param(SECOND)])
     def test_main(self, *, duration: Duration) -> None:
         assert in_timedelta(duration) == SECOND
-
-
-class TestNotFunc:
-    @given(x=booleans())
-    def test_main(self, *, x: bool) -> None:
-        def return_x() -> bool:
-            return x
-
-        return_not_x = not_func(return_x)
-        result = return_not_x()
-        expected = not x
-        assert result is expected
 
 
 class TestSkipIfOptimize:

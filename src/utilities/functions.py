@@ -493,19 +493,6 @@ def in_timedelta(duration: Duration, /) -> TimeDelta:
 ##
 
 
-def not_func[**P](func: Callable[P, bool], /) -> Callable[P, bool]:
-    """Lift a boolean-valued function to return its conjugation."""
-
-    @wraps(func)
-    def wrapped(*args: P.args, **kwargs: P.kwargs) -> bool:
-        return not func(*args, **kwargs)
-
-    return wrapped
-
-
-##
-
-
 def skip_if_optimize[**P](func: Callable[P, None], /) -> Callable[P, None]:
     """Skip a function if we are in the optimized mode."""
     if __debug__:  # pragma: no cover
@@ -582,7 +569,6 @@ __all__ = [
     "in_milli_seconds",
     "in_seconds",
     "in_timedelta",
-    "not_func",
     "skip_if_optimize",
     "yield_object_attributes",
 ]

@@ -7,7 +7,7 @@ import tempfile
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
-from functools import _lru_cache_wrapper, partial
+from functools import _lru_cache_wrapper, partial, wraps
 from itertools import chain, islice
 from os import chdir, environ, getenv, getpid
 from pathlib import Path
@@ -203,6 +203,21 @@ def suppress_super_attribute_error() -> Iterator[None]:
 _suppress_super_attribute_error_pattern = re.compile(
     r"'super' object has no attribute '\w+'"
 )
+
+
+###############################################################################
+#### functools ################################################################
+###############################################################################
+
+
+def not_func[**P](func: Callable[P, bool], /) -> Callable[P, bool]:
+    """Lift a boolean-valued function to return its conjugation."""
+
+    @wraps(func)
+    def wrapped(*args: P.args, **kwargs: P.kwargs) -> bool:
+        return not func(*args, **kwargs)
+
+    return wrapped
 
 
 ###############################################################################
@@ -1102,6 +1117,7 @@ __all__ = [
     "min_nullable",
     "normalize_multi_line_str",
     "normalize_str",
+    "not_func",
     "one",
     "one_str",
     "repr_",
