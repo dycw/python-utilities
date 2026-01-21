@@ -72,6 +72,7 @@ from utilities.core import (
     chunked,
     get_class_name,
     repr_,
+    snake_case,
 )
 from utilities.functions import ensure_str, yield_object_attributes
 from utilities.iterables import (
@@ -84,7 +85,7 @@ from utilities.iterables import (
     one,
 )
 from utilities.os import is_pytest
-from utilities.text import secret_str, snake_case
+from utilities.text import secret_str
 from utilities.types import (
     Duration,
     MaybeIterable,
