@@ -721,7 +721,7 @@ class _FileOrDirTypeError(FileOrDirError):
 
 @contextmanager
 def yield_temp_cwd(path: PathLike, /) -> Iterator[None]:
-    """Context manager with temporary current working directory set."""
+    """Yield a temporary working directory."""
     prev = Path.cwd()
     chdir(path)
     try:
