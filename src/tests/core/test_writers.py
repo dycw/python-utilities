@@ -15,3 +15,4 @@ class TestYieldWritePath:
             _ = temp.write_text("text")
             assert not path.exists()
         assert path.is_file()
+        assert path.read_text() == "text"
