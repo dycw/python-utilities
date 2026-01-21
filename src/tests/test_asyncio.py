@@ -16,7 +16,6 @@ from utilities.asyncio import (
     EnhancedTaskGroup,
     OneAsyncEmptyError,
     OneAsyncNonUniqueError,
-    chain_async,
     get_items,
     get_items_nowait,
     one_async,
@@ -193,27 +192,6 @@ class TestAsyncDict:
         assert isinstance(dict_.values(), ValuesView)
         for value in dict_.values():
             assert isinstance(value, int)
-
-
-class TestChainAsync:
-    @given(n=integers(0, 10))
-    async def test_sync(self, *, n: int) -> None:
-        it = chain_async(range(n))
-        result = [x async for x in it]
-        expected = list(range(n))
-        assert result == expected
-
-    @given(n=integers(0, 10))
-    async def test_async(self, *, n: int) -> None:
-        async def range_async(n: int, /) -> AsyncIterator[int]:
-            await sleep()
-            for i in range(n):
-                yield i
-
-        it = chain_async(range_async(n))
-        result = [x async for x in it]
-        expected = list(range(n))
-        assert result == expected
 
 
 class TestEnhancedTaskGroup:

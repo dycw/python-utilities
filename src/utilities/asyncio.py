@@ -30,7 +30,6 @@ from typing import (
     Self,
     TextIO,
     assert_never,
-    cast,
     overload,
     override,
 )
@@ -346,24 +345,6 @@ class EnhancedTaskGroup(TaskGroup):
 ##
 
 
-def chain_async[T](*iterables: Iterable[T] | AsyncIterable[T]) -> AsyncIterator[T]:
-    """Asynchronous version of `chain`."""
-
-    async def iterator() -> AsyncIterator[T]:
-        for it in iterables:
-            try:
-                async for item in cast("AsyncIterable[T]", it):
-                    yield item
-            except TypeError:
-                for item in cast("Iterable[T]", it):
-                    yield item
-
-    return iterator()
-
-
-##
-
-
 async def get_items[T](queue: Queue[T], /, *, max_size: int | None = None) -> list[T]:
     """Get items from a queue; if empty then wait."""
     try:
@@ -584,7 +565,6 @@ __all__ = [
     "OneAsyncError",
     "OneAsyncNonUniqueError",
     "StreamCommandOutput",
-    "chain_async",
     "get_items",
     "get_items_nowait",
     "one_async",
