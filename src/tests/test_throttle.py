@@ -7,7 +7,7 @@ from pytest import mark, param, raises
 
 import utilities.asyncio
 import utilities.time
-from utilities.constants import SECOND
+from utilities.constants import IS_CI, SECOND
 from utilities.os import temp_environ
 from utilities.throttle import (
     _ThrottleMarkerFileError,
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from whenever import TimeDelta
 
 
-_DURATION: TimeDelta = 0.1 * SECOND
+_DURATION: TimeDelta = (5 if IS_CI else 1) * 0.1 * SECOND
 _MULTIPLE: int = 10
 
 
