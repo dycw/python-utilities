@@ -59,11 +59,11 @@ class TestCopyOrMove:
         dest.mkdir()
         match mode:
             case "copy":
-                copy(src, dest, overwrite=overwrite)
+                copy(src, dest, overwrite=True)
                 assert src.is_file()
                 assert src.read_text() == "src"
             case "move":
-                move(src, dest, overwrite=overwrite)
+                move(src, dest, overwrite=True)
                 assert not src.exists()
             case never:
                 assert_never(never)
