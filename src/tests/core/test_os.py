@@ -45,9 +45,9 @@ class TestCopyOrMove:
                 assert src.read_text() == "src"
             case "move":
                 move(src, dest, overwrite=overwrite)
+                assert not src.exists()
             case never:
                 assert_never(never)
-
         assert dest.is_file()
         assert dest.read_text() == "src"
 
