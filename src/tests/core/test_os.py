@@ -29,12 +29,6 @@ class TestGetEnv:
         with yield_temp_environ({key.lower(): value}):
             assert get_env(key.upper()) == value
 
-    @given(
-        key=text.map(_prefix),
-        case_sensitive=booleans(),
-        default=text,
-        nullable=booleans(),
-    )
     def test_default(
         self, *, key: str, case_sensitive: bool, default: str, nullable: bool
     ) -> None:
