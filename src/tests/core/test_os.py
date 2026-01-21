@@ -14,10 +14,6 @@ from utilities.hypothesis import text_ascii
 text = text_ascii(min_size=1, max_size=10)
 
 
-def _prefix(text: str, /) -> str:
-    return f"_TEST_OS_{text}"
-
-
 class TestGetEnv:
     def test_main(self) -> None:
         key, value = self._generate()
