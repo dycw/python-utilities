@@ -547,7 +547,9 @@ def _copy_or_move__move_dir(src: Path, dest: Path, /) -> None:
 def _copy_or_move__shutil(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
     match mode:
         case "copy":
-            shutil.copy(src, dest)
+            _ = shutil.copy(src, dest)
+        case "mode":
+            _ = shutil.copy(src, dest)
 
 
 ##
