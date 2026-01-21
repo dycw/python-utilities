@@ -2112,6 +2112,8 @@ class TestUvToolInstallCmd:
             "uv",
             "tool",
             "install",
+            "--resolution",
+            "highest",
             "--prerelease",
             "disallow",
             "--reinstall",
