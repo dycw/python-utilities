@@ -505,7 +505,6 @@ def _copy_or_move(
             _copy_or_move__copy_file(src, dest)
         case ("dir", None, "move", _):
             _copy_or_move__move_dir(src, dest)
-
         case ("dir", "dir", "move", True):
             _copy_or_move__move_dir(src, dest)
         case ("dir", None, "copy", _) | ("dir", "dir", "copy", True):
