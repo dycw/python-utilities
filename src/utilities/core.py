@@ -496,7 +496,7 @@ def _copy_or_move(
         case None, _, _:
             raise _CopyOrMoveSourceNotFoundError(src=src)
         case "file" | "dir", "file" | "dir", False:
-            raise _CopyOrMoveDestinationExistsError(src=src, dest=dest)
+            raise _CopyOrMoveDestinationExistsError(mode=mode, src=src, dest=dest)
         case ("file", None, _) | ("file", "file", True):
             _copy_or_move__file_to_file(src, dest, mode)
         case "file", "dir", True:
