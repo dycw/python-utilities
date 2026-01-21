@@ -526,7 +526,7 @@ class _CopyOrMoveDestinationExistsError(CopyOrMoveError):
 
     @override
     def __str__(self) -> str:
-        return f"Cannot {self.mode} file {str(self.src)!r} as destination {str(self.dest)!r} already exists"
+        return f"Cannot {self.mode} source {repr_str(self.src)!r} as destination {str(self.dest)!r} already exists"
 
 
 def _copy_or_move__file_to_file(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
