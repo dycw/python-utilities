@@ -77,9 +77,8 @@ class TestGetEnv:
         with raises(GetEnvError, match=r"No environment variable .*(\(modulo case\))?"):
             _ = get_env(key, case_sensitive=case_sensitive)
 
-
-def _prefix(text: str, /) -> str:
-    return f"_TEST_OS_{text}"
+    def _prefix(self, text: str, /) -> str:
+        return f"_TEST_OS_{text}"
 
 
 class TestYieldTempEnviron:
