@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from utilities.core import yield_write_path
+from pytest import raises
+
+from utilities.core import YieldWritePathError, yield_write_path
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -27,5 +29,11 @@ class TestYieldWritePath:
     def test_error(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file.txt"
         path.touch()
-        with yield_write_path(path):
+        with (
+            raises(
+                YieldWritePathError,
+                match=r"Cannot write to '.*' since it already exists",
+            ),
+            yield_write_path(path),
+        ):
             ...
