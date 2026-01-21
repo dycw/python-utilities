@@ -53,7 +53,7 @@ class TestGetEnv:
         with raises(GetEnvError, match=r"No environment variable .*(\(modulo case\))?"):
             _ = get_env(key, case_sensitive=case_sensitive)
 
-    def test_error_case_sensitive(self) -> None:
+    def test_error_case_insensitive(self) -> None:
         key, value = [unique_str() for _ in range(2)]
         with (
             yield_temp_environ({key.lower(): value}),
