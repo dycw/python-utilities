@@ -149,6 +149,13 @@ class TestCopyOrMove:
         dest = tmp_path / "dest.txt"
         if exists:
             _ = dest.write_text("dest")
+        dest = tmp_path / "dest"
+        if dest_exists:
+            dest.mkdir()
+            _ = (dest / "dest1.txt").write_text("dest1")
+            _ = (dest / "dest2.txt").write_text("dest2")
+            _ = (dest / "dest3.txt").write_text("dest3")
+        match mode:
         return dest
 
 
