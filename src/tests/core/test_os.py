@@ -28,7 +28,7 @@ class TestGetEnv:
         key, value = [unique_str() for _ in range(2)]
         with (
             yield_temp_environ({key.lower(): value}),
-            raises(GetEnvError, match="No environment variable '.*'"),
+            raises(GetEnvError, match=r"No environment variable '.*'"),
         ):
             _ = get_env(key.upper(), case_sensitive=True)
 
