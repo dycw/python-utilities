@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-class TestYieldWritePath:
+class TestWriteBytes:
     def test_main(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file.txt"
         with yield_write_path(path) as temp:
