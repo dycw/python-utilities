@@ -145,6 +145,12 @@ class TestCopyOrMove:
             _ = dest.write_text("dest")
         return dest
 
+    def _setup_dest_dir(self, tmp_path: Path, /, *, exists: bool = False) -> Path:
+        dest = tmp_path / "dest.txt"
+        if exists:
+            _ = dest.write_text("dest")
+        return dest
+
 
 class TestGetEnv:
     def test_main(self) -> None:
