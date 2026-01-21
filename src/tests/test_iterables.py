@@ -42,7 +42,6 @@ from utilities.iterables import (
     CheckSuperMappingError,
     CheckSuperSetError,
     EnsureIterableError,
-    EnsureIterableNotStrError,
     MergeStrMappingsError,
     ResolveIncludeAndExcludeError,
     SortIterableError,
@@ -70,9 +69,7 @@ from utilities.iterables import (
     check_unique_modulo_case,
     cmp_nullable,
     ensure_iterable,
-    ensure_iterable_not_str,
     enumerate_with_edge,
-    expanding_window,
     filter_include_and_exclude,
     groupby_lists,
     is_iterable,
@@ -514,20 +511,6 @@ class TestEnsureIterable:
             _ = ensure_iterable(None)
 
 
-class TestEnsureIterableNotStr:
-    @mark.parametrize("obj", [param([]), param(())])
-    def test_main(self, *, obj: Any) -> None:
-        _ = ensure_iterable_not_str(obj)
-
-    @mark.parametrize("obj", [param(None), param("")])
-    def test_error(self, *, obj: Any) -> None:
-        with raises(
-            EnsureIterableNotStrError,
-            match=r"Object .* must be iterable, but not a string",
-        ):
-            _ = ensure_iterable_not_str(obj)
-
-
 class TestEnumerateWithEdge:
     def test_main(self) -> None:
         result = list(enumerate_with_edge(range(100)))
@@ -543,21 +526,6 @@ class TestEnumerateWithEdge:
         for _, total, is_edge, _ in result:
             assert total == 9
             assert is_edge
-
-
-class TestExpandingWindow:
-    @mark.parametrize(
-        ("iterable", "expected"),
-        [
-            param(
-                [1, 2, 3, 4, 5], [[1], [1, 2], [1, 2, 3], [1, 2, 3, 4], [1, 2, 3, 4, 5]]
-            ),
-            param([], []),
-        ],
-    )
-    def test_main(self, *, iterable: Iterable[int], expected: list[list[int]]) -> None:
-        result = list(expanding_window(iterable))
-        assert result == expected
 
 
 class TestFilterIncludeAndExclude:

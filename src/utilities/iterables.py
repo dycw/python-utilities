@@ -15,7 +15,7 @@ from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import cmp_to_key, reduce
-from itertools import accumulate, chain, groupby, islice
+from itertools import chain, groupby
 from math import isnan
 from operator import or_
 from typing import (
@@ -678,25 +678,6 @@ class EnsureIterableError(Exception):
 ##
 
 
-def ensure_iterable_not_str(obj: Any, /) -> Iterable[Any]:
-    """Ensure an object is iterable, but not a string."""
-    if is_iterable_not_str(obj):
-        return obj
-    raise EnsureIterableNotStrError(obj=obj)
-
-
-@dataclass(kw_only=True, slots=True)
-class EnsureIterableNotStrError(Exception):
-    obj: Any
-
-    @override
-    def __str__(self) -> str:
-        return f"Object {repr_(self.obj)} must be iterable, but not a string"
-
-
-##
-
-
 _EDGE: int = 5
 
 
@@ -712,18 +693,6 @@ def enumerate_with_edge[T](
         enumerate(as_list, start=start), is_edge, strict=True
     ):
         yield i, total, is_edge_i, value
-
-
-##
-
-
-def expanding_window[T](iterable: Iterable[T], /) -> islice[list[T]]:
-    """Yield an expanding window over an iterable."""
-
-    def func(acc: Iterable[T], el: T, /) -> list[T]:
-        return list(chain(acc, [el]))
-
-    return islice(accumulate(iterable, func=func, initial=[]), 1, None)
 
 
 ##
