@@ -37,7 +37,7 @@ class TestGetEnv:
         ):
             _ = get_env(key.upper(), case_sensitive=True)
 
-    def test_case_sensitive_success(self) -> None:
+    def test_case_sensitive_failure(self) -> None:
         key, value = [unique_str() for _ in range(2)]
         with (
             yield_temp_environ({key.lower(): value}),
