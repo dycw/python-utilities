@@ -220,7 +220,7 @@ class SupportsRound(Protocol[_T_co]):
 
 
 # os
-type Copy
+type CopyOrMove = Literal["copy", "move"]
 type IntOrAll = int | Literal["all"]
 
 
@@ -312,6 +312,7 @@ type TimeZoneLike = (
 
 __all__ = [
     "TIME_ZONES",
+    "CopyOrMove",
     "Coro",
     "Dataclass",
     "DateDeltaLike",
