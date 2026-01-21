@@ -29,7 +29,7 @@ class TestGetEnv:
         with yield_temp_environ({key.lower(): value}):
             assert get_env(key.upper()) == value
 
-    def test_case_sensitive_failure(self) -> None:
+    def test_error_case_sensitive_failure(self) -> None:
         key, value = [unique_str() for _ in range(2)]
         with (
             yield_temp_environ({key.lower(): value}),
