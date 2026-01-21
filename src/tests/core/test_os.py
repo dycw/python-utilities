@@ -138,7 +138,6 @@ class TestCopyOrMove:
         src.mkdir()
         _ = (src / "src1.txt").write_text("src1")
         _ = (src / "src2.txt").write_text("src2")
-        _ = src.write_text("src")
         return src
 
     def _setup_dest_file(self, tmp_path: Path, /, *, exists: bool = False) -> Path:
