@@ -74,8 +74,8 @@ class TestCopyOrMove:
     @mark.parametrize(
         ("dest_exists", "overwrite"),
         [
-            param(False, False, marks=mark.skip),
-            param(False, True, marks=mark.skip),
+            param(False, False, marks=mark.only),
+            param(False, True, marks=mark.only),
             param(True, True, marks=mark.only),
         ],
     )
