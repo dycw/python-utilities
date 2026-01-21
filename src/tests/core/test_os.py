@@ -45,6 +45,7 @@ class TestCopyOrMove:
                 move(src, dest, overwrite=overwrite)
             case never:
                 assert_never(never)
+        assert dest.is_file()
 
 
 class TestGetEnv:
