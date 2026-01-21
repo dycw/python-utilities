@@ -546,8 +546,6 @@ def _copy_or_move__move_dir(src: Path, dest: Path, /, *, delete: bool = False) -
         with yield_adjacent_temp_dir(dest) as temp:
             breakpoint()
             _ = shutil.copytree(src, temp, dirs_exist_ok=True)
-            # if delete:
-            #     rmtree(dest, ignore_errors=True)
             breakpoint()
             _ = temp.replace(dest)
             breakpoint()
