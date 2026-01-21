@@ -22,7 +22,7 @@ class TestGetEnv:
     def test_main(self) -> None:
         key, value = [unique_str() for _ in range(2)]
         with yield_temp_environ({key: value}):
-            result = get_env(key, default=default, nullable=nullable)
+            assert get_env(key)
         assert result == value
 
     @given(
