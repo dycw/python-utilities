@@ -78,6 +78,10 @@ class TestGetEnv:
             _ = get_env(key, case_sensitive=case_sensitive)
 
 
+def _prefix(text: str, /) -> str:
+    return f"_TEST_OS_{text}"
+
+
 class TestYieldTempEnviron:
     @given(key=text.map(_prefix), value=text)
     def test_set(self, *, key: str, value: str) -> None:
