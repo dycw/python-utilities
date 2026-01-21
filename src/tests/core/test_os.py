@@ -73,8 +73,8 @@ class TestYieldTempEnviron:
                 assert getenv(key) == value2
             assert getenv(key) == value1
 
-    @given(key=text.map(_prefix), value=text)
-    def test_unset(self, *, key: str, value: str) -> None:
+    def test_unset(self) -> None:
+        key, value1 = self._generate()
         with yield_temp_environ({key: value}):
             assert getenv(key) == value
             with yield_temp_environ({key: None}):
