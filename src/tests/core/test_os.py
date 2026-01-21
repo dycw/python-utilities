@@ -80,6 +80,9 @@ class TestGetEnv:
     def _prefix(self, text: str, /) -> str:
         return f"_TEST_OS_{text}"
 
+    def _prefix(self, text: str, /) -> str:
+        return f"_TEST_OS_{text}"
+
 
 class TestYieldTempEnviron:
     @given(key=text.map(_prefix), value=text)
