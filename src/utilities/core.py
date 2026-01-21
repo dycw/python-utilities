@@ -525,7 +525,7 @@ def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
             raise
         with yield_temp_file_at(dest) as temp:
             _ = src.replace(temp)
-            _c
+            shutil.move(dest, temp)
         we_got_it
 
 
