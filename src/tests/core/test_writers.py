@@ -23,3 +23,10 @@ class TestYieldWritePath:
         with yield_write_path(path, overwrite=True) as temp:
             _ = temp.write_text("post")
         assert path.read_text() == "post"
+
+    def test_error(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        _ = path.write_text("init")
+        with yield_write_path(path, overwrite=True) as temp:
+            _ = temp.write_text("post")
+        assert path.read_text() == "post"
