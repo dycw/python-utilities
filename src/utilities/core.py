@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 import re
 import reprlib
 import shutil
@@ -28,24 +29,40 @@ from types import (
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 from uuid import uuid4
 from warnings import catch_warnings, filterwarnings
+from zoneinfo import ZoneInfo
 
 from typing_extensions import TypeIs
+from whenever import Date, PlainDateTime, Time, ZonedDateTime
 
 from utilities.constants import (
+    LOCAL_TIME_ZONE,
+    LOCAL_TIME_ZONE_NAME,
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
     RICH_MAX_DEPTH,
     RICH_MAX_LENGTH,
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
+    UTC,
     Sentinel,
+    _get_now,
     sentinel,
 )
-from utilities.types import CopyOrMove, PatternLike, SupportsRichComparison
+from utilities.constants import _get_now_local as get_now_local
+from utilities.types import (
+    TIME_ZONES,
+    CopyOrMove,
+    PatternLike,
+    SupportsRichComparison,
+    TimeZone,
+    TimeZoneLike,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
     from types import TracebackType
+
+    from whenever import Date, PlainDateTime, Time
 
     from utilities.types import FileOrDir, MaybeIterable, PathLike
 
@@ -1193,6 +1210,55 @@ def unique_str() -> str:
 
 
 ###############################################################################
+#### whenever #################################################################
+###############################################################################
+
+
+def get_now(time_zone: TimeZoneLike = UTC, /) -> ZonedDateTime:
+    """Get the current zoned date-time."""
+    return _get_now(to_time_zone_name(time_zone))
+
+
+def get_now_plain(time_zone: TimeZoneLike = UTC, /) -> PlainDateTime:
+    """Get the current plain date-time."""
+    return get_now(time_zone).to_plain()
+
+
+def get_now_local_plain() -> PlainDateTime:
+    """Get the current plain date-time in the local time-zone."""
+    return get_now_local().to_plain()
+
+
+##
+
+
+def get_time(time_zone: TimeZoneLike = UTC, /) -> Time:
+    """Get the current time."""
+    return get_now(time_zone).time()
+
+
+def get_time_local() -> Time:
+    """Get the current time in the local time-zone."""
+    return get_time(LOCAL_TIME_ZONE)
+
+
+##
+
+
+def get_today(time_zone: TimeZoneLike = UTC, /) -> Date:
+    """Get the current, timezone-aware local date."""
+    return get_now(time_zone).date()
+
+
+def get_today_local() -> Date:
+    """Get the current, timezone-aware local date."""
+    return get_today(LOCAL_TIME_ZONE)
+
+
+##
+
+
+###############################################################################
 #### writers ##################################################################
 ###############################################################################
 
@@ -1232,6 +1298,115 @@ class YieldWritePathError(Exception):
         return f"Cannot write to {repr_str(self.path)} since it already exists"
 
 
+###############################################################################
+#### zoneinfo #################################################################
+###############################################################################
+
+
+def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
+    """Convert to a time-zone."""
+    match obj:
+        case ZoneInfo() as zone_info:
+            return zone_info
+        case ZonedDateTime() as date_time:
+            return ZoneInfo(date_time.tz)
+        case "local" | "localtime":
+            return LOCAL_TIME_ZONE
+        case str() as key:
+            return ZoneInfo(key)
+        case dt.tzinfo() as tzinfo:
+            if tzinfo is dt.UTC:
+                return UTC
+            raise _ToZoneInfoInvalidTZInfoError(time_zone=obj)
+        case dt.datetime() as date_time:
+            if date_time.tzinfo is None:
+                raise _ToZoneInfoPlainDateTimeError(date_time=date_time)
+            return to_zone_info(date_time.tzinfo)
+        case never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class ToTimeZoneError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToZoneInfoInvalidTZInfoError(ToTimeZoneError):
+    time_zone: dt.tzinfo
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid time-zone: {self.time_zone}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToZoneInfoPlainDateTimeError(ToTimeZoneError):
+    date_time: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Plain date-time: {self.date_time}"
+
+
+##
+
+
+def to_time_zone_name(obj: TimeZoneLike, /) -> TimeZone:
+    """Convert to a time zone name."""
+    match obj:
+        case ZoneInfo() as zone_info:
+            return cast("TimeZone", zone_info.key)
+        case ZonedDateTime() as date_time:
+            return cast("TimeZone", date_time.tz)
+        case "local" | "localtime":
+            return LOCAL_TIME_ZONE_NAME
+        case str() as time_zone:
+            if time_zone in TIME_ZONES:
+                return time_zone
+            raise _ToTimeZoneNameInvalidKeyError(time_zone=time_zone)
+        case dt.tzinfo() as tzinfo:
+            if tzinfo is dt.UTC:
+                return cast("TimeZone", UTC.key)
+            raise _ToTimeZoneNameInvalidTZInfoError(time_zone=obj)
+        case dt.datetime() as date_time:
+            if date_time.tzinfo is None:
+                raise _ToTimeZoneNamePlainDateTimeError(date_time=date_time)
+            return to_time_zone_name(date_time.tzinfo)
+        case never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class ToTimeZoneNameError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToTimeZoneNameInvalidKeyError(ToTimeZoneNameError):
+    time_zone: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid time-zone: {self.time_zone!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToTimeZoneNameInvalidTZInfoError(ToTimeZoneNameError):
+    time_zone: dt.tzinfo
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid time-zone: {self.time_zone}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToTimeZoneNamePlainDateTimeError(ToTimeZoneNameError):
+    date_time: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Plain date-time: {self.date_time}"
+
+
 __all__ = [
     "ExtractGroupError",
     "ExtractGroupsError",
@@ -1247,6 +1422,8 @@ __all__ = [
     "OneStrNonUniqueError",
     "TemporaryDirectory",
     "TemporaryFile",
+    "ToTimeZoneError",
+    "ToTimeZoneNameError",
     "always_iterable",
     "chunked",
     "extract_group",
@@ -1256,6 +1433,14 @@ __all__ = [
     "get_class_name",
     "get_env",
     "get_func_name",
+    "get_now",
+    "get_now_local",
+    "get_now_local_plain",
+    "get_now_plain",
+    "get_time",
+    "get_time_local",
+    "get_today",
+    "get_today_local",
     "is_none",
     "is_not_none",
     "is_sentinel",
@@ -1270,6 +1455,8 @@ __all__ = [
     "repr_str",
     "suppress_super_attribute_error",
     "take",
+    "to_time_zone_name",
+    "to_zone_info",
     "transpose",
     "unique_everseen",
     "unique_str",

@@ -23,18 +23,13 @@ from utilities.constants import (
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
 )
-from utilities.core import OneEmptyError, one
+from utilities.core import OneEmptyError, get_now, get_now_local, one
 from utilities.errors import repr_error
 from utilities.pathlib import module_path, to_path
 from utilities.reprlib import yield_mapping_repr
 from utilities.text import to_bool
 from utilities.version import to_version3
-from utilities.whenever import (
-    format_compact,
-    get_now,
-    get_now_local,
-    to_zoned_date_time,
-)
+from utilities.whenever import format_compact, to_zoned_date_time
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator

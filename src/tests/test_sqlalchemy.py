@@ -30,9 +30,8 @@ from sqlalchemy.orm import (
 )
 
 from utilities.constants import MILLISECOND
-from utilities.core import normalize_multi_line_str
+from utilities.core import get_now_local_plain, normalize_multi_line_str, one
 from utilities.hypothesis import int32s, pairs, quadruples, urls
-from utilities.iterables import one
 from utilities.modules import is_installed
 from utilities.pytest import skipif_ci
 from utilities.sqlalchemy import (
@@ -91,7 +90,7 @@ from utilities.sqlalchemy import (
     yield_primary_key_columns,
 )
 from utilities.typing import get_args
-from utilities.whenever import format_compact, get_now_local_plain
+from utilities.whenever import format_compact
 
 if TYPE_CHECKING:
     from pathlib import Path

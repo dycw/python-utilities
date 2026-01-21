@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, assert_never
 from zipfile import ZipFile
 
 from utilities.atomicwrites import writer
-from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
     OneEmptyError,
     OneNonUniqueError,
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from utilities.types import PathLike
 
 
-@enhanced_context_manager
+@contextmanager
 def yield_zip_file_contents(path: PathLike, /) -> Iterator[Path]:
     """Yield the contents of a Zip file."""
     with ZipFile(path) as zf, TemporaryDirectory() as temp:

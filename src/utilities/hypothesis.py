@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import builtins
 import datetime as dt
+from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum, auto
 from math import ceil, floor, inf, isclose, isfinite, nan
@@ -84,12 +85,13 @@ from utilities.constants import (
     Sentinel,
     sentinel,
 )
-from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
     TemporaryDirectory,
+    get_now,
     is_sentinel,
     max_nullable,
     min_nullable,
+    to_zone_info,
     yield_temp_cwd,
 )
 from utilities.functions import ensure_int, ensure_str
@@ -108,12 +110,10 @@ from utilities.whenever import (
     DatePeriod,
     TimePeriod,
     ZonedDateTimePeriod,
-    get_now,
     to_date_time_delta,
     to_days,
     to_nanoseconds,
 )
-from utilities.zoneinfo import to_zone_info
 
 if TYPE_CHECKING:
     from collections.abc import Collection, Hashable, Iterable, Iterator
@@ -135,7 +135,7 @@ type Shape = int | tuple[int, ...]
 ##
 
 
-@enhanced_context_manager
+@contextmanager
 def assume_does_not_raise(
     *exceptions: type[Exception], match: str | None = None
 ) -> Iterator[None]:

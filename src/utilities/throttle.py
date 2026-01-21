@@ -11,11 +11,10 @@ from whenever import ZonedDateTime
 
 from utilities.atomicwrites import writer
 from utilities.constants import SECOND
-from utilities.core import get_env
+from utilities.core import get_env, get_now_local
 from utilities.functions import in_timedelta
 from utilities.pathlib import to_path
 from utilities.types import Duration, MaybeCallablePathLike, MaybeCoro
-from utilities.whenever import get_now_local
 
 if TYPE_CHECKING:
     from utilities.types import Coro

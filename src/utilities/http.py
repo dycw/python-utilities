@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from http.client import HTTPSConnection
 from ipaddress import IPv4Address
 from typing import TYPE_CHECKING
-
-from utilities.contextlib import enhanced_context_manager
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -22,7 +21,7 @@ def get_public_ip(*, timeout: float | None = None) -> IPv4Address:
 ##
 
 
-@enhanced_context_manager
+@contextmanager
 def yield_connection(
     host: str, /, *, timeout: float | None = None
 ) -> Iterator[HTTPSConnection]:

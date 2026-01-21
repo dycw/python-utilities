@@ -36,12 +36,12 @@ from typing import (
 )
 
 from utilities.constants import SYSTEM_RANDOM, Sentinel, sentinel
-from utilities.core import repr_
+from utilities.core import get_now, repr_
 from utilities.functions import ensure_int, ensure_not_none, in_seconds
 from utilities.os import is_pytest
 from utilities.shelve import yield_shelf
 from utilities.text import to_bool
-from utilities.whenever import get_now, round_date_or_date_time
+from utilities.whenever import round_date_or_date_time
 
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike

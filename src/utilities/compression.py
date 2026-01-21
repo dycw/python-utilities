@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from pathlib import Path
 from shutil import copyfileobj
 from tarfile import ReadError, TarFile
 from typing import TYPE_CHECKING, assert_never
 
 from utilities.atomicwrites import writer
-from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
     OneEmptyError,
     OneNonUniqueError,
@@ -65,7 +65,7 @@ def _compress_paths_add_dir(path: PathLike, tar: TarFile, /) -> None:
 ##
 
 
-@enhanced_context_manager
+@contextmanager
 def yield_compressed_contents(
     path: PathLike, func: PathToBinaryIO, /
 ) -> Iterator[Path]:

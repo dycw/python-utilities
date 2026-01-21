@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING, Self
 
 from psutil import swap_memory, virtual_memory
 
-from utilities.core import suppress_super_attribute_error
-from utilities.whenever import get_now
+from utilities.core import get_now, suppress_super_attribute_error
 
 if TYPE_CHECKING:
     from whenever import ZonedDateTime

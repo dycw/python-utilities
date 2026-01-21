@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import gzip
 import shutil
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from shutil import copyfileobj, copytree, rmtree
@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, assert_never, override
 
 from atomicwrites import replace_atomic
 
-from utilities.contextlib import enhanced_context_manager
 from utilities.core import TemporaryDirectory, TemporaryFile, file_or_dir, transpose
 
 if TYPE_CHECKING:
@@ -154,7 +153,7 @@ def move_many(*paths: tuple[PathLike, PathLike], overwrite: bool = False) -> Non
 ##
 
 
-@enhanced_context_manager
+@contextmanager
 def writer(
     path: PathLike, /, *, compress: bool = False, overwrite: bool = False
 ) -> Iterator[Path]:

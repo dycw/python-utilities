@@ -9,7 +9,7 @@ from hypothesis.strategies import integers, sampled_from
 from pytest import approx, mark, param, raises
 
 from utilities.constants import HOME, MILLISECOND, NOW_UTC, SECOND, ZERO_TIME, sentinel
-from utilities.core import normalize_multi_line_str
+from utilities.core import get_now, get_today, normalize_multi_line_str
 from utilities.functions import (
     EnsureBoolError,
     EnsureBytesError,
@@ -47,7 +47,6 @@ from utilities.functions import (
     yield_object_attributes,
 )
 from utilities.text import parse_bool
-from utilities.whenever import get_now, get_today
 
 if TYPE_CHECKING:
     import datetime as dt

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import gzip
+from contextlib import contextmanager
 from gzip import GzipFile
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 from utilities.atomicwrites import writer
 from utilities.compression import compress_paths, yield_compressed_contents
-from utilities.contextlib import enhanced_context_manager
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -48,7 +48,7 @@ def write_binary(
 ##
 
 
-@enhanced_context_manager
+@contextmanager
 def yield_gzip_contents(path: PathLike, /) -> Iterator[Path]:
     """Yield the contents of a Gzip file."""
 

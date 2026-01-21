@@ -41,7 +41,7 @@
   ]
   inflect = ["inflect>=7.5.0"]
   jinja2 = ["jinja2>=3.1.6"]
-  jupyter-test = ["pandas>=2.3.3", "polars>=1.37.1"]
+  jupyter-test = ["pandas>=3.0.0", "polars>=1.37.1"]
   libcst = ["libcst>=1.8.6"]
   lightweight-charts = ["lightweight-charts>=2.1"]
   lightweight-charts-test = ["polars>=1.37.1", "pyarrow>=23.0.0"]
@@ -89,8 +89,8 @@
   sklearn = ["scikit-learn>=1.8.0"]
   slack-sdk = ["slack-sdk>=3.39.0"]
   slack-sdk-test = ["aiohttp>=3.13.3"]
-  sqlalchemy = ["psycopg>=3.3.2", "sqlalchemy>=2.0.45"]
-  sqlalchemy-polars = ["polars>=1.37.1", "sqlalchemy>=2.0.45"]
+  sqlalchemy = ["psycopg>=3.3.2", "sqlalchemy>=2.0.46"]
+  sqlalchemy-polars = ["polars>=1.37.1", "sqlalchemy>=2.0.46"]
   sqlalchemy-polars-test = [
     "aiosqlite>=0.22.1",
     "asyncpg>=0.31.0",
@@ -100,14 +100,13 @@
   statsmodels = ["statsmodels>=0.14.6"]
   tabulate = ["tabulate>=0.9.0"]
   testbook = ["testbook>=0.4.2"]
-  tzdata = ["tzdata>=2025.3"]
   whenever-test = ["pathvalidate>=3.3.1"]
 
 [project]
   authors = [{ email = "d.wan@icloud.com", name = "Derek Wan" }]
   dependencies = [
-    "atomicwrites>=1.4.1",
     "typing-extensions>=4.15.0",
+    "tzdata>=2025.3",
     "tzlocal>=5.3.1",
     "whenever>=0.9.5",
   ]

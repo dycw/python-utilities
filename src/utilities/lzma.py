@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from lzma import LZMAFile
 from typing import TYPE_CHECKING, cast
 
 from utilities.compression import compress_paths, yield_compressed_contents
-from utilities.contextlib import enhanced_context_manager
 from utilities.types import PathLike
 
 if TYPE_CHECKING:
@@ -26,7 +26,7 @@ def lzma_paths(src_or_dest: PathLike, /, *srcs_or_dest: PathLike) -> None:
 ##
 
 
-@enhanced_context_manager
+@contextmanager
 def yield_lzma_contents(path: PathLike, /) -> Iterator[Path]:
     """Yield the contents of an LZMA file."""
 

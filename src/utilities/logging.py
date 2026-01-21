@@ -44,18 +44,14 @@ from utilities.core import (
     always_iterable,
     extract_group,
     extract_groups,
+    get_now_local,
     one,
 )
 from utilities.dataclasses import replace_non_sentinel
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_seconds
 from utilities.pathlib import ensure_suffix, to_path
-from utilities.whenever import (
-    WheneverLogRecord,
-    format_compact,
-    get_now_local,
-    to_zoned_date_time,
-)
+from utilities.whenever import WheneverLogRecord, format_compact, to_zoned_date_time
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, MutableMapping

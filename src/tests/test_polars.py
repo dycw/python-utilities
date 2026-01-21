@@ -71,6 +71,7 @@ from whenever import (
 import tests.test_math
 import utilities.polars
 from utilities.constants import NOW_UTC, PWD, TODAY_UTC, UTC, Sentinel, sentinel
+from utilities.core import get_now, get_now_plain, get_today, to_time_zone_name
 from utilities.hypothesis import (
     assume_does_not_raise,
     date_deltas,
@@ -234,12 +235,8 @@ from utilities.whenever import (
     DatePeriod,
     TimePeriod,
     ZonedDateTimePeriod,
-    get_now,
-    get_now_plain,
-    get_today,
     to_zoned_date_time,
 )
-from utilities.zoneinfo import to_time_zone_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
