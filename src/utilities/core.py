@@ -1056,6 +1056,8 @@ def yield_write_path(path: PathLike, /, *, overwrite: bool = False) -> Iterator[
         yield temp
         try:
             move(temp, path, overwrite=overwrite)
+        except _CopyOrMoveDestinationExistsError:
+            raise yield_write_path
 
 
 @dataclass(kw_only=True, slots=True)
