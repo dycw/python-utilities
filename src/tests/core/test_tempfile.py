@@ -91,7 +91,7 @@ class TestTemporaryFile:
 
 
 class TestYieldAdjacentTempFileAndDirAt:
-    def test_dir(self, *, temp_path_not_exist: Path) -> None:
+    def test_main(self, *, temp_path_not_exist: Path) -> None:
         with yield_adjacent_temp_dir(temp_path_not_exist) as temp:
             assert temp.is_dir()
             assert temp.parent == temp_path_not_exist.parent
@@ -99,7 +99,7 @@ class TestYieldAdjacentTempFileAndDirAt:
 
 
 class TestYieldAdjacentTempFile:
-    def test_file(self, *, temp_path_not_exist: Path) -> None:
+    def test_main(self, *, temp_path_not_exist: Path) -> None:
         with yield_adjacent_temp_file(temp_path_not_exist) as temp:
             assert temp.is_file()
             assert temp.parent == temp_path_not_exist.parent
