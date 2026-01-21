@@ -14,11 +14,15 @@ from utilities.hypothesis import text_ascii
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from utilities.types import CopyOrMove
+
 
 class TestCopyOrMove:
     @mark.parametrize("mode", [param("copy"), param("move")])
     @mark.parametrize("dest_exists", [param(True), param(False)])
-    def test_file_to_file(self, tmp_path: Path) -> None:
+    def test_file_to_file(
+        self, *, mode: CopyOrMove, dest_exists: bool, tmp_path: Path
+    ) -> None:
         src = tmp_path / "src"
         dest = tmp_path / "src"
 
