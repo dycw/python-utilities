@@ -75,7 +75,7 @@ class TestCopyOrMove:
         ("dest_exists", "overwrite"),
         [param(False, False), param(False, True), param(True, True)],
     )
-    def test_dir_to_file(
+    def test_dir_to_dir(
         self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool, overwrite: bool
     ) -> None:
         src = tmp_path / "src.txt"
