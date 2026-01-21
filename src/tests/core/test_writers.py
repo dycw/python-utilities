@@ -17,11 +17,10 @@ if TYPE_CHECKING:
 
 
 class TestWriteBytes:
-    def test_main(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file"
-        write_bytes(path, b"data")
-        assert path.is_file()
-        assert path.read_bytes() == b"data"
+    def test_main(self, *, temp_file: Path) -> None:
+        write_bytes(temp_file, b"data")
+        assert temp_file.is_file()
+        assert temp_file.read_bytes() == b"data"
 
 
 class TestWriteText:
