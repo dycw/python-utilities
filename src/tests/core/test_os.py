@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from os import getenv
-from shutil import move
 from typing import TYPE_CHECKING, assert_never
 
 from hypothesis import HealthCheck, Phase, given, reproduce_failure, settings
@@ -9,7 +8,14 @@ from hypothesis.strategies import DataObject, booleans, data, none, sampled_from
 from pytest import RaisesGroup, approx, fixture, mark, param, raises, skip
 
 from utilities.contextvars import set_global_breakpoint
-from utilities.core import GetEnvError, copy, get_env, unique_str, yield_temp_environ
+from utilities.core import (
+    GetEnvError,
+    copy,
+    get_env,
+    move,
+    unique_str,
+    yield_temp_environ,
+)
 from utilities.hypothesis import text_ascii
 
 if TYPE_CHECKING:
