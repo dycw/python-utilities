@@ -6,7 +6,7 @@ from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data, none, sampled_from
 from pytest import raises
 
-from utilities.core import GetEnvError, get_env, yield_temp_environ
+from utilities.core import GetEnvError, get_env, unique_str, yield_temp_environ
 from utilities.hypothesis import text_ascii
 
 text = text_ascii(min_size=1, max_size=10)
@@ -23,6 +23,7 @@ class TestGetEnv:
     def test_case_sensitive(
         self, *, key: str, value: str, default: str | None, nullable: bool
     ) -> None:
+        key, value = [unique_str() for _ in range(2)]
         with yield_temp_environ({key: value}):
             result = get_env(key, default=default, nullable=nullable)
         assert result == value
