@@ -55,7 +55,6 @@ from utilities.functions import (
     ensure_zoned_date_time,
     first,
     get_func_name,
-    get_func_qualname,
     identity,
     in_milli_seconds,
     in_seconds,
@@ -382,7 +381,7 @@ class TestFirst:
         assert result == x
 
 
-class TestGetFuncNameAndGetFuncQualName:
+class TestGetFuncName:
     @given(
         case=sampled_from([
             (identity, "identity", "utilities.functions.identity"),

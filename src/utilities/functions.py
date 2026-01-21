@@ -479,9 +479,6 @@ def first[T](pair: tuple[T, Any], /) -> T:
 ##
 
 
-##
-
-
 def get_func_name(obj: Callable[..., Any], /) -> str:
     """Get the name of a callable."""
     if isinstance(obj, BuiltinFunctionType):
@@ -506,24 +503,6 @@ def get_func_name(obj: Callable[..., Any], /) -> str:
     if isinstance(obj, partial):
         return get_func_name(obj.func)
     return get_class_name(obj)
-
-
-##
-
-
-def get_func_qualname(obj: Callable[..., Any], /) -> str:
-    """Get the qualified name of a callable."""
-    if isinstance(
-        obj, BuiltinFunctionType | FunctionType | MethodType | _lru_cache_wrapper
-    ):
-        return f"{obj.__module__}.{obj.__qualname__}"
-    if isinstance(
-        obj, MethodDescriptorType | MethodWrapperType | WrapperDescriptorType
-    ):
-        return f"{obj.__objclass__.__module__}.{obj.__qualname__}"
-    if isinstance(obj, partial):
-        return get_func_qualname(obj.func)
-    return f"{obj.__module__}.{get_class_name(obj)}"
 
 
 ##
