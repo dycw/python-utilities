@@ -515,7 +515,7 @@ class _CopyOrMoveSourceNotFoundError(CopyOrMoveError):
 
     @override
     def __str__(self) -> str:
-        return f"Source {str(self.src)!r} does not exist"
+        return f"Source {repr_str(self.src)} does not exist"
 
 
 @dataclass(kw_only=True, slots=True)
