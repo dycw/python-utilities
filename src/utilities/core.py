@@ -1040,10 +1040,10 @@ def unique_str() -> str:
 ###############################################################################
 
 
-def write_bytes(path: PathLike, text: str, /, *, overwrite: bool = False) -> None:
+def write_bytes(path: PathLike, data: bytes, /, *, overwrite: bool = False) -> None:
     """Write data to a file."""
     with yield_write_path(path, overwrite=overwrite) as temp:
-        _ = temp.write_text(normalize_str(text))
+        _ = temp.write_text(normalize_str(data))
 
 
 def write_text(path: PathLike, text: str, /, *, overwrite: bool = False) -> None:
