@@ -526,6 +526,7 @@ def _copy_or_move__dir_to_dir(src: Path, dest: Path, mode: CopyOrMove, /) -> Non
         with suppress(FileNotFoundError):
             _ = dest.replace(temp1)
         _copy_or_move__shutil_dir(src, temp2, mode)
+        breakpoint()
         _ = (temp2 / src.name).replace(dest)
 
 
