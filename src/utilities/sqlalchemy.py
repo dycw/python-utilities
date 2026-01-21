@@ -71,6 +71,7 @@ from utilities.core import (
     OneNonUniqueError,
     chunked,
     get_class_name,
+    normalize_multi_line_str,
     repr_,
     snake_case,
 )
@@ -902,7 +903,7 @@ def selectable_to_string(
     com = selectable.compile(
         dialect=engine_or_conn.dialect, compile_kwargs={"literal_binds": True}
     )
-    return str(com)
+    return normalize_multi_line_str(str(com))
 
 
 ##

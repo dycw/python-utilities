@@ -36,4 +36,4 @@ def repr_error(error: MaybeType[BaseException], /) -> str:
             assert_never(never)
 
 
-__all__ = ["ImpossibleCaseError", "is_instance_error", "repr_error"]
+__all__ = ["ImpossibleCaseError", "repr_error"]

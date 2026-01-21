@@ -1400,9 +1400,9 @@ class TestSelectableToString:
         result = selectable_to_string(sel, test_async_engine)
         expected = normalize_multi_line_str(
             """
-                SELECT example.id_, example.value *
-                FROM example *
-                WHERE example.value >= 1
+            SELECT example.id_, example.value *
+            FROM example *
+            WHERE example.value >= 1
             """.replace("*", "")
         )
         assert result == expected
