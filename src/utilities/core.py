@@ -518,7 +518,8 @@ def _copy_or_move(
 
 
 def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
-    _ = src.replace(dest)
+    try:
+        _ = src.replace(dest)
 
 
 ##
