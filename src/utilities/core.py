@@ -548,7 +548,7 @@ def _copy_or_move__shutil(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
     match mode:
         case "copy":
             _ = shutil.copy(src, dest)
-        case "mode":
+        case "move":
             _ = shutil.move(src, dest)
         case never:
             assert_never(never)
