@@ -233,7 +233,4 @@ def _suppress_signal_error() -> Iterator[None]:
         raise  # pragma: no cover
 
 
-##
-
-
 __all__ = ["enhanced_async_context_manager", "enhanced_context_manager"]
