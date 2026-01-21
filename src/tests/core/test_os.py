@@ -55,7 +55,7 @@ class TestGetEnv:
 
     def test_error_case_insensitive(self) -> None:
         key1, value = self._generate()
-        key1, key2, value = [unique_str() for _ in range(2)]
+        key2, _ = self._generate()
         with (
             yield_temp_environ({key1.lower(): value}),
             raises(GetEnvError, match=r"No environment variable '.*'"),
