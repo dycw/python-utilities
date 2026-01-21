@@ -523,7 +523,6 @@ def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
     except OSError as error:
         if (error.errno != 18) or (error.strerror != "Invalid cross-device link"):
             raise
-            raise
         we_got_it
 
 
