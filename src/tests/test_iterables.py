@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from functools import cmp_to_key
-from itertools import chain, repeat
+from itertools import repeat
 from math import isfinite, isinf, isnan, nan
 from operator import neg, sub
 from re import DOTALL
@@ -53,8 +53,6 @@ from utilities.iterables import (
     apply_bijection,
     apply_to_tuple,
     apply_to_varargs,
-    chain_mappings,
-    chain_nullable,
     check_bijection,
     check_duplicates,
     check_iterables_equal,
@@ -129,31 +127,6 @@ class TestApplyToVarArgs:
     def test_main(self, *, x: int, y: int) -> None:
         result = apply_to_varargs(sub, x, y)
         expected = x - y
-        assert result == expected
-
-
-class TestChainMappings:
-    @given(mappings=lists(dictionaries(text_ascii(), integers())), list_=booleans())
-    def test_main(self, *, mappings: Sequence[Mapping[str, int]], list_: bool) -> None:
-        result = chain_mappings(*mappings, list=list_)
-        expected = {}
-        for mapping in mappings:
-            for key, value in mapping.items():
-                expected[key] = list(chain(expected.get(key, []), [value]))
-        if list_:
-            assert result == expected
-        else:
-            assert set(result) == set(expected)
-
-
-class TestChainNullable:
-    @given(values=lists(lists(integers() | none()) | none()))
-    def test_main(self, *, values: list[list[int | None] | None]) -> None:
-        result = list(chain_nullable(*values))
-        expected = []
-        for val in values:
-            if val is not None:
-                expected.extend(v for v in val if v is not None)
         assert result == expected
 
 

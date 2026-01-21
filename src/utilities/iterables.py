@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import builtins
 from collections import Counter
 from collections.abc import (
     Callable,
@@ -15,7 +14,7 @@ from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import cmp_to_key, reduce
-from itertools import chain, groupby
+from itertools import groupby
 from math import isnan
 from operator import or_
 from typing import (
@@ -97,59 +96,9 @@ def apply_to_tuple[T](func: Callable[..., T], args: tuple[Any, ...], /) -> T:
     return apply_to_varargs(func, *args)
 
 
-##
-
-
 def apply_to_varargs[T](func: Callable[..., T], *args: Any) -> T:
     """Apply a function to a variable number of arguments."""
     return func(*args)
-
-
-##
-
-
-@overload
-def chain_mappings[K, V](
-    *mappings: Mapping[K, V], list: Literal[True]
-) -> Mapping[K, Sequence[V]]: ...
-@overload
-def chain_mappings[K, V](
-    *mappings: Mapping[K, V], list: bool = False
-) -> Mapping[K, Iterable[V]]: ...
-def chain_mappings[K, V](
-    *mappings: Mapping[K, V],
-    list: bool = False,  # noqa: A002
-) -> Mapping[K, Iterable[V]]:
-    """Chain the values of a set of mappings."""
-    try:
-        first, *rest = mappings
-    except ValueError:
-        return {}
-    initial = {k: [v] for k, v in first.items()}
-    reduced = reduce(_chain_mappings_one, rest, initial)
-    if list:
-        return {k: builtins.list(v) for k, v in reduced.items()}
-    return reduced
-
-
-def _chain_mappings_one[K, V](
-    acc: Mapping[K, Iterable[V]], el: Mapping[K, V], /
-) -> Mapping[K, Iterable[V]]:
-    """Chain the values of a set of mappings."""
-    out = dict(acc)
-    for key, value in el.items():
-        out[key] = chain(out.get(key, []), [value])
-    return out
-
-
-##
-
-
-def chain_nullable[T](*maybe_iterables: Iterable[T | None] | None) -> Iterable[T]:
-    """Chain a set of values; ignoring nulls."""
-    iterables = (mi for mi in maybe_iterables if mi is not None)
-    values = ((i for i in it if i is not None) for it in iterables)
-    return chain.from_iterable(values)
 
 
 ##
@@ -978,7 +927,6 @@ __all__ = [
     "CheckSuperSetError",
     "CheckUniqueModuloCaseError",
     "EnsureIterableError",
-    "EnsureIterableNotStrError",
     "MergeStrMappingsError",
     "ResolveIncludeAndExcludeError",
     "SortIterableError",
@@ -986,8 +934,6 @@ __all__ = [
     "apply_bijection",
     "apply_to_tuple",
     "apply_to_varargs",
-    "chain_mappings",
-    "chain_nullable",
     "check_bijection",
     "check_duplicates",
     "check_iterables_equal",
@@ -1001,9 +947,7 @@ __all__ = [
     "check_unique_modulo_case",
     "cmp_nullable",
     "ensure_iterable",
-    "ensure_iterable_not_str",
     "enumerate_with_edge",
-    "expanding_window",
     "filter_include_and_exclude",
     "groupby_lists",
     "is_iterable",
