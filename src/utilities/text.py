@@ -460,8 +460,6 @@ __all__ = [
     "split_key_value_pairs",
     "split_str",
     "str_encode",
-    "strip_dedent",
     "to_bool",
     "to_str",
-    "unique_str",
 ]
