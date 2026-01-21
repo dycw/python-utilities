@@ -140,8 +140,9 @@ class TestCopyOrMove:
             move(temp_file, temp_file)
 
     def _setup_src_file(self, tmp_path: Path, /) -> None:
-        src.mkdir()
+        src = tmp_path / "src.txt"
         _ = (src / "src1.txt").write_text("src1")
+        src.mkdir()
 
 
 class TestGetEnv:
