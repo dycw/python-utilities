@@ -93,6 +93,7 @@ class TestCopyOrMove:
 
     @mark.parametrize("mode", [param("copy"), param("move")])
     def test_dir_to_file(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
+        src = self._setup_src_dir(tmp_path)
         src = tmp_path / "src"
         src.mkdir()
         _ = (src / "src1.txt").write_text("src1")
