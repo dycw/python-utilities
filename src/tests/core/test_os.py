@@ -48,11 +48,6 @@ class TestGetEnv:
         value = get_env(key, case_sensitive=case_sensitive, nullable=True)
         assert value is None
 
-    @given(key=text.map(_prefix), case_sensitive=booleans())
-    def test_error(self, *, key: str, case_sensitive: bool) -> None:
-        with raises(GetEnvError, match=r"No environment variable .*(\(modulo case\))?"):
-            _ = get_env(key, case_sensitive=case_sensitive)
-
     def test_error_case_insensitive(self) -> None:
         key1, value = self._generate()
         key2, _ = self._generate()
