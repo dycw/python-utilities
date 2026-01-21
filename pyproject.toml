@@ -53,7 +53,7 @@
   optuna = ["optuna>=4.7.0"]
   orjson = ["orjson>=3.11.5"]
   orjson-test = ["polars>=1.37.1"]
-  packaging = ["packaging>=25.0"]
+  packaging = ["packaging>=26.0"]
   polars = ["polars>=1.37.1"]
   polars-ols = ["polars-ols>=0.3.5"]
   polars-ols-test = ["scikit-learn>=1.8.0"]
