@@ -24,6 +24,7 @@ class TestCopyOrMove:
         self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool
     ) -> None:
         src = tmp_path / "src"
+        _ = src.write_text("src")
         dest = tmp_path / "dest"
         if dest_exists:
             dest.touch()
