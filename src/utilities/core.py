@@ -493,7 +493,7 @@ def _copy_or_move(
             raise _CopyOrMoveSourceNotFoundError(src=src)
         case "file" | "dir", "file" | "dir", False:
             raise _CopyOrMoveDestinationExistsError(src=src, dest=dest)
-        case ("file", None, _) | ("file", "file", "move", True):
+        case ("file", None, _) | ("file", "file", True):
             _copy_or_move__move_file(src, dest)
         case ("file", None, "copy", _) | ("file", "file", "copy", True):
             _copy_or_move__copy_file(src, dest)
