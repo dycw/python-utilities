@@ -546,8 +546,8 @@ def _copy_or_move__dir_to_file(src: Path, dest: Path, mode: CopyOrMove, /) -> No
         # _ = temp_dir.replace(dest)
         match mode:
             case "copy":
-                _ = copytree(src, temp2, dirs_exist_ok=True)
-                _ = temp2.replace(dest)
+                _ = copytree(src, temp_dir, dirs_exist_ok=True)
+                _ = temp_dir.replace(dest)
             case "move":
                 _ = shutil.move(src, temp2)
                 _ = (temp2 / src.name).replace(dest)
