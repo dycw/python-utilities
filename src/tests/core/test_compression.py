@@ -71,12 +71,9 @@ def writer(*, reader_writer: tuple[PathToBinaryIO, PathToBinaryIO]) -> PathToBin
     return writer
 
 
-type Data = tuple[
-    Callable[[PathLike, PathLike], None],
-    Callable[[PathLike], AbstractContextManager[Path]],
-    type[Exception],
-    type[Exception],
-]
+type Compress = Callable[..., None]
+type YieldUncompressed = Callable[[PathLike], AbstractContextManager[Path]]
+type Data = tuple[Compress, YieldUncompressed, type[Exception], type[Exception]]
 
 
 @fixture(
@@ -92,15 +89,13 @@ def data(*, request: SubRequest) -> Data:
 
 
 @fixture
-def compress_new(*, data: Data) -> Callable[[PathLike, PathLike], None]:
+def compress_new(*, data: Data) -> Compress:
     compress, _, _, _ = data
     return compress
 
 
 @fixture
-def yield_uncompressed_new(
-    *, data: Data
-) -> Callable[[PathLike], AbstractContextManager[Path]]:
+def yield_uncompressed_new(*, data: Data) -> YieldUncompressed:
     _, yield_uncompressed, _, _ = data
     return yield_uncompressed
 
@@ -121,13 +116,13 @@ def error_yield_uncompressed(*, data: Data) -> type[Exception]:
 
 
 class TestCompressAndYieldUncompressed:
-    def test_main(
+    def test_single_file(
         self,
         *,
         temp_file: Path,
         temp_path_not_exist: Path,
-        compress_new: Callable[[PathLike, PathLike], None],
-        yield_uncompressed_new: Callable[[PathLike], AbstractContextManager[Path]],
+        compress_new: Compress,
+        yield_uncompressed_new: YieldUncompressed,
     ) -> None:
         _ = temp_file.write_text("text")
         compress_new(temp_file, temp_path_not_exist)
@@ -135,11 +130,27 @@ class TestCompressAndYieldUncompressed:
             assert temp.is_file()
             assert temp.read_text() == "text"
 
+    def test_multiple_files(
+        self,
+        *,
+        temp_files: tuple[Path, Path],
+        temp_path_not_exist: Path,
+        compress_new: Compress,
+        yield_uncompressed_new: YieldUncompressed,
+    ) -> None:
+        path1, path2 = temp_files
+        compress_new(path1, path2, temp_path_not_exist)
+        with yield_uncompressed_new(temp_path_not_exist) as temp:
+            assert temp.is_dir()
+            result = {p.name for p in temp.iterdir()}
+            expected = {p.name for p in temp_files}
+            assert result == expected
+
     def test_error_compress(
         self,
         *,
         temp_files: tuple[Path, Path],
-        compress_new: Callable[[PathLike, PathLike], None],
+        compress_new: Compress,
         error_compress: type[Exception],
     ) -> None:
         src, dest = temp_files
@@ -156,7 +167,7 @@ class TestCompressAndYieldUncompressed:
         self,
         *,
         temp_path_not_exist: Path,
-        yield_uncompressed_new: Callable[[PathLike], AbstractContextManager[Path]],
+        yield_uncompressed_new: YieldUncompressed,
         error_yield_uncompressed: type[Exception],
     ) -> None:
         with (
@@ -170,36 +181,6 @@ class TestCompressAndYieldUncompressed:
 
 
 class TestCompressFiles:
-    def test_single_file(
-        self,
-        *,
-        reader: PathToBinaryIO,
-        writer: PathToBinaryIO,
-        tmp_path: Path,
-        temp_file: Path,
-    ) -> None:
-        _ = temp_file.write_text("text")
-        dest = tmp_path / "dest"
-        _compress_files(writer, temp_file, dest)
-        with reader(dest) as buffer:
-            assert buffer.read() == b"text"
-
-    def test_multiple_files(
-        self,
-        *,
-        reader: PathToBinaryIO,
-        writer: PathToBinaryIO,
-        tmp_path: Path,
-        temp_files: tuple[Path, Path],
-    ) -> None:
-        path1, path2 = temp_files
-        dest = tmp_path / "dest"
-        _compress_files(writer, path1, path2, dest)
-        with reader(dest) as buffer, TarFile(fileobj=buffer) as tar:
-            result = set(tar.getnames())
-        expected = {p.name for p in temp_files}
-        assert result == expected
-
     def test_single_dir_empty(
         self,
         *,
