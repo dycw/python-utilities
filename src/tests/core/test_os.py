@@ -139,7 +139,7 @@ class TestCopyOrMove:
     def test_error_file_exists(self, *, temp_file: Path) -> None:
         with raises(
             _CopyOrMoveDestinationExistsError,
-            match=r"Cannot move file '.*' as destination '.*' already exists",
+            match=r"Cannot move source '.*' as destination '.*' already exists",
         ):
             move(temp_file, temp_file)
 
