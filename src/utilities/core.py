@@ -945,7 +945,7 @@ def _temporary_file_inner(
 
 
 @contextmanager
-def yield_temp_dir_at(path: PathLike, /) -> Iterator[Path]:
+def yield_adjacent_temp_dir(path: PathLike, /) -> Iterator[Path]:
     """Yield a temporary dir for a target path."""
 
     path = Path(path)
@@ -1088,8 +1088,8 @@ __all__ = [
     "unique_str",
     "write_bytes",
     "write_text",
+    "yield_adjacent_temp_dir",
     "yield_temp_cwd",
-    "yield_temp_dir_at",
     "yield_temp_environ",
     "yield_temp_file_at",
 ]
