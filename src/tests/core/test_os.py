@@ -57,20 +57,7 @@ class TestCopyOrMove:
     def test_dir_to_file(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
         src = self._setup_src_dir(tmp_path)
         dest = self._setup_dest_file(tmp_path, exists=True)
-        match mode:
-            case "copy":
-                copy(src, dest, overwrite=True)
-                assert src.is_dir()
-                assert {f.name for f in src.iterdir()} == {"src1.txt", "src2.txt"}
-            case "move":
-                move(src, dest, overwrite=True)
-                assert not src.exists()
-            case never:
-                assert_never(never)
-        assert dest.is_dir()
-        assert {f.name for f in dest.iterdir()} == {"src1.txt", "src2.txt"}
-        assert (dest / "src1.txt").read_text() == "src1"
-        assert (dest / "src2.txt").read_text() == "src2"
+        self._run_test_dir(mode, src, dest, overwrite=utrue)
 
     def test_error_source_not_found(
         self, *, tmp_path: Path, temp_path_not_exist: Path
