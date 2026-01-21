@@ -1555,16 +1555,44 @@ def get_today_local() -> Date:
 ###############################################################################
 
 
-def write_bytes(path: PathLike, data: bytes, /, *, overwrite: bool = False) -> None:
+def write_bytes(
+    path: PathLike, data: bytes, /, *, compress: bool = False, overwrite: bool = False
+) -> None:
     """Write data to a file."""
-    with yield_write_path(path, overwrite=overwrite) as temp:
-        _ = temp.write_bytes(data)
+    try:
+        with yield_write_path(path, compress=compress, overwrite=overwrite) as temp:
+            _ = temp.write_bytes(data)
+    except YieldWritePathError as error:
+        raise WriteBytesError(path=error.path) from None
 
 
-def write_text(path: PathLike, text: str, /, *, overwrite: bool = False) -> None:
+@dataclass(kw_only=True, slots=True)
+class WriteBytesError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot write to {repr_str(self.path)} since it already exists"
+
+
+def write_text(
+    path: PathLike, text: str, /, *, compress: bool = False, overwrite: bool = False
+) -> None:
     """Write text to a file."""
-    with yield_write_path(path, overwrite=overwrite) as temp:
-        _ = temp.write_text(normalize_str(text))
+    try:
+        with yield_write_path(path, compress=compress, overwrite=overwrite) as temp:
+            _ = temp.write_text(normalize_str(text))
+    except YieldWritePathError as error:
+        raise WriteTextError(path=error.path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class WriteTextError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot write to {repr_str(self.path)} since it already exists"
 
 
 ##
@@ -1577,13 +1605,16 @@ def yield_write_path(
     """Yield a temporary path for atomically writing files to disk."""
     with yield_adjacent_temp_file(path) as temp:
         yield temp
-        try:
-            if compress:
+        if compress:
+            try:
                 compress_gzip(temp, path, overwrite=overwrite)
-            else:
+            except CompressGzipError as error:
+                raise YieldWritePathError(path=error.dest) from None
+        else:
+            try:
                 move(temp, path, overwrite=overwrite)
-        except _CopyOrMoveDestinationExistsError as error:
-            raise YieldWritePathError(path=error.dest) from None
+            except _CopyOrMoveDestinationExistsError as error:
+                raise YieldWritePathError(path=error.dest) from None
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1725,6 +1756,8 @@ __all__ = [
     "TemporaryFile",
     "ToTimeZoneError",
     "ToTimeZoneNameError",
+    "WriteBytesError",
+    "WriteTextError",
     "always_iterable",
     "chunked",
     "compress_bz2",
