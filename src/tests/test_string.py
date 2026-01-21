@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from pytest import raises
 
-from utilities.os import temp_environ
+from utilities.os import yield_temp_environ
 from utilities.string import SubstituteError, substitute
 from utilities.text import strip_and_dedent, unique_str
 
@@ -32,7 +32,7 @@ class TestSubstitute:
 
     def test_environ(self) -> None:
         key, value = unique_str(), unique_str()
-        with temp_environ(TEMPLATE_KEY=key, TEMPLATE_VALUE=value):
+        with yield_temp_environ(TEMPLATE_KEY=key, TEMPLATE_VALUE=value):
             result = substitute(self.template, environ=True, key=key, value=value)
         self._assert_equal(result, key, value)
 

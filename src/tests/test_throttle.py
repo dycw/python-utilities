@@ -8,7 +8,7 @@ from pytest import mark, param, raises
 import utilities.asyncio
 import utilities.time
 from utilities.constants import IS_CI, SECOND
-from utilities.os import temp_environ
+from utilities.os import yield_temp_environ
 from utilities.throttle import (
     _ThrottleMarkerFileError,
     _ThrottleParseZonedDateTimeError,
@@ -210,7 +210,7 @@ class TestThrottle:
             nonlocal counter
             counter += 1
 
-        with temp_environ(THROTTLE="1"):
+        with yield_temp_environ(THROTTLE="1"):
             for i in range(2):
                 func()
                 assert counter == (i + 1)

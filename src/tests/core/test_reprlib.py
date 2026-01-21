@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from pytest import mark, param
 
-from utilities.core import repr_
+from utilities.core import repr_, repr_str
 
 
 class TestGetRepr:
@@ -21,3 +22,9 @@ class TestGetRepr:
     )
     def test_main(self, *, obj: Any, expected: str) -> None:
         assert repr_(obj) == expected
+
+
+class TestReprStr:
+    def test_main(self) -> None:
+        s = repr_str(Path("path"))
+        assert s == "'path'"

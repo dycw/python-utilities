@@ -3,10 +3,10 @@ from __future__ import annotations
 import reprlib
 import shutil
 import tempfile
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from itertools import chain
-from os import chdir, environ
+from os import chdir, environ, getenv
 from pathlib import Path
 from re import search
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
@@ -28,7 +28,7 @@ from utilities.constants import (
 from utilities.types import SupportsRichComparison
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterable, Iterator, Mapping
     from types import TracebackType
 
     from utilities.types import FileOrDir, MaybeIterable, PathLike
@@ -74,17 +74,17 @@ def min_nullable[T: SupportsRichComparison, U](
         try:
             return min(values)
         except ValueError:
-            raise MinNullableError(values=values) from None
+            raise MinNullableError(iterable=iterable) from None
     return min(values, default=default)
 
 
 @dataclass(kw_only=True, slots=True)
 class MinNullableError[T: SupportsRichComparison](Exception):
-    values: Iterable[T]
+    iterable: Iterable[T | None]
 
     @override
     def __str__(self) -> str:
-        return "Minimum of an all-None iterable is undefined"
+        return f"Minimum of an all-None iterable {repr_(self.iterable)} is undefined"
 
 
 @overload
@@ -104,17 +104,17 @@ def max_nullable[T: SupportsRichComparison, U](
         try:
             return max(values)
         except ValueError:
-            raise MaxNullableError(values=values) from None
+            raise MaxNullableError(iterable=iterable) from None
     return max(values, default=default)
 
 
 @dataclass(kw_only=True, slots=True)
-class MaxNullableError[TSupportsRichComparison](Exception):
-    values: Iterable[TSupportsRichComparison]
+class MaxNullableError[T: SupportsRichComparison](Exception):
+    iterable: Iterable[T | None]
 
     @override
     def __str__(self) -> str:
-        return "Maximum of an all-None iterable is undefined"
+        return f"Maximum of an all-None iterable {repr_(self.iterable)} is undefined"
 
 
 ###############################################################################
@@ -265,11 +265,11 @@ class OneStrEmptyError(OneStrError):
             case False, True:
                 tail = repr(self.text)
             case False, False:
-                tail = f"{self.text!r} (modulo case)"
+                tail = f"{repr_(self.text)} (modulo case)"
             case True, True:
-                tail = f"any string starting with {self.text!r}"
+                tail = f"any string starting with {repr_(self.text)}"
             case True, False:
-                tail = f"any string starting with {self.text!r} (modulo case)"
+                tail = f"any string starting with {repr_(self.text)} (modulo case)"
             case never:
                 assert_never(never)
         return f"{head} {tail}"
@@ -285,16 +285,18 @@ class OneStrNonUniqueError(OneStrError):
         head = f"Iterable {repr_(self.iterable)} must contain"
         match self.head, self.case_sensitive:
             case False, True:
-                mid = f"{self.text!r} exactly once"
+                mid = f"{repr_(self.text)} exactly once"
             case False, False:
-                mid = f"{self.text!r} exactly once (modulo case)"
+                mid = f"{repr_(self.text)} exactly once (modulo case)"
             case True, True:
-                mid = f"exactly one string starting with {self.text!r}"
+                mid = f"exactly one string starting with {repr_(self.text)}"
             case True, False:
-                mid = f"exactly one string starting with {self.text!r} (modulo case)"
+                mid = (
+                    f"exactly one string starting with {repr_(self.text)} (modulo case)"
+                )
             case never:
                 assert_never(never)
-        return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
+        return f"{head} {mid}; got {repr_(self.first)}, {repr_(self.second)} and perhaps more"
 
 
 ###############################################################################
@@ -355,8 +357,34 @@ class GetEnvError(Exception):
 
     @override
     def __str__(self) -> str:
-        desc = f"No environment variable {self.key!r}"
+        desc = f"No environment variable {repr_(self.key)}"
         return desc if self.case_sensitive else f"{desc} (modulo case)"
+
+
+##
+
+
+@contextmanager
+def yield_temp_environ(
+    env: Mapping[str, str | None] | None = None, **env_kwargs: str | None
+) -> Iterator[None]:
+    """Context manager with temporary environment variable set."""
+    mapping: dict[str, str | None] = ({} if env is None else dict(env)) | env_kwargs
+    prev = {key: getenv(key) for key in mapping}
+    _yield_temp_environ_apply(mapping)
+    try:
+        yield
+    finally:
+        _yield_temp_environ_apply(prev)
+
+
+def _yield_temp_environ_apply(mapping: Mapping[str, str | None], /) -> None:
+    for key, value in mapping.items():
+        if value is None:
+            with suppress(KeyError):
+                del environ[key]
+        else:
+            environ[key] = value
 
 
 ###############################################################################
@@ -447,6 +475,32 @@ def repr_(
         max_depth=max_depth,
         expand_all=expand_all,
     )
+
+
+def repr_str(
+    obj: Any,
+    /,
+    *,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+) -> str:
+    """Get the representation of the string of an object."""
+    return repr_(
+        str(obj),
+        max_width=max_width,
+        indent_size=indent_size,
+        max_length=max_length,
+        max_string=max_string,
+        max_depth=max_depth,
+        expand_all=expand_all,
+    )
+
+
+##
 
 
 ###############################################################################
@@ -644,8 +698,10 @@ __all__ = [
     "one",
     "one_str",
     "repr_",
+    "repr_str",
     "suppress_super_attribute_error",
     "yield_temp_cwd",
     "yield_temp_dir_at",
+    "yield_temp_environ",
     "yield_temp_file_at",
 ]

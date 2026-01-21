@@ -12,7 +12,7 @@ from utilities.asyncio import stream_command
 from utilities.core import always_iterable
 from utilities.docker import docker_exec_cmd
 from utilities.logging import to_logger
-from utilities.os import temp_environ
+from utilities.os import yield_temp_environ
 from utilities.pathlib import ensure_suffix
 from utilities.sqlalchemy import extract_url, get_table_name
 from utilities.timer import Timer
@@ -82,7 +82,10 @@ async def pg_dump(
         if logger is not None:
             to_logger(logger).info("Would run:\n\t%r", str(cmd))
         return True
-    with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
+    with (
+        yield_temp_environ(PGPASSWORD=url.password),
+        Timer() as timer,
+    ):  # pragma: no cover
         try:
             output = await stream_command(cmd)
         except KeyboardInterrupt:
@@ -237,7 +240,10 @@ async def restore(
         if logger is not None:
             to_logger(logger).info("Would run:\n\t%r", str(cmd))
         return True
-    with temp_environ(PGPASSWORD=url.password), Timer() as timer:  # pragma: no cover
+    with (
+        yield_temp_environ(PGPASSWORD=url.password),
+        Timer() as timer,
+    ):  # pragma: no cover
         try:
             output = await stream_command(cmd)
         except KeyboardInterrupt:

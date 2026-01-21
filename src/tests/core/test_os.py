@@ -73,7 +73,7 @@ class TestGetEnv:
             _ = get_env(key, case_sensitive=case_sensitive)
 
 
-class TestTempEnviron:
+class TestYieldTempEnviron:
     @given(key=text.map(_prefix), value=text)
     def test_set(self, *, key: str, value: str) -> None:
         assert getenv(key) is None
