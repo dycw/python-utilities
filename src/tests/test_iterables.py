@@ -6,7 +6,7 @@ from enum import Enum, auto
 from functools import cmp_to_key
 from itertools import chain, repeat
 from math import isfinite, isinf, isnan, nan
-from operator import add, neg, sub
+from operator import neg, sub
 from re import DOTALL
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -19,7 +19,6 @@ from hypothesis.strategies import (
     floats,
     frozensets,
     integers,
-    just,
     lists,
     none,
     permutations,
@@ -30,8 +29,8 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 
 from tests.test_objects.objects import objects
-from utilities.constants import Sentinel, sentinel
-from utilities.hypothesis import pairs, sentinels, sets_fixed_length, text_ascii
+from utilities.constants import sentinel
+from utilities.hypothesis import pairs, sets_fixed_length, text_ascii
 from utilities.iterables import (
     CheckBijectionError,
     CheckDuplicatesError,
@@ -93,7 +92,6 @@ from utilities.iterables import (
     pairwise_tail,
     product_dicts,
     range_partitions,
-    reduce_mappings,
     resolve_include_and_exclude,
     sort_iterable,
     take,
@@ -898,22 +896,6 @@ class TestRangePartitions:
             _RangePartitionsNumError, match=r"'num' must be in \[0, 1\]; got 2"
         ):
             _ = range_partitions(2, 2, 2)
-
-
-class TestReduceMappings:
-    @given(
-        mappings=lists(dictionaries(text_ascii(), integers())),
-        initial=just(0) | sentinels(),
-    )
-    def test_main(
-        self, *, mappings: Sequence[Mapping[str, int]], initial: int | Sentinel
-    ) -> None:
-        result = reduce_mappings(add, mappings, initial=initial)
-        expected = {}
-        for mapping in mappings:
-            for key, value in mapping.items():
-                expected[key] = expected.get(key, 0) + value
-        assert result == expected
 
 
 class TestResolveIncludeAndExclude:

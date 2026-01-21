@@ -31,14 +31,7 @@ from typing import (
 )
 
 from utilities.constants import Sentinel, sentinel
-from utilities.core import (
-    OneStrEmptyError,
-    always_iterable,
-    is_sentinel,
-    one,
-    one_str,
-    repr_,
-)
+from utilities.core import OneStrEmptyError, always_iterable, one, one_str, repr_
 from utilities.errors import ImpossibleCaseError
 from utilities.math import (
     _CheckIntegerEqualError,
@@ -982,37 +975,6 @@ class _RangePartitionsNumError(RangePartitionsError):
 ##
 
 
-@overload
-def reduce_mappings[K, V](
-    func: Callable[[V, V], V], sequence: Iterable[Mapping[K, V]], /
-) -> Mapping[K, V]: ...
-@overload
-def reduce_mappings[K, V, W](
-    func: Callable[[W, V], W],
-    sequence: Iterable[Mapping[K, V]],
-    /,
-    *,
-    initial: W | Sentinel = sentinel,
-) -> Mapping[K, W]: ...
-def reduce_mappings[K, V, W](
-    func: Callable[[V, V], V] | Callable[[W, V], W],
-    sequence: Iterable[Mapping[K, V]],
-    /,
-    *,
-    initial: W | Sentinel = sentinel,
-) -> Mapping[K, V | W]:
-    """Reduce a function over the values of a set of mappings."""
-    chained = chain_mappings(*sequence)
-    if is_sentinel(initial):
-        func2 = cast("Callable[[V, V], V]", func)
-        return {k: reduce(func2, v) for k, v in chained.items()}
-    func2 = cast("Callable[[W, V], W]", func)
-    return {k: reduce(func2, v, initial) for k, v in chained.items()}
-
-
-##
-
-
 def resolve_include_and_exclude[T](
     *, include: MaybeIterable[T] | None = None, exclude: MaybeIterable[T] | None = None
 ) -> tuple[set[T] | None, set[T] | None]:
@@ -1240,7 +1202,6 @@ __all__ = [
     "pairwise_tail",
     "product_dicts",
     "range_partitions",
-    "reduce_mappings",
     "resolve_include_and_exclude",
     "sort_iterable",
     "take",
