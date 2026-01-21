@@ -104,13 +104,7 @@ class TestCopyOrMove:
         assert (dest / "src2.txt").read_text() == "src2"
 
     @mark.parametrize("mode", [param("copy"), param("move")])
-    @mark.parametrize(
-        ("dest_exists", "overwrite"),
-        [param(False, False), param(False, True), param(True, True)],
-    )
-    def test_dir_to_file(
-        self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool, overwrite: bool
-    ) -> None:
+    def test_dir_to_file(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
         src = tmp_path / "src"
         src.mkdir()
         _ = (src / "src1.txt").write_text("src1")
