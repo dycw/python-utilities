@@ -16,3 +16,11 @@ class TestYieldWritePath:
             assert not path.exists()
         assert path.is_file()
         assert path.read_text() == "text"
+
+    def test_overwrite(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file.txt"
+        with yield_write_path(path) as temp:
+            _ = temp.write_text("text")
+            assert not path.exists()
+        assert path.is_file()
+        assert path.read_text() == "text"
