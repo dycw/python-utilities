@@ -505,7 +505,7 @@ def _copy_or_move(
             assert_never(never)
 
 
-def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
+def _copy_or_move__file_to_file(src: Path, dest: Path, /) -> None:
     with yield_adjacent_temp_file(dest) as temp:
         _ = shutil.move(src, temp)
         _ = temp.replace(dest)
