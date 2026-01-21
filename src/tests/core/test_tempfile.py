@@ -105,7 +105,7 @@ class TestYieldAdjacentTempDir:
     def _run_test(self, path: Path, temp: Path, /) -> None:
         assert temp.is_dir()
         assert temp.parent == path.parent
-        assert temp.name.startswith(tmp_path.name)
+        assert temp.name.startswith(path.name)
 
 
 class TestYieldAdjacentTempFile:
