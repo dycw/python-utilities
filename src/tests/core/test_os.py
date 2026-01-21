@@ -98,7 +98,7 @@ class TestCopyOrMove:
                 assert not src.exists()
             case never:
                 assert_never(never)
-        assert dest.is_file()
+        assert dest.is_dir()
         assert dest.read_text() == "src"
 
 
