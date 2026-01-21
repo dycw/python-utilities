@@ -140,7 +140,7 @@ def is_sentinel(obj: Any, /) -> TypeIs[Sentinel]:
 
 
 @contextmanager
-def suppress_super_object_attribute_error() -> Iterator[None]:
+def suppress_super_attribute_error() -> Iterator[None]:
     """Suppress the super() attribute error, for mix-ins."""
     try:
         yield
@@ -566,7 +566,7 @@ __all__ = [
     "one",
     "one_str",
     "repr_",
-    "suppress_super_object_attribute_error",
+    "suppress_super_attribute_error",
     "yield_temp_cwd",
     "yield_temp_dir_at",
     "yield_temp_file_at",

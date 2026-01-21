@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Self
 
 from psutil import swap_memory, virtual_memory
 
-from utilities.contextlib import suppress_super_object_attribute_error
+from utilities.core import suppress_super_attribute_error
 from utilities.whenever import get_now
 
 if TYPE_CHECKING:
@@ -30,7 +30,7 @@ class MemoryUsage:
     swap_pct: float = field(init=False)
 
     def __post_init__(self) -> None:
-        with suppress_super_object_attribute_error():
+        with suppress_super_attribute_error():
             super().__post_init__()  # pyright: ignore[reportAttributeAccessIssue]
         self.virtual_used_mb = self._to_mb(self.virtual_used)
         self.virtual_total_mb = self._to_mb(self.virtual_total)

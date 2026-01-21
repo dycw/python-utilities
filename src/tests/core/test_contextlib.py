@@ -5,17 +5,17 @@ from typing import override
 
 from pytest import raises
 
-from utilities.core import suppress_super_object_attribute_error
+from utilities.core import suppress_super_attribute_error
 
 
-class TestSuppressSuperObjectAttributeError:
+class TestSuppressSuperAttributeError:
     def test_main(self) -> None:
         inits: list[str] = []
 
         @dataclass(kw_only=True)
         class A:
             def __post_init__(self) -> None:
-                with suppress_super_object_attribute_error():
+                with suppress_super_attribute_error():
                     super().__post_init__()  # pyright:ignore [reportAttributeAccessIssue]
                 nonlocal inits
                 inits.append("A")
@@ -26,7 +26,7 @@ class TestSuppressSuperObjectAttributeError:
         @dataclass(kw_only=True)
         class C:
             def __post_init__(self) -> None:
-                with suppress_super_object_attribute_error():
+                with suppress_super_attribute_error():
                     super().__post_init__()  # pyright:ignore [reportAttributeAccessIssue]
                 nonlocal inits
                 inits.append("C")
@@ -49,7 +49,7 @@ class TestSuppressSuperObjectAttributeError:
         @dataclass(kw_only=True)
         class Parent:
             def __post_init__(self) -> None:
-                with suppress_super_object_attribute_error():
+                with suppress_super_attribute_error():
                     _ = self.error  # pyright:ignore [reportAttributeAccessIssue]
 
         @dataclass(kw_only=True)
