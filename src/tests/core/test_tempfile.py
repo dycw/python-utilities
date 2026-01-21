@@ -97,6 +97,9 @@ class TestYieldAdjacentTempDir:
             assert temp.parent == tmp_path.parent
             assert temp.name.startswith(tmp_path.name)
 
+    def test_deep(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "a/b/c/file.txt"
+
 
 class TestYieldAdjacentTempFile:
     def test_main(self, *, tmp_path: Path) -> None:
