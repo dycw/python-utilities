@@ -11,7 +11,7 @@ from functools import _lru_cache_wrapper, partial
 from itertools import chain, islice
 from os import chdir, environ, getenv
 from pathlib import Path
-from re import findall
+from re import VERBOSE, findall
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from types import (
     BuiltinFunctionType,
@@ -839,6 +839,52 @@ def yield_temp_file_at(path: PathLike, /) -> Iterator[Path]:
 ###############################################################################
 #### text #####################################################################
 ###############################################################################
+
+
+def kebab_case(text: str, /) -> str:
+    """Convert text into kebab case."""
+    return _kebab_snake_case(text, "-")
+
+
+def snake_case(text: str, /) -> str:
+    """Convert text into snake case."""
+    return _kebab_snake_case(text, "_")
+
+
+def _kebab_snake_case(text: str, separator: str, /) -> str:
+    """Convert text into kebab/snake case."""
+    leading = _kebab_leading_pattern.search(text) is not None
+    trailing = _kebab_trailing_pattern.search(text) is not None
+    parts = _kebab_pascal_pattern.findall(text)
+    parts = (p for p in parts if len(p) >= 1)
+    parts = chain([""] if leading else [], parts, [""] if trailing else [])
+    return separator.join(parts).lower()
+
+
+_kebab_leading_pattern = re.compile(r"^_")
+_kebab_trailing_pattern = re.compile(r"_$")
+
+
+def pascal_case(text: str, /) -> str:
+    """Convert text to pascal case."""
+    parts = _kebab_pascal_pattern.findall(text)
+    parts = [p for p in parts if len(p) >= 1]
+    parts = list(map(_pascal_case_upper_or_title, parts))
+    return "".join(parts)
+
+
+def _pascal_case_upper_or_title(text: str, /) -> str:
+    return text if text.isupper() else text.title()
+
+
+_kebab_pascal_pattern = re.compile(
+    r"""
+    [A-Z]+(?=[A-Z][a-z0-9]) | # all caps followed by Upper+lower or digit (API in APIResponse2)
+    [A-Z]?[a-z]+[0-9]*      | # normal words with optional trailing digits (Text123)
+    [A-Z]+[0-9]*            | # consecutive caps with optional trailing digits (ID2)
+    """,
+    flags=VERBOSE,
+)
 
 __all__ = [
     "FileOrDirError",

@@ -6,7 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from itertools import chain
 from os import getpid
-from re import IGNORECASE, VERBOSE, escape, search
+from re import IGNORECASE, escape, search
 from textwrap import dedent
 from threading import get_ident
 from time import time_ns
@@ -32,11 +32,6 @@ if TYPE_CHECKING:
 
 
 ##
-
-
-def kebab_case(text: str, /) -> str:
-    """Convert text into kebab case."""
-    return _kebab_snake_case(text, "-")
 
 
 ##
@@ -82,21 +77,6 @@ class ParseNoneError(Exception):
 ##
 
 
-def pascal_case(text: str, /) -> str:
-    """Convert text to pascal case."""
-    parts = _SPLIT_TEXT.findall(text)
-    parts = [p for p in parts if len(p) >= 1]
-    parts = list(map(_pascal_case_one, parts))
-    return "".join(parts)
-
-
-def _pascal_case_one(text: str, /) -> str:
-    return text if text.isupper() else text.title()
-
-
-##
-
-
 def prompt_bool(prompt: object = "", /, *, confirm: bool = False) -> bool:
     """Prompt for a boolean."""
     return True if confirm else parse_bool(input(prompt))
@@ -108,14 +88,6 @@ def prompt_bool(prompt: object = "", /, *, confirm: bool = False) -> bool:
 def repr_encode(obj: Any, /) -> bytes:
     """Return the representation of the object encoded as bytes."""
     return repr(obj).encode()
-
-
-##
-
-
-def snake_case(text: str, /) -> str:
-    """Convert text into snake case."""
-    return _kebab_snake_case(text, "_")
 
 
 ##
@@ -510,25 +482,6 @@ def unique_str() -> str:
 
 ##
 
-
-def _kebab_snake_case(text: str, separator: str, /) -> str:
-    """Convert text into kebab/snake case."""
-    leading = bool(search(r"^_", text))
-    trailing = bool(search(r"_$", text))
-    parts = _SPLIT_TEXT.findall(text)
-    parts = (p for p in parts if len(p) >= 1)
-    parts = chain([""] if leading else [], parts, [""] if trailing else [])
-    return separator.join(parts).lower()
-
-
-_SPLIT_TEXT = re.compile(
-    r"""
-    [A-Z]+(?=[A-Z][a-z0-9]) | # all caps followed by Upper+lower or digit (API in APIResponse2)
-    [A-Z]?[a-z]+[0-9]*      | # normal words with optional trailing digits (Text123)
-    [A-Z]+[0-9]*            | # consecutive caps with optional trailing digits (ID2)
-    """,
-    flags=VERBOSE,
-)
 
 __all__ = [
     "ParseBoolError",

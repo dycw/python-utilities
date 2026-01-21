@@ -463,12 +463,6 @@ class EnsureZonedDateTimeError(Exception):
 ##
 
 
-##
-
-
-##
-
-
 def in_milli_seconds(duration: Duration, /) -> float:
     """Convert a duration to milli-seconds."""
     return 1e3 * in_seconds(duration)
