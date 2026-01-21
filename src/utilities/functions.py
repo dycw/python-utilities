@@ -684,7 +684,6 @@ __all__ = [
     "ensure_zoned_date_time",
     "first",
     "get_func_name",
-    "get_func_qualname",
     "identity",
     "in_milli_seconds",
     "in_seconds",
