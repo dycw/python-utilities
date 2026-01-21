@@ -36,7 +36,6 @@ from utilities.text import (
     split_key_value_pairs,
     split_str,
     str_encode,
-    strip_and_dedent,
     to_bool,
     to_str,
 )
@@ -284,18 +283,6 @@ class TestStrEncode:
     def test_main(self, *, n: int) -> None:
         result = str_encode(n)
         expected = str(n).encode()
-        assert result == expected
-
-
-class TestStripAndDedent:
-    @mark.parametrize("trailing", [param(True), param(False)])
-    def test_main(self, *, trailing: bool) -> None:
-        text = """
-               This is line 1.
-               This is line 2.
-               """
-        result = strip_and_dedent(text, trailing=trailing)
-        expected = "This is line 1.\nThis is line 2." + ("\n" if trailing else "")
         assert result == expected
 
 

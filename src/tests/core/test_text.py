@@ -3,6 +3,7 @@ from __future__ import annotations
 from pytest import mark, param
 
 from utilities.core import kebab_case, pascal_case, snake_case, unique_str
+from utilities.text import strip_and_dedent
 
 
 class TestPascalSnakeAndKebabCase:
@@ -85,6 +86,18 @@ class TestPascalSnakeAndKebabCase:
         assert pascal_case(text) == exp_pascal
         assert snake_case(text) == exp_snake
         assert kebab_case(text) == exp_kebab
+
+
+class TestStripAndDedent:
+    def test_main(self) -> None:
+        result = strip_and_dedent(
+            """
+            This is line 1.
+            This is line 2.
+            """
+        )
+        expected = "This is line 1.\nThis is line 2.\n"
+        assert result == expected
 
 
 class TestUniqueStrs:

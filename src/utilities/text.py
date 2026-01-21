@@ -6,7 +6,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from itertools import chain
 from re import IGNORECASE, escape, search
-from textwrap import dedent
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -401,12 +400,6 @@ def str_encode(obj: Any, /) -> bytes:
 
 
 ##
-
-
-def strip_and_dedent(text: str, /, *, trailing: bool = False) -> str:
-    """Strip and dedent a string."""
-    result = dedent(text.strip("\n")).strip("\n")
-    return f"{result}\n" if trailing else result
 
 
 ##

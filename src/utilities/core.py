@@ -13,6 +13,7 @@ from os import chdir, environ, getenv, getpid
 from pathlib import Path
 from re import VERBOSE, findall
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
+from textwrap import dedent
 from threading import get_ident
 from time import time_ns
 from types import (
@@ -888,6 +889,14 @@ _kebab_pascal_pattern = re.compile(
     """,
     flags=VERBOSE,
 )
+
+
+##
+
+
+def strip_and_dedent(text: str, /) -> str:
+    """Strip and dedent a string."""
+    return dedent(text.strip("\n")).strip("\n") + "\n"
 
 
 ##
