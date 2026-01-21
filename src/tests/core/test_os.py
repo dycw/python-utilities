@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from os import getenv
+from shutil import move
 from typing import TYPE_CHECKING
 
 from hypothesis import HealthCheck, Phase, given, reproduce_failure, settings
@@ -31,6 +32,8 @@ class TestCopyOrMove:
         match mode:
             case "copy":
                 copy(src, dest)
+            case "move":
+                move(src, dest)
 
 
 class TestGetEnv:
