@@ -96,7 +96,6 @@ from utilities.iterables import (
     reduce_mappings,
     resolve_include_and_exclude,
     sort_iterable,
-    sum_mappings,
     take,
     transpose,
     unique_everseen,
@@ -1034,17 +1033,6 @@ class TestSortIterablesCmpFloats:
     def test_nan_vs_nan(self) -> None:
         result = _sort_iterable_cmp_floats(nan, nan)
         assert result == 0
-
-
-class TestSumMappings:
-    @given(mappings=lists(dictionaries(text_ascii(), integers())))
-    def test_main(self, *, mappings: Sequence[Mapping[str, int]]) -> None:
-        result = sum_mappings(*mappings)
-        expected = {}
-        for mapping in mappings:
-            for key, value in mapping.items():
-                expected[key] = expected.get(key, 0) + value
-        assert result == expected
 
 
 class TestTake:
