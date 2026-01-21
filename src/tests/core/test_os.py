@@ -49,6 +49,7 @@ class TestCopyOrMove:
     @mark.parametrize("mode", [param("copy"), param("move")])
     def test_file_to_dir(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
         src = self._setup_src_file(tmp_path)
+        dest = self._setup_dest_dir(tmp_path, exists=dest_exists)
         dest = tmp_path / "dest"
         dest.mkdir()
         match mode:
@@ -77,12 +78,6 @@ class TestCopyOrMove:
         _ = (src / "src1.txt").write_text("src1")
         _ = (src / "src2.txt").write_text("src2")
         dest = self._setup_dest_dir(tmp_path, exists=dest_exists)
-        dest = tmp_path / "dest"
-        if dest_exists:
-            dest.mkdir()
-            _ = (dest / "dest1.txt").write_text("dest1")
-            _ = (dest / "dest2.txt").write_text("dest2")
-            _ = (dest / "dest3.txt").write_text("dest3")
         match mode:
             case "copy":
                 copy(src, dest, overwrite=overwrite)
