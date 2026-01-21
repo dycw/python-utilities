@@ -482,7 +482,7 @@ def copy(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
 def move(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
     """Move a file atomically."""
     src, dest = map(Path, [src, dest])
-    _copy_or_move(src, dest, mode="move", overwrite=overwrite)
+    _copy_or_move(src, dest, "move", overwrite=overwrite)
 
 
 def _copy_or_move(
