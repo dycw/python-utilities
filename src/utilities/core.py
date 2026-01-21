@@ -518,7 +518,6 @@ def _copy_or_move__file_to_dir(src: Path, dest: Path, mode: CopyOrMove, /) -> No
     ):
         _ = dest.replace(temp_dir)
         _copy_or_move__shutil(src, temp_file, mode)
-        _ = shutil.move(src, temp_file)
         _ = temp_file.replace(dest)
 
 
