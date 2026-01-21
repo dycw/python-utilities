@@ -146,7 +146,7 @@ class TestCopyOrMove:
         return dest
 
     def _setup_dest_dir(self, tmp_path: Path, /, *, exists: bool = False) -> Path:
-        dest = tmp_path / "dest.txt"
+        dest = tmp_path / "dest"
         if exists:
             _ = dest.write_text("dest")
         dest = tmp_path / "dest"
