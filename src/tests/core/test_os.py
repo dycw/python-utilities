@@ -76,7 +76,7 @@ class TestCopyOrMove:
         [
             param(False, False, marks=mark.skip),
             param(False, True, marks=mark.skip),
-            param(True, True, marks=mark.skip),
+            param(True, True, marks=mark.only),
         ],
     )
     def test_dir_to_dir(
