@@ -553,6 +553,16 @@ def _copy_or_move__dir_to_file(src: Path, dest: Path, mode: CopyOrMove, /) -> No
                 assert_never(never)
 
 
+def _copy_or_move__shutil_file2(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
+    match mode:
+        case "copy":
+            _ = shutil.copy(src, dest)
+        case "move":
+            _ = shutil.move(src, dest)
+        case never:
+            assert_never(never)
+
+
 def _copy_or_move__shutil_file(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
     match mode:
         case "copy":
