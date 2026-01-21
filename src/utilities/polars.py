@@ -55,7 +55,7 @@ from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDa
 
 import utilities.math
 from utilities.constants import UTC
-from utilities.core import always_iterable
+from utilities.core import OneEmptyError, OneNonUniqueError, always_iterable, one
 from utilities.dataclasses import yield_fields
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import get_class_name
@@ -64,13 +64,10 @@ from utilities.iterables import (
     CheckIterablesEqualError,
     CheckMappingsEqualError,
     CheckSuperMappingError,
-    OneEmptyError,
-    OneNonUniqueError,
     check_iterables_equal,
     check_mappings_equal,
     check_supermapping,
     is_iterable_not_str,
-    one,
     resolve_include_and_exclude,
 )
 from utilities.json import write_formatted_json
@@ -82,7 +79,6 @@ from utilities.math import (
     is_less_than,
     is_non_negative,
 )
-from utilities.reprlib import get_repr
 from utilities.types import MaybeStr, Number, PathLike, StrDict, WeekDay
 from utilities.typing import (
     get_args,
@@ -344,7 +340,7 @@ class AppendRowError(Exception):
 class _AppendRowPredicateError(AppendRowError):
     @override
     def __str__(self) -> str:
-        return f"Predicate failed; got {get_repr(self.row)}"
+        return f"Predicate failed; got {repr_(self.row)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -353,7 +349,7 @@ class _AppendRowExtraKeysError(AppendRowError):
 
     @override
     def __str__(self) -> str:
-        return f"Extra key(s) found; got {get_repr(self.extra)}"
+        return f"Extra key(s) found; got {repr_(self.extra)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -362,7 +358,7 @@ class _AppendRowMissingKeysError(AppendRowError):
 
     @override
     def __str__(self) -> str:
-        return f"Missing key(s) found; got {get_repr(self.missing)}"
+        return f"Missing key(s) found; got {repr_(self.missing)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -371,7 +367,7 @@ class _AppendRowNullColumnsError(AppendRowError):
 
     @override
     def __str__(self) -> str:
-        return f"Null column(s) found; got {get_repr(self.columns)}"
+        return f"Null column(s) found; got {repr_(self.columns)}"
 
 
 ##
@@ -570,7 +566,7 @@ class _CheckPolarsDataFrameColumnsError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must have columns {get_repr(self.columns)}; got {get_repr(self.df.columns)}:\n\n{self.df}"
+        return f"DataFrame must have columns {repr_(self.columns)}; got {repr_(self.df.columns)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_dtypes(
@@ -588,7 +584,7 @@ class _CheckPolarsDataFrameDTypesError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must have dtypes {get_repr(self.dtypes)}; got {get_repr(self.df.dtypes)}:\n\n{self.df}"
+        return f"DataFrame must have dtypes {repr_(self.dtypes)}; got {repr_(self.df.dtypes)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_height(
@@ -651,9 +647,9 @@ class _CheckPolarsDataFramePredicatesError(CheckPolarsDataFrameError):
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.missing) >= 1:
-            yield f"missing columns were {get_repr(self.missing)}"
+            yield f"missing columns were {repr_(self.missing)}"
         if len(self.failed) >= 1:
-            yield f"failed predicates were {get_repr(self.failed)}"
+            yield f"failed predicates were {repr_(self.failed)}"
 
 
 def _check_polars_dataframe_schema_list(df: DataFrame, schema: SchemaDict, /) -> None:
@@ -673,7 +669,7 @@ class _CheckPolarsDataFrameSchemaListError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must have schema {get_repr(self.schema)} (ordered); got {get_repr(self.df.schema)}:\n\n{self.df}"
+        return f"DataFrame must have schema {repr_(self.schema)} (ordered); got {repr_(self.df.schema)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_schema_set(df: DataFrame, schema: SchemaDict, /) -> None:
@@ -689,7 +685,7 @@ class _CheckPolarsDataFrameSchemaSetError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must have schema {get_repr(self.schema)} (unordered); got {get_repr(self.df.schema)}:\n\n{self.df}"
+        return f"DataFrame must have schema {repr_(self.schema)} (unordered); got {repr_(self.df.schema)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_schema_subset(df: DataFrame, schema: SchemaDict, /) -> None:
@@ -705,7 +701,7 @@ class _CheckPolarsDataFrameSchemaSubsetError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame schema must include {get_repr(self.schema)} (unordered); got {get_repr(self.df.schema)}:\n\n{self.df}"
+        return f"DataFrame schema must include {repr_(self.schema)} (unordered); got {repr_(self.df.schema)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_shape(df: DataFrame, shape: tuple[int, int], /) -> None:
@@ -743,7 +739,7 @@ class _CheckPolarsDataFrameSortedError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must be sorted on {get_repr(self.by)}:\n\n{self.df}"
+        return f"DataFrame must be sorted on {repr_(self.by)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_unique(
@@ -762,7 +758,7 @@ class _CheckPolarsDataFrameUniqueError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must be unique on {get_repr(self.by)}:\n\n{self.df}"
+        return f"DataFrame must be unique on {repr_(self.by)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_width(df: DataFrame, width: int, /) -> None:
@@ -1133,7 +1129,7 @@ class _DataClassToDataFrameNonUniqueError(DataClassToDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {get_repr(self.objs)} must contain exactly 1 class; got {self.first}, {self.second} and perhaps more"
+        return f"Iterable {repr_(self.objs)} must contain exactly 1 class; got {self.first}, {self.second} and perhaps more"
 
 
 ##
@@ -2666,7 +2662,7 @@ class SelectExactError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"All columns must be selected; got {get_repr(self.columns)} remaining"
+        return f"All columns must be selected; got {repr_(self.columns)} remaining"
 
 
 ##

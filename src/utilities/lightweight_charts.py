@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, override
 
 from utilities.atomicwrites import writer  # pragma: no cover
 from utilities.contextlib import enhanced_async_context_manager
-from utilities.iterables import OneEmptyError, OneNonUniqueError, one
-from utilities.reprlib import get_repr
+from utilities.core import OneEmptyError, OneNonUniqueError, one, repr_
+from utilities.reprlib import repr_
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -72,7 +72,7 @@ class _SetDataFrameNonUniqueError(SetDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"{get_repr(self.schema)} must contain exactly 1 date/datetime column; got {self.first!r}, {self.second!r} and perhaps more"
+        return f"{repr_(self.schema)} must contain exactly 1 date/datetime column; got {self.first!r}, {self.second!r} and perhaps more"
 
 
 ##

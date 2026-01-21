@@ -7,9 +7,15 @@ from typing import TYPE_CHECKING, assert_never
 
 from utilities.atomicwrites import writer
 from utilities.contextlib import enhanced_context_manager
-from utilities.core import TemporaryDirectory, TemporaryFile, file_or_dir
+from utilities.core import (
+    OneEmptyError,
+    OneNonUniqueError,
+    TemporaryDirectory,
+    TemporaryFile,
+    file_or_dir,
+    one,
+)
 from utilities.errors import ImpossibleCaseError
-from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

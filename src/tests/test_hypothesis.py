@@ -61,7 +61,8 @@ from utilities.constants import (
     MIN_UINT32,
     MIN_UINT64,
 )
-from utilities.functions import ensure_int, is_sentinel
+from utilities.core import is_sentinel
+from utilities.functions import ensure_int
 from utilities.hypothesis import (
     _LINUX_DISALLOW_TIME_ZONES,
     Shape,
