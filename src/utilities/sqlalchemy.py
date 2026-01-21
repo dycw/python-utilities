@@ -66,12 +66,11 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 
 import utilities.asyncio
-from utilities.functions import ensure_str, get_class_name, yield_object_attributes
+from utilities.core import OneEmptyError, OneNonUniqueError, get_class_name, repr_
+from utilities.functions import ensure_str, yield_object_attributes
 from utilities.iterables import (
     CheckLengthError,
     CheckSubSetError,
-    OneEmptyError,
-    OneNonUniqueError,
     check_length,
     check_subset,
     chunked,
@@ -80,7 +79,6 @@ from utilities.iterables import (
     one,
 )
 from utilities.os import is_pytest
-from utilities.reprlib import get_repr
 from utilities.text import secret_str, snake_case
 from utilities.types import (
     Duration,
@@ -187,7 +185,7 @@ class CheckEngineError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"{get_repr(self.engine)} must have {self.expected} table(s); got {len(self.rows)}"
+        return f"{repr_(self.engine)} must have {self.expected} table(s); got {len(self.rows)}"
 
 
 ##
@@ -1103,7 +1101,7 @@ class _MapMappingToTableExtraColumnsError(_MapMappingToTableError):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {get_repr(self.mapping)} must be a subset of table columns {get_repr(self.columns)}; got extra {self.extra}"
+        return f"Mapping {repr_(self.mapping)} must be a subset of table columns {repr_(self.columns)}; got extra {self.extra}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1112,7 +1110,7 @@ class _MapMappingToTableSnakeMapEmptyError(_MapMappingToTableError):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {get_repr(self.mapping)} must be a subset of table columns {get_repr(self.columns)}; cannot find column to map to {self.key!r} modulo snake casing"
+        return f"Mapping {repr_(self.mapping)} must be a subset of table columns {repr_(self.columns)}; cannot find column to map to {self.key!r} modulo snake casing"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1123,7 +1121,7 @@ class _MapMappingToTableSnakeMapNonUniqueError(_MapMappingToTableError):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {get_repr(self.mapping)} must be a subset of table columns {get_repr(self.columns)}; found columns {self.first!r}, {self.second!r} and perhaps more to map to {self.key!r} modulo snake casing"
+        return f"Mapping {repr_(self.mapping)} must be a subset of table columns {repr_(self.columns)}; found columns {self.first!r}, {self.second!r} and perhaps more to map to {self.key!r} modulo snake casing"
 
 
 ##

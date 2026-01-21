@@ -7,7 +7,7 @@ from typing import Literal, override
 
 from shellingham import ShellDetectionFailure, detect_shell
 
-from utilities.iterables import OneEmptyError, one
+from utilities.core import OneEmptyError, one, repr_
 from utilities.typing import get_args
 
 type Shell = Literal["bash", "fish", "posix", "sh", "zsh"]
@@ -48,7 +48,7 @@ class _GetShellUnsupportedError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid shell; got {self.shell!r}"  # pragma: no cover
+        return f"Invalid shell; got {repr_(self.shell)}"  # pragma: no cover
 
 
 @dataclass(kw_only=True, slots=True)
@@ -57,7 +57,7 @@ class _GetShellOSError(GetShellError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid OS; got {self.name!r}"  # pragma: no cover
+        return f"Invalid OS; got {repr_(self.name)}"  # pragma: no cover
 
 
 SHELL = get_shell()

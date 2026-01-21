@@ -10,9 +10,9 @@ from pytest_datadir.plugin import LazyDataDir
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from utilities.atomicwrites import _CopySourceNotFoundError, copy
+from utilities.core import repr_
 from utilities.functions import ensure_str
 from utilities.operator import is_equal
-from utilities.reprlib import get_repr
 
 if TYPE_CHECKING:
     from polars import DataFrame, Series
@@ -96,7 +96,7 @@ class OrjsonRegressionError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Obtained object (at {str(self.path_obtained)!r}) and existing object (at {str(self.path_existing)!r}) differ; got {get_repr(self.obtained)} and {get_repr(self.existing)}"
+        return f"Obtained object (at {str(self.path_obtained)!r}) and existing object (at {str(self.path_existing)!r}) differ; got {repr_(self.obtained)} and {repr_(self.existing)}"
 
 
 ##
