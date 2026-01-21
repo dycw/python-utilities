@@ -141,6 +141,7 @@ class TestCopyOrMove:
 
     def _setup_src_file(self, tmp_path: Path, /) -> None:
         src = tmp_path / "src.txt"
+        _ = src.write_text("src")
         _ = (src / "src1.txt").write_text("src1")
         src.mkdir()
 
