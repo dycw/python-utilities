@@ -1909,6 +1909,7 @@ def uv_run(
     all_extras: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
+    only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -1932,6 +1933,7 @@ def uv_run(
     all_extras: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
+    only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -1955,6 +1957,7 @@ def uv_run(
     all_extras: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
+    only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -1978,6 +1981,7 @@ def uv_run(
     all_extras: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
+    only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -2001,6 +2005,7 @@ def uv_run(
     all_extras: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
+    only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -2023,6 +2028,7 @@ def uv_run(
     all_extras: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
+    only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -2046,6 +2052,7 @@ def uv_run(
             all_extras=all_extras,
             group=group,
             all_groups=all_groups,
+            only_dev=only_dev,
             with_=with_,
             index=index,
             native_tls=native_tls,
@@ -2071,6 +2078,7 @@ def uv_run_cmd(
     all_extras: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
+    only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -2082,12 +2090,15 @@ def uv_run_cmd(
             parts.extend(["--extra", extra_i])
     if all_extras:
         parts.append("--all-extras")
-    parts.append("--no-dev")
+    if not only_dev:
+        parts.append("--no-dev")
     if group is not None:
         for group_i in always_iterable(group):
             parts.extend(["--group", group_i])
     if all_groups:
         parts.append("--all-groups")
+    if only_dev:
+        parts.append("--only-dev")
     return [
         *parts,
         "--exact",
@@ -2096,6 +2107,7 @@ def uv_run_cmd(
         *uv_index_cmd(index=index),
         *RESOLUTION_HIGHEST,
         *PRERELEASE_DISALLOW,
+        "--reinstall",
         *uv_native_tls_cmd(native_tls=native_tls),
         MANAGED_PYTHON,
         "python",
@@ -2252,6 +2264,7 @@ def uv_tool_install_cmd(
         "install",
         *uv_with_cmd(with_=with_),
         *uv_index_cmd(index=index),
+        *RESOLUTION_HIGHEST,
         *PRERELEASE_DISALLOW,
         "--reinstall",
         MANAGED_PYTHON,
@@ -2269,6 +2282,7 @@ def uv_tool_run(
     /,
     *args: str,
     from_: str | None = None,
+    latest: bool = True,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -2289,6 +2303,7 @@ def uv_tool_run(
     /,
     *args: str,
     from_: str | None = None,
+    latest: bool = True,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -2309,6 +2324,7 @@ def uv_tool_run(
     /,
     *args: str,
     from_: str | None = None,
+    latest: bool = True,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -2329,6 +2345,7 @@ def uv_tool_run(
     /,
     *,
     from_: str | None = None,
+    latest: bool = True,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -2349,6 +2366,7 @@ def uv_tool_run(
     /,
     *args: str,
     from_: str | None = None,
+    latest: bool = True,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -2368,6 +2386,7 @@ def uv_tool_run(
     /,
     *args: str,
     from_: str | None = None,
+    latest: bool = True,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -2385,7 +2404,13 @@ def uv_tool_run(
     """Run a command provided by a Python package."""
     return run(  # pragma: no cover
         *uv_tool_run_cmd(
-            command, *args, from_=from_, with_=with_, index=index, native_tls=native_tls
+            command,
+            *args,
+            from_=from_,
+            latest=latest,
+            with_=with_,
+            index=index,
+            native_tls=native_tls,
         ),
         cwd=cwd,
         env=env,
