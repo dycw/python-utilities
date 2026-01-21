@@ -9,9 +9,7 @@ from utilities.core import first, identity, last, second
 class TestFirst:
     @given(x=integers(), y=integers())
     def test_main(self, *, x: int, y: int) -> None:
-        pair = x, y
-        result = first(pair)
-        assert result == x
+        assert first((x, y)) == x
 
 
 class TestIdentity:
@@ -23,12 +21,10 @@ class TestIdentity:
 class TestLast:
     @given(x=integers(), y=integers())
     def test_main(self, *, x: int, y: int) -> None:
-        pair = x, y
-        assert last(pair) == y
+        assert last((x, y)) == y
 
 
 class TestSecond:
     @given(x=integers(), y=integers())
     def test_main(self, *, x: int, y: int) -> None:
-        pair = x, y
-        assert second(pair) == y
+        assert second((x, y)) == y
