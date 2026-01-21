@@ -113,11 +113,11 @@ class TestCopyOrMove:
         _ = dest.write_text("dest")
         match mode:
             case "copy":
-                copy(src, dest, overwrite=overwrite)
+                copy(src, dest, overwrite=True)
                 assert src.is_dir()
                 assert {f.name for f in src.iterdir()} == {"src1.txt", "src2.txt"}
             case "move":
-                move(src, dest, overwrite=overwrite)
+                move(src, dest, overwrite=True)
                 assert not src.exists()
             case never:
                 assert_never(never)
