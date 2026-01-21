@@ -7,7 +7,6 @@ from subprocess import check_output
 from typing import TYPE_CHECKING, assert_never, overload, override
 
 from utilities.core import write_bytes
-from utilities.gzip import write_binary
 
 if TYPE_CHECKING:
     from utilities.types import PathLike
@@ -63,7 +62,7 @@ def write_formatted_json(
     """Write a formatted byte string to disk."""
     with suppress(RunPrettierError):
         data = run_prettier(data)
-    write_binary(data, path, compress=compress, overwrite=overwrite)
+    write_bytes(data, path, compress=compress, overwrite=overwrite)
 
 
 __all__ = ["RunPrettierError", "run_prettier", "write_formatted_json"]

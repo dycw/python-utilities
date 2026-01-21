@@ -1112,6 +1112,53 @@ def _to_pattern(pattern: PatternLike, /, *, flags: int = 0) -> Pattern[str]:
 
 
 ###############################################################################
+#### readers/writers ##########################################################
+###############################################################################
+
+
+def write_bytes(
+    path: PathLike, data: bytes, /, *, compress: bool = False, overwrite: bool = False
+) -> None:
+    """Write data to a file."""
+    try:
+        with yield_write_path(path, compress=compress, overwrite=overwrite) as temp:
+            _ = temp.write_bytes(data)
+    except YieldWritePathError as error:
+        raise WriteBytesError(path=error.path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class WriteBytesError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot write to {repr_str(self.path)} since it already exists"
+
+
+def write_text(
+    path: PathLike, text: str, /, *, compress: bool = False, overwrite: bool = False
+) -> None:
+    """Write text to a file."""
+    try:
+        with yield_write_path(path, compress=compress, overwrite=overwrite) as temp:
+            _ = temp.write_text(normalize_str(text))
+    except YieldWritePathError as error:
+        raise WriteTextError(path=error.path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class WriteTextError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot write to {repr_str(self.path)} since it already exists"
+
+
+##
+
+###############################################################################
 #### reprlib ##################################################################
 ###############################################################################
 
@@ -1547,55 +1594,9 @@ def get_today_local() -> Date:
     return get_today(LOCAL_TIME_ZONE)
 
 
-##
-
-
 ###############################################################################
 #### writers ##################################################################
 ###############################################################################
-
-
-def write_bytes(
-    path: PathLike, data: bytes, /, *, compress: bool = False, overwrite: bool = False
-) -> None:
-    """Write data to a file."""
-    try:
-        with yield_write_path(path, compress=compress, overwrite=overwrite) as temp:
-            _ = temp.write_bytes(data)
-    except YieldWritePathError as error:
-        raise WriteBytesError(path=error.path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class WriteBytesError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot write to {repr_str(self.path)} since it already exists"
-
-
-def write_text(
-    path: PathLike, text: str, /, *, compress: bool = False, overwrite: bool = False
-) -> None:
-    """Write text to a file."""
-    try:
-        with yield_write_path(path, compress=compress, overwrite=overwrite) as temp:
-            _ = temp.write_text(normalize_str(text))
-    except YieldWritePathError as error:
-        raise WriteTextError(path=error.path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class WriteTextError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot write to {repr_str(self.path)} since it already exists"
-
-
-##
 
 
 @contextmanager
