@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from pytest import raises
 
-from utilities.core import YieldWritePathError, yield_write_path
+from utilities.core import YieldWritePathError, write_bytes, yield_write_path
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class TestWriteBytes:
     def test_main(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file"
-        write
+        write_bytes(path, b"data")
         with yield_write_path(path) as temp:
             _ = temp.write_text("text")
             assert not path.exists()
