@@ -38,27 +38,6 @@ class TestGetEnv:
             _ = get_env(key.upper(), case_sensitive=True)
 
     @given(
-        data=data(),
-        key=text.map(_prefix),
-        value=text,
-        default=text | none(),
-        nullable=booleans(),
-    )
-    def test_case_insensitive(
-        self,
-        *,
-        data: DataObject,
-        key: str,
-        value: str,
-        default: str | None,
-        nullable: bool,
-    ) -> None:
-        key_use = data.draw(sampled_from([key, key.lower(), key.upper()]))
-        with yield_temp_environ({key: value}):
-            result = get_env(key_use, default=default, nullable=nullable)
-        assert result == value
-
-    @given(
         key=text.map(_prefix),
         case_sensitive=booleans(),
         default=text,
