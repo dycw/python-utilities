@@ -98,7 +98,7 @@ class TestYieldAdjacentTempFileAndDirAt:
             assert temp.name.startswith(temp_path_not_exist.name)
 
 
-class TestYieldAdjacentTempFileAndDirAt:
+class TestYieldAdjacentTempFile:
     def test_file(self, *, temp_path_not_exist: Path) -> None:
         with yield_adjacent_temp_file(temp_path_not_exist) as temp:
             assert temp.is_file()
