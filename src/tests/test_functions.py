@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from functools import cached_property
 from subprocess import check_output
 from sys import executable
 from typing import TYPE_CHECKING, Any, ClassVar, cast
@@ -48,8 +46,6 @@ from utilities.functions import (
     in_timedelta,
     not_func,
     yield_object_attributes,
-    yield_object_cached_properties,
-    yield_object_properties,
 )
 from utilities.text import parse_bool
 from utilities.whenever import get_now, get_today
@@ -429,60 +425,3 @@ class TestYieldObjectAttributes:
         attrs = dict(yield_object_attributes(Example))
         assert len(attrs) == approx(29, rel=0.1)
         assert attrs["attr"] == n
-
-
-class TestYieldObjectCachedProperties:
-    @given(cprop=integers(), prop=integers())
-    def test_main(self, *, cprop: int, prop: int) -> None:
-        class Example:
-            @cached_property
-            def cprop(self) -> int:
-                return cprop
-
-            @property
-            def prop(self) -> int:
-                return prop
-
-        obj = Example()
-        cprops = dict(yield_object_cached_properties(obj))
-        expected = {"cprop": cprop}
-        assert cprops == expected
-
-    @given(cprop=integers())
-    def test_skip(self, *, cprop: int) -> None:
-        @dataclass(kw_only=True)
-        class Example:
-            def __post_init__(self) -> None:
-                _ = self._cached_properties
-
-            @cached_property
-            def cprop(self) -> int:
-                return cprop
-
-            @cached_property
-            def _cached_properties(self) -> list[tuple[str, Any]]:
-                return list(
-                    yield_object_cached_properties(self, skip={"_cached_properties"})
-                )
-
-        obj = Example()
-        assert obj._cached_properties == [("cprop", cprop)]
-        assert obj.cprop == cprop
-
-
-class TestYieldObjectProperties:
-    @given(cprop=integers(), prop=integers())
-    def test_main(self, *, cprop: int, prop: int) -> None:
-        class Example:
-            @cached_property
-            def cprop(self) -> int:
-                return cprop
-
-            @property
-            def prop(self) -> int:
-                return prop
-
-        obj = Example()
-        props = dict(yield_object_properties(obj))
-        expected = {"prop": prop}
-        assert props == expected

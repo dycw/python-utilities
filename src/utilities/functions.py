@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import cached_property, wraps
+from functools import wraps
 from inspect import getattr_static
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, assert_never, overload, override
@@ -541,23 +541,6 @@ def yield_object_attributes(
 ##
 
 
-def yield_object_properties(
-    obj: Any, /, *, skip: Iterable[str] | None = None
-) -> Iterator[tuple[str, Any]]:
-    """Yield all the object properties."""
-    yield from yield_object_attributes(obj, skip=skip, static_type=property)
-
-
-def yield_object_cached_properties(
-    obj: Any, /, *, skip: Iterable[str] | None = None
-) -> Iterator[tuple[str, Any]]:
-    """Yield all the object cached properties."""
-    yield from yield_object_attributes(obj, skip=skip, static_type=cached_property)
-
-
-##
-
-
 def _make_error_msg(obj: Any, desc: str, /, *, nullable: bool = False) -> str:
     msg = f"{get_repr_and_class(obj)} must be {desc}"
     if nullable:
@@ -602,6 +585,4 @@ __all__ = [
     "not_func",
     "skip_if_optimize",
     "yield_object_attributes",
-    "yield_object_cached_properties",
-    "yield_object_properties",
 ]
