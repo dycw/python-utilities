@@ -22,7 +22,7 @@ class TestCopyOrMove:
     @mark.parametrize("mode", [param("copy"), param("move")])
     @mark.parametrize(
         "dest_exists__overwrite",
-        [param(False, False), param(False, True), param(False, True)],
+        [param(False, False), param(False, True), param(True, True)],
     )
     def test_file_to_file(
         self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool
