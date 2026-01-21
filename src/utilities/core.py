@@ -1058,7 +1058,7 @@ def yield_write_path(path: PathLike, /, *, overwrite: bool = False) -> Iterator[
 
 
 @dataclass(kw_only=True, slots=True)
-class _CopyOrMoveDestinationExistsError(CopyOrMoveError):
+class YieldWritePathError(CopyOrMoveError):
     mode: CopyOrMove
     src: Path
     dest: Path
