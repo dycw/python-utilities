@@ -27,7 +27,7 @@ class TestCopyOrMove:
         _ = src.write_text("src")
         dest = tmp_path / "dest"
         if dest_exists:
-            dest.touch()
+            dest.write_text("dest")
 
 
 class TestGetEnv:
