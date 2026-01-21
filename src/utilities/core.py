@@ -542,8 +542,17 @@ def _copy_or_move__dir_to_file(src: Path, dest: Path, mode: CopyOrMove, /) -> No
         yield_adjacent_temp_dir(dest) as temp_dir,
     ):
         _ = dest.replace(temp_file)
-        _copy_or_move__shutil_dir(src, temp_dir, mode)
-        _ = temp_dir.replace(dest)
+        # _copy_or_move__shutil_dir(src, temp_dir, mode)
+        # _ = temp_dir.replace(dest)
+        match mode:
+            case "copy":
+                _ = copytree(src, temp2, dirs_exist_ok=True)
+                _ = temp2.replace(dest)
+            case "move":
+                _ = shutil.move(src, temp2)
+                _ = (temp2 / src.name).replace(dest)
+            case never:
+                assert_never(never)
 
 
 def _copy_or_move__shutil_file(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
