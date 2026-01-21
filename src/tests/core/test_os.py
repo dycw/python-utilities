@@ -23,11 +23,11 @@ class TestCopyOrMove:
     def test_file_to_file(
         self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool
     ) -> None:
-        src = tmp_path / "src"
+        src = tmp_path / "src.txt"
         _ = src.write_text("src")
-        dest = tmp_path / "dest"
+        dest = tmp_path / "dest.txt"
         if dest_exists:
-            dest.write_text("dest")
+            _ = dest.write_text("dest")
 
 
 class TestGetEnv:
