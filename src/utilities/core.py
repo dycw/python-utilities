@@ -550,6 +550,8 @@ def _copy_or_move__move_dir(src: Path, dest: Path, /, *, delete: bool = False) -
         with yield_adjacent_temp_dir(dest) as temp:
             inner = temp / src.name
             _ = shutil.copytree(src, inner)
+            if delete:
+                rmtree(dest)
             _ = inner.replace(dest)
 
 
