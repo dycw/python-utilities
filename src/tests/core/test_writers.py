@@ -7,7 +7,7 @@ class TestYieldWritePath:
     def test_main(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file.txt"
         with yield_write_path(path) as temp:
-            self._run_test(tmp_path, temp)
+            _ = temp.write_text("text")
 
     def test_deep(self, *, tmp_path: Path) -> None:
         path = tmp_path / "a/b/c/file.txt"
