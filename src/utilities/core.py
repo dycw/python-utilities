@@ -564,7 +564,9 @@ def _copy_or_move__shutil_file(
     _ = temp.replace(dest)
 
 
-def _copy_or_move__shutil_dir(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
+def _copy_or_move__shutil_dir(
+    src: Path, temp: path, dest: Path, mode: CopyOrMove, /
+) -> None:
     match mode:
         case "copy":
             _ = copytree(src, dest, dirs_exist_ok=True)
