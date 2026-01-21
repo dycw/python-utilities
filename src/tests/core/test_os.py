@@ -139,6 +139,7 @@ class TestCopyOrMove:
         ):
             move(temp_file, temp_file)
 
+    def _setup_src_file(self, tmp_path: Path,/)->None:
 
 class TestGetEnv:
     def test_main(self) -> None:
