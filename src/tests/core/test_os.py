@@ -79,6 +79,7 @@ class TestCopyOrMove:
         self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool, overwrite: bool
     ) -> None:
         src = tmp_path / "src"
+        src.mkdir()
         _ = src.write_text("src")
         dest = tmp_path / "dest.txt"
         if dest_exists:
