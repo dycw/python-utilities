@@ -1055,34 +1055,6 @@ def yield_write_path(path: PathLike, /, *, overwrite: bool = False) -> Iterator[
     with yield_adjacent_temp_file(path) as temp:
         yield temp
         move(temp, path, overwrite=overwrite)
-    path = Path(path)
-    parent = path.parent
-    parent.mkdir(parents=True, exist_ok=True)
-    name = path.name
-    with TemporaryDirectory(suffix=".tmp", prefix=name, dir=parent) as temp_dir:
-        temp_path1 = Path(temp_dir, name)
-        try:
-            yield temp_path1
-        except KeyboardInterrupt:
-            rmtree(temp_dir)
-        else:
-            if compress:
-                temp_path2 = Path(temp_dir, f"{name}.gz")
-                with (
-                    temp_path1.open("rb") as source,
-                    gzip.open(temp_path2, mode="wb") as dest,
-                ):
-                    copyfileobj(source, dest)
-            else:
-                temp_path2 = temp_path1
-            try:
-                move(temp_path2, path, overwrite=overwrite)
-            except _CopyOrMoveSourceNotFoundError as error:
-                raise _WriterTemporaryPathEmptyError(temp_path=error.src) from None
-            except _MoveFileExistsError as error:
-                raise _WriterFileExistsError(destination=error.dest) from None
-            except _MoveDirectoryExistsError as error:
-                raise _WriterDirectoryExistsError(destination=error.dest) from None
 
 
 __all__ = [
