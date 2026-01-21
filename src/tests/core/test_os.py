@@ -126,6 +126,19 @@ class TestCopyOrMove:
         assert (dest / "src1.txt").read_text() == "src1"
         assert (dest / "src2.txt").read_text() == "src2"
 
+    def test_error_source_not_found(
+        self, *, tmp_path: Path, temp_path_not_exist: Path
+    ) -> None:
+        with raises(_MoveSourceNotFoundError, match=r"Source '.*' does not exist"):
+            move(temp_path_not_exist, tmp_path)
+
+    def test_error_file_exists(self, *, temp_file: Path) -> None:
+        with raises(
+            _MoveFileExistsError,
+            match=r"Cannot move file '.*' as destination '.*' already exists",
+        ):
+            move(temp_file, temp_file)
+
 
 class TestGetEnv:
     def test_main(self) -> None:
