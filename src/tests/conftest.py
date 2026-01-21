@@ -67,6 +67,12 @@ def set_log_factory() -> AbstractContextManager[None]:
 
 
 @fixture
+def temp_dir_with_dir(*, tmp_path: Path) -> Iterator[Path]:
+    with TemporaryDirectory(dir=tmp_path) as outer, TemporaryDirectory(dir=outer):
+        yield outer
+
+
+@fixture
 def temp_dir_with_dir_and_file(*, tmp_path: Path) -> Iterator[Path]:
     with (
         TemporaryDirectory(dir=tmp_path) as outer,
