@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, override
 from utilities.atomicwrites import writer  # pragma: no cover
 from utilities.contextlib import enhanced_async_context_manager
 from utilities.core import OneEmptyError, OneNonUniqueError, one, repr_
-from utilities.reprlib import repr_
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
