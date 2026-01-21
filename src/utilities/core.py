@@ -551,7 +551,7 @@ def _copy_or_move__move_dir(src: Path, dest: Path, /, *, delete: bool = False) -
             inner = temp / src.name
             _ = shutil.copytree(src, inner)
             if delete:
-                rmtree(dest)
+                rmtree(dest, ignore_errors=True)
             _ = inner.replace(dest)
 
 
