@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 
 class TestCopyOrMove:
+    @mark.parametrize("mode", [param(argvalue)])
     @mark.parametrize("dest_exists", [param(True), param(False)])
     def test_copy_file_to_file(self, tmp_path: Path) -> None:
         src = tmp_path / "src"
