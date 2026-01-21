@@ -534,9 +534,6 @@ def _copy_or_move__dir_to_dir(src: Path, dest: Path, mode: CopyOrMove, /) -> Non
                 _ = (temp2 / src.name).replace(dest)
             case never:
                 assert_never(never)
-        # _copy_or_move__shutil_dir(src, temp2, mode)
-        # breakpoint()
-        # _ = (temp2 / src.name).replace(dest)
 
 
 def _copy_or_move__dir_to_file(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
