@@ -39,6 +39,7 @@ class TestCopyOrMove:
     def test_file_to_dir(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
         src = self._setup_src_file(tmp_path)
         dest = self._setup_dest_dir(tmp_path, exists=True)
+        self._run_test_file(mode, src, dest, overwrite=True)
         match mode:
             case "copy":
                 copy(src, dest, overwrite=True)
