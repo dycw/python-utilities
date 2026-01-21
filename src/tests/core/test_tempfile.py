@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pytest import mark
+
 from utilities.core import (
     TemporaryDirectory,
     TemporaryFile,
