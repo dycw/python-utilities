@@ -29,14 +29,6 @@ class TestGetEnv:
         with yield_temp_environ({key.lower(): value}):
             assert get_env(key.upper()) == value
 
-    def test_error_case_sensitive_failure(self) -> None:
-        key, value = [unique_str() for _ in range(2)]
-        with (
-            yield_temp_environ({key.lower(): value}),
-            raises(GetEnvError, match=r"No environment variable '.*'"),
-        ):
-            _ = get_env(key.upper(), case_sensitive=True)
-
     @given(
         key=text.map(_prefix),
         case_sensitive=booleans(),
@@ -60,6 +52,14 @@ class TestGetEnv:
     def test_error(self, *, key: str, case_sensitive: bool) -> None:
         with raises(GetEnvError, match=r"No environment variable .*(\(modulo case\))?"):
             _ = get_env(key, case_sensitive=case_sensitive)
+
+    def test_error_case_sensitive(self) -> None:
+        key, value = [unique_str() for _ in range(2)]
+        with (
+            yield_temp_environ({key.lower(): value}),
+            raises(GetEnvError, match=r"No environment variable '.*'"),
+        ):
+            _ = get_env(key.upper(), case_sensitive=True)
 
     def _generate(self) -> tuple[str, str]:
         key = f"_TEST_OS_{unique_str()}"
