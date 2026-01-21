@@ -1,15 +1,10 @@
 from __future__ import annotations
 
 from os import getenv
-from typing import TYPE_CHECKING
 
-from hypothesis import HealthCheck, Phase, given, reproduce_failure, settings
-from hypothesis.strategies import DataObject, booleans, data, none, sampled_from
-from pytest import RaisesGroup, approx, fixture, mark, param, raises, skip
+from pytest import raises
 
-from utilities.contextvars import set_global_breakpoint
 from utilities.core import GetEnvError, get_env, unique_str, yield_temp_environ
-from utilities.hypothesis import text_ascii
 
 
 class TestGetEnv:
