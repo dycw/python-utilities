@@ -18,6 +18,14 @@ class TestWriteBytes:
         assert path.read_bytes() == b"data"
 
 
+class TestWriteText:
+    def test_main(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "file"
+        write_bytes(path, b"data")
+        assert path.is_file()
+        assert path.read_bytes() == b"data"
+
+
 class TestYieldWritePath:
     def test_main(self, *, tmp_path: Path) -> None:
         path = tmp_path / "file.txt"
