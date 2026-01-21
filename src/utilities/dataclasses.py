@@ -13,8 +13,10 @@ from utilities.constants import (
     sentinel,
 )
 from utilities.core import (
+    ExtractGroupError,
     OneStrEmptyError,
     OneStrNonUniqueError,
+    extract_group,
     get_class_name,
     is_sentinel,
     one_str,
@@ -28,7 +30,6 @@ from utilities.parse import (
     parse_object,
     serialize_object,
 )
-from utilities.re import ExtractGroupError, extract_group
 from utilities.text import (
     _SplitKeyValuePairsDuplicateKeysError,
     _SplitKeyValuePairsSplitError,

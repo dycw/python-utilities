@@ -5,11 +5,10 @@ from json import dumps
 from subprocess import check_call
 from typing import TYPE_CHECKING, ClassVar
 
-from utilities.core import one, yield_temp_environ
+from utilities.core import extract_group, one, yield_temp_environ
 from utilities.pydantic_settings import PathLikeOrWithSection, load_settings
 from utilities.pydantic_settings_sops import SopsBaseSettings
 from utilities.pytest import skipif_ci
-from utilities.re import extract_group
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

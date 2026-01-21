@@ -7,8 +7,8 @@ from math import ceil, exp, floor, isclose, isfinite, isinf, isnan, log, log10, 
 from re import Match, search
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
+from utilities.core import ExtractGroupsError, extract_groups
 from utilities.errors import ImpossibleCaseError
-from utilities.re import ExtractGroupsError, extract_groups
 
 if TYPE_CHECKING:
     from utilities.types import MathRoundMode, Number, Sign

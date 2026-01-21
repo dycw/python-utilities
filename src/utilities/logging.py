@@ -37,17 +37,19 @@ from whenever import ZonedDateTime
 
 from utilities.atomicwrites import move_many
 from utilities.constants import SECOND, Sentinel, sentinel
-from utilities.core import OneEmptyError, always_iterable, one
+from utilities.core import (
+    ExtractGroupError,
+    ExtractGroupsError,
+    OneEmptyError,
+    always_iterable,
+    extract_group,
+    extract_groups,
+    one,
+)
 from utilities.dataclasses import replace_non_sentinel
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_seconds
 from utilities.pathlib import ensure_suffix, to_path
-from utilities.re import (
-    ExtractGroupError,
-    ExtractGroupsError,
-    extract_group,
-    extract_groups,
-)
 from utilities.whenever import (
     WheneverLogRecord,
     format_compact,

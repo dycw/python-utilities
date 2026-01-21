@@ -11,9 +11,13 @@ from whenever import PlainDateTime
 from utilities.asyncio import sleep
 from utilities.constants import IS_CI, IS_CI_AND_NOT_LINUX, MINUTE
 from utilities.contextlib import enhanced_context_manager
-from utilities.core import TemporaryDirectory, TemporaryFile
+from utilities.core import (
+    ExtractGroupError,
+    TemporaryDirectory,
+    TemporaryFile,
+    extract_group,
+)
 from utilities.pytest import skipif_ci
-from utilities.re import ExtractGroupError, extract_group
 from utilities.whenever import get_now_local_plain
 
 if TYPE_CHECKING:
