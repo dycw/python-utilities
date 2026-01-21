@@ -33,6 +33,7 @@ class TestCopyOrMove:
     ) -> None:
         src = self._setup_src_file(tmp_path)
         dest = self._setup_dest_file(tmp_path, exists=dest_exists)
+        self._assert_post_file(mode, src, dest)
         match mode:
             case "copy":
                 copy(src, dest, overwrite=overwrite)
