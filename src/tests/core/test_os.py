@@ -79,3 +79,8 @@ class TestYieldTempEnviron:
             with yield_temp_environ({key: None}):
                 assert getenv(key) is None
             assert getenv(key) == value
+
+    def _generate(self) -> tuple[str, str]:
+        key = f"_TEST_OS_{unique_str()}"
+        value = unique_str()
+        return key, value
