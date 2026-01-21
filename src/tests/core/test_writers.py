@@ -5,7 +5,8 @@ from utilities.core import yield_write_path
 
 class TestYieldWritePath:
     def test_main(self, *, tmp_path: Path) -> None:
-        with yield_write_path(tmp_path) as temp:
+        path = tmp_path / "file.txt"
+        with yield_write_path(path) as temp:
             self._run_test(tmp_path, temp)
 
     def test_deep(self, *, tmp_path: Path) -> None:
