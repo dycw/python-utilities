@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass
 from functools import cache, cached_property, lru_cache, partial, wraps
-from itertools import chain
 from operator import neg
 from subprocess import check_output
 from sys import executable
@@ -19,8 +18,6 @@ from hypothesis.strategies import (
     dictionaries,
     integers,
     lists,
-    none,
-    permutations,
     sampled_from,
 )
 from pytest import approx, mark, param, raises
@@ -43,9 +40,6 @@ from utilities.functions import (
     EnsureTimeDeltaError,
     EnsureTimeError,
     EnsureZonedDateTimeError,
-    MaxNullableError,
-    MinNullableError,
-    apply_decorators,
     ensure_bool,
     ensure_bytes,
     ensure_class,
@@ -70,12 +64,7 @@ from utilities.functions import (
     in_milli_seconds,
     in_seconds,
     in_timedelta,
-    is_none,
-    is_not_none,
-    is_sentinel,
     map_object,
-    max_nullable,
-    min_nullable,
     not_func,
     second,
     yield_object_attributes,
@@ -87,36 +76,11 @@ from utilities.whenever import get_now, get_today
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable
 
     from whenever import PlainDateTime, TimeDelta, ZonedDateTime
 
     from utilities.types import Duration, Number
-
-
-class TestApplyDecorators:
-    @given(n=integers())
-    def test_main(self, *, n: int) -> None:
-        counter = 0
-
-        def negate(x: int, /) -> int:
-            return -x
-
-        def increment[**P, T](func: Callable[P, T], /) -> Callable[P, T]:
-            @wraps(func)
-            def wrapped(*args: P.args, **kwargs: P.kwargs) -> T:
-                nonlocal counter
-                counter += 1
-                return func(*args, **kwargs)
-
-            return wrapped
-
-        decorated = apply_decorators(negate, increment)
-        assert counter == 0
-        assert negate(n) == -n
-        assert counter == 0
-        assert decorated(n) == -n
-        assert counter == 1
 
 
 class TestEnsureBool:
@@ -585,28 +549,6 @@ class TestInTimeDelta:
         assert in_timedelta(duration) == SECOND
 
 
-class TestIsNoneAndIsNotNone:
-    @mark.parametrize(
-        ("func", "obj", "expected"),
-        [
-            param(is_none, None, True),
-            param(is_none, 0, False),
-            param(is_not_none, None, False),
-            param(is_not_none, 0, True),
-        ],
-    )
-    def test_main(
-        self, *, func: Callable[[Any], bool], obj: Any, expected: bool
-    ) -> None:
-        assert func(obj) is expected
-
-
-class TestIsSentinel:
-    @mark.parametrize(("obj", "expected"), [param(None, False), param(sentinel, True)])
-    def test_main(self, *, obj: Any, expected: bool) -> None:
-        assert is_sentinel(obj) is expected
-
-
 class TestMapObject:
     @given(x=integers())
     def test_int(self, *, x: int) -> None:
@@ -651,55 +593,6 @@ class TestMapObject:
         result = map_object(neg, x, before=before)
         expected = [-(i + 1) for i in x]
         assert result == expected
-
-
-class TestMinMaxNullable:
-    @given(
-        data=data(),
-        values=lists(integers(), min_size=1),
-        nones=lists(none()),
-        case=sampled_from([(min_nullable, min), (max_nullable, max)]),
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        values: list[int],
-        nones: list[None],
-        case: tuple[
-            Callable[[Iterable[int | None]], int], Callable[[Iterable[int]], int]
-        ],
-    ) -> None:
-        func_nullable, func_builtin = case
-        values_use = data.draw(permutations(list(chain(values, nones))))
-        result = func_nullable(values_use)
-        expected = func_builtin(values)
-        assert result == expected
-
-    @given(
-        nones=lists(none()),
-        value=integers(),
-        func=sampled_from([min_nullable, max_nullable]),
-    )
-    def test_default(
-        self, *, nones: list[None], value: int, func: Callable[..., int]
-    ) -> None:
-        result = func(nones, default=value)
-        assert result == value
-
-    @given(nones=lists(none()))
-    def test_error_min_nullable(self, *, nones: list[None]) -> None:
-        with raises(
-            MinNullableError, match=r"Minimum of an all-None iterable is undefined"
-        ):
-            _ = min_nullable(nones)
-
-    @given(nones=lists(none()))
-    def test_error_max_nullable(self, *, nones: list[None]) -> None:
-        with raises(
-            MaxNullableError, match=r"Maximum of an all-None iterable is undefined"
-        ):
-            max_nullable(nones)
 
 
 class TestNotFunc:

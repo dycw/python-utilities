@@ -11,6 +11,8 @@ from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 from warnings import catch_warnings, filterwarnings
 
+from typing_extensions import TypeIs
+
 from utilities.constants import (
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
@@ -18,7 +20,10 @@ from utilities.constants import (
     RICH_MAX_LENGTH,
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
+    Sentinel,
+    sentinel,
 )
+from utilities.types import SupportsRichComparison
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -27,7 +32,91 @@ if TYPE_CHECKING:
     from utilities.types import FileOrDir, MaybeIterable, PathLike
 
 
-#### itertools ##############################################################
+#### builtins #################################################################
+
+
+@overload
+def min_nullable[T: SupportsRichComparison](
+    iterable: Iterable[T | None], /, *, default: Sentinel = ...
+) -> T: ...
+@overload
+def min_nullable[T: SupportsRichComparison, U](
+    iterable: Iterable[T | None], /, *, default: U = ...
+) -> T | U: ...
+def min_nullable[T: SupportsRichComparison, U](
+    iterable: Iterable[T | None], /, *, default: U | Sentinel = sentinel
+) -> T | U:
+    """Compute the minimum of a set of values; ignoring nulls."""
+    values = (i for i in iterable if i is not None)
+    if is_sentinel(default):
+        try:
+            return min(values)
+        except ValueError:
+            raise MinNullableError(values=values) from None
+    return min(values, default=default)
+
+
+@dataclass(kw_only=True, slots=True)
+class MinNullableError[T: SupportsRichComparison](Exception):
+    values: Iterable[T]
+
+    @override
+    def __str__(self) -> str:
+        return "Minimum of an all-None iterable is undefined"
+
+
+@overload
+def max_nullable[T: SupportsRichComparison](
+    iterable: Iterable[T | None], /, *, default: Sentinel = ...
+) -> T: ...
+@overload
+def max_nullable[T: SupportsRichComparison, U](
+    iterable: Iterable[T | None], /, *, default: U = ...
+) -> T | U: ...
+def max_nullable[T: SupportsRichComparison, U](
+    iterable: Iterable[T | None], /, *, default: U | Sentinel = sentinel
+) -> T | U:
+    """Compute the maximum of a set of values; ignoring nulls."""
+    values = (i for i in iterable if i is not None)
+    if is_sentinel(default):
+        try:
+            return max(values)
+        except ValueError:
+            raise MaxNullableError(values=values) from None
+    return max(values, default=default)
+
+
+@dataclass(kw_only=True, slots=True)
+class MaxNullableError[TSupportsRichComparison](Exception):
+    values: Iterable[TSupportsRichComparison]
+
+    @override
+    def __str__(self) -> str:
+        return "Maximum of an all-None iterable is undefined"
+
+
+#### constants ################################################################
+
+
+def is_none(obj: Any, /) -> TypeIs[None]:
+    """Check if an object is `None`."""
+    return obj is None
+
+
+def is_not_none(obj: Any, /) -> bool:
+    """Check if an object is not `None`."""
+    return obj is not None
+
+
+##
+
+
+def is_sentinel(obj: Any, /) -> TypeIs[Sentinel]:
+    """Check if an object is the sentinel."""
+    return obj is sentinel
+
+
+#### itertools ################################################################
 
 
 def always_iterable[T](obj: MaybeIterable[T], /) -> Iterable[T]:
@@ -408,6 +497,8 @@ def yield_temp_file_at(path: PathLike, /) -> Iterator[Path]:
 
 __all__ = [
     "FileOrDirError",
+    "MaxNullableError",
+    "MinNullableError",
     "OneEmptyError",
     "OneError",
     "OneNonUniqueError",
@@ -418,6 +509,11 @@ __all__ = [
     "TemporaryFile",
     "always_iterable",
     "file_or_dir",
+    "is_none",
+    "is_not_none",
+    "is_sentinel",
+    "max_nullable",
+    "min_nullable",
     "one",
     "one_str",
     "repr_",

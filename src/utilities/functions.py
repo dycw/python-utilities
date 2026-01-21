@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator
 from dataclasses import asdict, dataclass
-from functools import _lru_cache_wrapper, cached_property, partial, reduce, wraps
+from functools import _lru_cache_wrapper, cached_property, partial, wraps
 from inspect import getattr_static
 from pathlib import Path
 from re import findall
@@ -16,35 +15,15 @@ from types import (
 )
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 
-from typing_extensions import TypeIs
 from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
-from utilities.constants import SECOND, Sentinel, sentinel
-from utilities.reprlib import get_repr, get_repr_and_class
-from utilities.types import (
-    Dataclass,
-    Duration,
-    Number,
-    SupportsRichComparison,
-    TypeLike,
-)
+from utilities.constants import SECOND
+from utilities.core import repr_
+from utilities.reprlib import get_repr_and_class
+from utilities.types import Dataclass, Duration, Number, TypeLike
 
 if TYPE_CHECKING:
-    from collections.abc import Container
-
-
-def apply_decorators[F1: Callable, F2: Callable](
-    func: F1, /, *decorators: Callable[[F2], F2]
-) -> F1:
-    """Apply a set of decorators to a function."""
-    return reduce(_apply_decorators_one, decorators, func)
-
-
-def _apply_decorators_one[F: Callable](acc: F, el: Callable[[Any], Any], /) -> F:
-    return el(acc)
-
-
-##
+    from collections.abc import Callable, Container, Iterable, Iterator
 
 
 @overload
@@ -281,7 +260,7 @@ class EnsureMemberError(Exception):
     @override
     def __str__(self) -> str:
         return _make_error_msg(
-            self.obj, f"a member of {get_repr(self.container)}", nullable=self.nullable
+            self.obj, f"a member of {repr_(self.container)}", nullable=self.nullable
         )
 
 
@@ -606,27 +585,6 @@ def in_timedelta(duration: Duration, /) -> TimeDelta:
 ##
 
 
-def is_none(obj: Any, /) -> TypeIs[None]:
-    """Check if an object is `None`."""
-    return obj is None
-
-
-def is_not_none(obj: Any, /) -> bool:
-    """Check if an object is not `None`."""
-    return obj is not None
-
-
-##
-
-
-def is_sentinel(obj: Any, /) -> TypeIs[Sentinel]:
-    """Check if an object is the sentinel."""
-    return obj is sentinel
-
-
-##
-
-
 def map_object[T](
     func: Callable[[Any], Any], obj: T, /, *, before: Callable[[Any], Any] | None = None
 ) -> T:
@@ -647,66 +605,6 @@ def map_object[T](
 
 
 ##
-
-
-@overload
-def min_nullable[T: SupportsRichComparison](
-    iterable: Iterable[T | None], /, *, default: Sentinel = ...
-) -> T: ...
-@overload
-def min_nullable[T: SupportsRichComparison, U](
-    iterable: Iterable[T | None], /, *, default: U = ...
-) -> T | U: ...
-def min_nullable[T: SupportsRichComparison, U](
-    iterable: Iterable[T | None], /, *, default: U | Sentinel = sentinel
-) -> T | U:
-    """Compute the minimum of a set of values; ignoring nulls."""
-    values = (i for i in iterable if i is not None)
-    if is_sentinel(default):
-        try:
-            return min(values)
-        except ValueError:
-            raise MinNullableError(values=values) from None
-    return min(values, default=default)
-
-
-@dataclass(kw_only=True, slots=True)
-class MinNullableError[T: SupportsRichComparison](Exception):
-    values: Iterable[T]
-
-    @override
-    def __str__(self) -> str:
-        return "Minimum of an all-None iterable is undefined"
-
-
-@overload
-def max_nullable[T: SupportsRichComparison](
-    iterable: Iterable[T | None], /, *, default: Sentinel = ...
-) -> T: ...
-@overload
-def max_nullable[T: SupportsRichComparison, U](
-    iterable: Iterable[T | None], /, *, default: U = ...
-) -> T | U: ...
-def max_nullable[T: SupportsRichComparison, U](
-    iterable: Iterable[T | None], /, *, default: U | Sentinel = sentinel
-) -> T | U:
-    """Compute the maximum of a set of values; ignoring nulls."""
-    values = (i for i in iterable if i is not None)
-    if is_sentinel(default):
-        try:
-            return max(values)
-        except ValueError:
-            raise MaxNullableError(values=values) from None
-    return max(values, default=default)
-
-
-@dataclass(kw_only=True, slots=True)
-class MaxNullableError[TSupportsRichComparison](Exception):
-    values: Iterable[TSupportsRichComparison]
-
-    @override
-    def __str__(self) -> str:
-        return "Maximum of an all-None iterable is undefined"
 
 
 ##
@@ -808,9 +706,6 @@ __all__ = [
     "EnsureTimeDeltaError",
     "EnsureTimeError",
     "EnsureZonedDateTimeError",
-    "MaxNullableError",
-    "MinNullableError",
-    "apply_decorators",
     "ensure_bool",
     "ensure_bytes",
     "ensure_class",
@@ -835,12 +730,7 @@ __all__ = [
     "in_milli_seconds",
     "in_seconds",
     "in_timedelta",
-    "is_none",
-    "is_not_none",
-    "is_sentinel",
     "map_object",
-    "max_nullable",
-    "min_nullable",
     "not_func",
     "second",
     "skip_if_optimize",
