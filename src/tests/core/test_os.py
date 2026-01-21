@@ -24,7 +24,7 @@ class TestCopyOrMove:
         self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool
     ) -> None:
         src = tmp_path / "src"
-        dest = tmp_path / "src"
+        dest = tmp_path / "dest"
 
 
 class TestGetEnv:
