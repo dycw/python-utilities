@@ -524,6 +524,7 @@ def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
         (msg,) = error.args
         if msg != "[Errno 18] Invalid cross-device link":
             raise
+        we_got_it
 
 
 ##
