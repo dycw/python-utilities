@@ -31,8 +31,8 @@ class TestWriteBytes:
 
 class TestWriteText:
     @mark.parametrize("text", [param("text"), param("text\n")])
-    def test_main(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file"
+    def test_main(self, *, tmp_path: Path, text: str) -> None:
+        path = tmp_path / "file.txt"
         write_bytes(path, b"data")
         assert path.is_file()
         assert path.read_bytes() == b"data"
