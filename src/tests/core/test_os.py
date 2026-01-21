@@ -33,7 +33,7 @@ class TestCopyOrMove:
     ) -> None:
         src = self._setup_src_file(tmp_path)
         dest = self._setup_dest_file(tmp_path, exists=dest_exists)
-        self._assert_post_file(mode, src, dest)
+        self._assert_post_file(mode, src, dest, overwrite=overwrite)
 
     @mark.parametrize("mode", [param("copy"), param("move")])
     def test_file_to_dir(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
