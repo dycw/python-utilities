@@ -8,6 +8,7 @@ src = Path("/tmp/foo")
 src.unlink(missing_ok=True)
 src.write_text("source text")
 dest = Path("/tmp/bar")
+dest = Path("/tmp/bar")
 dest.unlink(missing_ok=True)
 
 move(src, dest)
