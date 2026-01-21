@@ -99,8 +99,8 @@ class TestYieldAdjacentTempDir:
 
 
 class TestYieldAdjacentTempFile:
-    def test_main(self, *, temp_path_not_exist: Path) -> None:
-        with yield_adjacent_temp_file(temp_path_not_exist) as temp:
+    def test_main(self, *, tmp_path: Path) -> None:
+        with yield_adjacent_temp_file(tmp_path) as temp:
             assert temp.is_file()
-            assert temp.parent == temp_path_not_exist.parent
-            assert temp.name.startswith(temp_path_not_exist.name)
+            assert temp.parent == tmp_path.parent
+            assert temp.name.startswith(tmp_path.name)
