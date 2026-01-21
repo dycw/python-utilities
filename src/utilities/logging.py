@@ -44,7 +44,7 @@ from utilities.core import (
     extract_group,
     extract_groups,
     get_now_local,
-    move,
+    move_many,
     one,
 )
 from utilities.dataclasses import replace_non_sentinel
@@ -492,8 +492,9 @@ class _RolloverActions:
     def do(self) -> None:
         for deletion in self.deletions:
             deletion.delete()
-        for rotation in self.rotations:
-            move(rotation.file.path, rotation.destination, overwrite=True)
+        move_many(
+            *((r.file.path, r.destination) for r in self.rotations), overwrite=True
+        )
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)
