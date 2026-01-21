@@ -36,6 +36,18 @@ class TestLast:
     def test_main(self, *, x: int, y: int) -> None:
         assert last((x, y)) == y
 
+    @given(x=pairs(integers()))
+    def test_pair(self, *, x: tuple[int, int]) -> None:
+        assert second(x) == x[1]
+
+    @given(x=triples(integers()))
+    def test_triple(self, *, x: tuple[int, int, int]) -> None:
+        assert second(x) == x[1]
+
+    @given(x=quadruples(integers()))
+    def test_quadruple(self, *, x: tuple[int, int, int, int]) -> None:
+        assert second(x) == x[1]
+
 
 class TestSecond:
     @given(x=pairs(integers()))
