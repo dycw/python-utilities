@@ -521,7 +521,6 @@ def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
     try:
         _ = src.replace(dest)
     except OSError as error:
-        breakpoint()
         code, msg = error.args
         if (code, msg) != (18, "Invalid cross-device link"):
             raise
