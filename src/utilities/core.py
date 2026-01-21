@@ -36,7 +36,6 @@ from utilities.constants import (
     Sentinel,
     sentinel,
 )
-from utilities.core import get_class_name, repr_
 from utilities.types import SupportsRichComparison
 
 if TYPE_CHECKING:
