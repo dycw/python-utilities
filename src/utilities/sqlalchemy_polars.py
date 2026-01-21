@@ -28,16 +28,10 @@ from sqlalchemy.exc import DuplicateColumnError
 
 import utilities.asyncio
 from utilities.constants import UTC
+from utilities.core import OneError, one, repr_
 from utilities.functions import identity
-from utilities.iterables import (
-    CheckDuplicatesError,
-    OneError,
-    check_duplicates,
-    chunked,
-    one,
-)
+from utilities.iterables import CheckDuplicatesError, check_duplicates, chunked
 from utilities.polars import zoned_date_time_dtype
-from utilities.reprlib import get_repr
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
     TableOrORMInstOrClass,
@@ -168,7 +162,7 @@ class _InsertDataFrameMapDFColumnToTableColumnAndTypeError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to map DataFrame column {self.df_col_name!r} into table schema {get_repr(self.table_schema)} with snake={self.snake}"
+        return f"Unable to map DataFrame column {self.df_col_name!r} into table schema {repr_(self.table_schema)} with snake={self.snake}"
 
 
 def _insert_dataframe_check_df_and_db_types(
