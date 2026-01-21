@@ -54,12 +54,13 @@ class TestGetEnv:
             _ = get_env(key, case_sensitive=case_sensitive)
 
     def test_error_case_insensitive(self) -> None:
-        key, value = [unique_str() for _ in range(2)]
+        key1, value = [unique_str() for _ in range(2)]
+        key2, _ = [unique_str() for _ in range(2)]
         with (
-            yield_temp_environ({key.lower(): value}),
+            yield_temp_environ({key1.lower(): value}),
             raises(GetEnvError, match=r"No environment variable '.*'"),
         ):
-            _ = get_env(key.upper(), case_sensitive=True)
+            _ = get_env(key1.upper(), case_sensitive=True)
 
     def test_error_case_sensitive(self) -> None:
         key, value = [unique_str() for _ in range(2)]
