@@ -8,6 +8,7 @@ class TestYieldWritePath:
         path = tmp_path / "file.txt"
         with yield_write_path(path) as temp:
             _ = temp.write_text("text")
+        ass
 
     def test_deep(self, *, tmp_path: Path) -> None:
         path = tmp_path / "a/b/c/file.txt"
