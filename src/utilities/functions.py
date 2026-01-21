@@ -462,17 +462,7 @@ class EnsureZonedDateTimeError(Exception):
 ##
 
 
-def first[T](pair: tuple[T, Any], /) -> T:
-    """Get the first element in a pair."""
-    return pair[0]
-
-
 ##
-
-
-def identity[T](obj: T, /) -> T:
-    """Return the object itself."""
-    return obj
 
 
 ##
@@ -530,9 +520,6 @@ def map_object[T](
 ##
 
 
-##
-
-
 def not_func[**P](func: Callable[P, bool], /) -> Callable[P, bool]:
     """Lift a boolean-valued function to return its conjugation."""
 
@@ -541,14 +528,6 @@ def not_func[**P](func: Callable[P, bool], /) -> Callable[P, bool]:
         return not func(*args, **kwargs)
 
     return wrapped
-
-
-##
-
-
-def second[U](pair: tuple[Any, U], /) -> U:
-    """Get the second element in a pair."""
-    return pair[1]
 
 
 ##

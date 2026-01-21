@@ -201,6 +201,31 @@ _suppress_super_attribute_error_pattern = re.compile(
 
 
 ###############################################################################
+#### functions ################################################################
+###############################################################################
+
+
+def identity[T](obj: T, /) -> T:
+    """Return the object itself."""
+    return obj
+
+
+def first[T](obj: tuple[T, Any], /) -> T:
+    """Get the first element in an iterable."""
+    return obj[0]
+
+
+def second[T](obj: tuple[Any, T], /) -> T:
+    """Get the second element in an iterable."""
+    return obj[1]
+
+
+def last[T](obj: tuple[T, Any], /) -> T:
+    """Get the last element in an iterable."""
+    return obj[-1]
+
+
+###############################################################################
 #### itertools ################################################################
 ###############################################################################
 

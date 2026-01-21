@@ -52,14 +52,11 @@ from utilities.functions import (
     ensure_time,
     ensure_time_delta,
     ensure_zoned_date_time,
-    first,
-    identity,
     in_milli_seconds,
     in_seconds,
     in_timedelta,
     map_object,
     not_func,
-    second,
     yield_object_attributes,
     yield_object_cached_properties,
     yield_object_properties,
@@ -370,20 +367,6 @@ class TestEnsureZonedDateTime:
             _ = ensure_zoned_date_time(sentinel, nullable=nullable)
 
 
-class TestFirst:
-    @given(x=integers(), y=integers())
-    def test_main(self, *, x: int, y: int) -> None:
-        pair = x, y
-        result = first(pair)
-        assert result == x
-
-
-class TestIdentity:
-    @given(x=integers())
-    def test_main(self, *, x: int) -> None:
-        assert identity(x) == x
-
-
 class TestInMilliSeconds:
     @mark.parametrize(
         ("duration", "expected"),
@@ -466,13 +449,6 @@ class TestNotFunc:
         result = return_not_x()
         expected = not x
         assert result is expected
-
-
-class TestSecond:
-    @given(x=integers(), y=integers())
-    def test_main(self, *, x: int, y: int) -> None:
-        pair = x, y
-        assert second(pair) == y
 
 
 class TestSkipIfOptimize:
