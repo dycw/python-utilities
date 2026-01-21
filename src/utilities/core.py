@@ -543,7 +543,12 @@ def _copy_or_move__copy_file(src: Path, dest: Path, /) -> None:
 
 def _copy_or_move__move_dir(src: Path, dest: Path, /, *, delete: bool = False) -> None:
     try:
-        _ = src.replace(dest)
+        with yield_adjacent_temp_dir(dest) as temp:
+            inner = temp / src.name
+            _ = shutil.copytree(src, inner)
+            if delete:
+                rmtree(dest, ignore_errors=True)
+            _ = inner.replace(dest)
     except OSError as error:  # pragma: no cover
         if not _is_invalid_cross_device_link_error(error):
             raise
