@@ -63,6 +63,7 @@ from utilities.core import (
     repr_,
     suppress_warnings,
     to_time_zone_name,
+    write_bytes,
 )
 from utilities.dataclasses import yield_fields
 from utilities.errors import ImpossibleCaseError
@@ -78,7 +79,6 @@ from utilities.iterables import (
     is_iterable_not_str,
     resolve_include_and_exclude,
 )
-from utilities.json import write_formatted_json
 from utilities.math import (
     MAX_DECIMALS,
     CheckIntegerError,
@@ -2442,7 +2442,7 @@ def write_series(
 ) -> None:
     """Write a Series to disk."""
     data = serialize_series(series)
-    write_formatted_json(data, path, compress=compress, overwrite=overwrite)
+    write_bytes(path, data, compress=compress, overwrite=overwrite, json=True)
 
 
 def read_dataframe(path: PathLike, /, *, decompress: bool = False) -> DataFrame:
@@ -2456,7 +2456,7 @@ def write_dataframe(
 ) -> None:
     """Write a DataFrame to disk."""
     data = serialize_dataframe(df)
-    write_formatted_json(data, path, compress=compress, overwrite=overwrite)
+    write_bytes(path, data, compress=compress, overwrite=overwrite, json=True)
 
 
 def serialize_series(series: Series, /) -> bytes:

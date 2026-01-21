@@ -19,6 +19,7 @@ from pathlib import Path
 from re import VERBOSE, Pattern, findall
 from shutil import copyfileobj, copytree
 from string import Template
+from subprocess import check_output
 from tarfile import ReadError, TarFile
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from textwrap import dedent
@@ -1183,11 +1184,20 @@ class ReadBytesError(Exception):
 
 
 def write_bytes(
-    path: PathLike, data: bytes, /, *, compress: bool = False, overwrite: bool = False
+    path: PathLike,
+    data: bytes,
+    /,
+    *,
+    compress: bool = False,
+    overwrite: bool = False,
+    json: bool = False,
 ) -> None:
     """Write data to a file."""
     try:
         with yield_write_path(path, compress=compress, overwrite=overwrite) as temp:
+            if json:  # pragma: no cover
+                with suppress(FileNotFoundError):
+                    data = check_output(["prettier", "--parser=json"], input=data)
             _ = temp.write_bytes(data)
     except YieldWritePathError as error:
         raise WriteBytesError(path=error.path) from None
@@ -1249,8 +1259,6 @@ class WriteTextError(Exception):
     def __str__(self) -> str:
         return f"Cannot write to {repr_str(self.path)} since it already exists"
 
-
-##
 
 ###############################################################################
 #### reprlib ##################################################################

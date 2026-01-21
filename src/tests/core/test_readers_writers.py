@@ -26,6 +26,11 @@ class TestReadWriteBytes:
         assert temp_path_not_exist.is_file()
         assert read_bytes(temp_path_not_exist, uncompress=compress) == b"data"
 
+    def test_json(self, *, temp_path_not_exist: Path) -> None:
+        write_bytes(temp_path_not_exist, b"""{"foo":0,"bar":[1,2,3]}""", json=True)
+        expected = b"""{ "foo": 0, "bar": [1, 2, 3] }\n"""
+        assert read_bytes(temp_path_not_exist) == expected
+
     @mark.parametrize("uncompress", [param(False), param(True)])
     def test_error_read(self, *, temp_path_not_exist: Path, uncompress: bool) -> None:
         with raises(
