@@ -523,7 +523,7 @@ def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
     except OSError as error:  # pragma: no cover
         if not _is_invalid_cross_device_link_error(error):
             raise
-        with yield_temp_file_at(dest) as temp:
+        with yield_adjacent_temp_file(dest) as temp:
             _ = shutil.move(src, temp)
             _ = temp.replace(dest)
 
@@ -534,7 +534,7 @@ def _copy_or_move__copy_file(src: Path, dest: Path, /) -> None:
     except OSError as error:
         if not _is_invalid_cross_device_link_error(error):
             raise
-        with yield_temp_file_at(dest) as temp:
+        with yield_adjacent_temp_file(dest) as temp:
             _ = shutil.copy(src, temp)
             _ = temp.replace(dest)
 
@@ -545,7 +545,7 @@ def _copy_or_move__move_dir(src: Path, dest: Path, /) -> None:
     except OSError as error:  # pragma: no cover
         if not _is_invalid_cross_device_link_error(error):
             raise
-        with yield_temp_file_at(dest) as temp:
+        with yield_adjacent_temp_file(dest) as temp:
             _ = shutil.move(src, temp)
             _ = temp.replace(dest)
 
@@ -954,7 +954,7 @@ def yield_adjacent_temp_dir(path: PathLike, /) -> Iterator[Path]:
 
 
 @contextmanager
-def yield_temp_file_at(path: PathLike, /) -> Iterator[Path]:
+def yield_adjacent_temp_file(path: PathLike, /) -> Iterator[Path]:
     """Yield a temporary file adjacent to target path."""
 
     path = Path(path)
@@ -1089,7 +1089,7 @@ __all__ = [
     "write_bytes",
     "write_text",
     "yield_adjacent_temp_dir",
+    "yield_adjacent_temp_file",
     "yield_temp_cwd",
     "yield_temp_environ",
-    "yield_temp_file_at",
 ]

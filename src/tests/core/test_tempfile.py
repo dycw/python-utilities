@@ -5,8 +5,8 @@ from pathlib import Path
 from utilities.core import (
     TemporaryDirectory,
     TemporaryFile,
-    yield_temp_dir_at,
-    yield_temp_file_at,
+    yield_adjacent_temp_dir,
+    yield_adjacent_temp_file,
 )
 
 
@@ -92,13 +92,13 @@ class TestTemporaryFile:
 
 class TestYieldTempAt:
     def test_dir(self, *, temp_path_not_exist: Path) -> None:
-        with yield_temp_dir_at(temp_path_not_exist) as temp:
+        with yield_adjacent_temp_dir(temp_path_not_exist) as temp:
             assert temp.is_dir()
             assert temp.parent == temp_path_not_exist.parent
             assert temp.name.startswith(temp_path_not_exist.name)
 
     def test_file(self, *, temp_path_not_exist: Path) -> None:
-        with yield_temp_file_at(temp_path_not_exist) as temp:
+        with yield_adjacent_temp_file(temp_path_not_exist) as temp:
             assert temp.is_file()
             assert temp.parent == temp_path_not_exist.parent
             assert temp.name.startswith(temp_path_not_exist.name)
