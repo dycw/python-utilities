@@ -57,7 +57,7 @@ class TestCopyOrMove:
     def test_dir_to_file(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
         src = self._setup_src_dir(tmp_path)
         dest = self._setup_dest_file(tmp_path, exists=True)
-        self._run_test_dir(mode, src, dest, overwrite=utrue)
+        self._run_test_dir(mode, src, dest, overwrite=True)
 
     def test_error_source_not_found(
         self, *, tmp_path: Path, temp_path_not_exist: Path
