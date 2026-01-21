@@ -545,7 +545,7 @@ def _copy_or_move__move_dir(src: Path, dest: Path, /) -> None:
     except OSError as error:  # pragma: no cover
         if not _is_invalid_cross_device_link_error(error):
             raise
-        with yield_adjacent_temp_file(dest) as temp:
+        with yield_adjacent_temp_dir(dest) as temp:
             _ = shutil.move(src, temp)
             _ = temp.replace(dest)
 
