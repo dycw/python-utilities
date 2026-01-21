@@ -1116,6 +1116,15 @@ def _to_pattern(pattern: PatternLike, /, *, flags: int = 0) -> Pattern[str]:
 ###############################################################################
 
 
+def read_bytes(path: PathLike, /, *, uncompress: bool = False) -> bytes:
+    """Read data from a file."""
+    if uncompress:
+        with yield_gzip(path) as temp:
+            return temp.read_bytes()
+    else:
+        return Path(path).read_bytes()
+
+
 def write_bytes(
     path: PathLike, data: bytes, /, *, compress: bool = False, overwrite: bool = False
 ) -> None:
@@ -1134,6 +1143,18 @@ class WriteBytesError(Exception):
     @override
     def __str__(self) -> str:
         return f"Cannot write to {repr_str(self.path)} since it already exists"
+
+
+##
+
+
+def read_text(path: PathLike, /, *, uncompress: bool = False) -> str:
+    """Read text from a file."""
+    if uncompress:
+        with yield_gzip(path) as temp:
+            return temp.read_text()
+    else:
+        return Path(path).read_text()
 
 
 def write_text(
@@ -1789,6 +1810,8 @@ __all__ = [
     "not_func",
     "one",
     "one_str",
+    "read_bytes",
+    "read_text",
     "repr_",
     "repr_str",
     "substitute",

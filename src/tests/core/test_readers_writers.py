@@ -4,17 +4,25 @@ from typing import TYPE_CHECKING
 
 from pytest import mark, param, raises
 
-from utilities.core import WriteBytesError, WriteTextError, write_bytes, write_text
+from utilities.core import (
+    WriteBytesError,
+    WriteTextError,
+    read_bytes,
+    read_text,
+    write_bytes,
+    write_text,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 
-class TestWriteBytes:
-    def test_main(self, *, temp_path_not_exist: Path) -> None:
-        write_bytes(temp_path_not_exist, b"data")
+class TestReadWriteBytes:
+    @mark.parametrize("compress", [param(False), param(True)])
+    def test_main(self, *, temp_path_not_exist: Path, compress: bool) -> None:
+        write_bytes(temp_path_not_exist, b"data", compress=compress)
         assert temp_path_not_exist.is_file()
-        assert temp_path_not_exist.read_bytes() == b"data"
+        assert read_bytes(temp_path_not_exist, uncompress=compress) == b"data"
 
     def test_error(self, *, temp_file: Path) -> None:
         with raises(
@@ -25,10 +33,13 @@ class TestWriteBytes:
 
 class TestWriteText:
     @mark.parametrize("text", [param("text"), param("text\n")])
-    def test_main(self, *, temp_path_not_exist: Path, text: str) -> None:
-        write_text(temp_path_not_exist, text)
+    @mark.parametrize("compress", [param(False), param(True)])
+    def test_main(
+        self, *, temp_path_not_exist: Path, text: str, compress: bool
+    ) -> None:
+        write_text(temp_path_not_exist, text, compress=compress)
         assert temp_path_not_exist.is_file()
-        assert temp_path_not_exist.read_text() == "text\n"
+        assert read_text(temp_path_not_exist, uncompress=compress) == "text\n"
 
     def test_error(self, *, temp_file: Path) -> None:
         with raises(
