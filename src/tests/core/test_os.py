@@ -73,7 +73,7 @@ class TestCopyOrMove:
     @mark.parametrize("mode", [param("copy"), param("move")])
     @mark.parametrize(
         ("dest_exists", "overwrite"),
-        [param(False, False), param(False, True), param(True, True)],
+        [param(False, False, marks=mark.only), param(False, True), param(True, True)],
     )
     def test_dir_to_dir(
         self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool, overwrite: bool
