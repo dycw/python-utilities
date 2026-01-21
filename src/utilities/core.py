@@ -500,7 +500,7 @@ def _copy_or_move(
         case ("dir", None, _) | ("dir", "dir", True):
             _copy_or_move__dir_to_dir(src, dest, mode)
         case "dir", "file", True:
-            _copy_or_move__move_dir(src, dest)
+            _copy_or_move__dir_to_file(src, dest)
         case "dir", "file", "copy", True:
             dest.unlink(missing_ok=True)
             _copy_or_move__copy_dir(src, dest)
