@@ -242,9 +242,9 @@ def last[T](tup: tuple[Any, T], /) -> T: ...
 def last[T](tup: tuple[Any, Any, T], /) -> T: ...
 @overload
 def last[T](tup: tuple[Any, Any, Any, T], /) -> T: ...
-def last(obj: tuple[Any, ...], /) -> Any:
+def last(objtupuple[Any, ...], /) -> Any:
     """Get the last element in a tuple."""
-    return obj[-1]
+    return tup[-1]
 
 
 ###############################################################################
