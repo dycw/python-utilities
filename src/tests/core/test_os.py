@@ -30,18 +30,6 @@ class TestGetEnv:
             assert get_env(key) == value
 
     @given(
-        key=text.map(_prefix), value=text, default=text | none(), nullable=booleans()
-    )
-    @mark.skip
-    def test_case_sensitive(
-        self, *, key: str, value: str, default: str | None, nullable: bool
-    ) -> None:
-        key, value = [unique_str() for _ in range(2)]
-        with yield_temp_environ({key: value}):
-            result = get_env(key, default=default, nullable=nullable)
-        assert result == value
-
-    @given(
         data=data(),
         key=text.map(_prefix),
         value=text,
