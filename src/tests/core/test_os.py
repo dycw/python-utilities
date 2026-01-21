@@ -143,11 +143,11 @@ class TestCopyOrMove:
     ) -> None:
         match mode:
             case "copy":
-                copy(src, dest, overwrite=True)
+                copy(src, dest, overwrite=overwrite)
                 assert src.is_file()
                 assert src.read_text() == "src"
             case "move":
-                move(src, dest, overwrite=True)
+                move(src, dest, overwrite=overwrite)
                 assert not src.exists()
             case never:
                 assert_never(never)
