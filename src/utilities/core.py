@@ -524,7 +524,7 @@ def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
 ##
 
 
-@enhanced_context_manager
+@contextmanager
 def writer(
     path: PathLike, /, *, compress: bool = False, overwrite: bool = False
 ) -> Iterator[Path]:
