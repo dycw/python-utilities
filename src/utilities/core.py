@@ -525,13 +525,13 @@ def _copy_or_move__dir_to_dir(src: Path, dest: Path, mode: CopyOrMove, /) -> Non
     with yield_adjacent_temp_dir(dest) as temp1, yield_adjacent_temp_dir(dest) as temp2:
         with suppress(FileNotFoundError):
             _ = dest.replace(temp1)
-    match mode:
-        case "copy":
-            _ = shutil.copy(src, dest)
-        case "move":
-            _ = shutil.move(src, dest)
-        case never:
-            assert_never(never)
+        match mode:
+            case "copy":
+                _ = shutil.copy(src, dest)
+            case "move":
+                _ = shutil.move(src, dest)
+            case never:
+                assert_never(never)
         # _copy_or_move__shutil_dir(src, temp2, mode)
         # breakpoint()
         # _ = (temp2 / src.name).replace(dest)
