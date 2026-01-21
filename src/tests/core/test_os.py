@@ -66,9 +66,9 @@ class TestYieldTempEnviron:
 
     def test_override(self) -> None:
         key, value1 = self._generate()
-        _, value2 = self._generate()
-        with yield_temp_environ({key: prev}):
+        with yield_temp_environ({key: value1}):
             assert getenv(key) == prev
+            _, value2 = self._generate()
             with yield_temp_environ({key: new}):
                 assert getenv(key) == new
             assert getenv(key) == prev
