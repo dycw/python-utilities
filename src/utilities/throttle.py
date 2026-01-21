@@ -11,8 +11,8 @@ from whenever import ZonedDateTime
 
 from utilities.atomicwrites import writer
 from utilities.constants import SECOND
+from utilities.core import get_env
 from utilities.functions import in_timedelta
-from utilities.os import get_env_var
 from utilities.pathlib import to_path
 from utilities.types import Duration, MaybeCallablePathLike, MaybeCoro
 from utilities.whenever import get_now_local
@@ -106,7 +106,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
 def _is_throttle(
     *, path: MaybeCallablePathLike = Path.cwd, duration: Duration = SECOND
 ) -> bool:
-    if get_env_var("THROTTLE", nullable=True):
+    if get_env("THROTTLE", nullable=True):
         return False
     path = to_path(path)
     if path.is_file():

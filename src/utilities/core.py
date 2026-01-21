@@ -6,7 +6,7 @@ import tempfile
 from contextlib import contextmanager
 from dataclasses import dataclass
 from itertools import chain
-from os import chdir
+from os import chdir, environ
 from pathlib import Path
 from re import search
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
@@ -34,7 +34,9 @@ if TYPE_CHECKING:
     from utilities.types import FileOrDir, MaybeIterable, PathLike
 
 
+###############################################################################
 #### builtins #################################################################
+###############################################################################
 
 
 @overload
@@ -115,7 +117,9 @@ class MaxNullableError[TSupportsRichComparison](Exception):
         return "Maximum of an all-None iterable is undefined"
 
 
+###############################################################################
 #### constants ################################################################
+###############################################################################
 
 
 def is_none(obj: Any, /) -> TypeIs[None]:
@@ -136,7 +140,9 @@ def is_sentinel(obj: Any, /) -> TypeIs[Sentinel]:
     return obj is sentinel
 
 
+###############################################################################
 #### contextlib ###############################################################
+###############################################################################
 
 
 @contextmanager
@@ -149,7 +155,9 @@ def suppress_super_attribute_error() -> Iterator[None]:
             raise
 
 
+###############################################################################
 #### itertools ################################################################
+###############################################################################
 
 
 def always_iterable[T](obj: MaybeIterable[T], /) -> Iterable[T]:
@@ -289,7 +297,71 @@ class OneStrNonUniqueError(OneStrError):
         return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
 
 
+###############################################################################
+#### os #######################################################################
+###############################################################################
+
+
+@overload
+def get_env(
+    key: str, /, *, case_sensitive: bool = False, default: str, nullable: bool = False
+) -> str: ...
+@overload
+def get_env(
+    key: str,
+    /,
+    *,
+    case_sensitive: bool = False,
+    default: None = None,
+    nullable: Literal[False] = False,
+) -> str: ...
+@overload
+def get_env(
+    key: str,
+    /,
+    *,
+    case_sensitive: bool = False,
+    default: str | None = None,
+    nullable: bool = False,
+) -> str | None: ...
+def get_env(
+    key: str,
+    /,
+    *,
+    case_sensitive: bool = False,
+    default: str | None = None,
+    nullable: bool = False,
+) -> str | None:
+    """Get an environment variable."""
+    try:
+        key_use = one_str(environ, key, case_sensitive=case_sensitive)
+    except OneStrEmptyError:
+        match default, nullable:
+            case None, False:
+                raise GetEnvVarError(key=key, case_sensitive=case_sensitive) from None
+            case None, True:
+                return None
+            case str(), _:
+                return default
+            case never:
+                assert_never(never)
+    return environ[key_use]
+
+
+@dataclass(kw_only=True, slots=True)
+class GetEnvVarError(Exception):
+    key: str
+    case_sensitive: bool = False
+
+    @override
+    def __str__(self) -> str:
+        desc = f"No environment variable {self.key!r}"
+        return desc if self.case_sensitive else f"{desc} (modulo case)"
+
+
+###############################################################################
 #### pathlib ##################################################################
+###############################################################################
 
 
 @overload
@@ -345,7 +417,9 @@ def yield_temp_cwd(path: PathLike, /) -> Iterator[None]:
         chdir(prev)
 
 
+###############################################################################
 #### reprlib ##################################################################
+###############################################################################
 
 
 def repr_(
@@ -375,7 +449,9 @@ def repr_(
     )
 
 
+###############################################################################
 #### tempfile #################################################################
+###############################################################################
 
 
 class TemporaryDirectory:
@@ -544,6 +620,7 @@ def yield_temp_file_at(path: PathLike, /) -> Iterator[Path]:
 
 __all__ = [
     "FileOrDirError",
+    "GetEnvVarError",
     "MaxNullableError",
     "MinNullableError",
     "OneEmptyError",
@@ -558,6 +635,7 @@ __all__ = [
     "file_or_dir",
     "get_class",
     "get_class_name",
+    "get_env",
     "is_none",
     "is_not_none",
     "is_sentinel",

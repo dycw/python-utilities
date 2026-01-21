@@ -94,7 +94,7 @@ from utilities.core import (
 )
 from utilities.functions import ensure_int, ensure_str
 from utilities.math import is_zero
-from utilities.os import get_env_var
+from utilities.os import get_env
 from utilities.pathlib import module_path
 from utilities.permissions import Permissions
 from utilities.version import Version2, Version3
@@ -1066,7 +1066,7 @@ def setup_hypothesis_profiles(
             suppress_health_check=suppress_health_check,
             verbosity=profile.verbosity,
         )
-    profile = get_env_var("HYPOTHESIS_PROFILE", default=Profile.default.name)
+    profile = get_env("HYPOTHESIS_PROFILE", default=Profile.default.name)
     settings.load_profile(profile)
 
 
