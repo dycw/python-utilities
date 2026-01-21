@@ -25,7 +25,11 @@ class TestCopyOrMove:
         [param(False, False), param(False, True), param(True, True)],
     )
     def test_file_to_file(
-        self, *, tmp_path: Path, mode: CopyOrMove, dest_exists__overwrite: tuple[bool,bool
+        self,
+        *,
+        tmp_path: Path,
+        mode: CopyOrMove,
+        dest_exists__overwrite: tuple[bool, bool],
     ) -> None:
         src = tmp_path / "src.txt"
         _ = src.write_text("src")
