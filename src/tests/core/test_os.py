@@ -70,6 +70,32 @@ class TestCopyOrMove:
         assert dest.is_file()
         assert dest.read_text() == "src"
 
+    @mark.parametrize("mode", [param("copy"), param("move")])
+    @mark.parametrize(
+        ("dest_exists", "overwrite"),
+        [param(False, False), param(False, True), param(True, True)],
+    )
+    def test_dir_to_file(
+        self, *, tmp_path: Path, mode: CopyOrMove, dest_exists: bool, overwrite: bool
+    ) -> None:
+        src = tmp_path / "src.txt"
+        _ = src.write_text("src")
+        dest = tmp_path / "dest.txt"
+        if dest_exists:
+            _ = dest.write_text("dest")
+        match mode:
+            case "copy":
+                copy(src, dest, overwrite=overwrite)
+                assert src.is_file()
+                assert src.read_text() == "src"
+            case "move":
+                move(src, dest, overwrite=overwrite)
+                assert not src.exists()
+            case never:
+                assert_never(never)
+        assert dest.is_file()
+        assert dest.read_text() == "src"
+
 
 class TestGetEnv:
     def test_main(self) -> None:
