@@ -64,8 +64,9 @@ class TestYieldTempEnviron:
             assert getenv(key) == value
         assert getenv(key) is None
 
-    def test_override(self, *, key: str, prev: str, new: str) -> None:
-        key, value = self._generate()
+    def test_override(self) -> None:
+        key, value1 = self._generate()
+        key, value1 = self._generate()
         with yield_temp_environ({key: prev}):
             assert getenv(key) == prev
             with yield_temp_environ({key: new}):
