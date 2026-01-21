@@ -10,5 +10,4 @@ src.write_text("source text")
 dest = Path("/tmp/bar")
 dest = Path("/usr/local/bin/test-bar")
 dest.unlink(missing_ok=True)
-
 move(src, dest)
