@@ -210,18 +210,40 @@ def identity[T](obj: T, /) -> T:
     return obj
 
 
-def first[T](obj: tuple[T, Any], /) -> T:
-    """Get the first element in an iterable."""
-    return obj[0]
+@overload
+def first[T](tup: tuple[T], /) -> T: ...
+@overload
+def first[T](tup: tuple[T, Any], /) -> T: ...
+@overload
+def first[T](tup: tuple[T, Any, Any], /) -> T: ...
+@overload
+def first[T](tup: tuple[T, Any, Any, Any], /) -> T: ...
+def first(tup: tuple[Any, ...], /) -> Any:
+    """Get the first element in a tuple."""
+    return tup[0]
 
 
-def second[T](obj: tuple[Any, T], /) -> T:
-    """Get the second element in an iterable."""
-    return obj[1]
+@overload
+def second[T](tup: tuple[Any, T], /) -> T: ...
+@overload
+def second[T](tup: tuple[Any, T, Any], /) -> T: ...
+@overload
+def second[T](tup: tuple[Any, T, Any, Any], /) -> T: ...
+def second(tup: tuple[Any, ...], /) -> Any:
+    """Get the second element in a tuple."""
+    return tup[1]
 
 
-def last[T](obj: tuple[T, Any], /) -> T:
-    """Get the last element in an iterable."""
+@overload
+def last[T](tup: tuple[T], /) -> T: ...
+@overload
+def last[T](tup: tuple[Any, T], /) -> T: ...
+@overload
+def last[T](tup: tuple[Any, Any, T], /) -> T: ...
+@overload
+def last[T](tup: tuple[Any, Any, Any, T], /) -> T: ...
+def last[T](obj: tuple[Any, ...], /) -> Any:
+    """Get the last element in a tuple."""
     return obj[-1]
 
 

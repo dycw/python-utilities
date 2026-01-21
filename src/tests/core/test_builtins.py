@@ -26,11 +26,11 @@ from utilities.core import (
     get_class,
     get_class_name,
     get_func_name,
+    identity,
     max_nullable,
     min_nullable,
 )
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import identity
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
