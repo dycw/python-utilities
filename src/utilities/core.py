@@ -540,7 +540,7 @@ def _copy_or_move__move_file(src: Path, dest: Path, /) -> None:
 
 
 def _is_invalid_cross_device_link_error(error: OSError, /) -> bool:
-    if (error.errno != 18) or (error.strerror != "Invalid cross-device link"):
+    return (error.errno == 18) and (error.strerror != "Invalid cross-device link"):
         raise
     with yield_temp_file_at(dest) as temp:
         _ = shutil.move(src, temp)
