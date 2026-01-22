@@ -51,85 +51,6 @@ if TYPE_CHECKING:
     )
 
 
-def dataclass_repr[T](
-    obj: Dataclass,
-    /,
-    *,
-    globalns: StrMapping | None = None,
-    localns: StrMapping | None = None,
-    warn_name_errors: bool = False,
-    include: Iterable[str] | None = None,
-    exclude: Iterable[str] | None = None,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
-    extra: Mapping[type[T], Callable[[T, T], bool]] | None = None,
-    defaults: bool = False,
-    recursive: bool = False,
-) -> str:
-    """Repr a dataclass, without its defaults."""
-    out: dict[str, str] = {}
-    for fld in yield_fields(
-        obj, globalns=globalns, localns=localns, warn_name_errors=warn_name_errors
-    ):
-        if (
-            fld.keep(
-                include=include,
-                exclude=exclude,
-                rel_tol=rel_tol,
-                abs_tol=abs_tol,
-                extra=extra,
-                defaults=defaults,
-            )
-            and fld.repr
-        ):
-            if recursive:
-                if is_dataclass_instance(fld.value):
-                    repr_ = dataclass_repr(
-                        fld.value,
-                        globalns=globalns,
-                        localns=localns,
-                        warn_name_errors=warn_name_errors,
-                        include=include,
-                        exclude=exclude,
-                        rel_tol=rel_tol,
-                        abs_tol=abs_tol,
-                        extra=extra,
-                        defaults=defaults,
-                        recursive=recursive,
-                    )
-                elif isinstance(fld.value, list):
-                    repr_ = [
-                        dataclass_repr(
-                            v,
-                            globalns=globalns,
-                            localns=localns,
-                            warn_name_errors=warn_name_errors,
-                            include=include,
-                            exclude=exclude,
-                            rel_tol=rel_tol,
-                            abs_tol=abs_tol,
-                            extra=extra,
-                            defaults=defaults,
-                            recursive=recursive,
-                        )
-                        if is_dataclass_instance(v)
-                        else repr(v)
-                        for v in fld.value
-                    ]
-                    repr_ = f"[{', '.join(repr_)}]"
-                else:
-                    repr_ = repr(fld.value)
-            else:
-                repr_ = repr(fld.value)
-            out[fld.name] = repr_
-    cls = get_class_name(obj)
-    joined = ", ".join(f"{k}={v}" for k, v in out.items())
-    return f"{cls}({joined})"
-
-
-##
-
-
 def dataclass_to_dict[T](
     obj: Dataclass,
     /,
@@ -1019,7 +940,6 @@ __all__ = [
     "ParseDataClassError",
     "StrMappingToFieldMappingError",
     "YieldFieldsError",
-    "dataclass_repr",
     "dataclass_to_dict",
     "is_nullable_lt",
     "mapping_to_dataclass",
