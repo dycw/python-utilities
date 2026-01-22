@@ -18,17 +18,13 @@ class TestChOwn:
 
     def test_user(self, *, temp_file: Path) -> None:
         chown(temp_file, user=EFFECTIVE_USER_NAME)
-        result = get_file_owner(temp_file)
-        assert result == EFFECTIVE_USER_NAME
+        assert get_file_owner(temp_file) == EFFECTIVE_USER_NAME
 
     def test_group(self, *, temp_file: Path) -> None:
         chown(temp_file, group=EFFECTIVE_GROUP_NAME)
-        result = get_file_group(temp_file)
-        assert result == EFFECTIVE_GROUP_NAME
+        assert get_file_group(temp_file) == EFFECTIVE_GROUP_NAME
 
     def test_user_and_group(self, *, temp_file: Path) -> None:
         chown(temp_file, user=EFFECTIVE_USER_NAME, group=EFFECTIVE_GROUP_NAME)
-        owner = get_file_owner(temp_file)
-        assert owner == EFFECTIVE_USER_NAME
-        group = get_file_group(temp_file)
-        assert group == EFFECTIVE_GROUP_NAME
+        assert get_file_owner(temp_file) == EFFECTIVE_USER_NAME
+        assert get_file_group(temp_file) == EFFECTIVE_GROUP_NAME

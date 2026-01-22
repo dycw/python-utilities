@@ -41,8 +41,7 @@ class TestChMod:
     def test_main(self, *, temp_file: Path) -> None:
         perms = Permissions.from_text("u=rw,g=r,o=r")
         chmod(temp_file, perms)
-        result = Permissions.from_path(temp_file)
-        assert result == perms
+        assert Permissions.from_path(temp_file) == perms
 
 
 class TestCopyOrMove:
@@ -83,22 +82,19 @@ class TestCopyOrMove:
         dest = self._setup_dest_file(tmp_path)
         perms = Permissions.from_text("u=rw,g=r,o=r")
         self._run_test_file(mode, src, dest, perms=perms)
-        result = Permissions.from_path(dest)
-        assert result == perms
+        assert Permissions.from_path(dest) == perms
 
     def test_user(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
         src = self._setup_src_file(tmp_path)
         dest = self._setup_dest_file(tmp_path)
         self._run_test_file(mode, src, dest, owner=EFFECTIVE_USER_NAME)
-        result = get_file_owner(dest)
-        assert result == EFFECTIVE_USER_NAME
+        assert get_file_owner(dest) == EFFECTIVE_USER_NAME
 
     def test_group(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
         src = self._setup_src_file(tmp_path)
         dest = self._setup_dest_file(tmp_path)
         self._run_test_file(mode, src, dest, group=EFFECTIVE_GROUP_NAME)
-        result = get_file_group(dest)
-        assert result == EFFECTIVE_GROUP_NAME
+        assert get_file_group(dest) == EFFECTIVE_GROUP_NAME
 
     def test_error_source_not_found(
         self, *, tmp_path: Path, temp_path_not_exist: Path

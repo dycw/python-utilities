@@ -43,20 +43,17 @@ class TestYieldWritePath:
         perms = Permissions.from_text("u=rw,g=r,o=r")
         with yield_write_path(temp_path_not_exist, perms=perms) as temp:
             temp.touch()
-        result = Permissions.from_path(temp_path_not_exist)
-        assert result == perms
+        assert Permissions.from_path(temp_path_not_exist) == perms
 
     def test_user(self, *, temp_path_not_exist: Path) -> None:
         with yield_write_path(temp_path_not_exist, owner=EFFECTIVE_USER_NAME) as temp:
             temp.touch()
-        result = get_file_owner(temp_path_not_exist)
-        assert result == EFFECTIVE_USER_NAME
+        assert get_file_owner(temp_path_not_exist) == EFFECTIVE_USER_NAME
 
     def test_group(self, *, temp_path_not_exist: Path) -> None:
         with yield_write_path(temp_path_not_exist, group=EFFECTIVE_GROUP_NAME) as temp:
             temp.touch()
-        result = get_file_group(temp_path_not_exist)
-        assert result == EFFECTIVE_GROUP_NAME
+        assert get_file_group(temp_path_not_exist) == EFFECTIVE_GROUP_NAME
 
     @mark.parametrize("compress", [param(False), param(True)])
     def test_error(self, *, temp_file: Path, compress: bool) -> None:
