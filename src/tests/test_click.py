@@ -53,6 +53,7 @@ from utilities.click import (
     YearMonth,
     ZonedDateTime,
 )
+from utilities.core import normalize_multi_line_str
 from utilities.hypothesis import (
     date_deltas,
     date_time_deltas,
@@ -66,7 +67,7 @@ from utilities.hypothesis import (
     year_months,
     zoned_date_times,
 )
-from utilities.text import join_strs, strip_and_dedent
+from utilities.text import join_strs
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -559,5 +560,5 @@ class TestCLIHelp:
 
         result = CliRunner().invoke(cli, ["--help"])
         assert result.exit_code == 0
-        expected = strip_and_dedent(expected, trailing=True)
+        expected = normalize_multi_line_str(expected)
         assert result.stdout == expected

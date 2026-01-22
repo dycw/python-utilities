@@ -32,20 +32,18 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.constants import (
-    LOCAL_TIME_ZONE,
-    LOCAL_TIME_ZONE_NAME,
-    UTC,
-    Sentinel,
-    _get_now,
-    sentinel,
+from utilities.constants import LOCAL_TIME_ZONE_NAME, UTC, Sentinel, sentinel
+from utilities.core import (
+    get_now,
+    get_now_local,
+    get_time,
+    get_today,
+    to_time_zone_name,
 )
-from utilities.constants import _get_now_local as get_now_local
 from utilities.dataclasses import replace_non_sentinel
 from utilities.functions import get_class_name
 from utilities.math import sign
 from utilities.platform import get_strftime
-from utilities.zoneinfo import to_time_zone_name
 
 if TYPE_CHECKING:
     from utilities.types import (
@@ -238,6 +236,7 @@ def datetime_utc(
     month: int,
     day: int,
     /,
+    *,
     hour: int = 0,
     minute: int = 0,
     second: int = 0,
@@ -335,50 +334,6 @@ def from_timestamp_millis(i: int, /, *, time_zone: TimeZoneLike = UTC) -> ZonedD
 def from_timestamp_nanos(i: int, /, *, time_zone: TimeZoneLike = UTC) -> ZonedDateTime:
     """Get a zoned datetime from a timestamp (in nanoseconds)."""
     return ZonedDateTime.from_timestamp_nanos(i, tz=to_time_zone_name(time_zone))
-
-
-##
-
-
-def get_now(time_zone: TimeZoneLike = UTC, /) -> ZonedDateTime:
-    """Get the current zoned date-time."""
-    return _get_now(to_time_zone_name(time_zone))
-
-
-def get_now_plain(time_zone: TimeZoneLike = UTC, /) -> PlainDateTime:
-    """Get the current plain date-time."""
-    return get_now(time_zone).to_plain()
-
-
-def get_now_local_plain() -> PlainDateTime:
-    """Get the current plain date-time in the local time-zone."""
-    return get_now_local().to_plain()
-
-
-##
-
-
-def get_time(time_zone: TimeZoneLike = UTC, /) -> Time:
-    """Get the current time."""
-    return get_now(time_zone).time()
-
-
-def get_time_local() -> Time:
-    """Get the current time in the local time-zone."""
-    return get_time(LOCAL_TIME_ZONE)
-
-
-##
-
-
-def get_today(time_zone: TimeZoneLike = UTC, /) -> Date:
-    """Get the current, timezone-aware local date."""
-    return get_now(time_zone).date()
-
-
-def get_today_local() -> Date:
-    """Get the current, timezone-aware local date."""
-    return get_today(LOCAL_TIME_ZONE)
 
 
 ##
@@ -1980,14 +1935,6 @@ __all__ = [
     "from_timestamp",
     "from_timestamp_millis",
     "from_timestamp_nanos",
-    "get_now",
-    "get_now_local",
-    "get_now_local_plain",
-    "get_now_plain",
-    "get_time",
-    "get_time_local",
-    "get_today",
-    "get_today_local",
     "is_weekend",
     "mean_datetime",
     "min_max_date",

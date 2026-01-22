@@ -30,8 +30,8 @@ from sqlalchemy.orm import (
 )
 
 from utilities.constants import MILLISECOND
+from utilities.core import get_now_local_plain, normalize_multi_line_str, one
 from utilities.hypothesis import int32s, pairs, quadruples, urls
-from utilities.iterables import one
 from utilities.modules import is_installed
 from utilities.pytest import skipif_ci
 from utilities.sqlalchemy import (
@@ -89,9 +89,8 @@ from utilities.sqlalchemy import (
     selectable_to_string,
     yield_primary_key_columns,
 )
-from utilities.text import strip_and_dedent
 from utilities.typing import get_args
-from utilities.whenever import format_compact, get_now_local_plain
+from utilities.whenever import format_compact
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -1399,11 +1398,11 @@ class TestSelectableToString:
         )
         sel = select(table).where(table.c.value >= 1)
         result = selectable_to_string(sel, test_async_engine)
-        expected = strip_and_dedent(
+        expected = normalize_multi_line_str(
             """
-                SELECT example.id_, example.value *
-                FROM example *
-                WHERE example.value >= 1
+            SELECT example.id_, example.value *
+            FROM example *
+            WHERE example.value >= 1
             """.replace("*", "")
         )
         assert result == expected

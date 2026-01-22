@@ -12,14 +12,17 @@ from utilities.constants import (
     Sentinel,
     sentinel,
 )
-from utilities.errors import ImpossibleCaseError
-from utilities.functions import get_class_name, is_sentinel
-from utilities.iterables import (
+from utilities.core import (
+    ExtractGroupError,
     OneStrEmptyError,
     OneStrNonUniqueError,
-    cmp_nullable,
+    extract_group,
+    get_class_name,
+    is_sentinel,
     one_str,
 )
+from utilities.errors import ImpossibleCaseError
+from utilities.iterables import cmp_nullable
 from utilities.operator import is_equal
 from utilities.parse import (
     _ParseObjectExtraNonUniqueError,
@@ -27,7 +30,6 @@ from utilities.parse import (
     parse_object,
     serialize_object,
 )
-from utilities.re import ExtractGroupError, extract_group
 from utilities.text import (
     _SplitKeyValuePairsDuplicateKeysError,
     _SplitKeyValuePairsSplitError,

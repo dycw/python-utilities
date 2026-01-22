@@ -2,38 +2,33 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from enum import Enum, auto
 from functools import cmp_to_key
-from itertools import chain, repeat
+from itertools import repeat
 from math import isfinite, isinf, isnan, nan
-from operator import add, neg, sub
+from operator import neg, sub
 from re import DOTALL
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
-    binary,
     booleans,
     data,
     dictionaries,
     floats,
     frozensets,
     integers,
-    just,
     lists,
     none,
     permutations,
     sampled_from,
     sets,
-    text,
-    tuples,
 )
 from pytest import mark, param, raises
 
 from tests.test_objects.objects import objects
-from utilities.constants import Sentinel, sentinel
-from utilities.hypothesis import pairs, sentinels, sets_fixed_length, text_ascii
+from utilities.constants import sentinel
+from utilities.hypothesis import pairs, sets_fixed_length, text_ascii
 from utilities.iterables import (
     CheckBijectionError,
     CheckDuplicatesError,
@@ -47,33 +42,17 @@ from utilities.iterables import (
     CheckSuperMappingError,
     CheckSuperSetError,
     EnsureIterableError,
-    EnsureIterableNotStrError,
     MergeStrMappingsError,
-    OneEmptyError,
-    OneMaybeEmptyError,
-    OneMaybeNonUniqueError,
-    OneNonUniqueError,
-    OneStrEmptyError,
-    OneStrNonUniqueError,
-    OneUniqueEmptyError,
-    OneUniqueNonUniqueError,
     ResolveIncludeAndExcludeError,
     SortIterableError,
     _ApplyBijectionDuplicateKeysError,
     _ApplyBijectionDuplicateValuesError,
     _CheckUniqueModuloCaseDuplicateLowerCaseStringsError,
     _CheckUniqueModuloCaseDuplicateStringsError,
-    _RangePartitionsNumError,
-    _RangePartitionsStopError,
-    _RangePartitionsTotalError,
     _sort_iterable_cmp_floats,
-    always_iterable,
     apply_bijection,
     apply_to_tuple,
     apply_to_varargs,
-    chain_mappings,
-    chain_maybe_iterables,
-    chain_nullable,
     check_bijection,
     check_duplicates,
     check_iterables_equal,
@@ -86,80 +65,25 @@ from utilities.iterables import (
     check_supermapping,
     check_superset,
     check_unique_modulo_case,
-    chunked,
     cmp_nullable,
     ensure_iterable,
-    ensure_iterable_not_str,
     enumerate_with_edge,
-    expanding_window,
     filter_include_and_exclude,
     groupby_lists,
-    hashable_to_iterable,
     is_iterable,
-    is_iterable_not_enum,
     is_iterable_not_str,
     map_mapping,
     merge_mappings,
     merge_sets,
     merge_str_mappings,
-    one,
-    one_maybe,
-    one_str,
-    one_unique,
-    pairwise_tail,
-    product_dicts,
-    range_partitions,
-    reduce_mappings,
     resolve_include_and_exclude,
     sort_iterable,
-    sum_mappings,
-    take,
-    transpose,
-    unique_everseen,
 )
-from utilities.typing import is_sequence_of
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Mapping, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
 
-    from utilities.types import MaybeIterable, StrMapping
-
-
-class TestAlwaysIterable:
-    @given(x=binary())
-    def test_bytes(self, *, x: bytes) -> None:
-        assert list(always_iterable(x)) == [x]
-
-    @given(x=dictionaries(text(), integers()))
-    def test_dict(self, *, x: dict[str, int]) -> None:
-        assert list(always_iterable(x)) == list(x)
-
-    @given(x=integers())
-    def test_integer(self, *, x: int) -> None:
-        assert list(always_iterable(x)) == [x]
-
-    @given(x=lists(binary()))
-    def test_list_of_bytes(self, *, x: list[bytes]) -> None:
-        assert list(always_iterable(x)) == x
-
-    @given(x=text())
-    def test_string(self, *, x: str) -> None:
-        assert list(always_iterable(x)) == [x]
-
-    @given(x=lists(integers()))
-    def test_list_of_integers(self, *, x: list[int]) -> None:
-        assert list(always_iterable(x)) == x
-
-    @given(x=lists(text()))
-    def test_list_of_strings(self, *, x: list[str]) -> None:
-        assert list(always_iterable(x)) == x
-
-    def test_generator(self) -> None:
-        def yield_ints() -> Iterator[int]:
-            yield 0
-            yield 1
-
-        assert list(always_iterable(yield_ints())) == [0, 1]
+    from utilities.types import StrMapping
 
 
 class TestApplyBijection:
@@ -203,44 +127,6 @@ class TestApplyToVarArgs:
     def test_main(self, *, x: int, y: int) -> None:
         result = apply_to_varargs(sub, x, y)
         expected = x - y
-        assert result == expected
-
-
-class TestChainMappings:
-    @given(mappings=lists(dictionaries(text_ascii(), integers())), list_=booleans())
-    def test_main(self, *, mappings: Sequence[Mapping[str, int]], list_: bool) -> None:
-        result = chain_mappings(*mappings, list=list_)
-        expected = {}
-        for mapping in mappings:
-            for key, value in mapping.items():
-                expected[key] = list(chain(expected.get(key, []), [value]))
-        if list_:
-            assert result == expected
-        else:
-            assert set(result) == set(expected)
-
-
-class TestChainMaybeIterables:
-    @given(values=lists(integers() | lists(integers())))
-    def test_main(self, *, values: list[int | list[int]]) -> None:
-        result = list(chain_maybe_iterables(*values))
-        expected = []
-        for val in values:
-            if isinstance(val, int):
-                expected.append(val)
-            else:
-                expected.extend(v for v in val)
-        assert result == expected
-
-
-class TestChainNullable:
-    @given(values=lists(lists(integers() | none()) | none()))
-    def test_main(self, *, values: list[list[int | None] | None]) -> None:
-        result = list(chain_nullable(*values))
-        expected = []
-        for val in values:
-            if val is not None:
-                expected.extend(v for v in val if v is not None)
         assert result == expected
 
 
@@ -566,26 +452,6 @@ class TestCheckUniqueModuloCase:
             _ = check_unique_modulo_case([text.lower(), text.upper()])
 
 
-class TestChunked:
-    @mark.parametrize(
-        ("iterable", "expected"),
-        [
-            param("ABCDEF", [["A", "B", "C"], ["D", "E", "F"]]),
-            param("ABCDE", [["A", "B", "C"], ["D", "E"]]),
-        ],
-    )
-    def test_main(
-        self, *, iterable: Iterable[str], expected: Sequence[list[str]]
-    ) -> None:
-        result = list(chunked(iterable, 3))
-        assert result == expected
-
-    def test_odd(self) -> None:
-        result = list(chunked("ABCDE", 3))
-        expected = [["A", "B", "C"], ["D", "E"]]
-        assert result == expected
-
-
 class TestCmpNullable:
     @given(
         data=data(),
@@ -618,20 +484,6 @@ class TestEnsureIterable:
             _ = ensure_iterable(None)
 
 
-class TestEnsureIterableNotStr:
-    @mark.parametrize("obj", [param([]), param(())])
-    def test_main(self, *, obj: Any) -> None:
-        _ = ensure_iterable_not_str(obj)
-
-    @mark.parametrize("obj", [param(None), param("")])
-    def test_error(self, *, obj: Any) -> None:
-        with raises(
-            EnsureIterableNotStrError,
-            match=r"Object .* must be iterable, but not a string",
-        ):
-            _ = ensure_iterable_not_str(obj)
-
-
 class TestEnumerateWithEdge:
     def test_main(self) -> None:
         result = list(enumerate_with_edge(range(100)))
@@ -647,34 +499,6 @@ class TestEnumerateWithEdge:
         for _, total, is_edge, _ in result:
             assert total == 9
             assert is_edge
-
-
-class TestExpandingWindow:
-    @mark.parametrize(
-        ("iterable", "expected"),
-        [
-            param(
-                [1, 2, 3, 4, 5], [[1], [1, 2], [1, 2, 3], [1, 2, 3, 4], [1, 2, 3, 4, 5]]
-            ),
-            param([], []),
-        ],
-    )
-    def test_main(self, *, iterable: Iterable[int], expected: list[list[int]]) -> None:
-        result = list(expanding_window(iterable))
-        assert result == expected
-
-
-class TestHashableToIterable:
-    def test_none(self) -> None:
-        result = hashable_to_iterable(None)
-        expected = None
-        assert result is expected
-
-    @given(x=lists(integers()))
-    def test_integers(self, *, x: int) -> None:
-        result = hashable_to_iterable(x)
-        expected = (x,)
-        assert result == expected
 
 
 class TestFilterIncludeAndExclude:
@@ -774,34 +598,6 @@ class TestIsIterable:
         assert is_iterable(obj) is expected
 
 
-class TestIsIterableNotEnum:
-    def test_single(self) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        assert not is_iterable_not_enum(Truth)
-
-    def test_union(self) -> None:
-        class Truth1(Enum):
-            true = auto()
-            false = auto()
-
-        class Truth2(Enum):
-            true = auto()
-            false = auto()
-
-        assert is_iterable_not_enum((Truth1, Truth2))
-
-    @mark.parametrize(
-        ("obj", "expected"),
-        [param(None, False), param([], True), param((), True), param("", True)],
-    )
-    def test_others(self, *, obj: Any, expected: bool) -> None:
-        result = is_iterable_not_enum(obj)
-        assert result is expected
-
-
 class TestIsIterableNotStr:
     @mark.parametrize(
         ("obj", "expected"),
@@ -882,264 +678,6 @@ class TestMergeStrMappings:
             match=r"Mapping .* keys must not contain duplicates \(modulo case\); got .*",
         ):
             _ = merge_str_mappings({"x": 1, "X": 2})
-
-
-class TestOne:
-    @mark.parametrize(
-        "args", [param(([None],)), param(([None], [])), param(([None], [], []))]
-    )
-    def test_main(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        assert one(*args) is None
-
-    @mark.parametrize("args", [param([]), param(([], [])), param(([], [], []))])
-    def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        with raises(OneEmptyError, match=r"Iterable\(s\) .* must not be empty"):
-            _ = one(*args)
-
-    @given(iterable=sets(integers(), min_size=2))
-    def test_error_non_unique(self, *, iterable: set[int]) -> None:
-        with raises(
-            OneNonUniqueError,
-            match=re.compile(
-                r"Iterable\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
-                flags=DOTALL,
-            ),
-        ):
-            _ = one(iterable)
-
-
-class TestOneMaybe:
-    @mark.parametrize(
-        "args",
-        [
-            param((None,)),
-            param(([None],)),
-            param((None, [])),
-            param(([None], [])),
-            param((None, [], [])),
-            param(([None], [], [])),
-        ],
-    )
-    def test_main(self, *, args: tuple[MaybeIterable[Any], ...]) -> None:
-        assert one_maybe(*args) is None
-
-    @mark.parametrize("args", [param([]), param(([], [])), param(([], [], []))])
-    def test_error_empty(self, *, args: tuple[MaybeIterable[Any], ...]) -> None:
-        with raises(OneMaybeEmptyError, match=r"Object\(s\) must not be empty"):
-            _ = one_maybe(*args)
-
-    @given(iterable=sets(integers(), min_size=2))
-    def test_error_non_unique(self, *, iterable: set[int]) -> None:
-        with raises(
-            OneMaybeNonUniqueError,
-            match=re.compile(
-                r"Object\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
-                flags=DOTALL,
-            ),
-        ):
-            _ = one_maybe(iterable)
-
-
-class TestOneStr:
-    @given(data=data(), text=sampled_from(["a", "b", "c"]))
-    def test_exact_match_case_insensitive(self, *, data: DataObject, text: str) -> None:
-        text_use = data.draw(sampled_from([text.lower(), text.upper()]))
-        assert one_str(["a", "b", "c"], text_use) == text
-
-    @given(
-        data=data(), case=sampled_from([("ab", "abc"), ("ad", "ade"), ("af", "afg")])
-    )
-    def test_head_case_insensitive(
-        self, *, data: DataObject, case: tuple[str, str]
-    ) -> None:
-        head, expected = case
-        head_use = data.draw(sampled_from([head.lower(), head.upper()]))
-        assert one_str(["abc", "ade", "afg"], head_use, head=True) == expected
-
-    @given(text=sampled_from(["a", "b", "c"]))
-    def test_exact_match_case_sensitive(self, *, text: str) -> None:
-        assert one_str(["a", "b", "c"], text, case_sensitive=True) == text
-
-    @given(case=sampled_from([("ab", "abc"), ("ad", "ade"), ("af", "afg")]))
-    def test_head_case_sensitive(self, *, case: tuple[str, str]) -> None:
-        head, expected = case
-        assert (
-            one_str(["abc", "ade", "afg"], head, head=True, case_sensitive=True)
-            == expected
-        )
-
-    def test_error_exact_match_case_insensitive_empty_error(self) -> None:
-        with raises(
-            OneStrEmptyError, match=r"Iterable .* does not contain 'd' \(modulo case\)"
-        ):
-            _ = one_str(["a", "b", "c"], "d")
-
-    def test_error_exact_match_case_insensitive_non_unique_error(self) -> None:
-        with raises(
-            OneStrNonUniqueError,
-            match=r"Iterable .* must contain 'a' exactly once \(modulo case\); got 'a', 'A' and perhaps more",
-        ):
-            _ = one_str(["a", "A"], "a")
-
-    def test_error_head_case_insensitive_empty_error(self) -> None:
-        with raises(
-            OneStrEmptyError,
-            match=r"Iterable .* does not contain any string starting with 'ac' \(modulo case\)",
-        ):
-            _ = one_str(["abc", "ade", "afg"], "ac", head=True)
-
-    def test_error_head_case_insensitive_non_unique_error(self) -> None:
-        with raises(
-            OneStrNonUniqueError,
-            match=r"Iterable .* must contain exactly one string starting with 'ab' \(modulo case\); got 'abc', 'ABC' and perhaps more",
-        ):
-            _ = one_str(["abc", "ABC"], "ab", head=True)
-
-    def test_error_exact_match_case_sensitive_empty_error(self) -> None:
-        with raises(OneStrEmptyError, match=r"Iterable .* does not contain 'A'"):
-            _ = one_str(["a", "b", "c"], "A", case_sensitive=True)
-
-    def test_error_exact_match_case_sensitive_non_unique(self) -> None:
-        with raises(
-            OneStrNonUniqueError,
-            match=r"Iterable .* must contain 'a' exactly once; got 'a', 'a' and perhaps more",
-        ):
-            _ = one_str(["a", "a"], "a", case_sensitive=True)
-
-    def test_error_head_case_sensitive_empty_error(self) -> None:
-        with raises(
-            OneStrEmptyError,
-            match=r"Iterable .* does not contain any string starting with 'AB'",
-        ):
-            _ = one_str(["abc", "ade", "afg"], "AB", head=True, case_sensitive=True)
-
-    def test_error_head_case_sensitive_non_unique(self) -> None:
-        with raises(
-            OneStrNonUniqueError,
-            match=r"Iterable .* must contain exactly one string starting with 'ab'; got 'abc', 'abd' and perhaps more",
-        ):
-            _ = one_str(["abc", "abd"], "ab", head=True, case_sensitive=True)
-
-
-class TestOneUnique:
-    @given(args=sampled_from([([None],), ([None], [None]), ([None], [None], [None])]))
-    def test_main(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        assert one_unique(*args) is None
-
-    @given(args=sampled_from([([],), ([], []), ([], [], [])]))
-    def test_error_empty(self, *, args: tuple[Iterable[Any], ...]) -> None:
-        with raises(OneUniqueEmptyError, match=r"Iterable\(s\) must not be empty"):
-            _ = one_unique(*args)
-
-    @given(iterable=sets(integers(), min_size=2))
-    def test_error_non_unique(self, *, iterable: set[int]) -> None:
-        with raises(
-            OneUniqueNonUniqueError,
-            match=re.compile(
-                r"Iterable\(s\) .* must contain exactly one item; got .*, .* and perhaps more",
-                flags=DOTALL,
-            ),
-        ):
-            _ = one_unique(iterable)
-
-
-class TestPairwiseTail:
-    def test_main(self) -> None:
-        iterable = range(5)
-        result = list(pairwise_tail(iterable))
-        expected = [(0, 1), (1, 2), (2, 3), (3, 4), (4, sentinel)]
-        assert result == expected
-
-
-class TestProductDicts:
-    def test_main(self) -> None:
-        mapping = {"x": [1, 2], "y": [7, 8, 9]}
-        result = list(product_dicts(mapping))
-        expected = [
-            {"x": 1, "y": 7},
-            {"x": 1, "y": 8},
-            {"x": 1, "y": 9},
-            {"x": 2, "y": 7},
-            {"x": 2, "y": 8},
-            {"x": 2, "y": 9},
-        ]
-        assert result == expected
-
-
-class TestRangePartitions:
-    @given(
-        case=sampled_from([
-            (1, 0, 1, [0]),
-            (2, 0, 1, [0, 1]),
-            (2, 0, 2, [0]),
-            (2, 1, 2, [1]),
-            (3, 0, 1, [0, 1, 2]),
-            (3, 0, 2, [0, 1]),
-            (3, 1, 2, [2]),
-            (3, 0, 3, [0]),
-            (3, 1, 3, [1]),
-            (3, 2, 3, [2]),
-            (6, 0, 1, [0, 1, 2, 3, 4, 5]),
-            (6, 0, 2, [0, 1, 2]),
-            (6, 1, 2, [3, 4, 5]),
-            (6, 0, 3, [0, 1]),
-            (6, 1, 3, [2, 3]),
-            (6, 2, 3, [4, 5]),
-            (7, 0, 2, [0, 1, 2, 3]),
-            (7, 1, 2, [4, 5, 6]),
-            (7, 0, 3, [0, 1, 2]),
-            (7, 1, 3, [3, 4]),
-            (7, 2, 3, [5, 6]),
-        ])
-    )
-    def test_main(self, *, case: tuple[int, int, int, Sequence[int]]) -> None:
-        stop, num, total, expected = case
-        result = list(range_partitions(stop, num, total))
-        assert result == expected
-
-    def test_error_stop(self) -> None:
-        with raises(_RangePartitionsStopError, match=r"'stop' must be positive; got 0"):
-            _ = range_partitions(0, 0, 0)
-
-    def test_error_total_too_low(self) -> None:
-        with raises(
-            _RangePartitionsTotalError, match=r"'total' must be in \[1, 1\]; got 0"
-        ):
-            _ = range_partitions(1, 0, 0)
-
-    def test_error_total_too_high(self) -> None:
-        with raises(
-            _RangePartitionsTotalError, match=r"'total' must be in \[1, 1\]; got 2"
-        ):
-            _ = range_partitions(1, 0, 2)
-
-    def test_error_num_too_low(self) -> None:
-        with raises(
-            _RangePartitionsNumError, match=r"'num' must be in \[0, 1\]; got -1"
-        ):
-            _ = range_partitions(2, -1, 2)
-
-    def test_error_num_too_high(self) -> None:
-        with raises(
-            _RangePartitionsNumError, match=r"'num' must be in \[0, 1\]; got 2"
-        ):
-            _ = range_partitions(2, 2, 2)
-
-
-class TestReduceMappings:
-    @given(
-        mappings=lists(dictionaries(text_ascii(), integers())),
-        initial=just(0) | sentinels(),
-    )
-    def test_main(
-        self, *, mappings: Sequence[Mapping[str, int]], initial: int | Sentinel
-    ) -> None:
-        result = reduce_mappings(add, mappings, initial=initial)
-        expected = {}
-        for mapping in mappings:
-            for key, value in mapping.items():
-                expected[key] = expected.get(key, 0) + value
-        assert result == expected
 
 
 class TestResolveIncludeAndExclude:
@@ -1259,139 +797,3 @@ class TestSortIterablesCmpFloats:
     def test_nan_vs_nan(self) -> None:
         result = _sort_iterable_cmp_floats(nan, nan)
         assert result == 0
-
-
-class TestSumMappings:
-    @given(mappings=lists(dictionaries(text_ascii(), integers())))
-    def test_main(self, *, mappings: Sequence[Mapping[str, int]]) -> None:
-        result = sum_mappings(*mappings)
-        expected = {}
-        for mapping in mappings:
-            for key, value in mapping.items():
-                expected[key] = expected.get(key, 0) + value
-        assert result == expected
-
-
-class TestTake:
-    def test_simple(self) -> None:
-        result = take(5, range(10))
-        expected = list(range(5))
-        assert result == expected
-
-    def test_null(self) -> None:
-        result = take(0, range(10))
-        expected = []
-        assert result == expected
-
-    def test_negative(self) -> None:
-        with raises(
-            ValueError,
-            match=r"Indices for islice\(\) must be None or an integer: 0 <= x <= sys.maxsize\.",
-        ):
-            _ = take(-3, range(10))
-
-    def test_too_much(self) -> None:
-        result = take(10, range(5))
-        expected = list(range(5))
-        assert result == expected
-
-
-class TestTranspose:
-    @given(sequence=lists(tuples(integers()), min_size=1))
-    def test_singles(self, *, sequence: Sequence[tuple[int]]) -> None:
-        result = transpose(sequence)
-        assert isinstance(result, tuple)
-        for list_i in result:
-            assert isinstance(list_i, list)
-            assert len(list_i) == len(sequence)
-        (first,) = result
-        assert is_sequence_of(first, int)
-        zipped = list(zip(*result, strict=True))
-        assert zipped == sequence
-
-    @given(sequence=lists(tuples(integers(), text_ascii()), min_size=1))
-    def test_pairs(self, *, sequence: Sequence[tuple[int, str]]) -> None:
-        result = transpose(sequence)
-        assert isinstance(result, tuple)
-        for list_i in result:
-            assert isinstance(list_i, list)
-            assert len(list_i) == len(sequence)
-        first, second = result
-        assert is_sequence_of(first, int)
-        assert is_sequence_of(second, str)
-        zipped = list(zip(*result, strict=True))
-        assert zipped == sequence
-
-    @given(sequence=lists(tuples(integers(), text_ascii(), integers()), min_size=1))
-    def test_triples(self, *, sequence: Sequence[tuple[int, str, int]]) -> None:
-        result = transpose(sequence)
-        assert isinstance(result, tuple)
-        for list_i in result:
-            assert isinstance(list_i, list)
-            assert len(list_i) == len(sequence)
-        first, second, third = result
-        assert is_sequence_of(first, int)
-        assert is_sequence_of(second, str)
-        assert is_sequence_of(third, int)
-        zipped = list(zip(*result, strict=True))
-        assert zipped == sequence
-
-    @given(
-        sequence=lists(
-            tuples(integers(), text_ascii(), integers(), text_ascii()), min_size=1
-        )
-    )
-    def test_quadruples(self, *, sequence: Sequence[tuple[int, str, int, str]]) -> None:
-        result = transpose(sequence)
-        assert isinstance(result, tuple)
-        for list_i in result:
-            assert isinstance(list_i, list)
-            assert len(list_i) == len(sequence)
-        first, second, third, fourth = result
-        assert is_sequence_of(first, int)
-        assert is_sequence_of(second, str)
-        assert is_sequence_of(third, int)
-        assert is_sequence_of(fourth, str)
-        zipped = list(zip(*result, strict=True))
-        assert zipped == sequence
-
-    @given(
-        sequence=lists(
-            tuples(integers(), text_ascii(), integers(), text_ascii(), integers()),
-            min_size=1,
-        )
-    )
-    def test_quintuples(
-        self, *, sequence: Sequence[tuple[int, str, int, str, int]]
-    ) -> None:
-        result = transpose(sequence)
-        assert isinstance(result, tuple)
-        for list_i in result:
-            assert isinstance(list_i, list)
-            assert len(list_i) == len(sequence)
-        first, second, third, fourth, fifth = result
-        assert is_sequence_of(first, int)
-        assert is_sequence_of(second, str)
-        assert is_sequence_of(third, int)
-        assert is_sequence_of(fourth, str)
-        assert is_sequence_of(fifth, int)
-        zipped = list(zip(*result, strict=True))
-        assert zipped == sequence
-
-
-class TestUniqueEverseen:
-    text: ClassVar[str] = "AAAABBBCCDAABBB"
-    expected: ClassVar[list[str]] = ["A", "B", "C", "D"]
-
-    def test_main(self) -> None:
-        result = list(unique_everseen("AAAABBBCCDAABBB"))
-        assert result == self.expected
-
-    def test_key(self) -> None:
-        result = list(unique_everseen("ABBCcAD", key=str.lower))
-        assert result == self.expected
-
-    def test_non_hashable(self) -> None:
-        result = list(unique_everseen([[1, 2], [2, 3], [1, 2]]))
-        expected = [[1, 2], [2, 3]]
-        assert result == expected

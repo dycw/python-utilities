@@ -23,10 +23,13 @@ from altair import (
 )
 from altair.utils.schemapi import Undefined
 
-from utilities.atomicwrites import writer
+from utilities.core import (
+    TemporaryDirectory,
+    always_iterable,
+    write_bytes,
+    yield_write_path,
+)
 from utilities.functions import ensure_bytes, ensure_number
-from utilities.iterables import always_iterable
-from utilities.tempfile import TemporaryDirectory
 
 if TYPE_CHECKING:
     from polars import DataFrame
@@ -269,7 +272,7 @@ def save_chart(
     chart: _ChartLike, path: PathLike, /, *, overwrite: bool = False
 ) -> None:
     """Atomically save a chart to disk."""
-    with writer(path, overwrite=overwrite) as temp:
+    with yield_write_path(path, overwrite=overwrite) as temp:
         chart.save(temp, format="png")
 
 
@@ -287,8 +290,7 @@ def save_charts_as_pdf(
         for chart, temp_path in zip(charts, temp_paths, strict=True):
             save_chart(chart, temp_path)
         data = ensure_bytes(convert(*temp_paths))
-    with writer(path, overwrite=overwrite) as temp:
-        _ = temp.write_bytes(data)
+    write_bytes(path, data, overwrite=overwrite)
 
 
 ##

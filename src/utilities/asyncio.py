@@ -36,13 +36,12 @@ from typing import (
 )
 
 from utilities.constants import SYSTEM_RANDOM, Sentinel, sentinel
+from utilities.core import get_now, repr_
 from utilities.functions import ensure_int, ensure_not_none, in_seconds
 from utilities.os import is_pytest
-from utilities.reprlib import get_repr
 from utilities.shelve import yield_shelf
 from utilities.text import to_bool
-from utilities.warnings import suppress_warnings
-from utilities.whenever import get_now, round_date_or_date_time
+from utilities.whenever import round_date_or_date_time
 
 if TYPE_CHECKING:
     from asyncio import _CoroutineLike
@@ -67,7 +66,6 @@ if TYPE_CHECKING:
 
     from utilities.shelve import _Flag
     from utilities.types import (
-        Coro,
         Delta,
         Duration,
         MaybeCallableBoolLike,
@@ -366,20 +364,6 @@ def chain_async[T](*iterables: Iterable[T] | AsyncIterable[T]) -> AsyncIterator[
 ##
 
 
-def get_coroutine_name(func: Callable[[], Coro[Any]], /) -> str:
-    """Get the name of a coroutine, and then dispose of it gracefully."""
-    coro = func()
-    name = coro.__name__
-    with suppress_warnings(
-        message="coroutine '.*' was never awaited", category=RuntimeWarning
-    ):
-        del coro
-    return name
-
-
-##
-
-
 async def get_items[T](queue: Queue[T], /, *, max_size: int | None = None) -> list[T]:
     """Get items from a queue; if empty then wait."""
     try:
@@ -435,7 +419,7 @@ class OneAsyncError[T](Exception):
 class OneAsyncEmptyError[T](OneAsyncError[T]):
     @override
     def __str__(self) -> str:
-        return f"Iterable(s) {get_repr(self.iterables)} must not be empty"
+        return f"Iterable(s) {repr_(self.iterables)} must not be empty"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -445,7 +429,7 @@ class OneAsyncNonUniqueError[T](OneAsyncError):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable(s) {get_repr(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+        return f"Iterable(s) {repr_(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
 
 
 ##
@@ -601,7 +585,6 @@ __all__ = [
     "OneAsyncNonUniqueError",
     "StreamCommandOutput",
     "chain_async",
-    "get_coroutine_name",
     "get_items",
     "get_items_nowait",
     "one_async",

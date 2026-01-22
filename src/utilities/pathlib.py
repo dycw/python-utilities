@@ -3,23 +3,19 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from itertools import chain
-from os import chdir
-from os.path import expandvars
 from pathlib import Path
 from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_output
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.constants import Sentinel
-from utilities.contextlib import enhanced_context_manager
-from utilities.errors import ImpossibleCaseError
 from utilities.grp import get_gid_name
 from utilities.pwd import get_uid_name
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Sequence
 
-    from utilities.types import FileOrDir, MaybeCallablePathLike, PathLike
+    from utilities.types import MaybeCallablePathLike, PathLike
 
 
 def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
@@ -41,58 +37,6 @@ def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
 ##
 
 
-def expand_path(path: PathLike, /) -> Path:
-    """Expand a path."""
-    path = str(path)
-    path = expandvars(path)
-    return Path(path).expanduser()
-
-
-##
-
-
-@overload
-def file_or_dir(path: PathLike, /, *, exists: Literal[True]) -> FileOrDir: ...
-@overload
-def file_or_dir(path: PathLike, /, *, exists: bool = False) -> FileOrDir | None: ...
-def file_or_dir(path: PathLike, /, *, exists: bool = False) -> FileOrDir | None:
-    """Classify a path as a file, directory or non-existent."""
-    path = Path(path)
-    match path.exists(), path.is_file(), path.is_dir(), exists:
-        case True, True, False, _:
-            return "file"
-        case True, False, True, _:
-            return "dir"
-        case False, False, False, True:
-            raise _FileOrDirMissingError(path=path)
-        case False, False, False, False:
-            return None
-        case _:
-            raise _FileOrDirTypeError(path=path)
-
-
-@dataclass(kw_only=True, slots=True)
-class FileOrDirError(Exception):
-    path: Path
-
-
-@dataclass(kw_only=True, slots=True)
-class _FileOrDirMissingError(FileOrDirError):
-    @override
-    def __str__(self) -> str:
-        return f"Path does not exist: {str(self.path)!r}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _FileOrDirTypeError(FileOrDirError):
-    @override
-    def __str__(self) -> str:
-        return f"Path is neither a file nor a directory: {str(self.path)!r}"
-
-
-##
-
-
 def get_file_group(path: PathLike, /) -> str | None:
     """Get the group of a file."""
     return get_gid_name(to_path(path).stat().st_gid)
@@ -101,33 +45,6 @@ def get_file_group(path: PathLike, /) -> str | None:
 def get_file_owner(path: PathLike, /) -> str | None:
     """Get the owner of a file."""
     return get_uid_name(to_path(path).stat().st_uid)
-
-
-##
-
-
-def get_package_root(path: MaybeCallablePathLike = Path.cwd, /) -> Path:
-    """Get the package root."""
-    path = to_path(path)
-    path_dir = path.parent if path.is_file() else path
-    all_paths = list(chain([path_dir], path_dir.parents))
-    try:
-        return next(
-            p.resolve()
-            for p in all_paths
-            if any(p_i.name == "pyproject.toml" for p_i in p.iterdir())
-        )
-    except StopIteration:
-        raise GetPackageRootError(path=path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class GetPackageRootError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Path is not part of a package: {str(self.path)!r}"
 
 
 ##
@@ -176,50 +93,6 @@ class _GetRepoRootNotARepoError(GetRepoRootError):
     @override
     def __str__(self) -> str:
         return f"Path is not part of a `git` repository: {self.path}"
-
-
-##
-
-
-def get_root(path: MaybeCallablePathLike = Path.cwd, /) -> Path:
-    """Get the root of a path."""
-    path = to_path(path)
-    try:
-        repo = get_repo_root(path)
-    except GetRepoRootError:
-        repo = None
-    try:
-        package = get_package_root(path)
-    except GetPackageRootError:
-        package = None
-    match repo, package:
-        case None, None:
-            raise GetRootError(path=path)
-        case Path(), None:
-            return repo
-        case None, Path():
-            return package
-        case Path(), Path():
-            if repo == package:
-                return repo
-            if is_sub_path(repo, package, strict=True):
-                return repo
-            if is_sub_path(package, repo, strict=True):
-                return package
-            raise ImpossibleCaseError(  # pragma: no cover
-                case=[f"{repo=}", f"{package=}"]
-            )
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class GetRootError(Exception):
-    path: PathLike
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to determine root from {str(self.path)!r}"
 
 
 ##
@@ -322,32 +195,9 @@ def module_path(
 ##
 
 
-def is_sub_path(x: PathLike, y: PathLike, /, *, strict: bool = False) -> bool:
-    """Check if a path is a sub path of another."""
-    x, y = [Path(i).resolve() for i in [x, y]]
-    return x.is_relative_to(y) and not (strict and y.is_relative_to(x))
-
-
-##
-
-
 def list_dir(path: PathLike, /) -> Sequence[Path]:
     """List the contents of a directory."""
     return sorted(Path(path).iterdir())
-
-
-##
-
-
-@enhanced_context_manager
-def temp_cwd(path: PathLike, /) -> Iterator[None]:
-    """Context manager with temporary current working directory set."""
-    prev = Path.cwd()
-    chdir(path)
-    try:
-        yield
-    finally:
-        chdir(prev)
 
 
 ##
@@ -375,21 +225,14 @@ def to_path(
 
 
 __all__ = [
-    "FileOrDirError",
-    "GetPackageRootError",
     "GetRepoRootError",
     "GetTailError",
     "ensure_suffix",
-    "expand_path",
-    "file_or_dir",
     "get_file_group",
     "get_file_owner",
-    "get_package_root",
     "get_repo_root",
     "get_tail",
-    "is_sub_path",
     "list_dir",
     "module_path",
-    "temp_cwd",
     "to_path",
 ]

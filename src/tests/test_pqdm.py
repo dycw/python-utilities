@@ -10,9 +10,9 @@ from hypothesis.strategies import integers, lists, sampled_from, tuples
 from pytest import mark, param
 
 from utilities.constants import Sentinel, sentinel
+from utilities.core import transpose
 from utilities.functions import get_class_name
 from utilities.hypothesis import int32s, pairs, settings_with_reduced_examples
-from utilities.iterables import transpose
 from utilities.pqdm import _get_desc, pqdm_map, pqdm_starmap
 from utilities.types import Parallelism, StrStrMapping
 from utilities.typing import get_args

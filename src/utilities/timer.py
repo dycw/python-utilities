@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any, Self, override
 
 from whenever import TimeDelta
 
+from utilities.core import get_now_local
 from utilities.functions import in_timedelta
-from utilities.whenever import get_now_local
 
 if TYPE_CHECKING:
     from collections.abc import Callable

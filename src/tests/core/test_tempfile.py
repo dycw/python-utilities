@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from utilities.tempfile import (
+from utilities.core import (
     TemporaryDirectory,
     TemporaryFile,
-    yield_temp_dir_at,
-    yield_temp_file_at,
+    yield_adjacent_temp_dir,
+    yield_adjacent_temp_file,
 )
 
 
@@ -90,15 +90,33 @@ class TestTemporaryFile:
             assert current == text
 
 
-class TestYieldTempAt:
-    def test_dir(self, *, temp_path_not_exist: Path) -> None:
-        with yield_temp_dir_at(temp_path_not_exist) as temp:
-            assert temp.is_dir()
-            assert temp.parent == temp_path_not_exist.parent
-            assert temp.name.startswith(temp_path_not_exist.name)
+class TestYieldAdjacentTempDir:
+    def test_main(self, *, tmp_path: Path) -> None:
+        with yield_adjacent_temp_dir(tmp_path) as temp:
+            self._run_test(tmp_path, temp)
 
-    def test_file(self, *, temp_path_not_exist: Path) -> None:
-        with yield_temp_file_at(temp_path_not_exist) as temp:
-            assert temp.is_file()
-            assert temp.parent == temp_path_not_exist.parent
-            assert temp.name.startswith(temp_path_not_exist.name)
+    def test_deep(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "a/b/c"
+        with yield_adjacent_temp_dir(path) as temp:
+            self._run_test(path, temp)
+
+    def _run_test(self, path: Path, temp: Path, /) -> None:
+        assert temp.is_dir()
+        assert temp.parent == path.parent
+        assert temp.name.startswith(path.name)
+
+
+class TestYieldAdjacentTempFile:
+    def test_main(self, *, tmp_path: Path) -> None:
+        with yield_adjacent_temp_file(tmp_path) as temp:
+            self._run_test(tmp_path, temp)
+
+    def test_deep(self, *, tmp_path: Path) -> None:
+        path = tmp_path / "a/b/c/file.txt"
+        with yield_adjacent_temp_file(path) as temp:
+            self._run_test(path, temp)
+
+    def _run_test(self, path: Path, temp: Path, /) -> None:
+        assert temp.is_file()
+        assert temp.parent == path.parent
+        assert temp.name.startswith(path.name)

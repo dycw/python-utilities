@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from tabulate import tabulate
 
-from utilities.functions import get_func_name
+from utilities.core import get_func_name, normalize_str
 from utilities.text import split_f_str_equals
 
 if TYPE_CHECKING:
@@ -16,16 +16,17 @@ def func_param_desc(func: Callable[..., Any], version: str, /, *variables: str) 
     """Generate a string describing a function & its parameters."""
     name = get_func_name(func)
     table = indent(params_table(*variables), "  ")
-    return f"""\
+    return normalize_str(f"""\
 Running {name!r} (version {version}) with:
-{table}"""
+{table}
+""")
 
 
 def params_table(*variables: str) -> str:
     """Generate a table of parameter names and values."""
-    return tabulate(
-        list(map(split_f_str_equals, variables)), tablefmt="rounded_outline"
-    )
+    data = list(map(split_f_str_equals, variables))
+    table = tabulate(data, tablefmt="rounded_outline")
+    return normalize_str(table)
 
 
 __all__ = ["func_param_desc", "params_table"]

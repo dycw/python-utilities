@@ -38,17 +38,10 @@ from whenever import (
 
 from utilities.concurrent import concurrent_map
 from utilities.constants import LOCAL_TIME_ZONE, MAX_INT64, MIN_INT64
+from utilities.core import OneEmptyError, always_iterable, one, read_bytes, write_bytes
 from utilities.dataclasses import dataclass_to_dict
 from utilities.functions import ensure_class
-from utilities.gzip import read_binary
-from utilities.iterables import (
-    OneEmptyError,
-    always_iterable,
-    merge_sets,
-    one,
-    one_unique,
-)
-from utilities.json import write_formatted_json
+from utilities.iterables import merge_sets
 from utilities.logging import get_logging_level_number
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
 from utilities.typing import is_str_mapping
@@ -959,7 +952,7 @@ class GetLogRecordsOutput:
             for r in self.records
         ]
         if len(records) >= 1:
-            time_zone = one_unique(ZoneInfo(r.datetime.tz) for r in records)
+            time_zone = one({ZoneInfo(r.datetime.tz) for r in records})
         else:
             time_zone = LOCAL_TIME_ZONE
         return DataFrame(
@@ -1269,7 +1262,7 @@ def read_object(
     redirects: Mapping[str, type[Any]] | None = None,
 ) -> Any:
     """Read an object from disk."""
-    data = read_binary(path, decompress=decompress)
+    data = read_bytes(path, decompress=decompress)
     return deserialize(
         data, dataclass_hook=dataclass_hook, objects=objects, redirects=redirects
     )
@@ -1299,7 +1292,7 @@ def write_object(
         dataclass_hook=dataclass_hook,
         dataclass_defaults=dataclass_defaults,
     )
-    write_formatted_json(data, path, compress=compress, overwrite=overwrite)
+    write_bytes(path, data, compress=compress, overwrite=overwrite, json=True)
 
 
 __all__ = [

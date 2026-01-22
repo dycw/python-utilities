@@ -5,11 +5,7 @@ from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
 from itertools import chain
-from os import getpid
-from re import IGNORECASE, VERBOSE, escape, search
-from textwrap import dedent
-from threading import get_ident
-from time import time_ns
+from re import IGNORECASE, escape, search
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,24 +15,15 @@ from typing import (
     overload,
     override,
 )
-from uuid import uuid4
 
 from utilities.constants import BRACKETS, LIST_SEPARATOR, PAIR_SEPARATOR, Sentinel
-from utilities.iterables import CheckDuplicatesError, check_duplicates, transpose
-from utilities.reprlib import get_repr
+from utilities.core import repr_, transpose
+from utilities.iterables import CheckDuplicatesError, check_duplicates
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
     from utilities.types import MaybeCallableBoolLike, MaybeCallableStr, StrStrMapping
-
-
-##
-
-
-def kebab_case(text: str, /) -> str:
-    """Convert text into kebab case."""
-    return _kebab_snake_case(text, "-")
 
 
 ##
@@ -82,40 +69,9 @@ class ParseNoneError(Exception):
 ##
 
 
-def pascal_case(text: str, /) -> str:
-    """Convert text to pascal case."""
-    parts = _SPLIT_TEXT.findall(text)
-    parts = [p for p in parts if len(p) >= 1]
-    parts = list(map(_pascal_case_one, parts))
-    return "".join(parts)
-
-
-def _pascal_case_one(text: str, /) -> str:
-    return text if text.isupper() else text.title()
-
-
-##
-
-
 def prompt_bool(prompt: object = "", /, *, confirm: bool = False) -> bool:
     """Prompt for a boolean."""
     return True if confirm else parse_bool(input(prompt))
-
-
-##
-
-
-def repr_encode(obj: Any, /) -> bytes:
-    """Return the representation of the object encoded as bytes."""
-    return repr(obj).encode()
-
-
-##
-
-
-def snake_case(text: str, /) -> str:
-    """Convert text into snake case."""
-    return _kebab_snake_case(text, "_")
 
 
 ##
@@ -212,7 +168,7 @@ class _SplitKeyValuePairsDuplicateKeysError(SplitKeyValuePairsError):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to split {self.text!r} into a mapping since there are duplicate keys; got {get_repr(self.counts)}"
+        return f"Unable to split {self.text!r} into a mapping since there are duplicate keys; got {repr_(self.counts)}"
 
 
 ##
@@ -412,14 +368,6 @@ def _escape_separator(*, separator: str = LIST_SEPARATOR) -> str:
 ##
 
 
-def repr_str(obj: Any, /) -> str:
-    """Get the representation of the string of an object."""
-    return repr(str(obj))
-
-
-##
-
-
 class secret_str(str):  # noqa: N801
     """A string with an obfuscated representation."""
 
@@ -449,15 +397,6 @@ class secret_str(str):  # noqa: N801
 def str_encode(obj: Any, /) -> bytes:
     """Return the string representation of the object encoded as bytes."""
     return str(obj).encode()
-
-
-##
-
-
-def strip_and_dedent(text: str, /, *, trailing: bool = False) -> str:
-    """Strip and dedent a string."""
-    result = dedent(text.strip("\n")).strip("\n")
-    return f"{result}\n" if trailing else result
 
 
 ##
@@ -507,58 +446,20 @@ def to_str(text: MaybeCallableStr | None | Sentinel, /) -> str | None | Sentinel
 ##
 
 
-def unique_str() -> str:
-    """Generate at unique string."""
-    now = time_ns()
-    pid = getpid()
-    ident = get_ident()
-    key = str(uuid4()).replace("-", "")
-    return f"{now}_{pid}_{ident}_{key}"
-
-
-##
-
-
-def _kebab_snake_case(text: str, separator: str, /) -> str:
-    """Convert text into kebab/snake case."""
-    leading = bool(search(r"^_", text))
-    trailing = bool(search(r"_$", text))
-    parts = _SPLIT_TEXT.findall(text)
-    parts = (p for p in parts if len(p) >= 1)
-    parts = chain([""] if leading else [], parts, [""] if trailing else [])
-    return separator.join(parts).lower()
-
-
-_SPLIT_TEXT = re.compile(
-    r"""
-    [A-Z]+(?=[A-Z][a-z0-9]) | # all caps followed by Upper+lower or digit (API in APIResponse2)
-    [A-Z]?[a-z]+[0-9]*      | # normal words with optional trailing digits (Text123)
-    [A-Z]+[0-9]*            | # consecutive caps with optional trailing digits (ID2)
-    """,
-    flags=VERBOSE,
-)
-
 __all__ = [
     "ParseBoolError",
     "ParseNoneError",
     "SplitKeyValuePairsError",
     "SplitStrError",
     "join_strs",
-    "kebab_case",
     "parse_bool",
     "parse_none",
-    "pascal_case",
     "prompt_bool",
-    "repr_encode",
-    "repr_str",
     "secret_str",
-    "snake_case",
     "split_f_str_equals",
     "split_key_value_pairs",
     "split_str",
     "str_encode",
-    "strip_and_dedent",
     "to_bool",
     "to_str",
-    "unique_str",
 ]

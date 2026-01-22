@@ -8,7 +8,7 @@ from utilities.contextvars import (
     set_global_breakpoint,
     yield_set_context,
 )
-from utilities.text import unique_str
+from utilities.core import unique_str
 
 
 class TestGlobalBreakpoint:

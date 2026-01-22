@@ -8,7 +8,7 @@ import packaging.requirements
 from packaging.requirements import _parse_requirement
 from packaging.specifiers import Specifier, SpecifierSet
 
-from utilities.iterables import OneEmptyError, one
+from utilities.core import OneEmptyError, one
 
 if TYPE_CHECKING:
     from packaging._parser import MarkerList

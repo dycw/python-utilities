@@ -9,10 +9,9 @@ from typing import TYPE_CHECKING, Any, assert_never, override
 from pytest_datadir.plugin import LazyDataDir
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from utilities.atomicwrites import _CopySourceNotFoundError, copy
+from utilities.core import _CopyOrMoveSourceNotFoundError, copy, repr_
 from utilities.functions import ensure_str
 from utilities.operator import is_equal
-from utilities.reprlib import get_repr
 
 if TYPE_CHECKING:
     from polars import DataFrame, Series
@@ -34,7 +33,7 @@ class OrjsonRegressionFixture:
         path = Path(path)
         original_datadir = path.parent
         data_dir = tmp_path.joinpath(ensure_str(request.fixturename))
-        with suppress(_CopySourceNotFoundError):
+        with suppress(_CopyOrMoveSourceNotFoundError):
             copy(original_datadir, data_dir, overwrite=True)
         self._fixture = FileRegressionFixture(
             datadir=LazyDataDir(original_datadir=original_datadir, tmp_path=data_dir),
@@ -96,7 +95,7 @@ class OrjsonRegressionError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Obtained object (at {str(self.path_obtained)!r}) and existing object (at {str(self.path_existing)!r}) differ; got {get_repr(self.obtained)} and {get_repr(self.existing)}"
+        return f"Obtained object (at {str(self.path_obtained)!r}) and existing object (at {str(self.path_existing)!r}) differ; got {repr_(self.obtained)} and {repr_(self.existing)}"
 
 
 ##

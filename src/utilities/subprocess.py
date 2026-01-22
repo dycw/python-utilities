@@ -16,22 +16,23 @@ from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
-from utilities.atomicwrites import (
-    _CopySourceNotFoundError,
-    _MoveSourceNotFoundError,
-    copy,
-    move,
-)
 from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
+from utilities.core import (
+    OneEmptyError,
+    TemporaryDirectory,
+    _CopyOrMoveSourceNotFoundError,
+    always_iterable,
+    copy,
+    file_or_dir,
+    move,
+    normalize_multi_line_str,
+    one,
+)
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
-from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.logging import to_logger
-from utilities.pathlib import file_or_dir
 from utilities.permissions import Permissions, ensure_perms
-from utilities.tempfile import TemporaryDirectory
-from utilities.text import strip_and_dedent
 from utilities.time import sleep
 from utilities.version import (
     ParseVersion2Or3Error,
@@ -141,7 +142,7 @@ def apt_remove_cmd(package: str, /, *packages: str) -> list[str]:
 
 def apt_update(*, sudo: bool = False) -> None:
     """Update 'apt'."""
-    run(*maybe_sudo_cmd(*APT_UPDATE, sudo=sudo))
+    run(*maybe_sudo_cmd(*APT_UPDATE, sudo=sudo))  # pragma: no cover
 
 
 ##
@@ -323,7 +324,7 @@ def cp(
     else:
         try:
             copy(src, dest, overwrite=True)
-        except _CopySourceNotFoundError as error:
+        except _CopyOrMoveSourceNotFoundError as error:
             raise CpError(src=error.src) from None
     if perms is not None:
         chmod(dest, perms, sudo=sudo)
@@ -687,7 +688,7 @@ def mv(
     else:
         try:
             move(src, dest, overwrite=True)
-        except _MoveSourceNotFoundError as error:
+        except _CopyOrMoveSourceNotFoundError as error:
             raise MvFileError(src=error.src) from None
     if perms is not None:
         chmod(dest, perms, sudo=sudo)
@@ -879,10 +880,10 @@ def rsync_cmd(
         args.extend(["--rsync-path", join(sudo_cmd("rsync"))])
     srcs = list(always_iterable(src_or_srcs))  # do not Path()
     if len(srcs) == 0:
-        raise RsyncCmdNoSourcesError(user=user, hostname=hostname, dest=dest)
+        raise _RsyncCmdNoSourcesError(user=user, hostname=hostname, dest=dest)
     missing = [s for s in srcs if not Path(s).exists()]
     if len(missing) >= 1:
-        raise RsyncCmdSourcesNotFoundError(
+        raise _RsyncCmdSourcesNotFoundError(
             sources=missing, user=user, hostname=hostname, dest=dest
         )
     return [*args, *map(str, srcs), f"{user}@{hostname}:{dest}"]
@@ -894,20 +895,16 @@ class RsyncCmdError(Exception):
     hostname: str
     dest: PathLike
 
+
+@dataclass(kw_only=True, slots=True)
+class _RsyncCmdNoSourcesError(RsyncCmdError):
     @override
     def __str__(self) -> str:
         return f"No sources selected to send to {self.user}@{self.hostname}:{self.dest}"
 
 
 @dataclass(kw_only=True, slots=True)
-class RsyncCmdNoSourcesError(RsyncCmdError):
-    @override
-    def __str__(self) -> str:
-        return f"No sources selected to send to {self.user}@{self.hostname}:{self.dest}"
-
-
-@dataclass(kw_only=True, slots=True)
-class RsyncCmdSourcesNotFoundError(RsyncCmdError):
+class _RsyncCmdSourcesNotFoundError(RsyncCmdError):
     sources: list[PathLike]
 
     @override
@@ -947,7 +944,11 @@ def rsync_many(
             match item:
                 case Path() | str() as src, Path() | str() as dest:
                     cmds.extend(_rsync_many_prepare(src, dest, temp_src, temp_dest))
-                case "sudo", Path() | str() as src, Path() | str() as dest:
+                case (  # pragma: no cover
+                    "sudo",
+                    Path() | str() as src,
+                    Path() | str() as dest,
+                ):
                     cmds.extend(
                         _rsync_many_prepare(src, dest, temp_src, temp_dest, sudo=True)
                     )
@@ -959,7 +960,7 @@ def rsync_many(
                     cmds.extend(
                         _rsync_many_prepare(src, dest, temp_src, temp_dest, perms=perms)
                     )
-                case (
+                case (  # pragma: no cover
                     "sudo",
                     Path() | str() as src,
                     Path() | str() as dest,
@@ -1230,7 +1231,7 @@ def run(
                 else:
                     attempts, duration = retry
                 if logger is not None:
-                    msg = strip_and_dedent(f"""
+                    msg = normalize_multi_line_str(f"""
 'run' failed with:
  - cmd          = {cmd}
  - cmds_or_args = {cmds_or_args}
@@ -1464,7 +1465,7 @@ def ssh(
             retry_skip=_ssh_retry_skip,
             logger=logger,
         )
-    except CalledProcessError as error:  # skipif-ci
+    except CalledProcessError as error:  # pragma: no cover
         if not _ssh_is_strict_checking_error(error.stderr):
             raise
         ssh_keyscan(hostname, port=port)
@@ -1561,7 +1562,7 @@ def ssh_await(
             to_logger(logger).info("Waiting for '%s'...", hostname)
         try:
             ssh(user, hostname, "true")
-        except CalledProcessError:
+        except CalledProcessError:  # pragma: no cover
             sleep(duration)
         else:
             if logger is not None:
@@ -2521,8 +2522,6 @@ __all__ = [
     "CpError",
     "MvFileError",
     "RsyncCmdError",
-    "RsyncCmdNoSourcesError",
-    "RsyncCmdSourcesNotFoundError",
     "UvPipListError",
     "append_text",
     "apt_install",

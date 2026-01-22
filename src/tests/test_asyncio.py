@@ -17,7 +17,6 @@ from utilities.asyncio import (
     OneAsyncEmptyError,
     OneAsyncNonUniqueError,
     chain_async,
-    get_coroutine_name,
     get_items,
     get_items_nowait,
     one_async,
@@ -32,9 +31,9 @@ from utilities.asyncio import (
     yield_locked_shelf,
 )
 from utilities.constants import SECOND
+from utilities.core import get_now
 from utilities.hypothesis import pairs, text_ascii
 from utilities.timer import Timer
-from utilities.whenever import get_now
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -315,16 +314,6 @@ class TestEnhancedTaskGroup:
         with RaisesGroup(CustomError):
             async with EnhancedTaskGroup(timeout=_DURATION, error=CustomError) as tg:
                 _ = tg.create_task(sleep(_MULTIPLE_HIGH * _DURATION))
-
-
-class TestGetCoroutineName:
-    def test_main(self) -> None:
-        async def func() -> None:
-            await sleep()
-
-        result = get_coroutine_name(func)
-        expected = "func"
-        assert result == expected
 
 
 class TestGetItems:

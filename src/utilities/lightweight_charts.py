@@ -3,10 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
 
-from utilities.atomicwrites import writer  # pragma: no cover
 from utilities.contextlib import enhanced_async_context_manager
-from utilities.iterables import OneEmptyError, OneNonUniqueError, one
-from utilities.reprlib import get_repr
+from utilities.core import OneEmptyError, OneNonUniqueError, one, repr_, write_bytes
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -25,8 +23,8 @@ if TYPE_CHECKING:
 def save_chart(chart: Chart, path: PathLike, /, *, overwrite: bool = False) -> None:
     """Atomically save a chart to disk."""
     chart.show(block=False)  # pragma: no cover
-    with writer(path, overwrite=overwrite) as temp:  # pragma: no cover
-        _ = temp.write_bytes(chart.screenshot())
+    data = chart.screenshot()  # pragma: no cover
+    write_bytes(path, data, overwrite=overwrite)  # pragma: no cover
     chart.exit()  # pragma: no cover
 
 
@@ -72,7 +70,7 @@ class _SetDataFrameNonUniqueError(SetDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"{get_repr(self.schema)} must contain exactly 1 date/datetime column; got {self.first!r}, {self.second!r} and perhaps more"
+        return f"{repr_(self.schema)} must contain exactly 1 date/datetime column; got {self.first!r}, {self.second!r} and perhaps more"
 
 
 ##

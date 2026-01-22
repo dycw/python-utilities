@@ -5,12 +5,10 @@ from json import dumps
 from subprocess import check_call
 from typing import TYPE_CHECKING, ClassVar
 
-from utilities.iterables import one
-from utilities.os import temp_environ
+from utilities.core import extract_group, one, yield_temp_environ
 from utilities.pydantic_settings import PathLikeOrWithSection, load_settings
 from utilities.pydantic_settings_sops import SopsBaseSettings
 from utilities.pytest import skipif_ci
-from utilities.re import extract_group
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -32,7 +30,7 @@ class TestSOPSBaseSettings:
         public_key = extract_group(pattern, public_line)
         encrypted_file = tmp_path.joinpath("encrypted.json")
         with (
-            temp_environ(SOPS_AGE_RECIPIENTS=public_key),
+            yield_temp_environ(SOPS_AGE_RECIPIENTS=public_key),
             encrypted_file.open(mode="w") as file,
         ):
             _ = check_call(["sops", "encrypt", str(unencrypted_file)], stdout=file)
@@ -42,7 +40,7 @@ class TestSOPSBaseSettings:
             x: int
             y: int
 
-        with temp_environ(SOPS_AGE_KEY_FILE=str(key_file)):
+        with yield_temp_environ(SOPS_AGE_KEY_FILE=str(key_file)):
             settings = load_settings(Settings)
         assert settings.x == 1
         assert settings.y == 2

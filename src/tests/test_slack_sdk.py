@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from os import environ
+
 from aiohttp import InvalidUrlClientError
 from pytest import mark, raises
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 
 from utilities.constants import MINUTE
-from utilities.os import get_env_var
 from utilities.pytest import throttle_test
 from utilities.slack_sdk import _get_async_client, send_to_slack, send_to_slack_async
 
@@ -25,10 +26,10 @@ class TestSendToSlack:
         with raises(InvalidUrlClientError, match=r"url"):
             await send_to_slack_async("url", "message")
 
-    @mark.skipif(get_env_var("SLACK", nullable=True) is None, reason="'SLACK' not set")
+    @mark.skipif("SLACK" not in environ, reason="'SLACK' not set")
     @throttle_test(duration=5 * MINUTE)
     async def test_real(self) -> None:
-        url = get_env_var("SLACK")
+        url = environ["SLACK"]
         await send_to_slack_async(
             url, f"message from {TestSendToSlack.test_real.__qualname__}"
         )

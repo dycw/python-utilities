@@ -19,7 +19,7 @@ from libcst import (
 )
 from pytest import raises
 
-from utilities.iterables import one
+from utilities.core import one
 from utilities.libcst import (
     GenerateImportFromError,
     _ParseImportAliasError,

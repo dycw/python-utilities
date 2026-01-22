@@ -40,7 +40,7 @@ from whenever import (
 )
 
 from utilities.constants import Sentinel
-from utilities.iterables import unique_everseen
+from utilities.core import unique_everseen
 from utilities.types import (
     Dataclass,
     StrDict,

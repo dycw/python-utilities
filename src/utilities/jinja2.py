@@ -9,7 +9,6 @@ from jinja2.defaults import (
     BLOCK_START_STRING,
     COMMENT_END_STRING,
     COMMENT_START_STRING,
-    KEEP_TRAILING_NEWLINE,
     LINE_COMMENT_PREFIX,
     LINE_STATEMENT_PREFIX,
     LSTRIP_BLOCKS,
@@ -19,8 +18,7 @@ from jinja2.defaults import (
     VARIABLE_START_STRING,
 )
 
-from utilities.atomicwrites import writer
-from utilities.text import kebab_case, pascal_case, snake_case
+from utilities.core import kebab_case, pascal_case, snake_case, write_text
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -48,7 +46,7 @@ class EnhancedEnvironment(Environment):
         trim_blocks: bool = TRIM_BLOCKS,
         lstrip_blocks: bool = LSTRIP_BLOCKS,
         newline_sequence: Literal["\n", "\r\n", "\r"] = NEWLINE_SEQUENCE,
-        keep_trailing_newline: bool = KEEP_TRAILING_NEWLINE,
+        keep_trailing_newline: bool = True,
         extensions: Sequence[str | type[Extension]] = (),
         optimized: bool = True,
         undefined: type[Undefined] = Undefined,
@@ -108,8 +106,7 @@ class TemplateJob:
         """Run the job."""
         match self.mode:
             case "write":
-                with writer(self.target, overwrite=True) as temp:
-                    _ = temp.write_text(self.rendered)
+                write_text(self.target, self.rendered, overwrite=True)
             case "append":
                 with self.target.open(mode="a") as fh:
                     _ = fh.write(self.rendered)

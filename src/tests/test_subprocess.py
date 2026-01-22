@@ -18,7 +18,13 @@ from utilities.constants import (
     PWD,
     SECOND,
 )
-from utilities.iterables import one
+from utilities.core import (
+    TemporaryDirectory,
+    TemporaryFile,
+    normalize_multi_line_str,
+    one,
+    unique_str,
+)
 from utilities.pathlib import get_file_group, get_file_owner
 from utilities.permissions import Permissions
 from utilities.pytest import skipif_ci, skipif_mac, throttle_test
@@ -30,10 +36,11 @@ from utilities.subprocess import (
     ChownCmdError,
     CpError,
     MvFileError,
-    RsyncCmdNoSourcesError,
-    RsyncCmdSourcesNotFoundError,
     _rsync_many_prepare,
+    _RsyncCmdNoSourcesError,
+    _RsyncCmdSourcesNotFoundError,
     _ssh_is_strict_checking_error,
+    _ssh_retry_skip,
     _uv_pip_list_assemble_output,
     _uv_pip_list_loads,
     _UvPipListBaseVersionError,
@@ -96,6 +103,7 @@ from utilities.subprocess import (
     symlink_cmd,
     tee,
     tee_cmd,
+    touch,
     touch_cmd,
     useradd_cmd,
     uv_index_cmd,
@@ -109,8 +117,6 @@ from utilities.subprocess import (
     yield_git_repo,
     yield_ssh_temp_dir,
 )
-from utilities.tempfile import TemporaryDirectory, TemporaryFile
-from utilities.text import strip_and_dedent, unique_str
 from utilities.typing import is_sequence_of
 from utilities.version import Version3
 
@@ -310,6 +316,13 @@ class TestChOwnCmd:
 
 class TestCopyText:
     def test_main(self, *, temp_files: tuple[Path, Path]) -> None:
+        src, dest = temp_files
+        _ = src.write_text("text")
+        copy_text(src, dest)
+        result = dest.read_text()
+        assert result == "text"
+
+    def test_substitutions(self, *, temp_files: tuple[Path, Path]) -> None:
         src, dest = temp_files
         _ = src.write_text("${KEY}")
         copy_text(src, dest, substitutions={"KEY": "value"})
@@ -714,7 +727,7 @@ class TestRsync:
                 ssh_user,
                 ssh_hostname,
                 *BASH_LS,
-                input=strip_and_dedent(f"""
+                input=normalize_multi_line_str(f"""
                     if ! [ -d {dest} ]; then exit 1; fi
                     if ! [ -d {dest}/{tmp_path.name} ]; then exit 1; fi
                     if ! [ -f {dest}/{tmp_path.name}/{temp_file.name} ]; then exit 1; fi
@@ -732,10 +745,23 @@ class TestRsync:
                 ssh_user,
                 ssh_hostname,
                 *BASH_LS,
-                input=strip_and_dedent(f"""
+                input=normalize_multi_line_str(f"""
                     if ! [ -d {dest} ]; then exit 1; fi
                     if ! [ -f {dest}/{temp_file.name} ]; then exit 1; fi
                 """),
+            )
+
+    @skipif_ci
+    @throttle_test(duration=5 * MINUTE)
+    def test_chmod(self, *, temp_file: Path, ssh_user: str, ssh_hostname: str) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp_dest:
+            dest = temp_dest / temp_file.name
+            rsync(temp_file, ssh_user, ssh_hostname, dest, chmod="u=rwx,g=r,o=r")
+            ssh(
+                ssh_user,
+                ssh_hostname,
+                *BASH_LS,
+                input=f"if ! [ -f {dest} ]; then exit 1; fi",
             )
 
 
@@ -899,14 +925,14 @@ class TestRsyncCmd:
 
     def test_error_no_sources(self) -> None:
         with raises(
-            RsyncCmdNoSourcesError,
+            _RsyncCmdNoSourcesError,
             match=r"No sources selected to send to user@hostname:dest",
         ):
             _ = rsync_cmd([], "user", "hostname", "dest")
 
     def test_error_sources_not_found(self, *, temp_path_not_exist: Path) -> None:
         with raises(
-            RsyncCmdSourcesNotFoundError,
+            _RsyncCmdSourcesNotFoundError,
             match=r"Sources selected to send to user@hostname:dest but not found: '.*'",
         ):
             _ = rsync_cmd(temp_path_not_exist, "user", "hostname", "dest")
@@ -941,7 +967,7 @@ class TestRsyncMany:
                 ssh_user,
                 ssh_hostname,
                 *BASH_LS,
-                input=strip_and_dedent(f"""
+                input=normalize_multi_line_str(f"""
                     if ! [ -f {dest1} ]; then exit 1; fi
                     if ! [ -f {dest2} ]; then exit 1; fi
                 """),
@@ -974,7 +1000,7 @@ class TestRsyncMany:
         with (
             TemporaryDirectory(dir=tmp_path) as temp_src,
             TemporaryFile(dir=temp_src) as src_file,
-            TemporaryDirectory(dir=temp_src) as src_dir,
+            TemporaryDirectory(dir=tmp_path) as src_dir,
             yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest,
         ):
             rsync_many(
@@ -992,6 +1018,31 @@ class TestRsyncMany:
                     if ! [ -d {dest} ]; then exit 1; fi
                     if ! [ -f {dest}/{src_file.name} ]; then exit 1; fi
                     if ! [ -d {dest}/{src_dir.name} ]; then exit 1; fi
+                    """
+                ),
+            )
+
+    @skipif_ci
+    @throttle_test(duration=5 * MINUTE)
+    def test_perms(self, *, temp_file: Path, ssh_user: str, ssh_hostname: str) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest:
+            rsync_many(
+                ssh_user,
+                ssh_hostname,
+                (
+                    temp_file,
+                    dest / temp_file.name,
+                    Permissions.from_text("u=rw,g=r,o=r"),
+                ),
+            )
+            ssh(
+                ssh_user,
+                ssh_hostname,
+                *BASH_LS,
+                input=(
+                    f"""
+                    if ! [ -d {dest} ]; then exit 1; fi
+                    if ! [ -f {dest}/{temp_file.name} ]; then exit 1; fi
                     """
                 ),
             )
@@ -1107,7 +1158,7 @@ class TestRun:
         assert cap.err == ""
 
     def test_input_bash(self, *, capsys: CaptureFixture) -> None:
-        input_ = strip_and_dedent("""
+        input_ = normalize_multi_line_str("""
             key=value
             echo ${key}@stdout
             echo ${key}@stderr 1>&2
@@ -1119,7 +1170,7 @@ class TestRun:
         assert cap.err == "value@stderr\n"
 
     def test_input_cat(self, *, capsys: CaptureFixture) -> None:
-        input_ = strip_and_dedent("""
+        input_ = normalize_multi_line_str("""
             foo
             bar
             baz
@@ -1131,11 +1182,11 @@ class TestRun:
         assert cap.err == ""
 
     def test_input_and_return(self, *, capsys: CaptureFixture) -> None:
-        input_ = strip_and_dedent("""
+        input_ = normalize_multi_line_str("""
             foo
             bar
             baz
-        """)
+        """).rstrip("\n")
         result = run("cat", input=input_, return_=True)
         assert result == input_
         cap = capsys.readouterr()
@@ -1336,7 +1387,7 @@ class TestRun:
         with raises(CalledProcessError):
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, logger=name)  # noqa: S604
         record = one(r for r in caplog.records if r.name == name)
-        expected = strip_and_dedent("""
+        expected = normalize_multi_line_str("""
 'run' failed with:
  - cmd          = echo stdout; echo stderr 1>&2; exit 1
  - cmds_or_args = ()
@@ -1359,19 +1410,16 @@ stderr
 
     def test_logger_and_input(self, *, caplog: LogCaptureFixture) -> None:
         name = unique_str()
-        input_ = strip_and_dedent(
-            """
+        input_ = normalize_multi_line_str("""
             key=value
             echo ${key}@stdout
             echo ${key}@stderr 1>&2
             exit 1
-            """,
-            trailing=True,
-        )
+        """)
         with raises(CalledProcessError):
             _ = run(*BASH_LS, input=input_, logger=name)
         record = one(r for r in caplog.records if r.name == name)
-        expected = strip_and_dedent("""
+        expected = normalize_multi_line_str("""
 'run' failed with:
  - cmd          = bash
  - cmds_or_args = ('-ls',)
@@ -1397,16 +1445,13 @@ value@stderr
         assert record.message == expected
 
     def _test_retry_cmd(self, path: PathLike, attempts: int, /) -> str:
-        return strip_and_dedent(
-            f"""
+        return normalize_multi_line_str(f"""
             count=$(ls -1A "{path}" 2>/dev/null | wc -l)
             if [ "${{count}}" -lt {attempts} ]; then
                 mktemp "{path}/XXX"
                 exit 1
             fi
-        """,
-            trailing=True,
-        )
+        """)
 
 
 class TestSetHostnameCmd:
@@ -1516,13 +1561,13 @@ class TestSSHIsStrictCheckingError:
         "text",
         [
             param(
-                strip_and_dedent("""
+                normalize_multi_line_str("""
 No ED25519 host key is known for XXX and you have requested strict checking.
 Host key verification failed.
 """)
             ),
             param(
-                strip_and_dedent("""
+                normalize_multi_line_str("""
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1542,6 +1587,11 @@ Host key verification failed.
     )
     def test_main(self, *, text: str) -> None:
         assert _ssh_is_strict_checking_error(text)
+
+
+class TestSSHRetrySkip:
+    def test_main(self) -> None:
+        assert not _ssh_retry_skip(0, "stdout", "stderr")
 
 
 class TestSSHKeyScan:
@@ -1723,6 +1773,12 @@ class TestTeeCmd:
         assert result == expected
 
 
+class TestTouch:
+    def test_main(self, *, temp_path_not_exist: Path) -> None:
+        touch(temp_path_not_exist)
+        assert temp_path_not_exist.is_file()
+
+
 class TestTouchCmd:
     def test_main(self) -> None:
         result = touch_cmd("path")
@@ -1780,7 +1836,7 @@ class TestUvPipList:
 
 class TestUvPipListLoadsOutput:
     def test_main(self) -> None:
-        text = strip_and_dedent("""
+        text = normalize_multi_line_str("""
             [{"name":"name","version":"0.0.1"}]
         """)
         result = _uv_pip_list_loads(text)
@@ -1788,7 +1844,7 @@ class TestUvPipListLoadsOutput:
         assert result == expected
 
     def test_error(self) -> None:
-        text = strip_and_dedent("""
+        text = normalize_multi_line_str("""
             [{"name":"name","version":"0.0.1"}]
             # warning: The package `name` requires `dep>=1.2.3`, but `1.2.2` is installed
         """)

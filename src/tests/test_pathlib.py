@@ -1,44 +1,31 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from os import mkfifo
 from pathlib import Path
 from typing import TYPE_CHECKING, Self, assert_never
 
-from hypothesis import HealthCheck, given, settings
+from hypothesis import given, settings
 from hypothesis.strategies import integers, sets
 from pytest import mark, param, raises
 
-from utilities.atomicwrites import copy
-from utilities.constants import HOME, SYSTEM, Sentinel, sentinel
+from utilities.constants import SYSTEM, Sentinel, sentinel
 from utilities.dataclasses import replace_non_sentinel
 from utilities.hypothesis import git_repos, pairs, paths, temp_paths
 from utilities.pathlib import (
-    GetPackageRootError,
-    GetRootError,
-    _FileOrDirMissingError,
-    _FileOrDirTypeError,
     _GetRepoRootNotARepoError,
     _GetTailDisambiguate,
     _GetTailEmptyError,
     _GetTailLengthError,
     _GetTailNonUniqueError,
     ensure_suffix,
-    expand_path,
-    file_or_dir,
     get_file_group,
     get_file_owner,
-    get_package_root,
     get_repo_root,
-    get_root,
     get_tail,
-    is_sub_path,
     list_dir,
     module_path,
-    temp_cwd,
     to_path,
 )
-from utilities.tempfile import TemporaryDirectory
 
 if TYPE_CHECKING:
     from utilities.types import MaybeCallablePathLike, PathLike
@@ -63,55 +50,6 @@ class TestEnsureSuffix:
         assert result == expected
 
 
-class TestExpandPath:
-    @mark.parametrize(
-        ("path", "expected"),
-        [
-            param("foo", Path("foo")),
-            param("~", HOME),
-            param("~/foo", HOME / "foo"),
-            param("$HOME", HOME),
-            param("$HOME/foo", HOME / "foo"),
-        ],
-        ids=str,
-    )
-    def test_main(self, *, path: Path, expected: Path) -> None:
-        result = expand_path(path)
-        assert result == expected
-
-
-class TestFileOrDir:
-    def test_file(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "file.txt"
-        path.touch()
-        result = file_or_dir(path)
-        assert result == "file"
-
-    def test_dir(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "dir"
-        path.mkdir()
-        result = file_or_dir(path)
-        assert result == "dir"
-
-    def test_empty(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "non-existent"
-        result = file_or_dir(path)
-        assert result is None
-
-    def test_error_missing(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "non-existent"
-        with raises(_FileOrDirMissingError, match=r"Path does not exist: '.*'"):
-            _ = file_or_dir(path, exists=True)
-
-    def test_error_type(self, *, tmp_path: Path) -> None:
-        path = tmp_path / "fifo"
-        mkfifo(path)
-        with raises(
-            _FileOrDirTypeError, match=r"Path is neither a file nor a directory: '.*'"
-        ):
-            _ = file_or_dir(path)
-
-
 class TestFileOwnerAndGroup:
     def test_owner(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("file.txt")
@@ -131,35 +69,6 @@ class TestFileOwnerAndGroup:
                 assert isinstance(value, str)
             case never:
                 assert_never(never)
-
-
-class TestGetPackageRoot:
-    @given(tail=paths())
-    @settings(
-        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
-    )
-    def test_dir(self, *, tmp_path: Path, tail: Path) -> None:
-        tmp_path.joinpath("pyproject.toml").touch()
-        path = tmp_path.joinpath(tail)
-        result = get_package_root(path)
-        expected = tmp_path.resolve()
-        assert result == expected
-
-    @given(tail=paths(min_depth=1))
-    @settings(
-        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
-    )
-    def test_file(self, *, tmp_path: Path, tail: Path) -> None:
-        tmp_path.joinpath("pyproject.toml").touch()
-        path = tmp_path.joinpath(tail)
-        path.touch()
-        root = get_package_root(path)
-        expected = tmp_path.resolve()
-        assert root == expected
-
-    def test_error(self, *, tmp_path: Path) -> None:
-        with raises(GetPackageRootError, match=r"Path is not part of a package: .*"):
-            _ = get_package_root(tmp_path)
 
 
 class TestGetRepoRoot:
@@ -185,66 +94,6 @@ class TestGetRepoRoot:
             match=r"Path is not part of a `git` repository: .*",
         ):
             _ = get_repo_root(tmp_path)
-
-
-class TestGetRoot:
-    @given(repo=git_repos(), tail=paths())
-    @settings(max_examples=1)
-    def test_repo_only(self, *, repo: Path, tail: Path) -> None:
-        root = get_root(repo.joinpath(tail))
-        expected = repo.resolve()
-        assert root == expected
-
-    @given(tail=paths())
-    @settings(
-        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
-    )
-    def test_package_only(self, *, tmp_path: Path, tail: Path) -> None:
-        tmp_path.joinpath("pyproject.toml").touch()
-        path = tmp_path.joinpath(tail)
-        result = get_root(path)
-        expected = tmp_path.resolve()
-        assert result == expected
-
-    @given(repo=git_repos(), tail=paths())
-    @settings(
-        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
-    )
-    def test_repo_and_package(self, *, repo: Path, tail: Path) -> None:
-        repo.joinpath("pyproject.toml").touch()
-        path = repo.joinpath(tail)
-        root = get_root(path)
-        expected = repo.resolve()
-        assert root == expected
-
-    @given(repo=git_repos(), tail=paths(min_depth=1))
-    @settings(
-        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
-    )
-    def test_repo_with_package_inside(self, *, repo: Path, tail: Path) -> None:
-        path = repo.joinpath(tail)
-        path.mkdir(parents=True)
-        path.joinpath("pyproject.toml").touch()
-        root = get_root(path)
-        expected = path.resolve()
-        assert root == expected
-
-    @given(repo=git_repos(), tail=paths(min_depth=1))
-    @settings(
-        max_examples=1, suppress_health_check={HealthCheck.function_scoped_fixture}
-    )
-    def test_package_with_repo_inside(self, *, repo: Path, tail: Path) -> None:
-        with TemporaryDirectory() as temp:
-            temp.joinpath("pyproject.toml").touch()
-            path = temp.joinpath(tail)
-            copy(repo, path)
-            root = get_root(path)
-            expected = path.resolve()
-            assert root == expected
-
-    def test_error(self, *, tmp_path: Path) -> None:
-        with raises(GetRootError, match=r"Unable to determine root from '.*'"):
-            _ = get_root(tmp_path)
 
 
 class TestGetTail:
@@ -290,27 +139,6 @@ class TestGetTail:
             _ = get_tail("a/b/c/a/b/c", "b")
 
 
-class TestIsSubPath:
-    @mark.parametrize(
-        ("x", "y", "strict", "expected"),
-        [
-            param("foo", "foo", False, True),
-            param("foo", "foo", True, False),
-            param("foo/bar", "foo", False, True),
-            param("foo/bar", "foo", True, True),
-            param("foo/bar", "foo/baz", False, False),
-            param("foo/bar", "foo/baz", True, False),
-            param("foo", "foo/bar", False, False),
-            param("foo", "foo/bar", True, False),
-        ],
-    )
-    def test_main(
-        self, *, x: PathLike, y: PathLike, strict: bool, expected: bool
-    ) -> None:
-        result = is_sub_path(x, y, strict=strict)
-        assert result is expected
-
-
 class TestListDir:
     @given(root=temp_paths(), nums=sets(integers(0, 100), max_size=10))
     def test_main(self, *, root: Path, nums: set[str]) -> None:
@@ -330,14 +158,6 @@ class TestModulePath:
     def test_main(self, *, root: PathLike | None, expected: Path) -> None:
         module = module_path("foo/bar/baz.py", root=root)
         assert module == expected
-
-
-class TestTempCwd:
-    def test_main(self, *, tmp_path: Path) -> None:
-        assert Path.cwd() != tmp_path
-        with temp_cwd(tmp_path):
-            assert Path.cwd() == tmp_path
-        assert Path.cwd() != tmp_path
 
 
 class TestToPath:

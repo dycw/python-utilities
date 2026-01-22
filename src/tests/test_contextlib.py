@@ -2,15 +2,14 @@ from __future__ import annotations
 
 from asyncio import run
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
 from inspect import signature
 from multiprocessing import Process
 from pathlib import Path
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import booleans
-from pytest import mark, param, raises
+from pytest import mark, param
 
 import utilities.asyncio
 import utilities.time
@@ -18,7 +17,6 @@ from utilities.constants import SECOND
 from utilities.contextlib import (
     enhanced_async_context_manager,
     enhanced_context_manager,
-    suppress_super_object_attribute_error,
 )
 from utilities.pytest import skipif_ci
 
@@ -242,57 +240,3 @@ class TestEnhancedContextManager:
         utilities.time.sleep(_DURATION)
         assert proc.is_alive()
         assert not marker.exists()
-
-
-class TestSuppressSuperObjectAttributeError:
-    def test_main(self) -> None:
-        inits: list[str] = []
-
-        @dataclass(kw_only=True)
-        class A:
-            def __post_init__(self) -> None:
-                with suppress_super_object_attribute_error():
-                    super().__post_init__()  # pyright:ignore [reportAttributeAccessIssue]
-                nonlocal inits
-                inits.append("A")
-
-        @dataclass(kw_only=True)
-        class B: ...
-
-        @dataclass(kw_only=True)
-        class C:
-            def __post_init__(self) -> None:
-                with suppress_super_object_attribute_error():
-                    super().__post_init__()  # pyright:ignore [reportAttributeAccessIssue]
-                nonlocal inits
-                inits.append("C")
-
-        @dataclass(kw_only=True)
-        class D: ...
-
-        @dataclass(kw_only=True)
-        class E(A, B, C, D):
-            @override
-            def __post_init__(self) -> None:
-                super().__post_init__()
-                nonlocal inits
-                inits.append("E")
-
-        _ = E()
-        assert inits == ["C", "A", "E"]
-
-    def test_error(self) -> None:
-        @dataclass(kw_only=True)
-        class Parent:
-            def __post_init__(self) -> None:
-                with suppress_super_object_attribute_error():
-                    _ = self.error  # pyright:ignore [reportAttributeAccessIssue]
-
-        @dataclass(kw_only=True)
-        class Child(Parent):
-            @override
-            def __post_init__(self) -> None:
-                super().__post_init__()
-
-        with raises(AttributeError, match=r"'Child' object has no attribute 'error'"):
-            _ = Child()

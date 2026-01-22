@@ -13,7 +13,6 @@ from sys import stderr
 from traceback import TracebackException
 from typing import TYPE_CHECKING, override
 
-from utilities.atomicwrites import writer
 from utilities.constants import (
     LOCAL_TIME_ZONE_NAME,
     RICH_EXPAND_ALL,
@@ -23,18 +22,13 @@ from utilities.constants import (
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
 )
+from utilities.core import OneEmptyError, get_now, get_now_local, one, write_text
 from utilities.errors import repr_error
-from utilities.iterables import OneEmptyError, one
 from utilities.pathlib import module_path, to_path
 from utilities.reprlib import yield_mapping_repr
 from utilities.text import to_bool
 from utilities.version import to_version3
-from utilities.whenever import (
-    format_compact,
-    get_now,
-    get_now_local,
-    to_zoned_date_time,
-)
+from utilities.whenever import format_compact, to_zoned_date_time
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -272,8 +266,7 @@ def _make_except_hook_inner(
             max_depth=max_depth,
             expand_all=expand_all,
         )
-        with writer(path_log, overwrite=True) as temp:
-            _ = temp.write_text(full)
+        write_text(path_log, full, overwrite=True)
         if path_max_age is not None:
             _make_except_hook_purge(path, path_max_age)
     if slack_url is not None:  # pragma: no cover

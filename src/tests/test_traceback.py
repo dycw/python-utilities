@@ -9,9 +9,10 @@ from typing import TYPE_CHECKING
 from hypothesis import given
 from hypothesis.strategies import sampled_from
 from pytest import CaptureFixture, mark, param, raises
+from pytest_lazy_fixtures import lf
 
 from utilities.constants import LOCAL_TIME_ZONE_NAME, SECOND
-from utilities.iterables import one
+from utilities.core import get_now, one
 from utilities.traceback import (
     MakeExceptHookError,
     _make_except_hook_purge,
@@ -19,7 +20,7 @@ from utilities.traceback import (
     format_exception_stack,
     make_except_hook,
 )
-from utilities.whenever import format_compact, get_now
+from utilities.whenever import format_compact
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -126,10 +127,12 @@ class TestMakeExceptHookPurge:
         _make_except_hook_purge(tmp_path, SECOND)
         assert len(list(tmp_path.iterdir())) == 0
 
-    def test_purge_invalid_path(self, *, tmp_path: Path) -> None:
-        tmp_path.joinpath("invalid").touch()
-        _make_except_hook_purge(tmp_path, SECOND)
-        assert len(list(tmp_path.iterdir())) == 1
+    @mark.parametrize(
+        "path", [param(lf("temp_dir_with_dir")), param(lf("temp_dir_with_file"))]
+    )
+    def test_purge_invalid_path(self, *, path: Path) -> None:
+        _make_except_hook_purge(path, SECOND)
+        assert len(list(path.iterdir())) == 1
 
 
 class TestPathToDots:

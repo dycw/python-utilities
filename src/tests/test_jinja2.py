@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING
 from jinja2 import DictLoader
 from pytest import raises
 
+from utilities.core import normalize_multi_line_str
 from utilities.jinja2 import (
     EnhancedEnvironment,
     TemplateJob,
     _TemplateJobTargetDoesNotExistError,
     _TemplateJobTemplateDoesNotExistError,
 )
-from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -21,7 +21,7 @@ class TestEnhancedTemplate:
     def test_main(self) -> None:
         env = EnhancedEnvironment(
             loader=DictLoader({
-                "test.j2": strip_and_dedent("""
+                "test.j2": normalize_multi_line_str("""
                     text   = '{{ text }}'
                     kebab  = '{{ text | kebab }}'
                     pascal = '{{ text | pascal }}'
@@ -30,7 +30,7 @@ class TestEnhancedTemplate:
             })
         )
         result = env.get_template("test.j2").render(text="multi-word string")
-        expected = strip_and_dedent("""
+        expected = normalize_multi_line_str("""
             text   = 'multi-word string'
             kebab  = 'multi-word-string'
             pascal = 'MultiWordString'
@@ -43,7 +43,7 @@ class TestTemplateJob:
     def test_main(self, *, tmp_path: Path) -> None:
         path_template = tmp_path.joinpath("template.j2")
         _ = path_template.write_text(
-            strip_and_dedent("""
+            normalize_multi_line_str("""
                 text = '{{ text }}'
             """)
         )
@@ -51,7 +51,7 @@ class TestTemplateJob:
         job = TemplateJob(
             template=path_template, kwargs={"text": "example text"}, target=path_target
         )
-        expected = strip_and_dedent("""
+        expected = normalize_multi_line_str("""
             text = 'example text'
         """)
         assert job.rendered == expected
@@ -63,21 +63,15 @@ class TestTemplateJob:
     def test_append(self, *, tmp_path: Path) -> None:
         path_template = tmp_path.joinpath("template.j2")
         _ = path_template.write_text(
-            strip_and_dedent(
-                """
+            normalize_multi_line_str("""
                 new = '{{ text }}'
-                """,
-                trailing=True,
-            )
+            """)
         )
         path_target = tmp_path.joinpath("target.txt")
         _ = path_target.write_text(
-            strip_and_dedent(
-                """
+            normalize_multi_line_str("""
                 old = 'old text'
-                """,
-                trailing=True,
-            )
+            """)
         )
         job = TemplateJob(
             template=path_template,
@@ -87,7 +81,7 @@ class TestTemplateJob:
         )
         job.run()
         assert path_target.exists()
-        assert path_target.read_text() == strip_and_dedent("""
+        assert path_target.read_text() == normalize_multi_line_str("""
             old = 'old text'
             new = 'new text'
         """)

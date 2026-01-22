@@ -7,8 +7,8 @@ from hypothesis import given
 from hypothesis.strategies import integers, lists, sampled_from, tuples
 
 from utilities.concurrent import concurrent_map, concurrent_starmap
+from utilities.core import transpose
 from utilities.hypothesis import int32s, pairs, settings_with_reduced_examples
-from utilities.iterables import transpose
 from utilities.types import Parallelism
 from utilities.typing import get_args
 

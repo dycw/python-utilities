@@ -5,7 +5,7 @@ from asyncio import TaskGroup
 from pytest import RaisesGroup, raises
 
 from utilities.asyncio import sleep
-from utilities.errors import ImpossibleCaseError, is_instance_error, repr_error
+from utilities.errors import ImpossibleCaseError, repr_error
 
 
 class TestImpossibleCaseError:
@@ -13,39 +13,6 @@ class TestImpossibleCaseError:
         x = None
         with raises(ImpossibleCaseError, match=r"Case must be possible: x=None\."):
             raise ImpossibleCaseError(case=[f"{x=}"])
-
-
-class TestIsInstanceError:
-    def test_flat(self) -> None:
-        class CustomError(Exception): ...
-
-        with raises(CustomError) as exc_info:
-            raise CustomError
-
-        assert is_instance_error(exc_info.value, CustomError)
-
-    async def test_group(self) -> None:
-        class CustomError(Exception): ...
-
-        async def coroutine() -> None:
-            await sleep()
-            raise CustomError
-
-        with RaisesGroup(CustomError) as exc_info:
-            async with TaskGroup() as tg:
-                _ = tg.create_task(coroutine())
-
-        assert is_instance_error(exc_info.value, CustomError)
-
-    def test_false(self) -> None:
-        class Custom1Error(Exception): ...
-
-        class Custom2Error(Exception): ...
-
-        with raises(Custom1Error) as exc_info:
-            raise Custom1Error
-
-        assert not is_instance_error(exc_info.value, Custom2Error)
 
 
 class TestReprError:

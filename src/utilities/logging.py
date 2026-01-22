@@ -35,25 +35,23 @@ from typing import (
 
 from whenever import ZonedDateTime
 
-from utilities.atomicwrites import move_many
 from utilities.constants import SECOND, Sentinel, sentinel
+from utilities.core import (
+    ExtractGroupError,
+    ExtractGroupsError,
+    OneEmptyError,
+    always_iterable,
+    extract_group,
+    extract_groups,
+    get_now_local,
+    move_many,
+    one,
+)
 from utilities.dataclasses import replace_non_sentinel
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_seconds
-from utilities.iterables import OneEmptyError, always_iterable, one
 from utilities.pathlib import ensure_suffix, to_path
-from utilities.re import (
-    ExtractGroupError,
-    ExtractGroupsError,
-    extract_group,
-    extract_groups,
-)
-from utilities.whenever import (
-    WheneverLogRecord,
-    format_compact,
-    get_now_local,
-    to_zoned_date_time,
-)
+from utilities.whenever import WheneverLogRecord, format_compact, to_zoned_date_time
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, MutableMapping
@@ -494,7 +492,9 @@ class _RolloverActions:
     def do(self) -> None:
         for deletion in self.deletions:
             deletion.delete()
-        move_many(*((r.file.path, r.destination) for r in self.rotations))
+        move_many(
+            *((r.file.path, r.destination) for r in self.rotations), overwrite=True
+        )
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True)

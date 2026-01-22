@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import builtins
 from collections import Counter
 from collections.abc import (
     Callable,
@@ -14,11 +13,10 @@ from collections.abc import (
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from dataclasses import dataclass
-from enum import Enum
-from functools import cmp_to_key, partial, reduce
-from itertools import accumulate, chain, groupby, islice, pairwise, product
+from functools import cmp_to_key, reduce
+from itertools import groupby
 from math import isnan
-from operator import add, or_
+from operator import or_
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -30,9 +28,8 @@ from typing import (
     override,
 )
 
-from utilities.constants import Sentinel, sentinel
+from utilities.core import OneStrEmptyError, always_iterable, one, one_str, repr_
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import is_sentinel
 from utilities.math import (
     _CheckIntegerEqualError,
     _CheckIntegerEqualOrApproxError,
@@ -40,30 +37,12 @@ from utilities.math import (
     _CheckIntegerMinError,
     check_integer,
 )
-from utilities.reprlib import get_repr
-from utilities.types import SupportsAdd, SupportsLT
+from utilities.types import SupportsLT
 
 if TYPE_CHECKING:
     from types import NoneType
 
     from utilities.types import MaybeIterable, Sign, StrMapping
-
-
-##
-
-
-def always_iterable[T](obj: MaybeIterable[T], /) -> Iterable[T]:
-    """Typed version of `always_iterable`."""
-    obj = cast("Any", obj)
-    if isinstance(obj, str | bytes):
-        return cast("list[T]", [obj])
-    try:
-        return iter(cast("Iterable[T]", obj))
-    except TypeError:
-        return cast("list[T]", [obj])
-
-
-##
 
 
 def apply_bijection[T, U](
@@ -97,7 +76,7 @@ class ApplyBijectionError[T](Exception):
 class _ApplyBijectionDuplicateKeysError[T](ApplyBijectionError[T]):
     @override
     def __str__(self) -> str:
-        return f"Keys {get_repr(self.keys)} must not contain duplicates; got {get_repr(self.counts)}"
+        return f"Keys {repr_(self.keys)} must not contain duplicates; got {repr_(self.counts)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -106,7 +85,7 @@ class _ApplyBijectionDuplicateValuesError[T, U](ApplyBijectionError[T]):
 
     @override
     def __str__(self) -> str:
-        return f"Values {get_repr(self.values)} must not contain duplicates; got {get_repr(self.counts)}"
+        return f"Values {repr_(self.values)} must not contain duplicates; got {repr_(self.counts)}"
 
 
 ##
@@ -117,68 +96,9 @@ def apply_to_tuple[T](func: Callable[..., T], args: tuple[Any, ...], /) -> T:
     return apply_to_varargs(func, *args)
 
 
-##
-
-
 def apply_to_varargs[T](func: Callable[..., T], *args: Any) -> T:
     """Apply a function to a variable number of arguments."""
     return func(*args)
-
-
-##
-
-
-@overload
-def chain_mappings[K, V](
-    *mappings: Mapping[K, V], list: Literal[True]
-) -> Mapping[K, Sequence[V]]: ...
-@overload
-def chain_mappings[K, V](
-    *mappings: Mapping[K, V], list: bool = False
-) -> Mapping[K, Iterable[V]]: ...
-def chain_mappings[K, V](
-    *mappings: Mapping[K, V],
-    list: bool = False,  # noqa: A002
-) -> Mapping[K, Iterable[V]]:
-    """Chain the values of a set of mappings."""
-    try:
-        first, *rest = mappings
-    except ValueError:
-        return {}
-    initial = {k: [v] for k, v in first.items()}
-    reduced = reduce(_chain_mappings_one, rest, initial)
-    if list:
-        return {k: builtins.list(v) for k, v in reduced.items()}
-    return reduced
-
-
-def _chain_mappings_one[K, V](
-    acc: Mapping[K, Iterable[V]], el: Mapping[K, V], /
-) -> Mapping[K, Iterable[V]]:
-    """Chain the values of a set of mappings."""
-    out = dict(acc)
-    for key, value in el.items():
-        out[key] = chain(out.get(key, []), [value])
-    return out
-
-
-##
-
-
-def chain_maybe_iterables[T](*maybe_iterables: MaybeIterable[T]) -> Iterable[T]:
-    """Chain a set of maybe iterables."""
-    iterables = map(always_iterable, maybe_iterables)
-    return chain.from_iterable(iterables)
-
-
-##
-
-
-def chain_nullable[T](*maybe_iterables: Iterable[T | None] | None) -> Iterable[T]:
-    """Chain a set of values; ignoring nulls."""
-    iterables = (mi for mi in maybe_iterables if mi is not None)
-    values = ((i for i in it if i is not None) for it in iterables)
-    return chain.from_iterable(values)
 
 
 ##
@@ -199,7 +119,7 @@ class CheckBijectionError[THashable](Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {get_repr(self.mapping)} must be a bijection; got duplicates {get_repr(self.counts)}"
+        return f"Mapping {repr_(self.mapping)} must be a bijection; got duplicates {repr_(self.counts)}"
 
 
 ##
@@ -219,7 +139,7 @@ class CheckDuplicatesError[THashable](Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {get_repr(self.iterable)} must not contain duplicates; got {get_repr(self.counts)}"
+        return f"Iterable {repr_(self.iterable)} must not contain duplicates; got {repr_(self.counts)}"
 
 
 ##
@@ -271,12 +191,12 @@ class CheckIterablesEqualError[T](Exception):
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return f"Iterables {get_repr(self.left)} and {get_repr(self.right)} must be equal; {desc}"
+        return f"Iterables {repr_(self.left)} and {repr_(self.right)} must be equal; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.errors) >= 1:
             errors = [(f"{i=}", lv, rv) for i, lv, rv in self.errors]
-            yield f"differing items were {get_repr(errors)}"
+            yield f"differing items were {repr_(errors)}"
         match self.state:
             case "left_longer":
                 yield "left was longer"
@@ -327,7 +247,7 @@ class _CheckLengthEqualError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {get_repr(self.obj)} must have length {self.equal}; got {len(self.obj)}"
+        return f"Object {repr_(self.obj)} must have length {self.equal}; got {len(self.obj)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -341,7 +261,7 @@ class _CheckLengthEqualOrApproxError(CheckLengthError):
                 desc = f"approximate length {target} (error {error:%})"
             case target:
                 desc = f"length {target}"
-        return f"Object {get_repr(self.obj)} must have {desc}; got {len(self.obj)}"
+        return f"Object {repr_(self.obj)} must have {desc}; got {len(self.obj)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -350,7 +270,7 @@ class _CheckLengthMinError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {get_repr(self.obj)} must have minimum length {self.min_}; got {len(self.obj)}"
+        return f"Object {repr_(self.obj)} must have minimum length {self.min_}; got {len(self.obj)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -359,7 +279,7 @@ class _CheckLengthMaxError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {get_repr(self.obj)} must have maximum length {self.max_}; got {len(self.obj)}"
+        return f"Object {repr_(self.obj)} must have maximum length {self.max_}; got {len(self.obj)}"
 
 
 ##
@@ -378,7 +298,7 @@ class CheckLengthsEqualError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Sized objects {get_repr(self.left)} and {get_repr(self.right)} must have the same length; got {len(self.left)} and {len(self.right)}"
+        return f"Sized objects {repr_(self.left)} and {repr_(self.right)} must have the same length; got {len(self.left)} and {len(self.right)}"
 
 
 ##
@@ -428,16 +348,18 @@ class CheckMappingsEqualError[K, V](Exception):
                 desc = f"{first}, {second} and {third}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return f"Mappings {get_repr(self.left)} and {get_repr(self.right)} must be equal; {desc}"
+        return (
+            f"Mappings {repr_(self.left)} and {repr_(self.right)} must be equal; {desc}"
+        )
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.left_extra) >= 1:
-            yield f"left had extra keys {get_repr(self.left_extra)}"
+            yield f"left had extra keys {repr_(self.left_extra)}"
         if len(self.right_extra) >= 1:
-            yield f"right had extra keys {get_repr(self.right_extra)}"
+            yield f"right had extra keys {repr_(self.right_extra)}"
         if len(self.errors) >= 1:
             errors = [(f"{k=}", lv, rv) for k, lv, rv in self.errors]
-            yield f"differing values were {get_repr(errors)}"
+            yield f"differing values were {repr_(errors)}"
 
 
 ##
@@ -475,13 +397,13 @@ class CheckSetsEqualError[T](Exception):
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return f"Sets {get_repr(self.left)} and {get_repr(self.right)} must be equal; {desc}"
+        return f"Sets {repr_(self.left)} and {repr_(self.right)} must be equal; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.left_extra) >= 1:
-            yield f"left had extra items {get_repr(self.left_extra)}"
+            yield f"left had extra items {repr_(self.left_extra)}"
         if len(self.right_extra) >= 1:
-            yield f"right had extra items {get_repr(self.right_extra)}"
+            yield f"right had extra items {repr_(self.right_extra)}"
 
 
 ##
@@ -522,14 +444,14 @@ class CheckSubMappingError[K, V](Exception):
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return f"Mapping {get_repr(self.left)} must be a submapping of {get_repr(self.right)}; {desc}"
+        return f"Mapping {repr_(self.left)} must be a submapping of {repr_(self.right)}; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.extra) >= 1:
-            yield f"left had extra keys {get_repr(self.extra)}"
+            yield f"left had extra keys {repr_(self.extra)}"
         if len(self.errors) >= 1:
             errors = [(f"{k=}", lv, rv) for k, lv, rv in self.errors]
-            yield f"differing values were {get_repr(errors)}"
+            yield f"differing values were {repr_(errors)}"
 
 
 ##
@@ -552,7 +474,7 @@ class CheckSubSetError[T](Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Set {get_repr(self.left)} must be a subset of {get_repr(self.right)}; left had extra items {get_repr(self.extra)}"
+        return f"Set {repr_(self.left)} must be a subset of {repr_(self.right)}; left had extra items {repr_(self.extra)}"
 
 
 ##
@@ -593,14 +515,14 @@ class CheckSuperMappingError[K, V](Exception):
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return f"Mapping {get_repr(self.left)} must be a supermapping of {get_repr(self.right)}; {desc}"
+        return f"Mapping {repr_(self.left)} must be a supermapping of {repr_(self.right)}; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.extra) >= 1:
-            yield f"right had extra keys {get_repr(self.extra)}"
+            yield f"right had extra keys {repr_(self.extra)}"
         if len(self.errors) >= 1:
             errors = [(f"{k=}", lv, rv) for k, lv, rv in self.errors]
-            yield f"differing values were {get_repr(errors)}"
+            yield f"differing values were {repr_(errors)}"
 
 
 ##
@@ -623,7 +545,7 @@ class CheckSuperSetError[T](Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Set {get_repr(self.left)} must be a superset of {get_repr(self.right)}; right had extra items {get_repr(self.extra)}."
+        return f"Set {repr_(self.left)} must be a superset of {repr_(self.right)}; right had extra items {repr_(self.extra)}."
 
 
 ##
@@ -653,7 +575,7 @@ class CheckUniqueModuloCaseError(Exception):
 class _CheckUniqueModuloCaseDuplicateStringsError(CheckUniqueModuloCaseError):
     @override
     def __str__(self) -> str:
-        return f"Strings {get_repr(self.keys)} must not contain duplicates; got {get_repr(self.counts)}"
+        return f"Strings {repr_(self.keys)} must not contain duplicates; got {repr_(self.counts)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -662,7 +584,7 @@ class _CheckUniqueModuloCaseDuplicateLowerCaseStringsError(CheckUniqueModuloCase
 
     @override
     def __str__(self) -> str:
-        return f"Strings {get_repr(self.values)} must not contain duplicates (modulo case); got {get_repr(self.counts)}"
+        return f"Strings {repr_(self.values)} must not contain duplicates (modulo case); got {repr_(self.counts)}"
 
 
 ##
@@ -686,14 +608,6 @@ def cmp_nullable[T: SupportsLT](x: T | None, y: T | None, /) -> Sign:
 ##
 
 
-def chunked[T](iterable: Iterable[T], n: int, /) -> Iterator[Sequence[T]]:
-    """Break an iterable into lists of length n."""
-    return iter(partial(take, n, iter(iterable)), [])
-
-
-##
-
-
 def ensure_iterable(obj: Any, /) -> Iterable[Any]:
     """Ensure an object is iterable."""
     if is_iterable(obj):
@@ -707,26 +621,7 @@ class EnsureIterableError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Object {get_repr(self.obj)} must be iterable"
-
-
-##
-
-
-def ensure_iterable_not_str(obj: Any, /) -> Iterable[Any]:
-    """Ensure an object is iterable, but not a string."""
-    if is_iterable_not_str(obj):
-        return obj
-    raise EnsureIterableNotStrError(obj=obj)
-
-
-@dataclass(kw_only=True, slots=True)
-class EnsureIterableNotStrError(Exception):
-    obj: Any
-
-    @override
-    def __str__(self) -> str:
-        return f"Object {get_repr(self.obj)} must be iterable, but not a string"
+        return f"Object {repr_(self.obj)} must be iterable"
 
 
 ##
@@ -747,18 +642,6 @@ def enumerate_with_edge[T](
         enumerate(as_list, start=start), is_edge, strict=True
     ):
         yield i, total, is_edge_i, value
-
-
-##
-
-
-def expanding_window[T](iterable: Iterable[T], /) -> islice[list[T]]:
-    """Yield an expanding window over an iterable."""
-
-    def func(acc: Iterable[T], el: T, /) -> list[T]:
-        return list(chain(acc, [el]))
-
-    return islice(accumulate(iterable, func=func, initial=[]), 1, None)
 
 
 ##
@@ -831,14 +714,6 @@ def groupby_lists[T, U](
 ##
 
 
-def hashable_to_iterable[T: Hashable](obj: T | None, /) -> tuple[T, ...] | None:
-    """Lift a hashable singleton to an iterable of hashables."""
-    return None if obj is None else (obj,)
-
-
-##
-
-
 def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     """Check if an object is iterable."""
     try:
@@ -846,14 +721,6 @@ def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     except TypeError:
         return False
     return True
-
-
-##
-
-
-def is_iterable_not_enum(obj: Any, /) -> TypeGuard[Iterable[Any]]:
-    """Check if an object is iterable, but not an Enum."""
-    return is_iterable(obj) and not (isinstance(obj, type) and issubclass(obj, Enum))
 
 
 ##
@@ -926,309 +793,7 @@ class MergeStrMappingsError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {get_repr(self.mapping)} keys must not contain duplicates (modulo case); got {get_repr(self.counts)}"
-
-
-##
-
-
-def one[T](*iterables: Iterable[T]) -> T:
-    """Return the unique value in a set of iterables."""
-    it = chain(*iterables)
-    try:
-        first = next(it)
-    except StopIteration:
-        raise OneEmptyError(iterables=iterables) from None
-    try:
-        second = next(it)
-    except StopIteration:
-        return first
-    raise OneNonUniqueError(iterables=iterables, first=first, second=second)
-
-
-@dataclass(kw_only=True, slots=True)
-class OneError[T](Exception):
-    iterables: tuple[Iterable[T], ...]
-
-
-@dataclass(kw_only=True, slots=True)
-class OneEmptyError[T](OneError[T]):
-    @override
-    def __str__(self) -> str:
-        return f"Iterable(s) {get_repr(self.iterables)} must not be empty"
-
-
-@dataclass(kw_only=True, slots=True)
-class OneNonUniqueError[T](OneError):
-    first: T
-    second: T
-
-    @override
-    def __str__(self) -> str:
-        return f"Iterable(s) {get_repr(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
-
-
-##
-
-
-def one_maybe[T](*objs: MaybeIterable[T]) -> T:
-    """Return the unique value in a set of values/iterables."""
-    try:
-        return one(chain_maybe_iterables(*objs))
-    except OneEmptyError:
-        raise OneMaybeEmptyError from None
-    except OneNonUniqueError as error:
-        raise OneMaybeNonUniqueError(
-            objs=objs, first=error.first, second=error.second
-        ) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class OneMaybeError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class OneMaybeEmptyError(OneMaybeError):
-    @override
-    def __str__(self) -> str:
-        return "Object(s) must not be empty"
-
-
-@dataclass(kw_only=True, slots=True)
-class OneMaybeNonUniqueError[T](OneMaybeError):
-    objs: tuple[MaybeIterable[T], ...]
-    first: T
-    second: T
-
-    @override
-    def __str__(self) -> str:
-        return f"Object(s) {get_repr(self.objs)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
-
-
-##
-
-
-def one_str(
-    iterable: Iterable[str],
-    text: str,
-    /,
-    *,
-    head: bool = False,
-    case_sensitive: bool = False,
-) -> str:
-    """Find the unique string in an iterable."""
-    as_list = list(iterable)
-    match head, case_sensitive:
-        case False, True:
-            it = (t for t in as_list if t == text)
-        case False, False:
-            it = (t for t in as_list if t.lower() == text.lower())
-        case True, True:
-            it = (t for t in as_list if t.startswith(text))
-        case True, False:
-            it = (t for t in as_list if t.lower().startswith(text.lower()))
-        case never:
-            assert_never(never)
-    try:
-        return one(it)
-    except OneEmptyError:
-        raise OneStrEmptyError(
-            iterable=as_list, text=text, head=head, case_sensitive=case_sensitive
-        ) from None
-    except OneNonUniqueError as error:
-        raise OneStrNonUniqueError(
-            iterable=as_list,
-            text=text,
-            head=head,
-            case_sensitive=case_sensitive,
-            first=error.first,
-            second=error.second,
-        ) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class OneStrError(Exception):
-    iterable: Iterable[str]
-    text: str
-    head: bool = False
-    case_sensitive: bool = False
-
-
-@dataclass(kw_only=True, slots=True)
-class OneStrEmptyError(OneStrError):
-    @override
-    def __str__(self) -> str:
-        head = f"Iterable {get_repr(self.iterable)} does not contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                tail = repr(self.text)
-            case False, False:
-                tail = f"{self.text!r} (modulo case)"
-            case True, True:
-                tail = f"any string starting with {self.text!r}"
-            case True, False:
-                tail = f"any string starting with {self.text!r} (modulo case)"
-            case never:
-                assert_never(never)
-        return f"{head} {tail}"
-
-
-@dataclass(kw_only=True, slots=True)
-class OneStrNonUniqueError(OneStrError):
-    first: str
-    second: str
-
-    @override
-    def __str__(self) -> str:
-        head = f"Iterable {get_repr(self.iterable)} must contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                mid = f"{self.text!r} exactly once"
-            case False, False:
-                mid = f"{self.text!r} exactly once (modulo case)"
-            case True, True:
-                mid = f"exactly one string starting with {self.text!r}"
-            case True, False:
-                mid = f"exactly one string starting with {self.text!r} (modulo case)"
-            case never:
-                assert_never(never)
-        return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
-
-
-##
-
-
-def one_unique[T: Hashable](*iterables: Iterable[T]) -> T:
-    """Return the set-unique value in a set of iterables."""
-    try:
-        return one(set(chain(*iterables)))
-    except OneEmptyError:
-        raise OneUniqueEmptyError from None
-    except OneNonUniqueError as error:
-        raise OneUniqueNonUniqueError(
-            iterables=iterables, first=error.first, second=error.second
-        ) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class OneUniqueError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class OneUniqueEmptyError(OneUniqueError):
-    @override
-    def __str__(self) -> str:
-        return "Iterable(s) must not be empty"
-
-
-@dataclass(kw_only=True, slots=True)
-class OneUniqueNonUniqueError[THashable](OneUniqueError):
-    iterables: tuple[MaybeIterable[THashable], ...]
-    first: THashable
-    second: THashable
-
-    @override
-    def __str__(self) -> str:
-        return f"Iterable(s) {get_repr(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
-
-
-##
-
-
-def pairwise_tail[T](iterable: Iterable[T], /) -> Iterator[tuple[T, T | Sentinel]]:
-    """Return pairwise elements, with the last paired with the sentinel."""
-    return pairwise(chain(iterable, [sentinel]))
-
-
-##
-
-
-def product_dicts[K, V](mapping: Mapping[K, Iterable[V]], /) -> Iterator[Mapping[K, V]]:
-    """Return the cartesian product of the values in a mapping, as mappings."""
-    keys = list(mapping)
-    for values in product(*mapping.values()):
-        yield cast("Mapping[K, V]", dict(zip(keys, values, strict=True)))
-
-
-##
-
-
-def range_partitions(stop: int, num: int, total: int, /) -> range:
-    """Partition a range."""
-    if stop <= 0:
-        raise _RangePartitionsStopError(stop=stop)
-    if not (1 <= total <= stop):
-        raise _RangePartitionsTotalError(stop=stop, total=total)
-    if not (0 <= num < total):
-        raise _RangePartitionsNumError(num=num, total=total)
-    q, r = divmod(stop, total)
-    start = num * q + min(num, r)
-    end = start + q + (1 if num < r else 0)
-    return range(start, end)
-
-
-@dataclass(kw_only=True, slots=True)
-class RangePartitionsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _RangePartitionsStopError(RangePartitionsError):
-    stop: int
-
-    @override
-    def __str__(self) -> str:
-        return f"'stop' must be positive; got {self.stop}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _RangePartitionsTotalError(RangePartitionsError):
-    stop: int
-    total: int
-
-    @override
-    def __str__(self) -> str:
-        return f"'total' must be in [1, {self.stop}]; got {self.total}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _RangePartitionsNumError(RangePartitionsError):
-    num: int
-    total: int
-
-    @override
-    def __str__(self) -> str:
-        return f"'num' must be in [0, {self.total - 1}]; got {self.num}"
-
-
-##
-
-
-@overload
-def reduce_mappings[K, V](
-    func: Callable[[V, V], V], sequence: Iterable[Mapping[K, V]], /
-) -> Mapping[K, V]: ...
-@overload
-def reduce_mappings[K, V, W](
-    func: Callable[[W, V], W],
-    sequence: Iterable[Mapping[K, V]],
-    /,
-    *,
-    initial: W | Sentinel = sentinel,
-) -> Mapping[K, W]: ...
-def reduce_mappings[K, V, W](
-    func: Callable[[V, V], V] | Callable[[W, V], W],
-    sequence: Iterable[Mapping[K, V]],
-    /,
-    *,
-    initial: W | Sentinel = sentinel,
-) -> Mapping[K, V | W]:
-    """Reduce a function over the values of a set of mappings."""
-    chained = chain_mappings(*sequence)
-    if is_sentinel(initial):
-        func2 = cast("Callable[[V, V], V]", func)
-        return {k: reduce(func2, v) for k, v in chained.items()}
-    func2 = cast("Callable[[W, V], W]", func)
-    return {k: reduce(func2, v, initial) for k, v in chained.items()}
+        return f"Mapping {repr_(self.mapping)} keys must not contain duplicates (modulo case); got {repr_(self.counts)}"
 
 
 ##
@@ -1259,7 +824,7 @@ class ResolveIncludeAndExcludeError[T](Exception):
         include = list(self.include)
         exclude = list(self.exclude)
         overlap = set(include) & set(exclude)
-        return f"Iterables {get_repr(include)} and {get_repr(exclude)} must not overlap; got {get_repr(overlap)}"
+        return f"Iterables {repr_(include)} and {repr_(exclude)} must not overlap; got {repr_(overlap)}"
 
 
 ##
@@ -1326,7 +891,7 @@ class SortIterableError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to sort {get_repr(self.x)} and {get_repr(self.y)}"
+        return f"Unable to sort {repr_(self.x)} and {repr_(self.y)}"
 
 
 def _sort_iterable_cmp_floats(x: float, y: float, /) -> Sign:
@@ -1348,74 +913,6 @@ def _sort_iterable_cmp_floats(x: float, y: float, /) -> Sign:
 ##
 
 
-def sum_mappings[K: Hashable, V: SupportsAdd](
-    *mappings: Mapping[K, V],
-) -> Mapping[K, V]:
-    """Sum the values of a set of mappings."""
-    return reduce_mappings(add, mappings, initial=0)
-
-
-##
-
-
-def take[T](n: int, iterable: Iterable[T], /) -> Sequence[T]:
-    """Return first n items of the iterable as a list."""
-    return list(islice(iterable, n))
-
-
-##
-
-
-@overload
-def transpose[T1](iterable: Iterable[tuple[T1]], /) -> tuple[list[T1]]: ...
-@overload
-def transpose[T1, T2](
-    iterable: Iterable[tuple[T1, T2]], /
-) -> tuple[list[T1], list[T2]]: ...
-@overload
-def transpose[T1, T2, T3](
-    iterable: Iterable[tuple[T1, T2, T3]], /
-) -> tuple[list[T1], list[T2], list[T3]]: ...
-@overload
-def transpose[T1, T2, T3, T4](
-    iterable: Iterable[tuple[T1, T2, T3, T4]], /
-) -> tuple[list[T1], list[T2], list[T3], list[T4]]: ...
-@overload
-def transpose[T1, T2, T3, T4, T5](
-    iterable: Iterable[tuple[T1, T2, T3, T4, T5]], /
-) -> tuple[list[T1], list[T2], list[T3], list[T4], list[T5]]: ...
-def transpose(iterable: Iterable[tuple[Any]]) -> tuple[list[Any], ...]:  # pyright: ignore[reportInconsistentOverload]
-    """Typed verison of `transpose`."""
-    return tuple(map(list, zip(*iterable, strict=True)))
-
-
-##
-
-
-def unique_everseen[T](
-    iterable: Iterable[T], /, *, key: Callable[[T], Any] | None = None
-) -> Iterator[T]:
-    """Yield unique elements, preserving order."""
-    seenset = set()
-    seenset_add = seenset.add
-    seenlist = []
-    seenlist_add = seenlist.append
-    use_key = key is not None
-    for element in iterable:
-        k = key(element) if use_key else element
-        try:
-            if k not in seenset:
-                seenset_add(k)
-                yield element
-        except TypeError:
-            if k not in seenlist:
-                seenlist_add(k)
-                yield element
-
-
-##
-
-
 __all__ = [
     "ApplyBijectionError",
     "CheckBijectionError",
@@ -1430,30 +927,13 @@ __all__ = [
     "CheckSuperSetError",
     "CheckUniqueModuloCaseError",
     "EnsureIterableError",
-    "EnsureIterableNotStrError",
     "MergeStrMappingsError",
-    "OneEmptyError",
-    "OneError",
-    "OneMaybeEmptyError",
-    "OneMaybeError",
-    "OneMaybeNonUniqueError",
-    "OneNonUniqueError",
-    "OneStrEmptyError",
-    "OneStrError",
-    "OneStrNonUniqueError",
-    "OneUniqueEmptyError",
-    "OneUniqueError",
-    "OneUniqueNonUniqueError",
-    "RangePartitionsError",
     "ResolveIncludeAndExcludeError",
     "SortIterableError",
     "always_iterable",
     "apply_bijection",
     "apply_to_tuple",
     "apply_to_varargs",
-    "chain_mappings",
-    "chain_maybe_iterables",
-    "chain_nullable",
     "check_bijection",
     "check_duplicates",
     "check_iterables_equal",
@@ -1465,34 +945,17 @@ __all__ = [
     "check_supermapping",
     "check_superset",
     "check_unique_modulo_case",
-    "chunked",
     "cmp_nullable",
     "ensure_iterable",
-    "ensure_iterable_not_str",
     "enumerate_with_edge",
-    "expanding_window",
     "filter_include_and_exclude",
     "groupby_lists",
-    "hashable_to_iterable",
     "is_iterable",
-    "is_iterable_not_enum",
     "is_iterable_not_str",
     "map_mapping",
     "merge_mappings",
     "merge_sets",
     "merge_str_mappings",
-    "one",
-    "one_maybe",
-    "one_str",
-    "one_unique",
-    "pairwise_tail",
-    "product_dicts",
-    "range_partitions",
-    "reduce_mappings",
     "resolve_include_and_exclude",
     "sort_iterable",
-    "sum_mappings",
-    "take",
-    "transpose",
-    "unique_everseen",
 ]

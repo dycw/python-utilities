@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from pyinstrument.profiler import Profiler
 
-from utilities.atomicwrites import writer
-from utilities.contextlib import enhanced_context_manager
+from utilities.core import get_now_local, write_text
 from utilities.pathlib import to_path
-from utilities.whenever import format_compact, get_now_local
+from utilities.whenever import format_compact
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from utilities.types import MaybeCallablePathLike
 
 
-@enhanced_context_manager
+@contextmanager
 def profile(path: MaybeCallablePathLike = Path.cwd, /) -> Iterator[None]:
     """Profile the contents of a block."""
     with Profiler() as profiler:
@@ -24,8 +24,8 @@ def profile(path: MaybeCallablePathLike = Path.cwd, /) -> Iterator[None]:
     filename = to_path(path).joinpath(
         f"profile__{format_compact(get_now_local(), path=True)}.html"
     )
-    with writer(filename) as temp:
-        _ = temp.write_text(profiler.output_html())
+    text = profiler.output_html()
+    write_text(filename, text, overwrite=True)
 
 
 __all__ = ["profile"]

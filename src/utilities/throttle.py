@@ -9,13 +9,11 @@ from typing import TYPE_CHECKING, Any, NoReturn, assert_never, cast, override
 
 from whenever import ZonedDateTime
 
-from utilities.atomicwrites import writer
 from utilities.constants import SECOND
+from utilities.core import get_env, get_now_local, write_text
 from utilities.functions import in_timedelta
-from utilities.os import get_env_var
 from utilities.pathlib import to_path
 from utilities.types import Duration, MaybeCallablePathLike, MaybeCoro
-from utilities.whenever import get_now_local
 
 if TYPE_CHECKING:
     from utilities.types import Coro
@@ -106,11 +104,11 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
 def _is_throttle(
     *, path: MaybeCallablePathLike = Path.cwd, duration: Duration = SECOND
 ) -> bool:
-    if get_env_var("THROTTLE", nullable=True):
+    if get_env("THROTTLE", nullable=True):
         return False
     path = to_path(path)
     if path.is_file():
-        text = path.read_text()
+        text = path.read_text().rstrip("\n")
         if text == "":
             path.unlink(missing_ok=True)
             return False
@@ -131,9 +129,8 @@ def _try_raise(*, raiser: Callable[[], NoReturn] | None = None) -> None:
 
 
 def _write_throttle(*, path: MaybeCallablePathLike = Path.cwd) -> None:
-    path = to_path(path)
-    with writer(path, overwrite=True) as temp:
-        _ = temp.write_text(get_now_local().format_iso())
+    path_use = to_path(path)
+    write_text(path_use, get_now_local().format_iso(), overwrite=True)
 
 
 @dataclass(kw_only=True, slots=True)

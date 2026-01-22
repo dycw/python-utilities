@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import builtins
 import datetime as dt
+from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum, auto
 from math import ceil, floor, inf, isclose, isfinite, nan
@@ -84,19 +85,20 @@ from utilities.constants import (
     Sentinel,
     sentinel,
 )
-from utilities.contextlib import enhanced_context_manager
-from utilities.functions import (
-    ensure_int,
-    ensure_str,
+from utilities.core import (
+    TemporaryDirectory,
+    get_now,
     is_sentinel,
     max_nullable,
     min_nullable,
+    to_zone_info,
+    yield_temp_cwd,
 )
+from utilities.functions import ensure_int, ensure_str
 from utilities.math import is_zero
-from utilities.os import get_env_var
-from utilities.pathlib import module_path, temp_cwd
+from utilities.os import get_env
+from utilities.pathlib import module_path
 from utilities.permissions import Permissions
-from utilities.tempfile import TemporaryDirectory
 from utilities.version import Version2, Version3
 from utilities.whenever import (
     DATE_DELTA_PARSABLE_MAX,
@@ -108,12 +110,10 @@ from utilities.whenever import (
     DatePeriod,
     TimePeriod,
     ZonedDateTimePeriod,
-    get_now,
     to_date_time_delta,
     to_days,
     to_nanoseconds,
 )
-from utilities.zoneinfo import to_zone_info
 
 if TYPE_CHECKING:
     from collections.abc import Collection, Hashable, Iterable, Iterator
@@ -135,7 +135,7 @@ type Shape = int | tuple[int, ...]
 ##
 
 
-@enhanced_context_manager
+@contextmanager
 def assume_does_not_raise(
     *exceptions: type[Exception], match: str | None = None
 ) -> Iterator[None]:
@@ -563,7 +563,7 @@ def floats_extra(
 @composite
 def git_repos(draw: DrawFn, /) -> Path:
     path = draw(temp_paths())
-    with temp_cwd(path):
+    with yield_temp_cwd(path):
         _ = check_call(["git", "init", "-b", "master"])
         _ = check_call(["git", "config", "user.name", "User"])
         _ = check_call(["git", "config", "user.email", "a@z.com"])
@@ -1066,7 +1066,7 @@ def setup_hypothesis_profiles(
             suppress_health_check=suppress_health_check,
             verbosity=profile.verbosity,
         )
-    profile = get_env_var("HYPOTHESIS_PROFILE", default=Profile.default.name)
+    profile = get_env("HYPOTHESIS_PROFILE", default=Profile.default.name)
     settings.load_profile(profile)
 
 

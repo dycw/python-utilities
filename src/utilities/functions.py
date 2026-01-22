@@ -1,50 +1,20 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator
-from dataclasses import asdict, dataclass
-from functools import _lru_cache_wrapper, cached_property, partial, reduce, wraps
+from dataclasses import dataclass
+from functools import wraps
 from inspect import getattr_static
 from pathlib import Path
-from re import findall
-from types import (
-    BuiltinFunctionType,
-    FunctionType,
-    MethodDescriptorType,
-    MethodType,
-    MethodWrapperType,
-    WrapperDescriptorType,
-)
-from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
+from typing import TYPE_CHECKING, Any, Literal, assert_never, overload, override
 
-from typing_extensions import TypeIs
 from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
-from utilities.constants import SECOND, Sentinel, sentinel
-from utilities.reprlib import get_repr, get_repr_and_class
-from utilities.types import (
-    Dataclass,
-    Duration,
-    Number,
-    SupportsRichComparison,
-    TypeLike,
-)
+from utilities.constants import SECOND
+from utilities.core import get_class_name, repr_, repr_str
 
 if TYPE_CHECKING:
-    from collections.abc import Container
+    from collections.abc import Callable, Container, Iterable, Iterator
 
-
-def apply_decorators[F1: Callable, F2: Callable](
-    func: F1, /, *decorators: Callable[[F2], F2]
-) -> F1:
-    """Apply a set of decorators to a function."""
-    return reduce(_apply_decorators_one, decorators, func)
-
-
-def _apply_decorators_one[F: Callable](acc: F, el: Callable[[Any], Any], /) -> F:
-    return el(acc)
-
-
-##
+    from utilities.types import Duration, Number, TypeLike
 
 
 @overload
@@ -281,7 +251,7 @@ class EnsureMemberError(Exception):
     @override
     def __str__(self) -> str:
         return _make_error_msg(
-            self.obj, f"a member of {get_repr(self.container)}", nullable=self.nullable
+            self.obj, f"a member of {repr_(self.container)}", nullable=self.nullable
         )
 
 
@@ -492,90 +462,6 @@ class EnsureZonedDateTimeError(Exception):
 ##
 
 
-def first[T](pair: tuple[T, Any], /) -> T:
-    """Get the first element in a pair."""
-    return pair[0]
-
-
-##
-
-
-@overload
-def get_class[T](obj: type[T], /) -> type[T]: ...
-@overload
-def get_class[T](obj: T, /) -> type[T]: ...
-def get_class[T](obj: T | type[T], /) -> type[T]:
-    """Get the class of an object, unless it is already a class."""
-    return obj if isinstance(obj, type) else type(obj)
-
-
-##
-
-
-def get_class_name(obj: Any, /, *, qual: bool = False) -> str:
-    """Get the name of the class of an object, unless it is already a class."""
-    cls = get_class(obj)
-    return f"{cls.__module__}.{cls.__qualname__}" if qual else cls.__name__
-
-
-##
-
-
-def get_func_name(obj: Callable[..., Any], /) -> str:
-    """Get the name of a callable."""
-    if isinstance(obj, BuiltinFunctionType):
-        return obj.__name__
-    if isinstance(obj, FunctionType):
-        name = obj.__name__
-        pattern = r"^.+\.([A-Z]\w+\." + name + ")$"
-        try:
-            (full_name,) = findall(pattern, obj.__qualname__)
-        except ValueError:
-            return name
-        return full_name
-    if isinstance(obj, MethodType):
-        return f"{get_class_name(obj.__self__)}.{obj.__name__}"
-    if isinstance(
-        obj,
-        MethodType | MethodDescriptorType | MethodWrapperType | WrapperDescriptorType,
-    ):
-        return obj.__qualname__
-    if isinstance(obj, _lru_cache_wrapper):
-        return cast("Any", obj).__name__
-    if isinstance(obj, partial):
-        return get_func_name(obj.func)
-    return get_class_name(obj)
-
-
-##
-
-
-def get_func_qualname(obj: Callable[..., Any], /) -> str:
-    """Get the qualified name of a callable."""
-    if isinstance(
-        obj, BuiltinFunctionType | FunctionType | MethodType | _lru_cache_wrapper
-    ):
-        return f"{obj.__module__}.{obj.__qualname__}"
-    if isinstance(
-        obj, MethodDescriptorType | MethodWrapperType | WrapperDescriptorType
-    ):
-        return f"{obj.__objclass__.__module__}.{obj.__qualname__}"
-    if isinstance(obj, partial):
-        return get_func_qualname(obj.func)
-    return f"{obj.__module__}.{get_class_name(obj)}"
-
-
-##
-
-
-def identity[T](obj: T, /) -> T:
-    """Return the object itself."""
-    return obj
-
-
-##
-
-
 def in_milli_seconds(duration: Duration, /) -> float:
     """Convert a duration to milli-seconds."""
     return 1e3 * in_seconds(duration)
@@ -601,133 +487,6 @@ def in_timedelta(duration: Duration, /) -> TimeDelta:
             return duration
         case never:
             assert_never(never)
-
-
-##
-
-
-def is_none(obj: Any, /) -> TypeIs[None]:
-    """Check if an object is `None`."""
-    return obj is None
-
-
-def is_not_none(obj: Any, /) -> bool:
-    """Check if an object is not `None`."""
-    return obj is not None
-
-
-##
-
-
-def is_sentinel(obj: Any, /) -> TypeIs[Sentinel]:
-    """Check if an object is the sentinel."""
-    return obj is sentinel
-
-
-##
-
-
-def map_object[T](
-    func: Callable[[Any], Any], obj: T, /, *, before: Callable[[Any], Any] | None = None
-) -> T:
-    """Map a function over an object, across a variety of structures."""
-    if before is not None:
-        obj = before(obj)
-    match obj:
-        case dict():
-            return type(obj)({
-                k: map_object(func, v, before=before) for k, v in obj.items()
-            })
-        case frozenset() | list() | set() | tuple():
-            return type(obj)(map_object(func, i, before=before) for i in obj)
-        case Dataclass():
-            return map_object(func, asdict(obj), before=before)
-        case _:
-            return func(obj)
-
-
-##
-
-
-@overload
-def min_nullable[T: SupportsRichComparison](
-    iterable: Iterable[T | None], /, *, default: Sentinel = ...
-) -> T: ...
-@overload
-def min_nullable[T: SupportsRichComparison, U](
-    iterable: Iterable[T | None], /, *, default: U = ...
-) -> T | U: ...
-def min_nullable[T: SupportsRichComparison, U](
-    iterable: Iterable[T | None], /, *, default: U | Sentinel = sentinel
-) -> T | U:
-    """Compute the minimum of a set of values; ignoring nulls."""
-    values = (i for i in iterable if i is not None)
-    if is_sentinel(default):
-        try:
-            return min(values)
-        except ValueError:
-            raise MinNullableError(values=values) from None
-    return min(values, default=default)
-
-
-@dataclass(kw_only=True, slots=True)
-class MinNullableError[T: SupportsRichComparison](Exception):
-    values: Iterable[T]
-
-    @override
-    def __str__(self) -> str:
-        return "Minimum of an all-None iterable is undefined"
-
-
-@overload
-def max_nullable[T: SupportsRichComparison](
-    iterable: Iterable[T | None], /, *, default: Sentinel = ...
-) -> T: ...
-@overload
-def max_nullable[T: SupportsRichComparison, U](
-    iterable: Iterable[T | None], /, *, default: U = ...
-) -> T | U: ...
-def max_nullable[T: SupportsRichComparison, U](
-    iterable: Iterable[T | None], /, *, default: U | Sentinel = sentinel
-) -> T | U:
-    """Compute the maximum of a set of values; ignoring nulls."""
-    values = (i for i in iterable if i is not None)
-    if is_sentinel(default):
-        try:
-            return max(values)
-        except ValueError:
-            raise MaxNullableError(values=values) from None
-    return max(values, default=default)
-
-
-@dataclass(kw_only=True, slots=True)
-class MaxNullableError[TSupportsRichComparison](Exception):
-    values: Iterable[TSupportsRichComparison]
-
-    @override
-    def __str__(self) -> str:
-        return "Maximum of an all-None iterable is undefined"
-
-
-##
-
-
-def not_func[**P](func: Callable[P, bool], /) -> Callable[P, bool]:
-    """Lift a boolean-valued function to return its conjugation."""
-
-    @wraps(func)
-    def wrapped(*args: P.args, **kwargs: P.kwargs) -> bool:
-        return not func(*args, **kwargs)
-
-    return wrapped
-
-
-##
-
-
-def second[U](pair: tuple[Any, U], /) -> U:
-    """Get the second element in a pair."""
-    return pair[1]
 
 
 ##
@@ -768,25 +527,8 @@ def yield_object_attributes(
 ##
 
 
-def yield_object_properties(
-    obj: Any, /, *, skip: Iterable[str] | None = None
-) -> Iterator[tuple[str, Any]]:
-    """Yield all the object properties."""
-    yield from yield_object_attributes(obj, skip=skip, static_type=property)
-
-
-def yield_object_cached_properties(
-    obj: Any, /, *, skip: Iterable[str] | None = None
-) -> Iterator[tuple[str, Any]]:
-    """Yield all the object cached properties."""
-    yield from yield_object_attributes(obj, skip=skip, static_type=cached_property)
-
-
-##
-
-
 def _make_error_msg(obj: Any, desc: str, /, *, nullable: bool = False) -> str:
-    msg = f"{get_repr_and_class(obj)} must be {desc}"
+    msg = f"Object {repr_str(obj)} of type {get_class_name(obj)!r} must be {desc}"
     if nullable:
         msg += " or None"
     return msg
@@ -808,9 +550,6 @@ __all__ = [
     "EnsureTimeDeltaError",
     "EnsureTimeError",
     "EnsureZonedDateTimeError",
-    "MaxNullableError",
-    "MinNullableError",
-    "apply_decorators",
     "ensure_bool",
     "ensure_bytes",
     "ensure_class",
@@ -826,25 +565,9 @@ __all__ = [
     "ensure_time",
     "ensure_time_delta",
     "ensure_zoned_date_time",
-    "first",
-    "get_class",
-    "get_class_name",
-    "get_func_name",
-    "get_func_qualname",
-    "identity",
     "in_milli_seconds",
     "in_seconds",
     "in_timedelta",
-    "is_none",
-    "is_not_none",
-    "is_sentinel",
-    "map_object",
-    "max_nullable",
-    "min_nullable",
-    "not_func",
-    "second",
     "skip_if_optimize",
     "yield_object_attributes",
-    "yield_object_cached_properties",
-    "yield_object_properties",
 ]

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import AbstractContextManager, suppress
+from contextlib import AbstractContextManager, contextmanager, suppress
 from logging import LogRecord, setLogRecordFactory
 from typing import TYPE_CHECKING
 
@@ -10,11 +10,14 @@ from whenever import PlainDateTime
 
 from utilities.asyncio import sleep
 from utilities.constants import IS_CI, IS_CI_AND_NOT_LINUX, MINUTE
-from utilities.contextlib import enhanced_context_manager
+from utilities.core import (
+    ExtractGroupError,
+    TemporaryDirectory,
+    TemporaryFile,
+    extract_group,
+    get_now_local_plain,
+)
 from utilities.pytest import skipif_ci
-from utilities.re import ExtractGroupError, extract_group
-from utilities.tempfile import TemporaryDirectory, TemporaryFile
-from utilities.whenever import get_now_local_plain
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
@@ -50,7 +53,7 @@ def container() -> str:
 
 @fixture
 def set_log_factory() -> AbstractContextManager[None]:
-    @enhanced_context_manager
+    @contextmanager
     def cm() -> Iterator[None]:
         try:
             yield
@@ -61,6 +64,12 @@ def set_log_factory() -> AbstractContextManager[None]:
 
 
 # fixtures - pathlib
+
+
+@fixture
+def temp_dir_with_dir(*, tmp_path: Path) -> Iterator[Path]:
+    with TemporaryDirectory(dir=tmp_path) as outer, TemporaryDirectory(dir=outer):
+        yield outer
 
 
 @fixture

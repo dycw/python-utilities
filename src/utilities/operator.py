@@ -6,8 +6,8 @@ from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, cast, override
 
 import utilities.math
+from utilities.core import repr_
 from utilities.iterables import SortIterableError, sort_iterable
-from utilities.reprlib import get_repr
 from utilities.typing import is_dataclass_instance
 
 if TYPE_CHECKING:
@@ -109,7 +109,7 @@ class IsEqualError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to sort {get_repr(self.x)} and {get_repr(self.y)}"  # pragma: no cover
+        return f"Unable to sort {repr_(self.x)} and {repr_(self.y)}"  # pragma: no cover
 
 
 __all__ = ["IsEqualError", "is_equal"]

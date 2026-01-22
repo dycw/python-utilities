@@ -10,7 +10,7 @@ import yaml
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pytest import mark, param
 
-from utilities.os import temp_environ
+from utilities.core import yield_temp_environ
 from utilities.pydantic_settings import (
     CustomBaseSettings,
     HashableBaseSettings,
@@ -92,7 +92,7 @@ class TestCustomBaseSettings:
         class Settings(CustomBaseSettings):
             x: int
 
-        with temp_environ(x="1"):
+        with yield_temp_environ(x="1"):
             settings = load_settings(Settings)
         assert settings.x == 1
 
@@ -101,7 +101,7 @@ class TestCustomBaseSettings:
             model_config = SettingsConfigDict(env_prefix="test_")
             x: int
 
-        with temp_environ(test_x="1"):
+        with yield_temp_environ(test_x="1"):
             settings = load_settings(Settings)
         assert settings.x == 1
 
@@ -115,7 +115,7 @@ class TestCustomBaseSettings:
 
         _ = Settings.model_rebuild()
 
-        with temp_environ(inner__x="1"):
+        with yield_temp_environ(inner__x="1"):
             settings = load_settings(Settings)
         assert settings.inner.x == 1
 
@@ -131,7 +131,7 @@ class TestCustomBaseSettings:
             x: int
 
         _ = Settings.model_rebuild()
-        with temp_environ(test__inner__x="1"):
+        with yield_temp_environ(test__inner__x="1"):
             settings = load_settings(Settings)
         assert settings.inner.x == 1
 

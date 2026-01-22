@@ -27,11 +27,11 @@ from utilities.altair import (
     vconcat_charts,
 )
 from utilities.constants import UTC
+from utilities.core import get_now
 from utilities.functions import ensure_class
 from utilities.hypothesis import dates, text_ascii, zoned_date_times
 from utilities.polars import DatetimeUTC, zoned_date_time_dtype
 from utilities.tzdata import HongKong, Tokyo
-from utilities.whenever import get_now
 
 if TYPE_CHECKING:
     from pathlib import Path
