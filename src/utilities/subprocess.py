@@ -944,7 +944,11 @@ def rsync_many(
             match item:
                 case Path() | str() as src, Path() | str() as dest:
                     cmds.extend(_rsync_many_prepare(src, dest, temp_src, temp_dest))
-                case "sudo", Path() | str() as src, Path() | str() as dest:
+                case (  # pragma: no cover
+                    "sudo",
+                    Path() | str() as src,
+                    Path() | str() as dest,
+                ):
                     cmds.extend(
                         _rsync_many_prepare(src, dest, temp_src, temp_dest, sudo=True)
                     )
@@ -956,7 +960,7 @@ def rsync_many(
                     cmds.extend(
                         _rsync_many_prepare(src, dest, temp_src, temp_dest, perms=perms)
                     )
-                case (
+                case (  # pragma: no cover
                     "sudo",
                     Path() | str() as src,
                     Path() | str() as dest,
