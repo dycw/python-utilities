@@ -8,8 +8,10 @@ from pytest import mark, param, raises
 
 from utilities.core import (
     GetEnvError,
+    Permissions,
     _CopyOrMoveDestinationExistsError,
     _CopyOrMoveSourceNotFoundError,
+    chmod,
     copy,
     get_env,
     move,
@@ -22,6 +24,14 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from utilities.types import CopyOrMove
+
+
+class TestChMod:
+    def test_main(self, *, temp_file: Path) -> None:
+        perms = Permissions.from_text("u=rw,g=r,o=r")
+        chmod(temp_file, perms)
+        result = Permissions.from_path(temp_file)
+        assert result == perms
 
 
 class TestCopyOrMove:

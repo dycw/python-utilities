@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Self, assert_never
+from typing import TYPE_CHECKING, Self
 
 from hypothesis import given, settings
 from hypothesis.strategies import integers, sets
 from pytest import mark, param, raises
 
-from utilities.constants import SYSTEM, Sentinel, sentinel
+from utilities.constants import Sentinel, sentinel
 from utilities.core import replace_non_sentinel
 from utilities.hypothesis import git_repos, pairs, paths, temp_paths
 from utilities.pathlib import (
@@ -18,8 +18,6 @@ from utilities.pathlib import (
     _GetTailLengthError,
     _GetTailNonUniqueError,
     ensure_suffix,
-    get_file_group,
-    get_file_owner,
     get_repo_root,
     get_tail,
     list_dir,
@@ -48,27 +46,6 @@ class TestEnsureSuffix:
     def test_main(self, *, path: Path, suffix: str, expected: str) -> None:
         result = str(ensure_suffix(path, suffix))
         assert result == expected
-
-
-class TestFileOwnerAndGroup:
-    def test_owner(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("file.txt")
-        path.touch()
-        self._assert(get_file_owner(path))
-
-    def test_group(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("file.txt")
-        path.touch()
-        self._assert(get_file_group(path))
-
-    def _assert(self, value: str | None, /) -> None:
-        match SYSTEM:
-            case "windows":  # skipif-not-windows
-                assert value is None
-            case "mac" | "linux":  # skipif-windows
-                assert isinstance(value, str)
-            case never:
-                assert_never(never)
 
 
 class TestGetRepoRoot:

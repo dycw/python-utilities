@@ -78,7 +78,9 @@ from utilities.constants import (
     _get_now,
     sentinel,
 )
+from utilities.constants import _get_gid_name as get_gid_name
 from utilities.constants import _get_now_local as get_now_local
+from utilities.constants import _get_uid_name as get_uid_name
 from utilities.types import (
     TIME_ZONES,
     CopyOrMove,
@@ -655,6 +657,17 @@ def identity[T](obj: T, /) -> T:
 
 
 ###############################################################################
+#### grp ######################################################################
+###############################################################################
+
+
+def get_file_group(path: PathLike, /) -> str | None:
+    """Get the group of a file."""
+    gid = Path(path).stat().st_gid
+    return get_gid_name(gid)
+
+
+###############################################################################
 #### itertools ################################################################
 ###############################################################################
 
@@ -870,6 +883,14 @@ def unique_everseen[T](
 ###############################################################################
 #### os #######################################################################
 ###############################################################################
+
+
+def chmod(path: PathLike, perms: PermissionsLike, /) -> None:
+    """Change file mode."""
+    Path(path).chmod(int(Permissions.new(perms)))
+
+
+##
 
 
 def copy(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
@@ -1400,6 +1421,17 @@ class _PermissionsFromTextError(PermissionsError):
 
 
 ###############################################################################
+#### pwd ######################################################################
+###############################################################################
+
+
+def get_file_owner(path: PathLike, /) -> str | None:
+    """Get the owner of a file."""
+    uid = Path(path).stat().st_uid
+    return get_uid_name(uid)
+
+
+###############################################################################
 #### re #######################################################################
 ###############################################################################
 
@@ -1704,6 +1736,36 @@ def repr_str(
         max_depth=max_depth,
         expand_all=expand_all,
     )
+
+
+###############################################################################
+#### shutil ###################################################################
+###############################################################################
+
+
+def chown(
+    path: PathLike,
+    /,
+    *,
+    recursive: bool = False,
+    user: str | int | None = None,
+    group: str | int | None = None,
+) -> None:
+    """Change file owner and/or group."""
+    path = Path(path)
+    paths = list(path.rglob("**/*")) if recursive else [path]
+    for p in paths:
+        match user, group:
+            case None, None:
+                ...
+            case str() | int(), None:
+                shutil.chown(p, user, group)
+            case None, str() | int():
+                shutil.chown(p, user, group)
+            case str() | int(), str() | int():
+                shutil.chown(p, user, group)
+            case never:
+                assert_never(never)
 
 
 ###############################################################################
@@ -2262,6 +2324,8 @@ __all__ = [
     "YieldLZMAError",
     "YieldZipError",
     "always_iterable",
+    "chmod",
+    "chown",
     "chunked",
     "compress_bz2",
     "compress_gzip",
@@ -2273,7 +2337,10 @@ __all__ = [
     "get_class",
     "get_class_name",
     "get_env",
+    "get_file_group",
+    "get_file_owner",
     "get_func_name",
+    "get_gid_name",
     "get_now",
     "get_now_local",
     "get_now_local_plain",
@@ -2282,6 +2349,7 @@ __all__ = [
     "get_time_local",
     "get_today",
     "get_today_local",
+    "get_uid_name",
     "is_none",
     "is_not_none",
     "is_sentinel",

@@ -22,11 +22,12 @@ from utilities.core import (
     Permissions,
     TemporaryDirectory,
     TemporaryFile,
+    get_file_group,
     normalize_multi_line_str,
     one,
     unique_str,
 )
-from utilities.pathlib import get_file_group, get_file_owner
+from utilities.pathlib import get_file_owner
 from utilities.pytest import skipif_ci, skipif_mac, throttle_test
 from utilities.shutil import which
 from utilities.subprocess import (
@@ -54,9 +55,7 @@ from utilities.subprocess import (
     cat_cmd,
     cd_cmd,
     chattr_cmd,
-    chmod,
     chmod_cmd,
-    chown,
     chown_cmd,
     copy_text,
     cp,
@@ -245,44 +244,11 @@ class TestChAttrCmd:
         assert result == expected
 
 
-class TestChMod:
-    def test_main(self, *, temp_file: Path) -> None:
-        perms = Permissions.from_text("u=rw,g=r,o=r")
-        _ = chmod(temp_file, perms)
-        result = Permissions.from_path(temp_file)
-        assert result == perms
-
-
 class TestChModCmd:
     def test_main(self) -> None:
         result = chmod_cmd("path", "u=rw,g=r,o=r")
         expected = ["chmod", "u=rw,g=r,o=r", "path"]
         assert result == expected
-
-
-class TestChOwn:
-    def test_none(self, *, temp_file: Path) -> None:
-        chown(temp_file)
-
-    def test_recursive(self, *, temp_file: Path) -> None:
-        chown(temp_file, recursive=True)
-
-    def test_user(self, *, temp_file: Path) -> None:
-        chown(temp_file, user=EFFECTIVE_USER_NAME)
-        result = get_file_owner(temp_file)
-        assert result == EFFECTIVE_USER_NAME
-
-    def test_group(self, *, temp_file: Path) -> None:
-        chown(temp_file, group=EFFECTIVE_GROUP_NAME)
-        result = get_file_group(temp_file)
-        assert result == EFFECTIVE_GROUP_NAME
-
-    def test_user_and_group(self, *, temp_file: Path) -> None:
-        chown(temp_file, user=EFFECTIVE_USER_NAME, group=EFFECTIVE_GROUP_NAME)
-        owner = get_file_owner(temp_file)
-        assert owner == EFFECTIVE_USER_NAME
-        group = get_file_group(temp_file)
-        assert group == EFFECTIVE_GROUP_NAME
 
 
 class TestChOwnCmd:

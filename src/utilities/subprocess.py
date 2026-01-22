@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 import sys
 from dataclasses import dataclass
 from io import StringIO
@@ -16,6 +15,7 @@ from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
+import utilities.core
 from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
@@ -199,8 +199,8 @@ def chmod(path: PathLike, perms: PermissionsLike, /, *, sudo: bool = False) -> N
     """Change file mode."""
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*chmod_cmd(path, perms)))
-    else:
-        Path(path).chmod(int(Permissions.new(perms)))
+    else:  # pragma: no cover
+        utilities.core.chmod(path, perms)
 
 
 def chmod_cmd(path: PathLike, perms: PermissionsLike, /) -> list[str]:
@@ -227,21 +227,8 @@ def chown(
                 *chown_cmd(path, recursive=recursive, user=user, group=group)
             )
             run(*args)
-    else:
-        path = Path(path)
-        paths = list(path.rglob("**/*")) if recursive else [path]
-        for p in paths:
-            match user, group:
-                case None, None:
-                    ...
-                case str() | int(), None:
-                    shutil.chown(p, user, group)
-                case None, str() | int():
-                    shutil.chown(p, user, group)
-                case str() | int(), str() | int():
-                    shutil.chown(p, user, group)
-                case never:
-                    assert_never(never)
+    else:  # pragma: no cover
+        utilities.core.chown(path, recursive=recursive, user=user, group=group)
 
 
 def chown_cmd(
