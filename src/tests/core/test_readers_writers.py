@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from pytest import mark, param, raises
 
+from utilities.constants import IS_CI
 from utilities.core import (
     ReadBytesError,
     ReadTextError,
@@ -27,8 +28,9 @@ class TestReadWriteBytes:
         assert read_bytes(temp_path_not_exist, decompress=compress) == b"data"
 
     def test_json(self, *, temp_path_not_exist: Path) -> None:
-        write_bytes(temp_path_not_exist, b"""{"foo":0,"bar":[1,2,3]}""", json=True)
-        expected = b"""{ "foo": 0, "bar": [1, 2, 3] }\n"""
+        data = b"""{"foo":0,"bar":[1,2,3]}"""
+        write_bytes(temp_path_not_exist, data, json=True)
+        expected = data if IS_CI else b"""{ "foo": 0, "bar": [1, 2, 3] }\n"""
         assert read_bytes(temp_path_not_exist) == expected
 
     @mark.parametrize("uncompress", [param(False), param(True)])

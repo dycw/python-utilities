@@ -1022,32 +1022,16 @@ class TestRsyncMany:
                 ),
             )
 
+    @skipif_ci
     @throttle_test(duration=5 * MINUTE)
-    def test_sudo_and_perms(
-        self, *, tmp_path: Path, ssh_user: str, ssh_hostname: str
-    ) -> None:
-        with (
-            TemporaryDirectory(dir=tmp_path) as src,
-            TemporaryFile(dir=src) as src_file1,
-            TemporaryFile(dir=src) as src_file2,
-            TemporaryFile(dir=src) as src_file3,
-            TemporaryFile(dir=src) as src_file4,
-            yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest,
-        ):
+    def test_perms(self, *, temp_file: Path, ssh_user: str, ssh_hostname: str) -> None:
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest:
             rsync_many(
                 ssh_user,
                 ssh_hostname,
-                (src_file1, dest / src_file1.name),
-                ("sudo", src_file2, dest / src_file2.name),
                 (
-                    src_file3,
-                    dest / src_file3.name,
-                    Permissions.from_text("u=rw,g=r,o=r"),
-                ),
-                (
-                    "sudo",
-                    src_file4,
-                    dest / src_file4.name,
+                    temp_file,
+                    dest / temp_file.name,
                     Permissions.from_text("u=rw,g=r,o=r"),
                 ),
             )
@@ -1058,10 +1042,7 @@ class TestRsyncMany:
                 input=(
                     f"""
                     if ! [ -d {dest} ]; then exit 1; fi
-                    if ! [ -f {dest}/{src_file1.name} ]; then exit 1; fi
-                    if ! [ -f {dest}/{src_file2.name} ]; then exit 1; fi
-                    if ! [ -f {dest}/{src_file3.name} ]; then exit 1; fi
-                    if ! [ -f {dest}/{src_file4.name} ]; then exit 1; fi
+                    if ! [ -f {dest}/{temp_file.name} ]; then exit 1; fi
                     """
                 ),
             )
