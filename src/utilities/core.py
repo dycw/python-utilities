@@ -2190,12 +2190,12 @@ def _yield_caught_warnings(
 ###############################################################################
 
 
+get_now_local = utilities.constants._get_now_local  # noqa: SLF001
+
+
 def get_now(time_zone: TimeZoneLike = UTC, /) -> ZonedDateTime:
     """Get the current zoned date-time."""
     return _get_now(to_time_zone_name(time_zone))
-
-
-get_now_local = utilities.constants._get_now_local  # noqa: SLF001
 
 
 def get_now_plain(time_zone: TimeZoneLike = UTC, /) -> PlainDateTime:
