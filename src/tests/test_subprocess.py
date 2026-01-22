@@ -973,16 +973,12 @@ class TestRsyncMany:
 class TestRsyncManyPrepare:
     @mark.parametrize("as_path", [param(False), param(True)])
     def test_single_file(
-        self, *, tmp_path: Path, temp_file: Path, as_path: bool
+        self, *, temp_file: Path, temp_dirs3: tuple[Path, Path, Path], as_path: bool
     ) -> None:
-        dest = tmp_path / "dest"
-        with (
-            TemporaryDirectory(dir=tmp_path) as temp_src,
-            TemporaryDirectory(dir=tmp_path) as temp_dest,
-        ):
-            src = temp_file if as_path else str(temp_file)
-            result = _rsync_many_prepare(src, dest, temp_src, temp_dest)
-            assert one(temp_src.iterdir()) == temp_src / "0"
+        src = temp_file if as_path else str(temp_file)
+        dest, temp_src, temp_dest = temp_dirs3
+        result = _rsync_many_prepare(src, dest, temp_src, temp_dest)
+        assert one(temp_src.iterdir()) == temp_src / "0"
         expected: list[list[str]] = [
             rm_cmd(dest),
             mkdir_cmd(dest, parent=True),
@@ -991,17 +987,16 @@ class TestRsyncManyPrepare:
         assert result == expected
 
     def test_multiple_files(
-        self, *, tmp_path: Path, temp_files: tuple[Path, Path]
+        self,
+        *,
+        temp_files: tuple[Path, Path],
+        temp_dirs4: tuple[Path, Path, Path, Path],
     ) -> None:
         path1, path2 = temp_files
-        dest1, dest2 = [tmp_path / "dest" / p.name for p in temp_files]
-        with (
-            TemporaryDirectory(dir=tmp_path) as temp_src,
-            TemporaryDirectory(dir=tmp_path) as temp_dest,
-        ):
-            result1 = _rsync_many_prepare(path1, dest1, temp_src, temp_dest)
-            result2 = _rsync_many_prepare(path2, dest2, temp_src, temp_dest)
-            assert set(temp_src.iterdir()) == {temp_src / str(i) for i in [0, 1]}
+        dest1, dest2, temp_src, temp_dest = temp_dirs4
+        result1 = _rsync_many_prepare(path1, dest1, temp_src, temp_dest)
+        result2 = _rsync_many_prepare(path2, dest2, temp_src, temp_dest)
+        assert set(temp_src.iterdir()) == {temp_src / str(i) for i in [0, 1]}
         expected1: list[list[str]] = [
             rm_cmd(dest1),
             mkdir_cmd(dest1, parent=True),
@@ -1016,19 +1011,28 @@ class TestRsyncManyPrepare:
         assert result2 == expected2
 
     @mark.parametrize("text", [param("text"), param(100 * "text")])
-    def test_text(self, *, tmp_path: Path, text: str) -> None:
-        dest = tmp_path / "dest"
-        with (
-            TemporaryDirectory(dir=tmp_path) as temp_src,
-            TemporaryDirectory(dir=tmp_path) as temp_dest,
-        ):
-            result = _rsync_many_prepare(text, dest, temp_src, temp_dest)
-            assert one(temp_src.iterdir()) == temp_src / "0"
-            assert (temp_src / "0").read_text() == text
+    def test_text(self, *, temp_dirs3: tuple[Path, Path, Path], text: str) -> None:
+        dest, temp_src, temp_dest = temp_dirs3
+        result = _rsync_many_prepare(text, dest, temp_src, temp_dest)
+        assert one(temp_src.iterdir()) == temp_src / "0"
+        assert (temp_src / "0").read_text() == text
         expected: list[list[str]] = [
             rm_cmd(dest),
             mkdir_cmd(dest, parent=True),
             cp_cmd(temp_dest / "0", dest),
+        ]
+        assert result == expected
+
+    def test_perms(self, *, temp_dirs4: tuple[Path, Path, Path, Path]) -> None:
+        src, dest, temp_src, temp_dest = temp_dirs4
+        perms = "u=rw,g=r,o=r"
+        result = _rsync_many_prepare(src, dest, temp_src, temp_dest, perms=perms)
+        assert one(temp_src.iterdir()) == temp_src / "0"
+        expected: list[list[str]] = [
+            rm_cmd(dest),
+            mkdir_cmd(dest, parent=True),
+            cp_cmd(temp_dest / "0", dest),
+            chmod_cmd(dest, perms),
         ]
         assert result == expected
 

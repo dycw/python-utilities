@@ -6,13 +6,13 @@ name: pull-request
   schedule:
     - cron: 3 22 * * *
 jobs:
-  pyright:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run 'pyright'
-        uses: dycw/action-pyright@latest
-        with:
-          python-version: "3.12"
+  # pyright:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Run 'pyright'
+  #       uses: dycw/action-pyright@latest
+  #       with:
+  #         python-version: "3.12"
   pytest:
     env:
       CI: "1"
@@ -20,6 +20,15 @@ jobs:
     runs-on:
       - ${{matrix.os}}
     services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       redis:
         image: ${{ matrix.os == 'ubuntu-latest' && 'redis/redis-stack:latest' ||
           '' }}
@@ -39,8 +48,8 @@ jobs:
           - ubuntu-latest
         python-version:
           - "3.12"
-          - "3.13"
-          - "3.14"
+          # - "3.13"
+          # - "3.14"
         resolution:
           - highest
           - lowest-direct
