@@ -71,6 +71,7 @@ from utilities.core import (
     OneNonUniqueError,
     chunked,
     get_class_name,
+    is_pytest,
     normalize_multi_line_str,
     one,
     repr_,
@@ -85,7 +86,6 @@ from utilities.iterables import (
     merge_sets,
     merge_str_mappings,
 )
-from utilities.os import is_pytest
 from utilities.text import secret_str
 from utilities.types import (
     Duration,

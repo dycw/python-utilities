@@ -18,6 +18,9 @@ from utilities.core import (
     get_env,
     get_file_group,
     get_file_owner,
+    has_env,
+    is_debug,
+    is_pytest,
     move,
     move_many,
     unique_str,
@@ -30,6 +33,12 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from _pytest.fixtures import SubRequest
+
+
+def generate_pair() -> tuple[str, str]:
+    key = f"_TEST_OS_{unique_str()}"
+    value = unique_str()
+    return key, value
 
 
 @fixture(params=get_literal_elements(CopyOrMove))
@@ -198,26 +207,26 @@ class TestCopyOrMove:
 
 class TestGetEnv:
     def test_main(self) -> None:
-        key, value = self._generate()
+        key, value = generate_pair()
         with yield_temp_environ({key: value}):
             assert get_env(key) == value
 
     def test_case_insensitive(self) -> None:
-        key, value = self._generate()
+        key, value = generate_pair()
         with yield_temp_environ({key.lower(): value}):
             assert get_env(key.upper()) == value
 
     def test_default(self) -> None:
-        key, value = self._generate()
+        key, value = generate_pair()
         assert get_env(key, default=value) == value
 
     def test_nullable(self) -> None:
-        key, _ = self._generate()
+        key, _ = generate_pair()
         assert get_env(key, nullable=True) is None
 
     def test_error_case_insensitive(self) -> None:
-        key1, value = self._generate()
-        key2, _ = self._generate()
+        key1, value = generate_pair()
+        key2, _ = generate_pair()
         with (
             yield_temp_environ({key1: value}),
             raises(GetEnvError, match=r"No environment variable '.*' \(modulo case\)"),
@@ -225,17 +234,46 @@ class TestGetEnv:
             _ = get_env(key2)
 
     def test_error_case_sensitive(self) -> None:
-        key, value = self._generate()
+        key, value = generate_pair()
         with (
             yield_temp_environ({key.lower(): value}),
             raises(GetEnvError, match=r"No environment variable '.*'"),
         ):
             _ = get_env(key.upper(), case_sensitive=True)
 
-    def _generate(self) -> tuple[str, str]:
-        key = f"_TEST_OS_{unique_str()}"
-        value = unique_str()
-        return key, value
+
+class TestHasEnv:
+    def test_main(self) -> None:
+        key, value = generate_pair()
+        with yield_temp_environ({key: value}):
+            assert has_env(key)
+
+    def test_case_insensitive(self) -> None:
+        key, value = generate_pair()
+        with yield_temp_environ({key.lower(): value}):
+            assert has_env(key.upper())
+
+    def test_missing_case_insensitive(self) -> None:
+        key1, value = generate_pair()
+        key2, _ = generate_pair()
+        with yield_temp_environ({key1: value}):
+            assert not has_env(key2)
+
+    def test_missing_case_sensitive(self) -> None:
+        key, value = generate_pair()
+        with yield_temp_environ({key.lower(): value}):
+            assert not has_env(key.upper(), case_sensitive=True)
+
+
+class TestIsDebug:
+    def test_main(self) -> None:
+        with yield_temp_environ(DEBUG="1"):
+            assert is_debug()
+
+
+class TestIsPytest:
+    def test_main(self) -> None:
+        assert is_pytest()
 
 
 class TestMoveMany:
@@ -251,23 +289,23 @@ class TestMoveMany:
 
 class TestYieldTempEnviron:
     def test_set(self) -> None:
-        key, value = self._generate()
+        key, value = generate_pair()
         assert getenv(key) is None
         with yield_temp_environ({key: value}):
             assert getenv(key) == value
         assert getenv(key) is None
 
     def test_override(self) -> None:
-        key, value1 = self._generate()
+        key, value1 = generate_pair()
         with yield_temp_environ({key: value1}):
             assert getenv(key) == value1
-            _, value2 = self._generate()
+            _, value2 = generate_pair()
             with yield_temp_environ({key: value2}):
                 assert getenv(key) == value2
             assert getenv(key) == value1
 
     def test_unset(self) -> None:
-        key, value = self._generate()
+        key, value = generate_pair()
         with yield_temp_environ({key: value}):
             assert getenv(key) == value
             with yield_temp_environ({key: None}):
