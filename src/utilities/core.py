@@ -64,6 +64,7 @@ from zoneinfo import ZoneInfo
 from typing_extensions import TypeIs
 from whenever import Date, PlainDateTime, Time, ZonedDateTime
 
+import utilities.constants
 from utilities.constants import (
     LOCAL_TIME_ZONE,
     LOCAL_TIME_ZONE_NAME,
@@ -78,9 +79,6 @@ from utilities.constants import (
     _get_now,
     sentinel,
 )
-from utilities.constants import _get_gid_name as get_gid_name
-from utilities.constants import _get_now_local as get_now_local
-from utilities.constants import _get_uid_name as get_uid_name
 from utilities.types import (
     TIME_ZONES,
     CopyOrMove,
@@ -675,6 +673,9 @@ def identity[T](obj: T, /) -> T:
 ###############################################################################
 #### grp ######################################################################
 ###############################################################################
+
+
+get_gid_name = utilities.constants._get_gid_name  # noqa: SLF001
 
 
 def get_file_group(path: PathLike, /) -> str | None:
@@ -1481,6 +1482,9 @@ class _PermissionsFromTextError(PermissionsError):
 ###############################################################################
 
 
+get_uid_name = utilities.constants._get_uid_name  # noqa: SLF001
+
+
 def get_file_owner(path: PathLike, /) -> str | None:
     """Get the owner of a file."""
     uid = Path(path).stat().st_uid
@@ -2189,6 +2193,9 @@ def _yield_caught_warnings(
 def get_now(time_zone: TimeZoneLike = UTC, /) -> ZonedDateTime:
     """Get the current zoned date-time."""
     return _get_now(to_time_zone_name(time_zone))
+
+
+get_now_local = utilities.constants._get_now_local  # noqa: SLF001
 
 
 def get_now_plain(time_zone: TimeZoneLike = UTC, /) -> PlainDateTime:

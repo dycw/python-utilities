@@ -15,6 +15,7 @@ from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
+import utilities.core
 from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
@@ -29,8 +30,6 @@ from utilities.core import (
     normalize_multi_line_str,
     one,
 )
-from utilities.core import chmod as _chmod
-from utilities.core import chown as _chown
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
 from utilities.logging import to_logger
@@ -201,7 +200,7 @@ def chmod(path: PathLike, perms: PermissionsLike, /, *, sudo: bool = False) -> N
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*chmod_cmd(path, perms)))
     else:  # pragma: no cover
-        _chmod(path, perms)
+        utilities.core.chmod(path, perms)
 
 
 def chmod_cmd(path: PathLike, perms: PermissionsLike, /) -> list[str]:
@@ -229,7 +228,7 @@ def chown(
             )
             run(*args)
     else:  # pragma: no cover
-        _chown(path, recursive=recursive, user=user, group=group)
+        utilities.core.chown(path, recursive=recursive, user=user, group=group)
 
 
 def chown_cmd(
