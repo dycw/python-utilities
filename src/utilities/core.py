@@ -586,7 +586,7 @@ _suppress_super_attribute_error_pattern = re.compile(
 
 @contextmanager
 def yield_temp_context_var(var: ContextVar[bool], /) -> Iterator[None]:
-    """Yield a context var as being set."""
+    """Yield a temporary boolean context var as True."""
     token = var.set(True)
     try:
         yield
