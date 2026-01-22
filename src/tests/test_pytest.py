@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from pytest import fixture, mark, param, raises
 
 from utilities.constants import IS_CI, SECOND
+from utilities.core import repr_str
 from utilities.functions import in_seconds
 from utilities.pytest import (
     _NodeIdToPathNotGetTailError,
@@ -33,8 +34,7 @@ def set_asyncio_default_fixture_loop_scope(*, testdir: Testdir) -> None:
 
 class TestMakeIDs:
     def test_main(self, *, testdir: Testdir) -> None:
-        _ = testdir.makepyfile(
-            """
+        _ = testdir.makepyfile("""
             from pytest import mark, param
 
             from utilities.pytest import make_ids
@@ -42,13 +42,11 @@ class TestMakeIDs:
             @mark.parametrize('n', [param(1), param(2), param(3)], ids=make_ids)
             def test_main(*, n: int) -> None:
                 assert isinstance(n, int)
-            """
-        )
+        """)
         testdir.runpytest("-p", "xdist", "-n", "2").assert_outcomes(passed=3)
 
     def test_functions(self, *, testdir: Testdir) -> None:
-        _ = testdir.makepyfile(
-            """
+        _ = testdir.makepyfile("""
             from collections.abc import Callable
 
             from pytest import mark, param
@@ -67,13 +65,11 @@ class TestMakeIDs:
             @mark.parametrize('func', [param(f), param(g), param(h)], ids=make_ids)
             def test_main(*, func: Callable[[], int]) -> None:
                 assert isinstance(func(), int)
-            """
-        )
+        """)
         testdir.runpytest("-p", "xdist", "-n", "2").assert_outcomes(passed=3)
 
     def test_sqlalchemy(self, *, testdir: Testdir) -> None:
-        _ = testdir.makepyfile(
-            """
+        _ = testdir.makepyfile("""
             from typing import Any
 
             from pytest import mark, param
@@ -84,8 +80,7 @@ class TestMakeIDs:
             @mark.parametrize('obj', [param(INTEGER), param(Integer)], ids=make_ids)
             def test_main(*, obj: Any) -> None:
                 assert isinstance(obj, object)
-            """
-        )
+        """)
         testdir.runpytest("-p", "xdist", "-n", "2").assert_outcomes(passed=2)
 
 
@@ -160,15 +155,13 @@ class TestNodeIdPath:
 
 class TestPytestOptions:
     def test_unknown_mark(self, *, testdir: Testdir) -> None:
-        _ = testdir.makepyfile(
-            """
+        _ = testdir.makepyfile("""
             from pytest import mark
 
             @mark.unknown
             def test_main() -> None:
                 assert True
-            """
-        )
+        """)
         result = testdir.runpytest()
         result.assert_outcomes(errors=1)
         result.stdout.re_match_lines([r".*Unknown pytest\.mark\.unknown"])
@@ -176,20 +169,16 @@ class TestPytestOptions:
     @mark.parametrize("configure", [param(True), param(False)])
     def test_unknown_option(self, *, configure: bool, testdir: Testdir) -> None:
         if configure:
-            _ = testdir.makeconftest(
-                """
+            _ = testdir.makeconftest("""
                 from utilities.pytest import add_pytest_configure
 
                 def pytest_configure(config):
                     add_pytest_configure(config, [("slow", "slow to run")])
-                """
-            )
-        _ = testdir.makepyfile(
-            """
+            """)
+        _ = testdir.makepyfile("""
             def test_main() -> None:
                 assert True
-            """
-        )
+        """)
         result = testdir.runpytest("--unknown")
         result.stderr.re_match_lines([r".*unrecognized arguments.*"])
 
@@ -206,8 +195,7 @@ class TestPytestOptions:
         skipped: int,
         matches: list[str],
     ) -> None:
-        _ = testdir.makeconftest(
-            """
+        _ = testdir.makeconftest("""
             from utilities.pytest import add_pytest_addoption
             from utilities.pytest import add_pytest_collection_modifyitems
             from utilities.pytest import add_pytest_configure
@@ -220,17 +208,14 @@ class TestPytestOptions:
 
             def pytest_configure(config):
                 add_pytest_configure(config, [("slow", "slow to run")])
-            """
-        )
-        _ = testdir.makepyfile(
-            """
+        """)
+        _ = testdir.makepyfile("""
             from pytest import mark
 
             @mark.slow
             def test_main() -> None:
                 assert True
-            """
-        )
+        """)
         result = testdir.runpytest("-rs", *case)
         result.assert_outcomes(passed=passed, skipped=skipped)
         result.stdout.re_match_lines(list(matches))
@@ -272,8 +257,7 @@ class TestPytestOptions:
         skipped: int,
         matches: list[str],
     ) -> None:
-        _ = testdir.makeconftest(
-            """
+        _ = testdir.makeconftest("""
             from utilities.pytest import add_pytest_addoption
             from utilities.pytest import add_pytest_collection_modifyitems
             from utilities.pytest import add_pytest_configure
@@ -290,10 +274,8 @@ class TestPytestOptions:
                 add_pytest_configure(
                     config, [("slow", "slow to run"), ("fast", "fast to run")],
                 )
-            """
-        )
-        _ = testdir.makepyfile(
-            """
+        """)
+        _ = testdir.makepyfile("""
             from pytest import mark
 
             def test_none() -> None:
@@ -311,91 +293,70 @@ class TestPytestOptions:
             @mark.fast
             def test_both() -> None:
                 assert True
-            """
-        )
+        """)
         result = testdir.runpytest("-rs", *case, "--randomly-dont-reorganize")
         result.assert_outcomes(passed=passed, skipped=skipped)
         result.stdout.re_match_lines(list(matches))
 
 
 class TestRunTestFrac:
-    @mark.flaky
-    def test_basic(self, *, testdir: Testdir) -> None:
-        _ = testdir.makepyfile(
-            """
+    def test_sync_func_passing(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile("""
             from utilities.pytest import run_test_frac
 
-            @run_test_frac()
+            @run_test_frac(frac=1.0)
             def test_main() -> None:
                 assert True
-            """
-        )
-        self._run_test(testdir)
-
-    @mark.flaky
-    @mark.parametrize("asyncio_first", [param(True), param(False)])
-    def test_async(self, *, testdir: Testdir, asyncio_first: bool) -> None:
-        if asyncio_first:
-            _ = testdir.makepyfile(
-                """
-                from pytest import mark
-
-                from utilities.pytest import run_test_frac
-
-                @mark.asyncio
-                @run_test_frac()
-                async def test_main() -> None:
-                    assert True
-                """
-            )
-        else:
-            _ = testdir.makepyfile(
-                """
-                from pytest import mark
-
-                from utilities.pytest import run_test_frac
-
-                @run_test_frac()
-                @mark.asyncio
-                async def test_main() -> None:
-                    assert True
-                """
-            )
-        self._run_test(testdir)
-
-    @mark.flaky
-    def test_predicate(self, *, testdir: Testdir) -> None:
-        _ = testdir.makepyfile(
-            """
-            from utilities.pytest import run_test_frac
-
-            @run_test_frac(predicate=False)
-            def test_main() -> None:
-                assert True
-            """
-        )
+        """)
         testdir.runpytest().assert_outcomes(passed=1)
 
-    def _run_test(self, testdir: Testdir, /) -> None:
-        result = testdir.runpytest()
-        try:
-            result.assert_outcomes(passed=1)
-        except AssertionError:
-            result.assert_outcomes(skipped=1)
+    def test_sync_func_skipped(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile("""
+            from utilities.pytest import run_test_frac
+
+            @run_test_frac(frac=0.0)
+            def test_main() -> None:
+                assert True
+        """)
+        testdir.runpytest().assert_outcomes(skipped=1)
+
+    def test_async_func_passing(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile("""
+            from pytest import mark
+
+            from utilities.pytest import run_test_frac
+
+            @mark.asyncio
+            @run_test_frac(frac=1.0)
+            async def test_main() -> None:
+                assert True
+        """)
+        testdir.runpytest().assert_outcomes(passed=1)
+
+    def test_async_func_skipped(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile("""
+            from pytest import mark
+
+            from utilities.pytest import run_test_frac
+
+            @mark.asyncio
+            @run_test_frac(frac=0.0)
+            async def test_main() -> None:
+                assert True
+        """)
+        testdir.runpytest().assert_outcomes(skipped=1)
 
 
 class TestThrottleTest:
     def test_main(self, *, testdir: Testdir, tmp_path: Path) -> None:
         seconds = in_seconds(_DURATION)
-        _ = testdir.makepyfile(
-            f"""
+        _ = testdir.makepyfile(f"""
             from utilities.pytest import throttle_test
 
-            @throttle_test(root={str(tmp_path)!r}, duration={seconds})
+            @throttle_test(root={repr_str(tmp_path)}, duration={seconds})
             def test_main() -> None:
                 assert True
-            """
-        )
+        """)
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
         sleep(_MULTIPLE * _DURATION)
@@ -403,8 +364,7 @@ class TestThrottleTest:
 
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
         seconds = in_seconds(_DURATION)
-        _ = testdir.makepyfile(
-            f"""
+        _ = testdir.makepyfile(f"""
             from pytest import mark
             from string import printable
 
@@ -414,8 +374,7 @@ class TestThrottleTest:
             @throttle_test(root={str(tmp_path)!r}, duration={seconds})
             def test_main(*, arg: str) -> None:
                 assert True
-            """
-        )
+        """)
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
         sleep(_MULTIPLE * _DURATION)
