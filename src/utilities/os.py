@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, assert_never, override
 
 from utilities.constants import CPU_COUNT
-from utilities.core import get_env
 
 if TYPE_CHECKING:
     from utilities.types import IntOrAll
@@ -32,23 +31,4 @@ class GetCPUUseError(Exception):
         return f"Invalid number of CPUs to use: {self.n}"
 
 
-##
-
-
-def is_debug() -> bool:
-    """Check if we are in `DEBUG` mode."""
-    return get_env("DEBUG", nullable=True) is not None
-
-
-##
-
-
-def is_pytest() -> bool:
-    """Check if `pytest` is running."""
-    return get_env("PYTEST_VERSION", nullable=True) is not None
-
-
-##
-
-
-__all__ = ["GetCPUUseError", "get_cpu_use", "is_debug", "is_pytest"]
+__all__ = ["GetCPUUseError", "get_cpu_use"]

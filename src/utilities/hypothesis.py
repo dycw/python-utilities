@@ -88,6 +88,7 @@ from utilities.constants import (
 from utilities.core import (
     Permissions,
     TemporaryDirectory,
+    get_env,
     get_now,
     is_sentinel,
     max_nullable,
@@ -97,7 +98,6 @@ from utilities.core import (
 )
 from utilities.functions import ensure_int, ensure_str
 from utilities.math import is_zero
-from utilities.os import get_env
 from utilities.pathlib import module_path
 from utilities.version import Version2, Version3
 from utilities.whenever import (

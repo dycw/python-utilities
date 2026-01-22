@@ -1138,6 +1138,31 @@ class GetEnvError(Exception):
 ##
 
 
+def has_env(key: str, /, *, case_sensitive: bool = False) -> bool:
+    """Check if an environment variable is define."""
+    try:
+        _ = get_env(key, case_sensitive=case_sensitive)
+    except GetEnvError:
+        return False
+    return True
+
+
+##
+
+
+def is_debug() -> bool:
+    """Check if we are in `DEBUG` mode."""
+    return has_env("DEBUG")
+
+
+def is_pytest() -> bool:
+    """Check if `pytest` is running."""
+    return has_env("PYTEST_VERSION")
+
+
+##
+
+
 def move_many(
     *paths: tuple[PathLike, PathLike],
     overwrite: bool = False,
@@ -2512,8 +2537,11 @@ __all__ = [
     "get_today",
     "get_today_local",
     "get_uid_name",
+    "has_env",
+    "is_debug",
     "is_none",
     "is_not_none",
+    "is_pytest",
     "is_sentinel",
     "max_nullable",
     "min_nullable",
