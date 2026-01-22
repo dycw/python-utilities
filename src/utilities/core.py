@@ -9,15 +9,28 @@ import tempfile
 from bz2 import BZ2File
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import ExitStack, contextmanager, suppress
-from dataclasses import dataclass
-from functools import _lru_cache_wrapper, partial, wraps
+from dataclasses import dataclass, replace
+from functools import _lru_cache_wrapper, partial, reduce, wraps
 from gzip import GzipFile
 from itertools import chain, islice
 from lzma import LZMAFile
+from operator import or_
 from os import chdir, environ, getenv, getpid
 from pathlib import Path
 from re import VERBOSE, Pattern, findall
 from shutil import copyfileobj, copytree
+from stat import (
+    S_IMODE,
+    S_IRGRP,
+    S_IROTH,
+    S_IRUSR,
+    S_IWGRP,
+    S_IWOTH,
+    S_IWUSR,
+    S_IXGRP,
+    S_IXOTH,
+    S_IXUSR,
+)
 from string import Template
 from subprocess import check_output
 from tarfile import ReadError, TarFile
@@ -33,7 +46,16 @@ from types import (
     MethodWrapperType,
     WrapperDescriptorType,
 )
-from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    Self,
+    assert_never,
+    cast,
+    overload,
+    override,
+)
 from uuid import uuid4
 from warnings import catch_warnings, filterwarnings
 from zipfile import ZipFile
@@ -60,6 +82,7 @@ from utilities.constants import _get_now_local as get_now_local
 from utilities.types import (
     TIME_ZONES,
     CopyOrMove,
+    Dataclass,
     FilterWarningsAction,
     PathToBinaryIO,
     PatternLike,
@@ -535,6 +558,35 @@ def suppress_super_attribute_error() -> Iterator[None]:
 _suppress_super_attribute_error_pattern = re.compile(
     r"'super' object has no attribute '\w+'"
 )
+
+
+###############################################################################
+#### dataclass ################################################################
+###############################################################################
+
+
+@overload
+def replace_non_sentinel(
+    obj: Dataclass, /, *, in_place: Literal[True], **kwargs: Any
+) -> None: ...
+@overload
+def replace_non_sentinel[T: Dataclass](
+    obj: T, /, *, in_place: Literal[False] = False, **kwargs: Any
+) -> T: ...
+@overload
+def replace_non_sentinel[T: Dataclass](
+    obj: T, /, *, in_place: bool = False, **kwargs: Any
+) -> T | None: ...
+def replace_non_sentinel[T: Dataclass](
+    obj: T, /, *, in_place: bool = False, **kwargs: Any
+) -> T | None:
+    """Replace attributes on a dataclass, filtering out sentinel values."""
+    if in_place:
+        for k, v in kwargs.items():
+            if not is_sentinel(v):
+                setattr(obj, k, v)
+        return None
+    return replace(obj, **{k: v for k, v in kwargs.items() if not is_sentinel(v)})
 
 
 ###############################################################################
@@ -1086,6 +1138,265 @@ def yield_temp_cwd(path: PathLike, /) -> Iterator[None]:
         yield
     finally:
         chdir(prev)
+
+
+###############################################################################
+#### permissions ##############################################################
+###############################################################################
+
+
+type PermissionsLike = Permissions | int | str
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
+class Permissions:
+    """A set of file permissions."""
+
+    user_read: bool = False
+    user_write: bool = False
+    user_execute: bool = False
+    group_read: bool = False
+    group_write: bool = False
+    group_execute: bool = False
+    others_read: bool = False
+    others_write: bool = False
+    others_execute: bool = False
+
+    def __int__(self) -> int:
+        flags: list[int] = [
+            S_IRUSR if self.user_read else 0,
+            S_IWUSR if self.user_write else 0,
+            S_IXUSR if self.user_execute else 0,
+            S_IRGRP if self.group_read else 0,
+            S_IWGRP if self.group_write else 0,
+            S_IXGRP if self.group_execute else 0,
+            S_IROTH if self.others_read else 0,
+            S_IWOTH if self.others_write else 0,
+            S_IXOTH if self.others_execute else 0,
+        ]
+        return reduce(or_, flags)
+
+    @override
+    def __repr__(self) -> str:
+        return ",".join([
+            self._repr_parts(
+                "u",
+                read=self.user_read,
+                write=self.user_write,
+                execute=self.user_execute,
+            ),
+            self._repr_parts(
+                "g",
+                read=self.group_read,
+                write=self.group_write,
+                execute=self.group_execute,
+            ),
+            self._repr_parts(
+                "o",
+                read=self.others_read,
+                write=self.others_write,
+                execute=self.others_execute,
+            ),
+        ])
+
+    def _repr_parts(
+        self,
+        prefix: Literal["u", "g", "o"],
+        /,
+        *,
+        read: bool = False,
+        write: bool = False,
+        execute: bool = False,
+    ) -> str:
+        parts: list[str] = [
+            "r" if read else "",
+            "w" if write else "",
+            "x" if execute else "",
+        ]
+        return f"{prefix}={''.join(parts)}"
+
+    @override
+    def __str__(self) -> str:
+        return repr(self)
+
+    @classmethod
+    def new(cls, perms: PermissionsLike, /) -> Self:
+        match perms:
+            case Permissions():
+                return cast("Self", perms)
+            case int():
+                return cls.from_int(perms)
+            case str():
+                return cls.from_text(perms)
+            case never:
+                assert_never(never)
+
+    @classmethod
+    def from_human_int(cls, n: int, /) -> Self:
+        if not (0 <= n <= 777):
+            raise _PermissionsFromHumanIntRangeError(n=n)
+        user_read, user_write, user_execute = cls._from_human_int(n, (n // 100) % 10)
+        group_read, group_write, group_execute = cls._from_human_int(n, (n // 10) % 10)
+        others_read, others_write, others_execute = cls._from_human_int(n, n % 10)
+        return cls(
+            user_read=user_read,
+            user_write=user_write,
+            user_execute=user_execute,
+            group_read=group_read,
+            group_write=group_write,
+            group_execute=group_execute,
+            others_read=others_read,
+            others_write=others_write,
+            others_execute=others_execute,
+        )
+
+    @classmethod
+    def _from_human_int(cls, n: int, digit: int, /) -> tuple[bool, bool, bool]:
+        if not (0 <= digit <= 7):
+            raise _PermissionsFromHumanIntDigitError(n=n, digit=digit)
+        return bool(4 & digit), bool(2 & digit), bool(1 & digit)
+
+    @classmethod
+    def from_int(cls, n: int, /) -> Self:
+        if 0o0 <= n <= 0o777:
+            return cls(
+                user_read=bool(n & S_IRUSR),
+                user_write=bool(n & S_IWUSR),
+                user_execute=bool(n & S_IXUSR),
+                group_read=bool(n & S_IRGRP),
+                group_write=bool(n & S_IWGRP),
+                group_execute=bool(n & S_IXGRP),
+                others_read=bool(n & S_IROTH),
+                others_write=bool(n & S_IWOTH),
+                others_execute=bool(n & S_IXOTH),
+            )
+        raise _PermissionsFromIntError(n=n)
+
+    @classmethod
+    def from_path(cls, path: PathLike, /) -> Self:
+        return cls.from_int(S_IMODE(Path(path).stat().st_mode))
+
+    @classmethod
+    def from_text(cls, text: str, /) -> Self:
+        try:
+            user, group, others = extract_groups(
+                r"^u=(r?w?x?),g=(r?w?x?),o=(r?w?x?)$", text
+            )
+        except ExtractGroupsError:
+            raise _PermissionsFromTextError(text=text) from None
+        user_read, user_write, user_execute = cls._from_text_part(user)
+        group_read, group_write, group_execute = cls._from_text_part(group)
+        others_read, others_write, others_execute = cls._from_text_part(others)
+        return cls(
+            user_read=user_read,
+            user_write=user_write,
+            user_execute=user_execute,
+            group_read=group_read,
+            group_write=group_write,
+            group_execute=group_execute,
+            others_read=others_read,
+            others_write=others_write,
+            others_execute=others_execute,
+        )
+
+    @classmethod
+    def _from_text_part(cls, text: str, /) -> tuple[bool, bool, bool]:
+        read, write, execute = extract_groups("^(r?)(w?)(x?)$", text)
+        return read != "", write != "", execute != ""
+
+    @property
+    def human_int(self) -> int:
+        return (
+            100
+            * self._human_int(
+                read=self.user_read, write=self.user_write, execute=self.user_execute
+            )
+            + 10
+            * self._human_int(
+                read=self.group_read, write=self.group_write, execute=self.group_execute
+            )
+            + self._human_int(
+                read=self.others_read,
+                write=self.others_write,
+                execute=self.others_execute,
+            )
+        )
+
+    def _human_int(
+        self, *, read: bool = False, write: bool = False, execute: bool = False
+    ) -> int:
+        return (4 if read else 0) + (2 if write else 0) + (1 if execute else 0)
+
+    def replace(
+        self,
+        *,
+        user_read: bool | Sentinel = sentinel,
+        user_write: bool | Sentinel = sentinel,
+        user_execute: bool | Sentinel = sentinel,
+        group_read: bool | Sentinel = sentinel,
+        group_write: bool | Sentinel = sentinel,
+        group_execute: bool | Sentinel = sentinel,
+        others_read: bool | Sentinel = sentinel,
+        others_write: bool | Sentinel = sentinel,
+        others_execute: bool | Sentinel = sentinel,
+    ) -> Self:
+        return replace_non_sentinel(
+            self,
+            user_read=user_read,
+            user_write=user_write,
+            user_execute=user_execute,
+            group_read=group_read,
+            group_write=group_write,
+            group_execute=group_execute,
+            others_read=others_read,
+            others_write=others_write,
+            others_execute=others_execute,
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _PermissionsFromHumanIntError(PermissionsError):
+    n: int
+
+
+@dataclass(kw_only=True, slots=True)
+class _PermissionsFromHumanIntRangeError(_PermissionsFromHumanIntError):
+    @override
+    def __str__(self) -> str:
+        return f"Invalid human integer for permissions; got {self.n}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PermissionsFromHumanIntDigitError(_PermissionsFromHumanIntError):
+    digit: int
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Invalid human integer for permissions; got digit {self.digit} in {self.n}"
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class _PermissionsFromIntError(PermissionsError):
+    n: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid integer for permissions; got {self.n} = {oct(self.n)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PermissionsFromTextError(PermissionsError):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid string for permissions; got {self.text!r}"
 
 
 ###############################################################################
@@ -1932,6 +2243,9 @@ __all__ = [
     "OneStrEmptyError",
     "OneStrError",
     "OneStrNonUniqueError",
+    "Permissions",
+    "PermissionsError",
+    "PermissionsLike",
     "ReadBytesError",
     "ReadTextError",
     "SubstituteError",
@@ -1981,6 +2295,7 @@ __all__ = [
     "one_str",
     "read_bytes",
     "read_text",
+    "replace_non_sentinel",
     "repr_",
     "repr_str",
     "substitute",

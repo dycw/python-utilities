@@ -20,6 +20,7 @@ from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
     OneEmptyError,
+    Permissions,
     TemporaryDirectory,
     _CopyOrMoveSourceNotFoundError,
     always_iterable,
@@ -32,7 +33,6 @@ from utilities.core import (
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
 from utilities.logging import to_logger
-from utilities.permissions import Permissions, ensure_perms
 from utilities.time import sleep
 from utilities.version import (
     ParseVersion2Or3Error,
@@ -44,7 +44,7 @@ from utilities.version import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
 
-    from utilities.permissions import PermissionsLike
+    from utilities.core import PermissionsLike
     from utilities.types import (
         Duration,
         LoggerLike,
@@ -200,12 +200,12 @@ def chmod(path: PathLike, perms: PermissionsLike, /, *, sudo: bool = False) -> N
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*chmod_cmd(path, perms)))
     else:
-        Path(path).chmod(int(ensure_perms(perms)))
+        Path(path).chmod(int(Permissions.new(perms)))
 
 
 def chmod_cmd(path: PathLike, perms: PermissionsLike, /) -> list[str]:
     """Command to use 'chmod' to change file mode."""
-    return ["chmod", str(ensure_perms(perms)), str(path)]
+    return ["chmod", str(Permissions.new(perms)), str(path)]
 
 
 ##
@@ -628,7 +628,7 @@ def install_cmd(
     if directory:
         args.append("-d")
     if mode is not None:
-        args.extend(["-m", str(ensure_perms(mode))])
+        args.extend(["-m", str(Permissions.new(mode))])
     if owner is not None:
         args.extend(["-o", str(owner)])
     if group is not None:

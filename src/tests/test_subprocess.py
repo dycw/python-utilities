@@ -19,6 +19,7 @@ from utilities.constants import (
     SECOND,
 )
 from utilities.core import (
+    Permissions,
     TemporaryDirectory,
     TemporaryFile,
     normalize_multi_line_str,
@@ -26,7 +27,6 @@ from utilities.core import (
     unique_str,
 )
 from utilities.pathlib import get_file_group, get_file_owner
-from utilities.permissions import Permissions
 from utilities.pytest import skipif_ci, skipif_mac, throttle_test
 from utilities.shutil import which
 from utilities.subprocess import (

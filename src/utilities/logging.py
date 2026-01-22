@@ -46,8 +46,8 @@ from utilities.core import (
     get_now_local,
     move_many,
     one,
+    replace_non_sentinel,
 )
-from utilities.dataclasses import replace_non_sentinel
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_seconds
 from utilities.pathlib import ensure_suffix, to_path

@@ -41,7 +41,6 @@ from tests.test_typing_funcs.with_future import (
     TrueOrFalseFutureLit,
     TrueOrFalseFutureTypeLit,
 )
-from utilities.constants import sentinel
 from utilities.core import get_class_name, one
 from utilities.dataclasses import (
     YieldFieldsError,
@@ -68,7 +67,6 @@ from utilities.dataclasses import (
     mapping_to_dataclass,
     one_field,
     parse_dataclass,
-    replace_non_sentinel,
     serialize_dataclass,
     str_mapping_to_field_mapping,
     yield_fields,
@@ -499,24 +497,6 @@ class TestParseDataClassSplitKeyValuePairs:
         result = _parse_dataclass_split_key_value_pairs(text, DataClassFutureInt)
         expected = {"a": "1", "b": "22", "c": "333"}
         assert result == expected
-
-
-class TestReplaceNonSentinel:
-    def test_main(self) -> None:
-        obj = DataClassFutureIntDefault()
-        assert obj.int_ == 0
-        obj1 = replace_non_sentinel(obj, int_=1)
-        assert obj1.int_ == 1
-        obj2 = replace_non_sentinel(obj1, int_=sentinel)
-        assert obj2.int_ == 1
-
-    def test_in_place(self) -> None:
-        obj = DataClassFutureIntDefault()
-        assert obj.int_ == 0
-        replace_non_sentinel(obj, int_=1, in_place=True)
-        assert obj.int_ == 1
-        replace_non_sentinel(obj, int_=sentinel, in_place=True)
-        assert obj.int_ == 1
 
 
 class TestSerializeAndParseDataClass:

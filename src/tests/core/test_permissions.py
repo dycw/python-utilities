@@ -8,15 +8,14 @@ from hypothesis.strategies import booleans
 from pytest import mark, param, raises
 
 from utilities.constants import Sentinel
-from utilities.hypothesis import permissions, sentinels, temp_paths
-from utilities.permissions import (
+from utilities.core import (
     Permissions,
-    PermissionsFromHumanIntDigitError,
-    PermissionsFromHumanIntRangeError,
-    PermissionsFromIntError,
-    PermissionsFromTextError,
-    ensure_perms,
+    _PermissionsFromHumanIntDigitError,
+    _PermissionsFromHumanIntRangeError,
+    _PermissionsFromIntError,
+    _PermissionsFromTextError,
 )
+from utilities.hypothesis import permissions, sentinels, temp_paths
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -59,20 +58,6 @@ _CASES: list[_Case] = [
 ]
 
 
-class TestEnsurePermissions:
-    @given(perms=permissions())
-    def test_int(self, *, perms: Permissions) -> None:
-        assert ensure_perms(int(perms)) == perms
-
-    @given(perms=permissions())
-    def test_perms(self, *, perms: Permissions) -> None:
-        assert ensure_perms(perms) == perms
-
-    @given(perms=permissions())
-    def test_text(self, *, perms: Permissions) -> None:
-        assert ensure_perms(str(perms)) == perms
-
-
 class TestPermissions:
     @given(root=temp_paths(), perms=permissions())
     def test_from_path(self, *, root: Path, perms: Permissions) -> None:
@@ -104,6 +89,18 @@ class TestPermissions:
         result = int(perms)
         assert result == expected
         assert Permissions.from_int(result) == perms
+
+    @given(perms=permissions())
+    def test_new_int(self, *, perms: Permissions) -> None:
+        assert Permissions.new(int(perms)) == perms
+
+    @given(perms=permissions())
+    def test_new_perms(self, *, perms: Permissions) -> None:
+        assert Permissions.new(perms) == perms
+
+    @given(perms=permissions())
+    def test_new_text(self, *, perms: Permissions) -> None:
+        assert Permissions.new(str(perms)) == perms
 
     @given(
         perms=permissions(),
@@ -175,28 +172,28 @@ class TestPermissions:
 
     def test_error_from_human_int_digit(self) -> None:
         with raises(
-            PermissionsFromHumanIntDigitError,
+            _PermissionsFromHumanIntDigitError,
             match="Invalid human integer for permissions; got digit 8 in 8",
         ):
             _ = Permissions.from_human_int(8)
 
     def test_error_from_human_int_range(self) -> None:
         with raises(
-            PermissionsFromHumanIntRangeError,
+            _PermissionsFromHumanIntRangeError,
             match="Invalid human integer for permissions; got 7777",
         ):
             _ = Permissions.from_human_int(7777)
 
     def test_error_from_int(self) -> None:
         with raises(
-            PermissionsFromIntError,
+            _PermissionsFromIntError,
             match="Invalid integer for permissions; got 4095 = 0o7777",
         ):
             _ = Permissions.from_int(0o7777)
 
     def test_error_from_text(self) -> None:
         with raises(
-            PermissionsFromTextError,
+            _PermissionsFromTextError,
             match="Invalid string for permissions; got 'u=xwr,g=,o='",
         ):
             _ = Permissions.from_text("u=xwr,g=,o=")
