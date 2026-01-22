@@ -279,8 +279,8 @@ async def test_async_postgres_engine() -> AsyncEngine:
 
     from utilities.sqlalchemy import create_engine
 
-    if IS_CI:
-        skip(reason="Skipped for CI; Postgres is not available")
+    # if IS_CI:
+    #     skip(reason="Skipped for CI; Postgres is not available")
     engine = create_engine(
         "postgresql+asyncpg",
         username="postgres",
