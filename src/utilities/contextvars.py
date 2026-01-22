@@ -1,15 +1,6 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-
-##
-
 
 _GLOBAL_BREAKPOINT = ContextVar("GLOBAL_BREAKPOINT", default=False)
 
@@ -25,17 +16,4 @@ def set_global_breakpoint() -> None:
     _ = _GLOBAL_BREAKPOINT.set(True)
 
 
-##
-
-
-@contextmanager
-def yield_set_context(var: ContextVar[bool], /) -> Iterator[None]:
-    """Yield a context var as being set."""
-    token = var.set(True)
-    try:
-        yield
-    finally:
-        _ = var.reset(token)
-
-
-__all__ = ["global_breakpoint", "set_global_breakpoint", "yield_set_context"]
+__all__ = ["global_breakpoint", "set_global_breakpoint"]

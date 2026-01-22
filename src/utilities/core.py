@@ -98,6 +98,7 @@ from utilities.types import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+    from contextvars import ContextVar
     from types import TracebackType
 
     from whenever import Date, PlainDateTime, Time
@@ -576,6 +577,21 @@ def suppress_super_attribute_error() -> Iterator[None]:
 _suppress_super_attribute_error_pattern = re.compile(
     r"'super' object has no attribute '\w+'"
 )
+
+
+###############################################################################
+#### contextvars ##############################################################
+###############################################################################
+
+
+@contextmanager
+def yield_temp_context_var(var: ContextVar[bool], /) -> Iterator[None]:
+    """Yield a context var as being set."""
+    token = var.set(True)
+    try:
+        yield
+    finally:
+        _ = var.reset(token)
 
 
 ###############################################################################
