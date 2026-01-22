@@ -29,6 +29,7 @@ from utilities.core import (
     move,
     normalize_multi_line_str,
     one,
+    repr_str,
 )
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
@@ -305,14 +306,14 @@ def cp(
     group: str | int | None = None,
 ) -> None:
     """Copy a file/directory."""
-    mkdir(dest, sudo=sudo, parent=True)  # pragma: no cover
+    mkdir(dest, sudo=sudo, parent=True)
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*cp_cmd(src, dest)))
         if perms is not None:
             chmod(dest, perms, sudo=True)
         if (owner is not None) or (group is not None):
             chown(dest, sudo=True, user=owner, group=group)
-    else:  # pragma: no cover
+    else:
         try:
             copy(src, dest, overwrite=True, perms=perms, owner=owner, group=group)
         except _CopyOrMoveSourceNotFoundError as error:
@@ -325,7 +326,7 @@ class CpError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Source {str(self.src)!r} does not exist"
+        return f"Source {repr_str(self.src)} does not exist"
 
 
 def cp_cmd(src: PathLike, dest: PathLike, /) -> list[str]:
@@ -669,14 +670,14 @@ def mv(
     group: str | int | None = None,
 ) -> None:
     """Move a file/directory."""
-    mkdir(dest, sudo=sudo, parent=True)  # pragma: no cover
+    mkdir(dest, sudo=sudo, parent=True)
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*cp_cmd(src, dest)))
         if perms is not None:
             chmod(dest, perms, sudo=True)
         if (owner is not None) or (group is not None):
             chown(dest, sudo=True, user=owner, group=group)
-    else:  # pragma: no cover
+    else:
         try:
             move(src, dest, overwrite=True, perms=perms, owner=owner, group=group)
         except _CopyOrMoveSourceNotFoundError as error:
@@ -689,7 +690,7 @@ class MvFileError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Source {str(self.src)!r} does not exist"
+        return f"Source {repr_str(self.src)} does not exist"
 
 
 def mv_cmd(src: PathLike, dest: PathLike, /) -> list[str]:

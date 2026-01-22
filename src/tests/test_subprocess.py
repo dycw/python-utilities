@@ -35,6 +35,8 @@ from utilities.subprocess import (
     BASH_LS,
     KNOWN_HOSTS,
     ChownCmdError,
+    CpError,
+    MvFileError,
     _rsync_many_prepare,
     _RsyncCmdNoSourcesError,
     _RsyncCmdSourcesNotFoundError,
@@ -56,6 +58,7 @@ from utilities.subprocess import (
     chmod_cmd,
     chown_cmd,
     copy_text,
+    cp,
     cp_cmd,
     curl,
     curl_cmd,
@@ -73,6 +76,7 @@ from utilities.subprocess import (
     maybe_sudo_cmd,
     mkdir,
     mkdir_cmd,
+    mv,
     mv_cmd,
     replace_text,
     ripgrep,
@@ -290,6 +294,19 @@ class TestCopyText:
         copy_text(src, dest, substitutions={"KEY": "value"})
         result = dest.read_text()
         assert result == "value"
+
+
+class TestCp:
+    def test_main(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        _ = temp_file.write_text("text")
+        cp(temp_file, temp_path_not_exist)
+        assert temp_file.is_file()
+        assert temp_path_not_exist.is_file()
+        assert temp_path_not_exist.read_text() == "text"
+
+    def test_error(self, *, temp_path_not_exist: Path) -> None:
+        with raises(CpError, match=r"Source '.*' does not exist"):
+            cp(temp_path_not_exist, temp_path_not_exist)
 
 
 class TestCpCmd:
@@ -518,6 +535,19 @@ class TestMkDirCmd:
         result = mkdir_cmd("~/path", parent=True)
         expected = ["mkdir", "-p", "~"]
         assert result == expected
+
+
+class TestMv:
+    def test_main(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
+        _ = temp_file.write_text("text")
+        mv(temp_file, temp_path_not_exist)
+        assert not temp_file.exists()
+        assert temp_path_not_exist.is_file()
+        assert temp_path_not_exist.read_text() == "text"
+
+    def test_error(self, *, temp_path_not_exist: Path) -> None:
+        with raises(MvFileError, match=r"Source '.*' does not exist"):
+            mv(temp_path_not_exist, temp_path_not_exist)
 
 
 class TestMvCmd:
