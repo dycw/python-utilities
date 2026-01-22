@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from contextlib import suppress
-from dataclasses import MISSING, dataclass, field, fields, replace
-from typing import TYPE_CHECKING, Any, Literal, assert_never, overload, override
+from dataclasses import MISSING, dataclass, field, fields
+from typing import TYPE_CHECKING, Any, assert_never, overload, override
 
 from utilities.constants import (
     BRACKETS,
@@ -411,33 +411,6 @@ class _OneFieldNonUniqueError(OneFieldError):
             head=self.head,
             case_sensitive=self.case_sensitive,
         )
-
-
-##
-
-
-@overload
-def replace_non_sentinel(
-    obj: Dataclass, /, *, in_place: Literal[True], **kwargs: Any
-) -> None: ...
-@overload
-def replace_non_sentinel[T: Dataclass](
-    obj: T, /, *, in_place: Literal[False] = False, **kwargs: Any
-) -> T: ...
-@overload
-def replace_non_sentinel[T: Dataclass](
-    obj: T, /, *, in_place: bool = False, **kwargs: Any
-) -> T | None: ...
-def replace_non_sentinel[T: Dataclass](
-    obj: T, /, *, in_place: bool = False, **kwargs: Any
-) -> T | None:
-    """Replace attributes on a dataclass, filtering out sentinel values."""
-    if in_place:
-        for k, v in kwargs.items():
-            if not is_sentinel(v):
-                setattr(obj, k, v)
-        return None
-    return replace(obj, **{k: v for k, v in kwargs.items() if not is_sentinel(v)})
 
 
 ##
@@ -1052,7 +1025,6 @@ __all__ = [
     "mapping_to_dataclass",
     "one_field",
     "parse_dataclass",
-    "replace_non_sentinel",
     "str_mapping_to_field_mapping",
     "yield_fields",
 ]

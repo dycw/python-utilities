@@ -9,8 +9,6 @@ from subprocess import PIPE, CalledProcessError, check_output
 from typing import TYPE_CHECKING, Literal, assert_never, overload, override
 
 from utilities.constants import Sentinel
-from utilities.grp import get_gid_name
-from utilities.pwd import get_uid_name
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -32,19 +30,6 @@ def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
         add = suffixes[i:]
     name = ".".join(chain(parts, add))
     return path.with_name(name)
-
-
-##
-
-
-def get_file_group(path: PathLike, /) -> str | None:
-    """Get the group of a file."""
-    return get_gid_name(to_path(path).stat().st_gid)
-
-
-def get_file_owner(path: PathLike, /) -> str | None:
-    """Get the owner of a file."""
-    return get_uid_name(to_path(path).stat().st_uid)
 
 
 ##
@@ -228,8 +213,6 @@ __all__ = [
     "GetRepoRootError",
     "GetTailError",
     "ensure_suffix",
-    "get_file_group",
-    "get_file_owner",
     "get_repo_root",
     "get_tail",
     "list_dir",

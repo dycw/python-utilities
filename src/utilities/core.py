@@ -9,15 +9,28 @@ import tempfile
 from bz2 import BZ2File
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import ExitStack, contextmanager, suppress
-from dataclasses import dataclass
-from functools import _lru_cache_wrapper, partial, wraps
+from dataclasses import dataclass, replace
+from functools import _lru_cache_wrapper, partial, reduce, wraps
 from gzip import GzipFile
 from itertools import chain, islice
 from lzma import LZMAFile
+from operator import or_
 from os import chdir, environ, getenv, getpid
 from pathlib import Path
 from re import VERBOSE, Pattern, findall
 from shutil import copyfileobj, copytree
+from stat import (
+    S_IMODE,
+    S_IRGRP,
+    S_IROTH,
+    S_IRUSR,
+    S_IWGRP,
+    S_IWOTH,
+    S_IWUSR,
+    S_IXGRP,
+    S_IXOTH,
+    S_IXUSR,
+)
 from string import Template
 from subprocess import check_output
 from tarfile import ReadError, TarFile
@@ -33,7 +46,16 @@ from types import (
     MethodWrapperType,
     WrapperDescriptorType,
 )
-from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    Self,
+    assert_never,
+    cast,
+    overload,
+    override,
+)
 from uuid import uuid4
 from warnings import catch_warnings, filterwarnings
 from zipfile import ZipFile
@@ -42,6 +64,7 @@ from zoneinfo import ZoneInfo
 from typing_extensions import TypeIs
 from whenever import Date, PlainDateTime, Time, ZonedDateTime
 
+import utilities.constants
 from utilities.constants import (
     LOCAL_TIME_ZONE,
     LOCAL_TIME_ZONE_NAME,
@@ -56,10 +79,10 @@ from utilities.constants import (
     _get_now,
     sentinel,
 )
-from utilities.constants import _get_now_local as get_now_local
 from utilities.types import (
     TIME_ZONES,
     CopyOrMove,
+    Dataclass,
     FilterWarningsAction,
     PathToBinaryIO,
     PatternLike,
@@ -278,10 +301,18 @@ def _compress_files(
     /,
     *srcs_or_dest: PathLike,
     overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
 ) -> None:
     *srcs, dest = map(Path, [src_or_dest, *srcs_or_dest])
     try:
-        with yield_write_path(dest, overwrite=overwrite) as temp, func(temp) as buffer:
+        with (
+            yield_write_path(
+                dest, overwrite=overwrite, perms=perms, owner=owner, group=group
+            ) as temp,
+            func(temp) as buffer,
+        ):
             match srcs:
                 case [src]:
                     match file_or_dir(src):
@@ -327,13 +358,21 @@ def _compress_files_add_dir(path: PathLike, tar: TarFile, /) -> None:
 
 
 def compress_zip(
-    src_or_dest: PathLike, /, *srcs_or_dest: PathLike, overwrite: bool = False
+    src_or_dest: PathLike,
+    /,
+    *srcs_or_dest: PathLike,
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
 ) -> None:
     """Create a Zip file."""
     *srcs, dest = map(Path, [src_or_dest, *srcs_or_dest])
     try:
         with (
-            yield_write_path(dest, overwrite=overwrite) as temp,
+            yield_write_path(
+                dest, overwrite=overwrite, perms=perms, owner=owner, group=group
+            ) as temp,
             ZipFile(temp, mode="w") as zf,
         ):
             for src_i in sorted(srcs):
@@ -538,6 +577,35 @@ _suppress_super_attribute_error_pattern = re.compile(
 
 
 ###############################################################################
+#### dataclass ################################################################
+###############################################################################
+
+
+@overload
+def replace_non_sentinel(
+    obj: Dataclass, /, *, in_place: Literal[True], **kwargs: Any
+) -> None: ...
+@overload
+def replace_non_sentinel[T: Dataclass](
+    obj: T, /, *, in_place: Literal[False] = False, **kwargs: Any
+) -> T: ...
+@overload
+def replace_non_sentinel[T: Dataclass](
+    obj: T, /, *, in_place: bool = False, **kwargs: Any
+) -> T | None: ...
+def replace_non_sentinel[T: Dataclass](
+    obj: T, /, *, in_place: bool = False, **kwargs: Any
+) -> T | None:
+    """Replace attributes on a dataclass, filtering out sentinel values."""
+    if in_place:
+        for k, v in kwargs.items():
+            if not is_sentinel(v):
+                setattr(obj, k, v)
+        return None
+    return replace(obj, **{k: v for k, v in kwargs.items() if not is_sentinel(v)})
+
+
+###############################################################################
 #### functools ################################################################
 ###############################################################################
 
@@ -600,6 +668,20 @@ def last(tup: tuple[Any, ...], /) -> Any:
 def identity[T](obj: T, /) -> T:
     """Return the object itself."""
     return obj
+
+
+###############################################################################
+#### grp ######################################################################
+###############################################################################
+
+
+get_gid_name = utilities.constants._get_gid_name  # noqa: SLF001
+
+
+def get_file_group(path: PathLike, /) -> str | None:
+    """Get the group of a file."""
+    gid = Path(path).stat().st_gid
+    return get_gid_name(gid)
 
 
 ###############################################################################
@@ -820,16 +902,46 @@ def unique_everseen[T](
 ###############################################################################
 
 
-def copy(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
+def chmod(path: PathLike, perms: PermissionsLike, /) -> None:
+    """Change file mode."""
+    Path(path).chmod(int(Permissions.new(perms)))
+
+
+##
+
+
+def copy(
+    src: PathLike,
+    dest: PathLike,
+    /,
+    *,
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
+) -> None:
     """Copy a file atomically."""
     src, dest = map(Path, [src, dest])
-    _copy_or_move(src, dest, "copy", overwrite=overwrite)
+    _copy_or_move(
+        src, dest, "copy", overwrite=overwrite, perms=perms, owner=owner, group=group
+    )
 
 
-def move(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
+def move(
+    src: PathLike,
+    dest: PathLike,
+    /,
+    *,
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
+) -> None:
     """Move a file atomically."""
     src, dest = map(Path, [src, dest])
-    _copy_or_move(src, dest, "move", overwrite=overwrite)
+    _copy_or_move(
+        src, dest, "move", overwrite=overwrite, perms=perms, owner=owner, group=group
+    )
 
 
 @dataclass(kw_only=True, slots=True)
@@ -837,7 +949,15 @@ class CopyOrMoveError(Exception): ...
 
 
 def _copy_or_move(
-    src: Path, dest: Path, mode: CopyOrMove, /, *, overwrite: bool = False
+    src: Path,
+    dest: Path,
+    mode: CopyOrMove,
+    /,
+    *,
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
 ) -> None:
     match file_or_dir(src), file_or_dir(dest), overwrite:
         case None, _, _:
@@ -854,6 +974,10 @@ def _copy_or_move(
             _copy_or_move__dir_to_file(src, dest, mode)
         case never:
             assert_never(never)
+    if perms is not None:
+        chmod(dest, perms)
+    if (owner is not None) or (group is not None):
+        chown(dest, user=owner, group=group)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -996,12 +1120,18 @@ class GetEnvError(Exception):
 ##
 
 
-def move_many(*paths: tuple[PathLike, PathLike], overwrite: bool = False) -> None:
+def move_many(
+    *paths: tuple[PathLike, PathLike],
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
+) -> None:
     """Move a set of files concurrently."""
     with ExitStack() as stack:
         for src, dest in paths:
             temp = stack.enter_context(yield_write_path(dest, overwrite=overwrite))
-            move(src, temp, overwrite=overwrite)
+            move(src, temp, overwrite=overwrite, perms=perms, owner=owner, group=group)
 
 
 ##
@@ -1086,6 +1216,279 @@ def yield_temp_cwd(path: PathLike, /) -> Iterator[None]:
         yield
     finally:
         chdir(prev)
+
+
+###############################################################################
+#### permissions ##############################################################
+###############################################################################
+
+
+type PermissionsLike = Permissions | int | str
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
+class Permissions:
+    """A set of file permissions."""
+
+    user_read: bool = False
+    user_write: bool = False
+    user_execute: bool = False
+    group_read: bool = False
+    group_write: bool = False
+    group_execute: bool = False
+    others_read: bool = False
+    others_write: bool = False
+    others_execute: bool = False
+
+    def __int__(self) -> int:
+        flags: list[int] = [
+            S_IRUSR if self.user_read else 0,
+            S_IWUSR if self.user_write else 0,
+            S_IXUSR if self.user_execute else 0,
+            S_IRGRP if self.group_read else 0,
+            S_IWGRP if self.group_write else 0,
+            S_IXGRP if self.group_execute else 0,
+            S_IROTH if self.others_read else 0,
+            S_IWOTH if self.others_write else 0,
+            S_IXOTH if self.others_execute else 0,
+        ]
+        return reduce(or_, flags)
+
+    @override
+    def __repr__(self) -> str:
+        return ",".join([
+            self._repr_parts(
+                "u",
+                read=self.user_read,
+                write=self.user_write,
+                execute=self.user_execute,
+            ),
+            self._repr_parts(
+                "g",
+                read=self.group_read,
+                write=self.group_write,
+                execute=self.group_execute,
+            ),
+            self._repr_parts(
+                "o",
+                read=self.others_read,
+                write=self.others_write,
+                execute=self.others_execute,
+            ),
+        ])
+
+    def _repr_parts(
+        self,
+        prefix: Literal["u", "g", "o"],
+        /,
+        *,
+        read: bool = False,
+        write: bool = False,
+        execute: bool = False,
+    ) -> str:
+        parts: list[str] = [
+            "r" if read else "",
+            "w" if write else "",
+            "x" if execute else "",
+        ]
+        return f"{prefix}={''.join(parts)}"
+
+    @override
+    def __str__(self) -> str:
+        return repr(self)
+
+    @classmethod
+    def new(cls, perms: PermissionsLike, /) -> Self:
+        match perms:
+            case Permissions():
+                return cast("Self", perms)
+            case int():
+                return cls.from_int(perms)
+            case str():
+                return cls.from_text(perms)
+            case never:
+                assert_never(never)
+
+    @classmethod
+    def from_human_int(cls, n: int, /) -> Self:
+        if not (0 <= n <= 777):
+            raise _PermissionsFromHumanIntRangeError(n=n)
+        user_read, user_write, user_execute = cls._from_human_int(n, (n // 100) % 10)
+        group_read, group_write, group_execute = cls._from_human_int(n, (n // 10) % 10)
+        others_read, others_write, others_execute = cls._from_human_int(n, n % 10)
+        return cls(
+            user_read=user_read,
+            user_write=user_write,
+            user_execute=user_execute,
+            group_read=group_read,
+            group_write=group_write,
+            group_execute=group_execute,
+            others_read=others_read,
+            others_write=others_write,
+            others_execute=others_execute,
+        )
+
+    @classmethod
+    def _from_human_int(cls, n: int, digit: int, /) -> tuple[bool, bool, bool]:
+        if not (0 <= digit <= 7):
+            raise _PermissionsFromHumanIntDigitError(n=n, digit=digit)
+        return bool(4 & digit), bool(2 & digit), bool(1 & digit)
+
+    @classmethod
+    def from_int(cls, n: int, /) -> Self:
+        if 0o0 <= n <= 0o777:
+            return cls(
+                user_read=bool(n & S_IRUSR),
+                user_write=bool(n & S_IWUSR),
+                user_execute=bool(n & S_IXUSR),
+                group_read=bool(n & S_IRGRP),
+                group_write=bool(n & S_IWGRP),
+                group_execute=bool(n & S_IXGRP),
+                others_read=bool(n & S_IROTH),
+                others_write=bool(n & S_IWOTH),
+                others_execute=bool(n & S_IXOTH),
+            )
+        raise _PermissionsFromIntError(n=n)
+
+    @classmethod
+    def from_path(cls, path: PathLike, /) -> Self:
+        return cls.from_int(S_IMODE(Path(path).stat().st_mode))
+
+    @classmethod
+    def from_text(cls, text: str, /) -> Self:
+        try:
+            user, group, others = extract_groups(
+                r"^u=(r?w?x?),g=(r?w?x?),o=(r?w?x?)$", text
+            )
+        except ExtractGroupsError:
+            raise _PermissionsFromTextError(text=text) from None
+        user_read, user_write, user_execute = cls._from_text_part(user)
+        group_read, group_write, group_execute = cls._from_text_part(group)
+        others_read, others_write, others_execute = cls._from_text_part(others)
+        return cls(
+            user_read=user_read,
+            user_write=user_write,
+            user_execute=user_execute,
+            group_read=group_read,
+            group_write=group_write,
+            group_execute=group_execute,
+            others_read=others_read,
+            others_write=others_write,
+            others_execute=others_execute,
+        )
+
+    @classmethod
+    def _from_text_part(cls, text: str, /) -> tuple[bool, bool, bool]:
+        read, write, execute = extract_groups("^(r?)(w?)(x?)$", text)
+        return read != "", write != "", execute != ""
+
+    @property
+    def human_int(self) -> int:
+        return (
+            100
+            * self._human_int(
+                read=self.user_read, write=self.user_write, execute=self.user_execute
+            )
+            + 10
+            * self._human_int(
+                read=self.group_read, write=self.group_write, execute=self.group_execute
+            )
+            + self._human_int(
+                read=self.others_read,
+                write=self.others_write,
+                execute=self.others_execute,
+            )
+        )
+
+    def _human_int(
+        self, *, read: bool = False, write: bool = False, execute: bool = False
+    ) -> int:
+        return (4 if read else 0) + (2 if write else 0) + (1 if execute else 0)
+
+    def replace(
+        self,
+        *,
+        user_read: bool | Sentinel = sentinel,
+        user_write: bool | Sentinel = sentinel,
+        user_execute: bool | Sentinel = sentinel,
+        group_read: bool | Sentinel = sentinel,
+        group_write: bool | Sentinel = sentinel,
+        group_execute: bool | Sentinel = sentinel,
+        others_read: bool | Sentinel = sentinel,
+        others_write: bool | Sentinel = sentinel,
+        others_execute: bool | Sentinel = sentinel,
+    ) -> Self:
+        return replace_non_sentinel(
+            self,
+            user_read=user_read,
+            user_write=user_write,
+            user_execute=user_execute,
+            group_read=group_read,
+            group_write=group_write,
+            group_execute=group_execute,
+            others_read=others_read,
+            others_write=others_write,
+            others_execute=others_execute,
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _PermissionsFromHumanIntError(PermissionsError):
+    n: int
+
+
+@dataclass(kw_only=True, slots=True)
+class _PermissionsFromHumanIntRangeError(_PermissionsFromHumanIntError):
+    @override
+    def __str__(self) -> str:
+        return f"Invalid human integer for permissions; got {self.n}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PermissionsFromHumanIntDigitError(_PermissionsFromHumanIntError):
+    digit: int
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Invalid human integer for permissions; got digit {self.digit} in {self.n}"
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class _PermissionsFromIntError(PermissionsError):
+    n: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid integer for permissions; got {self.n} = {oct(self.n)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _PermissionsFromTextError(PermissionsError):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid string for permissions; got {self.text!r}"
+
+
+###############################################################################
+#### pwd ######################################################################
+###############################################################################
+
+
+get_uid_name = utilities.constants._get_uid_name  # noqa: SLF001
+
+
+def get_file_owner(path: PathLike, /) -> str | None:
+    """Get the owner of a file."""
+    uid = Path(path).stat().st_uid
+    return get_uid_name(uid)
 
 
 ###############################################################################
@@ -1267,11 +1670,21 @@ def write_bytes(
     *,
     compress: bool = False,
     overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
     json: bool = False,
 ) -> None:
     """Write data to a file."""
     try:
-        with yield_write_path(path, compress=compress, overwrite=overwrite) as temp:
+        with yield_write_path(
+            path,
+            compress=compress,
+            overwrite=overwrite,
+            perms=perms,
+            owner=owner,
+            group=group,
+        ) as temp:
             if json:  # pragma: no cover
                 with suppress(FileNotFoundError):
                     data = check_output(["prettier", "--parser=json"], input=data)
@@ -1318,11 +1731,26 @@ class ReadTextError(Exception):
 
 
 def write_text(
-    path: PathLike, text: str, /, *, compress: bool = False, overwrite: bool = False
+    path: PathLike,
+    text: str,
+    /,
+    *,
+    compress: bool = False,
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
 ) -> None:
     """Write text to a file."""
     try:
-        with yield_write_path(path, compress=compress, overwrite=overwrite) as temp:
+        with yield_write_path(
+            path,
+            compress=compress,
+            overwrite=overwrite,
+            perms=perms,
+            owner=owner,
+            group=group,
+        ) as temp:
             _ = temp.write_text(normalize_str(text))
     except YieldWritePathError as error:
         raise WriteTextError(path=error.path) from None
@@ -1393,6 +1821,36 @@ def repr_str(
         max_depth=max_depth,
         expand_all=expand_all,
     )
+
+
+###############################################################################
+#### shutil ###################################################################
+###############################################################################
+
+
+def chown(
+    path: PathLike,
+    /,
+    *,
+    recursive: bool = False,
+    user: str | int | None = None,
+    group: str | int | None = None,
+) -> None:
+    """Change file owner and/or group."""
+    path = Path(path)
+    paths = list(path.rglob("**/*")) if recursive else [path]
+    for p in paths:
+        match user, group:
+            case None, None:
+                ...
+            case str() | int(), None:
+                shutil.chown(p, user, group)
+            case None, str() | int():
+                shutil.chown(p, user, group)
+            case str() | int(), str() | int():
+                shutil.chown(p, user, group)
+            case never:
+                assert_never(never)
 
 
 ###############################################################################
@@ -1732,6 +2190,9 @@ def _yield_caught_warnings(
 ###############################################################################
 
 
+get_now_local = utilities.constants._get_now_local  # noqa: SLF001
+
+
 def get_now(time_zone: TimeZoneLike = UTC, /) -> ZonedDateTime:
     """Get the current zoned date-time."""
     return _get_now(to_time_zone_name(time_zone))
@@ -1780,7 +2241,14 @@ def get_today_local() -> Date:
 
 @contextmanager
 def yield_write_path(
-    path: PathLike, /, *, compress: bool = False, overwrite: bool = False
+    path: PathLike,
+    /,
+    *,
+    compress: bool = False,
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
 ) -> Iterator[Path]:
     """Yield a temporary path for atomically writing files to disk."""
     with yield_adjacent_temp_file(path) as temp:
@@ -1795,6 +2263,10 @@ def yield_write_path(
                 move(temp, path, overwrite=overwrite)
             except _CopyOrMoveDestinationExistsError as error:
                 raise YieldWritePathError(path=error.dest) from None
+    if perms is not None:
+        chmod(path, perms)
+    if (owner is not None) or (group is not None):
+        chown(path, user=owner, group=group)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1932,6 +2404,9 @@ __all__ = [
     "OneStrEmptyError",
     "OneStrError",
     "OneStrNonUniqueError",
+    "Permissions",
+    "PermissionsError",
+    "PermissionsLike",
     "ReadBytesError",
     "ReadTextError",
     "SubstituteError",
@@ -1948,6 +2423,8 @@ __all__ = [
     "YieldLZMAError",
     "YieldZipError",
     "always_iterable",
+    "chmod",
+    "chown",
     "chunked",
     "compress_bz2",
     "compress_gzip",
@@ -1959,7 +2436,10 @@ __all__ = [
     "get_class",
     "get_class_name",
     "get_env",
+    "get_file_group",
+    "get_file_owner",
     "get_func_name",
+    "get_gid_name",
     "get_now",
     "get_now_local",
     "get_now_local_plain",
@@ -1968,6 +2448,7 @@ __all__ = [
     "get_time_local",
     "get_today",
     "get_today_local",
+    "get_uid_name",
     "is_none",
     "is_not_none",
     "is_sentinel",
@@ -1981,6 +2462,7 @@ __all__ = [
     "one_str",
     "read_bytes",
     "read_text",
+    "replace_non_sentinel",
     "repr_",
     "repr_str",
     "substitute",

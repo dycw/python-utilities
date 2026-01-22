@@ -38,9 +38,9 @@ from utilities.core import (
     get_now_local,
     get_time,
     get_today,
+    replace_non_sentinel,
     to_time_zone_name,
 )
-from utilities.dataclasses import replace_non_sentinel
 from utilities.functions import get_class_name
 from utilities.math import sign
 from utilities.platform import get_strftime

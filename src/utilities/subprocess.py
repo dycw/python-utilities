@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 import sys
 from dataclasses import dataclass
 from io import StringIO
@@ -16,10 +15,12 @@ from subprocess import PIPE, CalledProcessError, Popen
 from threading import Thread
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
+import utilities.core
 from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
     OneEmptyError,
+    Permissions,
     TemporaryDirectory,
     _CopyOrMoveSourceNotFoundError,
     always_iterable,
@@ -32,7 +33,6 @@ from utilities.core import (
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
 from utilities.logging import to_logger
-from utilities.permissions import Permissions, ensure_perms
 from utilities.time import sleep
 from utilities.version import (
     ParseVersion2Or3Error,
@@ -44,7 +44,7 @@ from utilities.version import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
 
-    from utilities.permissions import PermissionsLike
+    from utilities.core import PermissionsLike
     from utilities.types import (
         Duration,
         LoggerLike,
@@ -199,13 +199,13 @@ def chmod(path: PathLike, perms: PermissionsLike, /, *, sudo: bool = False) -> N
     """Change file mode."""
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*chmod_cmd(path, perms)))
-    else:
-        Path(path).chmod(int(ensure_perms(perms)))
+    else:  # pragma: no cover
+        utilities.core.chmod(path, perms)
 
 
 def chmod_cmd(path: PathLike, perms: PermissionsLike, /) -> list[str]:
     """Command to use 'chmod' to change file mode."""
-    return ["chmod", str(ensure_perms(perms)), str(path)]
+    return ["chmod", str(Permissions.new(perms)), str(path)]
 
 
 ##
@@ -227,21 +227,8 @@ def chown(
                 *chown_cmd(path, recursive=recursive, user=user, group=group)
             )
             run(*args)
-    else:
-        path = Path(path)
-        paths = list(path.rglob("**/*")) if recursive else [path]
-        for p in paths:
-            match user, group:
-                case None, None:
-                    ...
-                case str() | int(), None:
-                    shutil.chown(p, user, group)
-                case None, str() | int():
-                    shutil.chown(p, user, group)
-                case str() | int(), str() | int():
-                    shutil.chown(p, user, group)
-                case never:
-                    assert_never(never)
+    else:  # pragma: no cover
+        utilities.core.chown(path, recursive=recursive, user=user, group=group)
 
 
 def chown_cmd(
@@ -318,18 +305,18 @@ def cp(
     group: str | int | None = None,
 ) -> None:
     """Copy a file/directory."""
-    mkdir(dest, sudo=sudo, parent=True)
+    mkdir(dest, sudo=sudo, parent=True)  # pragma: no cover
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*cp_cmd(src, dest)))
-    else:
+        if perms is not None:
+            chmod(dest, perms, sudo=True)
+        if (owner is not None) or (group is not None):
+            chown(dest, sudo=True, user=owner, group=group)
+    else:  # pragma: no cover
         try:
-            copy(src, dest, overwrite=True)
+            copy(src, dest, overwrite=True, perms=perms, owner=owner, group=group)
         except _CopyOrMoveSourceNotFoundError as error:
             raise CpError(src=error.src) from None
-    if perms is not None:
-        chmod(dest, perms, sudo=sudo)
-    if (owner is not None) or (group is not None):
-        chown(dest, sudo=sudo, user=owner, group=group)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -628,7 +615,7 @@ def install_cmd(
     if directory:
         args.append("-d")
     if mode is not None:
-        args.extend(["-m", str(ensure_perms(mode))])
+        args.extend(["-m", str(Permissions.new(mode))])
     if owner is not None:
         args.extend(["-o", str(owner)])
     if group is not None:
@@ -682,18 +669,18 @@ def mv(
     group: str | int | None = None,
 ) -> None:
     """Move a file/directory."""
-    mkdir(dest, sudo=sudo, parent=True)
+    mkdir(dest, sudo=sudo, parent=True)  # pragma: no cover
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*cp_cmd(src, dest)))
-    else:
+        if perms is not None:
+            chmod(dest, perms, sudo=True)
+        if (owner is not None) or (group is not None):
+            chown(dest, sudo=True, user=owner, group=group)
+    else:  # pragma: no cover
         try:
-            move(src, dest, overwrite=True)
+            move(src, dest, overwrite=True, perms=perms, owner=owner, group=group)
         except _CopyOrMoveSourceNotFoundError as error:
             raise MvFileError(src=error.src) from None
-    if perms is not None:
-        chmod(dest, perms, sudo=sudo)
-    if (owner is not None) or (group is not None):
-        chown(dest, sudo=sudo, user=owner, group=group)
 
 
 @dataclass(kw_only=True, slots=True)

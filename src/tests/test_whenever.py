@@ -43,8 +43,7 @@ from utilities.constants import (
     USEastern,
     sentinel,
 )
-from utilities.core import get_now, get_time, get_today
-from utilities.dataclasses import replace_non_sentinel
+from utilities.core import get_now, get_time, get_today, replace_non_sentinel
 from utilities.hypothesis import (
     assume_does_not_raise,
     date_deltas,

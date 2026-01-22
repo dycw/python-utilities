@@ -86,6 +86,7 @@ from utilities.constants import (
     sentinel,
 )
 from utilities.core import (
+    Permissions,
     TemporaryDirectory,
     get_now,
     is_sentinel,
@@ -98,7 +99,6 @@ from utilities.functions import ensure_int, ensure_str
 from utilities.math import is_zero
 from utilities.os import get_env
 from utilities.pathlib import module_path
-from utilities.permissions import Permissions
 from utilities.version import Version2, Version3
 from utilities.whenever import (
     DATE_DELTA_PARSABLE_MAX,

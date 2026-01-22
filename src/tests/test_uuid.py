@@ -9,7 +9,7 @@ from hypothesis import given
 from hypothesis.strategies import none, randoms, uuids
 
 from utilities.constants import Sentinel, sentinel
-from utilities.dataclasses import replace_non_sentinel
+from utilities.core import replace_non_sentinel
 from utilities.hypothesis import pairs
 from utilities.uuid import UUID_EXACT_PATTERN, UUID_PATTERN, get_uuid, to_uuid
 

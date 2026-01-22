@@ -4,28 +4,47 @@ from itertools import pairwise
 from os import getenv
 from typing import TYPE_CHECKING, assert_never
 
-from pytest import mark, param, raises
+from pytest import fixture, mark, param, raises
 
+from utilities.constants import EFFECTIVE_GROUP_NAME, EFFECTIVE_USER_NAME
 from utilities.core import (
     GetEnvError,
+    Permissions,
+    PermissionsLike,
     _CopyOrMoveDestinationExistsError,
     _CopyOrMoveSourceNotFoundError,
+    chmod,
     copy,
     get_env,
+    get_file_group,
+    get_file_owner,
     move,
     move_many,
     unique_str,
     yield_temp_environ,
 )
+from utilities.types import CopyOrMove
+from utilities.typing import get_literal_elements
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from utilities.types import CopyOrMove
+    from _pytest.fixtures import SubRequest
+
+
+@fixture(params=get_literal_elements(CopyOrMove))
+def mode(*, request: SubRequest) -> CopyOrMove:
+    return request.param
+
+
+class TestChMod:
+    def test_main(self, *, temp_file: Path) -> None:
+        perms = Permissions.from_text("u=rw,g=r,o=r")
+        chmod(temp_file, perms)
+        assert Permissions.from_path(temp_file) == perms
 
 
 class TestCopyOrMove:
-    @mark.parametrize("mode", [param("copy"), param("move")])
     @mark.parametrize(
         ("dest_exists", "overwrite"),
         [param(False, False), param(False, True), param(True, True)],
@@ -37,13 +56,11 @@ class TestCopyOrMove:
         dest = self._setup_dest_file(tmp_path, exists=dest_exists)
         self._run_test_file(mode, src, dest, overwrite=overwrite)
 
-    @mark.parametrize("mode", [param("copy"), param("move")])
     def test_file_to_dir(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
         src = self._setup_src_file(tmp_path)
         dest = self._setup_dest_dir(tmp_path, exists=True)
         self._run_test_file(mode, src, dest, overwrite=True)
 
-    @mark.parametrize("mode", [param("copy"), param("move")])
     @mark.parametrize(
         ("dest_exists", "overwrite"),
         [param(False, False), param(False, True), param(True, True)],
@@ -55,11 +72,29 @@ class TestCopyOrMove:
         dest = self._setup_dest_dir(tmp_path, exists=dest_exists)
         self._run_test_dir(mode, src, dest, overwrite=overwrite)
 
-    @mark.parametrize("mode", [param("copy"), param("move")])
     def test_dir_to_file(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
         src = self._setup_src_dir(tmp_path)
         dest = self._setup_dest_file(tmp_path, exists=True)
         self._run_test_dir(mode, src, dest, overwrite=True)
+
+    def test_perms(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
+        src = self._setup_src_file(tmp_path)
+        dest = self._setup_dest_file(tmp_path)
+        perms = Permissions.from_text("u=rw,g=r,o=r")
+        self._run_test_file(mode, src, dest, perms=perms)
+        assert Permissions.from_path(dest) == perms
+
+    def test_user(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
+        src = self._setup_src_file(tmp_path)
+        dest = self._setup_dest_file(tmp_path)
+        self._run_test_file(mode, src, dest, owner=EFFECTIVE_USER_NAME)
+        assert get_file_owner(dest) == EFFECTIVE_USER_NAME
+
+    def test_group(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
+        src = self._setup_src_file(tmp_path)
+        dest = self._setup_dest_file(tmp_path)
+        self._run_test_file(mode, src, dest, group=EFFECTIVE_GROUP_NAME)
+        assert get_file_group(dest) == EFFECTIVE_GROUP_NAME
 
     def test_error_source_not_found(
         self, *, tmp_path: Path, temp_path_not_exist: Path
@@ -104,15 +139,38 @@ class TestCopyOrMove:
         return dest
 
     def _run_test_file(
-        self, mode: CopyOrMove, src: Path, dest: Path, /, *, overwrite: bool = False
+        self,
+        mode: CopyOrMove,
+        src: Path,
+        dest: Path,
+        /,
+        *,
+        overwrite: bool = False,
+        perms: PermissionsLike | None = None,
+        owner: str | int | None = None,
+        group: str | int | None = None,
     ) -> None:
         match mode:
             case "copy":
-                copy(src, dest, overwrite=overwrite)
+                copy(
+                    src,
+                    dest,
+                    overwrite=overwrite,
+                    perms=perms,
+                    owner=owner,
+                    group=group,
+                )
                 assert src.is_file()
                 assert src.read_text() == "src"
             case "move":
-                move(src, dest, overwrite=overwrite)
+                move(
+                    src,
+                    dest,
+                    overwrite=overwrite,
+                    perms=perms,
+                    owner=owner,
+                    group=group,
+                )
                 assert not src.exists()
             case never:
                 assert_never(never)
