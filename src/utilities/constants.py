@@ -365,10 +365,10 @@ NANOSECONDS_PER_DAY = SECONDS_PER_DAY * NANOSECONDS_PER_SECOND
 
 
 UTC: ZoneInfo = ZoneInfo("UTC")
-HongKong = ZoneInfo("Asia/Hong_Kong")
-Tokyo = ZoneInfo("Asia/Tokyo")
-USCentral = ZoneInfo("US/Central")
-USEastern = ZoneInfo("US/Eastern")
+HongKong: ZoneInfo = ZoneInfo("Asia/Hong_Kong")
+Tokyo: ZoneInfo = ZoneInfo("Asia/Tokyo")
+USCentral: ZoneInfo = ZoneInfo("US/Central")
+USEastern: ZoneInfo = ZoneInfo("US/Eastern")
 
 
 # zoneinfo -> whenever
