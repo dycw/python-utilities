@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import datetime as dt
+import gzip
 import os
+import pickle
 import re
 import reprlib
 import shutil
@@ -1705,6 +1707,49 @@ class WriteBytesError(Exception):
 ##
 
 
+def read_pickle(path: PathLike, /) -> Any:
+    """Read an object from disk."""
+    path = Path(path)
+    try:
+        with gzip.open(path, mode="rb") as gz:
+            return pickle.load(gz)  # noqa: S301
+    except FileNotFoundError:
+        raise ReadPickleError(path=path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadPickleError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot read from {repr_str(self.path)} since it does not exist"
+
+
+def write_pickle(path: PathLike, obj: Any, /, *, overwrite: bool = False) -> None:
+    """Write an object to disk."""
+    try:
+        with (
+            yield_write_path(path, overwrite=overwrite) as temp,
+            gzip.open(temp, mode="wb") as gz,
+        ):
+            pickle.dump(obj, gz)
+    except YieldWritePathError as error:
+        raise WritePickleError(path=error.path) from None
+
+
+@dataclass(kw_only=True, slots=True)
+class WritePickleError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot write to {repr_str(self.path)} since it already exists"
+
+
+##
+
+
 def read_text(path: PathLike, /, *, decompress: bool = False) -> str:
     """Read text from a file."""
     path = Path(path)
@@ -2408,6 +2453,7 @@ __all__ = [
     "PermissionsError",
     "PermissionsLike",
     "ReadBytesError",
+    "ReadPickleError",
     "ReadTextError",
     "SubstituteError",
     "TemporaryDirectory",
@@ -2416,6 +2462,7 @@ __all__ = [
     "ToTimeZoneNameError",
     "WriteBytesError",
     "WriteBytesError",
+    "WritePickleError",
     "WriteTextError",
     "WriteTextError",
     "YieldBZ2Error",
@@ -2461,6 +2508,7 @@ __all__ = [
     "one",
     "one_str",
     "read_bytes",
+    "read_pickle",
     "read_text",
     "replace_non_sentinel",
     "repr_",
@@ -2475,6 +2523,7 @@ __all__ = [
     "unique_everseen",
     "unique_str",
     "write_bytes",
+    "write_pickle",
     "write_text",
     "yield_adjacent_temp_dir",
     "yield_adjacent_temp_file",

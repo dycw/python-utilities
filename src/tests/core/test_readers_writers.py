@@ -7,12 +7,16 @@ from pytest import mark, param, raises
 from utilities.constants import IS_CI
 from utilities.core import (
     ReadBytesError,
+    ReadPickleError,
     ReadTextError,
     WriteBytesError,
+    WritePickleError,
     WriteTextError,
     read_bytes,
+    read_pickle,
     read_text,
     write_bytes,
+    write_pickle,
     write_text,
 )
 
@@ -47,7 +51,26 @@ class TestReadWriteBytes:
             write_bytes(temp_file, b"data")
 
 
-class TestWriteText:
+class TestReadWritePickle:
+    def test_main(self, *, temp_path_not_exist: Path) -> None:
+        write_pickle(temp_path_not_exist, None)
+        assert temp_path_not_exist.is_file()
+        assert read_pickle(temp_path_not_exist) is None
+
+    def test_error_read(self, *, temp_path_not_exist: Path) -> None:
+        with raises(
+            ReadPickleError, match=r"Cannot read from '.*' since it does not exist"
+        ):
+            _ = read_pickle(temp_path_not_exist)
+
+    def test_error_write(self, *, temp_file: Path) -> None:
+        with raises(
+            WritePickleError, match=r"Cannot write to '.*' since it already exists"
+        ):
+            write_pickle(temp_file, b"data")
+
+
+class TestReadWriteText:
     @mark.parametrize("text", [param("text"), param("text\n")])
     @mark.parametrize("compress", [param(False), param(True)])
     def test_main(
