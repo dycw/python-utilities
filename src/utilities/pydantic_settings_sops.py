@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 class _SuppressDefaultConfigMessage(Filter):
     @override
     def filter(self, record: LogRecord) -> bool:
-        return not search(
+        return not search(  # pragma: no cover
             r"^default config file does not exists '.*'$", record.getMessage()
         )
 
@@ -48,8 +48,10 @@ class SopsBaseSettings(CustomBaseSettings):
         env_settings: PydanticBaseSettingsSource,
         /,
     ) -> Iterator[PydanticBaseSettingsSource]:
-        yield from super()._yield_base_settings_sources(settings_cls, env_settings)
-        for file, section in map(_ensure_section, cls.secret_files):
+        yield from super()._yield_base_settings_sources(  # skipif-ci
+            settings_cls, env_settings
+        )
+        for file, section in map(_ensure_section, cls.secret_files):  # skipif-ci
             yield SOPSConfigSectionSettingsSource(
                 settings_cls, json_file=file, section=section
             )
@@ -65,12 +67,12 @@ class SOPSConfigSectionSettingsSource(SOPSConfigSettingsSource):
         *,
         section: MaybeSequenceStr,
     ) -> None:
-        super().__init__(settings_cls, json_file=json_file, yaml_file=yaml_file)  # pyright: ignore[reportArgumentType]
-        self.section = section
+        super().__init__(settings_cls, json_file=json_file, yaml_file=yaml_file)  # pyright: ignore[reportArgumentType]  # skipif-ci
+        self.section = section  # skipif-ci
 
     @override
     def __call__(self) -> StrDict:
-        return _get_section(super().__call__(), self.section)
+        return _get_section(super().__call__(), self.section)  # skipif-ci
 
 
 __all__ = ["SOPSConfigSectionSettingsSource", "SopsBaseSettings"]
