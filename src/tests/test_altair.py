@@ -26,12 +26,11 @@ from utilities.altair import (
     save_charts_as_pdf,
     vconcat_charts,
 )
-from utilities.constants import UTC
+from utilities.constants import UTC, HongKong, Tokyo
 from utilities.core import get_now
 from utilities.functions import ensure_class
 from utilities.hypothesis import dates, text_ascii, zoned_date_times
 from utilities.polars import DatetimeUTC, zoned_date_time_dtype
-from utilities.tzdata import HongKong, Tokyo
 
 if TYPE_CHECKING:
     from pathlib import Path

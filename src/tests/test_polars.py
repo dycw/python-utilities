@@ -70,7 +70,18 @@ from whenever import (
 
 import tests.test_math
 import utilities.polars
-from utilities.constants import NOW_UTC, PWD, TODAY_UTC, UTC, Sentinel, sentinel
+from utilities.constants import (
+    NOW_UTC,
+    PWD,
+    TODAY_UTC,
+    UTC,
+    HongKong,
+    Sentinel,
+    Tokyo,
+    USCentral,
+    USEastern,
+    sentinel,
+)
 from utilities.core import get_now, get_now_plain, get_today, to_time_zone_name
 from utilities.hypothesis import (
     assume_does_not_raise,
@@ -230,7 +241,6 @@ from utilities.polars import (
     zoned_date_time_dtype,
     zoned_date_time_period_dtype,
 )
-from utilities.tzdata import HongKong, Tokyo, USCentral, USEastern
 from utilities.whenever import (
     DatePeriod,
     TimePeriod,

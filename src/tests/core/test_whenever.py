@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 from hypothesis import given
 from whenever import Date, PlainDateTime, Time, ZonedDateTime
 
-from utilities.constants import UTC
+from utilities.constants import UTC, HongKong, Tokyo
 from utilities.core import (
     get_now,
     get_now_local,
@@ -17,7 +17,6 @@ from utilities.core import (
     get_today_local,
 )
 from utilities.hypothesis import zone_infos
-from utilities.tzdata import HongKong, Tokyo
 
 
 class TestGetNow:

@@ -365,6 +365,10 @@ NANOSECONDS_PER_DAY = SECONDS_PER_DAY * NANOSECONDS_PER_SECOND
 
 
 UTC: ZoneInfo = ZoneInfo("UTC")
+HongKong = ZoneInfo("Asia/Hong_Kong")
+Tokyo = ZoneInfo("Asia/Tokyo")
+USCentral = ZoneInfo("US/Central")
+USEastern = ZoneInfo("US/Eastern")
 
 
 # zoneinfo -> whenever
@@ -471,6 +475,10 @@ __all__ = [
     "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
+    "HongKong",
     "Sentinel",
+    "Tokyo",
+    "USCentral",
+    "USEastern",
     "sentinel",
 ]
