@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from functools import total_ordering
 from pathlib import Path
 from types import NoneType
-from typing import Any, Literal, Self, cast, override
+from typing import Any, Literal, Self, cast
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -61,7 +61,6 @@ from utilities.dataclasses import (
     _StrMappingToFieldMappingNonUniqueError,
     _YieldFieldsClass,
     _YieldFieldsInstance,
-    dataclass_repr,
     dataclass_to_dict,
     is_nullable_lt,
     mapping_to_dataclass,
@@ -77,44 +76,7 @@ from utilities.types import Dataclass, StrMapping
 from utilities.typing import get_args, is_list_type, is_literal_type, is_optional_type
 
 
-class TestDataClassRepr:
-    def test_overriding_repr(self) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example(DataClassFutureIntDefault):
-            @override
-            def __repr__(self) -> str:
-                return dataclass_repr(self)
-
-        obj = Example()
-        result = repr(obj)
-        expected = "Example()"
-        assert result == expected
-
-    def test_overriding_repr_defaults(self) -> None:
-        @dataclass(kw_only=True)
-        class Example(DataClassFutureIntDefault):
-            @override
-            def __repr__(self) -> str:
-                return dataclass_repr(self, defaults=True)
-
-        obj = Example()
-        result = repr(obj)
-        expected = "Example(int_=0)"
-        assert result == expected
-
-    @given(x=integers())
-    def test_non_repr_field(self, *, x: int) -> None:
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            x: int = field(default=0, repr=False)
-
-        obj = Example(x=x)
-        result = dataclass_repr(obj)
-        expected = "Example()"
-        assert result == expected
-
-
-class TestDataClassToDictAndDataClassRepr:
+class TestDataClassToDict:
     @given(x=integers(), defaults=booleans())
     def test_field_without_defaults(self, *, x: int, defaults: bool) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -125,9 +87,6 @@ class TestDataClassToDictAndDataClassRepr:
         dict_res = dataclass_to_dict(obj, defaults=defaults)
         dict_exp = {"x": x}
         assert dict_res == dict_exp
-        repr_res = dataclass_repr(obj, defaults=defaults)
-        repr_exp = f"Example(x={x})"
-        assert repr_res == repr_exp
 
     @given(x=integers())
     def test_field_with_default_included(self, *, x: int) -> None:
@@ -139,9 +98,6 @@ class TestDataClassToDictAndDataClassRepr:
         dict_res = dataclass_to_dict(obj, defaults=True)
         dict_exp = {"x": x}
         assert dict_res == dict_exp
-        repr_res = dataclass_repr(obj, defaults=True)
-        repr_exp = f"Example(x={x})"
-        assert repr_res == repr_exp
 
     def test_field_with_default_dropped(self) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -152,9 +108,6 @@ class TestDataClassToDictAndDataClassRepr:
         dict_res = dataclass_to_dict(obj)
         dict_exp = {}
         assert dict_res == dict_exp
-        repr_res = dataclass_repr(obj)
-        repr_exp = "Example()"
-        assert repr_res == repr_exp
 
     def test_field_with_dataframe_included(self) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -168,9 +121,6 @@ class TestDataClassToDictAndDataClassRepr:
         )
         dict_exp = {"x": DataFrame()}
         assert set(dict_res) == set(dict_exp)
-        repr_res = dataclass_repr(obj, globalns=globals(), extra=extra, defaults=True)
-        repr_exp = f"Example(x={DataFrame()})"
-        assert repr_res == repr_exp
 
     def test_field_with_dataframe_dropped(self) -> None:
         @dataclass(kw_only=True, slots=True)
@@ -182,9 +132,6 @@ class TestDataClassToDictAndDataClassRepr:
         dict_res = dataclass_to_dict(obj, globalns=globals(), extra=extra)
         dict_exp = {}
         assert set(dict_res) == set(dict_exp)
-        repr_res = dataclass_repr(obj, globalns=globals(), extra=extra)
-        repr_exp = "Example()"
-        assert repr_res == repr_exp
 
     @given(x=integers())
     def test_final(self, *, x: int) -> None:
@@ -215,9 +162,6 @@ class TestDataClassToDictAndDataClassRepr:
         dict_res = dataclass_to_dict(obj, localns=locals(), recursive=True)
         dict_exp = {"inner": {}, "y": y}
         assert dict_res == dict_exp
-        repr_res = dataclass_repr(obj, localns=locals(), recursive=True)
-        repr_exp = f"Outer(inner=Inner(), y={y})"
-        assert repr_res == repr_exp
 
     @given(y=integers())
     def test_nested_without_recursive(self, *, y: int) -> None:
@@ -234,9 +178,6 @@ class TestDataClassToDictAndDataClassRepr:
         dict_res = dataclass_to_dict(obj, localns=locals())
         dict_exp = {"inner": Inner(), "y": y}
         assert dict_res == dict_exp
-        repr_res = dataclass_repr(obj, localns=locals())
-        repr_exp = f"Outer(inner=TestDataClassToDictAndDataClassRepr.test_nested_without_recursive.<locals>.Inner(x=0), y={y})"
-        assert repr_res == repr_exp
 
     @given(y=lists(integers()), z=integers())
     def test_nested_in_list_with_recursive(self, *, y: list[int], z: int) -> None:
@@ -254,9 +195,6 @@ class TestDataClassToDictAndDataClassRepr:
         dict_res = dataclass_to_dict(obj, localns=locals(), recursive=True)
         dict_exp = {"inner": [{}], "y": y, "z": z}
         assert dict_res == dict_exp
-        repr_res = dataclass_repr(obj, localns=locals(), recursive=True)
-        repr_exp = f"Outer(inner=[Inner()], y={y}, z={z})"
-        assert repr_res == repr_exp
 
     @given(y=lists(integers()), z=integers())
     def test_nested_in_list_without_recursive(self, *, y: list[int], z: int) -> None:
@@ -274,9 +212,6 @@ class TestDataClassToDictAndDataClassRepr:
         dict_res = dataclass_to_dict(obj, localns=locals())
         dict_exp = {"inner": [Inner(x=0)], "y": y, "z": z}
         assert dict_res == dict_exp
-        repr_res = dataclass_repr(obj, localns=locals())
-        repr_exp = f"Outer(inner=[TestDataClassToDictAndDataClassRepr.test_nested_in_list_without_recursive.<locals>.Inner(x=0)], y={y}, z={z})"
-        assert repr_res == repr_exp
 
 
 class TestIsNullableLT:
