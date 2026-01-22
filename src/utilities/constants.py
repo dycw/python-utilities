@@ -15,7 +15,15 @@ from typing import TYPE_CHECKING, Any, assert_never, cast, override
 from zoneinfo import ZoneInfo
 
 from tzlocal import get_localzone
-from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 if TYPE_CHECKING:
     from utilities.types import System, TimeZone
@@ -227,10 +235,6 @@ class _Meta(type):
         return cls.instance
 
 
-_SENTINEL_PATTERN = re.compile("^(|sentinel|<sentinel>)$", flags=IGNORECASE)
-_SENTINEL_REPR = "<sentinel>"
-
-
 class Sentinel(metaclass=_Meta):
     """Base class for the sentinel object."""
 
@@ -248,6 +252,10 @@ class Sentinel(metaclass=_Meta):
         if _SENTINEL_PATTERN.search(text):
             return sentinel
         raise SentinelParseError(text=text)
+
+
+_SENTINEL_PATTERN = re.compile("^(|sentinel|<sentinel>)$", flags=IGNORECASE)
+_SENTINEL_REPR = "<sentinel>"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -307,10 +315,10 @@ def _get_now_local() -> ZonedDateTime:
     return ZonedDateTime.now(LOCAL_TIME_ZONE_NAME)
 
 
-NOW_LOCAL = _get_now_local()
-TODAY_LOCAL = NOW_LOCAL.date()
-TIME_LOCAL = NOW_LOCAL.time()
-NOW_LOCAL_PLAIN = NOW_LOCAL.to_plain()
+NOW_LOCAL: ZonedDateTime = _get_now_local()
+TODAY_LOCAL: Date = NOW_LOCAL.date()
+TIME_LOCAL: Time = NOW_LOCAL.time()
+NOW_LOCAL_PLAIN: PlainDateTime = NOW_LOCAL.to_plain()
 
 
 # whenever
@@ -356,15 +364,19 @@ DATE_TIME_DELTA_MAX: DateTimeDelta = DateTimeDelta(
 )
 
 
-SECONDS_PER_DAY = 24 * 60 * 60
-NANOSECONDS_PER_SECOND = 1_000_000_000
-NANOSECONDS_PER_DAY = SECONDS_PER_DAY * NANOSECONDS_PER_SECOND
+SECONDS_PER_DAY: int = 24 * 60 * 60
+NANOSECONDS_PER_SECOND: int = 1_000_000_000
+NANOSECONDS_PER_DAY: int = SECONDS_PER_DAY * NANOSECONDS_PER_SECOND
 
 
 # zoneinfo
 
 
 UTC: ZoneInfo = ZoneInfo("UTC")
+HongKong: ZoneInfo = ZoneInfo("Asia/Hong_Kong")
+Tokyo: ZoneInfo = ZoneInfo("Asia/Tokyo")
+USCentral: ZoneInfo = ZoneInfo("US/Central")
+USEastern: ZoneInfo = ZoneInfo("US/Eastern")
 
 
 # zoneinfo -> whenever
@@ -379,10 +391,10 @@ def _get_now(time_zone: str = UTC.key, /) -> ZonedDateTime:
     return ZonedDateTime.now(time_zone)
 
 
-NOW_UTC = _get_now()
-TODAY_UTC = NOW_UTC.date()
-TIME_UTC = NOW_UTC.time()
-NOW_UTC_PLAIN = NOW_UTC.to_plain()
+NOW_UTC: ZonedDateTime = _get_now()
+TODAY_UTC: Date = NOW_UTC.date()
+TIME_UTC: Time = NOW_UTC.time()
+NOW_UTC_PLAIN: PlainDateTime = NOW_UTC.to_plain()
 
 
 __all__ = [
@@ -471,6 +483,10 @@ __all__ = [
     "ZERO_TIME",
     "ZONED_DATE_TIME_MAX",
     "ZONED_DATE_TIME_MIN",
+    "HongKong",
     "Sentinel",
+    "Tokyo",
+    "USCentral",
+    "USEastern",
     "sentinel",
 ]

@@ -8,7 +8,13 @@ from hypothesis import given
 from hypothesis.strategies import DataObject, data, datetimes, just, sampled_from
 from pytest import mark, param, raises
 
-from utilities.constants import LOCAL_TIME_ZONE, LOCAL_TIME_ZONE_NAME, UTC
+from utilities.constants import (
+    LOCAL_TIME_ZONE,
+    LOCAL_TIME_ZONE_NAME,
+    UTC,
+    HongKong,
+    Tokyo,
+)
 from utilities.core import (
     _ToTimeZoneNameInvalidKeyError,
     _ToTimeZoneNameInvalidTZInfoError,
@@ -19,7 +25,6 @@ from utilities.core import (
     to_zone_info,
 )
 from utilities.hypothesis import zone_infos, zoned_date_times
-from utilities.tzdata import HongKong, Tokyo
 
 if TYPE_CHECKING:
     from utilities.types import TimeZoneLike

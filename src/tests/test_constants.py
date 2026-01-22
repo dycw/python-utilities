@@ -53,10 +53,15 @@ from utilities.constants import (
     TODAY_LOCAL,
     TODAY_UTC,
     USER,
+    UTC,
     ZONED_DATE_TIME_MAX,
     ZONED_DATE_TIME_MIN,
+    HongKong,
     Sentinel,
     SentinelParseError,
+    Tokyo,
+    USCentral,
+    USEastern,
     sentinel,
 )
 from utilities.platform import SYSTEM
@@ -255,6 +260,15 @@ class TestTimeDeltaMinMax:
         with raises(ValueError, match=r"TimeDelta out of range"):
             _ = TimeDelta(nanoseconds=TIME_DELTA_MAX.in_nanoseconds() + 1)
         _ = TIME_DELTA_MAX + NANOSECOND
+
+
+class TestTimeZones:
+    @mark.parametrize(
+        "time_zone",
+        [param(HongKong), param(Tokyo), param(USCentral), param(USEastern), param(UTC)],
+    )
+    def test_main(self, *, time_zone: ZoneInfo) -> None:
+        assert isinstance(time_zone, ZoneInfo)
 
 
 class TestUser:

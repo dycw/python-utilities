@@ -39,6 +39,8 @@ from utilities.constants import (
     UTC,
     ZERO_DAYS,
     Sentinel,
+    USCentral,
+    USEastern,
     sentinel,
 )
 from utilities.core import get_now, get_time, get_today
@@ -59,7 +61,6 @@ from utilities.hypothesis import (
     zoned_date_times_2000,
 )
 from utilities.types import TIME_ZONES, MaybeCallableTimeLike
-from utilities.tzdata import USCentral, USEastern
 from utilities.whenever import (
     DATE_DELTA_PARSABLE_MAX,
     DATE_DELTA_PARSABLE_MIN,
