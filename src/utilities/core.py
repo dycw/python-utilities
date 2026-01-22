@@ -2153,7 +2153,14 @@ def get_today_local() -> Date:
 
 @contextmanager
 def yield_write_path(
-    path: PathLike, /, *, compress: bool = False, overwrite: bool = False
+    path: PathLike,
+    /,
+    *,
+    compress: bool = False,
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
 ) -> Iterator[Path]:
     """Yield a temporary path for atomically writing files to disk."""
     with yield_adjacent_temp_file(path) as temp:
@@ -2168,6 +2175,10 @@ def yield_write_path(
                 move(temp, path, overwrite=overwrite)
             except _CopyOrMoveDestinationExistsError as error:
                 raise YieldWritePathError(path=error.dest) from None
+    if perms is not None:
+        chmod(path, perms)
+    if (owner is not None) or (group is not None):
+        chown(path, user=owner, group=group)
 
 
 @dataclass(kw_only=True, slots=True)

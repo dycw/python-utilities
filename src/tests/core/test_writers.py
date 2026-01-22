@@ -4,7 +4,15 @@ from typing import TYPE_CHECKING
 
 from pytest import mark, param, raises
 
-from utilities.core import YieldWritePathError, yield_gzip, yield_write_path
+from utilities.constants import EFFECTIVE_GROUP_NAME, EFFECTIVE_USER_NAME
+from utilities.core import (
+    Permissions,
+    YieldWritePathError,
+    get_file_group,
+    get_file_owner,
+    yield_gzip,
+    yield_write_path,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -30,6 +38,25 @@ class TestYieldWritePath:
         with yield_write_path(temp_file, overwrite=True) as temp:
             _ = temp.write_text("post")
         assert temp_file.read_text() == "post"
+
+    def test_perms(self, *, temp_path_not_exist: Path) -> None:
+        perms = Permissions.from_text("u=rw,g=r,o=r")
+        with yield_write_path(temp_path_not_exist, perms=perms) as temp:
+            temp.touch()
+        result = Permissions.from_path(temp_path_not_exist)
+        assert result == perms
+
+    def test_user(self, *, temp_path_not_exist: Path) -> None:
+        with yield_write_path(temp_path_not_exist, owner=EFFECTIVE_USER_NAME) as temp:
+            temp.touch()
+        result = get_file_owner(temp_path_not_exist)
+        assert result == EFFECTIVE_USER_NAME
+
+    def test_group(self, *, temp_path_not_exist: Path) -> None:
+        with yield_write_path(temp_path_not_exist, group=EFFECTIVE_GROUP_NAME) as temp:
+            temp.touch()
+        result = get_file_group(temp_path_not_exist)
+        assert result == EFFECTIVE_GROUP_NAME
 
     @mark.parametrize("compress", [param(False), param(True)])
     def test_error(self, *, temp_file: Path, compress: bool) -> None:

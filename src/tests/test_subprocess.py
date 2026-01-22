@@ -23,11 +23,11 @@ from utilities.core import (
     TemporaryDirectory,
     TemporaryFile,
     get_file_group,
+    get_file_owner,
     normalize_multi_line_str,
     one,
     unique_str,
 )
-from utilities.pathlib import get_file_owner
 from utilities.pytest import skipif_ci, skipif_mac, throttle_test
 from utilities.shutil import which
 from utilities.subprocess import (
