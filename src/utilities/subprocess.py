@@ -34,9 +34,6 @@ from utilities.core import (
     normalize_str,
     one,
     repr_str,
-    repr_table,
-    sync_sleep,
-    to_logger,
 )
 from utilities.errors import ImpossibleCaseError
 from utilities.math import safe_round
