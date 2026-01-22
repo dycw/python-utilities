@@ -137,13 +137,13 @@ async def check_connect_async(
     error: MaybeType[BaseException] = TimeoutError,
 ) -> bool:
     """Check if an engine can connect."""
-    try:
+    try:  # skipif-ci
         async with (
             utilities.asyncio.timeout(timeout, error=error),
             engine.connect() as conn,
         ):
             return bool((await conn.execute(_SELECT)).scalar_one())
-    except (gaierror, ConnectionRefusedError, DatabaseError, TimeoutError):
+    except (gaierror, ConnectionRefusedError, DatabaseError, TimeoutError):  # skipif-ci
         return False
 
 
