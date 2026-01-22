@@ -1000,7 +1000,7 @@ class TestRsyncMany:
         with (
             TemporaryDirectory(dir=tmp_path) as temp_src,
             TemporaryFile(dir=temp_src) as src_file,
-            TemporaryDirectory(dir=temp_src) as src_dir,
+            TemporaryDirectory(dir=tmp_path) as src_dir,
             yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest,
         ):
             rsync_many(
@@ -1018,6 +1018,50 @@ class TestRsyncMany:
                     if ! [ -d {dest} ]; then exit 1; fi
                     if ! [ -f {dest}/{src_file.name} ]; then exit 1; fi
                     if ! [ -d {dest}/{src_dir.name} ]; then exit 1; fi
+                    """
+                ),
+            )
+
+    @throttle_test(duration=5 * MINUTE)
+    def test_sudo_and_perms(
+        self, *, tmp_path: Path, ssh_user: str, ssh_hostname: str
+    ) -> None:
+        with (
+            TemporaryDirectory(dir=tmp_path) as src,
+            TemporaryFile(dir=src) as src_file1,
+            TemporaryFile(dir=src) as src_file2,
+            TemporaryFile(dir=src) as src_file3,
+            TemporaryFile(dir=src) as src_file4,
+            yield_ssh_temp_dir(ssh_user, ssh_hostname) as dest,
+        ):
+            rsync_many(
+                ssh_user,
+                ssh_hostname,
+                (src_file1, dest / src_file1.name),
+                ("sudo", src_file2, dest / src_file2.name),
+                (
+                    src_file3,
+                    dest / src_file3.name,
+                    Permissions.from_text("u=rw,g=r,o=r"),
+                ),
+                (
+                    "sudo",
+                    src_file4,
+                    dest / src_file4.name,
+                    Permissions.from_text("u=rw,g=r,o=r"),
+                ),
+            )
+            ssh(
+                ssh_user,
+                ssh_hostname,
+                *BASH_LS,
+                input=(
+                    f"""
+                    if ! [ -d {dest} ]; then exit 1; fi
+                    if ! [ -f {dest}/{src_file1.name} ]; then exit 1; fi
+                    if ! [ -f {dest}/{src_file2.name} ]; then exit 1; fi
+                    if ! [ -f {dest}/{src_file3.name} ]; then exit 1; fi
+                    if ! [ -f {dest}/{src_file4.name} ]; then exit 1; fi
                     """
                 ),
             )
