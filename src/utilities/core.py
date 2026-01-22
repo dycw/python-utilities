@@ -18,7 +18,7 @@ from operator import or_
 from os import chdir, environ, getenv, getpid
 from pathlib import Path
 from re import VERBOSE, Pattern, findall
-from shutil import copyfileobj, copytree
+from shutil import copyfile, copyfileobj, copytree
 from stat import (
     S_IMODE,
     S_IRGRP,
@@ -1035,7 +1035,7 @@ def _copy_or_move__shutil_file(
 ) -> None:
     match mode:
         case "copy":
-            _ = shutil.copy(src, temp)
+            _ = copyfile(src, temp)
         case "move":
             _ = shutil.move(src, temp)
         case never:
