@@ -35,8 +35,6 @@ from utilities.subprocess import (
     BASH_LS,
     KNOWN_HOSTS,
     ChownCmdError,
-    CpError,
-    MvFileError,
     _rsync_many_prepare,
     _RsyncCmdNoSourcesError,
     _RsyncCmdSourcesNotFoundError,
@@ -58,7 +56,6 @@ from utilities.subprocess import (
     chmod_cmd,
     chown_cmd,
     copy_text,
-    cp,
     cp_cmd,
     curl,
     curl_cmd,
@@ -76,7 +73,6 @@ from utilities.subprocess import (
     maybe_sudo_cmd,
     mkdir,
     mkdir_cmd,
-    mv,
     mv_cmd,
     replace_text,
     ripgrep,
@@ -294,42 +290,6 @@ class TestCopyText:
         copy_text(src, dest, substitutions={"KEY": "value"})
         result = dest.read_text()
         assert result == "value"
-
-
-class TestCp:
-    def test_file(self, *, temp_file: Path, temp_path_nested_not_exist: Path) -> None:
-        dest = temp_path_nested_not_exist / temp_file.name
-        cp(temp_file, dest)
-        assert temp_file.is_file()
-        assert dest.is_file()
-
-    def test_directory(
-        self, *, tmp_path: Path, temp_path_nested_not_exist: Path
-    ) -> None:
-        src = tmp_path / tmp_path.name
-        src.mkdir()
-        dest = temp_path_nested_not_exist / tmp_path.name
-        cp(src, dest)
-        assert src.is_dir()
-        assert dest.is_dir()
-
-    def test_perms(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
-        dest = temp_path_not_exist / temp_file.name
-        perms = Permissions.from_text("u=rwx,g=,o=")
-        cp(temp_file, dest, perms=perms)
-        result = Permissions.from_path(dest)
-        assert result == perms
-
-    def test_owner(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
-        dest = temp_path_not_exist / temp_file.name
-        cp(temp_file, dest, owner=EFFECTIVE_USER_NAME)
-        result = get_file_owner(dest)
-        assert result == EFFECTIVE_USER_NAME
-
-    def test_error(self, *, temp_path_not_exist: Path, tmp_path: Path) -> None:
-        dest = tmp_path / temp_path_not_exist.name
-        with raises(CpError, match=r"Source '.*' does not exist"):
-            cp(temp_path_not_exist, dest)
 
 
 class TestCpCmd:
@@ -558,40 +518,6 @@ class TestMkDirCmd:
         result = mkdir_cmd("~/path", parent=True)
         expected = ["mkdir", "-p", "~"]
         assert result == expected
-
-
-class TestMv:
-    def test_file(self, *, temp_file: Path, temp_path_nested_not_exist: Path) -> None:
-        dest = temp_path_nested_not_exist / temp_file.name
-        mv(temp_file, dest)
-        assert not temp_file.exists()
-        assert dest.is_file()
-
-    def test_dir(self, *, tmp_path: Path, temp_path_nested_not_exist: Path) -> None:
-        src = tmp_path / tmp_path.name
-        src.mkdir()
-        dest = temp_path_nested_not_exist / tmp_path.name
-        mv(src, dest)
-        assert not src.exists()
-        assert dest.is_dir()
-
-    def test_perms(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
-        dest = temp_path_not_exist / temp_file.name
-        perms = Permissions.from_text("u=rwx,g=,o=")
-        mv(temp_file, dest, perms=perms)
-        result = Permissions.from_path(dest)
-        assert result == perms
-
-    def test_owner(self, *, temp_file: Path, temp_path_not_exist: Path) -> None:
-        dest = temp_path_not_exist / temp_file.name
-        mv(temp_file, dest, owner=EFFECTIVE_USER_NAME)
-        result = get_file_owner(dest)
-        assert result == EFFECTIVE_USER_NAME
-
-    def test_error(self, *, temp_path_not_exist: Path, tmp_path: Path) -> None:
-        dest = tmp_path / temp_path_not_exist.name
-        with raises(MvFileError, match=r"Source '.*' does not exist"):
-            mv(temp_path_not_exist, dest)
 
 
 class TestMvCmd:

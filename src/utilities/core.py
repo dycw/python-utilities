@@ -303,10 +303,18 @@ def _compress_files(
     /,
     *srcs_or_dest: PathLike,
     overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
 ) -> None:
     *srcs, dest = map(Path, [src_or_dest, *srcs_or_dest])
     try:
-        with yield_write_path(dest, overwrite=overwrite) as temp, func(temp) as buffer:
+        with (
+            yield_write_path(
+                dest, overwrite=overwrite, perms=perms, owner=owner, group=group
+            ) as temp,
+            func(temp) as buffer,
+        ):
             match srcs:
                 case [src]:
                     match file_or_dir(src):
@@ -352,13 +360,21 @@ def _compress_files_add_dir(path: PathLike, tar: TarFile, /) -> None:
 
 
 def compress_zip(
-    src_or_dest: PathLike, /, *srcs_or_dest: PathLike, overwrite: bool = False
+    src_or_dest: PathLike,
+    /,
+    *srcs_or_dest: PathLike,
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
 ) -> None:
     """Create a Zip file."""
     *srcs, dest = map(Path, [src_or_dest, *srcs_or_dest])
     try:
         with (
-            yield_write_path(dest, overwrite=overwrite) as temp,
+            yield_write_path(
+                dest, overwrite=overwrite, perms=perms, owner=owner, group=group
+            ) as temp,
             ZipFile(temp, mode="w") as zf,
         ):
             for src_i in sorted(srcs):
@@ -893,16 +909,38 @@ def chmod(path: PathLike, perms: PermissionsLike, /) -> None:
 ##
 
 
-def copy(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
+def copy(
+    src: PathLike,
+    dest: PathLike,
+    /,
+    *,
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
+) -> None:
     """Copy a file atomically."""
     src, dest = map(Path, [src, dest])
-    _copy_or_move(src, dest, "copy", overwrite=overwrite)
+    _copy_or_move(
+        src, dest, "copy", overwrite=overwrite, perms=perms, owner=owner, group=group
+    )
 
 
-def move(src: PathLike, dest: PathLike, /, *, overwrite: bool = False) -> None:
+def move(
+    src: PathLike,
+    dest: PathLike,
+    /,
+    *,
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
+) -> None:
     """Move a file atomically."""
     src, dest = map(Path, [src, dest])
-    _copy_or_move(src, dest, "move", overwrite=overwrite)
+    _copy_or_move(
+        src, dest, "move", overwrite=overwrite, perms=perms, owner=owner, group=group
+    )
 
 
 @dataclass(kw_only=True, slots=True)
@@ -910,7 +948,15 @@ class CopyOrMoveError(Exception): ...
 
 
 def _copy_or_move(
-    src: Path, dest: Path, mode: CopyOrMove, /, *, overwrite: bool = False
+    src: Path,
+    dest: Path,
+    mode: CopyOrMove,
+    /,
+    *,
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
 ) -> None:
     match file_or_dir(src), file_or_dir(dest), overwrite:
         case None, _, _:
@@ -927,6 +973,10 @@ def _copy_or_move(
             _copy_or_move__dir_to_file(src, dest, mode)
         case never:
             assert_never(never)
+    if perms is not None:
+        chmod(dest, perms)
+    if (owner is not None) or (group is not None):
+        chown(dest, user=owner, group=group)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1069,12 +1119,18 @@ class GetEnvError(Exception):
 ##
 
 
-def move_many(*paths: tuple[PathLike, PathLike], overwrite: bool = False) -> None:
+def move_many(
+    *paths: tuple[PathLike, PathLike],
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
+) -> None:
     """Move a set of files concurrently."""
     with ExitStack() as stack:
         for src, dest in paths:
             temp = stack.enter_context(yield_write_path(dest, overwrite=overwrite))
-            move(src, temp, overwrite=overwrite)
+            move(src, temp, overwrite=overwrite, perms=perms, owner=owner, group=group)
 
 
 ##
@@ -1610,11 +1666,21 @@ def write_bytes(
     *,
     compress: bool = False,
     overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
     json: bool = False,
 ) -> None:
     """Write data to a file."""
     try:
-        with yield_write_path(path, compress=compress, overwrite=overwrite) as temp:
+        with yield_write_path(
+            path,
+            compress=compress,
+            overwrite=overwrite,
+            perms=perms,
+            owner=owner,
+            group=group,
+        ) as temp:
             if json:  # pragma: no cover
                 with suppress(FileNotFoundError):
                     data = check_output(["prettier", "--parser=json"], input=data)
@@ -1661,11 +1727,26 @@ class ReadTextError(Exception):
 
 
 def write_text(
-    path: PathLike, text: str, /, *, compress: bool = False, overwrite: bool = False
+    path: PathLike,
+    text: str,
+    /,
+    *,
+    compress: bool = False,
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
 ) -> None:
     """Write text to a file."""
     try:
-        with yield_write_path(path, compress=compress, overwrite=overwrite) as temp:
+        with yield_write_path(
+            path,
+            compress=compress,
+            overwrite=overwrite,
+            perms=perms,
+            owner=owner,
+            group=group,
+        ) as temp:
             _ = temp.write_text(normalize_str(text))
     except YieldWritePathError as error:
         raise WriteTextError(path=error.path) from None

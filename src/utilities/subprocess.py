@@ -305,18 +305,18 @@ def cp(
     group: str | int | None = None,
 ) -> None:
     """Copy a file/directory."""
-    mkdir(dest, sudo=sudo, parent=True)
+    mkdir(dest, sudo=sudo, parent=True)  # pragma: no cover
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*cp_cmd(src, dest)))
-    else:
+        if perms is not None:
+            chmod(dest, perms, sudo=True)
+        if (owner is not None) or (group is not None):
+            chown(dest, sudo=True, user=owner, group=group)
+    else:  # pragma: no cover
         try:
-            copy(src, dest, overwrite=True)
+            copy(src, dest, overwrite=True, perms=perms, owner=owner, group=group)
         except _CopyOrMoveSourceNotFoundError as error:
             raise CpError(src=error.src) from None
-    if perms is not None:
-        chmod(dest, perms, sudo=sudo)
-    if (owner is not None) or (group is not None):
-        chown(dest, sudo=sudo, user=owner, group=group)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -669,18 +669,18 @@ def mv(
     group: str | int | None = None,
 ) -> None:
     """Move a file/directory."""
-    mkdir(dest, sudo=sudo, parent=True)
+    mkdir(dest, sudo=sudo, parent=True)  # pragma: no cover
     if sudo:  # pragma: no cover
         run(*sudo_cmd(*cp_cmd(src, dest)))
-    else:
+        if perms is not None:
+            chmod(dest, perms, sudo=True)
+        if (owner is not None) or (group is not None):
+            chown(dest, sudo=True, user=owner, group=group)
+    else:  # pragma: no cover
         try:
-            move(src, dest, overwrite=True)
+            move(src, dest, overwrite=True, perms=perms, owner=owner, group=group)
         except _CopyOrMoveSourceNotFoundError as error:
             raise MvFileError(src=error.src) from None
-    if perms is not None:
-        chmod(dest, perms, sudo=sudo)
-    if (owner is not None) or (group is not None):
-        chown(dest, sudo=sudo, user=owner, group=group)
 
 
 @dataclass(kw_only=True, slots=True)
