@@ -121,6 +121,27 @@ def temp_dirs(*, tmp_path: Path) -> Iterator[tuple[Path, Path]]:
 
 
 @fixture
+def temp_dirs3(*, tmp_path: Path) -> Iterator[tuple[Path, Path, Path]]:
+    with (
+        TemporaryDirectory(dir=tmp_path) as temp1,
+        TemporaryDirectory(dir=tmp_path) as temp2,
+        TemporaryDirectory(dir=tmp_path) as temp3,
+    ):
+        yield temp1, temp2, temp3
+
+
+@fixture
+def temp_dirs4(*, tmp_path: Path) -> Iterator[tuple[Path, Path, Path, Path]]:
+    with (
+        TemporaryDirectory(dir=tmp_path) as temp1,
+        TemporaryDirectory(dir=tmp_path) as temp2,
+        TemporaryDirectory(dir=tmp_path) as temp3,
+        TemporaryDirectory(dir=tmp_path) as temp4,
+    ):
+        yield temp1, temp2, temp3, temp4
+
+
+@fixture
 def temp_dirs_with_files(
     *, temp_dirs: tuple[Path, Path]
 ) -> Iterator[tuple[Path, Path]]:
@@ -162,7 +183,7 @@ def temp_path_nested_not_exist(*, tmp_path: Path, temp_path_not_exist: Path) -> 
 @fixture
 async def test_redis() -> AsyncIterator[Redis]:
     if IS_CI_AND_NOT_LINUX:
-        skip(reason="Skipped for CI/non-Linux")
+        skip(reason="Skipped for CI/non-Linux; Redis is not available")
 
     from utilities.redis import yield_redis
 
@@ -245,7 +266,7 @@ async def test_async_postgres_engine() -> AsyncEngine:
     from utilities.sqlalchemy import create_engine
 
     if IS_CI:
-        skip(reason="Skipped for CI")
+        skip(reason="Skipped for CI; Postgres is not available")
     engine = create_engine(
         "postgresql+asyncpg",
         username="postgres",
