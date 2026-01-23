@@ -18,6 +18,8 @@ from utilities.constants import (
     NANOSECOND,
     SECOND,
     UTC,
+    WEEK,
+    YEAR,
     HongKong,
     Sentinel,
     Tokyo,
@@ -26,6 +28,7 @@ from utilities.constants import (
 from utilities.core import (
     NumDaysError,
     NumHoursError,
+    NumMilliSecondsError,
     NumMinutesError,
     NumSecondsError,
     _DeltaComponentsMixedSignError,
@@ -41,6 +44,7 @@ from utilities.core import (
     get_today_local,
     num_days,
     num_hours,
+    num_milliseconds,
     num_minutes,
     num_seconds,
     replace_non_sentinel,
@@ -57,7 +61,14 @@ class TestDeltaComponents:
     @mark.parametrize(
         ("delta", "expected"),
         [
+            param(YEAR, _DeltaComponentsOutput(years=1)),
+            param(24 * MONTH, _DeltaComponentsOutput(years=2)),
+            param(18 * MONTH, _DeltaComponentsOutput(years=1, months=6)),
             param(MONTH, _DeltaComponentsOutput(months=1)),
+            param(WEEK, _DeltaComponentsOutput(weeks=1)),
+            param(14 * DAY, _DeltaComponentsOutput(weeks=2)),
+            param(10 * DAY, _DeltaComponentsOutput(weeks=1, days=3)),
+            param(7 * DAY, _DeltaComponentsOutput(weeks=1)),
             param(DAY, _DeltaComponentsOutput(days=1)),
             param(48 * HOUR, _DeltaComponentsOutput(days=2)),
             param(36 * HOUR, _DeltaComponentsOutput(days=1, hours=12)),
@@ -97,7 +108,9 @@ class TestDeltaComponents:
     ) -> None:
         result = delta_components(sign * delta)
         signed_expected = _DeltaComponentsOutput(
+            years=sign * expected.years,
             months=sign * expected.months,
+            weeks=sign * expected.weeks,
             days=sign * expected.days,
             hours=sign * expected.hours,
             minutes=sign * expected.minutes,
@@ -112,10 +125,15 @@ class TestDeltaComponents:
     @mark.parametrize(
         ("input_", "expected"),
         [
+            param({"months": 24}, {"years": 2}),
+            param({"months": 18}, {"years": 1, "months": 6}),
+            param({"months": 12}, {"years": 1}),
+            param({"days": 14}, {"weeks": 2}),
+            param({"days": 10}, {"weeks": 1, "days": 3}),
+            param({"days": 7}, {"weeks": 1}),
             param({"hours": 48}, {"days": 2}),
             param({"hours": 36}, {"days": 1, "hours": 12}),
             param({"hours": 24}, {"days": 1}),
-            param({"hours": 1}, {"hours": 1}),
             param({"minutes": 120}, {"hours": 2}),
             param({"minutes": 90}, {"hours": 1, "minutes": 30}),
             param({"minutes": 60}, {"hours": 1}),
@@ -142,13 +160,16 @@ class TestDeltaComponents:
         })
         assert result == signed_expected
 
-    @mark.parametrize(("months", "days"), [param(1, -1), param(-1, 1)])
-    def test_error_mixed_sign(self, *, months: int, days: int) -> None:
+    @mark.parametrize(
+        ("years", "months", "days"),
+        [param(1, 0, -1), param(0, 1, -1), param(-1, 0, 1), param(0, -1, 1)],
+    )
+    def test_error_mixed_sign(self, *, years: int, months: int, days: int) -> None:
         with raises(
             _DeltaComponentsMixedSignError,
-            match=r"Months and days must have the same sign; got .* and .*",
+            match=r"Years, months and days must have the same sign; got .*, .* and .*",
         ):
-            _ = _DeltaComponentsOutput(months=months, days=days)
+            _ = _DeltaComponentsOutput(years=years, months=months, days=days)
 
 
 class TestGetNow:
@@ -265,6 +286,41 @@ class TestNumHours:
             match=r"Delta must not contain months \(.*\), days \(.*\), minutes \(.*\), seconds \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
         ):
             _ = num_hours(delta)
+
+
+class TestNumMilliSeconds:
+    @mark.parametrize(
+        ("delta", "expected"),
+        [
+            param(2 * MILLISECOND, 2),
+            param(MILLISECOND, 1),
+            param(2000 * MICROSECOND, 2),
+            param(1000 * MICROSECOND, 1),
+        ],
+    )
+    def test_main(self, *, delta: Delta, expected: int) -> None:
+        assert num_milliseconds(delta) == expected
+
+    @mark.parametrize(
+        "delta",
+        [
+            # param(YEAR),
+            # param(MONTH),
+            # param(WEEK),
+            param(DAY),
+            param(HOUR),
+            param(MINUTE),
+            param(SECOND),
+            param(MICROSECOND),
+            param(NANOSECOND),
+        ],
+    )
+    def test_error(self, *, delta: Delta) -> None:
+        with raises(
+            NumMilliSecondsError,
+            match=r"Delta must not contain months \(.*\), days \(.*\), hours \(.*\), minutes \(.*\), seconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
+        ):
+            _ = num_milliseconds(delta)
 
 
 class TestNumMinutes:

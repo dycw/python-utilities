@@ -40,6 +40,7 @@ from utilities.core import (
     get_time,
     get_today,
     num_days,
+    num_hours,
     replace_non_sentinel,
     to_time_zone_name,
 )
@@ -518,7 +519,7 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
     else:
         return days, "D"
     try:
-        hours = to_hours(delta)
+        hours = num_hours(delta)
     except ToHoursError:
         pass
     else:

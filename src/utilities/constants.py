@@ -364,6 +364,8 @@ DATE_TIME_DELTA_MAX: DateTimeDelta = DateTimeDelta(
 )
 
 
+MONTHS_PER_YEAR: int = 12
+DAYS_PER_WEEK: int = 7
 HOURS_PER_DAY: int = 24
 MINUTES_PER_HOUR: int = 60
 SECONDS_PER_MINUTE: int = 60
@@ -408,6 +410,7 @@ __all__ = [
     "DATE_TIME_DELTA_MAX",
     "DATE_TIME_DELTA_MIN",
     "DAY",
+    "DAYS_PER_WEEK",
     "EFFECTIVE_GROUP_ID",
     "EFFECTIVE_GROUP_NAME",
     "EFFECTIVE_USER_ID",
@@ -460,6 +463,7 @@ __all__ = [
     "MIN_UINT32",
     "MIN_UINT64",
     "MONTH",
+    "MONTHS_PER_YEAR",
     "NANOSECOND",
     "NANOSECONDS_PER_MICROSECOND",
     "NOW_LOCAL",

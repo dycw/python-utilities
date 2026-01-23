@@ -78,12 +78,14 @@ from whenever import (
 
 import utilities.constants
 from utilities.constants import (
+    DAYS_PER_WEEK,
     HOURS_PER_DAY,
     LOCAL_TIME_ZONE,
     LOCAL_TIME_ZONE_NAME,
     MICROSECONDS_PER_MILLISECOND,
     MILLISECONDS_PER_SECOND,
     MINUTES_PER_HOUR,
+    MONTHS_PER_YEAR,
     NANOSECONDS_PER_MICROSECOND,
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
@@ -2356,8 +2358,8 @@ def delta_components(delta: Delta, /) -> _DeltaComponentsOutput:
     """Decompose a delta into its components."""
     match delta:
         case DateDelta():
-            months, days = delta.in_months_days()
-            return _DeltaComponentsOutput(months=months, days=days)
+            years, months, days = delta.in_years_months_days()
+            return _DeltaComponentsOutput(years=years, months=months, days=days)
         case TimeDelta():
             hours, minutes, seconds, nanoseconds = delta.in_hrs_mins_secs_nanos()
             return _DeltaComponentsOutput(
@@ -2374,7 +2376,9 @@ def delta_components(delta: Delta, /) -> _DeltaComponentsOutput:
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
 class _DeltaComponentsOutput:
+    years: int = 0
     months: int = 0
+    weeks: int = 0
     days: int = 0
     hours: int = 0
     minutes: int = 0
@@ -2386,26 +2390,21 @@ class _DeltaComponentsOutput:
     def __post_init__(self) -> None:
         while not self._normalize():
             pass
-        if ((self.months > 0) and (self.days < 0)) or (
-            (self.months < 0) and (self.days > 0)
+        if (
+            ((self.years > 0) and (self.days < 0))
+            or ((self.months > 0) and (self.days < 0))
+            or ((self.years < 0) and (self.days > 0))
+            or ((self.months < 0) and (self.days > 0))
         ):
-            raise _DeltaComponentsMixedSignError(months=self.months, days=self.days)
-
-    def __add__(self, other: Self, /) -> Self:
-        return self.replace(
-            months=self.months + other.months,
-            days=self.days + other.days,
-            hours=self.hours + other.hours,
-            minutes=self.minutes + other.minutes,
-            seconds=self.seconds + other.seconds,
-            milliseconds=self.milliseconds + other.milliseconds,
-            microseconds=self.microseconds + other.microseconds,
-            nanoseconds=self.nanoseconds + other.nanoseconds,
-        )
+            raise _DeltaComponentsMixedSignError(
+                years=self.years, months=self.months, days=self.days
+            )
 
     def __mul__(self, n: int, /) -> Self:
         return self.replace(
+            years=n * self.years,
             months=n * self.months,
+            weeks=n * self.weeks,
             days=n * self.days,
             hours=n * self.hours,
             minutes=n * self.minutes,
@@ -2421,7 +2420,9 @@ class _DeltaComponentsOutput:
     def replace(
         self,
         *,
+        years: int | Sentinel = sentinel,
         months: int | Sentinel = sentinel,
+        weeks: int | Sentinel = sentinel,
         days: int | Sentinel = sentinel,
         hours: int | Sentinel = sentinel,
         minutes: int | Sentinel = sentinel,
@@ -2432,7 +2433,9 @@ class _DeltaComponentsOutput:
     ) -> Self:
         return replace_non_sentinel(
             self,
+            years=years,
             months=months,
+            weeks=weeks,
             days=days,
             hours=hours,
             minutes=minutes,
@@ -2444,13 +2447,39 @@ class _DeltaComponentsOutput:
 
     def _normalize(self) -> bool:
         return (
-            self._normalize_hours_to_days()
+            self._normalize_months_to_years()
+            and self._normalize_days_to_weeks()
+            and self._normalize_hours_to_days()
             and self._normalize_minutes_to_hours()
             and self._normalize_seconds_to_minutes()
             and self._normalize_milliseconds_to_seconds()
             and self._normalize_microseconds_to_millseconds()
             and self._normalize_nanoseconds_to_millseconds()
         )
+
+    def _normalize_months_to_years(self) -> bool:
+        factor = MONTHS_PER_YEAR
+        if (self.years >= 0) and (self.months >= factor):
+            years, self.months = divmod(self.months, factor)
+            self.years += years
+            return False
+        if (self.years <= 0) and (self.months <= -factor):
+            years, self.months = divmod(self.months, -factor)
+            self.years -= years
+            return False
+        return True
+
+    def _normalize_days_to_weeks(self) -> bool:
+        factor = DAYS_PER_WEEK
+        if (self.weeks >= 0) and (self.days >= factor):
+            weeks, self.days = divmod(self.days, factor)
+            self.weeks += weeks
+            return False
+        if (self.weeks <= 0) and (self.days <= -factor):
+            weeks, self.days = divmod(self.days, -factor)
+            self.weeks -= weeks
+            return False
+        return True
 
     def _normalize_hours_to_days(self) -> bool:
         factor = HOURS_PER_DAY
@@ -2531,12 +2560,13 @@ class DeltaComponentsError(Exception): ...
 
 @dataclass(kw_only=True, slots=True)
 class _DeltaComponentsMixedSignError(DeltaComponentsError):
-    months: int
-    days: int
+    years: int = 0
+    months: int = 0
+    days: int = 0
 
     @override
     def __str__(self) -> str:
-        return f"Months and days must have the same sign; got {self.months} and {self.days}"
+        return f"Years, months and days must have the same sign; got {self.years}, {self.months} and {self.days}"
 
 
 ##
@@ -2587,6 +2617,96 @@ def get_today_local() -> Date:
 
 
 ##
+
+
+def num_years(delta: Delta, /) -> int:
+    """Compute the number of years in a delta."""
+    components = delta_components(delta)
+    if (
+        (components.months != 0)
+        or (components.weeks != 0)
+        or (components.days != 0)
+        or (components.hours != 0)
+        or (components.minutes != 0)
+        or (components.seconds != 0)
+        or (components.milliseconds != 0)
+        or (components.microseconds != 0)
+        or (components.nanoseconds != 0)
+    ):
+        raise NumYearsError(
+            months=components.months,
+            weeks=components.weeks,
+            days=components.days,
+            hours=components.hours,
+            minutes=components.minutes,
+            seconds=components.seconds,
+            milliseconds=components.milliseconds,
+            microseconds=components.microseconds,
+            nanoseconds=components.nanoseconds,
+        )
+    return components.years
+
+
+@dataclass(kw_only=True, slots=True)
+class NumYearsError(Exception):
+    months: int = 0
+    weeks: int = 0
+    days: int = 0
+    hours: int = 0
+    minutes: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain months ({self.months}), weeks ({self.weeks}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+def num_weeks(delta: Delta, /) -> int:
+    """Compute the number of weeks in a delta."""
+    components = delta_components(delta)
+    if (
+        (components.years != 0)
+        or (components.months != 0)
+        or (components.days != 0)
+        or (components.hours != 0)
+        or (components.minutes != 0)
+        or (components.seconds != 0)
+        or (components.milliseconds != 0)
+        or (components.microseconds != 0)
+        or (components.nanoseconds != 0)
+    ):
+        raise NumWeeksError(
+            years=components.years,
+            months=components.months,
+            days=components.days,
+            hours=components.hours,
+            minutes=components.minutes,
+            seconds=components.seconds,
+            milliseconds=components.milliseconds,
+            microseconds=components.microseconds,
+            nanoseconds=components.nanoseconds,
+        )
+    return components.weeks
+
+
+@dataclass(kw_only=True, slots=True)
+class NumWeeksError(Exception):
+    years: int = 0
+    months: int = 0
+    days: int = 0
+    hours: int = 0
+    minutes: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
 
 
 def num_days(delta: Delta, /) -> int:
@@ -2766,7 +2886,7 @@ def num_milliseconds(delta: Delta, /) -> int:
             microseconds=components.microseconds,
             nanoseconds=components.nanoseconds,
         )
-    return components.seconds
+    return components.milliseconds
 
 
 @dataclass(kw_only=True, slots=True)
