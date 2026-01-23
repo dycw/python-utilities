@@ -50,7 +50,6 @@ if TYPE_CHECKING:
         DateOrDateTimeDelta,
         DateTimeRoundMode,
         Delta,
-        MaybeCallableDateLike,
         MaybeCallableTimeLike,
         MaybeCallableZonedDateTimeLike,
         TimeOrDateTimeDelta,
@@ -801,40 +800,6 @@ class TimePeriod:
     def to_py_dict(self) -> PeriodDict[dt.time]:
         """Convert the period to a dictionary."""
         return PeriodDict(start=self.start.py_time(), end=self.end.py_time())
-
-
-##
-
-
-@overload
-def to_date(date: Sentinel, /, *, time_zone: TimeZoneLike = UTC) -> Sentinel: ...
-@overload
-def to_date(
-    date: MaybeCallableDateLike | None | dt.date = get_today,
-    /,
-    *,
-    time_zone: TimeZoneLike = UTC,
-) -> Date: ...
-def to_date(
-    date: MaybeCallableDateLike | dt.date | None | Sentinel = get_today,
-    /,
-    *,
-    time_zone: TimeZoneLike = UTC,
-) -> Date | Sentinel:
-    """Convert to a date."""
-    match date:
-        case Date() | Sentinel():
-            return date
-        case None:
-            return get_today(time_zone)
-        case str():
-            return Date.parse_iso(date)
-        case dt.date():
-            return Date.from_py_date(date)
-        case Callable() as func:
-            return to_date(func(), time_zone=time_zone)
-        case never:
-            assert_never(never)
 
 
 ##
@@ -1940,7 +1905,6 @@ __all__ = [
     "min_max_date",
     "round_date_or_date_time",
     "sub_year_month",
-    "to_date",
     "to_date_time_delta",
     "to_days",
     "to_microseconds",

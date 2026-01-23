@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from utilities.constants import SECOND
-from utilities.time import sleep
+from utilities.core import sleep
 from utilities.timer import Timer
 
 if TYPE_CHECKING:

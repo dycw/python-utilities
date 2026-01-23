@@ -3,8 +3,8 @@ from __future__ import annotations
 from re import search
 from typing import TYPE_CHECKING
 
+from utilities.core import sleep
 from utilities.pyinstrument import profile
-from utilities.time import sleep
 
 if TYPE_CHECKING:
     from pathlib import Path

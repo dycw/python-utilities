@@ -117,7 +117,6 @@ from utilities.whenever import (
     min_max_date,
     round_date_or_date_time,
     sub_year_month,
-    to_date,
     to_date_time_delta,
     to_days,
     to_hours,
@@ -148,7 +147,6 @@ if TYPE_CHECKING:
         DateOrDateTimeDelta,
         DateTimeRoundMode,
         Delta,
-        MaybeCallableDateLike,
         MaybeCallableZonedDateTimeLike,
         TimeOrDateTimeDelta,
         TimeZone,
@@ -900,52 +898,6 @@ class TestTimePeriod:
         dict_ = data.draw(sampled_from([period.to_dict(), period.to_py_dict()]))
         result = TimePeriod.from_dict(dict_)
         assert result == period
-
-
-class TestToDate:
-    def test_default(self) -> None:
-        assert to_date() == get_today()
-
-    @given(date=dates())
-    def test_date(self, *, date: Date) -> None:
-        assert to_date(date) == date
-
-    @given(date=dates())
-    def test_str(self, *, date: Date) -> None:
-        assert to_date(date.format_iso()) == date
-
-    @given(date=dates())
-    def test_py_date(self, *, date: Date) -> None:
-        assert to_date(date.py_date()) == date
-
-    @given(date=dates())
-    def test_callable(self, *, date: Date) -> None:
-        assert to_date(lambda: date) == date
-
-    def test_none(self) -> None:
-        assert to_date(None) == get_today()
-
-    def test_sentinel(self) -> None:
-        assert to_date(sentinel) is sentinel
-
-    @given(dates=pairs(dates()))
-    def test_replace_non_sentinel(self, *, dates: tuple[Date, Date]) -> None:
-        date1, date2 = dates
-
-        @dataclass(kw_only=True, slots=True)
-        class Example:
-            date: Date = field(default_factory=get_today)
-
-            def replace(
-                self, *, date: MaybeCallableDateLike | Sentinel = sentinel
-            ) -> Self:
-                return replace_non_sentinel(self, date=to_date(date))
-
-        obj = Example(date=date1)
-        assert obj.date == date1
-        assert obj.replace().date == date1
-        assert obj.replace(date=date2).date == date2
-        assert obj.replace(date=get_today).date == get_today()
 
 
 class TestToDays:

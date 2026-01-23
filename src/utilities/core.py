@@ -8,6 +8,7 @@ import re
 import reprlib
 import shutil
 import tempfile
+import time
 from bz2 import BZ2File
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import ExitStack, contextmanager, suppress
@@ -85,7 +86,10 @@ from utilities.types import (
     TIME_ZONES,
     CopyOrMove,
     Dataclass,
+    Duration,
     FilterWarningsAction,
+    MaybeCallableDateLike,
+    Pair,
     PathToBinaryIO,
     PatternLike,
     StrDict,
@@ -93,15 +97,16 @@ from utilities.types import (
     SupportsRichComparison,
     TimeZone,
     TimeZoneLike,
+    Triple,
     TypeLike,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+    from collections.abc import Iterable, Iterator, Mapping, Sequence
     from contextvars import ContextVar
     from types import TracebackType
 
-    from whenever import Date, PlainDateTime, Time
+    from whenever import PlainDateTime, Time
 
     from utilities.types import FileOrDir, MaybeIterable, PathLike
 
@@ -1164,7 +1169,7 @@ def is_pytest() -> bool:
 
 
 def move_many(
-    *paths: tuple[PathLike, PathLike],
+    *paths: Pair[PathLike],
     overwrite: bool = False,
     perms: PermissionsLike | None = None,
     owner: str | int | None = None,
@@ -1372,7 +1377,7 @@ class Permissions:
         )
 
     @classmethod
-    def _from_human_int(cls, n: int, digit: int, /) -> tuple[bool, bool, bool]:
+    def _from_human_int(cls, n: int, digit: int, /) -> Triple[bool]:
         if not (0 <= digit <= 7):
             raise _PermissionsFromHumanIntDigitError(n=n, digit=digit)
         return bool(4 & digit), bool(2 & digit), bool(1 & digit)
@@ -1421,7 +1426,7 @@ class Permissions:
         )
 
     @classmethod
-    def _from_text_part(cls, text: str, /) -> tuple[bool, bool, bool]:
+    def _from_text_part(cls, text: str, /) -> Triple[bool]:
         read, write, execute = extract_groups("^(r?)(w?)(x?)$", text)
         return read != "", write != "", execute != ""
 
@@ -1939,6 +1944,26 @@ def chown(
                 assert_never(never)
 
 
+##
+
+
+def which(cmd: str, /) -> Path:
+    """Get the path of a command."""
+    path = shutil.which(cmd)
+    if path is None:
+        raise WhichError(cmd=cmd)
+    return Path(path)
+
+
+@dataclass(kw_only=True, slots=True)
+class WhichError(Exception):
+    cmd: str
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.cmd!r} not found"
+
+
 ###############################################################################
 #### tempfile #################################################################
 ###############################################################################
@@ -2227,6 +2252,17 @@ def unique_str() -> str:
 
 
 ###############################################################################
+#### time #####################################################################
+###############################################################################
+
+
+def sleep(duration: Duration | None = None, /) -> None:
+    """Sleep which accepts durations."""
+    if duration is not None:
+        time.sleep(in_seconds(duration))
+
+
+###############################################################################
 #### warnings #################################################################
 ###############################################################################
 
@@ -2320,6 +2356,40 @@ def get_today_local() -> Date:
     return get_today(LOCAL_TIME_ZONE)
 
 
+##
+
+
+@overload
+def to_date(date: Sentinel, /, *, time_zone: TimeZoneLike = UTC) -> Sentinel: ...
+@overload
+def to_date(
+    date: MaybeCallableDateLike | None | dt.date = get_today,
+    /,
+    *,
+    time_zone: TimeZoneLike = UTC,
+) -> Date: ...
+def to_date(
+    date: MaybeCallableDateLike | dt.date | None | Sentinel = get_today,
+    /,
+    *,
+    time_zone: TimeZoneLike = UTC,
+) -> Date | Sentinel:
+    """Convert to a date."""
+    match date:
+        case Date() | Sentinel():
+            return date
+        case None:
+            return get_today(time_zone)
+        case str():
+            return Date.parse_iso(date)
+        case dt.date():
+            return Date.from_py_date(date)
+        case Callable() as func:
+            return to_date(func(), time_zone=time_zone)
+        case never:
+            assert_never(never)
+
+
 ###############################################################################
 #### writers ##################################################################
 ###############################################################################
@@ -2370,7 +2440,7 @@ class YieldWritePathError(Exception):
 
 
 def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
-    """Convert to a time-zone."""
+    """Convert an object to a time-zone."""
     match obj:
         case ZoneInfo() as zone_info:
             return zone_info
@@ -2501,6 +2571,7 @@ __all__ = [
     "TemporaryFile",
     "ToTimeZoneError",
     "ToTimeZoneNameError",
+    "WhichError",
     "WriteBytesError",
     "WriteBytesError",
     "WritePickleError",
@@ -2561,11 +2632,13 @@ __all__ = [
     "suppress_super_attribute_error",
     "suppress_warnings",
     "take",
+    "to_date",
     "to_time_zone_name",
     "to_zone_info",
     "transpose",
     "unique_everseen",
     "unique_str",
+    "which",
     "write_bytes",
     "write_pickle",
     "write_text",

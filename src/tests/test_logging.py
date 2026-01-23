@@ -12,7 +12,7 @@ from hypothesis.strategies import integers
 from pytest import LogCaptureFixture, mark, param, raises
 
 from utilities.constants import SECOND
-from utilities.core import get_now_local, one, unique_str
+from utilities.core import get_now_local, one, sleep, unique_str
 from utilities.hypothesis import pairs, temp_paths, zoned_date_times
 from utilities.logging import (
     GetLoggingLevelNumberError,
@@ -29,7 +29,6 @@ from utilities.logging import (
     setup_logging,
     to_logger,
 )
-from utilities.time import sleep
 from utilities.types import LogLevel
 from utilities.typing import get_args
 from utilities.whenever import format_compact

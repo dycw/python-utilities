@@ -3,8 +3,8 @@ from __future__ import annotations
 from re import search
 from typing import TYPE_CHECKING
 
+from utilities.core import sleep
 from utilities.threading import run_in_background
-from utilities.time import sleep
 
 if TYPE_CHECKING:
     from threading import Event

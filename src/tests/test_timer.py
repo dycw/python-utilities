@@ -8,7 +8,7 @@ from pytest import mark, param, raises
 from whenever import TimeDelta
 
 from utilities.constants import SECOND, ZERO_TIME
-from utilities.time import sleep
+from utilities.core import sleep
 from utilities.timer import Timer
 
 if TYPE_CHECKING:

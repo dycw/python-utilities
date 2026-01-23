@@ -6,14 +6,13 @@ from typing import TYPE_CHECKING
 from pytest import fixture, mark, param, raises
 
 from utilities.constants import IS_CI, SECOND
-from utilities.core import repr_str
+from utilities.core import repr_str, sleep
 from utilities.functions import in_seconds
 from utilities.pytest import (
     _NodeIdToPathNotGetTailError,
     _NodeIdToPathNotPythonFileError,
     node_id_path,
 )
-from utilities.time import sleep
 
 if TYPE_CHECKING:
     from _pytest.legacypath import Testdir

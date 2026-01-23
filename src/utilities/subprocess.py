@@ -30,11 +30,11 @@ from utilities.core import (
     normalize_multi_line_str,
     one,
     repr_str,
+    sleep,
 )
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import in_timedelta
 from utilities.logging import to_logger
-from utilities.time import sleep
 from utilities.version import (
     ParseVersion2Or3Error,
     Version2,

@@ -7,8 +7,8 @@ from hypothesis.strategies import integers, none
 
 from utilities.cachetools import TTLSet, cache
 from utilities.constants import SECOND
+from utilities.core import sleep
 from utilities.hypothesis import time_deltas
-from utilities.time import sleep
 
 if TYPE_CHECKING:
     from whenever import TimeDelta
