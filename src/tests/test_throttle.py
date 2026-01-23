@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, NoReturn
 from pytest import mark, param, raises
 
 import utilities.asyncio
-import utilities.time
+import utilities.core
 from utilities.constants import IS_CI, SECOND
-from utilities.core import yield_temp_environ
+from utilities.core import sync_sleep, yield_temp_environ
 from utilities.throttle import (
     _ThrottleMarkerFileError,
     _ThrottleParseZonedDateTimeError,
@@ -40,7 +40,7 @@ class TestThrottle:
             assert counter == 1
             assert temp_file.is_file()
 
-        utilities.time.sleep(_MULTIPLE * _DURATION)
+        utilities.core.sync_sleep(_MULTIPLE * _DURATION)
 
         for _ in range(2):
             func()
@@ -102,7 +102,7 @@ class TestThrottle:
         func()
         assert counter == 1
 
-        utilities.time.sleep(_MULTIPLE * _DURATION)
+        utilities.core.sync_sleep(_MULTIPLE * _DURATION)
 
         with raises(CustomError):
             func()

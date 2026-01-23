@@ -7,7 +7,7 @@ from hypothesis.strategies import integers, none
 
 from utilities.cachetools import TTLSet, cache
 from utilities.constants import SECOND
-from utilities.core import sleep
+from utilities.core import sync_sleep
 from utilities.hypothesis import time_deltas
 
 if TYPE_CHECKING:
@@ -65,7 +65,7 @@ class TestTTLSet:
     def test_max_duration(self) -> None:
         set_ = TTLSet(range(3), max_duration=_DURATION)
         assert set_ == {0, 1, 2}
-        sleep(_MULTIPLE * _DURATION)
+        sync_sleep(_MULTIPLE * _DURATION)
         assert set_ == set()
 
     def test_max_size(self) -> None:

@@ -8,7 +8,7 @@ from pytest import mark, param, raises
 from whenever import TimeDelta
 
 from utilities.constants import SECOND, ZERO_TIME
-from utilities.core import sleep
+from utilities.core import sync_sleep
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
@@ -46,7 +46,7 @@ class TestTimer:
         self, *, op: Callable[[Any, Any], Any], cls: type[Any]
     ) -> None:
         with Timer() as timer1, Timer() as timer2:
-            sleep(_DURATION)
+            sync_sleep(_DURATION)
         assert isinstance(op(timer1, timer2), cls)
 
     @mark.parametrize(("op"), [param(add), param(sub), param(mul), param(truediv)])
@@ -101,7 +101,7 @@ class TestTimer:
 
     def test_context_manager(self) -> None:
         with Timer() as timer:
-            sleep(_MULTIPLE * _DURATION)
+            sync_sleep(_MULTIPLE * _DURATION)
         assert timer >= _DURATION
 
     def test_float(self) -> None:
@@ -116,15 +116,15 @@ class TestTimer:
     @mark.parametrize("func", [param(repr), param(str)])
     def test_repr_and_str(self, *, func: Callable[[Timer], str]) -> None:
         with Timer() as timer:
-            sleep(_DURATION)
+            sync_sleep(_DURATION)
         as_str = func(timer)
         assert search(r"^PT0\.\d+S$", as_str)
 
     def test_running(self) -> None:
         timer = Timer()
-        sleep(_MULTIPLE * _DURATION)
+        sync_sleep(_MULTIPLE * _DURATION)
         assert timer >= _DURATION
-        sleep(_MULTIPLE * _DURATION)
+        sync_sleep(_MULTIPLE * _DURATION)
         assert timer >= 2 * _MULTIPLE * _DURATION
 
     def test_timedelta(self) -> None:

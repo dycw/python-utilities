@@ -40,7 +40,7 @@ from tarfile import ReadError, TarFile
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from textwrap import dedent
 from threading import get_ident
-from time import time_ns
+from time import sleep, time_ns
 from types import (
     BuiltinFunctionType,
     FunctionType,
@@ -2256,10 +2256,10 @@ def unique_str() -> str:
 ###############################################################################
 
 
-def sleep(duration: Duration | None = None, /) -> None:
+def sync_sleep(duration: Duration | None = None, /) -> None:
     """Sleep which accepts durations."""
     if duration is not None:
-        time.sleep(in_seconds(duration))
+        sleep(in_seconds(duration))
 
 
 ###############################################################################

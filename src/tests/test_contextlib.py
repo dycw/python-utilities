@@ -12,7 +12,7 @@ from hypothesis.strategies import booleans
 from pytest import mark, param
 
 import utilities.asyncio
-import utilities.time
+import utilities.core
 from utilities.constants import SECOND
 from utilities.contextlib import (
     enhanced_async_context_manager,
@@ -46,7 +46,7 @@ def _test_enhanced_context_manager(
             path.unlink(missing_ok=True)
 
     with yield_marker():
-        utilities.time.sleep(duration)
+        utilities.core.sync_sleep(duration)
 
 
 def _test_enhanced_async_context_manager_entry(
@@ -233,10 +233,10 @@ class TestEnhancedContextManager:
         assert proc.pid is not None
         assert proc.is_alive()
         assert not marker.exists()
-        utilities.time.sleep(_DURATION)
+        utilities.core.sync_sleep(_DURATION)
         assert proc.is_alive()
         assert marker.is_file()
         proc.terminate()
-        utilities.time.sleep(_DURATION)
+        utilities.core.sync_sleep(_DURATION)
         assert proc.is_alive()
         assert not marker.exists()

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from pytest import fixture, mark, param, raises
 
 from utilities.constants import IS_CI, SECOND
-from utilities.core import repr_str, sleep
+from utilities.core import repr_str, sync_sleep
 from utilities.functions import in_seconds
 from utilities.pytest import (
     _NodeIdToPathNotGetTailError,
@@ -358,7 +358,7 @@ class TestThrottleTest:
         """)
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(_MULTIPLE * _DURATION)
+        sync_sleep(_MULTIPLE * _DURATION)
         testdir.runpytest().assert_outcomes(passed=1)
 
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
@@ -376,5 +376,5 @@ class TestThrottleTest:
         """)
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(_MULTIPLE * _DURATION)
+        sync_sleep(_MULTIPLE * _DURATION)
         testdir.runpytest().assert_outcomes(passed=1)
