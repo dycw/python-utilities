@@ -78,14 +78,20 @@ from whenever import (
 
 import utilities.constants
 from utilities.constants import (
+    HOURS_PER_DAY,
     LOCAL_TIME_ZONE,
     LOCAL_TIME_ZONE_NAME,
+    MICROSECONDS_PER_MILLISECOND,
+    MILLISECONDS_PER_SECOND,
+    MINUTES_PER_HOUR,
+    NANOSECONDS_PER_MICROSECOND,
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
     RICH_MAX_DEPTH,
     RICH_MAX_LENGTH,
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
+    SECONDS_PER_MINUTE,
     UTC,
     Sentinel,
     _get_now,
@@ -102,6 +108,7 @@ from utilities.types import (
     Pair,
     PathToBinaryIO,
     PatternLike,
+    Sign,
     StrDict,
     StrMapping,
     SupportsRichComparison,
@@ -2345,32 +2352,28 @@ def _yield_caught_warnings(
 ###############################################################################
 
 
-def delta_components(delta: Delta, /) -> _DecomposeDeltaOutput:
+def delta_components(delta: Delta, /) -> _DeltaComponentsOutput:
     """Decompose a delta into its components."""
     match delta:
         case DateDelta():
             months, days = delta.in_months_days()
-            return _DecomposeDeltaOutput(months=months, days=days)
+            return _DeltaComponentsOutput(months=months, days=days)
         case TimeDelta():
             hours, minutes, seconds, nanoseconds = delta.in_hrs_mins_secs_nanos()
-            return _DecomposeDeltaOutput(
+            return _DeltaComponentsOutput(
                 hours=hours, minutes=minutes, seconds=seconds, nanoseconds=nanoseconds
             )
         case DateTimeDelta():
-            try:
-                return to_days(delta.date_part()) + to_days(delta.time_part())
-            except _ToDaysMonthsError as error:
-                raise _ToDaysMonthsError(delta=delta, months=error.months) from None
-            except _ToDaysNanosecondsError as error:
-                raise _ToDaysNanosecondsError(
-                    delta=delta, nanoseconds=error.nanoseconds
-                ) from None
+            months, days, seconds, nanoseconds = delta.in_months_days_secs_nanos()
+            return _DeltaComponentsOutput(
+                months=months, days=days, seconds=seconds, nanoseconds=nanoseconds
+            )
         case never:
             assert_never(never)
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
-class _DecomposeDeltaOutput:
+class _DeltaComponentsOutput:
     months: int = 0
     days: int = 0
     hours: int = 0
@@ -2380,8 +2383,76 @@ class _DecomposeDeltaOutput:
     microseconds: int = 0
     nanoseconds: int = 0
 
+    def __post_init__(self) -> None:
+        while not self._normalize():
+            pass
+
+    def __add__(self, other: Self, /) -> Self:
+        return type(self)(
+            months=self.months + other.months,
+            days=self.days + other.days,
+            hours=self.hours + other.hours,
+            minutes=self.minutes + other.minutes,
+            seconds=self.seconds + other.seconds,
+            milliseconds=self.milliseconds + other.milliseconds,
+            microseconds=self.microseconds + other.microseconds,
+            nanoseconds=self.nanoseconds + other.nanoseconds,
+        )
+
+    def _normalize(self) -> bool:
+        return self._normalize_hours_to_days() and self._normalize_minutes_to_hours()
+
+    def _normalize_hours_to_days(self) -> bool:
+        factor = HOURS_PER_DAY
+        if (self.days >= 0) and (self.hours >= factor):
+            days, self.hours = divmod(self.hours, factor)
+            self.days += days
+            return False
+        return True
+
+    def _normalize_minutes_to_hours(self) -> bool:
+        factor = MINUTES_PER_HOUR
+        if (self.hours >= 0) and (self.minutes >= factor):
+            hours, self.minutes = divmod(self.minutes, factor)
+            self.hours += hours
+            return False
+        return True
+
+    def _normalize_seconds_to_minutes(self) -> bool:
+        factor = SECONDS_PER_MINUTE
+        if (self.minutes >= 0) and (self.seconds >= factor):
+            minutes, self.seconds = divmod(self.seconds, factor)
+            self.minutes += minutes
+            return False
+        return True
+
+    def _normalize_milliseconds_to_seconds(self) -> bool:
+        factor = MILLISECONDS_PER_SECOND
+        if (self.seconds >= 0) and (self.milliseconds >= factor):
+            seconds, self.milliseconds = divmod(self.milliseconds, factor)
+            self.seconds += seconds
+            return False
+        return True
+
+    def _normalize_microseconds_to_millseconds(self) -> bool:
+        factor = MICROSECONDS_PER_MILLISECOND
+        if (self.milliseconds >= 0) and (self.microseconds >= factor):
+            milliseconds, self.microseconds = divmod(self.microseconds, factor)
+            self.milliseconds += milliseconds
+            return False
+        return True
+
+    def _normalize_nanoseconds_to_millseconds(self) -> bool:
+        factor = NANOSECONDS_PER_MICROSECOND
+        if (self.microseconds >= 0) and (self.nanoseconds >= factor):
+            microseconds, self.nanoseconds = divmod(self.nanoseconds, factor)
+            self.microseconds += microseconds
+            return False
+        return True
+
 
 ##
+
 
 get_now_local = utilities.constants._get_now_local  # noqa: SLF001
 
@@ -2439,7 +2510,7 @@ def to_days(delta: Delta, /) -> int:
                 raise _ToDaysMonthsError(delta=delta, months=months)
             return days
         case TimeDelta():
-            nanos = to_nanoseconds(delta)
+            nanos = delta.in_nanoseconds()
             days, remainder = divmod(nanos, 24 * 60 * 60 * int(1e9))
             if remainder != 0:
                 raise _ToDaysNanosecondsError(delta=delta, nanoseconds=remainder)
@@ -2716,6 +2787,7 @@ __all__ = [
     "compress_gzip",
     "compress_lzma",
     "compress_zip",
+    "delta_components",
     "extract_group",
     "extract_groups",
     "file_or_dir",

@@ -17,10 +17,26 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.constants import UTC, HongKong, Sentinel, Tokyo, sentinel
+from utilities.constants import (
+    DAY,
+    HOUR,
+    MICROSECOND,
+    MILLISECOND,
+    MINUTE,
+    MONTH,
+    NANOSECOND,
+    SECOND,
+    UTC,
+    HongKong,
+    Sentinel,
+    Tokyo,
+    sentinel,
+)
 from utilities.core import (
+    _DeltaComponentsOutput,
     _ToDaysMonthsError,
     _ToDaysNanosecondsError,
+    delta_components,
     get_now,
     get_now_local,
     get_now_local_plain,
@@ -36,7 +52,37 @@ from utilities.core import (
 from utilities.hypothesis import assume_does_not_raise, dates, pairs, zone_infos
 
 if TYPE_CHECKING:
-    from utilities.types import MaybeCallableDateLike, Pair
+    from utilities.types import (
+        DateOrDateTimeDelta,
+        Delta,
+        MaybeCallableDateLike,
+        Pair,
+        TimeOrDateTimeDelta,
+    )
+
+
+class TestDeltaComponents:
+    @mark.parametrize(
+        ("delta", "expected"),
+        [
+            param(MONTH, _DeltaComponentsOutput(months=1)),
+            param(DAY, _DeltaComponentsOutput(days=1)),
+            param(48 * HOUR, _DeltaComponentsOutput(days=2)),
+            param(36 * HOUR, _DeltaComponentsOutput(days=1, hours=12)),
+            param(24 * HOUR, _DeltaComponentsOutput(days=1)),
+            param(HOUR, _DeltaComponentsOutput(hours=1)),
+            param(120 * MINUTE, _DeltaComponentsOutput(hours=2)),
+            param(90 * MINUTE, _DeltaComponentsOutput(hours=1, minutes=30)),
+            param(60 * MINUTE, _DeltaComponentsOutput(hours=1)),
+            param(120 * SECOND, _DeltaComponentsOutput(minutes=2)),
+            param(SECOND, _DeltaComponentsOutput(seconds=1)),
+            param(MILLISECOND, _DeltaComponentsOutput(milliseconds=1)),
+            param(MICROSECOND, _DeltaComponentsOutput(microseconds=1)),
+            param(NANOSECOND, _DeltaComponentsOutput(nanoseconds=1)),
+        ],
+    )
+    def test_main(self, *, delta: Delta, expected: _DeltaComponentsOutput) -> None:
+        assert delta_components(delta) == expected
 
 
 class TestGetNow:
