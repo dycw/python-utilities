@@ -63,6 +63,7 @@ if TYPE_CHECKING:
 
 
 class TestDeltaComponents:
+    @mark.parametrize("sign", [param(1), param(-1)])
     @mark.parametrize(
         ("delta", "expected"),
         [
@@ -101,8 +102,22 @@ class TestDeltaComponents:
             param(NANOSECOND, _DeltaComponentsOutput(nanoseconds=1)),
         ],
     )
-    def test_main(self, *, delta: Delta, expected: _DeltaComponentsOutput) -> None:
-        assert delta_components(delta) == expected
+    def test_main(
+        self, *, sign: int, delta: Delta, expected: _DeltaComponentsOutput
+    ) -> None:
+        delta_use = sign * delta
+        result = delta_components(delta_use)
+        signed_expected = _DeltaComponentsOutput(
+            months=sign * expected.months,
+            days=sign * expected.days,
+            hours=sign * expected.hours,
+            minutes=sign * expected.minutes,
+            seconds=sign * expected.seconds,
+            milliseconds=sign * expected.milliseconds,
+            microseconds=sign * expected.microseconds,
+            nanoseconds=sign * expected.nanoseconds,
+        )
+        assert result == signed_expected
 
     @mark.parametrize(("months", "days"), [param(1, -1), param(-1, 1)])
     def test_mixed_sign(self, *, months: int, days: int) -> None:
@@ -110,7 +125,7 @@ class TestDeltaComponents:
             _DeltaComponentsMixedSignError,
             match=r"Months and days must have the same sign; got .* and .*",
         ):
-            _DeltaComponentsOutput(months=months, days=days)
+            _ = _DeltaComponentsOutput(months=months, days=days)
 
 
 class TestGetNow:

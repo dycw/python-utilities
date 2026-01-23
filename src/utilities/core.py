@@ -2418,6 +2418,10 @@ class _DeltaComponentsOutput:
             days, self.hours = divmod(self.hours, factor)
             self.days += days
             return False
+        if (self.days <= 0) and (self.hours <= -factor):
+            days, self.hours = divmod(self.hours, -factor)
+            self.days -= days
+            return False
         return True
 
     def _normalize_minutes_to_hours(self) -> bool:
@@ -2450,6 +2454,10 @@ class _DeltaComponentsOutput:
             milliseconds, self.microseconds = divmod(self.microseconds, factor)
             self.milliseconds += milliseconds
             return False
+        if (self.milliseconds <= 0) and (self.microseconds <= -factor):
+            milliseconds, self.microseconds = divmod(self.microseconds, -factor)
+            self.milliseconds -= milliseconds
+            return False
         return True
 
     def _normalize_nanoseconds_to_millseconds(self) -> bool:
@@ -2457,6 +2465,10 @@ class _DeltaComponentsOutput:
         if (self.microseconds >= 0) and (self.nanoseconds >= factor):
             microseconds, self.nanoseconds = divmod(self.nanoseconds, factor)
             self.microseconds += microseconds
+            return False
+        if (self.microseconds <= 0) and (self.nanoseconds <= -factor):
+            microseconds, self.nanoseconds = divmod(self.nanoseconds, -factor)
+            self.microseconds -= microseconds
             return False
         return True
 
