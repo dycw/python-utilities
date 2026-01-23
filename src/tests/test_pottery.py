@@ -6,9 +6,8 @@ from typing import TYPE_CHECKING
 from pottery import AIORedlock
 from pytest import mark, param, raises
 
-from utilities.asyncio import async_sleep
 from utilities.constants import MILLISECOND, SECOND
-from utilities.core import unique_str
+from utilities.core import async_sleep, unique_str
 from utilities.pottery import (
     _YieldAccessNumLocksError,
     _YieldAccessUnableToAcquireLockError,

@@ -8,7 +8,7 @@ from pytest import mark, param, raises
 import utilities.asyncio
 import utilities.core
 from utilities.constants import IS_CI, SECOND
-from utilities.core import sync_sleep, yield_temp_environ
+from utilities.core import yield_temp_environ
 from utilities.throttle import (
     _ThrottleMarkerFileError,
     _ThrottleParseZonedDateTimeError,

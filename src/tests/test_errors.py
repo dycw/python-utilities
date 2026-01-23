@@ -4,7 +4,7 @@ from asyncio import TaskGroup
 
 from pytest import RaisesGroup, raises
 
-from utilities.asyncio import async_sleep
+from utilities.core import async_sleep
 from utilities.errors import ImpossibleCaseError, repr_error
 
 

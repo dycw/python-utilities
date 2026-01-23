@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from utilities.asyncio import async_sleep
 from utilities.atools import call_memoized, memoize
 from utilities.constants import SECOND
+from utilities.core import async_sleep
 
 if TYPE_CHECKING:
     from whenever import TimeDelta

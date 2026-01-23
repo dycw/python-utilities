@@ -3,8 +3,8 @@ from __future__ import annotations
 from re import search
 from typing import TYPE_CHECKING, ClassVar, Literal
 
-from utilities.asyncio import async_sleep
 from utilities.constants import SECOND
+from utilities.core import async_sleep
 from utilities.fastapi import yield_ping_receiver
 from utilities.pytest import skipif_ci
 

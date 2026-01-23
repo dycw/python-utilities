@@ -21,9 +21,9 @@ from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 
 from tests.test_objects.objects import objects
-from utilities.asyncio import async_sleep, get_items_nowait
+from utilities.asyncio import get_items_nowait
 from utilities.constants import _SENTINEL_REPR, MICROSECOND, SECOND, Sentinel, sentinel
-from utilities.core import get_class_name, identity, one, unique_str
+from utilities.core import async_sleep, get_class_name, identity, one, unique_str
 from utilities.hypothesis import int64s, pairs, text_ascii
 from utilities.operator import is_equal
 from utilities.orjson import deserialize, serialize

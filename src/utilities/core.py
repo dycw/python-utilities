@@ -41,7 +41,7 @@ from tarfile import ReadError, TarFile
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from textwrap import dedent
 from threading import get_ident
-from time import sleep, time_ns
+from time import time_ns
 from types import (
     BuiltinFunctionType,
     FunctionType,

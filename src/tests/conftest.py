@@ -8,12 +8,12 @@ from hypothesis import HealthCheck
 from pytest import fixture, param, skip
 from whenever import PlainDateTime
 
-from utilities.asyncio import async_sleep
 from utilities.constants import IS_CI, IS_CI_AND_NOT_LINUX, MINUTE
 from utilities.core import (
     ExtractGroupError,
     TemporaryDirectory,
     TemporaryFile,
+    async_sleep,
     extract_group,
     get_now_local_plain,
 )
