@@ -33,6 +33,7 @@ from utilities.constants import (
     sentinel,
 )
 from utilities.core import (
+    _DeltaComponentsMixedSignError,
     _DeltaComponentsOutput,
     _ToDaysMonthsError,
     _ToDaysNanosecondsError,
@@ -102,6 +103,14 @@ class TestDeltaComponents:
     )
     def test_main(self, *, delta: Delta, expected: _DeltaComponentsOutput) -> None:
         assert delta_components(delta) == expected
+
+    @mark.parametrize(("months", "days"), [param(1, -1), param(-1, 1)])
+    def test_mixed_sign(self, *, months: int, days: int) -> None:
+        with raises(
+            _DeltaComponentsMixedSignError,
+            match=r"Months and days must have the same sign; got .* and .*",
+        ):
+            _DeltaComponentsOutput(months=months, days=days)
 
 
 class TestGetNow:

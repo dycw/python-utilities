@@ -2385,6 +2385,10 @@ class _DeltaComponentsOutput:
     def __post_init__(self) -> None:
         while not self._normalize():
             pass
+        if ((self.months > 0) and (self.days < 0)) or (
+            (self.months < 0) and (self.days > 0)
+        ):
+            raise _DeltaComponentsMixedSignError(months=self.months, days=self.days)
 
     def __add__(self, other: Self, /) -> Self:
         return type(self)(
@@ -2455,6 +2459,20 @@ class _DeltaComponentsOutput:
             self.microseconds += microseconds
             return False
         return True
+
+
+@dataclass(kw_only=True, slots=True)
+class DeltaComponentsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _DeltaComponentsMixedSignError(DeltaComponentsError):
+    months: int
+    days: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Months and days must have the same sign; got {self.months} and {self.days}"
 
 
 ##
