@@ -117,7 +117,7 @@ class TestThrottle:
 
         @throttle(on_try=on_try, duration=_DURATION, path=temp_file)
         async def func() -> None:
-            await utilities.asyncio.sleep()
+            await utilities.asyncio.async_sleep()
             nonlocal counter
             counter += 1
 
@@ -126,7 +126,7 @@ class TestThrottle:
             assert counter == 1
             assert temp_file.is_file()
 
-        await utilities.asyncio.sleep(_MULTIPLE * _DURATION)
+        await utilities.asyncio.async_sleep(_MULTIPLE * _DURATION)
 
         for _ in range(2):
             await func()
@@ -145,7 +145,7 @@ class TestThrottle:
 
         @throttle(on_try=on_try, duration=_DURATION, path=temp_file, raiser=raiser)
         async def func() -> None:
-            await utilities.asyncio.sleep()
+            await utilities.asyncio.async_sleep()
             nonlocal counter
             counter += 1
 
@@ -163,7 +163,7 @@ class TestThrottle:
 
         @throttle(duration=_DURATION, path=temp_file)
         async def func() -> None:
-            await utilities.asyncio.sleep()
+            await utilities.asyncio.async_sleep()
             nonlocal counter
             counter += 1
             raise CustomError
@@ -181,7 +181,7 @@ class TestThrottle:
 
         @throttle(on_try=True, duration=_DURATION, path=temp_file)
         async def func() -> None:
-            await utilities.asyncio.sleep()
+            await utilities.asyncio.async_sleep()
             nonlocal counter
             counter += 1
             raise CustomError
@@ -193,7 +193,7 @@ class TestThrottle:
         await func()
         assert counter == 1
 
-        await utilities.asyncio.sleep(_MULTIPLE * _DURATION)
+        await utilities.asyncio.async_sleep(_MULTIPLE * _DURATION)
 
         with raises(CustomError):
             await func()

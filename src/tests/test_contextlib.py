@@ -63,14 +63,14 @@ async def _test_enhanced_async_context_manager_core(
 
     @enhanced_async_context_manager
     async def yield_marker() -> AsyncIterator[None]:
-        await utilities.asyncio.sleep()
+        await utilities.asyncio.async_sleep()
         try:
             yield
         finally:
             path.unlink(missing_ok=True)
 
     async with yield_marker():
-        await utilities.asyncio.sleep(duration)
+        await utilities.asyncio.async_sleep(duration)
 
 
 class TestEnhancedContextManager:
@@ -170,7 +170,7 @@ class TestEnhancedContextManager:
             sigterm=sigterm,
         )
         async def yield_marker() -> AsyncIterator[None]:
-            await utilities.asyncio.sleep()
+            await utilities.asyncio.async_sleep()
             try:
                 yield
             finally:
@@ -184,7 +184,7 @@ class TestEnhancedContextManager:
     def test_async_signature(self) -> None:
         @enhanced_async_context_manager
         async def yield_marker(x: int, y: int, /) -> AsyncIterator[int]:
-            await utilities.asyncio.sleep()
+            await utilities.asyncio.async_sleep()
             yield x + y
 
         sig = set(signature(yield_marker).parameters)
@@ -203,7 +203,7 @@ class TestEnhancedContextManager:
 
         @enhanced_async_context_manager
         async def yield_marker() -> AsyncIterator[None]:
-            await utilities.asyncio.sleep()
+            await utilities.asyncio.async_sleep()
             try:
                 yield
             finally:

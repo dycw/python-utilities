@@ -783,7 +783,7 @@ async def _subscribe_core[T](
                     error_filter=error_filter,
                 )
             else:
-                await utilities.asyncio.sleep(sleep)
+                await utilities.asyncio.async_sleep(sleep)
 
 
 def _is_message(

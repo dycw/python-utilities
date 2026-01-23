@@ -75,7 +75,7 @@ async def yield_access(
         )
         yield lock
     finally:  # skipif-ci-and-not-linux
-        await utilities.asyncio.sleep(throttle)
+        await utilities.asyncio.async_sleep(throttle)
         if lock is not None:
             with suppress(ReleaseUnlockedLock):
                 await lock.release()
@@ -100,7 +100,7 @@ async def _get_first_available_lock(
         while True:
             if (result := await _get_first_available_lock_if_any(locks)) is not None:
                 return result
-            await utilities.asyncio.sleep(sleep)
+            await utilities.asyncio.async_sleep(sleep)
 
 
 async def _get_first_available_lock_if_any(

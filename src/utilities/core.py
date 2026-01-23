@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 import gzip
 import os
@@ -109,6 +110,17 @@ if TYPE_CHECKING:
     from whenever import PlainDateTime, Time
 
     from utilities.types import FileOrDir, MaybeIterable, PathLike
+
+
+###############################################################################
+#### asyncio ##################################################################
+###############################################################################
+
+
+async def async_sleep(duration: Duration | None = None, /) -> None:
+    """Sleep which accepts durations."""
+    if duration is not None:
+        await asyncio.sleep(in_seconds(duration))
 
 
 ###############################################################################
@@ -2259,7 +2271,7 @@ def unique_str() -> str:
 def sync_sleep(duration: Duration | None = None, /) -> None:
     """Sleep which accepts durations."""
     if duration is not None:
-        sleep(in_seconds(duration))
+        time.sleep(in_seconds(duration))
 
 
 ###############################################################################

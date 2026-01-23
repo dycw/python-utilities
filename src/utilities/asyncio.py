@@ -36,7 +36,7 @@ from typing import (
 )
 
 from utilities.constants import SYSTEM_RANDOM, Sentinel, sentinel
-from utilities.core import get_now, is_pytest, repr_
+from utilities.core import async_sleep, get_now, is_pytest, repr_
 from utilities.functions import ensure_int, ensure_not_none, in_seconds
 from utilities.shelve import yield_shelf
 from utilities.text import to_bool
@@ -449,21 +449,12 @@ def put_items_nowait[T](items: Iterable[T], queue: Queue[T], /) -> None:
 ##
 
 
-async def sleep(duration: Duration | None = None, /) -> None:
-    """Sleep which accepts durations."""
-    if duration is not None:
-        await asyncio.sleep(in_seconds(duration))
-
-
-##
-
-
 async def sleep_max(
     duration: Duration | None = None, /, *, random: Random = SYSTEM_RANDOM
 ) -> None:
     """Sleep up to a maximum duration."""
     if duration is not None:
-        await sleep(random.uniform(0.0, in_seconds(duration)))
+        await async_sleep(random.uniform(0.0, in_seconds(duration)))
 
 
 ##
@@ -479,7 +470,7 @@ async def sleep_rounded(delta: Delta, /) -> None:
 
 async def sleep_until(datetime: ZonedDateTime, /) -> None:
     """Sleep until a given time."""
-    await sleep(datetime - get_now())
+    await async_sleep(datetime - get_now())
 
 
 ##
@@ -583,13 +574,13 @@ __all__ = [
     "OneAsyncError",
     "OneAsyncNonUniqueError",
     "StreamCommandOutput",
+    "async_sleep",
     "chain_async",
     "get_items",
     "get_items_nowait",
     "one_async",
     "put_items",
     "put_items_nowait",
-    "sleep",
     "sleep_max",
     "sleep_rounded",
     "sleep_until",

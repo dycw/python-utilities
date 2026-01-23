@@ -4,7 +4,7 @@ from asyncio import TaskGroup
 
 from pytest import RaisesGroup, raises
 
-from utilities.asyncio import sleep
+from utilities.asyncio import async_sleep
 from utilities.errors import ImpossibleCaseError, repr_error
 
 
@@ -27,13 +27,13 @@ class TestReprError:
         class Custom1Error(Exception): ...
 
         async def coroutine1() -> None:
-            await sleep()
+            await async_sleep()
             raise Custom1Error
 
         class Custom2Error(Exception): ...
 
         async def coroutine2() -> None:
-            await sleep()
+            await async_sleep()
             msg = "message2"
             raise Custom2Error(msg)
 
