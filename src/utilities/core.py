@@ -108,7 +108,6 @@ from utilities.types import (
     Pair,
     PathToBinaryIO,
     PatternLike,
-    Sign,
     StrDict,
     StrMapping,
     SupportsRichComparison,
@@ -2400,7 +2399,14 @@ class _DeltaComponentsOutput:
         )
 
     def _normalize(self) -> bool:
-        return self._normalize_hours_to_days() and self._normalize_minutes_to_hours()
+        return (
+            self._normalize_hours_to_days()
+            and self._normalize_minutes_to_hours()
+            and self._normalize_seconds_to_minutes()
+            and self._normalize_milliseconds_to_seconds()
+            and self._normalize_microseconds_to_millseconds()
+            and self._normalize_nanoseconds_to_millseconds()
+        )
 
     def _normalize_hours_to_days(self) -> bool:
         factor = HOURS_PER_DAY

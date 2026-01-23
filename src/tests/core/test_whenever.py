@@ -75,9 +75,28 @@ class TestDeltaComponents:
             param(90 * MINUTE, _DeltaComponentsOutput(hours=1, minutes=30)),
             param(60 * MINUTE, _DeltaComponentsOutput(hours=1)),
             param(120 * SECOND, _DeltaComponentsOutput(minutes=2)),
+            param(90 * SECOND, _DeltaComponentsOutput(minutes=1, seconds=30)),
+            param(60 * SECOND, _DeltaComponentsOutput(minutes=1)),
             param(SECOND, _DeltaComponentsOutput(seconds=1)),
+            param(2000 * MILLISECOND, _DeltaComponentsOutput(seconds=2)),
+            param(
+                1500 * MILLISECOND, _DeltaComponentsOutput(seconds=1, milliseconds=500)
+            ),
+            param(1000 * MILLISECOND, _DeltaComponentsOutput(seconds=1)),
             param(MILLISECOND, _DeltaComponentsOutput(milliseconds=1)),
+            param(2000 * MICROSECOND, _DeltaComponentsOutput(milliseconds=2)),
+            param(
+                1500 * MICROSECOND,
+                _DeltaComponentsOutput(milliseconds=1, microseconds=500),
+            ),
+            param(1000 * MICROSECOND, _DeltaComponentsOutput(milliseconds=1)),
             param(MICROSECOND, _DeltaComponentsOutput(microseconds=1)),
+            param(2000 * NANOSECOND, _DeltaComponentsOutput(microseconds=2)),
+            param(
+                1500 * NANOSECOND,
+                _DeltaComponentsOutput(microseconds=1, nanoseconds=500),
+            ),
+            param(1000 * NANOSECOND, _DeltaComponentsOutput(microseconds=1)),
             param(NANOSECOND, _DeltaComponentsOutput(nanoseconds=1)),
         ],
     )
