@@ -66,7 +66,17 @@ from zipfile import ZipFile
 from zoneinfo import ZoneInfo
 
 from typing_extensions import TypeIs
-from whenever import Date, PlainDateTime, Time, ZonedDateTime
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    Weekday,
+    YearMonth,
+    ZonedDateTime,
+)
 
 import utilities.constants
 from utilities.constants import (
@@ -87,6 +97,7 @@ from utilities.types import (
     TIME_ZONES,
     CopyOrMove,
     Dataclass,
+    DateOrDateTimeDelta,
     Duration,
     FilterWarningsAction,
     MaybeCallableDateLike,
@@ -96,6 +107,7 @@ from utilities.types import (
     StrDict,
     StrMapping,
     SupportsRichComparison,
+    TimeOrDateTimeDelta,
     TimeZone,
     TimeZoneLike,
     Triple,
@@ -109,7 +121,7 @@ if TYPE_CHECKING:
 
     from whenever import PlainDateTime, Time
 
-    from utilities.types import FileOrDir, MaybeIterable, PathLike
+    from utilities.types import Delta, FileOrDir, MaybeIterable, PathLike
 
 
 ###############################################################################
@@ -120,7 +132,18 @@ if TYPE_CHECKING:
 async def async_sleep(duration: Duration | None = None, /) -> None:
     """Sleep which accepts durations."""
     if duration is not None:
-        await asyncio.sleep(in_seconds(duration))
+        await asyncio.sleep(in_seconds_ZZZZZ(duration))
+
+
+def in_seconds_ZZZZZ(duration: Duration, /) -> float:  # noqa: N802
+    """Convert a duration to seconds."""
+    match duration:
+        case int() | float():
+            return duration
+        case TimeDelta():
+            return duration.in_seconds()
+        case never:
+            assert_never(never)
 
 
 ###############################################################################
@@ -2271,7 +2294,7 @@ def unique_str() -> str:
 def sync_sleep(duration: Duration | None = None, /) -> None:
     """Sleep which accepts durations."""
     if duration is not None:
-        time.sleep(in_seconds(duration))
+        time.sleep(in_seconds_ZZZZZ(duration))
 
 
 ###############################################################################
@@ -2324,6 +2347,44 @@ def _yield_caught_warnings(
 ###############################################################################
 
 
+def delta_components(delta: Delta, /) -> _DecomposeDeltaOutput:
+    """Decompose a delta into its components."""
+    match delta:
+        case DateDelta():
+            months, days = delta.in_months_days()
+            return _DecomposeDeltaOutput(months=months, days=days)
+        case TimeDelta():
+            hours, minutes, seconds, nanoseconds = delta.in_hrs_mins_secs_nanos()
+            return _DecomposeDeltaOutput(
+                hours=hours, minutes=minutes, seconds=seconds, nanoseconds=nanoseconds
+            )
+        case DateTimeDelta():
+            try:
+                return to_days(delta.date_part()) + to_days(delta.time_part())
+            except _ToDaysMonthsError as error:
+                raise _ToDaysMonthsError(delta=delta, months=error.months) from None
+            except _ToDaysNanosecondsError as error:
+                raise _ToDaysNanosecondsError(
+                    delta=delta, nanoseconds=error.nanoseconds
+                ) from None
+        case never:
+            assert_never(never)
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
+class _DecomposeDeltaOutput:
+    months: int = 0
+    days: int = 0
+    hours: int = 0
+    minutes: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+
+##
+
 get_now_local = utilities.constants._get_now_local  # noqa: SLF001
 
 
@@ -2366,6 +2427,60 @@ def get_today(time_zone: TimeZoneLike = UTC, /) -> Date:
 def get_today_local() -> Date:
     """Get the current, timezone-aware local date."""
     return get_today(LOCAL_TIME_ZONE)
+
+
+##
+
+
+def to_days(delta: Delta, /) -> int:
+    """Compute the number of days in a delta."""
+    match delta:
+        case DateDelta():
+            months, days = delta.in_months_days()
+            if months != 0:
+                raise _ToDaysMonthsError(delta=delta, months=months)
+            return days
+        case TimeDelta():
+            nanos = to_nanoseconds(delta)
+            days, remainder = divmod(nanos, 24 * 60 * 60 * int(1e9))
+            if remainder != 0:
+                raise _ToDaysNanosecondsError(delta=delta, nanoseconds=remainder)
+            return days
+        case DateTimeDelta():
+            try:
+                return to_days(delta.date_part()) + to_days(delta.time_part())
+            except _ToDaysMonthsError as error:
+                raise _ToDaysMonthsError(delta=delta, months=error.months) from None
+            except _ToDaysNanosecondsError as error:
+                raise _ToDaysNanosecondsError(
+                    delta=delta, nanoseconds=error.nanoseconds
+                ) from None
+        case never:
+            assert_never(never)
+
+
+@dataclass(kw_only=True, slots=True)
+class ToDaysError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToDaysMonthsError(ToDaysError):
+    delta: DateOrDateTimeDelta
+    months: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain months; got {self.months}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToDaysNanosecondsError(ToDaysError):
+    delta: TimeOrDateTimeDelta
+    nanoseconds: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain extra nanoseconds; got {self.nanoseconds}"
 
 
 ##
@@ -2594,6 +2709,7 @@ __all__ = [
     "YieldLZMAError",
     "YieldZipError",
     "always_iterable",
+    "async_sleep",
     "chmod",
     "chown",
     "chunked",

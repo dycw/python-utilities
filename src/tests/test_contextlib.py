@@ -11,13 +11,12 @@ from hypothesis import given
 from hypothesis.strategies import booleans
 from pytest import mark, param
 
-import utilities.asyncio
-import utilities.core
 from utilities.constants import SECOND
 from utilities.contextlib import (
     enhanced_async_context_manager,
     enhanced_context_manager,
 )
+from utilities.core import async_sleep, sync_sleep
 from utilities.pytest import skipif_ci
 
 if TYPE_CHECKING:
@@ -46,7 +45,7 @@ def _test_enhanced_context_manager(
             path.unlink(missing_ok=True)
 
     with yield_marker():
-        utilities.core.sync_sleep(duration)
+        sync_sleep(duration)
 
 
 def _test_enhanced_async_context_manager_entry(
@@ -63,14 +62,14 @@ async def _test_enhanced_async_context_manager_core(
 
     @enhanced_async_context_manager
     async def yield_marker() -> AsyncIterator[None]:
-        await utilities.asyncio.async_sleep()
+        await async_sleep()
         try:
             yield
         finally:
             path.unlink(missing_ok=True)
 
     async with yield_marker():
-        await utilities.asyncio.async_sleep(duration)
+        await async_sleep(duration)
 
 
 class TestEnhancedContextManager:
@@ -170,7 +169,7 @@ class TestEnhancedContextManager:
             sigterm=sigterm,
         )
         async def yield_marker() -> AsyncIterator[None]:
-            await utilities.asyncio.async_sleep()
+            await async_sleep()
             try:
                 yield
             finally:
@@ -184,7 +183,7 @@ class TestEnhancedContextManager:
     def test_async_signature(self) -> None:
         @enhanced_async_context_manager
         async def yield_marker(x: int, y: int, /) -> AsyncIterator[int]:
-            await utilities.asyncio.async_sleep()
+            await async_sleep()
             yield x + y
 
         sig = set(signature(yield_marker).parameters)
@@ -203,7 +202,7 @@ class TestEnhancedContextManager:
 
         @enhanced_async_context_manager
         async def yield_marker() -> AsyncIterator[None]:
-            await utilities.asyncio.async_sleep()
+            await async_sleep()
             try:
                 yield
             finally:
@@ -233,10 +232,10 @@ class TestEnhancedContextManager:
         assert proc.pid is not None
         assert proc.is_alive()
         assert not marker.exists()
-        utilities.core.sync_sleep(_DURATION)
+        sync_sleep(_DURATION)
         assert proc.is_alive()
         assert marker.is_file()
         proc.terminate()
-        utilities.core.sync_sleep(_DURATION)
+        sync_sleep(_DURATION)
         assert proc.is_alive()
         assert not marker.exists()
