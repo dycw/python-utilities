@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable, Iterable
+from contextlib import suppress
 from dataclasses import dataclass
 from functools import cache
 from logging import LogRecord
@@ -32,15 +33,39 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.constants import LOCAL_TIME_ZONE_NAME, UTC, Sentinel, sentinel
+from utilities.constants import (
+    HOURS_PER_DAY,
+    LOCAL_TIME_ZONE_NAME,
+    MICROSECONDS_PER_MILLISECOND,
+    MILLISECONDS_PER_SECOND,
+    MINUTES_PER_HOUR,
+    NANOSECONDS_PER_MICROSECOND,
+    SECONDS_PER_MINUTE,
+    UTC,
+    Sentinel,
+    sentinel,
+)
 from utilities.core import (
     NumDaysError,
+    NumHoursError,
+    NumMicroSecondsError,
+    NumMilliSecondsError,
+    NumMinutesError,
+    NumNanoSecondsError,
+    NumSecondsError,
+    NumWeeksError,
     get_now,
     get_now_local,
     get_time,
     get_today,
     num_days,
     num_hours,
+    num_microseconds,
+    num_milliseconds,
+    num_minutes,
+    num_nanoseconds,
+    num_seconds,
+    num_weeks,
     replace_non_sentinel,
     to_time_zone_name,
 )
@@ -50,12 +75,10 @@ from utilities.platform import get_strftime
 
 if TYPE_CHECKING:
     from utilities.types import (
-        DateOrDateTimeDelta,
         DateTimeRoundMode,
         Delta,
         MaybeCallableTimeLike,
         MaybeCallableZonedDateTimeLike,
-        TimeOrDateTimeDelta,
         TimeZoneLike,
     )
 
@@ -506,76 +529,59 @@ def round_date_or_date_time[T: Date | PlainDateTime | ZonedDateTime](
 
 
 def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTimeUnit]:
-    try:
-        weeks = to_weeks(delta)
-    except ToWeeksError:
-        pass
-    else:
-        return weeks, "W"
-    try:
-        days = num_days(delta)
-    except NumDaysError:
-        pass
-    else:
-        return days, "D"
-    try:
+    with suppress(NumWeeksError):
+        return num_weeks(delta), "W"
+    with suppress(NumDaysError):
+        return num_days(delta), "D"
+    with suppress(NumHoursError):
         hours = num_hours(delta)
-    except ToHoursError:
-        pass
-    else:
-        if (0 < hours < 24) and (24 % hours == 0):
+        divisor = HOURS_PER_DAY
+        if (0 < hours < divisor) and (divisor % hours == 0):
             return hours, "H"
         raise _RoundDateOrDateTimeIncrementError(
-            delta=delta, increment=hours, divisor=24
+            delta=delta, increment=hours, divisor=divisor
         )
-    try:
-        minutes = to_minutes(delta)
-    except ToMinutesError:
-        pass
-    else:
-        if (0 < minutes < 60) and (60 % minutes == 0):
+    with suppress(NumMinutesError):
+        minutes = num_minutes(delta)
+        divisor = MINUTES_PER_HOUR
+        if (0 < minutes < divisor) and (divisor % minutes == 0):
             return minutes, "M"
         raise _RoundDateOrDateTimeIncrementError(
-            delta=delta, increment=minutes, divisor=60
+            delta=delta, increment=minutes, divisor=divisor
         )
-    try:
-        seconds = to_seconds(delta)
-    except ToSecondsError:
-        pass
-    else:
-        if (0 < seconds < 60) and (60 % seconds == 0):
+    with suppress(NumSecondsError):
+        seconds = num_seconds(delta)
+        divisor = SECONDS_PER_MINUTE
+        if (0 < seconds < divisor) and (divisor % seconds == 0):
             return seconds, "S"
         raise _RoundDateOrDateTimeIncrementError(
-            delta=delta, increment=seconds, divisor=60
+            delta=delta, increment=seconds, divisor=divisor
         )
-    try:
-        milliseconds = to_milliseconds(delta)
-    except ToMillisecondsError:
-        pass
-    else:
-        if (0 < milliseconds < 1000) and (1000 % milliseconds == 0):
+    with suppress(NumMilliSecondsError):
+        milliseconds = num_milliseconds(delta)
+        divisor = MILLISECONDS_PER_SECOND
+        if (0 < milliseconds < divisor) and (divisor % milliseconds == 0):
             return milliseconds, "ms"
         raise _RoundDateOrDateTimeIncrementError(
-            delta=delta, increment=milliseconds, divisor=1000
+            delta=delta, increment=milliseconds, divisor=divisor
         )
-    try:
-        microseconds = to_microseconds(delta)
-    except ToMicrosecondsError:
-        pass
-    else:
-        if (0 < microseconds < 1000) and (1000 % microseconds == 0):
+    with suppress(NumMicroSecondsError):
+        microseconds = num_microseconds(delta)
+        divisor = MICROSECONDS_PER_MILLISECOND
+        if (0 < microseconds < divisor) and (divisor % microseconds == 0):
             return microseconds, "us"
         raise _RoundDateOrDateTimeIncrementError(
-            delta=delta, increment=microseconds, divisor=1000
+            delta=delta, increment=microseconds, divisor=divisor
         )
     try:
-        nanoseconds = to_nanoseconds(delta)
-    except ToNanosecondsError:
+        nanoseconds = num_nanoseconds(delta)
+    except NumNanoSecondsError:
         raise _RoundDateOrDateTimeInvalidDeltaError(delta=delta) from None
-    if (0 < nanoseconds < 1000) and (1000 % nanoseconds == 0):
+    divisor = NANOSECONDS_PER_MICROSECOND
+    if (0 < nanoseconds < divisor) and (divisor % nanoseconds == 0):
         return nanoseconds, "ns"
     raise _RoundDateOrDateTimeIncrementError(
-        delta=delta, increment=nanoseconds, divisor=1000
+        delta=delta, increment=nanoseconds, divisor=divisor
     )
 
 
@@ -845,51 +851,6 @@ def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
 ##
 
 
-def to_months(delta: DateOrDateTimeDelta, /) -> int:
-    """Compute the number of months in a delta."""
-    match delta:
-        case DateDelta():
-            months, days = delta.in_months_days()
-            if days != 0:
-                raise _ToMonthsDaysError(delta=delta, days=days)
-            return months
-        case DateTimeDelta():
-            if delta.time_part() != TimeDelta():
-                raise _ToMonthsTimeError(delta=delta)
-            try:
-                return to_months(delta.date_part())
-            except _ToMonthsDaysError as error:
-                raise _ToMonthsDaysError(delta=delta, days=error.days) from None
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class ToMonthsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToMonthsDaysError(ToMonthsError):
-    delta: DateOrDateTimeDelta
-    days: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain days; got {self.days}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToMonthsTimeError(ToMonthsError):
-    delta: DateTimeDelta
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain a time part; got {self.delta.time_part()}"
-
-
-##
-
-
 @overload
 def to_py_date_or_date_time(date_or_date_time: Date, /) -> dt.date: ...
 @overload
@@ -1058,118 +1019,6 @@ def _to_time_delta_components(nanos: int, /) -> _TimeDeltaComponents:
         milliseconds=millis,
         nanoseconds=nanos,
     )
-
-
-##
-
-
-def to_weeks(delta: Delta, /) -> int:
-    """Compute the number of weeks in a delta."""
-    try:
-        days = num_days(delta)
-    except NumDaysError as error:
-        raise _ToWeeksMonthsError(delta=error.delta, months=error.months) from None
-    except _ToDaysNanosecondsError as error:
-        raise _ToWeeksNanosecondsError(
-            delta=error.delta, nanoseconds=error.nanoseconds
-        ) from None
-    weeks, remainder = divmod(days, 7)
-    if remainder != 0:
-        raise _ToWeeksDaysError(delta=delta, days=remainder) from None
-    return weeks
-
-
-@dataclass(kw_only=True, slots=True)
-class ToWeeksError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToWeeksMonthsError(ToWeeksError):
-    delta: DateOrDateTimeDelta
-    months: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain months; got {self.months}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToWeeksNanosecondsError(ToWeeksError):
-    delta: TimeOrDateTimeDelta
-    nanoseconds: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain extra nanoseconds; got {self.nanoseconds}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToWeeksDaysError(ToWeeksError):
-    delta: Delta
-    days: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain extra days; got {self.days}"
-
-
-##
-
-
-def to_years(delta: DateOrDateTimeDelta, /) -> int:
-    """Compute the number of years in a delta."""
-    match delta:
-        case DateDelta():
-            years, months, days = delta.in_years_months_days()
-            if months != 0:
-                raise _ToYearsMonthsError(delta=delta, months=months)
-            if days != 0:
-                raise _ToYearsDaysError(delta=delta, days=days)
-            return years
-        case DateTimeDelta():
-            if delta.time_part() != TimeDelta():
-                raise _ToYearsTimeError(delta=delta)
-            try:
-                return to_years(delta.date_part())
-            except _ToYearsMonthsError as error:
-                raise _ToYearsMonthsError(delta=delta, months=error.months) from None
-            except _ToYearsDaysError as error:
-                raise _ToYearsDaysError(delta=delta, days=error.days) from None
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class ToYearsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToYearsMonthsError(ToYearsError):
-    delta: DateOrDateTimeDelta
-    months: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain months; got {self.months}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToYearsDaysError(ToYearsError):
-    delta: DateOrDateTimeDelta
-    days: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain days; got {self.days}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToYearsTimeError(ToYearsError):
-    delta: DateTimeDelta
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain a time part; got {self.delta.time_part()}"
 
 
 ##
@@ -1478,14 +1327,7 @@ __all__ = [
     "PeriodDict",
     "RoundDateOrDateTimeError",
     "TimePeriod",
-    "ToMinutesError",
-    "ToMonthsAndDaysError",
-    "ToMonthsError",
-    "ToNanosecondsError",
     "ToPyTimeDeltaError",
-    "ToSecondsError",
-    "ToWeeksError",
-    "ToYearsError",
     "WheneverLogRecord",
     "ZonedDateTimePeriod",
     "ZonedDateTimePeriodError",
@@ -1503,18 +1345,9 @@ __all__ = [
     "round_date_or_date_time",
     "sub_year_month",
     "to_date_time_delta",
-    "to_microseconds",
-    "to_milliseconds",
-    "to_minutes",
-    "to_months",
-    "to_months_and_days",
-    "to_nanoseconds",
     "to_py_date_or_date_time",
     "to_py_time_delta",
-    "to_seconds",
     "to_time",
-    "to_weeks",
-    "to_years",
     "to_zoned_date_time",
     "two_digit_year_month",
 ]
