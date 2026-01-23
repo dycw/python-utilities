@@ -61,7 +61,7 @@ from utilities.constants import (
     MIN_UINT32,
     MIN_UINT64,
 )
-from utilities.core import get_now, is_sentinel, one
+from utilities.core import get_now, is_sentinel, one, to_days
 from utilities.functions import ensure_int
 from utilities.hypothesis import (
     _LINUX_DISALLOW_TIME_ZONES,
@@ -135,7 +135,6 @@ from utilities.whenever import (
     DatePeriod,
     TimePeriod,
     ZonedDateTimePeriod,
-    to_days,
     to_nanoseconds,
     to_py_time_delta,
 )

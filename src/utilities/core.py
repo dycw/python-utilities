@@ -73,8 +73,6 @@ from whenever import (
     PlainDateTime,
     Time,
     TimeDelta,
-    Weekday,
-    YearMonth,
     ZonedDateTime,
 )
 
@@ -2696,6 +2694,7 @@ __all__ = [
     "SubstituteError",
     "TemporaryDirectory",
     "TemporaryFile",
+    "ToDaysError",
     "ToTimeZoneError",
     "ToTimeZoneNameError",
     "WhichError",
@@ -2761,6 +2760,7 @@ __all__ = [
     "suppress_warnings",
     "take",
     "to_date",
+    "to_days",
     "to_time_zone_name",
     "to_zone_info",
     "transpose",

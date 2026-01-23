@@ -5,10 +5,22 @@ from typing import TYPE_CHECKING, Self
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from whenever import Date, PlainDateTime, Time, ZonedDateTime
+from hypothesis.strategies import integers, sampled_from
+from pytest import mark, param, raises
+from whenever import (
+    Date,
+    DateDelta,
+    DateTimeDelta,
+    PlainDateTime,
+    Time,
+    TimeDelta,
+    ZonedDateTime,
+)
 
 from utilities.constants import UTC, HongKong, Sentinel, Tokyo, sentinel
 from utilities.core import (
+    _ToDaysMonthsError,
+    _ToDaysNanosecondsError,
     get_now,
     get_now_local,
     get_now_local_plain,
@@ -19,8 +31,9 @@ from utilities.core import (
     get_today_local,
     replace_non_sentinel,
     to_date,
+    to_days,
 )
-from utilities.hypothesis import dates, pairs, zone_infos
+from utilities.hypothesis import assume_does_not_raise, dates, pairs, zone_infos
 
 if TYPE_CHECKING:
     from utilities.types import MaybeCallableDateLike, Pair
@@ -125,3 +138,49 @@ class TestToDate:
         assert obj.replace().date == date1
         assert obj.replace(date=date2).date == date2
         assert obj.replace(date=get_today).date == get_today()
+
+
+class TestToDays:
+    @given(cls=sampled_from([DateDelta, DateTimeDelta]), days=integers())
+    def test_date_or_date_time_delta(
+        self, *, cls: type[DateOrDateTimeDelta], days: int
+    ) -> None:
+        with (
+            assume_does_not_raise(ValueError, match=r"Out of range"),
+            assume_does_not_raise(ValueError, match=r"days out of range"),
+            assume_does_not_raise(
+                OverflowError, match=r"Python int too large to convert to C long"
+            ),
+        ):
+            delta = cls(days=days)
+        assert to_days(delta) == days
+
+    @given(days=integers())
+    def test_time_delta(self, *, days: int) -> None:
+        with (
+            assume_does_not_raise(ValueError, match=r"Out of range"),
+            assume_does_not_raise(ValueError, match=r"hours out of range"),
+            assume_does_not_raise(OverflowError, match=r"int too big to convert"),
+            assume_does_not_raise(
+                OverflowError, match=r"Python int too large to convert to C long"
+            ),
+        ):
+            delta = TimeDelta(hours=24 * days)
+        assert to_days(delta) == days
+
+    @mark.parametrize(
+        "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
+    )
+    def test_error_months(self, *, delta: DateOrDateTimeDelta) -> None:
+        with raises(_ToDaysMonthsError, match=r"Delta must not contain months; got 1"):
+            _ = to_days(delta)
+
+    @mark.parametrize(
+        "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
+    )
+    def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
+        with raises(
+            _ToDaysNanosecondsError,
+            match=r"Delta must not contain extra nanoseconds; got .*",
+        ):
+            _ = to_days(delta)

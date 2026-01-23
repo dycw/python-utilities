@@ -93,6 +93,7 @@ from utilities.core import (
     is_sentinel,
     max_nullable,
     min_nullable,
+    to_days,
     to_zone_info,
     yield_temp_cwd,
 )
@@ -111,7 +112,6 @@ from utilities.whenever import (
     TimePeriod,
     ZonedDateTimePeriod,
     to_date_time_delta,
-    to_days,
     to_nanoseconds,
 )
 

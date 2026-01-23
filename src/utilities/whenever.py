@@ -34,11 +34,15 @@ from whenever import (
 
 from utilities.constants import LOCAL_TIME_ZONE_NAME, UTC, Sentinel, sentinel
 from utilities.core import (
+    ToDaysError,
+    _ToDaysMonthsError,
+    _ToDaysNanosecondsError,
     get_now,
     get_now_local,
     get_time,
     get_today,
     replace_non_sentinel,
+    to_days,
     to_time_zone_name,
 )
 from utilities.functions import get_class_name
@@ -1830,7 +1834,6 @@ __all__ = [
     "PeriodDict",
     "RoundDateOrDateTimeError",
     "TimePeriod",
-    "ToDaysError",
     "ToMinutesError",
     "ToMonthsAndDaysError",
     "ToMonthsError",
