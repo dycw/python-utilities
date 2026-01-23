@@ -34,15 +34,13 @@ from whenever import (
 
 from utilities.constants import LOCAL_TIME_ZONE_NAME, UTC, Sentinel, sentinel
 from utilities.core import (
-    ToDaysError,
-    _ToDaysMonthsError,
-    _ToDaysNanosecondsError,
+    NumDaysError,
     get_now,
     get_now_local,
     get_time,
     get_today,
+    num_days,
     replace_non_sentinel,
-    to_days,
     to_time_zone_name,
 )
 from utilities.functions import get_class_name
@@ -514,8 +512,8 @@ def _round_datetime_decompose(delta: Delta, /) -> tuple[int, _RoundDateOrDateTim
     else:
         return weeks, "W"
     try:
-        days = to_days(delta)
-    except ToDaysError:
+        days = num_days(delta)
+    except NumDaysError:
         pass
     else:
         return days, "D"
@@ -846,246 +844,6 @@ def to_date_time_delta(nanos: int, /) -> DateTimeDelta:
 ##
 
 
-##
-
-
-def to_hours(delta: Delta, /) -> int:
-    """Compute the number of hours in a delta."""
-    match delta:
-        case DateDelta():
-            try:
-                days = to_days(delta)
-            except _ToDaysMonthsError as error:
-                raise _ToHoursMonthsError(delta=delta, months=error.months) from None
-            return 24 * days
-        case TimeDelta():
-            nanos = to_nanoseconds(delta)
-            divisor = 60 * 60 * int(1e9)
-            hours, remainder = divmod(nanos, divisor)
-            if remainder != 0:
-                raise _ToHoursNanosecondsError(delta=delta, nanoseconds=remainder)
-            return hours
-        case DateTimeDelta():
-            try:
-                return to_hours(delta.date_part()) + to_hours(delta.time_part())
-            except _ToHoursMonthsError as error:
-                raise _ToHoursMonthsError(delta=delta, months=error.months) from None
-            except _ToHoursNanosecondsError as error:
-                raise _ToHoursNanosecondsError(
-                    delta=delta, nanoseconds=error.nanoseconds
-                ) from None
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class ToHoursError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToHoursMonthsError(ToHoursError):
-    delta: DateOrDateTimeDelta
-    months: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain months; got {self.months}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToHoursNanosecondsError(ToHoursError):
-    delta: TimeOrDateTimeDelta
-    nanoseconds: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain extra nanoseconds; got {self.nanoseconds}"
-
-
-##
-
-
-def to_microseconds(delta: Delta, /) -> int:
-    """Compute the number of microseconds in a delta."""
-    match delta:
-        case DateDelta():
-            try:
-                days = to_days(delta)
-            except _ToDaysMonthsError as error:
-                raise _ToMicrosecondsMonthsError(
-                    delta=delta, months=error.months
-                ) from None
-            return 24 * 60 * 60 * int(1e6) * days
-        case TimeDelta():
-            nanos = to_nanoseconds(delta)
-            microseconds, remainder = divmod(nanos, int(1e3))
-            if remainder != 0:
-                raise _ToMicrosecondsNanosecondsError(
-                    delta=delta, nanoseconds=remainder
-                )
-            return microseconds
-        case DateTimeDelta():
-            try:
-                return to_microseconds(delta.date_part()) + to_microseconds(
-                    delta.time_part()
-                )
-            except _ToMicrosecondsMonthsError as error:
-                raise _ToMicrosecondsMonthsError(
-                    delta=delta, months=error.months
-                ) from None
-            except _ToMicrosecondsNanosecondsError as error:
-                raise _ToMicrosecondsNanosecondsError(
-                    delta=delta, nanoseconds=error.nanoseconds
-                ) from None
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class ToMicrosecondsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToMicrosecondsMonthsError(ToMicrosecondsError):
-    delta: DateOrDateTimeDelta
-    months: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain months; got {self.months}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToMicrosecondsNanosecondsError(ToMicrosecondsError):
-    delta: TimeOrDateTimeDelta
-    nanoseconds: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain extra nanoseconds; got {self.nanoseconds}"
-
-
-##
-
-
-def to_milliseconds(delta: Delta, /) -> int:
-    """Compute the number of milliseconds in a delta."""
-    match delta:
-        case DateDelta():
-            try:
-                days = to_days(delta)
-            except _ToDaysMonthsError as error:
-                raise _ToMillisecondsMonthsError(
-                    delta=delta, months=error.months
-                ) from None
-            return 24 * 60 * 60 * int(1e3) * days
-        case TimeDelta():
-            nanos = to_nanoseconds(delta)
-            milliseconds, remainder = divmod(nanos, int(1e6))
-            if remainder != 0:
-                raise _ToMillisecondsNanosecondsError(
-                    delta=delta, nanoseconds=remainder
-                )
-            return milliseconds
-        case DateTimeDelta():
-            try:
-                return to_milliseconds(delta.date_part()) + to_milliseconds(
-                    delta.time_part()
-                )
-            except _ToMillisecondsMonthsError as error:
-                raise _ToMillisecondsMonthsError(
-                    delta=delta, months=error.months
-                ) from None
-            except _ToMillisecondsNanosecondsError as error:
-                raise _ToMillisecondsNanosecondsError(
-                    delta=delta, nanoseconds=error.nanoseconds
-                ) from None
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class ToMillisecondsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToMillisecondsMonthsError(ToMillisecondsError):
-    delta: DateOrDateTimeDelta
-    months: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain months; got {self.months}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToMillisecondsNanosecondsError(ToMillisecondsError):
-    delta: TimeOrDateTimeDelta
-    nanoseconds: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain extra nanoseconds; got {self.nanoseconds}"
-
-
-##
-
-
-def to_minutes(delta: Delta, /) -> int:
-    """Compute the number of minutes in a delta."""
-    match delta:
-        case DateDelta():
-            try:
-                days = to_days(delta)
-            except _ToDaysMonthsError as error:
-                raise _ToMinutesMonthsError(delta=delta, months=error.months) from None
-            return 24 * 60 * days
-        case TimeDelta():
-            nanos = to_nanoseconds(delta)
-            minutes, remainder = divmod(nanos, 60 * int(1e9))
-            if remainder != 0:
-                raise _ToMinutesNanosecondsError(delta=delta, nanoseconds=remainder)
-            return minutes
-        case DateTimeDelta():
-            try:
-                return to_minutes(delta.date_part()) + to_minutes(delta.time_part())
-            except _ToMinutesMonthsError as error:
-                raise _ToMinutesMonthsError(delta=delta, months=error.months) from None
-            except _ToMinutesNanosecondsError as error:
-                raise _ToMinutesNanosecondsError(
-                    delta=delta, nanoseconds=error.nanoseconds
-                ) from None
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class ToMinutesError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToMinutesMonthsError(ToMinutesError):
-    delta: DateOrDateTimeDelta
-    months: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain months; got {self.months}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToMinutesNanosecondsError(ToMinutesError):
-    delta: TimeOrDateTimeDelta
-    nanoseconds: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain extra nanoseconds; got {self.nanoseconds}"
-
-
-##
-
-
 def to_months(delta: DateOrDateTimeDelta, /) -> int:
     """Compute the number of months in a delta."""
     match delta:
@@ -1131,66 +889,6 @@ class _ToMonthsTimeError(ToMonthsError):
 ##
 
 
-def to_months_and_days(delta: DateOrDateTimeDelta, /) -> tuple[int, int]:
-    """Compute the number of months & days in a delta."""
-    match delta:
-        case DateDelta():
-            return delta.in_months_days()
-        case DateTimeDelta():
-            if delta.time_part() != TimeDelta():
-                raise ToMonthsAndDaysError(delta=delta)
-            return to_months_and_days(delta.date_part())
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class ToMonthsAndDaysError(Exception):
-    delta: DateTimeDelta
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain a time part; got {self.delta.time_part()}"
-
-
-##
-
-
-def to_nanoseconds(delta: Delta, /) -> int:
-    """Compute the number of nanoseconds in a date-time delta."""
-    match delta:
-        case DateDelta():
-            try:
-                days = to_days(delta)
-            except _ToDaysMonthsError as error:
-                raise ToNanosecondsError(delta=delta, months=error.months) from None
-            return 24 * 60 * 60 * int(1e9) * days
-        case TimeDelta():
-            return delta.in_nanoseconds()
-        case DateTimeDelta():
-            try:
-                return to_nanoseconds(delta.date_part()) + to_nanoseconds(
-                    delta.time_part()
-                )
-            except ToNanosecondsError as error:
-                raise ToNanosecondsError(delta=delta, months=error.months) from None
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class ToNanosecondsError(Exception):
-    delta: DateOrDateTimeDelta
-    months: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain months; got {self.months}"
-
-
-##
-
-
 @overload
 def to_py_date_or_date_time(date_or_date_time: Date, /) -> dt.date: ...
 @overload
@@ -1223,7 +921,7 @@ def to_py_time_delta(delta: Delta | None, /) -> dt.timedelta | None:
     """Try convert a DateDelta to a standard library timedelta."""
     match delta:
         case DateDelta():
-            return dt.timedelta(days=to_days(delta))
+            return dt.timedelta(days=num_days(delta))
         case TimeDelta():
             nanos = delta.in_nanoseconds()
             micros, remainder = divmod(nanos, 1000)
@@ -1247,61 +945,6 @@ class ToPyTimeDeltaError(Exception):
     @override
     def __str__(self) -> str:
         return f"Time delta must not contain nanoseconds; got {self.nanoseconds}"
-
-
-##
-
-
-def to_seconds(delta: Delta, /) -> int:
-    """Compute the number of seconds in a delta."""
-    match delta:
-        case DateDelta():
-            try:
-                days = to_days(delta)
-            except _ToDaysMonthsError as error:
-                raise _ToSecondsMonthsError(delta=delta, months=error.months) from None
-            return 24 * 60 * 60 * days
-        case TimeDelta():
-            nanos = to_nanoseconds(delta)
-            seconds, remainder = divmod(nanos, int(1e9))
-            if remainder != 0:
-                raise _ToSecondsNanosecondsError(delta=delta, nanoseconds=remainder)
-            return seconds
-        case DateTimeDelta():
-            try:
-                return to_seconds(delta.date_part()) + to_seconds(delta.time_part())
-            except _ToSecondsMonthsError as error:
-                raise _ToSecondsMonthsError(delta=delta, months=error.months) from None
-            except _ToSecondsNanosecondsError as error:
-                raise _ToSecondsNanosecondsError(
-                    delta=delta, nanoseconds=error.nanoseconds
-                ) from None
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class ToSecondsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToSecondsMonthsError(ToSecondsError):
-    delta: DateOrDateTimeDelta
-    months: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain months; got {self.months}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToSecondsNanosecondsError(ToSecondsError):
-    delta: TimeOrDateTimeDelta
-    nanoseconds: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain extra nanoseconds; got {self.nanoseconds}"
 
 
 ##
@@ -1422,8 +1065,8 @@ def _to_time_delta_components(nanos: int, /) -> _TimeDeltaComponents:
 def to_weeks(delta: Delta, /) -> int:
     """Compute the number of weeks in a delta."""
     try:
-        days = to_days(delta)
-    except _ToDaysMonthsError as error:
+        days = num_days(delta)
+    except NumDaysError as error:
         raise _ToWeeksMonthsError(delta=error.delta, months=error.months) from None
     except _ToDaysNanosecondsError as error:
         raise _ToWeeksNanosecondsError(
@@ -1855,10 +1498,10 @@ __all__ = [
     "is_weekend",
     "mean_datetime",
     "min_max_date",
+    "num_days",
     "round_date_or_date_time",
     "sub_year_month",
     "to_date_time_delta",
-    "to_days",
     "to_microseconds",
     "to_milliseconds",
     "to_minutes",

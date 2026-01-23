@@ -5,17 +5,8 @@ from typing import TYPE_CHECKING, Self
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import integers, sampled_from
 from pytest import mark, param, raises
-from whenever import (
-    Date,
-    DateDelta,
-    DateTimeDelta,
-    PlainDateTime,
-    Time,
-    TimeDelta,
-    ZonedDateTime,
-)
+from whenever import Date, PlainDateTime, Time, ZonedDateTime
 
 from utilities.constants import (
     DAY,
@@ -33,10 +24,12 @@ from utilities.constants import (
     sentinel,
 )
 from utilities.core import (
+    NumDaysError,
+    NumHoursError,
+    NumMinutesError,
+    NumSecondsError,
     _DeltaComponentsMixedSignError,
     _DeltaComponentsOutput,
-    _ToDaysMonthsError,
-    _ToDaysNanosecondsError,
     delta_components,
     get_now,
     get_now_local,
@@ -46,20 +39,17 @@ from utilities.core import (
     get_time_local,
     get_today,
     get_today_local,
+    num_days,
+    num_hours,
+    num_minutes,
+    num_seconds,
     replace_non_sentinel,
     to_date,
-    to_days,
 )
-from utilities.hypothesis import assume_does_not_raise, dates, pairs, zone_infos
+from utilities.hypothesis import dates, pairs, zone_infos
 
 if TYPE_CHECKING:
-    from utilities.types import (
-        DateOrDateTimeDelta,
-        Delta,
-        MaybeCallableDateLike,
-        Pair,
-        TimeOrDateTimeDelta,
-    )
+    from utilities.types import Delta, MaybeCallableDateLike, Pair
 
 
 class TestDeltaComponents:
@@ -105,8 +95,7 @@ class TestDeltaComponents:
     def test_main(
         self, *, sign: int, delta: Delta, expected: _DeltaComponentsOutput
     ) -> None:
-        delta_use = sign * delta
-        result = delta_components(delta_use)
+        result = delta_components(sign * delta)
         signed_expected = _DeltaComponentsOutput(
             months=sign * expected.months,
             days=sign * expected.days,
@@ -119,8 +108,42 @@ class TestDeltaComponents:
         )
         assert result == signed_expected
 
+    @mark.parametrize("sign", [param(1), param(-1)])
+    @mark.parametrize(
+        ("input_", "expected"),
+        [
+            param({"hours": 48}, {"days": 2}),
+            param({"hours": 36}, {"days": 1, "hours": 12}),
+            param({"hours": 24}, {"days": 1}),
+            param({"hours": 1}, {"hours": 1}),
+            param({"minutes": 120}, {"hours": 2}),
+            param({"minutes": 90}, {"hours": 1, "minutes": 30}),
+            param({"minutes": 60}, {"hours": 1}),
+            param({"seconds": 120}, {"minutes": 2}),
+            param({"seconds": 90}, {"minutes": 1, "seconds": 30}),
+            param({"seconds": 60}, {"minutes": 1}),
+            param({"milliseconds": 2000}, {"seconds": 2}),
+            param({"milliseconds": 1500}, {"seconds": 1, "milliseconds": 500}),
+            param({"milliseconds": 1000}, {"seconds": 1}),
+            param({"microseconds": 2000}, {"milliseconds": 2}),
+            param({"microseconds": 1500}, {"milliseconds": 1, "microseconds": 500}),
+            param({"microseconds": 1000}, {"milliseconds": 1}),
+            param({"nanoseconds": 2000}, {"microseconds": 2}),
+            param({"nanoseconds": 1500}, {"microseconds": 1, "nanoseconds": 500}),
+            param({"nanoseconds": 1000}, {"microseconds": 1}),
+        ],
+    )
+    def test_normalize(
+        self, *, sign: int, input_: dict[str, int], expected: dict[str, int]
+    ) -> None:
+        result = _DeltaComponentsOutput(**{k: sign * v for k, v in input_.items()})
+        signed_expected = _DeltaComponentsOutput(**{
+            k: sign * v for k, v in expected.items()
+        })
+        assert result == signed_expected
+
     @mark.parametrize(("months", "days"), [param(1, -1), param(-1, 1)])
-    def test_mixed_sign(self, *, months: int, days: int) -> None:
+    def test_error_mixed_sign(self, *, months: int, days: int) -> None:
         with raises(
             _DeltaComponentsMixedSignError,
             match=r"Months and days must have the same sign; got .* and .*",
@@ -183,6 +206,133 @@ class TestGetTodayLocal:
         assert isinstance(today, Date)
 
 
+class TestNumDays:
+    @mark.parametrize(
+        ("delta", "expected"),
+        [param(2 * DAY, 2), param(DAY, 1), param(48 * HOUR, 2), param(24 * HOUR, 1)],
+    )
+    def test_main(self, *, delta: Delta, expected: int) -> None:
+        assert num_days(delta) == expected
+
+    @mark.parametrize(
+        "delta",
+        [
+            param(MONTH),
+            param(HOUR),
+            param(MINUTE),
+            param(SECOND),
+            param(MILLISECOND),
+            param(MICROSECOND),
+            param(NANOSECOND),
+        ],
+    )
+    def test_error(self, *, delta: Delta) -> None:
+        with raises(
+            NumDaysError,
+            match=r"Delta must not contain months \(.*\), hours \(.*\), minutes \(.*\), seconds \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
+        ):
+            _ = num_days(delta)
+
+
+class TestNumHours:
+    @mark.parametrize(
+        ("delta", "expected"),
+        [
+            param(2 * HOUR, 2),
+            param(HOUR, 1),
+            param(120 * MINUTE, 2),
+            param(60 * MINUTE, 1),
+        ],
+    )
+    def test_main(self, *, delta: Delta, expected: int) -> None:
+        assert num_hours(delta) == expected
+
+    @mark.parametrize(
+        "delta",
+        [
+            param(MONTH),
+            param(DAY),
+            param(MINUTE),
+            param(SECOND),
+            param(MILLISECOND),
+            param(MICROSECOND),
+            param(NANOSECOND),
+        ],
+    )
+    def test_error(self, *, delta: Delta) -> None:
+        with raises(
+            NumHoursError,
+            match=r"Delta must not contain months \(.*\), days \(.*\), minutes \(.*\), seconds \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
+        ):
+            _ = num_hours(delta)
+
+
+class TestNumMinutes:
+    @mark.parametrize(
+        ("delta", "expected"),
+        [
+            param(2 * MINUTE, 2),
+            param(MINUTE, 1),
+            param(120 * SECOND, 2),
+            param(60 * SECOND, 1),
+        ],
+    )
+    def test_main(self, *, delta: Delta, expected: int) -> None:
+        assert num_minutes(delta) == expected
+
+    @mark.parametrize(
+        "delta",
+        [
+            param(MONTH),
+            param(DAY),
+            param(HOUR),
+            param(SECOND),
+            param(MILLISECOND),
+            param(MICROSECOND),
+            param(NANOSECOND),
+        ],
+    )
+    def test_error(self, *, delta: Delta) -> None:
+        with raises(
+            NumMinutesError,
+            match=r"Delta must not contain months \(.*\), days \(.*\), hours \(.*\), seconds \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
+        ):
+            _ = num_minutes(delta)
+
+
+class TestNumSeconds:
+    @mark.parametrize(
+        ("delta", "expected"),
+        [
+            param(2 * SECOND, 2),
+            param(SECOND, 1),
+            param(2000 * MILLISECOND, 2),
+            param(1000 * MILLISECOND, 1),
+        ],
+    )
+    def test_main(self, *, delta: Delta, expected: int) -> None:
+        assert num_seconds(delta) == expected
+
+    @mark.parametrize(
+        "delta",
+        [
+            param(MONTH),
+            param(DAY),
+            param(HOUR),
+            param(MINUTE),
+            param(MILLISECOND),
+            param(MICROSECOND),
+            param(NANOSECOND),
+        ],
+    )
+    def test_error(self, *, delta: Delta) -> None:
+        with raises(
+            NumSecondsError,
+            match=r"Delta must not contain months \(.*\), days \(.*\), hours \(.*\), minutes \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
+        ):
+            _ = num_seconds(delta)
+
+
 class TestToDate:
     def test_default(self) -> None:
         assert to_date() == get_today()
@@ -227,49 +377,3 @@ class TestToDate:
         assert obj.replace().date == date1
         assert obj.replace(date=date2).date == date2
         assert obj.replace(date=get_today).date == get_today()
-
-
-class TestToDays:
-    @given(cls=sampled_from([DateDelta, DateTimeDelta]), days=integers())
-    def test_date_or_date_time_delta(
-        self, *, cls: type[DateOrDateTimeDelta], days: int
-    ) -> None:
-        with (
-            assume_does_not_raise(ValueError, match=r"Out of range"),
-            assume_does_not_raise(ValueError, match=r"days out of range"),
-            assume_does_not_raise(
-                OverflowError, match=r"Python int too large to convert to C long"
-            ),
-        ):
-            delta = cls(days=days)
-        assert to_days(delta) == days
-
-    @given(days=integers())
-    def test_time_delta(self, *, days: int) -> None:
-        with (
-            assume_does_not_raise(ValueError, match=r"Out of range"),
-            assume_does_not_raise(ValueError, match=r"hours out of range"),
-            assume_does_not_raise(OverflowError, match=r"int too big to convert"),
-            assume_does_not_raise(
-                OverflowError, match=r"Python int too large to convert to C long"
-            ),
-        ):
-            delta = TimeDelta(hours=24 * days)
-        assert to_days(delta) == days
-
-    @mark.parametrize(
-        "delta", [param(DateDelta(months=1)), param(DateTimeDelta(months=1))]
-    )
-    def test_error_months(self, *, delta: DateOrDateTimeDelta) -> None:
-        with raises(_ToDaysMonthsError, match=r"Delta must not contain months; got 1"):
-            _ = to_days(delta)
-
-    @mark.parametrize(
-        "delta", [param(TimeDelta(nanoseconds=1)), param(DateTimeDelta(nanoseconds=1))]
-    )
-    def test_error_nanoseconds(self, *, delta: TimeOrDateTimeDelta) -> None:
-        with raises(
-            _ToDaysNanosecondsError,
-            match=r"Delta must not contain extra nanoseconds; got .*",
-        ):
-            _ = to_days(delta)

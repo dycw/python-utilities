@@ -260,7 +260,7 @@ type MaybeCallableStr = MaybeCallable[str]
 
 
 # time
-type Duration = Number | TimeDelta
+type Duration = Number | Delta
 
 
 # traceback

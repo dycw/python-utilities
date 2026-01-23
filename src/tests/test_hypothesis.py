@@ -61,7 +61,7 @@ from utilities.constants import (
     MIN_UINT32,
     MIN_UINT64,
 )
-from utilities.core import get_now, is_sentinel, one, to_days
+from utilities.core import get_now, is_sentinel, num_days, one
 from utilities.functions import ensure_int
 from utilities.hypothesis import (
     _LINUX_DISALLOW_TIME_ZONES,
@@ -201,11 +201,11 @@ class TestDateDeltas:
             )
         assert isinstance(delta, DateDelta)
         assert isinstance(to_py_time_delta(delta), dt.timedelta)
-        days = to_days(delta)
+        days = num_days(delta)
         if min_value is not None:
-            assert days >= to_days(min_value)
+            assert days >= num_days(min_value)
         if max_value is not None:
-            assert days <= to_days(max_value)
+            assert days <= num_days(max_value)
         if parsable:
             assert DateDelta.parse_iso(delta.format_iso()) == delta
 
