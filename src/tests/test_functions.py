@@ -8,7 +8,7 @@ from hypothesis import given
 from hypothesis.strategies import integers, sampled_from
 from pytest import approx, mark, param, raises
 
-from utilities.constants import HOME, MILLISECOND, NOW_UTC, SECOND, ZERO_TIME, sentinel
+from utilities.constants import HOME, NOW_UTC, ZERO_TIME, sentinel
 from utilities.core import get_now, get_today, normalize_multi_line_str
 from utilities.functions import (
     EnsureBoolError,
@@ -41,9 +41,6 @@ from utilities.functions import (
     ensure_time,
     ensure_time_delta,
     ensure_zoned_date_time,
-    in_milli_seconds,
-    in_seconds,
-    in_timedelta,
     yield_object_attributes,
 )
 from utilities.text import parse_bool
@@ -53,7 +50,7 @@ if TYPE_CHECKING:
 
     from whenever import PlainDateTime, TimeDelta, ZonedDateTime
 
-    from utilities.types import Duration, Number
+    from utilities.types import Number
 
 
 class TestEnsureBool:
@@ -349,32 +346,6 @@ class TestEnsureZonedDateTime:
         nullable, match = case
         with raises(EnsureZonedDateTimeError, match=match):
             _ = ensure_zoned_date_time(sentinel, nullable=nullable)
-
-
-class TestInMilliSeconds:
-    @mark.parametrize(
-        ("duration", "expected"),
-        [
-            param(1, 1000),
-            param(1.0, 1000.0),
-            param(SECOND, 1000.0),
-            param(MILLISECOND, 1.0),
-        ],
-    )
-    def test_main(self, *, duration: Duration, expected: Number) -> None:
-        assert in_milli_seconds(duration) == expected
-
-
-class TestInSeconds:
-    @mark.parametrize("duration", [param(1), param(1.0), param(SECOND)])
-    def test_main(self, *, duration: Duration) -> None:
-        assert in_seconds(duration) == 1.0
-
-
-class TestInTimeDelta:
-    @mark.parametrize("duration", [param(1), param(1.0), param(SECOND)])
-    def test_main(self, *, duration: Duration) -> None:
-        assert in_timedelta(duration) == SECOND
 
 
 class TestSkipIfOptimize:
