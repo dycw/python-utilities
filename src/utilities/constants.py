@@ -426,7 +426,6 @@ NOW_UTC_PLAIN: PlainDateTime = NOW_UTC.to_plain()
 
 
 __all__ = [
-    "<MICROSECONDS_PER_HOUR",
     "BRACKETS",
     "CPU_COUNT",
     "DATE_DELTA_MAX",
