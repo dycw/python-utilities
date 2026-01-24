@@ -84,14 +84,32 @@ from utilities._core_errors import (
     CompressGzipError,
     CompressLZMAError,
     CompressZipError,
+    CopyDestinationExistsError,
+    CopyError,
+    CopySourceNotFoundError,
     MaxNullableError,
     MinNullableError,
+    MoveDestinationExistsError,
+    MoveError,
+    MoveSourceNotFoundError,
+    OneEmptyError,
+    OneError,
+    OneNonUniqueError,
+    OneStrEmptyError,
+    OneStrError,
+    OneStrNonUniqueError,
     YieldBZ2Error,
     YieldGzipError,
     YieldLZMAError,
     YieldZipError,
 )
 from utilities._core_errors import CompressFilesError as _CompressFilesError
+from utilities._core_errors import (
+    CopyOrMoveDestinationExistsError as _CopyOrMoveDestinationExistsError,
+)
+from utilities._core_errors import (
+    CopyOrMoveSourceNotFoundError as _CopyOrMoveSourceNotFoundError,
+)
 from utilities._core_errors import YieldUncompressedError as _YieldUncompressedError
 from utilities.constants import (
     ABS_TOL,
@@ -720,28 +738,6 @@ def one[T](*iterables: Iterable[T]) -> T:
     raise OneNonUniqueError(iterables=iterables, first=first, second=second)
 
 
-@dataclass(kw_only=True, slots=True)
-class OneError[T](Exception):
-    iterables: tuple[Iterable[T], ...]
-
-
-@dataclass(kw_only=True, slots=True)
-class OneEmptyError[T](OneError[T]):
-    @override
-    def __str__(self) -> str:
-        return f"Iterable(s) {repr_(self.iterables)} must not be empty"
-
-
-@dataclass(kw_only=True, slots=True)
-class OneNonUniqueError[T](OneError):
-    first: T
-    second: T
-
-    @override
-    def __str__(self) -> str:
-        return f"Iterable(s) {repr_(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
-
-
 ##
 
 
@@ -781,57 +777,6 @@ def one_str(
             first=error.first,
             second=error.second,
         ) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class OneStrError(Exception):
-    iterable: Iterable[str]
-    text: str
-    head: bool = False
-    case_sensitive: bool = False
-
-
-@dataclass(kw_only=True, slots=True)
-class OneStrEmptyError(OneStrError):
-    @override
-    def __str__(self) -> str:
-        head = f"Iterable {repr_(self.iterable)} does not contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                tail = repr(self.text)
-            case False, False:
-                tail = f"{repr_(self.text)} (modulo case)"
-            case True, True:
-                tail = f"any string starting with {repr_(self.text)}"
-            case True, False:
-                tail = f"any string starting with {repr_(self.text)} (modulo case)"
-            case never:
-                assert_never(never)
-        return f"{head} {tail}"
-
-
-@dataclass(kw_only=True, slots=True)
-class OneStrNonUniqueError(OneStrError):
-    first: str
-    second: str
-
-    @override
-    def __str__(self) -> str:
-        head = f"Iterable {repr_(self.iterable)} must contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                mid = f"{repr_(self.text)} exactly once"
-            case False, False:
-                mid = f"{repr_(self.text)} exactly once (modulo case)"
-            case True, True:
-                mid = f"exactly one string starting with {repr_(self.text)}"
-            case True, False:
-                mid = (
-                    f"exactly one string starting with {repr_(self.text)} (modulo case)"
-                )
-            case never:
-                assert_never(never)
-        return f"{head} {mid}; got {repr_(self.first)}, {repr_(self.second)} and perhaps more"
 
 
 ##
@@ -1111,9 +1056,20 @@ def copy(
 ) -> None:
     """Copy a file atomically."""
     src, dest = map(Path, [src, dest])
-    _copy_or_move(
-        src, dest, "copy", overwrite=overwrite, perms=perms, owner=owner, group=group
-    )
+    try:
+        _copy_or_move(
+            src,
+            dest,
+            "copy",
+            overwrite=overwrite,
+            perms=perms,
+            owner=owner,
+            group=group,
+        )
+    except _CopyOrMoveSourceNotFoundError as error:
+        raise CopySourceNotFoundError(src=error.src) from None
+    except _CopyOrMoveDestinationExistsError as error:
+        raise CopyDestinationExistsError(src=error.src, dest=error.dest) from None
 
 
 def move(
@@ -1128,13 +1084,20 @@ def move(
 ) -> None:
     """Move a file atomically."""
     src, dest = map(Path, [src, dest])
-    _copy_or_move(
-        src, dest, "move", overwrite=overwrite, perms=perms, owner=owner, group=group
-    )
-
-
-@dataclass(kw_only=True, slots=True)
-class CopyOrMoveError(Exception): ...
+    try:
+        _copy_or_move(
+            src,
+            dest,
+            "move",
+            overwrite=overwrite,
+            perms=perms,
+            owner=owner,
+            group=group,
+        )
+    except _CopyOrMoveSourceNotFoundError as error:
+        raise MoveSourceNotFoundError(src=error.src) from None
+    except _CopyOrMoveDestinationExistsError as error:
+        raise MoveDestinationExistsError(src=error.src, dest=error.dest) from None
 
 
 def _copy_or_move(
@@ -1152,7 +1115,7 @@ def _copy_or_move(
         case None, _, _:
             raise _CopyOrMoveSourceNotFoundError(src=src)
         case "file" | "dir", "file" | "dir", False:
-            raise _CopyOrMoveDestinationExistsError(mode=mode, src=src, dest=dest)
+            raise _CopyOrMoveDestinationExistsError(src=src, dest=dest)
         case ("file", None, _) | ("file", "file", True):
             _copy_or_move__file_to_file(src, dest, mode)
         case "file", "dir", True:
@@ -1167,26 +1130,6 @@ def _copy_or_move(
         chmod(dest, perms)
     if (owner is not None) or (group is not None):
         chown(dest, user=owner, group=group)
-
-
-@dataclass(kw_only=True, slots=True)
-class _CopyOrMoveSourceNotFoundError(CopyOrMoveError):
-    src: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Source {repr_str(self.src)} does not exist"
-
-
-@dataclass(kw_only=True, slots=True)
-class _CopyOrMoveDestinationExistsError(CopyOrMoveError):
-    mode: CopyOrMove
-    src: Path
-    dest: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot {self.mode} source {repr_str(self.src)} since destination {repr_str(self.dest)} already exists"
 
 
 def _copy_or_move__file_to_file(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
@@ -3363,12 +3306,18 @@ __all__ = [
     "CompressGzipError",
     "CompressLZMAError",
     "CompressZipError",
+    "CopyDestinationExistsError",
+    "CopyError",
+    "CopySourceNotFoundError",
     "ExtractGroupError",
     "ExtractGroupsError",
     "FileOrDirError",
     "GetEnvError",
     "MaxNullableError",
     "MinNullableError",
+    "MoveDestinationExistsError",
+    "MoveError",
+    "MoveSourceNotFoundError",
     "NumDaysError",
     "NumHoursError",
     "NumMicroSecondsError",
