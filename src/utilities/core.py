@@ -2713,7 +2713,8 @@ def num_days(delta: Delta, /) -> int:
     """Compute the number of days in a delta."""
     components = delta_components(delta)
     if (
-        (components.months != 0)
+        (components.years != 0)
+        or (components.months != 0)
         or (components.hours != 0)
         or (components.minutes != 0)
         or (components.seconds != 0)
@@ -2722,6 +2723,7 @@ def num_days(delta: Delta, /) -> int:
         or (components.nanoseconds != 0)
     ):
         raise NumDaysError(
+            years=components.years,
             months=components.months,
             hours=components.hours,
             minutes=components.minutes,
@@ -2730,11 +2732,12 @@ def num_days(delta: Delta, /) -> int:
             microseconds=components.microseconds,
             nanoseconds=components.nanoseconds,
         )
-    return components.days
+    return DAYS_PER_WEEK * components.weeks + components.days
 
 
 @dataclass(kw_only=True, slots=True)
 class NumDaysError(Exception):
+    years: int = 0
     months: int = 0
     hours: int = 0
     minutes: int = 0
@@ -2745,7 +2748,7 @@ class NumDaysError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Delta must not contain months ({self.months}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+        return f"Delta must not contain years ({self.years}), months ({self.months}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
 
 
 def num_hours(delta: Delta, /) -> int:
@@ -3185,8 +3188,11 @@ __all__ = [
     "NumMicroSecondsError",
     "NumMilliSecondsError",
     "NumMinutesError",
+    "NumMonthsError",
     "NumNanoSecondsError",
     "NumSecondsError",
+    "NumWeeksError",
+    "NumYearsError",
     "OneEmptyError",
     "OneError",
     "OneNonUniqueError",
@@ -3260,8 +3266,11 @@ __all__ = [
     "num_microseconds",
     "num_milliseconds",
     "num_minutes",
+    "num_months",
     "num_nanoseconds",
     "num_seconds",
+    "num_weeks",
+    "num_years",
     "one",
     "one_str",
     "read_bytes",

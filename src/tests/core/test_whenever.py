@@ -31,6 +31,7 @@ from utilities.core import (
     NumMilliSecondsError,
     NumMinutesError,
     NumSecondsError,
+    NumYearsError,
     _DeltaComponentsMixedSignError,
     _DeltaComponentsOutput,
     delta_components,
@@ -47,6 +48,7 @@ from utilities.core import (
     num_milliseconds,
     num_minutes,
     num_seconds,
+    num_years,
     replace_non_sentinel,
     to_date,
 )
@@ -230,7 +232,15 @@ class TestGetTodayLocal:
 class TestNumDays:
     @mark.parametrize(
         ("delta", "expected"),
-        [param(2 * DAY, 2), param(DAY, 1), param(48 * HOUR, 2), param(24 * HOUR, 1)],
+        [
+            param(2 * WEEK, 14),
+            param(WEEK, 7),
+            param(WEEK + DAY, 8),
+            param(2 * DAY, 2),
+            param(DAY, 1),
+            param(48 * HOUR, 2),
+            param(24 * HOUR, 1),
+        ],
     )
     def test_main(self, *, delta: Delta, expected: int) -> None:
         assert num_days(delta) == expected
@@ -238,6 +248,7 @@ class TestNumDays:
     @mark.parametrize(
         "delta",
         [
+            param(YEAR),
             param(MONTH),
             param(HOUR),
             param(MINUTE),
@@ -250,7 +261,7 @@ class TestNumDays:
     def test_error(self, *, delta: Delta) -> None:
         with raises(
             NumDaysError,
-            match=r"Delta must not contain months \(.*\), hours \(.*\), minutes \(.*\), seconds \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
+            match=r"Delta must not contain years \(.*\), months \(.*\), hours \(.*\), minutes \(.*\), seconds \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
         ):
             _ = num_days(delta)
 
@@ -356,6 +367,40 @@ class TestNumMinutes:
             _ = num_minutes(delta)
 
 
+class TestNumMonths:
+    @mark.parametrize(
+        ("delta", "expected"),
+        [
+            param(2 * MONTH, 2),
+            param(MONTH, 1),
+            param(24 * MONTH, 2),
+            param(12 * MONTH, 1),
+        ],
+    )
+    def test_main(self, *, delta: Delta, expected: int) -> None:
+        assert num_months(delta) == expected
+
+    @mark.parametrize(
+        "delta",
+        [
+            param(MONTH),
+            param(WEEK),
+            param(HOUR),
+            param(MINUTE),
+            param(SECOND),
+            param(MILLISECOND),
+            param(MICROSECOND),
+            param(NANOSECOND),
+        ],
+    )
+    def test_error(self, *, delta: Delta) -> None:
+        with raises(
+            NumMonthsError,
+            match=r"Delta must not contain months \(.*\), weeks \(.*\), days \(.*\), hours \(.*\), minutes \(.*\), seconds \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
+        ):
+            _ = num_months(delta)
+
+
 class TestNumSeconds:
     @mark.parametrize(
         ("delta", "expected"),
@@ -387,6 +432,40 @@ class TestNumSeconds:
             match=r"Delta must not contain months \(.*\), days \(.*\), hours \(.*\), minutes \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
         ):
             _ = num_seconds(delta)
+
+
+class TestNumYears:
+    @mark.parametrize(
+        ("delta", "expected"),
+        [
+            param(2 * YEAR, 2),
+            param(YEAR, 1),
+            param(24 * MONTH, 2),
+            param(12 * MONTH, 1),
+        ],
+    )
+    def test_main(self, *, delta: Delta, expected: int) -> None:
+        assert num_years(delta) == expected
+
+    @mark.parametrize(
+        "delta",
+        [
+            param(MONTH),
+            param(WEEK),
+            param(HOUR),
+            param(MINUTE),
+            param(SECOND),
+            param(MILLISECOND),
+            param(MICROSECOND),
+            param(NANOSECOND),
+        ],
+    )
+    def test_error(self, *, delta: Delta) -> None:
+        with raises(
+            NumYearsError,
+            match=r"Delta must not contain months \(.*\), weeks \(.*\), days \(.*\), hours \(.*\), minutes \(.*\), seconds \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
+        ):
+            _ = num_years(delta)
 
 
 class TestToDate:
