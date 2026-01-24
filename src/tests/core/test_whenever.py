@@ -32,6 +32,7 @@ from utilities.core import (
     NumMilliSecondsError,
     NumMinutesError,
     NumMonthsError,
+    NumNanoSecondsError,
     NumSecondsError,
     NumWeeksError,
     NumYearsError,
@@ -52,6 +53,7 @@ from utilities.core import (
     num_milliseconds,
     num_minutes,
     num_months,
+    num_nanoseconds,
     num_seconds,
     num_weeks,
     num_years,
@@ -464,6 +466,47 @@ class TestNumMonths:
             match=r"Delta must not contain weeks \(.*\), days \(.*\), hours \(.*\), minutes \(.*\), seconds \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
         ):
             _ = num_months(delta)
+
+
+class TestNumNanoSeconds:
+    @mark.parametrize(
+        ("delta", "expected"),
+        [
+            param(2 * WEEK, 1_209_600_000_000_000),
+            param(WEEK + 3 * DAY, 864_000_000_000_000),
+            param(WEEK, 604_800_000_000_000),
+            param(2 * DAY, 172_800_000_000_000),
+            param(DAY + 12 * HOUR, 129_600_000_000_000),
+            param(DAY, 86_400_000_000_000),
+            param(2 * HOUR, 7_200_000_000_000),
+            param(HOUR + 30 * MINUTE, 5_400_000_000_000),
+            param(HOUR, 3_600_000_000_000),
+            param(2 * MINUTE, 120_000_000_000),
+            param(MINUTE + 30 * SECOND, 90_000_000_000),
+            param(MINUTE, 60_000_000_000),
+            param(2 * SECOND, 2_000_000_000),
+            param(SECOND + 500 * MILLISECOND, 1_500_000_000),
+            param(SECOND, 1_000_000_000),
+            param(2 * MILLISECOND, 2_000_000),
+            param(MILLISECOND + 500 * MICROSECOND, 1_500_000),
+            param(MILLISECOND, 1_000_000),
+            param(2 * MICROSECOND, 2_000),
+            param(MICROSECOND + 500 * NANOSECOND, 1_500),
+            param(MICROSECOND, 1_000),
+            param(2 * NANOSECOND, 2),
+            param(NANOSECOND, 1),
+        ],
+    )
+    def test_main(self, *, delta: Delta, expected: int) -> None:
+        assert num_nanoseconds(delta) == expected
+
+    @mark.parametrize("delta", [param(YEAR), param(MONTH)])
+    def test_error(self, *, delta: Delta) -> None:
+        with raises(
+            NumNanoSecondsError,
+            match=r"Delta must not contain years \(.*\) or months \(.*\)",
+        ):
+            _ = num_nanoseconds(delta)
 
 
 class TestNumSeconds:

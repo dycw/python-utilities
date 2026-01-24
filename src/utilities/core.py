@@ -98,7 +98,13 @@ from utilities.constants import (
     MINUTES_PER_HOUR,
     MINUTES_PER_WEEK,
     MONTHS_PER_YEAR,
+    NANOSECONDS_PER_DAY,
+    NANOSECONDS_PER_HOUR,
     NANOSECONDS_PER_MICROSECOND,
+    NANOSECONDS_PER_MILLISECOND,
+    NANOSECONDS_PER_MINUTE,
+    NANOSECONDS_PER_SECOND,
+    NANOSECONDS_PER_WEEK,
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
     RICH_MAX_DEPTH,
@@ -3006,40 +3012,28 @@ class NumMicroSecondsError(Exception):
 def num_nanoseconds(delta: Delta, /) -> int:
     """Compute the number of nanoseconds in a delta."""
     components = delta_components(delta)
-    if (
-        (components.months != 0)
-        or (components.days != 0)
-        or (components.hours != 0)
-        or (components.minutes != 0)
-        or (components.seconds != 0)
-        or (components.milliseconds != 0)
-        or (components.microseconds != 0)
-    ):
-        raise NumNanoSecondsError(
-            months=components.months,
-            days=components.days,
-            hours=components.hours,
-            minutes=components.minutes,
-            seconds=components.seconds,
-            milliseconds=components.milliseconds,
-            microseconds=components.microseconds,
-        )
-    return components.seconds
+    if (components.years != 0) or (components.months != 0):
+        raise NumNanoSecondsError(years=components.years, months=components.months)
+    return (
+        NANOSECONDS_PER_WEEK * components.weeks
+        + NANOSECONDS_PER_DAY * components.days
+        + NANOSECONDS_PER_HOUR * components.hours
+        + NANOSECONDS_PER_MINUTE * components.minutes
+        + NANOSECONDS_PER_SECOND * components.seconds
+        + NANOSECONDS_PER_MILLISECOND * components.milliseconds
+        + NANOSECONDS_PER_MICROSECOND * components.microseconds
+        + components.nanoseconds
+    )
 
 
 @dataclass(kw_only=True, slots=True)
 class NumNanoSecondsError(Exception):
+    years: int = 0
     months: int = 0
-    days: int = 0
-    hours: int = 0
-    minutes: int = 0
-    seconds: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
 
     @override
     def __str__(self) -> str:
-        return f"Delta must not contain months ({self.months}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}) or microseconds ({self.microseconds})"
+        return f"Delta must not contain years ({self.years}) or months ({self.months})"
 
 
 ##
