@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, cast, override
 
 import utilities.math
+from utilities.constants import ABS_TOL, REL_TOL
 from utilities.core import repr_
 from utilities.iterables import SortIterableError, sort_iterable
 from utilities.typing import is_dataclass_instance
@@ -19,8 +20,8 @@ def is_equal[T](
     y: Any,
     /,
     *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    rel_tol: float = REL_TOL,
+    abs_tol: float = ABS_TOL,
     extra: Mapping[type[T], Callable[[T, T], bool]] | None = None,
 ) -> bool:
     """Check if two objects are equal."""
@@ -89,8 +90,8 @@ def _is_in[T](
     y: AbstractSet[Any],
     /,
     *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    rel_tol: float = REL_TOL,
+    abs_tol: float = ABS_TOL,
     extra: Mapping[type[T], Callable[[T, T], bool]] | None = None,
 ) -> bool:
     return all(

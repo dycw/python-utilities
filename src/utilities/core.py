@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import datetime as dt
 import gzip
+import math
 import os
 import pickle
 import re
@@ -78,7 +79,16 @@ from whenever import (
 )
 
 import utilities.constants
+from utilities._core_errors import (
+    CompressBZ2Error,
+    CompressGzipError,
+    CompressLZMAError,
+    MaxNullableError,
+    MinNullableError,
+    _CompressFilesError,
+)
 from utilities.constants import (
+    ABS_TOL,
     DAYS_PER_WEEK,
     HOURS_PER_DAY,
     HOURS_PER_WEEK,
@@ -106,6 +116,7 @@ from utilities.constants import (
     NANOSECONDS_PER_MINUTE,
     NANOSECONDS_PER_SECOND,
     NANOSECONDS_PER_WEEK,
+    REL_TOL,
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
     RICH_MAX_DEPTH,
@@ -244,15 +255,6 @@ def min_nullable[T: SupportsRichComparison, U](
     return min(values, default=default)
 
 
-@dataclass(kw_only=True, slots=True)
-class MinNullableError[T: SupportsRichComparison](Exception):
-    iterable: Iterable[T | None]
-
-    @override
-    def __str__(self) -> str:
-        return f"Minimum of {repr_(self.iterable)} is undefined"
-
-
 @overload
 def max_nullable[T: SupportsRichComparison](
     iterable: Iterable[T | None], /, *, default: Sentinel = ...
@@ -272,15 +274,6 @@ def max_nullable[T: SupportsRichComparison, U](
         except ValueError:
             raise MaxNullableError(iterable=iterable) from None
     return max(values, default=default)
-
-
-@dataclass(kw_only=True, slots=True)
-class MaxNullableError[T: SupportsRichComparison](Exception):
-    iterable: Iterable[T | None]
-
-    @override
-    def __str__(self) -> str:
-        return f"Maximum of {repr_(self.iterable)} is undefined"
 
 
 ###############################################################################
@@ -303,16 +296,6 @@ def compress_bz2(
         raise CompressBZ2Error(srcs=error.srcs, dest=error.dest) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class CompressBZ2Error(Exception):
-    srcs: list[Path]
-    dest: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot compress source(s) {repr_(list(map(str, self.srcs)))} since destination {repr_str(self.dest)} already exists"
-
-
 def compress_gzip(
     src_or_dest: PathLike, /, *srcs_or_dest: PathLike, overwrite: bool = False
 ) -> None:
@@ -328,16 +311,6 @@ def compress_gzip(
         raise CompressGzipError(srcs=error.srcs, dest=error.dest) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class CompressGzipError(Exception):
-    srcs: list[Path]
-    dest: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot compress source(s) {repr_(list(map(str, self.srcs)))} since destination {repr_str(self.dest)} already exists"
-
-
 def compress_lzma(
     src_or_dest: PathLike, /, *srcs_or_dest: PathLike, overwrite: bool = False
 ) -> None:
@@ -351,16 +324,6 @@ def compress_lzma(
         _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
     except _CompressFilesError as error:
         raise CompressLZMAError(srcs=error.srcs, dest=error.dest) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class CompressLZMAError(Exception):
-    srcs: list[Path]
-    dest: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot compress source(s) {repr_(list(map(str, self.srcs)))} since destination {repr_str(self.dest)} already exists"
 
 
 def _compress_files(
@@ -408,12 +371,6 @@ def _compress_files(
                                     assert_never(never)
     except YieldWritePathError as error:
         raise _CompressFilesError(srcs=srcs, dest=error.path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class _CompressFilesError(Exception):
-    srcs: list[Path]
-    dest: Path
 
 
 def _compress_files_add_dir(path: PathLike, tar: TarFile, /) -> None:
@@ -1152,6 +1109,26 @@ def to_logger(logger: LoggerLike, /) -> Logger:
             return getLogger(logger)
         case never:
             assert_never(never)
+
+
+###############################################################################
+#### math #####################################################################
+###############################################################################
+
+
+def is_close(
+    x: float, y: float, /, *, rel_tol: float = REL_TOL, abs_tol: float = ABS_TOL
+) -> bool:
+    """Check if x == y."""
+    return math.isclose(
+        x,
+        y,
+        **({} if rel_tol is None else {"rel_tol": rel_tol}),
+        **({} if abs_tol is None else {"abs_tol": abs_tol}),
+    )
+
+
+##
 
 
 ###############################################################################
@@ -3506,6 +3483,7 @@ __all__ = [
     "get_today_local",
     "get_uid_name",
     "has_env",
+    "is_close",
     "is_debug",
     "is_none",
     "is_not_none",

@@ -6,9 +6,11 @@ from dataclasses import MISSING, dataclass, field, fields
 from typing import TYPE_CHECKING, Any, assert_never, overload, override
 
 from utilities.constants import (
+    ABS_TOL,
     BRACKETS,
     LIST_SEPARATOR,
     PAIR_SEPARATOR,
+    REL_TOL,
     Sentinel,
     sentinel,
 )
@@ -60,8 +62,8 @@ def dataclass_to_dict[T](
     warn_name_errors: bool = False,
     include: Iterable[str] | None = None,
     exclude: Iterable[str] | None = None,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    rel_tol: float = REL_TOL,
+    abs_tol: float = ABS_TOL,
     extra: Mapping[type[T], Callable[[T, T], bool]] | None = None,
     defaults: bool = False,
     final: Callable[[type[Dataclass], StrMapping], StrMapping] | None = None,
@@ -346,8 +348,8 @@ def serialize_dataclass[T](
     warn_name_errors: bool = False,
     include: Iterable[str] | None = None,
     exclude: Iterable[str] | None = None,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    rel_tol: float = REL_TOL,
+    abs_tol: float = ABS_TOL,
     extra_equal: Mapping[type[T], Callable[[T, T], bool]] | None = None,
     defaults: bool = False,
     list_separator: str = LIST_SEPARATOR,
@@ -799,8 +801,8 @@ class _YieldFieldsInstance[T]:
     def equals_default[U](
         self,
         *,
-        rel_tol: float | None = None,
-        abs_tol: float | None = None,
+        rel_tol: float = REL_TOL,
+        abs_tol: float = ABS_TOL,
         extra: Mapping[type[U], Callable[[U, U], bool]] | None = None,
     ) -> bool:
         """Check if the field value equals its default."""
@@ -823,8 +825,8 @@ class _YieldFieldsInstance[T]:
         *,
         include: Iterable[str] | None = None,
         exclude: Iterable[str] | None = None,
-        rel_tol: float | None = None,
-        abs_tol: float | None = None,
+        rel_tol: float = REL_TOL,
+        abs_tol: float = ABS_TOL,
         extra: Mapping[type[U], Callable[[U, U], bool]] | None = None,
         defaults: bool = False,
     ) -> bool:
