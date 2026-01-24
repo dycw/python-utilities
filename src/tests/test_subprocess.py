@@ -1262,7 +1262,7 @@ class TestRun:
                 retry=(2, None),
                 logger=logger,
             )
-        first, second, third = (r for r in caplog.records if r.name == logger.name)
+        first, second, third = [r for r in caplog.records if r.name == logger.name]
         assert search(r"^Retrying 2 more time\(s\)...$", first.message, flags=MULTILINE)
         assert search(
             r"^Retrying 1 more time\(s\)...$", second.message, flags=MULTILINE
