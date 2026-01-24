@@ -2485,7 +2485,7 @@ def yield_ssh_temp_dir(
         yield path
     finally:  # skipif-ci
         if keep:
-            log_info(logger, "Keeping temporary directory '%s'...", path)
+            log_info(logger, "Keeping temporary directory %s...", repr_str(path))
         else:
             ssh(user, hostname, *rm_cmd(path), retry=retry, logger=logger)
 
