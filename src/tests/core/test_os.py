@@ -115,14 +115,12 @@ class TestCopyOrMove:
         with raises(CopySourceNotFoundError, match=r"Source '.*' does not exist"):
             copy(temp_path_not_exist, tmp_path)
 
-    def test_error_copy_destination_exists(
-        self, *, tmp_path: Path, temp_path_not_exist: Path
-    ) -> None:
+    def test_error_copy_destination_exists(self, *, temp_file: Path) -> None:
         with raises(
             CopyDestinationExistsError,
-            match=r"Cannot move source '.*' since destination '.*' already exists",
+            match=r"Cannot copy source '.*' since destination '.*' already exists",
         ):
-            copy(temp_path_not_exist, tmp_path)
+            copy(temp_file, temp_file)
 
     def test_error_move_source_not_found(
         self, *, tmp_path: Path, temp_path_not_exist: Path

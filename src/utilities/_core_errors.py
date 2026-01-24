@@ -241,13 +241,12 @@ def _copy_or_move_dest_already_exists_error_msg(
 
 
 @dataclass(kw_only=True, slots=True)
-class CopyError(Exception): ...
+class CopyError(Exception):
+    src: Path
 
 
 @dataclass(kw_only=True, slots=True)
 class CopySourceNotFoundError(CopyError):
-    src: Path
-
     @override
     def __str__(self) -> str:
         return _copy_or_move_source_not_found_error_msg(self.src)
@@ -255,7 +254,6 @@ class CopySourceNotFoundError(CopyError):
 
 @dataclass(kw_only=True, slots=True)
 class CopyDestinationExistsError(CopyError):
-    src: Path
     dest: Path
 
     @override
@@ -264,13 +262,12 @@ class CopyDestinationExistsError(CopyError):
 
 
 @dataclass(kw_only=True, slots=True)
-class MoveError(Exception): ...
+class MoveError(Exception):
+    src: Path
 
 
 @dataclass(kw_only=True, slots=True)
 class MoveSourceNotFoundError(MoveError):
-    src: Path
-
     @override
     def __str__(self) -> str:
         return _copy_or_move_source_not_found_error_msg(self.src)
@@ -278,7 +275,6 @@ class MoveSourceNotFoundError(MoveError):
 
 @dataclass(kw_only=True, slots=True)
 class MoveDestinationExistsError(MoveError):
-    src: Path
     dest: Path
 
     @override
@@ -287,7 +283,7 @@ class MoveDestinationExistsError(MoveError):
 
 
 @dataclass(kw_only=True, slots=True)
-class CopyOrMoveSourceNotFoundError(Exception):
+class CopyOrMoveError(Exception):
     src: Path
 
     @override
@@ -296,8 +292,14 @@ class CopyOrMoveSourceNotFoundError(Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class CopyOrMoveDestinationExistsError(Exception):
-    src: Path
+class CopyOrMoveSourceNotFoundError(CopyOrMoveError):
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class CopyOrMoveDestinationExistsError(CopyOrMoveError):
     dest: Path
 
     @override
@@ -317,6 +319,34 @@ class GetEnvError(Exception):
     def __str__(self) -> str:
         desc = f"No environment variable {str(self.key)!r}"
         return desc if self.case_sensitive else f"{desc} (modulo case)"
+
+
+###############################################################################
+#### pathlib ##################################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class FileOrDirError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class FileOrDirMissingError(FileOrDirError):
+    @override
+    def __str__(self) -> str:
+        return f"Path does not exist: {str(self.path)!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class FileOrDirTypeError(FileOrDirError):
+    @override
+    def __str__(self) -> str:
+        return f"Path is neither a file nor a directory: {str(self.path)!r}"
 
 
 ###############################################################################
@@ -344,6 +374,9 @@ __all__ = [
     "CopyOrMoveDestinationExistsError",
     "CopyOrMoveSourceNotFoundError",
     "CopySourceNotFoundError",
+    "FileOrDirError",
+    "FileOrDirMissingError",
+    "FileOrDirTypeError",
     "GetEnvError",
     "MaxNullableError",
     "MinNullableError",

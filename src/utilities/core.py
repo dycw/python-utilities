@@ -87,6 +87,9 @@ from utilities._core_errors import (
     CopyDestinationExistsError,
     CopyError,
     CopySourceNotFoundError,
+    FileOrDirError,
+    FileOrDirMissingError,
+    FileOrDirTypeError,
     GetEnvError,
     MaxNullableError,
     MinNullableError,
@@ -1326,30 +1329,11 @@ def file_or_dir(path: PathLike, /, *, exists: bool = False) -> FileOrDir | None:
         case True, False, True, _:
             return "dir"
         case False, False, False, True:
-            raise _FileOrDirMissingError(path=path)
+            raise FileOrDirMissingError(path=path)
         case False, False, False, False:
             return None
         case _:
-            raise _FileOrDirTypeError(path=path)
-
-
-@dataclass(kw_only=True, slots=True)
-class FileOrDirError(Exception):
-    path: Path
-
-
-@dataclass(kw_only=True, slots=True)
-class _FileOrDirMissingError(FileOrDirError):
-    @override
-    def __str__(self) -> str:
-        return f"Path does not exist: {repr_str(self.path)}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _FileOrDirTypeError(FileOrDirError):
-    @override
-    def __str__(self) -> str:
-        return f"Path is neither a file nor a directory: {repr_str(self.path)}"
+            raise FileOrDirTypeError(path=path)
 
 
 ##
@@ -3294,6 +3278,8 @@ __all__ = [
     "ExtractGroupError",
     "ExtractGroupsError",
     "FileOrDirError",
+    "FileOrDirMissingError",
+    "FileOrDirTypeError",
     "GetEnvError",
     "MaxNullableError",
     "MinNullableError",
