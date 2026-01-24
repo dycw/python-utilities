@@ -9,7 +9,7 @@ from sqlalchemy import Table
 from sqlalchemy.orm import DeclarativeBase
 
 from utilities.asyncio import stream_command
-from utilities.core import always_iterable, log_info, to_logger, yield_temp_environ
+from utilities.core import always_iterable, log_exception, log_info, yield_temp_environ
 from utilities.docker import docker_exec_cmd
 from utilities.pathlib import ensure_suffix
 from utilities.sqlalchemy import extract_url, get_table_name
@@ -90,7 +90,8 @@ async def pg_dump(
             rmtree(path, ignore_errors=True)
             return False
         if output.return_code != 0:
-            to_logger(logger).exception(
+            log_exception(
+                logger,
                 "Backup to %r failed after %s\nstderr:\n%s",
                 str(path),
                 timer,
@@ -98,9 +99,9 @@ async def pg_dump(
             )
             rmtree(path, ignore_errors=True)
             return False
-    to_logger(logger).info(
-        "Backup to %r finished after %s", str(path), timer
-    )  # pragma: no cover
+    log_info(  # pragma: no cover
+        logger, "Backup to %r finished after %s", str(path), timer
+    )
     return True  # pragma: no cover
 
 
@@ -231,32 +232,29 @@ async def restore(
         docker_container=docker_container,
     )
     if dry_run:
-        if logger is not None:
-            to_logger(logger).info("Would run:\n\t%r", str(cmd))
+        log_info(logger, "Would run:\n\t%r", str(cmd))
         return True
-    with (
+    with (  # pragma: no cover
         yield_temp_environ(PGPASSWORD=url.password),
         Timer() as timer,
-    ):  # pragma: no cover
+    ):
         try:
             output = await stream_command(cmd)
         except KeyboardInterrupt:
-            if logger is not None:
-                to_logger(logger).info(
-                    "Cancelled restore from %r after %s", str(path), timer
-                )
+            log_info(logger, "Cancelled restore from %r after %s", str(path), timer)
             return False
         if output.return_code != 0:
-            if logger is not None:
-                to_logger(logger).exception(
-                    "Restore from %r failed after %s\nstderr:\n%s",
-                    str(path),
-                    timer,
-                    output.stderr,
-                )
+            log_exception(
+                logger,
+                "Restore from %r failed after %s\nstderr:\n%s",
+                str(path),
+                timer,
+                output.stderr,
+            )
             return False
-    if logger is not None:  # pragma: no cover
-        to_logger(logger).info("Restore from %r finished after %s", str(path), timer)
+    log_info(  # pragma: no cover
+        logger, "Restore from %r finished after %s", str(path), timer
+    )
     return True  # pragma: no cover
 
 
