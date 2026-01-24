@@ -89,6 +89,10 @@ class CompressFilesError(Exception):
     srcs: list[Path]
     dest: Path
 
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
 
 ##
 
@@ -136,6 +140,10 @@ class YieldZipError(Exception):
 @dataclass(kw_only=True, slots=True)
 class YieldUncompressedError(Exception):
     path: Path
+
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
 
 
 ###############################################################################
@@ -282,11 +290,33 @@ class MoveDestinationExistsError(MoveError):
 class CopyOrMoveSourceNotFoundError(Exception):
     src: Path
 
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
 
 @dataclass(kw_only=True, slots=True)
 class CopyOrMoveDestinationExistsError(Exception):
     src: Path
     dest: Path
+
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+###############################################################################
+#### writers ##################################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class YieldWritePathError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot write to {str(self.path)!r} since it already exists"
 
 
 __all__ = [
@@ -312,5 +342,6 @@ __all__ = [
     "YieldGzipError",
     "YieldLZMAError",
     "YieldUncompressedError",
+    "YieldWritePathError",
     "YieldZipError",
 ]
