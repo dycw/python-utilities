@@ -2664,6 +2664,48 @@ class NumYearsError(Exception):
         return f"Delta must not contain months ({self.months}), weeks ({self.weeks}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
 
 
+def num_months(delta: Delta, /) -> int:
+    """Compute the number of months in a delta."""
+    components = delta_components(delta)
+    if (
+        (components.weeks != 0)
+        or (components.days != 0)
+        or (components.hours != 0)
+        or (components.minutes != 0)
+        or (components.seconds != 0)
+        or (components.milliseconds != 0)
+        or (components.microseconds != 0)
+        or (components.nanoseconds != 0)
+    ):
+        raise NumMonthsError(
+            weeks=components.weeks,
+            days=components.days,
+            hours=components.hours,
+            minutes=components.minutes,
+            seconds=components.seconds,
+            milliseconds=components.milliseconds,
+            microseconds=components.microseconds,
+            nanoseconds=components.nanoseconds,
+        )
+    return MONTHS_PER_YEAR * components.years + components.months
+
+
+@dataclass(kw_only=True, slots=True)
+class NumMonthsError(Exception):
+    weeks: int = 0
+    days: int = 0
+    hours: int = 0
+    minutes: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain weeks ({self.weeks}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
 def num_weeks(delta: Delta, /) -> int:
     """Compute the number of weeks in a delta."""
     components = delta_components(delta)
