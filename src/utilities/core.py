@@ -101,6 +101,7 @@ from utilities._core_errors import (
     YieldBZ2Error,
     YieldGzipError,
     YieldLZMAError,
+    YieldWritePathError,
     YieldZipError,
 )
 from utilities._core_errors import CompressFilesError as _CompressFilesError
@@ -3175,21 +3176,12 @@ def yield_write_path(
         else:
             try:
                 move(temp, path, overwrite=overwrite)
-            except _CopyOrMoveDestinationExistsError as error:
+            except MoveDestinationExistsError as error:
                 raise YieldWritePathError(path=error.dest) from None
     if perms is not None:
         chmod(path, perms)
     if (owner is not None) or (group is not None):
         chown(path, user=owner, group=group)
-
-
-@dataclass(kw_only=True, slots=True)
-class YieldWritePathError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot write to {repr_str(self.path)} since it already exists"
 
 
 ###############################################################################
