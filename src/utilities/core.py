@@ -81,12 +81,18 @@ from whenever import (
 import utilities.constants
 from utilities._core_errors import (
     CompressBZ2Error,
-    CompressFilesError,
     CompressGzipError,
     CompressLZMAError,
+    CompressZipError,
     MaxNullableError,
     MinNullableError,
+    YieldBZ2Error,
+    YieldGzipError,
+    YieldLZMAError,
+    YieldZipError,
 )
+from utilities._core_errors import CompressFilesError as _CompressFilesError
+from utilities._core_errors import YieldUncompressedError as _YieldUncompressedError
 from utilities.constants import (
     ABS_TOL,
     DAYS_PER_WEEK,
@@ -292,7 +298,7 @@ def compress_bz2(
     func2 = cast("PathToBinaryIO", func)
     try:
         _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
-    except CompressFilesError as error:
+    except _CompressFilesError as error:
         raise CompressBZ2Error(srcs=error.srcs, dest=error.dest) from None
 
 
@@ -307,7 +313,7 @@ def compress_gzip(
     func2 = cast("PathToBinaryIO", func)
     try:
         _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
-    except CompressFilesError as error:
+    except _CompressFilesError as error:
         raise CompressGzipError(srcs=error.srcs, dest=error.dest) from None
 
 
@@ -322,7 +328,7 @@ def compress_lzma(
     func2 = cast("PathToBinaryIO", func)
     try:
         _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
-    except CompressFilesError as error:
+    except _CompressFilesError as error:
         raise CompressLZMAError(srcs=error.srcs, dest=error.dest) from None
 
 
@@ -370,7 +376,7 @@ def _compress_files(
                                 case never:
                                     assert_never(never)
     except YieldWritePathError as error:
-        raise CompressFilesError(srcs=srcs, dest=error.path) from None
+        raise _CompressFilesError(srcs=srcs, dest=error.path) from None
 
 
 def _compress_files_add_dir(path: PathLike, tar: TarFile, /) -> None:
@@ -415,16 +421,6 @@ def compress_zip(
         raise CompressZipError(srcs=srcs, dest=error.path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class CompressZipError(Exception):
-    srcs: list[Path]
-    dest: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot compress source(s) {repr_(list(map(str, self.srcs)))} since destination {repr_str(self.dest)} already exists"
-
-
 ##
 
 
@@ -442,15 +438,6 @@ def yield_bz2(path: PathLike, /) -> Iterator[Path]:
         raise YieldBZ2Error(path=error.path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class YieldBZ2Error(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot uncompress {repr_str(self.path)} since it does not exist"
-
-
 @contextmanager
 def yield_gzip(path: PathLike, /) -> Iterator[Path]:
     """Yield the contents of a Gzip file."""
@@ -465,15 +452,6 @@ def yield_gzip(path: PathLike, /) -> Iterator[Path]:
         raise YieldGzipError(path=error.path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class YieldGzipError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot uncompress {repr_str(self.path)} since it does not exist"
-
-
 @contextmanager
 def yield_lzma(path: PathLike, /) -> Iterator[Path]:
     """Yield the contents of an LZMA file."""
@@ -486,15 +464,6 @@ def yield_lzma(path: PathLike, /) -> Iterator[Path]:
             yield temp
     except _YieldUncompressedError as error:
         raise YieldLZMAError(path=error.path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class YieldLZMAError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot uncompress {repr_str(self.path)} since it does not exist"
 
 
 @contextmanager
@@ -526,11 +495,6 @@ def _yield_uncompressed(path: PathLike, func: PathToBinaryIO, /) -> Iterator[Pat
         raise _YieldUncompressedError(path=path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class _YieldUncompressedError(Exception):
-    path: Path
-
-
 ##
 
 
@@ -547,15 +511,6 @@ def yield_zip(path: PathLike, /) -> Iterator[Path]:
                 yield temp
     except FileNotFoundError:
         raise YieldZipError(path=path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class YieldZipError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot uncompress {repr_str(self.path)} since it does not exist"
 
 
 ###############################################################################
