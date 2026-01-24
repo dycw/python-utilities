@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal, overload
 
 from utilities.contextlib import enhanced_context_manager
-from utilities.core import always_iterable, to_logger
+from utilities.core import always_iterable, log_info, repr_str
 from utilities.errors import ImpossibleCaseError
 from utilities.subprocess import (
     MKTEMP_DIR_CMD,
@@ -365,8 +365,7 @@ def yield_docker_temp_dir(
         yield path
     finally:  # skipif-ci
         if keep:
-            if logger is not None:
-                to_logger(logger).info("Keeping temporary directory '%s'...", path)
+            log_info(logger, "Keeping temporary directory %s...", repr_str(path))
         else:
             docker_exec(container, *rm_cmd(path), user=user, retry=retry, logger=logger)
 
