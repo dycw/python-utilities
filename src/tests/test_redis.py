@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from asyncio import Queue
 from itertools import chain, repeat
-from logging import getLogger
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from hypothesis import HealthCheck, Phase, given, settings
@@ -45,6 +44,7 @@ from utilities.redis import (
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
+    from logging import Logger
 
     from whenever import TimeDelta
 
@@ -83,10 +83,8 @@ class TestHandleMessage:
         assert queue.empty()
 
     def test_error_transform_with_handler(
-        self, *, caplog: LogCaptureFixture, queue: Queue[Any]
+        self, *, logger: Logger, caplog: LogCaptureFixture, queue: Queue[Any]
     ) -> None:
-        logger = getLogger(name := unique_str())
-
         class CustomError(Exception): ...
 
         def transform(message: _RedisMessage, /) -> None:
@@ -97,7 +95,7 @@ class TestHandleMessage:
 
         _handle_message(self.message, transform, queue, error_transform=error_transform)
         assert queue.empty()
-        record = one(r for r in caplog.records if r.name == name)
+        record = one(r for r in caplog.records if r.name == logger.name)
         assert record.message == f"Got 'CustomError' transforming {self.message}"
 
     @mark.parametrize(
@@ -126,10 +124,8 @@ class TestHandleMessage:
         assert queue.empty()
 
     def test_error_filter_with_handler(
-        self, *, caplog: LogCaptureFixture, queue: Queue[Any]
+        self, *, logger: Logger, caplog: LogCaptureFixture, queue: Queue[Any]
     ) -> None:
-        logger = getLogger(name := unique_str())
-
         def error_filter(message: _RedisMessage, error: Exception, /) -> None:
             logger.warning("Got %r filtering %r", get_class_name(error), message)
 
@@ -141,7 +137,7 @@ class TestHandleMessage:
             error_filter=error_filter,
         )
         assert queue.empty()
-        record = one(r for r in caplog.records if r.name == name)
+        record = one(r for r in caplog.records if r.name == logger.name)
         assert record.message == f"Got 'KeyError' filtering {self.message}"
 
 
