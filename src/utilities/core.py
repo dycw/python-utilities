@@ -96,7 +96,10 @@ from utilities.constants import (
     RICH_MAX_LENGTH,
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
+    SECONDS_PER_DAY,
+    SECONDS_PER_HOUR,
     SECONDS_PER_MINUTE,
+    SECONDS_PER_WEEK,
     UTC,
     Sentinel,
     _get_now,
@@ -2884,39 +2887,39 @@ def num_seconds(delta: Delta, /) -> int:
     """Compute the number of seconds in a delta."""
     components = delta_components(delta)
     if (
-        (components.months != 0)
-        or (components.days != 0)
-        or (components.hours != 0)
-        or (components.minutes != 0)
+        (components.years != 0)
+        or (components.months != 0)
         or (components.milliseconds != 0)
         or (components.microseconds != 0)
         or (components.nanoseconds != 0)
     ):
         raise NumSecondsError(
+            years=components.years,
             months=components.months,
-            days=components.days,
-            hours=components.hours,
-            minutes=components.minutes,
             milliseconds=components.milliseconds,
             microseconds=components.microseconds,
             nanoseconds=components.nanoseconds,
         )
-    return components.seconds
+    return (
+        SECONDS_PER_WEEK * components.weeks
+        + SECONDS_PER_DAY * components.days
+        + SECONDS_PER_HOUR * components.hours
+        + SECONDS_PER_MINUTE * components.minutes
+        + components.seconds
+    )
 
 
 @dataclass(kw_only=True, slots=True)
 class NumSecondsError(Exception):
+    years: int = 0
     months: int = 0
-    days: int = 0
-    hours: int = 0
-    minutes: int = 0
     milliseconds: int = 0
     microseconds: int = 0
     nanoseconds: int = 0
 
     @override
     def __str__(self) -> str:
-        return f"Delta must not contain months ({self.months}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+        return f"Delta must not contain years ({self.years}), months ({self.months}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
 
 
 def num_milliseconds(delta: Delta, /) -> int:

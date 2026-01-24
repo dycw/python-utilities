@@ -353,7 +353,7 @@ class TestNumMinutes:
             param(WEEK, 10_080),
             param(2 * DAY, 2_880),
             param(DAY + 12 * HOUR, 2_160),
-            param(DAY, 1440),
+            param(DAY, 1_440),
             param(2 * HOUR, 120),
             param(HOUR + 30 * MINUTE, 90),
             param(HOUR, 60),
@@ -424,6 +424,18 @@ class TestNumSeconds:
     @mark.parametrize(
         ("delta", "expected"),
         [
+            param(2 * WEEK, 1_209_600),
+            param(WEEK + 3 * DAY, 864_000),
+            param(WEEK, 604_800),
+            param(2 * DAY, 172_800),
+            param(DAY + 12 * HOUR, 129_600),
+            param(DAY, 86_400),
+            param(2 * HOUR, 7_200),
+            param(HOUR + 30 * MINUTE, 5_400),
+            param(HOUR, 3_600),
+            param(2 * MINUTE, 120),
+            param(MINUTE + 30 * SECOND, 90),
+            param(MINUTE, 60),
             param(2 * SECOND, 2),
             param(SECOND, 1),
             param(2000 * MILLISECOND, 2),
@@ -436,10 +448,8 @@ class TestNumSeconds:
     @mark.parametrize(
         "delta",
         [
+            param(YEAR),
             param(MONTH),
-            param(DAY),
-            param(HOUR),
-            param(MINUTE),
             param(MILLISECOND),
             param(MICROSECOND),
             param(NANOSECOND),
@@ -448,7 +458,7 @@ class TestNumSeconds:
     def test_error(self, *, delta: Delta) -> None:
         with raises(
             NumSecondsError,
-            match=r"Delta must not contain months \(.*\), days \(.*\), hours \(.*\), minutes \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
+            match=r"Delta must not contain years \(.*\), months \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
         ):
             _ = num_seconds(delta)
 
