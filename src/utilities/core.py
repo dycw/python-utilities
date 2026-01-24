@@ -83,7 +83,12 @@ from utilities.constants import (
     HOURS_PER_WEEK,
     LOCAL_TIME_ZONE,
     LOCAL_TIME_ZONE_NAME,
+    MICROSECONDS_PER_DAY,
+    MICROSECONDS_PER_HOUR,
     MICROSECONDS_PER_MILLISECOND,
+    MICROSECONDS_PER_MINUTE,
+    MICROSECONDS_PER_SECOND,
+    MICROSECONDS_PER_WEEK,
     MILLISECONDS_PER_DAY,
     MILLISECONDS_PER_HOUR,
     MILLISECONDS_PER_MINUTE,
@@ -2941,7 +2946,6 @@ def num_milliseconds(delta: Delta, /) -> int:
             microseconds=components.microseconds,
             nanoseconds=components.nanoseconds,
         )
-
     return (
         MILLISECONDS_PER_WEEK * components.weeks
         + MILLISECONDS_PER_DAY * components.days
@@ -2968,39 +2972,35 @@ def num_microseconds(delta: Delta, /) -> int:
     """Compute the number of microseconds in a delta."""
     components = delta_components(delta)
     if (
-        (components.months != 0)
-        or (components.days != 0)
-        or (components.hours != 0)
-        or (components.minutes != 0)
-        or (components.seconds != 0)
-        or (components.milliseconds != 0)
+        (components.years != 0)
+        or (components.months != 0)
         or (components.nanoseconds != 0)
     ):
         raise NumMicroSecondsError(
+            years=components.years,
             months=components.months,
-            days=components.days,
-            hours=components.hours,
-            minutes=components.minutes,
-            seconds=components.seconds,
-            milliseconds=components.milliseconds,
             nanoseconds=components.nanoseconds,
         )
-    return components.seconds
+    return (
+        MICROSECONDS_PER_WEEK * components.weeks
+        + MICROSECONDS_PER_DAY * components.days
+        + MICROSECONDS_PER_HOUR * components.hours
+        + MICROSECONDS_PER_MINUTE * components.minutes
+        + MICROSECONDS_PER_SECOND * components.seconds
+        + MICROSECONDS_PER_MILLISECOND * components.milliseconds
+        + components.microseconds
+    )
 
 
 @dataclass(kw_only=True, slots=True)
 class NumMicroSecondsError(Exception):
+    years: int = 0
     months: int = 0
-    days: int = 0
-    hours: int = 0
-    minutes: int = 0
-    seconds: int = 0
-    milliseconds: int = 0
     nanoseconds: int = 0
 
     @override
     def __str__(self) -> str:
-        return f"Delta must not contain months ({self.months}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}) or nanoseconds ({self.nanoseconds})"
+        return f"Delta must not contain years ({self.years}), months ({self.months}) or nanoseconds ({self.nanoseconds})"
 
 
 def num_nanoseconds(delta: Delta, /) -> int:

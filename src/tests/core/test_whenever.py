@@ -28,6 +28,7 @@ from utilities.constants import (
 from utilities.core import (
     NumDaysError,
     NumHoursError,
+    NumMicroSecondsError,
     NumMilliSecondsError,
     NumMinutesError,
     NumMonthsError,
@@ -47,6 +48,7 @@ from utilities.core import (
     get_today_local,
     num_days,
     num_hours,
+    num_microseconds,
     num_milliseconds,
     num_minutes,
     num_months,
@@ -307,6 +309,46 @@ class TestNumHours:
             match=r"Delta must not contain years \(.*\), months \(.*\), minutes \(.*\), seconds \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
         ):
             _ = num_hours(delta)
+
+
+class TestNumMicroSeconds:
+    @mark.parametrize(
+        ("delta", "expected"),
+        [
+            param(2 * WEEK, 1_209_600_000_000),
+            param(WEEK + 3 * DAY, 864_000_000_000),
+            param(WEEK, 604_800_000_000),
+            param(2 * DAY, 172_800_000_000),
+            param(DAY + 12 * HOUR, 129_600_000_000),
+            param(DAY, 86_400_000_000),
+            param(2 * HOUR, 7_200_000_000),
+            param(HOUR + 30 * MINUTE, 5_400_000_000),
+            param(HOUR, 3_600_000_000),
+            param(2 * MINUTE, 120_000_000),
+            param(MINUTE + 30 * SECOND, 90_000_000),
+            param(MINUTE, 60_000_000),
+            param(2 * SECOND, 2_000_000),
+            param(SECOND + 500 * MILLISECOND, 1_500_000),
+            param(SECOND, 1_000_000),
+            param(2 * MILLISECOND, 2_000),
+            param(MILLISECOND + 500 * MICROSECOND, 1_500),
+            param(MILLISECOND, 1_000),
+            param(2 * MICROSECOND, 2),
+            param(MICROSECOND, 1),
+            param(2000 * NANOSECOND, 2),
+            param(1000 * NANOSECOND, 1),
+        ],
+    )
+    def test_main(self, *, delta: Delta, expected: int) -> None:
+        assert num_microseconds(delta) == expected
+
+    @mark.parametrize("delta", [param(YEAR), param(MONTH), param(NANOSECOND)])
+    def test_error(self, *, delta: Delta) -> None:
+        with raises(
+            NumMicroSecondsError,
+            match=r"Delta must not contain years \(.*\), months \(.*\) or nanoseconds \(.*\)",
+        ):
+            _ = num_microseconds(delta)
 
 
 class TestNumMilliSeconds:
