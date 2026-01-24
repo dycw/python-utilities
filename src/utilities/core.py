@@ -1148,7 +1148,7 @@ def to_logger(logger: LoggerLike, /) -> Logger:
     match logger:
         case Logger():
             return logger
-        case str() | None:
+        case str():
             return getLogger(logger)
         case never:
             assert_never(never)

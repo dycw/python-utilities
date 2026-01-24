@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, Logger, getLogger
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, Logger
 from typing import TYPE_CHECKING
 
 from pytest import mark, param
@@ -81,9 +81,8 @@ class TestLogDebugInfoWarningErrorCritical:
 
 
 class TestToLogger:
-    def test_logger(self) -> None:
-        name = unique_str()
-        assert to_logger(getLogger(name)).name == name
+    def test_logger(self, *, logger: Logger) -> None:
+        assert to_logger(logger) is logger
 
     def test_str(self) -> None:
         name = unique_str()
