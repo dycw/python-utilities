@@ -127,6 +127,7 @@ from utilities.types import (
     Duration,
     FilterWarningsAction,
     MaybeCallableDateLike,
+    Number,
     Pair,
     PathToBinaryIO,
     PatternLike,
@@ -2593,6 +2594,31 @@ class _DeltaComponentsMixedSignError(DeltaComponentsError):
 ##
 
 
+def duration_to_milliseconds(duration: Duration, /) -> Number:
+    """Convert a duration to a number of milliseconds."""
+    match duration:
+        case int() | float():
+            return duration
+        case DateDelta() | TimeDelta() | DateTimeDelta():
+            return num_nanoseconds(duration) / NANOSECONDS_PER_MILLISECOND
+        case never:
+            assert_never(never)
+
+
+def duration_to_seconds(duration: Duration, /) -> Number:
+    """Convert a duration to a number of seconds."""
+    match duration:
+        case int() | float():
+            return duration
+        case DateDelta() | TimeDelta() | DateTimeDelta():
+            return num_nanoseconds(duration) / NANOSECONDS_PER_SECOND
+        case never:
+            assert_never(never)
+
+
+##
+
+
 get_now_local = utilities.constants._get_now_local  # noqa: SLF001
 
 
@@ -3281,6 +3307,8 @@ __all__ = [
     "compress_lzma",
     "compress_zip",
     "delta_components",
+    "duration_to_milliseconds",
+    "duration_to_seconds",
     "extract_group",
     "extract_groups",
     "file_or_dir",

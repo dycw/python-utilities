@@ -36,8 +36,8 @@ from typing import (
 )
 
 from utilities.constants import SYSTEM_RANDOM, Sentinel, sentinel
-from utilities.core import async_sleep, get_now, is_pytest, repr_
-from utilities.functions import ensure_int, ensure_not_none, in_seconds
+from utilities.core import async_sleep, duration_to_seconds, get_now, is_pytest, repr_
+from utilities.functions import ensure_int, ensure_not_none
 from utilities.shelve import yield_shelf
 from utilities.text import to_bool
 from utilities.whenever import round_date_or_date_time
@@ -454,7 +454,7 @@ async def sleep_max(
 ) -> None:
     """Sleep up to a maximum duration."""
     if duration is not None:
-        await async_sleep(random.uniform(0.0, in_seconds(duration)))
+        await async_sleep(random.uniform(0.0, duration_to_seconds(duration)))
 
 
 ##
@@ -532,7 +532,7 @@ async def timeout(
         yield
     else:
         try:
-            async with asyncio.timeout(in_seconds(duration)):
+            async with asyncio.timeout(duration_to_seconds(duration)):
                 yield
         except TimeoutError:
             raise error from None

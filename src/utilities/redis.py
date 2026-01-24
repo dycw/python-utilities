@@ -24,9 +24,16 @@ import utilities.asyncio
 from utilities.asyncio import timeout
 from utilities.constants import MILLISECOND, SECOND
 from utilities.contextlib import enhanced_async_context_manager
-from utilities.core import always_iterable, identity, is_pytest, one
+from utilities.core import (
+    always_iterable,
+    duration_to_milliseconds,
+    duration_to_seconds,
+    identity,
+    is_pytest,
+    one,
+)
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import ensure_int, in_milli_seconds, in_seconds
+from utilities.functions import ensure_int
 from utilities.math import safe_round
 from utilities.typing import is_instance_gen
 
@@ -38,6 +45,7 @@ if TYPE_CHECKING:
     from redis.typing import EncodableT
 
     from utilities.types import (
+        Delta,
         Duration,
         MaybeIterable,
         MaybeSequence,
@@ -65,7 +73,7 @@ class RedisHashMapKey[K, V]:
     value_deserializer: Callable[[bytes], V] | None = None
     timeout: Duration | None = None
     error: MaybeType[BaseException] = TimeoutError
-    ttl: Duration | None = None
+    ttl: Delta | None = None
 
     async def delete(self, redis: Redis, key: K, /) -> int:
         """Delete a key from a hashmap in `redis`."""
@@ -169,7 +177,9 @@ class RedisHashMapKey[K, V]:
                 "Awaitable[int]", redis.hset(self.name, mapping=cast("Any", ser))
             )
             if self.ttl is not None:
-                await redis.pexpire(self.name, safe_round(in_milli_seconds(self.ttl)))
+                await redis.pexpire(
+                    self.name, safe_round(duration_to_milliseconds(self.ttl))
+                )
         return result  # skipif-ci-and-not-linux
 
     async def values(self, redis: Redis, /) -> Sequence[V]:
@@ -407,7 +417,7 @@ class RedisKey[T]:
         """Set a value in `redis`."""
         ser = _serialize(value, serializer=self.serializer)  # skipif-ci-and-not-linux
         ttl = (  # skipif-ci-and-not-linux
-            None if self.ttl is None else safe_round(in_milli_seconds(self.ttl))
+            None if self.ttl is None else safe_round(duration_to_milliseconds(self.ttl))
         )
         async with timeout(  # skipif-ci-and-not-linux
             self.timeout, error=self.error
@@ -765,7 +775,7 @@ async def _subscribe_core[T](
     sleep: Duration = _SUBSCRIBE_SLEEP,
 ) -> None:
     timeout_use = (  # skipif-ci-and-not-linux
-        None if timeout is None else in_seconds(timeout)
+        None if timeout is None else duration_to_seconds(timeout)
     )
     is_subscribe_message = partial(  # skipif-ci-and-not-linux
         _is_message, channels={c.encode() for c in channels}

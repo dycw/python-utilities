@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING
 from pytest import fixture, mark, param, raises
 
 from utilities.constants import IS_CI, SECOND
-from utilities.core import repr_str, sync_sleep
-from utilities.functions import in_seconds
+from utilities.core import duration_to_seconds, repr_str, sync_sleep
 from utilities.pytest import (
     _NodeIdToPathNotGetTailError,
     _NodeIdToPathNotPythonFileError,
@@ -348,11 +347,11 @@ class TestRunTestFrac:
 
 class TestThrottleTest:
     def test_main(self, *, testdir: Testdir, tmp_path: Path) -> None:
-        seconds = in_seconds(_DURATION)
+        seconds = duration_to_seconds(_DURATION)
         _ = testdir.makepyfile(f"""
             from utilities.pytest import throttle_test
 
-            @throttle_test(root={repr_str(tmp_path)}, duration={seconds})
+            @throttle_test(root={repr_str(tmp_path)}, delta={seconds})
             def test_main() -> None:
                 assert True
         """)
@@ -362,7 +361,7 @@ class TestThrottleTest:
         testdir.runpytest().assert_outcomes(passed=1)
 
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
-        seconds = in_seconds(_DURATION)
+        seconds = duration_to_seconds(_DURATION)
         _ = testdir.makepyfile(f"""
             from pytest import mark
             from string import printable
@@ -370,7 +369,7 @@ class TestThrottleTest:
             from utilities.pytest import throttle_test
 
             @mark.parametrize("arg", [10 * printable])
-            @throttle_test(root={str(tmp_path)!r}, duration={seconds})
+            @throttle_test(root={str(tmp_path)!r}, delta={seconds})
             def test_main(*, arg: str) -> None:
                 assert True
         """)

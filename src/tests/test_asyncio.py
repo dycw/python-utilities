@@ -383,16 +383,6 @@ class TestPutItems:
         assert result == xs
 
 
-class TestSleep:
-    async def test_main(self) -> None:
-        with Timer() as timer:
-            await async_sleep(_DURATION)
-        assert timer <= _MULTIPLE * _DURATION
-
-    async def test_none(self) -> None:
-        await async_sleep()
-
-
 class TestSleepMax:
     async def test_main(self) -> None:
         with Timer() as timer:

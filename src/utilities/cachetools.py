@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, cast, override
 import cachetools
 from cachetools.func import ttl_cache
 
-from utilities.functions import in_seconds
+from utilities.core import duration_to_seconds
 
 if TYPE_CHECKING:
     from utilities.types import Duration
@@ -27,7 +27,7 @@ class TTLCache[K: Hashable, V](cachetools.TTLCache[K, V]):
     ) -> None:
         super().__init__(
             maxsize=inf if max_size is None else max_size,
-            ttl=inf if max_duration is None else in_seconds(max_duration),
+            ttl=inf if max_duration is None else duration_to_seconds(max_duration),
             timer=timer,
             getsizeof=get_size_of,
         )
@@ -106,7 +106,7 @@ def cache[F: Callable](
         "F",
         ttl_cache(
             maxsize=max_size,
-            ttl=inf if max_duration is None else in_seconds(max_duration),
+            ttl=inf if max_duration is None else duration_to_seconds(max_duration),
             timer=timer,
             typed=typed_,
         ),

@@ -9,7 +9,7 @@ from slack_sdk.webhook.async_client import AsyncWebhookClient
 
 import utilities.asyncio
 from utilities.constants import MINUTE
-from utilities.functions import in_seconds
+from utilities.core import duration_to_seconds
 from utilities.functools import cache
 from utilities.math import safe_round
 
@@ -36,7 +36,7 @@ def send_to_slack(url: str, text: str, /, *, timeout: Duration = _TIMEOUT) -> No
 @cache
 def _get_client(url: str, /, *, timeout: Duration = _TIMEOUT) -> WebhookClient:
     """Get the Slack client."""
-    return WebhookClient(url, timeout=safe_round(in_seconds(timeout)))
+    return WebhookClient(url, timeout=safe_round(duration_to_seconds(timeout)))
 
 
 async def send_to_slack_async(
@@ -60,7 +60,7 @@ def _get_async_client(
     url: str, /, *, timeout: Duration = _TIMEOUT
 ) -> AsyncWebhookClient:
     """Get the Slack client."""
-    return AsyncWebhookClient(url, timeout=safe_round(in_seconds(timeout)))
+    return AsyncWebhookClient(url, timeout=safe_round(duration_to_seconds(timeout)))
 
 
 @dataclass(kw_only=True, slots=True)

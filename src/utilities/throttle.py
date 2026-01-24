@@ -10,8 +10,7 @@ from typing import TYPE_CHECKING, Any, NoReturn, assert_never, cast, override
 from whenever import ZonedDateTime
 
 from utilities.constants import SECOND
-from utilities.core import get_env, get_now_local, write_text
-from utilities.functions import in_timedelta
+from utilities.core import duration_to_seconds, get_env, get_now_local, write_text
 from utilities.pathlib import to_path
 from utilities.types import Duration, MaybeCallablePathLike, MaybeCoro
 
@@ -19,10 +18,13 @@ if TYPE_CHECKING:
     from utilities.types import Coro
 
 
+_DEFAULT_THROTTLE: Duration = SECOND
+
+
 def throttle[F: Callable[..., MaybeCoro[None]]](
     *,
     on_try: bool = False,
-    duration: Duration = SECOND,
+    duration: Duration = _DEFAULT_THROTTLE,
     path: MaybeCallablePathLike = Path.cwd,
     raiser: Callable[[], NoReturn] | None = None,
 ) -> Callable[[F], F]:
@@ -40,7 +42,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
     /,
     *,
     on_try: bool = False,
-    duration: Duration = SECOND,
+    duration: Duration = _DEFAULT_THROTTLE,
     path: MaybeCallablePathLike = Path.cwd,
     raiser: Callable[[], NoReturn] | None = None,
 ) -> F:
@@ -102,7 +104,7 @@ def _throttle_inner[F: Callable[..., MaybeCoro[None]]](
 
 
 def _is_throttle(
-    *, path: MaybeCallablePathLike = Path.cwd, duration: Duration = SECOND
+    *, path: MaybeCallablePathLike = Path.cwd, duration: Duration = _DEFAULT_THROTTLE
 ) -> bool:
     if get_env("THROTTLE", nullable=True):
         return False
@@ -116,7 +118,7 @@ def _is_throttle(
             last = ZonedDateTime.parse_iso(text)
         except ValueError:
             raise _ThrottleParseZonedDateTimeError(path=path, text=text) from None
-        threshold = get_now_local() - in_timedelta(duration)
+        threshold = get_now_local() - duration_to_seconds(duration) * SECOND
         return threshold <= last
     if not path.exists():
         return False

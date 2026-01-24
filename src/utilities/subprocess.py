@@ -33,7 +33,6 @@ from utilities.core import (
     sync_sleep,
 )
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import in_timedelta
 from utilities.logging import to_logger
 from utilities.version import (
     ParseVersion2Or3Error,
@@ -1240,7 +1239,7 @@ def run(
                         if duration is None:
                             msg = f"{msg}\n\nRetrying {attempts} more time(s)..."
                         else:
-                            msg = f"{msg}\n\nRetrying {attempts} more time(s) after {in_timedelta(duration)}..."
+                            msg = f"{msg}\n\nRetrying {attempts} more time(s) after {duration}..."
                     to_logger(logger).error(msg)
                 error = CalledProcessError(
                     return_code, args, output=stdout_text, stderr=stderr_text

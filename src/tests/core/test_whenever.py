@@ -39,6 +39,8 @@ from utilities.core import (
     _DeltaComponentsMixedSignError,
     _DeltaComponentsOutput,
     delta_components,
+    duration_to_milliseconds,
+    duration_to_seconds,
     get_now,
     get_now_local,
     get_now_local_plain,
@@ -63,7 +65,7 @@ from utilities.core import (
 from utilities.hypothesis import dates, pairs, zone_infos
 
 if TYPE_CHECKING:
-    from utilities.types import Delta, MaybeCallableDateLike, Pair
+    from utilities.types import Delta, Duration, MaybeCallableDateLike, Number, Pair
 
 
 class TestDeltaComponents:
@@ -180,6 +182,36 @@ class TestDeltaComponents:
             match=r"Years, months and days must have the same sign; got .*, .* and .*",
         ):
             _ = _DeltaComponentsOutput(years=years, months=months, days=days)
+
+
+class TestDurationToMilliSeconds:
+    @mark.parametrize(
+        ("duration", "expected"),
+        [
+            param(1, 1),
+            param(1.0, 1.0),
+            param(SECOND, 1000.0),
+            param(MILLISECOND, 1.0),
+            param(MICROSECOND, 0.001),
+        ],
+    )
+    def test_main(self, *, duration: Duration, expected: Number) -> None:
+        assert duration_to_milliseconds(duration) == expected
+
+
+class TestDurationToSeconds:
+    @mark.parametrize(
+        ("duration", "expected"),
+        [
+            param(1, 1),
+            param(1.0, 1.0),
+            param(MINUTE, 60.0),
+            param(SECOND, 1.0),
+            param(MILLISECOND, 0.001),
+        ],
+    )
+    def test_main(self, *, duration: Duration, expected: Number) -> None:
+        assert duration_to_seconds(duration) == expected
 
 
 class TestGetNow:
