@@ -1341,7 +1341,6 @@ __all__ = [
     "is_weekend",
     "mean_datetime",
     "min_max_date",
-    "num_days",
     "round_date_or_date_time",
     "sub_year_month",
     "to_date_time_delta",
