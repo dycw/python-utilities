@@ -45,7 +45,6 @@ if TYPE_CHECKING:
     from redis.typing import EncodableT
 
     from utilities.types import (
-        Delta,
         Duration,
         MaybeIterable,
         MaybeSequence,
@@ -73,7 +72,7 @@ class RedisHashMapKey[K, V]:
     value_deserializer: Callable[[bytes], V] | None = None
     timeout: Duration | None = None
     error: MaybeType[BaseException] = TimeoutError
-    ttl: Delta | None = None
+    ttl: Duration | None = None
 
     async def delete(self, redis: Redis, key: K, /) -> int:
         """Delete a key from a hashmap in `redis`."""
