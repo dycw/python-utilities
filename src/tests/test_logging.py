@@ -361,7 +361,7 @@ class TestSetupLogging:
     def test_main(self, *, logger: Logger, tmp_path: Path) -> None:
         setup_logging(logger, files_dir=tmp_path)
         assert len(logger.handlers) == 7
-        logger.warning("message")
+        logger.info("message")
         files = {p.name for p in tmp_path.iterdir() if p.is_file()}
         expected = {
             "debug.txt",
@@ -375,22 +375,18 @@ class TestSetupLogging:
 
 
 class TestSizeAndTimeRotatingFileHandler:
-    def test_handlers(self, *, tmp_path: Path) -> None:
-        logger = getLogger(unique_str())
+    def test_handlers(self, *, logger: Logger, tmp_path: Path) -> None:
         filename = tmp_path.joinpath("log")
         logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
-        logger.warning("message")
-        content = filename.read_text()
-        assert content == "message\n"
+        logger.info("message")
+        assert filename.read_text() == "message\n"
 
-    def test_create_parents(self, *, tmp_path: Path) -> None:
-        logger = getLogger(unique_str())
+    def test_create_parents(self, *, logger: Logger, tmp_path: Path) -> None:
         filename = tmp_path.joinpath("foo", "bar", "bar", "log")
         logger.addHandler(SizeAndTimeRotatingFileHandler(filename=filename))
-        assert filename.exists()
+        assert filename.is_file()
 
-    def test_size(self, *, tmp_path: Path) -> None:
-        logger = getLogger(unique_str())
+    def test_size(self, *, logger: Logger, tmp_path: Path) -> None:
         logger.addHandler(
             SizeAndTimeRotatingFileHandler(
                 filename=tmp_path.joinpath("log.txt"), maxBytes=100, backupCount=3
@@ -398,7 +394,7 @@ class TestSizeAndTimeRotatingFileHandler:
         )
         for cycle in range(1, 10):
             for i in range(1, 4):
-                logger.warning("%s message %d", 100 * "long" if i % 3 == 0 else "", i)
+                logger.info("%s message %d", 100 * "long" if i % 3 == 0 else "", i)
                 files = list(tmp_path.iterdir())
                 assert len(files) == min(cycle, 4)
                 assert any(p for p in files if search(r"^log\.txt$", p.name))
@@ -435,8 +431,7 @@ class TestSizeAndTimeRotatingFileHandler:
                     )
                 sync_sleep(_DURATION)
 
-    def test_time(self, *, tmp_path: Path) -> None:
-        logger = getLogger(unique_str())
+    def test_time(self, *, logger: Logger, tmp_path: Path) -> None:
         logger.addHandler(
             SizeAndTimeRotatingFileHandler(
                 filename=tmp_path.joinpath("log.txt"),
@@ -453,7 +448,7 @@ class TestSizeAndTimeRotatingFileHandler:
 
         sync_sleep(_MULTIPLE * _DURATION)
         for i in range(1, 3):
-            logger.warning("message %d", i)
+            logger.info("message %d", i)
             files = list(tmp_path.iterdir())
             assert len(files) == 2
             assert any(p for p in files if search(r"^log\.txt$", p.name))
@@ -461,7 +456,7 @@ class TestSizeAndTimeRotatingFileHandler:
 
         sync_sleep(_MULTIPLE * _DURATION)
         for i in range(3, 5):
-            logger.warning("message %d", i)
+            logger.info("message %d", i)
             files = list(tmp_path.iterdir())
             assert len(files) == 3
             assert any(p for p in files if search(r"^log\.txt$", p.name))
@@ -470,7 +465,7 @@ class TestSizeAndTimeRotatingFileHandler:
 
         sync_sleep(_MULTIPLE * _DURATION)
         for i in range(5, 7):
-            logger.warning("message %d", i)
+            logger.info("message %d", i)
             files = list(tmp_path.iterdir())
             assert len(files) == 4
             assert any(p for p in files if search(r"^log\.txt$", p.name))
@@ -481,7 +476,7 @@ class TestSizeAndTimeRotatingFileHandler:
         for _ in range(2):
             sync_sleep(_MULTIPLE * _DURATION)
             for i in range(7, 9):
-                logger.warning("message %d", i)
+                logger.info("message %d", i)
                 files = list(tmp_path.iterdir())
                 assert len(files) == 4
                 assert any(p for p in files if search(r"^log\.txt$", p.name))
@@ -497,14 +492,18 @@ class TestSizeAndTimeRotatingFileHandler:
 
     @mark.parametrize("max_bytes", [param(0), param(1)])
     def test_should_rollover_file_not_found(
-        self, *, tmp_path: Path, max_bytes: int, caplog: LogCaptureFixture
+        self,
+        *,
+        logger: Logger,
+        tmp_path: Path,
+        max_bytes: int,
+        caplog: LogCaptureFixture,
     ) -> None:
-        logger = getLogger(name := unique_str())
         path = tmp_path.joinpath("log")
         logger.addHandler(
             handler := SizeAndTimeRotatingFileHandler(filename=path, maxBytes=max_bytes)
         )
-        logger.warning("message")
-        record = one(r for r in caplog.records if r.name == name)
+        logger.info("message")
+        record = one(r for r in caplog.records if r.name == logger.name)
         path.unlink()
         assert not handler._should_rollover(record)
