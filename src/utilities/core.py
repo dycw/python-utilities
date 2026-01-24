@@ -3361,6 +3361,7 @@ __all__ = [
     "substitute",
     "suppress_super_attribute_error",
     "suppress_warnings",
+    "sync_sleep",
     "take",
     "to_date",
     "to_time_zone_name",
