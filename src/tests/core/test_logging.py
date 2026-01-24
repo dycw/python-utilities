@@ -81,9 +81,6 @@ class TestLogDebugInfoWarningError:
 
 
 class TestToLogger:
-    def test_default(self) -> None:
-        assert to_logger().name == "root"
-
     def test_logger(self) -> None:
         name = unique_str()
         assert to_logger(getLogger(name)).name == name
@@ -91,6 +88,3 @@ class TestToLogger:
     def test_str(self) -> None:
         name = unique_str()
         assert to_logger(name).name == name
-
-    def test_none(self) -> None:
-        assert to_logger(None).name == "root"

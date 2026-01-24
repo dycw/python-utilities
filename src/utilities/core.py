@@ -1143,7 +1143,7 @@ def _log_if_given(
 ##
 
 
-def to_logger(logger: LoggerLike | None = None, /) -> Logger:
+def to_logger(logger: LoggerLike, /) -> Logger:
     """Convert to a logger."""
     match logger:
         case Logger():
