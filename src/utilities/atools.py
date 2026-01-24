@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, cast, overload
 
 import atools
 
-from utilities.functions import in_seconds
+from utilities.core import duration_to_seconds
 from utilities.types import Coro, Duration, PathLike
 
 if TYPE_CHECKING:
@@ -33,9 +33,9 @@ async def call_memoized[**P, T](
     try:
         memoized_func = _MEMOIZED_FUNCS[key]
     except KeyError:
-        memoized_func = _MEMOIZED_FUNCS[(key)] = memoize(duration=in_seconds(refresh))(
-            func
-        )
+        memoized_func = _MEMOIZED_FUNCS[(key)] = memoize(
+            duration=duration_to_seconds(refresh)
+        )(func)
     return await memoized_func(*args, **kwargs)
 
 
@@ -87,7 +87,7 @@ def memoize[F: Callable[..., Coro[Any]]](
         return cast("Callable[[F], F]", result)
     return atools.memoize(
         db_path=None if db_path is None else Path(db_path),
-        duration=None if duration is None else in_seconds(duration),
+        duration=None if duration is None else duration_to_seconds(duration),
         keygen=keygen,
         pickler=pickler,
         size=size,

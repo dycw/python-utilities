@@ -93,6 +93,8 @@ from utilities.core import (
     is_sentinel,
     max_nullable,
     min_nullable,
+    num_days,
+    num_nanoseconds,
     to_zone_info,
     yield_temp_cwd,
 )
@@ -111,8 +113,6 @@ from utilities.whenever import (
     TimePeriod,
     ZonedDateTimePeriod,
     to_date_time_delta,
-    to_days,
-    to_nanoseconds,
 )
 
 if TYPE_CHECKING:
@@ -209,11 +209,11 @@ def date_deltas(
             ...
         case never:
             assert_never(never)
-    min_days = to_days(min_value_)
-    max_days = to_days(max_value_)
+    min_days = num_days(min_value_)
+    max_days = num_days(max_value_)
     if draw2(draw, parsable):
-        min_days = max(min_days, to_days(DATE_DELTA_PARSABLE_MIN))
-        max_days = min(max_days, to_days(DATE_DELTA_PARSABLE_MAX))
+        min_days = max(min_days, num_days(DATE_DELTA_PARSABLE_MIN))
+        max_days = min(max_days, num_days(DATE_DELTA_PARSABLE_MAX))
     days = draw(integers(min_value=min_days, max_value=max_days))
     return DateDelta(days=days)
 
@@ -267,10 +267,10 @@ def date_time_deltas(
             ...
         case never:
             assert_never(never)
-    min_nanos, max_nanos = map(to_nanoseconds, [min_value_, max_value_])
+    min_nanos, max_nanos = map(num_nanoseconds, [min_value_, max_value_])
     if draw2(draw, parsable):
-        min_nanos = max(min_nanos, to_nanoseconds(DATE_TIME_DELTA_PARSABLE_MIN))
-        max_nanos = min(max_nanos, to_nanoseconds(DATE_TIME_DELTA_PARSABLE_MAX))
+        min_nanos = max(min_nanos, num_nanoseconds(DATE_TIME_DELTA_PARSABLE_MIN))
+        max_nanos = min(max_nanos, num_nanoseconds(DATE_TIME_DELTA_PARSABLE_MAX))
     if draw2(draw, nativable):
         min_micros, _ = divmod(min_nanos, 1000)
         max_micros, _ = divmod(max_nanos, 1000)

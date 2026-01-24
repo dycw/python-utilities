@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any, Self, override
 
 from whenever import TimeDelta
 
+from utilities.constants import SECOND
 from utilities.core import get_now_local
-from utilities.functions import in_timedelta
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -108,12 +108,15 @@ class Timer:
     ) -> Any:
         other_use = other.timedelta if isinstance(other, Timer) else other
         if cast:
-            if isinstance(other_use, float | int | TimeDelta):
-                other_use = in_timedelta(other_use)
-            elif type_error is not None:
-                return type_error
-            else:
-                raise TypeError  # pragma: no cover
+            match other_use:
+                case int() | float():
+                    other_use = other_use * SECOND
+                case TimeDelta():
+                    ...
+                case _:
+                    if type_error is not None:
+                        return type_error
+                    raise TypeError  # pragma: no cover
         return op(self.timedelta, other_use)
 
 

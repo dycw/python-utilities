@@ -130,6 +130,9 @@ type MaybeCollection[T] = T | Collection[T]
 type MaybeIterable[T] = T | Iterable[T]
 type MaybeList[T] = T | list[T]
 type MaybeSet[T] = T | set[T] | frozenset[T]
+type Pair[T] = tuple[T, T]
+type Triple[T] = tuple[T, T, T]
+type Quadruple[T] = tuple[T, T, T, T]
 type SequenceLT[T] = list[T] | tuple[T, ...]
 # iterables - dervied
 type MaybeSequence[T] = T | SequenceLT[T]
@@ -257,7 +260,7 @@ type MaybeCallableStr = MaybeCallable[str]
 
 
 # time
-type Duration = Number | TimeDelta
+type Duration = Number | Delta
 
 
 # traceback
@@ -363,12 +366,14 @@ __all__ = [
     "Number",
     "OpenMode",
     "OptExcInfo",
+    "Pair",
     "Parallelism",
     "ParseObjectExtra",
     "PathLike",
     "PathToBinaryIO",
     "PatternLike",
     "PlainDateTimeLike",
+    "Quadruple",
     "Retry",
     "Seed",
     "SequenceStr",
@@ -396,6 +401,7 @@ __all__ = [
     "TimeOrDateTimeDelta",
     "TimeZone",
     "TimeZoneLike",
+    "Triple",
     "TupleOrStrMapping",
     "TypeLike",
     "UUIDLike",

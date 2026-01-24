@@ -41,6 +41,7 @@ from utilities.core import (
     ExtractGroupsError,
     OneEmptyError,
     always_iterable,
+    duration_to_seconds,
     extract_group,
     extract_groups,
     get_now_local,
@@ -49,7 +50,6 @@ from utilities.core import (
     replace_non_sentinel,
 )
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import in_seconds
 from utilities.pathlib import ensure_suffix, to_path
 from utilities.whenever import WheneverLogRecord, format_compact, to_zoned_date_time
 
@@ -374,7 +374,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
         self._time_handler = TimedRotatingFileHandler(
             path,
             when=when,
-            interval=cast("Any", in_seconds(interval)),  # float is OK
+            interval=cast("Any", duration_to_seconds(interval)),  # float is OK
             backupCount=backupCount,
             encoding=encoding,
             delay=delay,

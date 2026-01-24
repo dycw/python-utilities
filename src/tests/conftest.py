@@ -8,12 +8,12 @@ from hypothesis import HealthCheck
 from pytest import fixture, param, skip
 from whenever import PlainDateTime
 
-from utilities.asyncio import sleep
 from utilities.constants import IS_CI, IS_CI_AND_NOT_LINUX, MINUTE
 from utilities.core import (
     ExtractGroupError,
     TemporaryDirectory,
     TemporaryFile,
+    async_sleep,
     extract_group,
     get_now_local_plain,
 )
@@ -238,7 +238,7 @@ async def test_async_engine(
     test_async_sqlite_engine: AsyncEngine,
     test_async_postgres_engine: AsyncEngine,
 ) -> AsyncEngine:
-    await sleep()
+    await async_sleep()
     dialect = request.param
     match dialect:
         case "sqlite":
@@ -254,7 +254,7 @@ async def test_async_engine(
 async def test_async_sqlite_engine(*, tmp_path: Path) -> AsyncEngine:
     from utilities.sqlalchemy import create_engine
 
-    await sleep()
+    await async_sleep()
     db_path = tmp_path / "db.sqlite"
     return create_engine("sqlite+aiosqlite", database=str(db_path), async_=True)
 

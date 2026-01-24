@@ -4,17 +4,16 @@ from dataclasses import dataclass
 from functools import wraps
 from inspect import getattr_static
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, assert_never, overload, override
+from typing import TYPE_CHECKING, Any, Literal, overload, override
 
 from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
-from utilities.constants import SECOND
 from utilities.core import get_class_name, repr_, repr_str
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Container, Iterable, Iterator
 
-    from utilities.types import Duration, Number, TypeLike
+    from utilities.types import Number, TypeLike
 
 
 @overload
@@ -462,36 +461,6 @@ class EnsureZonedDateTimeError(Exception):
 ##
 
 
-def in_milli_seconds(duration: Duration, /) -> float:
-    """Convert a duration to milli-seconds."""
-    return 1e3 * in_seconds(duration)
-
-
-def in_seconds(duration: Duration, /) -> float:
-    """Convert a duration to seconds."""
-    match duration:
-        case int() | float():
-            return duration
-        case TimeDelta():
-            return duration.in_seconds()
-        case never:
-            assert_never(never)
-
-
-def in_timedelta(duration: Duration, /) -> TimeDelta:
-    """Convert a duration to a timedelta."""
-    match duration:
-        case int() | float():
-            return duration * SECOND
-        case TimeDelta():
-            return duration
-        case never:
-            assert_never(never)
-
-
-##
-
-
 def skip_if_optimize[**P](func: Callable[P, None], /) -> Callable[P, None]:
     """Skip a function if we are in the optimized mode."""
     if __debug__:  # pragma: no cover
@@ -565,9 +534,6 @@ __all__ = [
     "ensure_time",
     "ensure_time_delta",
     "ensure_zoned_date_time",
-    "in_milli_seconds",
-    "in_seconds",
-    "in_timedelta",
     "skip_if_optimize",
     "yield_object_attributes",
 ]

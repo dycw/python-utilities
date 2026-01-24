@@ -30,11 +30,10 @@ from utilities.core import (
     normalize_multi_line_str,
     one,
     repr_str,
+    sync_sleep,
 )
 from utilities.errors import ImpossibleCaseError
-from utilities.functions import in_timedelta
 from utilities.logging import to_logger
-from utilities.time import sleep
 from utilities.version import (
     ParseVersion2Or3Error,
     Version2,
@@ -1240,7 +1239,7 @@ def run(
                         if duration is None:
                             msg = f"{msg}\n\nRetrying {attempts} more time(s)..."
                         else:
-                            msg = f"{msg}\n\nRetrying {attempts} more time(s) after {in_timedelta(duration)}..."
+                            msg = f"{msg}\n\nRetrying {attempts} more time(s) after {duration}..."
                     to_logger(logger).error(msg)
                 error = CalledProcessError(
                     return_code, args, output=stdout_text, stderr=stderr_text
@@ -1248,7 +1247,7 @@ def run(
                 if (attempts is None) or (attempts <= 0):
                     raise error
                 if duration is not None:
-                    sleep(duration)
+                    sync_sleep(duration)
                 return run(
                     cmd,
                     *cmds_or_args,
@@ -1551,7 +1550,7 @@ def ssh_await(
         try:
             ssh(user, hostname, "true")
         except CalledProcessError:  # pragma: no cover
-            sleep(duration)
+            sync_sleep(duration)
         else:
             if logger is not None:
                 to_logger(logger).info("'%s' is up", hostname)

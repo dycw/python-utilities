@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from utilities.asyncio import sleep
 from utilities.atools import call_memoized, memoize
 from utilities.constants import SECOND
+from utilities.core import async_sleep
 
 if TYPE_CHECKING:
     from whenever import TimeDelta
@@ -19,7 +19,7 @@ class TestCallMemoized:
         counter = 0
 
         async def increment() -> int:
-            await sleep()
+            await async_sleep()
             nonlocal counter
             counter += 1
             return counter
@@ -32,7 +32,7 @@ class TestCallMemoized:
         counter = 0
 
         async def increment() -> int:
-            await sleep()
+            await async_sleep()
             nonlocal counter
             counter += 1
             return counter
@@ -40,7 +40,7 @@ class TestCallMemoized:
         for _ in range(2):
             assert (await call_memoized(increment, _DURATION)) == 1
             assert counter == 1
-        await sleep(_MULTIPLE * _DURATION)
+        await async_sleep(_MULTIPLE * _DURATION)
         for _ in range(2):
             assert (await call_memoized(increment, _DURATION)) == 2
             assert counter == 2
@@ -52,7 +52,7 @@ class TestMemoize:
 
         @memoize
         async def increment() -> int:
-            await sleep()
+            await async_sleep()
             nonlocal counter
             counter += 1
             return counter
@@ -66,13 +66,13 @@ class TestMemoize:
 
         @memoize(duration=_DURATION)
         async def increment() -> int:
-            await sleep()
+            await async_sleep()
             nonlocal counter
             counter += 1
             return counter
 
         assert await increment() == 1
         assert counter == 1
-        await sleep(_MULTIPLE * _DURATION)
+        await async_sleep(_MULTIPLE * _DURATION)
         assert await increment() == 2
         assert counter == 2

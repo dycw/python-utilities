@@ -61,7 +61,7 @@ from utilities.constants import (
     MIN_UINT32,
     MIN_UINT64,
 )
-from utilities.core import get_now, is_sentinel, one
+from utilities.core import get_now, is_sentinel, num_days, num_nanoseconds, one
 from utilities.functions import ensure_int
 from utilities.hypothesis import (
     _LINUX_DISALLOW_TIME_ZONES,
@@ -135,8 +135,6 @@ from utilities.whenever import (
     DatePeriod,
     TimePeriod,
     ZonedDateTimePeriod,
-    to_days,
-    to_nanoseconds,
     to_py_time_delta,
 )
 
@@ -202,11 +200,11 @@ class TestDateDeltas:
             )
         assert isinstance(delta, DateDelta)
         assert isinstance(to_py_time_delta(delta), dt.timedelta)
-        days = to_days(delta)
+        days = num_days(delta)
         if min_value is not None:
-            assert days >= to_days(min_value)
+            assert days >= num_days(min_value)
         if max_value is not None:
-            assert days <= to_days(max_value)
+            assert days <= num_days(max_value)
         if parsable:
             assert DateDelta.parse_iso(delta.format_iso()) == delta
 
@@ -240,11 +238,11 @@ class TestDateTimeDeltas:
                 )
             )
         assert isinstance(delta, DateTimeDelta)
-        nanos = to_nanoseconds(delta)
+        nanos = num_nanoseconds(delta)
         if min_value is not None:
-            assert nanos >= to_nanoseconds(min_value)
+            assert nanos >= num_nanoseconds(min_value)
         if max_value is not None:
-            assert nanos <= to_nanoseconds(max_value)
+            assert nanos <= num_nanoseconds(max_value)
         if parsable:
             assert DateTimeDelta.parse_iso(delta.format_iso()) == delta
         if nativable:

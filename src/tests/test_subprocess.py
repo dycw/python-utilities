@@ -27,9 +27,9 @@ from utilities.core import (
     normalize_multi_line_str,
     one,
     unique_str,
+    which,
 )
 from utilities.pytest import skipif_ci, skipif_mac, throttle_test
-from utilities.shutil import which
 from utilities.subprocess import (
     BASH_LC,
     BASH_LS,

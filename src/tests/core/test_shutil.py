@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from pathlib import Path
+
+from pytest import raises
 
 from utilities.constants import EFFECTIVE_GROUP_NAME, EFFECTIVE_USER_NAME
-from utilities.core import chown, get_file_group, get_file_owner
-
-if TYPE_CHECKING:
-    from pathlib import Path
+from utilities.core import WhichError, chown, get_file_group, get_file_owner, which
 
 
 class TestChOwn:
@@ -28,3 +27,18 @@ class TestChOwn:
         chown(temp_file, user=EFFECTIVE_USER_NAME, group=EFFECTIVE_GROUP_NAME)
         assert get_file_owner(temp_file) == EFFECTIVE_USER_NAME
         assert get_file_group(temp_file) == EFFECTIVE_GROUP_NAME
+
+
+class TestWhich:
+    def test_main(self) -> None:
+        result = which("bash")
+        expected = [
+            Path("/bin/bash"),
+            Path("/usr/bin/bash"),
+            Path("/opt/homebrew/bin/bash"),
+        ]
+        assert result in expected
+
+    def test_error(self) -> None:
+        with raises(WhichError, match="'invalid' not found"):
+            _ = which("invalid")

@@ -3,8 +3,8 @@ from __future__ import annotations
 from re import search
 from typing import TYPE_CHECKING, ClassVar, Literal
 
-from utilities.asyncio import sleep
 from utilities.constants import SECOND
+from utilities.core import async_sleep
 from utilities.fastapi import yield_ping_receiver
 from utilities.pytest import skipif_ci
 
@@ -22,15 +22,15 @@ class TestPingReceiver:
     @skipif_ci
     async def test_main(self) -> None:
         assert await self.ping() is False
-        await sleep(_DURATION)
+        await async_sleep(_DURATION)
         async with yield_ping_receiver(self.port, timeout=_MULTIPLE * _DURATION):
-            await sleep(_DURATION)
+            await async_sleep(_DURATION)
             result = await self.ping()
             assert isinstance(result, str)
             assert search(
                 r"pong @ \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,6}", result
             )
-        await sleep(_DURATION)
+        await async_sleep(_DURATION)
         assert await self.ping() is False
 
     async def ping(self) -> str | Literal[False]:
