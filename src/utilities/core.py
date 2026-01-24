@@ -81,11 +81,11 @@ from whenever import (
 import utilities.constants
 from utilities._core_errors import (
     CompressBZ2Error,
+    CompressFilesError,
     CompressGzipError,
     CompressLZMAError,
     MaxNullableError,
     MinNullableError,
-    _CompressFilesError,
 )
 from utilities.constants import (
     ABS_TOL,
@@ -292,7 +292,7 @@ def compress_bz2(
     func2 = cast("PathToBinaryIO", func)
     try:
         _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
-    except _CompressFilesError as error:
+    except CompressFilesError as error:
         raise CompressBZ2Error(srcs=error.srcs, dest=error.dest) from None
 
 
@@ -307,7 +307,7 @@ def compress_gzip(
     func2 = cast("PathToBinaryIO", func)
     try:
         _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
-    except _CompressFilesError as error:
+    except CompressFilesError as error:
         raise CompressGzipError(srcs=error.srcs, dest=error.dest) from None
 
 
@@ -322,7 +322,7 @@ def compress_lzma(
     func2 = cast("PathToBinaryIO", func)
     try:
         _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
-    except _CompressFilesError as error:
+    except CompressFilesError as error:
         raise CompressLZMAError(srcs=error.srcs, dest=error.dest) from None
 
 
@@ -370,7 +370,7 @@ def _compress_files(
                                 case never:
                                     assert_never(never)
     except YieldWritePathError as error:
-        raise _CompressFilesError(srcs=srcs, dest=error.path) from None
+        raise CompressFilesError(srcs=srcs, dest=error.path) from None
 
 
 def _compress_files_add_dir(path: PathLike, tar: TarFile, /) -> None:
