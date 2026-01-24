@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from logging import INFO, Logger, getLogger
 from pathlib import Path
 from re import MULTILINE, search
 from subprocess import CalledProcessError
@@ -26,7 +25,6 @@ from utilities.core import (
     get_file_owner,
     normalize_multi_line_str,
     one,
-    unique_str,
     which,
 )
 from utilities.pytest import skipif_ci, skipif_mac, throttle_test
@@ -120,6 +118,8 @@ from utilities.typing import is_sequence_of
 from utilities.version import Version3
 
 if TYPE_CHECKING:
+    from logging import Logger
+
     from pytest import CaptureFixture
 
     from utilities.types import PathLike
@@ -2249,14 +2249,16 @@ class TestYieldSSHTempDir:
     @skipif_ci
     @throttle_test(duration=5 * MINUTE)
     def test_keep_and_logger(
-        self, *, caplog: LogCaptureFixture, ssh_user: str, ssh_hostname: str
+        self,
+        *,
+        logger: Logger,
+        caplog: LogCaptureFixture,
+        ssh_user: str,
+        ssh_hostname: str,
     ) -> None:
-        name = unique_str()
-        logger = getLogger(name=name)
-        logger.setLevel(INFO)
-        with yield_ssh_temp_dir(ssh_user, ssh_hostname, keep=True, logger=name):
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname, keep=True, logger=logger):
             ...
-        record = one(r for r in caplog.records if r.name == name)
+        record = one(r for r in caplog.records if r.name == logger.name)
         assert search(
             r"^Keeping temporary directory '[/\.\w]+'...$",
             record.message,
