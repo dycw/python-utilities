@@ -238,8 +238,8 @@ class TestNumDays:
         ("delta", "expected"),
         [
             param(2 * WEEK, 14),
-            param(WEEK, 7),
             param(WEEK + 3 * DAY, 10),
+            param(WEEK, 7),
             param(2 * DAY, 2),
             param(DAY, 1),
             param(48 * HOUR, 2),
@@ -274,6 +274,12 @@ class TestNumHours:
     @mark.parametrize(
         ("delta", "expected"),
         [
+            param(2 * WEEK, 336),
+            param(WEEK + 3 * DAY, 240),
+            param(WEEK, 168),
+            param(2 * DAY, 48),
+            param(DAY + 12 * HOUR, 36),
+            param(DAY, 24),
             param(2 * HOUR, 2),
             param(HOUR, 1),
             param(120 * MINUTE, 2),
@@ -286,8 +292,8 @@ class TestNumHours:
     @mark.parametrize(
         "delta",
         [
+            param(YEAR),
             param(MONTH),
-            param(DAY),
             param(MINUTE),
             param(SECOND),
             param(MILLISECOND),
@@ -298,7 +304,7 @@ class TestNumHours:
     def test_error(self, *, delta: Delta) -> None:
         with raises(
             NumHoursError,
-            match=r"Delta must not contain months \(.*\), days \(.*\), minutes \(.*\), seconds \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
+            match=r"Delta must not contain years \(.*\), months \(.*\), minutes \(.*\), seconds \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
         ):
             _ = num_hours(delta)
 

@@ -80,6 +80,7 @@ import utilities.constants
 from utilities.constants import (
     DAYS_PER_WEEK,
     HOURS_PER_DAY,
+    HOURS_PER_WEEK,
     LOCAL_TIME_ZONE,
     LOCAL_TIME_ZONE_NAME,
     MICROSECONDS_PER_MILLISECOND,
@@ -2797,8 +2798,8 @@ def num_hours(delta: Delta, /) -> int:
     """Compute the number of hours in a delta."""
     components = delta_components(delta)
     if (
-        (components.months != 0)
-        or (components.days != 0)
+        (components.years != 0)
+        or (components.months != 0)
         or (components.minutes != 0)
         or (components.seconds != 0)
         or (components.milliseconds != 0)
@@ -2806,21 +2807,25 @@ def num_hours(delta: Delta, /) -> int:
         or (components.nanoseconds != 0)
     ):
         raise NumHoursError(
+            years=components.years,
             months=components.months,
-            days=components.days,
             minutes=components.minutes,
             seconds=components.seconds,
             milliseconds=components.milliseconds,
             microseconds=components.microseconds,
             nanoseconds=components.nanoseconds,
         )
-    return components.hours
+    return (
+        HOURS_PER_WEEK * components.weeks
+        + HOURS_PER_DAY * components.days
+        + components.hours
+    )
 
 
 @dataclass(kw_only=True, slots=True)
 class NumHoursError(Exception):
+    years: int = 0
     months: int = 0
-    days: int = 0
     minutes: int = 0
     seconds: int = 0
     milliseconds: int = 0
@@ -2829,7 +2834,7 @@ class NumHoursError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Delta must not contain months ({self.months}), days ({self.days}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+        return f"Delta must not contain years ({self.years}), months ({self.months}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
 
 
 def num_minutes(delta: Delta, /) -> int:
