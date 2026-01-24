@@ -6,13 +6,17 @@ from typing import TYPE_CHECKING, assert_never
 
 from pytest import fixture, mark, param, raises
 
+from utilities._core_errors import (
+    CopyDestinationExistsError,
+    CopySourceNotFoundError,
+    MoveDestinationExistsError,
+    MoveSourceNotFoundError,
+)
 from utilities.constants import EFFECTIVE_GROUP_NAME, EFFECTIVE_USER_NAME
 from utilities.core import (
     GetEnvError,
     Permissions,
     PermissionsLike,
-    _CopyOrMoveDestinationExistsError,
-    _CopyOrMoveSourceNotFoundError,
     chmod,
     copy,
     get_env,
@@ -105,17 +109,30 @@ class TestCopyOrMove:
         self._run_test_file(mode, src, dest, group=EFFECTIVE_GROUP_NAME)
         assert get_file_group(dest) == EFFECTIVE_GROUP_NAME
 
-    def test_error_source_not_found(
+    def test_error_copy_source_not_found(
+        self, *, tmp_path: Path, temp_path_not_exist: Path
+    ) -> None:
+        with raises(CopySourceNotFoundError, match=r"Source '.*' does not exist"):
+            copy(temp_path_not_exist, tmp_path)
+
+    def test_error_copy_destination_exists(
         self, *, tmp_path: Path, temp_path_not_exist: Path
     ) -> None:
         with raises(
-            _CopyOrMoveSourceNotFoundError, match=r"Source '.*' does not exist"
+            CopyDestinationExistsError,
+            match=r"Cannot move source '.*' since destination '.*' already exists",
         ):
+            copy(temp_path_not_exist, tmp_path)
+
+    def test_error_move_source_not_found(
+        self, *, tmp_path: Path, temp_path_not_exist: Path
+    ) -> None:
+        with raises(MoveSourceNotFoundError, match=r"Source '.*' does not exist"):
             move(temp_path_not_exist, tmp_path)
 
-    def test_error_file_exists(self, *, temp_file: Path) -> None:
+    def test_error_move_destination_exists(self, *, temp_file: Path) -> None:
         with raises(
-            _CopyOrMoveDestinationExistsError,
+            MoveDestinationExistsError,
             match=r"Cannot move source '.*' since destination '.*' already exists",
         ):
             move(temp_file, temp_file)
