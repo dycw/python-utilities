@@ -423,6 +423,7 @@ logging = [
     { name = "coloredlogs" },
 ]
 test = [
+    { name = "coverage-conditional-plugin" },
     { name = "dycw-pytest-only" },
     { name = "hypothesis" },
     { name = "pytest" },
@@ -445,8 +446,6 @@ dev = [
     { name = "aiosqlite" },
     { name = "asyncpg" },
     { name = "coloredlogs" },
-    { name = "coverage-conditional-plugin" },
-    { name = "dycw-pytest-only" },
     { name = "dycw-utilities", extra = ["test"] },
     { name = "greenlet" },
     { name = "httpx" },
@@ -460,8 +459,6 @@ dev = [
     { name = "pydantic" },
     { name = "pydantic-settings-sops" },
     { name = "pyright" },
-    { name = "pytest-cov" },
-    { name = "pytest-timeout" },
     { name = "redis" },
     { name = "rich" },
     { name = "scikit-learn" },
@@ -477,6 +474,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "coloredlogs", marker = "extra == 'logging'", specifier = ">=15.0.1" },
+    { name = "coverage-conditional-plugin", marker = "extra == 'test'", specifier = ">=0.9.0" },
     { name = "dycw-pytest-only", marker = "extra == 'test'", specifier = ">=2.1.1" },
     { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.150.3" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=9.0.2" },
@@ -504,8 +502,6 @@ dev = [
     { name = "aiosqlite", specifier = ">=0.22.1" },
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "coloredlogs", specifier = ">=15.0.1" },
-    { name = "coverage-conditional-plugin", specifier = ">=0.9.0" },
-    { name = "dycw-pytest-only", specifier = ">=2.1.1" },
     { name = "dycw-utilities", extras = ["test"], specifier = ">=0.184.3" },
     { name = "greenlet", specifier = ">=3.3.1" },
     { name = "httpx", specifier = ">=0.28.1" },
@@ -519,8 +515,6 @@ dev = [
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pydantic-settings-sops", specifier = ">=0.1.2" },
     { name = "pyright", specifier = ">=1.1.408" },
-    { name = "pytest-cov", specifier = ">=7.0.0" },
-    { name = "pytest-timeout", specifier = ">=2.4.0" },
     { name = "redis", specifier = ">=7.1.0" },
     { name = "rich", specifier = ">=14.3.1" },
     { name = "scikit-learn", specifier = ">=1.8.0" },
