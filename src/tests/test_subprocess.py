@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from logging import INFO, getLogger
 from pathlib import Path
 from re import MULTILINE, search
 from subprocess import CalledProcessError
@@ -26,7 +25,6 @@ from utilities.core import (
     get_file_owner,
     normalize_multi_line_str,
     one,
-    unique_str,
     which,
 )
 from utilities.pytest import skipif_ci, skipif_mac, throttle_test
@@ -120,6 +118,8 @@ from utilities.typing import is_sequence_of
 from utilities.version import Version3
 
 if TYPE_CHECKING:
+    from logging import Logger
+
     from pytest import CaptureFixture
 
     from utilities.types import PathLike
@@ -1208,65 +1208,61 @@ class TestRun:
         assert cap.err == "stderr\n"
 
     def test_retry_1_attempt_success(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
+        self, *, tmp_path: Path, logger: Logger, caplog: LogCaptureFixture
     ) -> None:
-        name = unique_str()
         result = run(
             *BASH_LS,
             input=self._test_retry_cmd(tmp_path, 1),
             retry=(1, None),
-            logger=name,
+            logger=logger,
         )
         assert result is None
-        record = one(r for r in caplog.records if r.name == name)
+        record = one(r for r in caplog.records if r.name == logger.name)
         assert search(
             r"^Retrying 1 more time\(s\)...$", record.message, flags=MULTILINE
         )
 
     def test_retry_1_attempt_failure(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
+        self, *, tmp_path: Path, logger: Logger, caplog: LogCaptureFixture
     ) -> None:
-        name = unique_str()
         with raises(CalledProcessError):
             _ = run(
                 *BASH_LS,
                 input=self._test_retry_cmd(tmp_path, 2),
                 retry=(1, None),
-                logger=name,
+                logger=logger,
             )
-        first, second = (r for r in caplog.records if r.name == name)
+        first, second = [r for r in caplog.records if r.name == logger.name]
         assert search(r"^Retrying 1 more time\(s\)...$", first.message, flags=MULTILINE)
         assert not search("Retrying", second.message, flags=MULTILINE)
 
     def test_retry_2_attempts_success(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
+        self, *, tmp_path: Path, logger: Logger, caplog: LogCaptureFixture
     ) -> None:
-        name = unique_str()
         result = run(
             *BASH_LS,
             input=self._test_retry_cmd(tmp_path, 2),
             retry=(2, None),
-            logger=name,
+            logger=logger,
         )
         assert result is None
-        first, second = [r for r in caplog.records if r.name == name]
+        first, second = [r for r in caplog.records if r.name == logger.name]
         assert search(r"^Retrying 2 more time\(s\)...$", first.message, flags=MULTILINE)
         assert search(
             r"^Retrying 1 more time\(s\)...$", second.message, flags=MULTILINE
         )
 
     def test_retry_2_attempts_failure(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
+        self, *, tmp_path: Path, logger: Logger, caplog: LogCaptureFixture
     ) -> None:
-        name = unique_str()
         with raises(CalledProcessError):
             _ = run(
                 *BASH_LS,
                 input=self._test_retry_cmd(tmp_path, 3),
                 retry=(2, None),
-                logger=name,
+                logger=logger,
             )
-        first, second, third = (r for r in caplog.records if r.name == name)
+        first, second, third = [r for r in caplog.records if r.name == logger.name]
         assert search(r"^Retrying 2 more time\(s\)...$", first.message, flags=MULTILINE)
         assert search(
             r"^Retrying 1 more time\(s\)...$", second.message, flags=MULTILINE
@@ -1274,45 +1270,44 @@ class TestRun:
         assert not search("Retrying", third.message, flags=MULTILINE)
 
     def test_retry_and_sleep(
-        self, *, tmp_path: Path, caplog: LogCaptureFixture
+        self, *, tmp_path: Path, logger: Logger, caplog: LogCaptureFixture
     ) -> None:
-        name = unique_str()
         result = run(
             *BASH_LS,
             input=self._test_retry_cmd(tmp_path, 1),
             retry=(1, SECOND),
-            logger=name,
+            logger=logger,
         )
         assert result is None
-        record = one(r for r in caplog.records if r.name == name)
+        record = one(r for r in caplog.records if r.name == logger.name)
         assert search(
             r"^Retrying 1 more time\(s\) after PT1S...$",
             record.message,
             flags=MULTILINE,
         )
 
-    def test_retry_skip(self, *, tmp_path: Path, caplog: LogCaptureFixture) -> None:
+    def test_retry_skip(
+        self, *, tmp_path: Path, logger: Logger, caplog: LogCaptureFixture
+    ) -> None:
         def retry_skip(return_code: int, stdout: str, stderr: str, /) -> bool:
             _ = (return_code, stdout, stderr)
             return True
 
-        name = unique_str()
         with raises(CalledProcessError):
             _ = run(
                 *BASH_LS,
                 input=self._test_retry_cmd(tmp_path, 1),
                 retry=(1, SECOND),
                 retry_skip=retry_skip,
-                logger=name,
+                logger=logger,
             )
-        record = one(r for r in caplog.records if r.name == name)
+        record = one(r for r in caplog.records if r.name == logger.name)
         assert not search("Retrying", record.message, flags=MULTILINE)
 
-    def test_logger(self, *, caplog: LogCaptureFixture) -> None:
-        name = unique_str()
+    def test_logger(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
         with raises(CalledProcessError):
-            _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, logger=name)  # noqa: S604
-        record = one(r for r in caplog.records if r.name == name)
+            _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, logger=logger)  # noqa: S604
+        record = one(r for r in caplog.records if r.name == logger.name)
         expected = normalize_multi_line_str("""
 'run' failed with:
  - cmd          = echo stdout; echo stderr 1>&2; exit 1
@@ -1334,8 +1329,9 @@ stderr
 """)
         assert record.message == expected
 
-    def test_logger_and_input(self, *, caplog: LogCaptureFixture) -> None:
-        name = unique_str()
+    def test_logger_and_input(
+        self, *, logger: Logger, caplog: LogCaptureFixture
+    ) -> None:
         input_ = normalize_multi_line_str("""
             key=value
             echo ${key}@stdout
@@ -1343,8 +1339,8 @@ stderr
             exit 1
         """)
         with raises(CalledProcessError):
-            _ = run(*BASH_LS, input=input_, logger=name)
-        record = one(r for r in caplog.records if r.name == name)
+            _ = run(*BASH_LS, input=input_, logger=logger)
+        record = one(r for r in caplog.records if r.name == logger.name)
         expected = normalize_multi_line_str("""
 'run' failed with:
  - cmd          = bash
@@ -1436,13 +1432,15 @@ class TestSSHAwait:
     @skipif_ci
     @throttle_test(duration=5 * MINUTE)
     def test_logger(
-        self, *, caplog: LogCaptureFixture, ssh_user: str, ssh_hostname: str
+        self,
+        *,
+        logger: Logger,
+        caplog: LogCaptureFixture,
+        ssh_user: str,
+        ssh_hostname: str,
     ) -> None:
-        name = unique_str()
-        logger = getLogger(name=name)
-        logger.setLevel(INFO)
-        ssh_await(ssh_user, ssh_hostname, logger=name)
-        first, second = [r for r in caplog.records if r.name == name]
+        ssh_await(ssh_user, ssh_hostname, logger=logger)
+        first, second = [r for r in caplog.records if r.name == logger.name]
         assert search(r"^Waiting for '.*'...$", first.message)
         assert search(r"^'.*' is up$", second.message)
 
@@ -2251,14 +2249,16 @@ class TestYieldSSHTempDir:
     @skipif_ci
     @throttle_test(duration=5 * MINUTE)
     def test_keep_and_logger(
-        self, *, caplog: LogCaptureFixture, ssh_user: str, ssh_hostname: str
+        self,
+        *,
+        logger: Logger,
+        caplog: LogCaptureFixture,
+        ssh_user: str,
+        ssh_hostname: str,
     ) -> None:
-        name = unique_str()
-        logger = getLogger(name=name)
-        logger.setLevel(INFO)
-        with yield_ssh_temp_dir(ssh_user, ssh_hostname, keep=True, logger=name):
+        with yield_ssh_temp_dir(ssh_user, ssh_hostname, keep=True, logger=logger):
             ...
-        record = one(r for r in caplog.records if r.name == name)
+        record = one(r for r in caplog.records if r.name == logger.name)
         assert search(
             r"^Keeping temporary directory '[/\.\w]+'...$",
             record.message,

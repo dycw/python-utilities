@@ -17,6 +17,7 @@ from dataclasses import dataclass, replace
 from functools import _lru_cache_wrapper, partial, reduce, wraps
 from gzip import GzipFile
 from itertools import chain, islice
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, Logger, getLogger
 from lzma import LZMAFile
 from operator import or_
 from os import chdir, environ, getenv, getpid
@@ -126,6 +127,7 @@ from utilities.types import (
     Dataclass,
     Duration,
     FilterWarningsAction,
+    LoggerLike,
     MaybeCallableDateLike,
     Number,
     Pair,
@@ -143,6 +145,7 @@ from utilities.types import (
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping, Sequence
     from contextvars import ContextVar
+    from logging import _ExcInfoType
     from types import TracebackType
 
     from whenever import PlainDateTime, Time
@@ -975,6 +978,180 @@ def unique_everseen[T](
             if k not in seenlist:
                 seenlist_add(k)
                 yield element
+
+
+###############################################################################
+#### logging ##################################################################
+###############################################################################
+
+
+def log_debug(
+    logger: LoggerLike | None,
+    msg: str,
+    *args: Any,
+    exc_info: _ExcInfoType | None = None,
+    stack_info: bool = False,
+    stacklevel: int = 1,
+    extra: StrMapping | None = None,
+) -> None:
+    """Log at the debug level."""
+    _log_if_given(
+        logger,
+        DEBUG,
+        msg,
+        *args,
+        exc_info=exc_info,
+        stack_info=stack_info,
+        stacklevel=stacklevel + 1,
+        extra=extra,
+    )
+
+
+def log_info(
+    logger: LoggerLike | None,
+    msg: str,
+    *args: Any,
+    exc_info: _ExcInfoType | None = None,
+    stack_info: bool = False,
+    stacklevel: int = 1,
+    extra: StrMapping | None = None,
+) -> None:
+    """Log at the info level."""
+    _log_if_given(
+        logger,
+        INFO,
+        msg,
+        *args,
+        exc_info=exc_info,
+        stack_info=stack_info,
+        stacklevel=stacklevel + 1,
+        extra=extra,
+    )
+
+
+def log_warning(
+    logger: LoggerLike | None,
+    msg: str,
+    *args: Any,
+    exc_info: _ExcInfoType | None = None,
+    stack_info: bool = False,
+    stacklevel: int = 1,
+    extra: StrMapping | None = None,
+) -> None:
+    """Log at the warning level."""
+    _log_if_given(
+        logger,
+        WARNING,
+        msg,
+        *args,
+        exc_info=exc_info,
+        stack_info=stack_info,
+        stacklevel=stacklevel + 1,
+        extra=extra,
+    )
+
+
+def log_error(
+    logger: LoggerLike | None,
+    msg: str,
+    *args: Any,
+    exc_info: _ExcInfoType | None = None,
+    stack_info: bool = False,
+    stacklevel: int = 1,
+    extra: StrMapping | None = None,
+) -> None:
+    """Log at the error level."""
+    _log_if_given(
+        logger,
+        ERROR,
+        msg,
+        *args,
+        exc_info=exc_info,
+        stack_info=stack_info,
+        stacklevel=stacklevel + 1,
+        extra=extra,
+    )
+
+
+def log_exception(
+    logger: LoggerLike | None,
+    msg: str,
+    *args: Any,
+    exc_info: _ExcInfoType = True,
+    stack_info: bool = False,
+    stacklevel: int = 1,
+    extra: StrMapping | None = None,
+) -> None:
+    """Log at the error level with exception information."""
+    return log_error(
+        logger,
+        msg,
+        *args,
+        exc_info=exc_info,
+        stack_info=stack_info,
+        stacklevel=stacklevel + 1,
+        extra=extra,
+    )
+
+
+def log_critical(
+    logger: LoggerLike | None,
+    msg: str,
+    *args: Any,
+    exc_info: _ExcInfoType | None = None,
+    stack_info: bool = False,
+    stacklevel: int = 1,
+    extra: StrMapping | None = None,
+) -> None:
+    """Log at the critical level."""
+    _log_if_given(
+        logger,
+        CRITICAL,
+        msg,
+        *args,
+        exc_info=exc_info,
+        stack_info=stack_info,
+        stacklevel=stacklevel + 1,
+        extra=extra,
+    )
+
+
+def _log_if_given(
+    logger: LoggerLike | None,
+    level: int,
+    msg: str,
+    *args: Any,
+    exc_info: _ExcInfoType | None = None,
+    stack_info: bool = False,
+    stacklevel: int = 1,
+    extra: StrMapping | None = None,
+) -> None:
+    """Log at the critical level."""
+    if logger is not None:
+        logger_use = to_logger(logger)
+        logger_use.log(
+            level,
+            msg,
+            *args,
+            exc_info=exc_info,
+            stack_info=stack_info,
+            stacklevel=stacklevel + 1,
+            extra=extra,
+        )
+
+
+##
+
+
+def to_logger(logger: LoggerLike, /) -> Logger:
+    """Convert to a logger."""
+    match logger:
+        case Logger():
+            return logger
+        case str():
+            return getLogger(logger)
+        case never:
+            assert_never(never)
 
 
 ###############################################################################
@@ -3334,6 +3511,12 @@ __all__ = [
     "is_not_none",
     "is_pytest",
     "is_sentinel",
+    "log_critical",
+    "log_debug",
+    "log_error",
+    "log_exception",
+    "log_info",
+    "log_warning",
     "max_nullable",
     "min_nullable",
     "move_many",
@@ -3364,6 +3547,7 @@ __all__ = [
     "sync_sleep",
     "take",
     "to_date",
+    "to_logger",
     "to_time_zone_name",
     "to_zone_info",
     "transpose",
