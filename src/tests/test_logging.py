@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from io import StringIO
-from logging import Formatter, LoggerAdapter, StreamHandler, getLogger
+from logging import Formatter, Logger, LoggerAdapter, StreamHandler, getLogger
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, cast
@@ -358,10 +358,8 @@ class TestRotatingLogFile:
 
 
 class TestSetupLogging:
-    def test_main(self, *, tmp_path: Path) -> None:
-        name = unique_str()
-        setup_logging(logger=name, files_dir=tmp_path)
-        logger = getLogger(name)
+    def test_main(self, *, logger: Logger, tmp_path: Path) -> None:
+        setup_logging(logger, files_dir=tmp_path)
         assert len(logger.handlers) == 7
         logger.warning("message")
         files = {p.name for p in tmp_path.iterdir() if p.is_file()}
@@ -369,9 +367,9 @@ class TestSetupLogging:
             "debug.txt",
             "info.txt",
             "error.txt",
-            f"{name}-debug.txt",
-            f"{name}-info.txt",
-            f"{name}-error.txt",
+            f"{logger.name}-debug.txt",
+            f"{logger.name}-info.txt",
+            f"{logger.name}-error.txt",
         }
         assert files == expected
 

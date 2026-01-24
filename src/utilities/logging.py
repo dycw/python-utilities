@@ -285,8 +285,9 @@ class GetLoggingLevelNumberError(Exception):
 
 
 def setup_logging(
+    logger: LoggerLike,
+    /,
     *,
-    logger: LoggerLike | None = None,
     format_: str | None = None,
     datefmt: str = _DEFAULT_DATEFMT,
     console_level: LogLevel = "INFO",
