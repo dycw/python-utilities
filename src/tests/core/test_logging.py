@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from pytest import LogCaptureFixture
 
 
-class TestLogDebugInfoWarningError:
+class TestLogDebugInfoWarningErrorCritical:
     @mark.parametrize(
         ("log_func", "level"),
         [
