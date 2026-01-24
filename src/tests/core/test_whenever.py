@@ -348,6 +348,15 @@ class TestNumMinutes:
     @mark.parametrize(
         ("delta", "expected"),
         [
+            param(2 * WEEK, 20_160),
+            param(WEEK + 3 * DAY, 14_400),
+            param(WEEK, 10_080),
+            param(2 * DAY, 2_880),
+            param(DAY + 12 * HOUR, 2_160),
+            param(DAY, 1440),
+            param(2 * HOUR, 120),
+            param(HOUR + 30 * MINUTE, 90),
+            param(HOUR, 60),
             param(2 * MINUTE, 2),
             param(MINUTE, 1),
             param(120 * SECOND, 2),
@@ -360,9 +369,8 @@ class TestNumMinutes:
     @mark.parametrize(
         "delta",
         [
+            param(YEAR),
             param(MONTH),
-            param(DAY),
-            param(HOUR),
             param(SECOND),
             param(MILLISECOND),
             param(MICROSECOND),
@@ -372,7 +380,7 @@ class TestNumMinutes:
     def test_error(self, *, delta: Delta) -> None:
         with raises(
             NumMinutesError,
-            match=r"Delta must not contain months \(.*\), days \(.*\), hours \(.*\), seconds \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
+            match=r"Delta must not contain years \(.*\), months \(.*\), seconds \(.*\), milliseconds \(.*\), microseconds \(.*\) or nanoseconds \(.*\)",
         ):
             _ = num_minutes(delta)
 
