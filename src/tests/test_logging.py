@@ -45,10 +45,7 @@ _MULTIPLE: int = 10
 
 
 class TestAddAdapter:
-    def test_main(self, *, caplog: LogCaptureFixture) -> None:
-        logger = getLogger(name := unique_str())
-        logger.setLevel("DEBUG")
-
+    def test_main(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
         def process(msg: str, x: int, /) -> str:
             return f"x={x}: {msg}"
 
@@ -62,7 +59,7 @@ class TestAddAdapter:
                 self.logger.info("Initializing...")
 
         _ = Example()
-        record = one(r for r in caplog.records if r.name == name)
+        record = one(r for r in caplog.records if r.name == logger.name)
         assert record.message == "x=0: Initializing..."
 
 
@@ -98,15 +95,15 @@ class TestBasicConfig:
         self,
         *,
         set_log_factory: AbstractContextManager[None],
+        logger: Logger,
         filters: _FilterType | None,
         plain: bool,
         caplog: LogCaptureFixture,
     ) -> None:
-        name = unique_str()
         with set_log_factory:
-            basic_config(obj=name, filters=filters, plain=plain)
-        getLogger(name).warning("message")
-        record = one(r for r in caplog.records if r.name == name)
+            basic_config(obj=logger, filters=filters, plain=plain)
+        logger.info("message")
+        record = one(r for r in caplog.records if r.name == logger.name)
         assert record.message == "message"
 
     @mark.parametrize("format_", [param("{message}"), param(None)])
