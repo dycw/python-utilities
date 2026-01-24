@@ -27,7 +27,6 @@ from utilities.logging import (
     get_formatter,
     get_logging_level_number,
     setup_logging,
-    to_logger,
 )
 from utilities.types import LogLevel
 from utilities.typing import get_args
@@ -511,19 +510,3 @@ class TestSizeAndTimeRotatingFileHandler:
         record = one(r for r in caplog.records if r.name == name)
         path.unlink()
         assert not handler._should_rollover(record)
-
-
-class TestToLogger:
-    def test_default(self) -> None:
-        assert to_logger().name == "root"
-
-    def test_logger(self) -> None:
-        name = unique_str()
-        assert to_logger(getLogger(name)).name == name
-
-    def test_str(self) -> None:
-        name = unique_str()
-        assert to_logger(name).name == name
-
-    def test_none(self) -> None:
-        assert to_logger(None).name == "root"

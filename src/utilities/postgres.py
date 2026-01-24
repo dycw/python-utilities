@@ -9,9 +9,8 @@ from sqlalchemy import Table
 from sqlalchemy.orm import DeclarativeBase
 
 from utilities.asyncio import stream_command
-from utilities.core import always_iterable, yield_temp_environ
+from utilities.core import always_iterable, log_info, to_logger, yield_temp_environ
 from utilities.docker import docker_exec_cmd
-from utilities.logging import to_logger
 from utilities.pathlib import ensure_suffix
 from utilities.sqlalchemy import extract_url, get_table_name
 from utilities.timer import Timer
@@ -78,34 +77,30 @@ async def pg_dump(
         role=role,
     )
     if dry_run:
-        if logger is not None:
-            to_logger(logger).info("Would run:\n\t%r", str(cmd))
+        log_info(logger, "Would run:\n\t%r", str(cmd))
         return True
-    with (
+    with (  # pragma: no cover
         yield_temp_environ(PGPASSWORD=url.password),
         Timer() as timer,
-    ):  # pragma: no cover
+    ):
         try:
             output = await stream_command(cmd)
         except KeyboardInterrupt:
-            if logger is not None:
-                to_logger(logger).info(
-                    "Cancelled backup to %r after %s", str(path), timer
-                )
+            log_info(logger, "Cancelled backup to %r after %s", str(path), timer)
             rmtree(path, ignore_errors=True)
             return False
         if output.return_code != 0:
-            if logger is not None:
-                to_logger(logger).exception(
-                    "Backup to %r failed after %s\nstderr:\n%s",
-                    str(path),
-                    timer,
-                    output.stderr,
-                )
+            to_logger(logger).exception(
+                "Backup to %r failed after %s\nstderr:\n%s",
+                str(path),
+                timer,
+                output.stderr,
+            )
             rmtree(path, ignore_errors=True)
             return False
-    if logger is not None:  # pragma: no cover
-        to_logger(logger).info("Backup to %r finished after %s", str(path), timer)
+    to_logger(logger).info(
+        "Backup to %r finished after %s", str(path), timer
+    )  # pragma: no cover
     return True  # pragma: no cover
 
 

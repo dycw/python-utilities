@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import AbstractContextManager, contextmanager, suppress
-from logging import LogRecord, setLogRecordFactory
+from logging import DEBUG, Logger, LogRecord, getLogger, setLogRecordFactory
 from typing import TYPE_CHECKING
 
 from hypothesis import HealthCheck
@@ -16,6 +16,7 @@ from utilities.core import (
     async_sleep,
     extract_group,
     get_now_local_plain,
+    unique_str,
 )
 from utilities.pytest import skipif_ci
 
@@ -49,6 +50,14 @@ def container() -> str:
 
 
 # fixtures - logging
+
+
+@fixture
+def logger() -> Logger:
+    name = unique_str()
+    logger = getLogger(name)
+    logger.setLevel(DEBUG)
+    return logger
 
 
 @fixture

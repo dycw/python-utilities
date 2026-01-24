@@ -13,7 +13,6 @@ from logging import (
     StreamHandler,
     basicConfig,
     getLevelNamesMapping,
-    getLogger,
     setLogRecordFactory,
 )
 from logging.handlers import BaseRotatingHandler, TimedRotatingFileHandler
@@ -48,6 +47,7 @@ from utilities.core import (
     move_many,
     one,
     replace_non_sentinel,
+    to_logger,
 )
 from utilities.errors import ImpossibleCaseError
 from utilities.pathlib import ensure_suffix, to_path
@@ -604,20 +604,6 @@ class _Rotation:
         return self.file.replace(index=self.index, start=self.start, end=self.end).path
 
 
-##
-
-
-def to_logger(logger: LoggerLike | None = None, /) -> Logger:
-    """Convert to a logger."""
-    match logger:
-        case Logger():
-            return logger
-        case str() | None:
-            return getLogger(logger)
-        case never:
-            assert_never(never)
-
-
 __all__ = [
     "GetLoggingLevelNumberError",
     "SizeAndTimeRotatingFileHandler",
@@ -627,5 +613,4 @@ __all__ = [
     "get_format_str",
     "get_logging_level_number",
     "setup_logging",
-    "to_logger",
 ]

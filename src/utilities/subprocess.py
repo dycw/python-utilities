@@ -26,14 +26,15 @@ from utilities.core import (
     always_iterable,
     copy,
     file_or_dir,
+    log_info,
     move,
     normalize_multi_line_str,
     one,
     repr_str,
     sync_sleep,
+    to_logger,
 )
 from utilities.errors import ImpossibleCaseError
-from utilities.logging import to_logger
 from utilities.version import (
     ParseVersion2Or3Error,
     Version2,
@@ -1545,15 +1546,13 @@ def ssh_await(
     duration: Duration = SECOND,
 ) -> None:
     while True:  # skipif-ci
-        if logger is not None:
-            to_logger(logger).info("Waiting for '%s'...", hostname)
+        log_info(logger, "Waiting for %r...", hostname)
         try:
             ssh(user, hostname, "true")
         except CalledProcessError:  # pragma: no cover
             sync_sleep(duration)
         else:
-            if logger is not None:
-                to_logger(logger).info("'%s' is up", hostname)
+            log_info(logger, "%r is up", hostname)
             return
 
 
@@ -2486,8 +2485,7 @@ def yield_ssh_temp_dir(
         yield path
     finally:  # skipif-ci
         if keep:
-            if logger is not None:
-                to_logger(logger).info("Keeping temporary directory '%s'...", path)
+            log_info(logger, "Keeping temporary directory '%s'...", path)
         else:
             ssh(user, hostname, *rm_cmd(path), retry=retry, logger=logger)
 
