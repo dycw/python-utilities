@@ -351,7 +351,7 @@ class TestThrottleTest:
         _ = testdir.makepyfile(f"""
             from utilities.pytest import throttle_test
 
-            @throttle_test(root={repr_str(tmp_path)}, delta={seconds})
+            @throttle_test(root={repr_str(tmp_path)}, duration={seconds})
             def test_main() -> None:
                 assert True
         """)
@@ -369,7 +369,7 @@ class TestThrottleTest:
             from utilities.pytest import throttle_test
 
             @mark.parametrize("arg", [10 * printable])
-            @throttle_test(root={str(tmp_path)!r}, delta={seconds})
+            @throttle_test(root={str(tmp_path)!r}, duration={seconds})
             def test_main(*, arg: str) -> None:
                 assert True
         """)
