@@ -87,6 +87,7 @@ from utilities._core_errors import (
     CopyDestinationExistsError,
     CopyError,
     CopySourceNotFoundError,
+    GetEnvError,
     MaxNullableError,
     MinNullableError,
     MoveDestinationExistsError,
@@ -1237,17 +1238,6 @@ def get_env(
             case never:
                 assert_never(never)
     return environ[key_use]
-
-
-@dataclass(kw_only=True, slots=True)
-class GetEnvError(Exception):
-    key: str
-    case_sensitive: bool = False
-
-    @override
-    def __str__(self) -> str:
-        desc = f"No environment variable {repr_(self.key)}"
-        return desc if self.case_sensitive else f"{desc} (modulo case)"
 
 
 ##

@@ -305,6 +305,20 @@ class CopyOrMoveDestinationExistsError(Exception):
         raise NotImplementedError  # pragma: no cover
 
 
+##
+
+
+@dataclass(kw_only=True, slots=True)
+class GetEnvError(Exception):
+    key: str
+    case_sensitive: bool = False
+
+    @override
+    def __str__(self) -> str:
+        desc = f"No environment variable {str(self.key)!r}"
+        return desc if self.case_sensitive else f"{desc} (modulo case)"
+
+
 ###############################################################################
 #### writers ##################################################################
 ###############################################################################
@@ -330,6 +344,7 @@ __all__ = [
     "CopyOrMoveDestinationExistsError",
     "CopyOrMoveSourceNotFoundError",
     "CopySourceNotFoundError",
+    "GetEnvError",
     "MaxNullableError",
     "MinNullableError",
     "MoveDestinationExistsError",
