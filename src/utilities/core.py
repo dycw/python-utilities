@@ -160,7 +160,7 @@ async def async_sleep(duration: Duration | None = None, /) -> None:
         case int() | float():
             await asyncio.sleep(duration)
         case DateDelta() | TimeDelta() | DateTimeDelta():
-            await asyncio.sleep(num_seconds(duration))
+            await asyncio.sleep(num_nanoseconds(duration) / NANOSECONDS_PER_SECOND)
         case None:
             ...
         case never:
@@ -2318,7 +2318,7 @@ def sync_sleep(duration: Duration | None = None, /) -> None:
         case int() | float():
             time.sleep(duration)
         case DateDelta() | TimeDelta() | DateTimeDelta():
-            time.sleep(num_seconds(duration))
+            time.sleep(num_nanoseconds(duration) / NANOSECONDS_PER_SECOND)
         case None:
             ...
         case never:
