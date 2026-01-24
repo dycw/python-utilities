@@ -74,13 +74,14 @@ def _compress_error_msg(srcs: Iterable[Path], dest: Path, /) -> str:
 
 
 @dataclass(kw_only=True, slots=True)
-class _CompressFilesError(Exception):
+class CompressFilesError(Exception):
     srcs: list[Path]
     dest: Path
 
 
 __all__ = [
     "CompressBZ2Error",
+    "CompressFilesError",
     "CompressGzipError",
     "CompressLZMAError",
     "MaxNullableError",
