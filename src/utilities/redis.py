@@ -26,6 +26,7 @@ from utilities.constants import MILLISECOND, SECOND
 from utilities.contextlib import enhanced_async_context_manager
 from utilities.core import (
     always_iterable,
+    async_sleep,
     duration_to_milliseconds,
     duration_to_seconds,
     identity,
@@ -792,7 +793,7 @@ async def _subscribe_core[T](
                     error_filter=error_filter,
                 )
             else:
-                await utilities.asyncio.async_sleep(sleep)
+                await async_sleep(sleep)
 
 
 def _is_message(

@@ -12,7 +12,7 @@ from redis.asyncio import Redis
 import utilities.asyncio
 from utilities.constants import MILLISECOND, SECOND
 from utilities.contextlib import enhanced_async_context_manager
-from utilities.core import always_iterable, duration_to_seconds
+from utilities.core import always_iterable, async_sleep, duration_to_seconds
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterable
@@ -74,7 +74,7 @@ async def yield_access(
         )
         yield lock
     finally:  # skipif-ci-and-not-linux
-        await utilities.asyncio.async_sleep(throttle)
+        await async_sleep(throttle)
         if lock is not None:
             with suppress(ReleaseUnlockedLock):
                 await lock.release()
@@ -99,7 +99,7 @@ async def _get_first_available_lock(
         while True:
             if (result := await _get_first_available_lock_if_any(locks)) is not None:
                 return result
-            await utilities.asyncio.async_sleep(sleep)
+            await async_sleep(sleep)
 
 
 async def _get_first_available_lock_if_any(
