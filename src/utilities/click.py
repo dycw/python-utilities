@@ -542,7 +542,7 @@ class FrozenSetParameter[P: ParamType, T](ParamType):
     ) -> frozenset[T] | None:
         """Convert a value into a frozenset, or None."""
         match value:
-            case None | "":
+            case "":
                 return None
             case str():
                 strings = split_str(value, separator=self._separator)
