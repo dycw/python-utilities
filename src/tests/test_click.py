@@ -330,7 +330,7 @@ class TestParameters:
             param=TextNonEmpty(),
             name="text",
             strategy=text_ascii(min_size=1) | none(),
-            serialize=_lift_serializer_for_nulls(serialize_object),
+            serialize=serialize_object,
             failable=False,
         ),
         _Case(
