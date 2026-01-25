@@ -10,6 +10,7 @@ from utilities.types import CopyOrMove, PathLike, SupportsRichComparison
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from pathlib import Path
+    from re import Pattern
 
 
 ###############################################################################
@@ -407,6 +408,87 @@ class PermissionsFromTextError(PermissionsError):
 
 
 ###############################################################################
+#### re #######################################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupError(Exception):
+    pattern: Pattern[str]
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupMultipleCaptureGroupsError(ExtractGroupError):
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {str(self.pattern)!r} must contain exactly one capture group; it had multiple"
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupMultipleMatchesError(ExtractGroupError):
+    matches: list[str]
+
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {str(self.pattern)!r} must match against {self.text!r} exactly once; matches were {', '.join([repr(str(m)) for m in self.matches])}"
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupNoCaptureGroupsError(ExtractGroupError):
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {str(self.pattern)!r} must contain exactly one capture group; it had none"
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupNoMatchesError(ExtractGroupError):
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {str(self.pattern)!r} must match against {self.text!r}"
+
+
+##
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupsError(Exception):
+    pattern: Pattern[str]
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupsMultipleMatchesError(ExtractGroupsError):
+    matches: list[str]
+
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {str(self.pattern)!r} must match against {self.text!r} exactly once; matches were {', '.join(repr(str(m)) for m in self.matches)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupsNoCaptureGroupsError(ExtractGroupsError):
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {str(self.pattern)!r} must contain at least one capture group"
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupsNoMatchesError(ExtractGroupsError):
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {str(self.pattern)!r} must match against {self.text!r}"
+
+
+###############################################################################
 #### writers ##################################################################
 ###############################################################################
 
@@ -431,6 +513,15 @@ __all__ = [
     "CopyOrMoveDestinationExistsError",
     "CopyOrMoveSourceNotFoundError",
     "CopySourceNotFoundError",
+    "ExtractGroupError",
+    "ExtractGroupMultipleCaptureGroupsError",
+    "ExtractGroupMultipleMatchesError",
+    "ExtractGroupNoCaptureGroupsError",
+    "ExtractGroupNoMatchesError",
+    "ExtractGroupsError",
+    "ExtractGroupsMultipleMatchesError",
+    "ExtractGroupsNoCaptureGroupsError",
+    "ExtractGroupsNoMatchesError",
     "FileOrDirError",
     "FileOrDirMissingError",
     "FileOrDirTypeError",
