@@ -227,7 +227,7 @@ RICH_EXPAND_ALL: bool = False
 # sentinel
 
 
-class _Meta(type):
+class _SentinelMeta(type):
     """Metaclass for the sentinel."""
 
     instance: Any = None
@@ -239,7 +239,7 @@ class _Meta(type):
         return cls.instance
 
 
-class Sentinel(metaclass=_Meta):
+class Sentinel(metaclass=_SentinelMeta):
     """Base class for the sentinel object."""
 
     @override

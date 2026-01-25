@@ -10,10 +10,10 @@ from pytest import mark, param, raises
 from utilities.constants import Sentinel
 from utilities.core import (
     Permissions,
-    _PermissionsFromHumanIntDigitError,
-    _PermissionsFromHumanIntRangeError,
-    _PermissionsFromIntError,
-    _PermissionsFromTextError,
+    PermissionsFromHumanIntDigitError,
+    PermissionsFromHumanIntRangeError,
+    PermissionsFromIntError,
+    PermissionsFromTextError,
 )
 from utilities.hypothesis import permissions, sentinels, temp_paths
 
@@ -172,28 +172,28 @@ class TestPermissions:
 
     def test_error_from_human_int_digit(self) -> None:
         with raises(
-            _PermissionsFromHumanIntDigitError,
+            PermissionsFromHumanIntDigitError,
             match="Invalid human integer for permissions; got digit 8 in 8",
         ):
             _ = Permissions.from_human_int(8)
 
     def test_error_from_human_int_range(self) -> None:
         with raises(
-            _PermissionsFromHumanIntRangeError,
+            PermissionsFromHumanIntRangeError,
             match="Invalid human integer for permissions; got 7777",
         ):
             _ = Permissions.from_human_int(7777)
 
     def test_error_from_int(self) -> None:
         with raises(
-            _PermissionsFromIntError,
+            PermissionsFromIntError,
             match="Invalid integer for permissions; got 4095 = 0o7777",
         ):
             _ = Permissions.from_int(0o7777)
 
     def test_error_from_text(self) -> None:
         with raises(
-            _PermissionsFromTextError,
+            PermissionsFromTextError,
             match="Invalid string for permissions; got 'u=xwr,g=,o='",
         ):
             _ = Permissions.from_text("u=xwr,g=,o=")

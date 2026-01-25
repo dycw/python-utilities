@@ -87,6 +87,16 @@ from utilities._core_errors import (
     CopyDestinationExistsError,
     CopyError,
     CopySourceNotFoundError,
+    DeltaComponentsError,
+    ExtractGroupError,
+    ExtractGroupMultipleCaptureGroupsError,
+    ExtractGroupMultipleMatchesError,
+    ExtractGroupNoCaptureGroupsError,
+    ExtractGroupNoMatchesError,
+    ExtractGroupsError,
+    ExtractGroupsMultipleMatchesError,
+    ExtractGroupsNoCaptureGroupsError,
+    ExtractGroupsNoMatchesError,
     FileOrDirError,
     FileOrDirMissingError,
     FileOrDirTypeError,
@@ -96,12 +106,42 @@ from utilities._core_errors import (
     MoveDestinationExistsError,
     MoveError,
     MoveSourceNotFoundError,
+    NumDaysError,
+    NumHoursError,
+    NumMicroSecondsError,
+    NumMilliSecondsError,
+    NumMinutesError,
+    NumMonthsError,
+    NumNanoSecondsError,
+    NumSecondsError,
+    NumWeeksError,
+    NumYearsError,
     OneEmptyError,
     OneError,
     OneNonUniqueError,
     OneStrEmptyError,
     OneStrError,
     OneStrNonUniqueError,
+    PermissionsError,
+    PermissionsFromHumanIntDigitError,
+    PermissionsFromHumanIntRangeError,
+    PermissionsFromIntError,
+    PermissionsFromTextError,
+    ReadBytesError,
+    ReadPickleError,
+    ReadTextError,
+    SubstituteError,
+    ToTimeZoneNameError,
+    ToTimeZoneNameInvalidKeyError,
+    ToTimeZoneNameInvalidTZInfoError,
+    ToTimeZoneNamePlainDateTimeError,
+    ToZoneInfoError,
+    ToZoneInfoInvalidTZInfoError,
+    ToZoneInfoPlainDateTimeError,
+    WhichError,
+    WriteBytesError,
+    WritePickleError,
+    WriteTextError,
     YieldBZ2Error,
     YieldGzipError,
     YieldLZMAError,
@@ -1444,7 +1484,7 @@ class Permissions:
     @classmethod
     def from_human_int(cls, n: int, /) -> Self:
         if not (0 <= n <= 777):
-            raise _PermissionsFromHumanIntRangeError(n=n)
+            raise PermissionsFromHumanIntRangeError(n=n)
         user_read, user_write, user_execute = cls._from_human_int(n, (n // 100) % 10)
         group_read, group_write, group_execute = cls._from_human_int(n, (n // 10) % 10)
         others_read, others_write, others_execute = cls._from_human_int(n, n % 10)
@@ -1463,7 +1503,7 @@ class Permissions:
     @classmethod
     def _from_human_int(cls, n: int, digit: int, /) -> Triple[bool]:
         if not (0 <= digit <= 7):
-            raise _PermissionsFromHumanIntDigitError(n=n, digit=digit)
+            raise PermissionsFromHumanIntDigitError(n=n, digit=digit)
         return bool(4 & digit), bool(2 & digit), bool(1 & digit)
 
     @classmethod
@@ -1480,7 +1520,7 @@ class Permissions:
                 others_write=bool(n & S_IWOTH),
                 others_execute=bool(n & S_IXOTH),
             )
-        raise _PermissionsFromIntError(n=n)
+        raise PermissionsFromIntError(n=n)
 
     @classmethod
     def from_path(cls, path: PathLike, /) -> Self:
@@ -1493,7 +1533,7 @@ class Permissions:
                 r"^u=(r?w?x?),g=(r?w?x?),o=(r?w?x?)$", text
             )
         except ExtractGroupsError:
-            raise _PermissionsFromTextError(text=text) from None
+            raise PermissionsFromTextError(text=text) from None
         user_read, user_write, user_execute = cls._from_text_part(user)
         group_read, group_write, group_execute = cls._from_text_part(group)
         others_read, others_write, others_execute = cls._from_text_part(others)
@@ -1564,51 +1604,6 @@ class Permissions:
         )
 
 
-@dataclass(kw_only=True, slots=True)
-class PermissionsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _PermissionsFromHumanIntError(PermissionsError):
-    n: int
-
-
-@dataclass(kw_only=True, slots=True)
-class _PermissionsFromHumanIntRangeError(_PermissionsFromHumanIntError):
-    @override
-    def __str__(self) -> str:
-        return f"Invalid human integer for permissions; got {self.n}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _PermissionsFromHumanIntDigitError(_PermissionsFromHumanIntError):
-    digit: int
-
-    @override
-    def __str__(self) -> str:
-        return (
-            f"Invalid human integer for permissions; got digit {self.digit} in {self.n}"
-        )
-
-
-@dataclass(kw_only=True, slots=True)
-class _PermissionsFromIntError(PermissionsError):
-    n: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid integer for permissions; got {self.n} = {oct(self.n)}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _PermissionsFromTextError(PermissionsError):
-    text: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid string for permissions; got {self.text!r}"
-
-
 ###############################################################################
 #### pwd ######################################################################
 ###############################################################################
@@ -1636,62 +1631,22 @@ def extract_group(pattern: PatternLike, text: str, /, *, flags: int = 0) -> str:
     pattern_use = _to_pattern(pattern, flags=flags)
     match pattern_use.groups:
         case 0:
-            raise _ExtractGroupNoCaptureGroupsError(pattern=pattern_use, text=text)
+            raise ExtractGroupNoCaptureGroupsError(pattern=pattern_use, text=text)
         case 1:
             matches: list[str] = pattern_use.findall(text)
             match len(matches):
                 case 0:
-                    raise _ExtractGroupNoMatchesError(
+                    raise ExtractGroupNoMatchesError(
                         pattern=pattern_use, text=text
                     ) from None
                 case 1:
                     return matches[0]
                 case _:
-                    raise _ExtractGroupMultipleMatchesError(
+                    raise ExtractGroupMultipleMatchesError(
                         pattern=pattern_use, text=text, matches=matches
                     ) from None
         case _:
-            raise _ExtractGroupMultipleCaptureGroupsError(
-                pattern=pattern_use, text=text
-            )
-
-
-@dataclass(kw_only=True, slots=True)
-class ExtractGroupError(Exception):
-    pattern: Pattern[str]
-    text: str
-
-
-@dataclass(kw_only=True, slots=True)
-class _ExtractGroupMultipleCaptureGroupsError(ExtractGroupError):
-    @override
-    def __str__(self) -> str:
-        return f"Pattern {self.pattern} must contain exactly one capture group; it had multiple"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ExtractGroupMultipleMatchesError(ExtractGroupError):
-    matches: list[str]
-
-    @override
-    def __str__(self) -> str:
-        return f"Pattern {self.pattern} must match against {self.text} exactly once; matches were {self.matches}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ExtractGroupNoCaptureGroupsError(ExtractGroupError):
-    @override
-    def __str__(self) -> str:
-        return f"Pattern {self.pattern} must contain exactly one capture group; it had none".format(
-            self.pattern
-        )
-
-
-@dataclass(kw_only=True, slots=True)
-class _ExtractGroupNoMatchesError(ExtractGroupError):
-    @override
-    def __str__(self) -> str:
-        return f"Pattern {self.pattern} must match against {self.text}"
+            raise ExtractGroupMultipleCaptureGroupsError(pattern=pattern_use, text=text)
 
 
 ##
@@ -1705,51 +1660,19 @@ def extract_groups(pattern: PatternLike, text: str, /, *, flags: int = 0) -> lis
     """
     pattern_use = _to_pattern(pattern, flags=flags)
     if (n_groups := pattern_use.groups) == 0:
-        raise _ExtractGroupsNoCaptureGroupsError(pattern=pattern_use, text=text)
+        raise ExtractGroupsNoCaptureGroupsError(pattern=pattern_use, text=text)
     matches: list[str] = pattern_use.findall(text)
     match len(matches), n_groups:
         case 0, _:
-            raise _ExtractGroupsNoMatchesError(pattern=pattern_use, text=text)
+            raise ExtractGroupsNoMatchesError(pattern=pattern_use, text=text)
         case 1, 1:
             return matches
         case 1, _:
             return list(matches[0])
         case _:
-            raise _ExtractGroupsMultipleMatchesError(
+            raise ExtractGroupsMultipleMatchesError(
                 pattern=pattern_use, text=text, matches=matches
             )
-
-
-@dataclass(kw_only=True, slots=True)
-class ExtractGroupsError(Exception):
-    pattern: Pattern[str]
-    text: str
-
-
-@dataclass(kw_only=True, slots=True)
-class _ExtractGroupsMultipleMatchesError(ExtractGroupsError):
-    matches: list[str]
-
-    @override
-    def __str__(self) -> str:
-        return f"Pattern {self.pattern} must match against {self.text} exactly once; matches were {self.matches}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ExtractGroupsNoCaptureGroupsError(ExtractGroupsError):
-    pattern: Pattern[str]
-    text: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Pattern {self.pattern} must contain at least one capture group"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ExtractGroupsNoMatchesError(ExtractGroupsError):
-    @override
-    def __str__(self) -> str:
-        return f"Pattern {self.pattern} must match against {self.text}"
 
 
 ##
@@ -1786,15 +1709,6 @@ def read_bytes(path: PathLike, /, *, decompress: bool = False) -> bytes:
             raise ReadBytesError(path=path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class ReadBytesError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot read from {repr_str(self.path)} since it does not exist"
-
-
 def write_bytes(
     path: PathLike,
     data: bytes,
@@ -1825,15 +1739,6 @@ def write_bytes(
         raise WriteBytesError(path=error.path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class WriteBytesError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot write to {repr_str(self.path)} since it already exists"
-
-
 ##
 
 
@@ -1847,15 +1752,6 @@ def read_pickle(path: PathLike, /) -> Any:
         raise ReadPickleError(path=path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class ReadPickleError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot read from {repr_str(self.path)} since it does not exist"
-
-
 def write_pickle(path: PathLike, obj: Any, /, *, overwrite: bool = False) -> None:
     """Write an object to disk."""
     try:
@@ -1866,15 +1762,6 @@ def write_pickle(path: PathLike, obj: Any, /, *, overwrite: bool = False) -> Non
             pickle.dump(obj, gz)
     except YieldWritePathError as error:
         raise WritePickleError(path=error.path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class WritePickleError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot write to {repr_str(self.path)} since it already exists"
 
 
 ##
@@ -1894,15 +1781,6 @@ def read_text(path: PathLike, /, *, decompress: bool = False) -> str:
             return path.read_text()
         except FileNotFoundError:
             raise ReadTextError(path=path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class ReadTextError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot read from {repr_str(self.path)} since it does not exist"
 
 
 def write_text(
@@ -1929,15 +1807,6 @@ def write_text(
             _ = temp.write_text(normalize_str(text))
     except YieldWritePathError as error:
         raise WriteTextError(path=error.path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class WriteTextError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot write to {repr_str(self.path)} since it already exists"
 
 
 ###############################################################################
@@ -2037,15 +1906,6 @@ def which(cmd: str, /) -> Path:
     if path is None:
         raise WhichError(cmd=cmd)
     return Path(path)
-
-
-@dataclass(kw_only=True, slots=True)
-class WhichError(Exception):
-    cmd: str
-
-    @override
-    def __str__(self) -> str:
-        return f"{self.cmd!r} not found"
 
 
 ###############################################################################
@@ -2314,15 +2174,6 @@ def substitute(
             assert_never(never)
 
 
-@dataclass(kw_only=True, slots=True)
-class SubstituteError(Exception):
-    key: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Missing key: {repr_(self.key)}"
-
-
 ##
 
 
@@ -2445,7 +2296,7 @@ class _DeltaComponentsOutput:
             or ((self.years < 0) and (self.days > 0))
             or ((self.months < 0) and (self.days > 0))
         ):
-            raise _DeltaComponentsMixedSignError(
+            raise DeltaComponentsError(
                 years=self.years, months=self.months, days=self.days
             )
 
@@ -2603,21 +2454,6 @@ class _DeltaComponentsOutput:
         return True
 
 
-@dataclass(kw_only=True, slots=True)
-class DeltaComponentsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _DeltaComponentsMixedSignError(DeltaComponentsError):
-    years: int = 0
-    months: int = 0
-    days: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Years, months and days must have the same sign; got {self.years}, {self.months} and {self.days}"
-
-
 ##
 
 
@@ -2721,23 +2557,6 @@ def num_years(delta: Delta, /) -> int:
     return components.years
 
 
-@dataclass(kw_only=True, slots=True)
-class NumYearsError(Exception):
-    months: int = 0
-    weeks: int = 0
-    days: int = 0
-    hours: int = 0
-    minutes: int = 0
-    seconds: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain months ({self.months}), weeks ({self.weeks}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
-
-
 def num_months(delta: Delta, /) -> int:
     """Compute the number of months in a delta."""
     components = delta_components(delta)
@@ -2762,22 +2581,6 @@ def num_months(delta: Delta, /) -> int:
             nanoseconds=components.nanoseconds,
         )
     return MONTHS_PER_YEAR * components.years + components.months
-
-
-@dataclass(kw_only=True, slots=True)
-class NumMonthsError(Exception):
-    weeks: int = 0
-    days: int = 0
-    hours: int = 0
-    minutes: int = 0
-    seconds: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain weeks ({self.weeks}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
 
 
 def num_weeks(delta: Delta, /) -> int:
@@ -2808,23 +2611,6 @@ def num_weeks(delta: Delta, /) -> int:
     return components.weeks
 
 
-@dataclass(kw_only=True, slots=True)
-class NumWeeksError(Exception):
-    years: int = 0
-    months: int = 0
-    days: int = 0
-    hours: int = 0
-    minutes: int = 0
-    seconds: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}), months ({self.months}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
-
-
 def num_days(delta: Delta, /) -> int:
     """Compute the number of days in a delta."""
     components = delta_components(delta)
@@ -2849,22 +2635,6 @@ def num_days(delta: Delta, /) -> int:
             nanoseconds=components.nanoseconds,
         )
     return DAYS_PER_WEEK * components.weeks + components.days
-
-
-@dataclass(kw_only=True, slots=True)
-class NumDaysError(Exception):
-    years: int = 0
-    months: int = 0
-    hours: int = 0
-    minutes: int = 0
-    seconds: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}), months ({self.months}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
 
 
 def num_hours(delta: Delta, /) -> int:
@@ -2895,21 +2665,6 @@ def num_hours(delta: Delta, /) -> int:
     )
 
 
-@dataclass(kw_only=True, slots=True)
-class NumHoursError(Exception):
-    years: int = 0
-    months: int = 0
-    minutes: int = 0
-    seconds: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}), months ({self.months}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
-
-
 def num_minutes(delta: Delta, /) -> int:
     """Compute the number of minutes in a delta."""
     components = delta_components(delta)
@@ -2935,20 +2690,6 @@ def num_minutes(delta: Delta, /) -> int:
         + MINUTES_PER_HOUR * components.hours
         + components.minutes
     )
-
-
-@dataclass(kw_only=True, slots=True)
-class NumMinutesError(Exception):
-    years: int = 0
-    months: int = 0
-    seconds: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}), months ({self.months}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
 
 
 def num_seconds(delta: Delta, /) -> int:
@@ -2977,19 +2718,6 @@ def num_seconds(delta: Delta, /) -> int:
     )
 
 
-@dataclass(kw_only=True, slots=True)
-class NumSecondsError(Exception):
-    years: int = 0
-    months: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}), months ({self.months}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
-
-
 def num_milliseconds(delta: Delta, /) -> int:
     """Compute the number of milliseconds in a delta."""
     components = delta_components(delta)
@@ -3013,18 +2741,6 @@ def num_milliseconds(delta: Delta, /) -> int:
         + MILLISECONDS_PER_SECOND * components.seconds
         + components.milliseconds
     )
-
-
-@dataclass(kw_only=True, slots=True)
-class NumMilliSecondsError(Exception):
-    years: int = 0
-    months: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}), months ({self.months}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
 
 
 def num_microseconds(delta: Delta, /) -> int:
@@ -3051,17 +2767,6 @@ def num_microseconds(delta: Delta, /) -> int:
     )
 
 
-@dataclass(kw_only=True, slots=True)
-class NumMicroSecondsError(Exception):
-    years: int = 0
-    months: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}), months ({self.months}) or nanoseconds ({self.nanoseconds})"
-
-
 def num_nanoseconds(delta: Delta, /) -> int:
     """Compute the number of nanoseconds in a delta."""
     components = delta_components(delta)
@@ -3077,16 +2782,6 @@ def num_nanoseconds(delta: Delta, /) -> int:
         + NANOSECONDS_PER_MICROSECOND * components.microseconds
         + components.nanoseconds
     )
-
-
-@dataclass(kw_only=True, slots=True)
-class NumNanoSecondsError(Exception):
-    years: int = 0
-    months: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}) or months ({self.months})"
 
 
 ##
@@ -3163,6 +2858,34 @@ def yield_write_path(
 ###############################################################################
 
 
+def to_time_zone_name(obj: TimeZoneLike, /) -> TimeZone:
+    """Convert to a time zone name."""
+    match obj:
+        case ZoneInfo() as zone_info:
+            return cast("TimeZone", zone_info.key)
+        case ZonedDateTime() as date_time:
+            return cast("TimeZone", date_time.tz)
+        case "local" | "localtime":
+            return LOCAL_TIME_ZONE_NAME
+        case str() as time_zone:
+            if time_zone in TIME_ZONES:
+                return time_zone
+            raise ToTimeZoneNameInvalidKeyError(time_zone=time_zone)
+        case dt.tzinfo() as tzinfo:
+            if tzinfo is dt.UTC:
+                return cast("TimeZone", UTC.key)
+            raise ToTimeZoneNameInvalidTZInfoError(time_zone=obj)
+        case dt.datetime() as date_time:
+            if date_time.tzinfo is None:
+                raise ToTimeZoneNamePlainDateTimeError(date_time=date_time)
+            return to_time_zone_name(date_time.tzinfo)
+        case never:
+            assert_never(never)
+
+
+##
+
+
 def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
     """Convert an object to a time-zone."""
     match obj:
@@ -3177,94 +2900,13 @@ def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
         case dt.tzinfo() as tzinfo:
             if tzinfo is dt.UTC:
                 return UTC
-            raise _ToZoneInfoInvalidTZInfoError(time_zone=obj)
+            raise ToZoneInfoInvalidTZInfoError(time_zone=obj)
         case dt.datetime() as date_time:
             if date_time.tzinfo is None:
-                raise _ToZoneInfoPlainDateTimeError(date_time=date_time)
+                raise ToZoneInfoPlainDateTimeError(date_time=date_time)
             return to_zone_info(date_time.tzinfo)
         case never:
             assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class ToTimeZoneError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToZoneInfoInvalidTZInfoError(ToTimeZoneError):
-    time_zone: dt.tzinfo
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid time-zone: {self.time_zone}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToZoneInfoPlainDateTimeError(ToTimeZoneError):
-    date_time: dt.datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"Plain date-time: {self.date_time}"
-
-
-##
-
-
-def to_time_zone_name(obj: TimeZoneLike, /) -> TimeZone:
-    """Convert to a time zone name."""
-    match obj:
-        case ZoneInfo() as zone_info:
-            return cast("TimeZone", zone_info.key)
-        case ZonedDateTime() as date_time:
-            return cast("TimeZone", date_time.tz)
-        case "local" | "localtime":
-            return LOCAL_TIME_ZONE_NAME
-        case str() as time_zone:
-            if time_zone in TIME_ZONES:
-                return time_zone
-            raise _ToTimeZoneNameInvalidKeyError(time_zone=time_zone)
-        case dt.tzinfo() as tzinfo:
-            if tzinfo is dt.UTC:
-                return cast("TimeZone", UTC.key)
-            raise _ToTimeZoneNameInvalidTZInfoError(time_zone=obj)
-        case dt.datetime() as date_time:
-            if date_time.tzinfo is None:
-                raise _ToTimeZoneNamePlainDateTimeError(date_time=date_time)
-            return to_time_zone_name(date_time.tzinfo)
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class ToTimeZoneNameError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToTimeZoneNameInvalidKeyError(ToTimeZoneNameError):
-    time_zone: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid time-zone: {self.time_zone!r}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToTimeZoneNameInvalidTZInfoError(ToTimeZoneNameError):
-    time_zone: dt.tzinfo
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid time-zone: {self.time_zone}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToTimeZoneNamePlainDateTimeError(ToTimeZoneNameError):
-    date_time: dt.datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"Plain date-time: {self.date_time}"
 
 
 __all__ = [
@@ -3276,7 +2918,14 @@ __all__ = [
     "CopyError",
     "CopySourceNotFoundError",
     "ExtractGroupError",
+    "ExtractGroupMultipleCaptureGroupsError",
+    "ExtractGroupMultipleMatchesError",
+    "ExtractGroupNoCaptureGroupsError",
+    "ExtractGroupNoMatchesError",
     "ExtractGroupsError",
+    "ExtractGroupsMultipleMatchesError",
+    "ExtractGroupsNoCaptureGroupsError",
+    "ExtractGroupsNoMatchesError",
     "FileOrDirError",
     "FileOrDirMissingError",
     "FileOrDirTypeError",
@@ -3304,6 +2953,11 @@ __all__ = [
     "OneStrNonUniqueError",
     "Permissions",
     "PermissionsError",
+    "PermissionsFromHumanIntDigitError",
+    "PermissionsFromHumanIntRangeError",
+    "PermissionsFromIntError",
+    "PermissionsFromIntError",
+    "PermissionsFromTextError",
     "PermissionsLike",
     "ReadBytesError",
     "ReadPickleError",
@@ -3311,8 +2965,13 @@ __all__ = [
     "SubstituteError",
     "TemporaryDirectory",
     "TemporaryFile",
-    "ToTimeZoneError",
     "ToTimeZoneNameError",
+    "ToTimeZoneNameInvalidKeyError",
+    "ToTimeZoneNameInvalidTZInfoError",
+    "ToTimeZoneNamePlainDateTimeError",
+    "ToZoneInfoError",
+    "ToZoneInfoInvalidTZInfoError",
+    "ToZoneInfoPlainDateTimeError",
     "WhichError",
     "WriteBytesError",
     "WriteBytesError",

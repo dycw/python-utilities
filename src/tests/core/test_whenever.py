@@ -26,6 +26,7 @@ from utilities.constants import (
     sentinel,
 )
 from utilities.core import (
+    DeltaComponentsError,
     NumDaysError,
     NumHoursError,
     NumMicroSecondsError,
@@ -36,7 +37,6 @@ from utilities.core import (
     NumSecondsError,
     NumWeeksError,
     NumYearsError,
-    _DeltaComponentsMixedSignError,
     _DeltaComponentsOutput,
     delta_components,
     duration_to_milliseconds,
@@ -178,7 +178,7 @@ class TestDeltaComponents:
     )
     def test_error_mixed_sign(self, *, years: int, months: int, days: int) -> None:
         with raises(
-            _DeltaComponentsMixedSignError,
+            DeltaComponentsError,
             match=r"Years, months and days must have the same sign; got .*, .* and .*",
         ):
             _ = _DeltaComponentsOutput(years=years, months=months, days=days)

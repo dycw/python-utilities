@@ -8,8 +8,10 @@ from typing import TYPE_CHECKING, assert_never, override
 from utilities.types import CopyOrMove, PathLike, SupportsRichComparison
 
 if TYPE_CHECKING:
+    import datetime as dt
     from collections.abc import Iterable
     from pathlib import Path
+    from re import Pattern
 
 
 ###############################################################################
@@ -350,6 +352,399 @@ class FileOrDirTypeError(FileOrDirError):
 
 
 ###############################################################################
+#### permissions ##############################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsError(Exception):
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromHumanIntError(PermissionsError):
+    n: int
+
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromHumanIntRangeError(PermissionsFromHumanIntError):
+    @override
+    def __str__(self) -> str:
+        return f"Invalid human integer for permissions; got {self.n}"
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromHumanIntDigitError(PermissionsFromHumanIntError):
+    digit: int
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Invalid human integer for permissions; got digit {self.digit} in {self.n}"
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromIntError(PermissionsError):
+    n: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid integer for permissions; got {self.n} = {oct(self.n)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromTextError(PermissionsError):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid string for permissions; got {self.text!r}"
+
+
+###############################################################################
+#### re #######################################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupError(Exception):
+    pattern: Pattern[str]
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupMultipleCaptureGroupsError(ExtractGroupError):
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {str(self.pattern)!r} must contain exactly one capture group; it had multiple"
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupMultipleMatchesError(ExtractGroupError):
+    matches: list[str]
+
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {str(self.pattern)!r} must match against {self.text!r} exactly once; matches were {', '.join([repr(str(m)) for m in self.matches])}"
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupNoCaptureGroupsError(ExtractGroupError):
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {str(self.pattern)!r} must contain exactly one capture group; it had none"
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupNoMatchesError(ExtractGroupError):
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {str(self.pattern)!r} must match against {self.text!r}"
+
+
+##
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupsError(Exception):
+    pattern: Pattern[str]
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupsMultipleMatchesError(ExtractGroupsError):
+    matches: list[str]
+
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {str(self.pattern)!r} must match against {self.text!r} exactly once; matches were {', '.join(repr(str(m)) for m in self.matches)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupsNoCaptureGroupsError(ExtractGroupsError):
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {str(self.pattern)!r} must contain at least one capture group"
+
+
+@dataclass(kw_only=True, slots=True)
+class ExtractGroupsNoMatchesError(ExtractGroupsError):
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {str(self.pattern)!r} must match against {self.text!r}"
+
+
+###############################################################################
+#### readers/writers ##########################################################
+###############################################################################
+
+
+def _read_file_error(path: PathLike, /) -> str:
+    return f"Cannot read from {str(path)!r} since it does not exist"
+
+
+def _write_file_error(path: PathLike, /) -> str:
+    return f"Cannot write to {str(path)!r} since it already exists"
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadBytesError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class WriteBytesError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _write_file_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadPickleError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class WritePickleError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _write_file_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadTextError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class WriteTextError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _write_file_error(self.path)
+
+
+###############################################################################
+#### shutil ###################################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class WhichError(Exception):
+    cmd: str
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.cmd!r} not found"
+
+
+###############################################################################
+#### text #####################################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class SubstituteError(Exception):
+    key: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Missing key: {self.key!r}"
+
+
+###############################################################################
+#### whenever #################################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class DeltaComponentsError(Exception):
+    years: int = 0
+    months: int = 0
+    days: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Years, months and days must have the same sign; got {self.years}, {self.months} and {self.days}"
+
+
+##
+
+
+@dataclass(kw_only=True, slots=True)
+class NumYearsError(Exception):
+    months: int = 0
+    weeks: int = 0
+    days: int = 0
+    hours: int = 0
+    minutes: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain months ({self.months}), weeks ({self.weeks}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumMonthsError(Exception):
+    weeks: int = 0
+    days: int = 0
+    hours: int = 0
+    minutes: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain weeks ({self.weeks}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumWeeksError(Exception):
+    years: int = 0
+    months: int = 0
+    days: int = 0
+    hours: int = 0
+    minutes: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumDaysError(Exception):
+    years: int = 0
+    months: int = 0
+    hours: int = 0
+    minutes: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumHoursError(Exception):
+    years: int = 0
+    months: int = 0
+    minutes: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumMinutesError(Exception):
+    years: int = 0
+    months: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumSecondsError(Exception):
+    years: int = 0
+    months: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumMilliSecondsError(Exception):
+    years: int = 0
+    months: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumMicroSecondsError(Exception):
+    years: int = 0
+    months: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumNanoSecondsError(Exception):
+    years: int = 0
+    months: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}) or months ({self.months})"
+
+
+###############################################################################
 #### writers ##################################################################
 ###############################################################################
 
@@ -363,6 +758,73 @@ class YieldWritePathError(Exception):
         return f"Cannot write to {str(self.path)!r} since it already exists"
 
 
+###############################################################################
+#### zoneinfo #################################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class ToTimeZoneNameError(Exception):
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class ToTimeZoneNameInvalidKeyError(ToTimeZoneNameError):
+    time_zone: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid time-zone: {self.time_zone!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class ToTimeZoneNameInvalidTZInfoError(ToTimeZoneNameError):
+    time_zone: dt.tzinfo
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid time-zone: {self.time_zone}"
+
+
+@dataclass(kw_only=True, slots=True)
+class ToTimeZoneNamePlainDateTimeError(ToTimeZoneNameError):
+    date_time: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Plain date-time: {self.date_time}"
+
+
+##
+
+
+@dataclass(kw_only=True, slots=True)
+class ToZoneInfoError(Exception):
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class ToZoneInfoInvalidTZInfoError(ToZoneInfoError):
+    time_zone: dt.tzinfo
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid time-zone: {self.time_zone}"
+
+
+@dataclass(kw_only=True, slots=True)
+class ToZoneInfoPlainDateTimeError(ToZoneInfoError):
+    date_time: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Plain date-time: {self.date_time}"
+
+
 __all__ = [
     "CompressBZ2Error",
     "CompressFilesError",
@@ -374,6 +836,16 @@ __all__ = [
     "CopyOrMoveDestinationExistsError",
     "CopyOrMoveSourceNotFoundError",
     "CopySourceNotFoundError",
+    "DeltaComponentsError",
+    "ExtractGroupError",
+    "ExtractGroupMultipleCaptureGroupsError",
+    "ExtractGroupMultipleMatchesError",
+    "ExtractGroupNoCaptureGroupsError",
+    "ExtractGroupNoMatchesError",
+    "ExtractGroupsError",
+    "ExtractGroupsMultipleMatchesError",
+    "ExtractGroupsNoCaptureGroupsError",
+    "ExtractGroupsNoMatchesError",
     "FileOrDirError",
     "FileOrDirMissingError",
     "FileOrDirTypeError",
@@ -383,9 +855,40 @@ __all__ = [
     "MoveDestinationExistsError",
     "MoveError",
     "MoveSourceNotFoundError",
+    "NumDaysError",
+    "NumHoursError",
+    "NumMicroSecondsError",
+    "NumMilliSecondsError",
+    "NumMinutesError",
+    "NumMonthsError",
+    "NumNanoSecondsError",
+    "NumSecondsError",
+    "NumWeeksError",
+    "NumYearsError",
     "OneEmptyError",
     "OneError",
     "OneNonUniqueError",
+    "PermissionsError",
+    "PermissionsFromHumanIntDigitError",
+    "PermissionsFromHumanIntRangeError",
+    "PermissionsFromIntError",
+    "PermissionsFromIntError",
+    "PermissionsFromTextError",
+    "ReadBytesError",
+    "ReadPickleError",
+    "ReadTextError",
+    "SubstituteError",
+    "ToTimeZoneNameError",
+    "ToTimeZoneNameError",
+    "ToTimeZoneNameInvalidKeyError",
+    "ToTimeZoneNameInvalidTZInfoError",
+    "ToTimeZoneNamePlainDateTimeError",
+    "ToZoneInfoError",
+    "ToZoneInfoPlainDateTimeError",
+    "WhichError",
+    "WriteBytesError",
+    "WritePickleError",
+    "WriteTextError",
     "YieldBZ2Error",
     "YieldGzipError",
     "YieldLZMAError",
