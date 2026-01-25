@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
+from zoneinfo import ZoneInfo
 
 from pytest import mark, param
 
-from utilities.constants import sentinel
+from utilities.constants import UTC, HongKong, Tokyo, USCentral, USEastern, sentinel
 from utilities.core import is_none, is_not_none, is_sentinel
 
 if TYPE_CHECKING:
@@ -31,3 +32,12 @@ class TestIsSentinel:
     @mark.parametrize(("obj", "expected"), [param(None, False), param(sentinel, True)])
     def test_main(self, *, obj: Any, expected: bool) -> None:
         assert is_sentinel(obj) is expected
+
+
+class TestTimeZones:
+    @mark.parametrize(
+        "time_zone",
+        [param(HongKong), param(Tokyo), param(USCentral), param(USEastern), param(UTC)],
+    )
+    def test_main(self, *, time_zone: ZoneInfo) -> None:
+        assert isinstance(time_zone, ZoneInfo)
