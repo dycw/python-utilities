@@ -198,7 +198,9 @@ class Enum[E: enum.Enum](ParamType):
                 if isinstance(value, self._enum):
                     return value
                 return self.fail(
-                    f"{value} is not an instance of {self._enum}", param, ctx
+                    f"Enum member {value.name!r} of type {get_class_name(value)!r} is not an instance of {get_class_name(self._enum)!r}",
+                    param,
+                    ctx,
                 )
             case "":
                 return None

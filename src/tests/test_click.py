@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import StrEnum, auto, unique
 from operator import attrgetter
 from re import search
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import whenever
 from click import ParamType, argument, command, echo, option
@@ -158,10 +158,6 @@ class _ExampleStrEnum(StrEnum):
     ak = "av"
     bk = "bv"
     ck = "cv"
-
-
-type _ExampleEnumABType = Literal[_ExampleEnum.a, _ExampleEnum.b]
-_ExampleEnumAB: list[_ExampleEnumABType] = [_ExampleEnum.a, _ExampleEnum.b]
 
 
 def _lift_serializer_for_iterables[T](
@@ -467,6 +463,19 @@ class TestParameters:
     def test_repr(self, *, param: ParamType, repr_: str | None, name: str) -> None:
         expected = name.upper() if repr_ is None else repr_
         assert repr(param) == expected
+
+    def test_error_enum_parse(self) -> None:
+        @command()
+        @option("--value", type=Enum(_ExampleEnum), default=_ExampleStrEnum.ak)
+        def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
+            _ = value
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 2, result.stderr
+        assert search(
+            "Invalid value for '--value': Enum member 'ak' of type '_ExampleStrEnum' is not an instance of '_ExampleEnum'",
+            result.stderr,
+        )
 
     @mark.parametrize(
         "param",
