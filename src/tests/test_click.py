@@ -56,7 +56,7 @@ from utilities.click import (
     YearMonth,
     ZonedDateTime,
 )
-from utilities.core import normalize_multi_line_str
+from utilities.core import get_class_name, normalize_multi_line_str
 from utilities.hypothesis import (
     date_deltas,
     date_time_deltas,
@@ -360,7 +360,37 @@ class TestParameters:
     @given(data=data())
     @mark.parametrize(
         ("param", "strategy", "serialize"),
-        [param(c.param, c.strategy, c.serialize) for c in cases],
+        [
+            param(c.param, c.strategy, c.serialize, id=get_class_name(c.param))
+            for c in cases
+        ],
+    )
+    def test_main(
+        self,
+        *,
+        data: DataObject,
+        param: ParamType,
+        strategy: SearchStrategy[Any],
+        serialize: Callable[[Any], str],
+    ) -> None:
+        @command()
+        @option("--value", type=param)
+        def cli(*, value: Any) -> None:
+            echo(f"value = {serialize(value)}")
+
+        value = data.draw(strategy)
+        ser = serialize(value)
+        result = CliRunner().invoke(cli, args=[f"--value={ser}"])
+        assert result.exit_code == 0, result.stderr
+        assert result.stdout == f"value = {ser}\n"
+
+    @given(data=data())
+    @mark.parametrize(
+        ("param", "strategy", "serialize"),
+        [
+            param(c.param, c.strategy, c.serialize, id=get_class_name(c.param))
+            for c in cases
+        ],
     )
     def test_default(
         self,
@@ -381,7 +411,9 @@ class TestParameters:
         assert result.exit_code == 0, result.stderr
         assert result.stdout == f"value = {serialize(default)}\n"
 
-    @mark.parametrize("param", [param(c.param) for c in cases])
+    @mark.parametrize(
+        "param", [param(c.param, id=get_class_name(c.param)) for c in cases]
+    )
     def test_empty_string(self, *, param: ParamType) -> None:
         @command()
         @argument("value", type=param)
@@ -391,7 +423,9 @@ class TestParameters:
         result = CliRunner().invoke(cli, args=[""])
         assert result.exit_code == 0, result.stderr
 
-    @mark.parametrize("param", [param(c.param) for c in cases])
+    @mark.parametrize(
+        "param", [param(c.param, id=get_class_name(c.param)) for c in cases]
+    )
     def test_none(self, *, param: ParamType) -> None:
         @command()
         @option("--value", type=param, default=None)
@@ -401,33 +435,13 @@ class TestParameters:
         result = CliRunner().invoke(cli)
         assert result.exit_code == 0, result.stderr
 
-    @given(data=data())
-    @mark.parametrize(
-        ("param", "strategy", "serialize"),
-        [param(c.param, c.strategy, c.serialize) for c in cases],
-    )
-    def test_cli_value(
-        self,
-        *,
-        data: DataObject,
-        param: ParamType,
-        strategy: SearchStrategy[Any],
-        serialize: Callable[[Any], str],
-    ) -> None:
-        @command()
-        @option("--value", type=param)
-        def cli(*, value: Any) -> None:
-            echo(f"value = {serialize(value)}")
-
-        value = data.draw(strategy)
-        ser = serialize(value)
-        result = CliRunner().invoke(cli, args=[f"--value={ser}"])
-        assert result.exit_code == 0, result.stderr
-        assert result.stdout == f"value = {ser}\n"
-
     @mark.parametrize(
         ("param", "serialize"),
-        [param(c.param, c.serialize) for c in cases if c.failable],
+        [
+            param(c.param, c.serialize, id=get_class_name(c.param))
+            for c in cases
+            if c.failable
+        ],
     )
     def test_cli_fail(
         self, *, param: ParamType, serialize: Callable[[Any], str]
@@ -440,12 +454,16 @@ class TestParameters:
         result = CliRunner().invoke(cli, args=["invalid"])
         assert result.exit_code == 2, result.stderr
 
-    @mark.parametrize(("param", "name"), [param(c.param, c.name) for c in cases])
+    @mark.parametrize(
+        ("param", "name"),
+        [param(c.param, c.name, id=get_class_name(c.param)) for c in cases],
+    )
     def test_name(self, *, param: ParamType, name: str) -> None:
         assert param.name == name
 
     @mark.parametrize(
-        ("param", "repr_", "name"), [param(c.param, c.repr, c.name) for c in cases]
+        ("param", "repr_", "name"),
+        [param(c.param, c.repr, c.name, id=get_class_name(c.param)) for c in cases],
     )
     def test_repr(self, *, param: ParamType, repr_: str | None, name: str) -> None:
         expected = name.upper() if repr_ is None else repr_
@@ -453,7 +471,10 @@ class TestParameters:
 
     @mark.parametrize(
         "param",
-        [param(ListEnums(_ExampleEnum)), param(FrozenSetEnums(_ExampleEnum))],
+        [
+            param(ListEnums(_ExampleEnum), id=get_class_name(ListEnums)),
+            param(FrozenSetEnums(_ExampleEnum), id=get_class_name(FrozenSetEnums)),
+        ],
         ids=str,
     )
     def test_error_list_and_frozensets_parse(self, *, param: ParamType) -> None:
