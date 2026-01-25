@@ -329,7 +329,9 @@ class MonthDay(ParamType):
 ##
 
 
-type _PathExist = Literal[True, False, "file", "dir"]
+type _PathExist = Literal[
+    True, False, "existing file", "existing dir", "file if exists", "dir if exists"
+]
 
 
 class Path(ParamType):
@@ -374,12 +376,20 @@ class Path(ParamType):
             case False:
                 if path.exists():
                     self.fail(f"{str(path)!r} exists", param, ctx)
-            case "file":
+            case "existing file":
                 if not path.is_file():
                     self.fail(f"{str(path)!r} is not a file", param, ctx)
-            case "dir":
+            case "existing dir":
                 if not path.is_dir():
                     self.fail(f"{str(path)!r} is not a directory", param, ctx)
+            case "file if exists":
+                if path.exists() and not path.is_file():
+                    self.fail(f"{str(path)!r} exists but is not a file", param, ctx)
+            case "dir if exists":
+                if path.exists() and not path.is_dir():
+                    self.fail(
+                        f"{str(path)!r} exists but is not a directory", param, ctx
+                    )
             case None:
                 ...
             case never:

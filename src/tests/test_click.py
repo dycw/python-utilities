@@ -601,20 +601,64 @@ class TestPath:
         result = CliRunner().invoke(cli)
         assert result.exit_code == 0, result.stderr
 
-    def test_file(self, *, temp_file: pathlib.Path) -> None:
+    def test_existing_file(self, *, temp_file: pathlib.Path) -> None:
         @command()
-        @option("--path", type=utilities.click.Path(exist="file"), default=temp_file)
+        @option(
+            "--path",
+            type=utilities.click.Path(exist="existing file"),
+            default=temp_file,
+        )
         def cli(*, path: pathlib.Path) -> None:
             assert path.is_file()
 
         result = CliRunner().invoke(cli)
         assert result.exit_code == 0, result.stderr
 
-    def test_dir(self, *, tmp_path: pathlib.Path) -> None:
+    def test_existing_dir(self, *, tmp_path: pathlib.Path) -> None:
         @command()
-        @option("--path", type=utilities.click.Path(exist="dir"), default=tmp_path)
+        @option(
+            "--path", type=utilities.click.Path(exist="existing dir"), default=tmp_path
+        )
         def cli(*, path: pathlib.Path) -> None:
             assert path.is_dir()
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0, result.stderr
+
+    @mark.parametrize("exists", [param(False), param(True)])
+    def test_file_if_exists(
+        self, *, temp_path_not_exist: pathlib.Path, exists: bool
+    ) -> None:
+        if exists:
+            temp_path_not_exist.touch()
+
+        @command()
+        @option(
+            "--path",
+            type=utilities.click.Path(exist="file if exists"),
+            default=temp_path_not_exist,
+        )
+        def cli(*, path: pathlib.Path) -> None:
+            assert path.is_file() or not path.exists()
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0, result.stderr
+
+    @mark.parametrize("exists", [param(False), param(True)])
+    def test_dir_if_exists(
+        self, *, temp_path_not_exist: pathlib.Path, exists: bool
+    ) -> None:
+        if exists:
+            temp_path_not_exist.mkdir()
+
+        @command()
+        @option(
+            "--path",
+            type=utilities.click.Path(exist="dir if exists"),
+            default=temp_path_not_exist,
+        )
+        def cli(*, path: pathlib.Path) -> None:
+            assert path.is_dir() or not path.exists()
 
         result = CliRunner().invoke(cli)
         assert result.exit_code == 0, result.stderr
@@ -641,9 +685,11 @@ class TestPath:
         assert result.exit_code == 2, result.stderr
         assert search("Invalid value for '--path': '.*' exists", result.stderr)
 
-    def test_error_file(self, *, tmp_path: pathlib.Path) -> None:
+    def test_error_existing_file(self, *, tmp_path: pathlib.Path) -> None:
         @command()
-        @option("--path", type=utilities.click.Path(exist="file"), default=tmp_path)
+        @option(
+            "--path", type=utilities.click.Path(exist="existing file"), default=tmp_path
+        )
         def cli(*, path: pathlib.Path) -> None:
             _ = path
 
@@ -651,9 +697,11 @@ class TestPath:
         assert result.exit_code == 2, result.stderr
         assert search("Invalid value for '--path': '.*' is not a file", result.stderr)
 
-    def test_error_dir(self, *, temp_file: pathlib.Path) -> None:
+    def test_error_existing_dir(self, *, temp_file: pathlib.Path) -> None:
         @command()
-        @option("--path", type=utilities.click.Path(exist="dir"), default=temp_file)
+        @option(
+            "--path", type=utilities.click.Path(exist="existing dir"), default=temp_file
+        )
         def cli(*, path: pathlib.Path) -> None:
             _ = path
 
@@ -661,4 +709,37 @@ class TestPath:
         assert result.exit_code == 2, result.stderr
         assert search(
             "Invalid value for '--path': '.*' is not a directory", result.stderr
+        )
+
+    def test_error_file_if_exists(self, *, tmp_path: pathlib.Path) -> None:
+        @command()
+        @option(
+            "--path",
+            type=utilities.click.Path(exist="file if exists"),
+            default=tmp_path,
+        )
+        def cli(*, path: pathlib.Path) -> None:
+            _ = path
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 2, result.stderr
+        assert search(
+            "Invalid value for '--path': '.*' exists but is not a file", result.stderr
+        )
+
+    def test_error_dir_if_exists(self, *, temp_file: pathlib.Path) -> None:
+        @command()
+        @option(
+            "--path",
+            type=utilities.click.Path(exist="dir if exists"),
+            default=temp_file,
+        )
+        def cli(*, path: pathlib.Path) -> None:
+            _ = path
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 2, result.stderr
+        assert search(
+            "Invalid value for '--path': '.*' exists but is not a directory",
+            result.stderr,
         )
