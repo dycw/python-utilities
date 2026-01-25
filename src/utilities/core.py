@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import datetime as dt
 import gzip
+import math
 import os
 import pickle
 import re
@@ -78,7 +79,45 @@ from whenever import (
 )
 
 import utilities.constants
+from utilities._core_errors import (
+    CompressBZ2Error,
+    CompressGzipError,
+    CompressLZMAError,
+    CompressZipError,
+    CopyDestinationExistsError,
+    CopyError,
+    CopySourceNotFoundError,
+    FileOrDirError,
+    FileOrDirMissingError,
+    FileOrDirTypeError,
+    GetEnvError,
+    MaxNullableError,
+    MinNullableError,
+    MoveDestinationExistsError,
+    MoveError,
+    MoveSourceNotFoundError,
+    OneEmptyError,
+    OneError,
+    OneNonUniqueError,
+    OneStrEmptyError,
+    OneStrError,
+    OneStrNonUniqueError,
+    YieldBZ2Error,
+    YieldGzipError,
+    YieldLZMAError,
+    YieldWritePathError,
+    YieldZipError,
+)
+from utilities._core_errors import CompressFilesError as _CompressFilesError
+from utilities._core_errors import (
+    CopyOrMoveDestinationExistsError as _CopyOrMoveDestinationExistsError,
+)
+from utilities._core_errors import (
+    CopyOrMoveSourceNotFoundError as _CopyOrMoveSourceNotFoundError,
+)
+from utilities._core_errors import YieldUncompressedError as _YieldUncompressedError
 from utilities.constants import (
+    ABS_TOL,
     DAYS_PER_WEEK,
     HOURS_PER_DAY,
     HOURS_PER_WEEK,
@@ -106,6 +145,7 @@ from utilities.constants import (
     NANOSECONDS_PER_MINUTE,
     NANOSECONDS_PER_SECOND,
     NANOSECONDS_PER_WEEK,
+    REL_TOL,
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
     RICH_MAX_DEPTH,
@@ -244,15 +284,6 @@ def min_nullable[T: SupportsRichComparison, U](
     return min(values, default=default)
 
 
-@dataclass(kw_only=True, slots=True)
-class MinNullableError[T: SupportsRichComparison](Exception):
-    iterable: Iterable[T | None]
-
-    @override
-    def __str__(self) -> str:
-        return f"Minimum of {repr_(self.iterable)} is undefined"
-
-
 @overload
 def max_nullable[T: SupportsRichComparison](
     iterable: Iterable[T | None], /, *, default: Sentinel = ...
@@ -272,15 +303,6 @@ def max_nullable[T: SupportsRichComparison, U](
         except ValueError:
             raise MaxNullableError(iterable=iterable) from None
     return max(values, default=default)
-
-
-@dataclass(kw_only=True, slots=True)
-class MaxNullableError[T: SupportsRichComparison](Exception):
-    iterable: Iterable[T | None]
-
-    @override
-    def __str__(self) -> str:
-        return f"Maximum of {repr_(self.iterable)} is undefined"
 
 
 ###############################################################################
@@ -303,16 +325,6 @@ def compress_bz2(
         raise CompressBZ2Error(srcs=error.srcs, dest=error.dest) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class CompressBZ2Error(Exception):
-    srcs: list[Path]
-    dest: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot compress source(s) {repr_(list(map(str, self.srcs)))} since destination {repr_str(self.dest)} already exists"
-
-
 def compress_gzip(
     src_or_dest: PathLike, /, *srcs_or_dest: PathLike, overwrite: bool = False
 ) -> None:
@@ -328,16 +340,6 @@ def compress_gzip(
         raise CompressGzipError(srcs=error.srcs, dest=error.dest) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class CompressGzipError(Exception):
-    srcs: list[Path]
-    dest: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot compress source(s) {repr_(list(map(str, self.srcs)))} since destination {repr_str(self.dest)} already exists"
-
-
 def compress_lzma(
     src_or_dest: PathLike, /, *srcs_or_dest: PathLike, overwrite: bool = False
 ) -> None:
@@ -351,16 +353,6 @@ def compress_lzma(
         _compress_files(func2, src_or_dest, *srcs_or_dest, overwrite=overwrite)
     except _CompressFilesError as error:
         raise CompressLZMAError(srcs=error.srcs, dest=error.dest) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class CompressLZMAError(Exception):
-    srcs: list[Path]
-    dest: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot compress source(s) {repr_(list(map(str, self.srcs)))} since destination {repr_str(self.dest)} already exists"
 
 
 def _compress_files(
@@ -410,12 +402,6 @@ def _compress_files(
         raise _CompressFilesError(srcs=srcs, dest=error.path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class _CompressFilesError(Exception):
-    srcs: list[Path]
-    dest: Path
-
-
 def _compress_files_add_dir(path: PathLike, tar: TarFile, /) -> None:
     path = Path(path)
     for p in sorted(path.rglob("**/*")):
@@ -458,16 +444,6 @@ def compress_zip(
         raise CompressZipError(srcs=srcs, dest=error.path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class CompressZipError(Exception):
-    srcs: list[Path]
-    dest: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot compress source(s) {repr_(list(map(str, self.srcs)))} since destination {repr_str(self.dest)} already exists"
-
-
 ##
 
 
@@ -485,15 +461,6 @@ def yield_bz2(path: PathLike, /) -> Iterator[Path]:
         raise YieldBZ2Error(path=error.path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class YieldBZ2Error(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot uncompress {repr_str(self.path)} since it does not exist"
-
-
 @contextmanager
 def yield_gzip(path: PathLike, /) -> Iterator[Path]:
     """Yield the contents of a Gzip file."""
@@ -508,15 +475,6 @@ def yield_gzip(path: PathLike, /) -> Iterator[Path]:
         raise YieldGzipError(path=error.path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class YieldGzipError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot uncompress {repr_str(self.path)} since it does not exist"
-
-
 @contextmanager
 def yield_lzma(path: PathLike, /) -> Iterator[Path]:
     """Yield the contents of an LZMA file."""
@@ -529,15 +487,6 @@ def yield_lzma(path: PathLike, /) -> Iterator[Path]:
             yield temp
     except _YieldUncompressedError as error:
         raise YieldLZMAError(path=error.path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class YieldLZMAError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot uncompress {repr_str(self.path)} since it does not exist"
 
 
 @contextmanager
@@ -569,11 +518,6 @@ def _yield_uncompressed(path: PathLike, func: PathToBinaryIO, /) -> Iterator[Pat
         raise _YieldUncompressedError(path=path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class _YieldUncompressedError(Exception):
-    path: Path
-
-
 ##
 
 
@@ -590,15 +534,6 @@ def yield_zip(path: PathLike, /) -> Iterator[Path]:
                 yield temp
     except FileNotFoundError:
         raise YieldZipError(path=path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class YieldZipError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot uncompress {repr_str(self.path)} since it does not exist"
 
 
 ###############################################################################
@@ -808,28 +743,6 @@ def one[T](*iterables: Iterable[T]) -> T:
     raise OneNonUniqueError(iterables=iterables, first=first, second=second)
 
 
-@dataclass(kw_only=True, slots=True)
-class OneError[T](Exception):
-    iterables: tuple[Iterable[T], ...]
-
-
-@dataclass(kw_only=True, slots=True)
-class OneEmptyError[T](OneError[T]):
-    @override
-    def __str__(self) -> str:
-        return f"Iterable(s) {repr_(self.iterables)} must not be empty"
-
-
-@dataclass(kw_only=True, slots=True)
-class OneNonUniqueError[T](OneError):
-    first: T
-    second: T
-
-    @override
-    def __str__(self) -> str:
-        return f"Iterable(s) {repr_(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
-
-
 ##
 
 
@@ -869,57 +782,6 @@ def one_str(
             first=error.first,
             second=error.second,
         ) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class OneStrError(Exception):
-    iterable: Iterable[str]
-    text: str
-    head: bool = False
-    case_sensitive: bool = False
-
-
-@dataclass(kw_only=True, slots=True)
-class OneStrEmptyError(OneStrError):
-    @override
-    def __str__(self) -> str:
-        head = f"Iterable {repr_(self.iterable)} does not contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                tail = repr(self.text)
-            case False, False:
-                tail = f"{repr_(self.text)} (modulo case)"
-            case True, True:
-                tail = f"any string starting with {repr_(self.text)}"
-            case True, False:
-                tail = f"any string starting with {repr_(self.text)} (modulo case)"
-            case never:
-                assert_never(never)
-        return f"{head} {tail}"
-
-
-@dataclass(kw_only=True, slots=True)
-class OneStrNonUniqueError(OneStrError):
-    first: str
-    second: str
-
-    @override
-    def __str__(self) -> str:
-        head = f"Iterable {repr_(self.iterable)} must contain"
-        match self.head, self.case_sensitive:
-            case False, True:
-                mid = f"{repr_(self.text)} exactly once"
-            case False, False:
-                mid = f"{repr_(self.text)} exactly once (modulo case)"
-            case True, True:
-                mid = f"exactly one string starting with {repr_(self.text)}"
-            case True, False:
-                mid = (
-                    f"exactly one string starting with {repr_(self.text)} (modulo case)"
-                )
-            case never:
-                assert_never(never)
-        return f"{head} {mid}; got {repr_(self.first)}, {repr_(self.second)} and perhaps more"
 
 
 ##
@@ -1155,6 +1017,26 @@ def to_logger(logger: LoggerLike, /) -> Logger:
 
 
 ###############################################################################
+#### math #####################################################################
+###############################################################################
+
+
+def is_close(
+    x: float, y: float, /, *, rel_tol: float = REL_TOL, abs_tol: float = ABS_TOL
+) -> bool:
+    """Check if x == y."""
+    return math.isclose(
+        x,
+        y,
+        **({} if rel_tol is None else {"rel_tol": rel_tol}),
+        **({} if abs_tol is None else {"abs_tol": abs_tol}),
+    )
+
+
+##
+
+
+###############################################################################
 #### os #######################################################################
 ###############################################################################
 
@@ -1179,9 +1061,20 @@ def copy(
 ) -> None:
     """Copy a file atomically."""
     src, dest = map(Path, [src, dest])
-    _copy_or_move(
-        src, dest, "copy", overwrite=overwrite, perms=perms, owner=owner, group=group
-    )
+    try:
+        _copy_or_move(
+            src,
+            dest,
+            "copy",
+            overwrite=overwrite,
+            perms=perms,
+            owner=owner,
+            group=group,
+        )
+    except _CopyOrMoveSourceNotFoundError as error:
+        raise CopySourceNotFoundError(src=error.src) from None
+    except _CopyOrMoveDestinationExistsError as error:
+        raise CopyDestinationExistsError(src=error.src, dest=error.dest) from None
 
 
 def move(
@@ -1196,13 +1089,20 @@ def move(
 ) -> None:
     """Move a file atomically."""
     src, dest = map(Path, [src, dest])
-    _copy_or_move(
-        src, dest, "move", overwrite=overwrite, perms=perms, owner=owner, group=group
-    )
-
-
-@dataclass(kw_only=True, slots=True)
-class CopyOrMoveError(Exception): ...
+    try:
+        _copy_or_move(
+            src,
+            dest,
+            "move",
+            overwrite=overwrite,
+            perms=perms,
+            owner=owner,
+            group=group,
+        )
+    except _CopyOrMoveSourceNotFoundError as error:
+        raise MoveSourceNotFoundError(src=error.src) from None
+    except _CopyOrMoveDestinationExistsError as error:
+        raise MoveDestinationExistsError(src=error.src, dest=error.dest) from None
 
 
 def _copy_or_move(
@@ -1220,7 +1120,7 @@ def _copy_or_move(
         case None, _, _:
             raise _CopyOrMoveSourceNotFoundError(src=src)
         case "file" | "dir", "file" | "dir", False:
-            raise _CopyOrMoveDestinationExistsError(mode=mode, src=src, dest=dest)
+            raise _CopyOrMoveDestinationExistsError(src=src, dest=dest)
         case ("file", None, _) | ("file", "file", True):
             _copy_or_move__file_to_file(src, dest, mode)
         case "file", "dir", True:
@@ -1235,26 +1135,6 @@ def _copy_or_move(
         chmod(dest, perms)
     if (owner is not None) or (group is not None):
         chown(dest, user=owner, group=group)
-
-
-@dataclass(kw_only=True, slots=True)
-class _CopyOrMoveSourceNotFoundError(CopyOrMoveError):
-    src: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Source {repr_str(self.src)} does not exist"
-
-
-@dataclass(kw_only=True, slots=True)
-class _CopyOrMoveDestinationExistsError(CopyOrMoveError):
-    mode: CopyOrMove
-    src: Path
-    dest: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot {self.mode} source {repr_str(self.src)} since destination {repr_str(self.dest)} already exists"
 
 
 def _copy_or_move__file_to_file(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
@@ -1363,17 +1243,6 @@ def get_env(
     return environ[key_use]
 
 
-@dataclass(kw_only=True, slots=True)
-class GetEnvError(Exception):
-    key: str
-    case_sensitive: bool = False
-
-    @override
-    def __str__(self) -> str:
-        desc = f"No environment variable {repr_(self.key)}"
-        return desc if self.case_sensitive else f"{desc} (modulo case)"
-
-
 ##
 
 
@@ -1460,30 +1329,11 @@ def file_or_dir(path: PathLike, /, *, exists: bool = False) -> FileOrDir | None:
         case True, False, True, _:
             return "dir"
         case False, False, False, True:
-            raise _FileOrDirMissingError(path=path)
+            raise FileOrDirMissingError(path=path)
         case False, False, False, False:
             return None
         case _:
-            raise _FileOrDirTypeError(path=path)
-
-
-@dataclass(kw_only=True, slots=True)
-class FileOrDirError(Exception):
-    path: Path
-
-
-@dataclass(kw_only=True, slots=True)
-class _FileOrDirMissingError(FileOrDirError):
-    @override
-    def __str__(self) -> str:
-        return f"Path does not exist: {repr_str(self.path)}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _FileOrDirTypeError(FileOrDirError):
-    @override
-    def __str__(self) -> str:
-        return f"Path is neither a file nor a directory: {repr_str(self.path)}"
+            raise FileOrDirTypeError(path=path)
 
 
 ##
@@ -3300,21 +3150,12 @@ def yield_write_path(
         else:
             try:
                 move(temp, path, overwrite=overwrite)
-            except _CopyOrMoveDestinationExistsError as error:
+            except MoveDestinationExistsError as error:
                 raise YieldWritePathError(path=error.dest) from None
     if perms is not None:
         chmod(path, perms)
     if (owner is not None) or (group is not None):
         chown(path, user=owner, group=group)
-
-
-@dataclass(kw_only=True, slots=True)
-class YieldWritePathError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot write to {repr_str(self.path)} since it already exists"
 
 
 ###############################################################################
@@ -3431,12 +3272,20 @@ __all__ = [
     "CompressGzipError",
     "CompressLZMAError",
     "CompressZipError",
+    "CopyDestinationExistsError",
+    "CopyError",
+    "CopySourceNotFoundError",
     "ExtractGroupError",
     "ExtractGroupsError",
     "FileOrDirError",
+    "FileOrDirMissingError",
+    "FileOrDirTypeError",
     "GetEnvError",
     "MaxNullableError",
     "MinNullableError",
+    "MoveDestinationExistsError",
+    "MoveError",
+    "MoveSourceNotFoundError",
     "NumDaysError",
     "NumHoursError",
     "NumMicroSecondsError",
@@ -3506,6 +3355,7 @@ __all__ = [
     "get_today_local",
     "get_uid_name",
     "has_env",
+    "is_close",
     "is_debug",
     "is_none",
     "is_not_none",

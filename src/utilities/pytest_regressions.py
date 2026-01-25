@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, Any, assert_never, override
 from pytest_datadir.plugin import LazyDataDir
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from utilities.core import _CopyOrMoveSourceNotFoundError, copy, repr_
+from utilities._core_errors import CopySourceNotFoundError
+from utilities.core import copy, repr_
 from utilities.functions import ensure_str
 from utilities.operator import is_equal
 
@@ -33,7 +34,7 @@ class OrjsonRegressionFixture:
         path = Path(path)
         original_datadir = path.parent
         data_dir = tmp_path.joinpath(ensure_str(request.fixturename))
-        with suppress(_CopyOrMoveSourceNotFoundError):
+        with suppress(CopySourceNotFoundError):
             copy(original_datadir, data_dir, overwrite=True)
         self._fixture = FileRegressionFixture(
             datadir=LazyDataDir(original_datadir=original_datadir, tmp_path=data_dir),

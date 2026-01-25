@@ -6,8 +6,8 @@ from pathlib import Path
 from pytest import raises
 
 from utilities.core import (
-    _FileOrDirMissingError,
-    _FileOrDirTypeError,
+    FileOrDirMissingError,
+    FileOrDirTypeError,
     file_or_dir,
     yield_temp_cwd,
 )
@@ -33,14 +33,14 @@ class TestFileOrDir:
 
     def test_error_missing(self, *, tmp_path: Path) -> None:
         path = tmp_path / "non-existent"
-        with raises(_FileOrDirMissingError, match=r"Path does not exist: '.*'"):
+        with raises(FileOrDirMissingError, match=r"Path does not exist: '.*'"):
             _ = file_or_dir(path, exists=True)
 
     def test_error_type(self, *, tmp_path: Path) -> None:
         path = tmp_path / "fifo"
         mkfifo(path)
         with raises(
-            _FileOrDirTypeError, match=r"Path is neither a file nor a directory: '.*'"
+            FileOrDirTypeError, match=r"Path is neither a file nor a directory: '.*'"
         ):
             _ = file_or_dir(path)
 

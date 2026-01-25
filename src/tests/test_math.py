@@ -5,14 +5,7 @@ from re import escape
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from hypothesis import example, given, settings
-from hypothesis.strategies import (
-    DataObject,
-    data,
-    floats,
-    integers,
-    permutations,
-    sampled_from,
-)
+from hypothesis.strategies import floats, integers, sampled_from
 from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, mark, param, raises
 
@@ -293,65 +286,65 @@ class TestIsBetween:
 
 
 class TestIsEqual:
-    @given(case=sampled_from([(-1, False), (0, True), (1, False)]))
-    def test_two_ints(self, *, case: tuple[float, bool]) -> None:
-        x, expected = case
+    @mark.parametrize(
+        ("x", "expected"), [param(-1, False), param(0, True), param(1, False)]
+    )
+    def test_two_ints(self, *, x: int, expected: bool) -> None:
         assert is_equal(x, 0) is expected
         assert is_equal(0, x) is expected
 
-    @given(
-        case=sampled_from([
-            (-inf, False),
-            (-1.0, False),
-            (-1e-6, False),
-            (-1e-7, False),
-            (-1e-8, False),
-            (0.0, True),
-            (1e-8, False),
-            (1e-7, False),
-            (1e-6, False),
-            (1.0, False),
-            (inf, False),
-            (nan, False),
-        ])
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-1.0, False),
+            param(-1e-6, False),
+            param(-1e-7, False),
+            param(-1e-8, False),
+            param(0.0, True),
+            param(1e-8, False),
+            param(1e-7, False),
+            param(1e-6, False),
+            param(1.0, False),
+            param(inf, False),
+            param(nan, False),
+        ],
     )
-    def test_one_float(self, *, case: tuple[float, bool]) -> None:
-        x, expected = case
+    def test_one_float(self, *, x: float, expected: bool) -> None:
         assert is_equal(x, 0.0) is expected
         assert is_equal(0.0, x) is expected
 
-    @given(
-        data=data(),
-        case=sampled_from([
-            (0, 0, None, True),
-            (0, 0.0, None, True),
-            (0.0, 0.0, None, True),
-            (0, 1e-16, None, False),
-            (0, 1e-16, 1e-8, True),
-            (0.0, 1e-16, None, False),
-            (0.0, 1e-16, 1e-8, True),
-            (7.0, 7.000000000000001, None, True),
-        ]),
+    @mark.parametrize(
+        ("x", "y", "abs_tol", "expected"),
+        [
+            param(0, 0, None, True),
+            param(0, 0.0, None, True),
+            param(0.0, 0.0, None, True),
+            param(0, 1e-16, None, False),
+            param(0, 1e-16, 1e-8, True),
+            param(0.0, 1e-16, None, False),
+            param(0.0, 1e-16, 1e-8, True),
+            param(7.0, 7.000000000000001, None, True),
+        ],
     )
     def test_two_numbers(
-        self, *, data: DataObject, case: tuple[Number, Number, float | None, bool]
+        self, *, x: Number, y: Number, abs_tol: float, expected: bool
     ) -> None:
-        x, y, abs_tol, expected = case
-        x, y = data.draw(permutations([x, y]))
         assert is_equal(x, y, abs_tol=abs_tol) is expected
+        assert is_equal(y, x, abs_tol=abs_tol) is expected
 
-    @given(
-        case=sampled_from([
-            (nan, nan, True),
-            (nan, inf, False),
-            (nan, -inf, False),
-            (inf, inf, True),
-            (inf, -inf, False),
-            (-inf, -inf, True),
-        ])
+    @mark.parametrize(
+        ("x", "y", "expected"),
+        [
+            param(nan, nan, True),
+            param(nan, inf, False),
+            param(nan, -inf, False),
+            param(inf, inf, True),
+            param(inf, -inf, False),
+            param(-inf, -inf, True),
+        ],
     )
-    def test_special(self, *, case: tuple[float, float, bool]) -> None:
-        x, y, expected = case
+    def test_special(self, *, x: float, y: float, expected: bool) -> None:
         assert is_equal(x, y) is expected
         assert is_equal(y, x) is expected
 

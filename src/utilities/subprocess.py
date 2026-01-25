@@ -16,13 +16,13 @@ from threading import Thread
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
 import utilities.core
+from utilities._core_errors import CopySourceNotFoundError, MoveSourceNotFoundError
 from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
     OneEmptyError,
     Permissions,
     TemporaryDirectory,
-    _CopyOrMoveSourceNotFoundError,
     always_iterable,
     copy,
     file_or_dir,
@@ -316,7 +316,7 @@ def cp(
     else:
         try:
             copy(src, dest, overwrite=True, perms=perms, owner=owner, group=group)
-        except _CopyOrMoveSourceNotFoundError as error:
+        except CopySourceNotFoundError as error:
             raise CpError(src=error.src) from None
 
 
@@ -680,7 +680,7 @@ def mv(
     else:
         try:
             move(src, dest, overwrite=True, perms=perms, owner=owner, group=group)
-        except _CopyOrMoveSourceNotFoundError as error:
+        except MoveSourceNotFoundError as error:
             raise MvFileError(src=error.src) from None
 
 

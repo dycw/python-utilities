@@ -50,6 +50,10 @@ MIN_UINT32, MAX_UINT32 = 0, 2**32 - 1
 MIN_UINT64, MAX_UINT64 = 0, 2**64 - 1
 
 
+REL_TOL: float = 1e-09
+ABS_TOL: float = 0.0
+
+
 # os
 
 
@@ -426,6 +430,7 @@ NOW_UTC_PLAIN: PlainDateTime = NOW_UTC.to_plain()
 
 
 __all__ = [
+    "ABS_TOL",
     "BRACKETS",
     "CPU_COUNT",
     "DATE_DELTA_MAX",
@@ -513,6 +518,7 @@ __all__ = [
     "NOW_UTC_PLAIN",
     "PAIR_SEPARATOR",
     "PWD",
+    "REL_TOL",
     "ROOT_GROUP_NAME",
     "ROOT_USER_NAME",
     "SECOND",
