@@ -37,7 +37,6 @@ from utilities.click import (
     DateDelta,
     DateTimeDelta,
     Enum,
-    EnumPartial,
     FrozenSetChoices,
     FrozenSetEnums,
     FrozenSetInts,
@@ -233,14 +232,6 @@ class TestParameters:
             failable=True,
         ),
         _Case(
-            param=EnumPartial(_ExampleEnumAB),
-            name="enum-partial[_ExampleEnum]",
-            repr="ENUMPARTIAL[_ExampleEnum]",
-            strategy=sampled_from(_ExampleEnumAB),
-            serialize=attrgetter("name"),
-            failable=True,
-        ),
-        _Case(
             param=FrozenSetInts(),
             name="frozenset[integer]",
             repr="FROZENSET[INT]",
@@ -390,6 +381,16 @@ class TestParameters:
         assert result.exit_code == 0, result.stderr
         assert result.stdout == f"value = {serialize(default)}\n"
 
+    @mark.parametrize("param", [param(c.param) for c in cases])
+    def test_empty_string(self, *, param: ParamType) -> None:
+        @command()
+        @argument("value", type=param)
+        def cli(*, value: Any) -> None:
+            assert value is None
+
+        result = CliRunner().invoke(cli, args=[""])
+        assert result.exit_code == 0, result.stderr
+
     @given(data=data())
     @mark.parametrize(
         ("param", "strategy", "serialize"),
@@ -439,31 +440,6 @@ class TestParameters:
     def test_repr(self, *, param: ParamType, repr_: str | None, name: str) -> None:
         expected = name.upper() if repr_ is None else repr_
         assert repr(param) == expected
-
-    def test_error_enum_partial_ensure_enum_error(self) -> None:
-        @command()
-        @argument("value", type=EnumPartial(_ExampleEnumAB))
-        def cli(*, value: _ExampleEnumABType) -> None:
-            echo(f"value = {value}")
-
-        result = CliRunner().invoke(cli, "invalid")
-        assert result.exit_code == 2, result.stderr
-        assert search(
-            "Invalid value for '{a,b}': Unable to ensure enum; got 'invalid'",
-            result.stderr,
-        )
-
-    def test_error_enum_partial_member_error(self) -> None:
-        @command()
-        @argument("value", type=EnumPartial(_ExampleEnumAB))
-        def cli(*, value: _ExampleEnumABType) -> None:
-            echo(f"value = {value}")
-
-        result = CliRunner().invoke(cli, "c")
-        assert result.exit_code == 2, result.stderr
-        assert search(
-            "Invalid value for '{a,b}': 3 is not a selected member", result.stderr
-        )
 
     @mark.parametrize(
         "param",
@@ -519,24 +495,6 @@ class TestCLIHelp:
                 Enum(_ExampleStrEnum),
                 """
                 Usage: cli [OPTIONS] {av,bv,cv}
-
-                Options:
-                  --help  Show this message and exit.
-                """,
-            ),
-            param(
-                EnumPartial(_ExampleEnumAB),
-                """
-                Usage: cli [OPTIONS] {a,b}
-
-                Options:
-                  --help  Show this message and exit.
-                """,
-            ),
-            param(
-                EnumPartial(_ExampleEnumAB, value=True),
-                """
-                Usage: cli [OPTIONS] {1,2}
 
                 Options:
                   --help  Show this message and exit.
