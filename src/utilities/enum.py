@@ -2,63 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, StrEnum
-from typing import TYPE_CHECKING, Literal, assert_never, overload, override
+from typing import Literal, assert_never, override
 
 from utilities.core import OneStrEmptyError, OneStrNonUniqueError, one_str
 from utilities.functions import ensure_str
-
-if TYPE_CHECKING:
-    from utilities.types import EnumLike
-
-
-##
-
-
-@overload
-def ensure_enum[E: Enum](
-    value: None, enum: type[E], /, *, case_sensitive: bool = False
-) -> None: ...
-@overload
-def ensure_enum[E: Enum](
-    value: EnumLike[E], enum: type[E], /, *, case_sensitive: bool = False
-) -> E: ...
-def ensure_enum[E: Enum](
-    value: EnumLike[E] | None, enum: type[E], /, *, case_sensitive: bool = False
-) -> E | None:
-    """Ensure the object is a member of the enum."""
-    if value is None:
-        return None
-    if isinstance(value, enum):
-        return value
-    if isinstance(value, Enum):
-        raise _EnsureEnumTypeEnumError(value=value, enum=enum)
-    try:
-        return parse_enum(value, enum, case_sensitive=case_sensitive)
-    except ParseEnumError as error:
-        raise _EnsureEnumParseError(value=error.value, enum=error.enum) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class EnsureEnumError[E: Enum](Exception):
-    value: EnumLike[E]
-    enum: type[E]
-
-
-@dataclass(kw_only=True, slots=True)
-class _EnsureEnumTypeEnumError(EnsureEnumError):
-    @override
-    def __str__(self) -> str:
-        return f"{self.value!r} is not an instance of {self.enum!r}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _EnsureEnumParseError(EnsureEnumError):
-    @override
-    def __str__(self) -> str:
-        return f"Unable to ensure enum; got {self.value!r}"
-
-
-##
 
 
 def parse_enum[E: Enum](
@@ -188,4 +135,4 @@ class _ParseEnumStrEnumNonUniqueError(ParseEnumError):
         )
 
 
-__all__ = ["EnsureEnumError", "ParseEnumError", "ensure_enum", "parse_enum"]
+__all__ = ["ParseEnumError", "parse_enum"]

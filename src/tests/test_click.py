@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import StrEnum, auto, unique
 from operator import attrgetter
 from re import search
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import whenever
 from click import ParamType, argument, command, echo, option
@@ -21,7 +21,6 @@ from hypothesis.strategies import (
     integers,
     ip_addresses,
     lists,
-    none,
     sampled_from,
     uuids,
 )
@@ -37,7 +36,6 @@ from utilities.click import (
     DateDelta,
     DateTimeDelta,
     Enum,
-    EnumPartial,
     FrozenSetChoices,
     FrozenSetEnums,
     FrozenSetInts,
@@ -57,7 +55,7 @@ from utilities.click import (
     YearMonth,
     ZonedDateTime,
 )
-from utilities.core import normalize_multi_line_str
+from utilities.core import get_class_name, normalize_multi_line_str
 from utilities.hypothesis import (
     date_deltas,
     date_time_deltas,
@@ -162,10 +160,6 @@ class _ExampleStrEnum(StrEnum):
     ck = "cv"
 
 
-type _ExampleEnumABType = Literal[_ExampleEnum.a, _ExampleEnum.b]
-_ExampleEnumAB: list[_ExampleEnumABType] = [_ExampleEnum.a, _ExampleEnum.b]
-
-
 def _lift_serializer_for_iterables[T](
     serializer: Callable[[T], str], /, *, sort: bool = False
 ) -> Callable[[Iterable[T]], str]:
@@ -199,7 +193,7 @@ class TestParameters:
         _Case(
             param=Bool(),
             name="bool",
-            strategy=booleans() | none(),
+            strategy=booleans(),
             serialize=_lift_serializer_for_nulls(serialize_object),
             failable=True,
         ),
@@ -233,18 +227,10 @@ class TestParameters:
             failable=True,
         ),
         _Case(
-            param=EnumPartial(_ExampleEnumAB),
-            name="enum-partial[_ExampleEnum]",
-            repr="ENUMPARTIAL[_ExampleEnum]",
-            strategy=sampled_from(_ExampleEnumAB),
-            serialize=attrgetter("name"),
-            failable=True,
-        ),
-        _Case(
             param=FrozenSetInts(),
             name="frozenset[integer]",
             repr="FROZENSET[INT]",
-            strategy=frozensets(integers()),
+            strategy=frozensets(integers(), min_size=1),
             serialize=_lift_serializer_for_iterables(str, sort=True),
             failable=True,
         ),
@@ -252,7 +238,7 @@ class TestParameters:
             param=FrozenSetChoices(["a", "b", "c"]),
             name="frozenset[choice]",
             repr="FROZENSET[Choice(['a', 'b', 'c'])]",
-            strategy=frozensets(sampled_from(["a", "b", "c"])),
+            strategy=frozensets(sampled_from(["a", "b", "c"]), min_size=1),
             serialize=_lift_serializer_for_iterables(str, sort=True),
             failable=True,
         ),
@@ -260,7 +246,7 @@ class TestParameters:
             param=FrozenSetEnums(_ExampleEnum),
             name="frozenset[enum[_ExampleEnum]]",
             repr="FROZENSET[ENUM[_ExampleEnum]]",
-            strategy=frozensets(sampled_from(_ExampleEnum)),
+            strategy=frozensets(sampled_from(_ExampleEnum), min_size=1),
             serialize=_lift_serializer_for_iterables(attrgetter("name"), sort=True),
             failable=True,
         ),
@@ -268,19 +254,19 @@ class TestParameters:
             param=FrozenSetStrs(),
             name="frozenset[text]",
             repr="FROZENSET[STRING]",
-            strategy=frozensets(text_ascii()),
+            strategy=frozensets(text_ascii(), min_size=1),
             serialize=_lift_serializer_for_iterables(str, sort=True),
         ),
         _Case(
             param=IPv4Address(),
-            name="ipv4 address",
+            name="ipv4",
             strategy=ip_addresses(v=4),
             serialize=str,
             failable=True,
         ),
         _Case(
             param=IPv6Address(),
-            name="ipv6 address",
+            name="ipv6",
             strategy=ip_addresses(v=6),
             serialize=str,
             failable=True,
@@ -289,7 +275,7 @@ class TestParameters:
             param=ListChoices(["a", "b", "c"]),
             name="list[choice]",
             repr="LIST[Choice(['a', 'b', 'c'])]",
-            strategy=lists(sampled_from(["a", "b", "c"])),
+            strategy=lists(sampled_from(["a", "b", "c"]), min_size=1),
             serialize=_lift_serializer_for_iterables(str),
             failable=True,
         ),
@@ -297,7 +283,7 @@ class TestParameters:
             param=ListInts(),
             name="list[integer]",
             repr="LIST[INT]",
-            strategy=lists(integers()),
+            strategy=lists(integers(), min_size=1),
             serialize=_lift_serializer_for_iterables(str),
             failable=True,
         ),
@@ -305,7 +291,7 @@ class TestParameters:
             param=ListEnums(_ExampleEnum),
             name="list[enum[_ExampleEnum]]",
             repr="LIST[ENUM[_ExampleEnum]]",
-            strategy=lists(sampled_from(_ExampleEnum)),
+            strategy=lists(sampled_from(_ExampleEnum), min_size=1),
             serialize=_lift_serializer_for_iterables(attrgetter("name")),
             failable=True,
         ),
@@ -329,7 +315,7 @@ class TestParameters:
         _Case(
             param=Str(),
             name="text",
-            strategy=text_ascii(min_size=1) | none(),
+            strategy=text_ascii(min_size=1),
             serialize=serialize_object,
             failable=False,
         ),
@@ -369,117 +355,148 @@ class TestParameters:
     @given(data=data())
     @mark.parametrize(
         ("param", "strategy", "serialize"),
-        [param(c.param, c.strategy, c.serialize) for c in cases],
+        [
+            param(c.param, c.strategy, c.serialize, id=get_class_name(c.param))
+            for c in cases
+        ],
     )
-    def test_default(
+    def test_main(
         self,
         *,
         data: DataObject,
         param: ParamType,
         strategy: SearchStrategy[Any],
         serialize: Callable[[Any], str],
+    ) -> None:
+        value_use = data.draw(strategy)
+
+        @command()
+        @option("--value", type=param)
+        def cli(*, value: Any) -> None:
+            assert value == value_use
+
+        result = CliRunner().invoke(cli, args=[f"--value={serialize(value_use)}"])
+        assert result.exit_code == 0, result.stderr
+
+    @given(data=data())
+    @mark.parametrize(
+        ("param", "strategy"),
+        [param(c.param, c.strategy, id=get_class_name(c.param)) for c in cases],
+    )
+    def test_default(
+        self, *, data: DataObject, param: ParamType, strategy: SearchStrategy[Any]
     ) -> None:
         default = data.draw(strategy)
 
         @command()
         @option("--value", type=param, default=default)
         def cli(*, value: Any) -> None:
-            echo(f"value = {serialize(value)}")
+            assert value == default
 
-        result = CliRunner().invoke(cli, args=[])
+        result = CliRunner().invoke(cli)
         assert result.exit_code == 0, result.stderr
-        assert result.stdout == f"value = {serialize(default)}\n"
-
-    @given(data=data())
-    @mark.parametrize(
-        ("param", "strategy", "serialize"),
-        [param(c.param, c.strategy, c.serialize) for c in cases],
-    )
-    def test_cli_value(
-        self,
-        *,
-        data: DataObject,
-        param: ParamType,
-        strategy: SearchStrategy[Any],
-        serialize: Callable[[Any], str],
-    ) -> None:
-        @command()
-        @option("--value", type=param)
-        def cli(*, value: Any) -> None:
-            echo(f"value = {serialize(value)}")
-
-        value = data.draw(strategy)
-        ser = serialize(value)
-        result = CliRunner().invoke(cli, args=[f"--value={ser}"])
-        assert result.exit_code == 0, result.stderr
-        assert result.stdout == f"value = {ser}\n"
 
     @mark.parametrize(
-        ("param", "serialize"),
-        [param(c.param, c.serialize) for c in cases if c.failable],
+        "param", [param(c.param, id=get_class_name(c.param)) for c in cases]
     )
-    def test_cli_fail(
-        self, *, param: ParamType, serialize: Callable[[Any], str]
-    ) -> None:
+    def test_empty_string(self, *, param: ParamType) -> None:
         @command()
         @argument("value", type=param)
         def cli(*, value: Any) -> None:
-            echo(f"value = {serialize(value)}")
+            assert value is None
+
+        result = CliRunner().invoke(cli, args=[""])
+        assert result.exit_code == 0, result.stderr
+
+    @mark.parametrize(
+        "param", [param(c.param, id=get_class_name(c.param)) for c in cases]
+    )
+    def test_none(self, *, param: ParamType) -> None:
+        @command()
+        @option("--value", type=param, default=None)
+        def cli(*, value: Any) -> None:
+            assert value is None
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0, result.stderr
+
+    @mark.parametrize(
+        "param",
+        [param(c.param, id=get_class_name(c.param)) for c in cases if c.failable],
+    )
+    def test_cli_fail(self, *, param: ParamType) -> None:
+        @command()
+        @argument("value", type=param)
+        def cli(*, value: Any) -> None:
+            _ = value
 
         result = CliRunner().invoke(cli, args=["invalid"])
         assert result.exit_code == 2, result.stderr
+        assert search("Invalid value for '.*':.*'invalid'", result.stderr)
 
-    @mark.parametrize(("param", "name"), [param(c.param, c.name) for c in cases])
+    @mark.parametrize(
+        ("param", "default"),
+        [
+            param(ListEnums(_ExampleEnum), [], id=get_class_name(ListEnums)),
+            param(FrozenSetEnums(_ExampleEnum), {}, id=get_class_name(FrozenSetEnums)),
+        ],
+        ids=str,
+    )
+    def test_empty_frozensets_parse(self, *, param: ParamType, default: Any) -> None:
+        @command()
+        @option("--value", type=param, default=default)
+        def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
+            assert value is None
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0, result.stderr
+
+    @mark.parametrize(
+        ("param", "name"),
+        [param(c.param, c.name, id=get_class_name(c.param)) for c in cases],
+    )
     def test_name(self, *, param: ParamType, name: str) -> None:
         assert param.name == name
 
     @mark.parametrize(
-        ("param", "repr_", "name"), [param(c.param, c.repr, c.name) for c in cases]
+        ("param", "repr_", "name"),
+        [param(c.param, c.repr, c.name, id=get_class_name(c.param)) for c in cases],
     )
     def test_repr(self, *, param: ParamType, repr_: str | None, name: str) -> None:
         expected = name.upper() if repr_ is None else repr_
         assert repr(param) == expected
 
-    def test_error_enum_partial_ensure_enum_error(self) -> None:
+    def test_error_enum_parse(self) -> None:
         @command()
-        @argument("value", type=EnumPartial(_ExampleEnumAB))
-        def cli(*, value: _ExampleEnumABType) -> None:
-            echo(f"value = {value}")
+        @option("--value", type=Enum(_ExampleEnum), default=_ExampleStrEnum.ak)
+        def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
+            _ = value
 
-        result = CliRunner().invoke(cli, "invalid")
+        result = CliRunner().invoke(cli)
         assert result.exit_code == 2, result.stderr
         assert search(
-            "Invalid value for '{a,b}': Unable to ensure enum; got 'invalid'",
+            "Invalid value for '--value': Enum member 'ak' of type '_ExampleStrEnum' is not an instance of '_ExampleEnum'",
             result.stderr,
-        )
-
-    def test_error_enum_partial_member_error(self) -> None:
-        @command()
-        @argument("value", type=EnumPartial(_ExampleEnumAB))
-        def cli(*, value: _ExampleEnumABType) -> None:
-            echo(f"value = {value}")
-
-        result = CliRunner().invoke(cli, "c")
-        assert result.exit_code == 2, result.stderr
-        assert search(
-            "Invalid value for '{a,b}': 3 is not a selected member", result.stderr
         )
 
     @mark.parametrize(
         "param",
-        [param(ListEnums(_ExampleEnum)), param(FrozenSetEnums(_ExampleEnum))],
+        [
+            param(ListEnums(_ExampleEnum), id=get_class_name(ListEnums)),
+            param(FrozenSetEnums(_ExampleEnum), id=get_class_name(FrozenSetEnums)),
+        ],
         ids=str,
     )
     def test_error_list_and_frozensets_parse(self, *, param: ParamType) -> None:
         @command()
         @option("--value", type=param, default=0)
         def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
-            echo(f"value = {value}")
+            _ = value
 
         result = CliRunner().invoke(cli)
         assert result.exit_code == 2, result.stderr
         assert search(
-            "Invalid value for '--value': Object '0' of type 'int' must be a string",
+            "Invalid value for '--value': Object '0' of type 'int' must be a (frozenset|list)",
             result.stderr,
         )
 
@@ -519,24 +536,6 @@ class TestCLIHelp:
                 Enum(_ExampleStrEnum),
                 """
                 Usage: cli [OPTIONS] {av,bv,cv}
-
-                Options:
-                  --help  Show this message and exit.
-                """,
-            ),
-            param(
-                EnumPartial(_ExampleEnumAB),
-                """
-                Usage: cli [OPTIONS] {a,b}
-
-                Options:
-                  --help  Show this message and exit.
-                """,
-            ),
-            param(
-                EnumPartial(_ExampleEnumAB, value=True),
-                """
-                Usage: cli [OPTIONS] {1,2}
 
                 Options:
                   --help  Show this message and exit.

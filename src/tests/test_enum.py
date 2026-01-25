@@ -1,25 +1,19 @@
 from __future__ import annotations
 
 from enum import Enum, StrEnum, auto
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, sampled_from
 from pytest import raises
 
 from utilities.enum import (
-    _EnsureEnumParseError,
-    _EnsureEnumTypeEnumError,
     _ParseEnumByKindNonUniqueError,
     _ParseEnumGenericEnumEmptyError,
     _ParseEnumStrEnumEmptyError,
     _ParseEnumStrEnumNonUniqueError,
-    ensure_enum,
     parse_enum,
 )
-
-if TYPE_CHECKING:
-    from utilities.types import EnumLike
 
 
 class TestParseEnum:
@@ -177,46 +171,3 @@ class TestParseEnum:
             match=r"^StrEnum 'Truth' member names and values must contain '(true|false)' exactly once; got '(true|false)' by name and '(true|false)' by value",
         ):
             _ = parse_enum(input_, Truth, case_sensitive=True)
-
-    @given(data=data())
-    def test_ensure(self, *, data: DataObject) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        truth: Truth = data.draw(sampled_from(Truth))
-        input_: EnumLike[Truth] = data.draw(sampled_from([truth, truth.name]))
-        result = ensure_enum(input_, Truth)
-        assert result is truth
-
-    def test_ensure_none(self) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        result = ensure_enum(None, Truth)
-        assert result is None
-
-    @given(data=data())
-    def test_error_ensure_type(self, *, data: DataObject) -> None:
-        class Truth1(Enum):
-            true1 = auto()
-            false1 = auto()
-
-        class Truth2(Enum):
-            true2 = auto()
-            false2 = auto()
-
-        truth: Truth1 = data.draw(sampled_from(Truth1))
-        with raises(_EnsureEnumTypeEnumError, match=r".* is not an instance of .*"):
-            _ = ensure_enum(truth, Truth2)
-
-    def test_error_ensure_parse(self) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        with raises(
-            _EnsureEnumParseError, match=r"Unable to ensure enum; got 'invalid'"
-        ):
-            _ = ensure_enum("invalid", Truth)
