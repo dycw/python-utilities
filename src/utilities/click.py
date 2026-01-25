@@ -111,7 +111,6 @@ class Date(ParamType):
                     self.fail(str(error), param, ctx)
             case never:
                 assert_never(never)
-        return None
 
 
 class DateDelta(ParamType):
