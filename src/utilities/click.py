@@ -351,32 +351,35 @@ class Path(ParamType):
         self, value: PathLike, param: Parameter | None, ctx: Context | None
     ) -> pathlib.Path | None:
         """Convert a value into a Path, or None."""
-        _ = (param, ctx)
         match value:
             case pathlib.Path():
+                self._check_path(value, param, ctx)
                 return value
             case "":
                 return None
             case str():
+                self._check_path(value, param, ctx)
                 return pathlib.Path(value)
             case never:
                 assert_never(never)
 
-    def _check_path(self, path: PathLike, /) -> None:
+    def _check_path(
+        self, path: PathLike, param: Parameter | None, ctx: Context | None, /
+    ) -> None:
         path = pathlib.Path(path)
         match cast("_PathExist", self._exist):
             case True:
                 if not path.exists():
-                    self.fail(f"{str(path)!r} must exist")
+                    self.fail(f"{str(path)!r} does not exist", param, ctx)
             case False:
                 if path.exists():
-                    self.fail(f"{str(path)!r} must not exist")
+                    self.fail(f"{str(path)!r} exists", param, ctx)
             case "file":
                 if not path.is_file():
-                    self.fail(f"{str(path)!r} must be a file")
+                    self.fail(f"{str(path)!r} is not a file", param, ctx)
             case "dir":
                 if not path.is_dir():
-                    self.fail(f"{str(path)!r} must be a directory")
+                    self.fail(f"{str(path)!r} is not a directory", param, ctx)
             case None:
                 ...
             case never:
