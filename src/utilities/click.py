@@ -6,7 +6,7 @@ import pathlib
 import uuid
 from collections.abc import Iterable
 from enum import StrEnum
-from typing import TYPE_CHECKING, TypedDict, assert_never, override
+from typing import TYPE_CHECKING, Literal, TypedDict, assert_never, cast, override
 
 import whenever
 from click import Choice, Context, Parameter, ParamType
@@ -85,6 +85,9 @@ class Bool(ParamType):
                 assert_never(never)
 
 
+##
+
+
 class Date(ParamType):
     """A date-valued parameter."""
 
@@ -111,6 +114,9 @@ class Date(ParamType):
                     self.fail(str(error), param, ctx)
             case never:
                 assert_never(never)
+
+
+##
 
 
 class DateDelta(ParamType):
@@ -141,6 +147,9 @@ class DateDelta(ParamType):
                 assert_never(never)
 
 
+##
+
+
 class DateTimeDelta(ParamType):
     """A date-delta-valued parameter."""
 
@@ -167,6 +176,9 @@ class DateTimeDelta(ParamType):
                     self.fail(str(error), param, ctx)
             case never:
                 assert_never(never)
+
+
+##
 
 
 class Enum[E: enum.Enum](ParamType):
@@ -221,6 +233,9 @@ class Enum[E: enum.Enum](ParamType):
         return _make_metavar(param, desc)
 
 
+##
+
+
 class IPv4Address(ParamType):
     """An IPv4 address-valued parameter."""
 
@@ -247,6 +262,9 @@ class IPv4Address(ParamType):
                     self.fail(str(error), param, ctx)
             case never:
                 assert_never(never)
+
+
+##
 
 
 class IPv6Address(ParamType):
@@ -277,6 +295,9 @@ class IPv6Address(ParamType):
                 assert_never(never)
 
 
+##
+
+
 class MonthDay(ParamType):
     """A month-day parameter."""
 
@@ -305,10 +326,23 @@ class MonthDay(ParamType):
                 assert_never(never)
 
 
+##
+
+
+type _PathExist = Literal[
+    True, False, "existing file", "existing dir", "file if exists", "dir if exists"
+]
+
+
 class Path(ParamType):
     """A path-valued parameter."""
 
     name = "path"
+
+    @override
+    def __init__(self, *, exist: _PathExist | None = None) -> None:
+        self._exist = exist
+        super().__init__()
 
     @override
     def __repr__(self) -> str:
@@ -319,16 +353,50 @@ class Path(ParamType):
         self, value: PathLike, param: Parameter | None, ctx: Context | None
     ) -> pathlib.Path | None:
         """Convert a value into a Path, or None."""
-        _ = (param, ctx)
         match value:
             case pathlib.Path():
+                self._check_path(value, param, ctx)
                 return value
             case "":
                 return None
             case str():
+                self._check_path(value, param, ctx)
                 return pathlib.Path(value)
             case never:
                 assert_never(never)
+
+    def _check_path(
+        self, path: PathLike, param: Parameter | None, ctx: Context | None, /
+    ) -> None:
+        path = pathlib.Path(path)
+        match cast("_PathExist", self._exist):
+            case True:
+                if not path.exists():
+                    self.fail(f"{str(path)!r} does not exist", param, ctx)
+            case False:
+                if path.exists():
+                    self.fail(f"{str(path)!r} exists", param, ctx)
+            case "existing file":
+                if not path.is_file():
+                    self.fail(f"{str(path)!r} is not a file", param, ctx)
+            case "existing dir":
+                if not path.is_dir():
+                    self.fail(f"{str(path)!r} is not a directory", param, ctx)
+            case "file if exists":
+                if path.exists() and not path.is_file():
+                    self.fail(f"{str(path)!r} exists but is not a file", param, ctx)
+            case "dir if exists":
+                if path.exists() and not path.is_dir():
+                    self.fail(
+                        f"{str(path)!r} exists but is not a directory", param, ctx
+                    )
+            case None:
+                ...
+            case never:
+                assert_never(never)
+
+
+##
 
 
 class PlainDateTime(ParamType):
@@ -359,6 +427,9 @@ class PlainDateTime(ParamType):
                 assert_never(never)
 
 
+##
+
+
 class Str(ParamType):
     """A string-valued parameter."""
 
@@ -375,6 +446,9 @@ class Str(ParamType):
         """Convert a value into a string, or None."""
         _ = (param, ctx)
         return None if value == "" else value
+
+
+##
 
 
 class Time(ParamType):
@@ -405,6 +479,9 @@ class Time(ParamType):
                 assert_never(never)
 
 
+##
+
+
 class TimeDelta(ParamType):
     """A timedelta-valued parameter."""
 
@@ -431,6 +508,9 @@ class TimeDelta(ParamType):
                     self.fail(str(error), param, ctx)
             case never:
                 assert_never(never)
+
+
+##
 
 
 class UUID(ParamType):
@@ -461,6 +541,9 @@ class UUID(ParamType):
                 assert_never(never)
 
 
+##
+
+
 class YearMonth(ParamType):
     """A year-month parameter."""
 
@@ -487,6 +570,9 @@ class YearMonth(ParamType):
                     self.fail(str(error), param, ctx)
             case never:
                 assert_never(never)
+
+
+##
 
 
 class ZonedDateTime(ParamType):
@@ -568,6 +654,9 @@ class FrozenSetParameter[P: ParamType, T](ParamType):
         sep = f"SEP={self._separator}"
         desc = f"{name} {sep}"
         return _make_metavar(param, desc)
+
+
+##
 
 
 class FrozenSetChoices(FrozenSetParameter[Choice, str]):
@@ -661,6 +750,9 @@ class ListParameter[P: ParamType, T](ParamType):
         sep = f"SEP={self._separator}"
         desc = f"{name} {sep}"
         return _make_metavar(param, desc)
+
+
+##
 
 
 class ListChoices(ListParameter[Choice, str]):

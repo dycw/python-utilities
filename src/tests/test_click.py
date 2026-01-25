@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import enum
-import pathlib
 from dataclasses import dataclass
 from enum import StrEnum, auto, unique
 from operator import attrgetter
@@ -26,6 +25,7 @@ from hypothesis.strategies import (
 )
 from pytest import mark, param
 
+import utilities.click
 from utilities.click import (
     _CONTEXT_SETTINGS_INNER,
     _MAX_CONTENT_WIDTH,
@@ -35,7 +35,6 @@ from utilities.click import (
     Date,
     DateDelta,
     DateTimeDelta,
-    Enum,
     FrozenSetChoices,
     FrozenSetEnums,
     FrozenSetInts,
@@ -47,7 +46,6 @@ from utilities.click import (
     ListInts,
     ListStrs,
     MonthDay,
-    Path,
     PlainDateTime,
     Str,
     Time,
@@ -73,7 +71,134 @@ from utilities.parse import serialize_object
 from utilities.text import join_strs
 
 if TYPE_CHECKING:
+    import pathlib
     from collections.abc import Callable, Iterable
+
+
+@unique
+class _ExampleEnum(enum.Enum):
+    a = auto()
+    b = auto()
+    c = auto()
+
+
+@unique
+class _ExampleStrEnum(StrEnum):
+    ak = "av"
+    bk = "bv"
+    ck = "cv"
+
+
+def _lift_serializer[T](
+    serializer: Callable[[T], str], /, *, sort: bool = False
+) -> Callable[[Iterable[T]], str]:
+    def wrapped(values: Iterable[T], /) -> str:
+        return join_strs(map(serializer, values), sort=sort)
+
+    return wrapped
+
+
+@dataclass(kw_only=True, slots=True)
+class _Case[T]:
+    param: ParamType
+    name: str
+    repr: str | None = None
+    strategy: SearchStrategy[T]
+    serialize: Callable[[T], str]
+    failable: bool = False
+
+
+##
+
+
+class TestCLIHelp:
+    @mark.parametrize(
+        ("param", "expected"),
+        [
+            param(
+                str,
+                """
+                Usage: cli [OPTIONS] VALUE
+
+                Options:
+                  --help  Show this message and exit.
+                """,
+            ),
+            param(
+                utilities.click.Enum(_ExampleEnum),
+                """
+                Usage: cli [OPTIONS] {a,b,c}
+
+                Options:
+                  --help  Show this message and exit.
+                """,
+            ),
+            param(
+                utilities.click.Enum(_ExampleEnum, value=True),
+                """
+                Usage: cli [OPTIONS] {1,2,3}
+
+                Options:
+                  --help  Show this message and exit.
+                """,
+            ),
+            param(
+                utilities.click.Enum(_ExampleStrEnum),
+                """
+                Usage: cli [OPTIONS] {av,bv,cv}
+
+                Options:
+                  --help  Show this message and exit.
+                """,
+            ),
+            param(
+                FrozenSetEnums(_ExampleEnum),
+                """
+                Usage: cli [OPTIONS] {FROZENSET{a,b,c} SEP=,}
+
+                Options:
+                  --help  Show this message and exit.
+                """,
+            ),
+            param(
+                FrozenSetStrs(),
+                """
+                Usage: cli [OPTIONS] {FROZENSET[TEXT] SEP=,}
+
+                Options:
+                  --help  Show this message and exit.
+                """,
+            ),
+            param(
+                ListEnums(_ExampleEnum),
+                """
+                Usage: cli [OPTIONS] {LIST{a,b,c} SEP=,}
+
+                Options:
+                  --help  Show this message and exit.
+                """,
+            ),
+            param(
+                ListStrs(),
+                """
+                Usage: cli [OPTIONS] {LIST[TEXT] SEP=,}
+
+                Options:
+                  --help  Show this message and exit.
+                """,
+            ),
+        ],
+    )
+    def test_main(self, *, param: Any, expected: str) -> None:
+        @command()
+        @argument("value", type=param)
+        def cli(*, value: Any) -> None:
+            echo(f"value = {value}")
+
+        result = CliRunner().invoke(cli, ["--help"])
+        assert result.exit_code == 0, result.stderr
+        expected = normalize_multi_line_str(expected)
+        assert result.stdout == expected
 
 
 class TestContextSettings:
@@ -132,70 +257,69 @@ Options:
         assert result.stdout == expected
 
 
-class TestPath:
-    def test_path(self, *, tmp_path: pathlib.Path) -> None:
-        path_use = pathlib.Path("~", tmp_path)
-
+class TestEnum:
+    def test_error(self) -> None:
         @command()
-        @argument("path", type=Path())
-        def cli(*, path: pathlib.Path) -> None:
-            assert isinstance(path, pathlib.Path)
-            assert path == path.expanduser()
+        @option(
+            "--value",
+            type=utilities.click.Enum(_ExampleEnum),
+            default=_ExampleStrEnum.ak,
+        )
+        def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
+            _ = value
 
-        result = CliRunner().invoke(cli, [str(path_use)])
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 2, result.stderr
+        assert search(
+            "Invalid value for '--value': Enum member 'ak' of type '_ExampleStrEnum' is not an instance of '_ExampleEnum'",
+            result.stderr,
+        )
+
+
+class TestFrozenSetAndList:
+    @mark.parametrize(
+        ("param", "default"),
+        [
+            param(ListEnums(_ExampleEnum), [], id=get_class_name(ListEnums)),
+            param(FrozenSetEnums(_ExampleEnum), {}, id=get_class_name(FrozenSetEnums)),
+        ],
+        ids=str,
+    )
+    def test_empty(self, *, param: ParamType, default: Any) -> None:
+        @command()
+        @option("--value", type=param, default=default)
+        def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
+            assert value is None
+
+        result = CliRunner().invoke(cli)
         assert result.exit_code == 0, result.stderr
 
+    @mark.parametrize(
+        "param",
+        [
+            param(ListEnums(_ExampleEnum), id=get_class_name(ListEnums)),
+            param(FrozenSetEnums(_ExampleEnum), id=get_class_name(FrozenSetEnums)),
+        ],
+        ids=str,
+    )
+    def test_error(self, *, param: ParamType) -> None:
+        @command()
+        @option("--value", type=param, default=0)
+        def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
+            _ = value
 
-@unique
-class _ExampleEnum(enum.Enum):
-    a = auto()
-    b = auto()
-    c = auto()
-
-
-@unique
-class _ExampleStrEnum(StrEnum):
-    ak = "av"
-    bk = "bv"
-    ck = "cv"
-
-
-def _lift_serializer_for_iterables[T](
-    serializer: Callable[[T], str], /, *, sort: bool = False
-) -> Callable[[Iterable[T]], str]:
-    def wrapped(values: Iterable[T], /) -> str:
-        return join_strs(map(serializer, values), sort=sort)
-
-    return wrapped
-
-
-def _lift_serializer_for_nulls[T](
-    serializer: Callable[[T | None], str], /
-) -> Callable[[T | None], str]:
-    def wrapped(value: T | None, /) -> str:
-        return "" if value is None else serializer(value)
-
-    return wrapped
-
-
-@dataclass(kw_only=True, slots=True)
-class _Case[T]:
-    param: ParamType
-    name: str
-    repr: str | None = None
-    strategy: SearchStrategy[T]
-    serialize: Callable[[T], str]
-    failable: bool = False
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 2, result.stderr
+        assert search(
+            "Invalid value for '--value': Object '0' of type 'int' must be a (frozenset|list)",
+            result.stderr,
+        )
 
 
 class TestParameters:
     cases: ClassVar[list[_Case]] = [
         _Case(
-            param=Bool(),
-            name="bool",
-            strategy=booleans(),
-            serialize=_lift_serializer_for_nulls(serialize_object),
-            failable=True,
+            param=Bool(), name="bool", strategy=booleans(), serialize=str, failable=True
         ),
         _Case(
             param=Date(),
@@ -219,7 +343,7 @@ class TestParameters:
             failable=True,
         ),
         _Case(
-            param=Enum(_ExampleEnum),
+            param=utilities.click.Enum(_ExampleEnum),
             name="enum[_ExampleEnum]",
             repr="ENUM[_ExampleEnum]",
             strategy=sampled_from(_ExampleEnum),
@@ -231,7 +355,7 @@ class TestParameters:
             name="frozenset[integer]",
             repr="FROZENSET[INT]",
             strategy=frozensets(integers(), min_size=1),
-            serialize=_lift_serializer_for_iterables(str, sort=True),
+            serialize=_lift_serializer(str, sort=True),
             failable=True,
         ),
         _Case(
@@ -239,7 +363,7 @@ class TestParameters:
             name="frozenset[choice]",
             repr="FROZENSET[Choice(['a', 'b', 'c'])]",
             strategy=frozensets(sampled_from(["a", "b", "c"]), min_size=1),
-            serialize=_lift_serializer_for_iterables(str, sort=True),
+            serialize=_lift_serializer(str, sort=True),
             failable=True,
         ),
         _Case(
@@ -247,7 +371,7 @@ class TestParameters:
             name="frozenset[enum[_ExampleEnum]]",
             repr="FROZENSET[ENUM[_ExampleEnum]]",
             strategy=frozensets(sampled_from(_ExampleEnum), min_size=1),
-            serialize=_lift_serializer_for_iterables(attrgetter("name"), sort=True),
+            serialize=_lift_serializer(attrgetter("name"), sort=True),
             failable=True,
         ),
         _Case(
@@ -255,7 +379,7 @@ class TestParameters:
             name="frozenset[text]",
             repr="FROZENSET[STRING]",
             strategy=frozensets(text_ascii(), min_size=1),
-            serialize=_lift_serializer_for_iterables(str, sort=True),
+            serialize=_lift_serializer(str, sort=True),
         ),
         _Case(
             param=IPv4Address(),
@@ -276,7 +400,7 @@ class TestParameters:
             name="list[choice]",
             repr="LIST[Choice(['a', 'b', 'c'])]",
             strategy=lists(sampled_from(["a", "b", "c"]), min_size=1),
-            serialize=_lift_serializer_for_iterables(str),
+            serialize=_lift_serializer(str),
             failable=True,
         ),
         _Case(
@@ -284,7 +408,7 @@ class TestParameters:
             name="list[integer]",
             repr="LIST[INT]",
             strategy=lists(integers(), min_size=1),
-            serialize=_lift_serializer_for_iterables(str),
+            serialize=_lift_serializer(str),
             failable=True,
         ),
         _Case(
@@ -292,7 +416,7 @@ class TestParameters:
             name="list[enum[_ExampleEnum]]",
             repr="LIST[ENUM[_ExampleEnum]]",
             strategy=lists(sampled_from(_ExampleEnum), min_size=1),
-            serialize=_lift_serializer_for_iterables(attrgetter("name")),
+            serialize=_lift_serializer(attrgetter("name")),
             failable=True,
         ),
         _Case(
@@ -303,7 +427,11 @@ class TestParameters:
             failable=True,
         ),
         _Case(
-            param=Path(), name="path", strategy=paths(), serialize=str, failable=False
+            param=utilities.click.Path(),
+            name="path",
+            strategy=paths(min_depth=1),
+            serialize=str,
+            failable=False,
         ),
         _Case(
             param=PlainDateTime(),
@@ -435,23 +563,6 @@ class TestParameters:
         assert search("Invalid value for '.*':.*'invalid'", result.stderr)
 
     @mark.parametrize(
-        ("param", "default"),
-        [
-            param(ListEnums(_ExampleEnum), [], id=get_class_name(ListEnums)),
-            param(FrozenSetEnums(_ExampleEnum), {}, id=get_class_name(FrozenSetEnums)),
-        ],
-        ids=str,
-    )
-    def test_empty_frozensets_parse(self, *, param: ParamType, default: Any) -> None:
-        @command()
-        @option("--value", type=param, default=default)
-        def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
-            assert value is None
-
-        result = CliRunner().invoke(cli)
-        assert result.exit_code == 0, result.stderr
-
-    @mark.parametrize(
         ("param", "name"),
         [param(c.param, c.name, id=get_class_name(c.param)) for c in cases],
     )
@@ -466,126 +577,169 @@ class TestParameters:
         expected = name.upper() if repr_ is None else repr_
         assert repr(param) == expected
 
-    def test_error_enum_parse(self) -> None:
+
+class TestPath:
+    def test_exists(self, *, temp_file: pathlib.Path) -> None:
         @command()
-        @option("--value", type=Enum(_ExampleEnum), default=_ExampleStrEnum.ak)
-        def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
-            _ = value
+        @option("--path", type=utilities.click.Path(exist=True), default=temp_file)
+        def cli(*, path: pathlib.Path) -> None:
+            assert path.exists()
 
         result = CliRunner().invoke(cli)
-        assert result.exit_code == 2, result.stderr
-        assert search(
-            "Invalid value for '--value': Enum member 'ak' of type '_ExampleStrEnum' is not an instance of '_ExampleEnum'",
-            result.stderr,
-        )
-
-    @mark.parametrize(
-        "param",
-        [
-            param(ListEnums(_ExampleEnum), id=get_class_name(ListEnums)),
-            param(FrozenSetEnums(_ExampleEnum), id=get_class_name(FrozenSetEnums)),
-        ],
-        ids=str,
-    )
-    def test_error_list_and_frozensets_parse(self, *, param: ParamType) -> None:
-        @command()
-        @option("--value", type=param, default=0)
-        def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
-            _ = value
-
-        result = CliRunner().invoke(cli)
-        assert result.exit_code == 2, result.stderr
-        assert search(
-            "Invalid value for '--value': Object '0' of type 'int' must be a (frozenset|list)",
-            result.stderr,
-        )
-
-
-class TestCLIHelp:
-    @mark.parametrize(
-        ("param", "expected"),
-        [
-            param(
-                str,
-                """
-                Usage: cli [OPTIONS] VALUE
-
-                Options:
-                  --help  Show this message and exit.
-                """,
-            ),
-            param(
-                Enum(_ExampleEnum),
-                """
-                Usage: cli [OPTIONS] {a,b,c}
-
-                Options:
-                  --help  Show this message and exit.
-                """,
-            ),
-            param(
-                Enum(_ExampleEnum, value=True),
-                """
-                Usage: cli [OPTIONS] {1,2,3}
-
-                Options:
-                  --help  Show this message and exit.
-                """,
-            ),
-            param(
-                Enum(_ExampleStrEnum),
-                """
-                Usage: cli [OPTIONS] {av,bv,cv}
-
-                Options:
-                  --help  Show this message and exit.
-                """,
-            ),
-            param(
-                FrozenSetEnums(_ExampleEnum),
-                """
-                Usage: cli [OPTIONS] {FROZENSET{a,b,c} SEP=,}
-
-                Options:
-                  --help  Show this message and exit.
-                """,
-            ),
-            param(
-                FrozenSetStrs(),
-                """
-                Usage: cli [OPTIONS] {FROZENSET[TEXT] SEP=,}
-
-                Options:
-                  --help  Show this message and exit.
-                """,
-            ),
-            param(
-                ListEnums(_ExampleEnum),
-                """
-                Usage: cli [OPTIONS] {LIST{a,b,c} SEP=,}
-
-                Options:
-                  --help  Show this message and exit.
-                """,
-            ),
-            param(
-                ListStrs(),
-                """
-                Usage: cli [OPTIONS] {LIST[TEXT] SEP=,}
-
-                Options:
-                  --help  Show this message and exit.
-                """,
-            ),
-        ],
-    )
-    def test_main(self, *, param: Any, expected: str) -> None:
-        @command()
-        @argument("value", type=param)
-        def cli(*, value: Any) -> None:
-            echo(f"value = {value}")
-
-        result = CliRunner().invoke(cli, ["--help"])
         assert result.exit_code == 0, result.stderr
-        expected = normalize_multi_line_str(expected)
-        assert result.stdout == expected
+
+    def test_not_exist(self, *, temp_path_not_exist: pathlib.Path) -> None:
+        @command()
+        @option(
+            "--path",
+            type=utilities.click.Path(exist=False),
+            default=temp_path_not_exist,
+        )
+        def cli(*, path: pathlib.Path) -> None:
+            assert not path.exists()
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0, result.stderr
+
+    def test_existing_file(self, *, temp_file: pathlib.Path) -> None:
+        @command()
+        @option(
+            "--path",
+            type=utilities.click.Path(exist="existing file"),
+            default=temp_file,
+        )
+        def cli(*, path: pathlib.Path) -> None:
+            assert path.is_file()
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0, result.stderr
+
+    def test_existing_dir(self, *, tmp_path: pathlib.Path) -> None:
+        @command()
+        @option(
+            "--path", type=utilities.click.Path(exist="existing dir"), default=tmp_path
+        )
+        def cli(*, path: pathlib.Path) -> None:
+            assert path.is_dir()
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0, result.stderr
+
+    @mark.parametrize("exists", [param(False), param(True)])
+    def test_file_if_exists(
+        self, *, temp_path_not_exist: pathlib.Path, exists: bool
+    ) -> None:
+        if exists:
+            temp_path_not_exist.touch()
+
+        @command()
+        @option(
+            "--path",
+            type=utilities.click.Path(exist="file if exists"),
+            default=temp_path_not_exist,
+        )
+        def cli(*, path: pathlib.Path) -> None:
+            assert path.is_file() or not path.exists()
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0, result.stderr
+
+    @mark.parametrize("exists", [param(False), param(True)])
+    def test_dir_if_exists(
+        self, *, temp_path_not_exist: pathlib.Path, exists: bool
+    ) -> None:
+        if exists:
+            temp_path_not_exist.mkdir()
+
+        @command()
+        @option(
+            "--path",
+            type=utilities.click.Path(exist="dir if exists"),
+            default=temp_path_not_exist,
+        )
+        def cli(*, path: pathlib.Path) -> None:
+            assert path.is_dir() or not path.exists()
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0, result.stderr
+
+    def test_error_exists(self, *, temp_path_not_exist: pathlib.Path) -> None:
+        @command()
+        @option(
+            "--path", type=utilities.click.Path(exist=True), default=temp_path_not_exist
+        )
+        def cli(*, path: pathlib.Path) -> None:
+            _ = path
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 2, result.stderr
+        assert search("Invalid value for '--path': '.*' does not exist", result.stderr)
+
+    def test_error_not_exist(self, *, temp_file: pathlib.Path) -> None:
+        @command()
+        @option("--path", type=utilities.click.Path(exist=False), default=temp_file)
+        def cli(*, path: pathlib.Path) -> None:
+            _ = path
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 2, result.stderr
+        assert search("Invalid value for '--path': '.*' exists", result.stderr)
+
+    def test_error_existing_file(self, *, tmp_path: pathlib.Path) -> None:
+        @command()
+        @option(
+            "--path", type=utilities.click.Path(exist="existing file"), default=tmp_path
+        )
+        def cli(*, path: pathlib.Path) -> None:
+            _ = path
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 2, result.stderr
+        assert search("Invalid value for '--path': '.*' is not a file", result.stderr)
+
+    def test_error_existing_dir(self, *, temp_file: pathlib.Path) -> None:
+        @command()
+        @option(
+            "--path", type=utilities.click.Path(exist="existing dir"), default=temp_file
+        )
+        def cli(*, path: pathlib.Path) -> None:
+            _ = path
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 2, result.stderr
+        assert search(
+            "Invalid value for '--path': '.*' is not a directory", result.stderr
+        )
+
+    def test_error_file_if_exists(self, *, tmp_path: pathlib.Path) -> None:
+        @command()
+        @option(
+            "--path",
+            type=utilities.click.Path(exist="file if exists"),
+            default=tmp_path,
+        )
+        def cli(*, path: pathlib.Path) -> None:
+            _ = path
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 2, result.stderr
+        assert search(
+            "Invalid value for '--path': '.*' exists but is not a file", result.stderr
+        )
+
+    def test_error_dir_if_exists(self, *, temp_file: pathlib.Path) -> None:
+        @command()
+        @option(
+            "--path",
+            type=utilities.click.Path(exist="dir if exists"),
+            default=temp_file,
+        )
+        def cli(*, path: pathlib.Path) -> None:
+            _ = path
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 2, result.stderr
+        assert search(
+            "Invalid value for '--path': '.*' exists but is not a directory",
+            result.stderr,
+        )
