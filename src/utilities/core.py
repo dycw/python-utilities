@@ -116,6 +116,12 @@ from utilities._core_errors import (
     PermissionsFromHumanIntRangeError,
     PermissionsFromIntError,
     PermissionsFromTextError,
+    ReadBytesError,
+    ReadPickleError,
+    ReadTextError,
+    WriteBytesError,
+    WritePickleError,
+    WriteTextError,
     YieldBZ2Error,
     YieldGzipError,
     YieldLZMAError,
@@ -1683,15 +1689,6 @@ def read_bytes(path: PathLike, /, *, decompress: bool = False) -> bytes:
             raise ReadBytesError(path=path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class ReadBytesError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot read from {repr_str(self.path)} since it does not exist"
-
-
 def write_bytes(
     path: PathLike,
     data: bytes,
@@ -1722,15 +1719,6 @@ def write_bytes(
         raise WriteBytesError(path=error.path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class WriteBytesError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot write to {repr_str(self.path)} since it already exists"
-
-
 ##
 
 
@@ -1744,15 +1732,6 @@ def read_pickle(path: PathLike, /) -> Any:
         raise ReadPickleError(path=path) from None
 
 
-@dataclass(kw_only=True, slots=True)
-class ReadPickleError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot read from {repr_str(self.path)} since it does not exist"
-
-
 def write_pickle(path: PathLike, obj: Any, /, *, overwrite: bool = False) -> None:
     """Write an object to disk."""
     try:
@@ -1763,15 +1742,6 @@ def write_pickle(path: PathLike, obj: Any, /, *, overwrite: bool = False) -> Non
             pickle.dump(obj, gz)
     except YieldWritePathError as error:
         raise WritePickleError(path=error.path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class WritePickleError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot write to {repr_str(self.path)} since it already exists"
 
 
 ##
@@ -1791,15 +1761,6 @@ def read_text(path: PathLike, /, *, decompress: bool = False) -> str:
             return path.read_text()
         except FileNotFoundError:
             raise ReadTextError(path=path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class ReadTextError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot read from {repr_str(self.path)} since it does not exist"
 
 
 def write_text(
@@ -1826,15 +1787,6 @@ def write_text(
             _ = temp.write_text(normalize_str(text))
     except YieldWritePathError as error:
         raise WriteTextError(path=error.path) from None
-
-
-@dataclass(kw_only=True, slots=True)
-class WriteTextError(Exception):
-    path: Path
-
-    @override
-    def __str__(self) -> str:
-        return f"Cannot write to {repr_str(self.path)} since it already exists"
 
 
 ###############################################################################

@@ -489,6 +489,73 @@ class ExtractGroupsNoMatchesError(ExtractGroupsError):
 
 
 ###############################################################################
+#### readers/writers ##########################################################
+###############################################################################
+
+
+def _read_file_error(path: PathLike, /) -> str:
+    return f"Cannot read from {str(path)!r} since it does not exist"
+
+
+def _write_file_error(path: PathLike, /) -> str:
+    return f"Cannot write to {str(path)!r} since it already exists"
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadBytesError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class WriteBytesError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _write_file_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadPickleError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class WritePickleError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _write_file_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadTextError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class WriteTextError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _write_file_error(self.path)
+
+
+###############################################################################
 #### writers ##################################################################
 ###############################################################################
 
@@ -540,6 +607,12 @@ __all__ = [
     "PermissionsFromIntError",
     "PermissionsFromIntError",
     "PermissionsFromTextError",
+    "ReadBytesError",
+    "ReadPickleError",
+    "ReadTextError",
+    "WriteBytesError",
+    "WritePickleError",
+    "WriteTextError",
     "YieldBZ2Error",
     "YieldGzipError",
     "YieldLZMAError",
