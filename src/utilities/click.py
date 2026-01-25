@@ -455,8 +455,8 @@ class UUID(ParamType):
             case str():
                 try:
                     return uuid.UUID(value)
-                except ValueError as error:
-                    self.fail(str(error), param, ctx)
+                except ValueError:
+                    self.fail(f"Invalid UUID: got {value!r}", param, ctx)
             case never:
                 assert_never(never)
 
