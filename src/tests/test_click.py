@@ -442,7 +442,7 @@ class TestParameters:
 
         result = CliRunner().invoke(cli, args=["invalid"])
         assert result.exit_code == 2, result.stderr
-        assert search("Invalid value for '.*': .* 'invalid'", result.stderr)
+        assert search("Invalid value for '.*':.*'invalid'", result.stderr)
 
     @mark.parametrize(
         ("param", "default"),
