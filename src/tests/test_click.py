@@ -15,11 +15,13 @@ from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
+    booleans,
     data,
     frozensets,
     integers,
     ip_addresses,
     lists,
+    none,
     sampled_from,
     uuids,
 )
@@ -30,6 +32,7 @@ from utilities.click import (
     _MAX_CONTENT_WIDTH,
     CONTEXT_SETTINGS,
     UUID,
+    Bool,
     Date,
     DateDelta,
     DateTimeDelta,
@@ -67,6 +70,7 @@ from utilities.hypothesis import (
     year_months,
     zoned_date_times,
 )
+from utilities.parse import serialize_object
 from utilities.text import join_strs
 
 if TYPE_CHECKING:
@@ -89,7 +93,7 @@ class TestContextSettings:
             _ = flag
 
         result = CliRunner().invoke(cli, ["--help"])
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.stderr
         expected = """\
 Usage: cli [OPTIONS]
 
@@ -109,7 +113,7 @@ Options:
         def cli() -> None: ...
 
         result = CliRunner().invoke(cli, [help_])
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.stderr
 
     def test_show_default(self) -> None:
         @command(**CONTEXT_SETTINGS)
@@ -118,7 +122,7 @@ Options:
             _ = flag
 
         result = CliRunner().invoke(cli, ["--help"])
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.stderr
         expected = """\
 Usage: cli [OPTIONS]
 
@@ -140,7 +144,7 @@ class TestPath:
             assert path == path.expanduser()
 
         result = CliRunner().invoke(cli, [str(path_use)])
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.stderr
 
 
 @unique
@@ -161,11 +165,20 @@ type _ExampleEnumABType = Literal[_ExampleEnum.a, _ExampleEnum.b]
 _ExampleEnumAB: list[_ExampleEnumABType] = [_ExampleEnum.a, _ExampleEnum.b]
 
 
-def _lift_serializer[T](
+def _lift_serializer_for_iterables[T](
     serializer: Callable[[T], str], /, *, sort: bool = False
 ) -> Callable[[Iterable[T]], str]:
     def wrapped(values: Iterable[T], /) -> str:
         return join_strs(map(serializer, values), sort=sort)
+
+    return wrapped
+
+
+def _lift_serializer_for_nulls[T](
+    serializer: Callable[[T | None], str], /
+) -> Callable[[T | None], str]:
+    def wrapped(value: T | None, /) -> str:
+        return "" if value is None else serializer(value)
 
     return wrapped
 
@@ -182,6 +195,13 @@ class _Case[T]:
 
 class TestParameters:
     cases: ClassVar[list[_Case]] = [
+        _Case(
+            param=Bool(),
+            name="bool",
+            strategy=booleans() | none(),
+            serialize=_lift_serializer_for_nulls(serialize_object),
+            failable=True,
+        ),
         _Case(
             param=Date(),
             name="date",
@@ -224,7 +244,7 @@ class TestParameters:
             name="frozenset[integer]",
             repr="FROZENSET[INT]",
             strategy=frozensets(integers()),
-            serialize=_lift_serializer(str, sort=True),
+            serialize=_lift_serializer_for_iterables(str, sort=True),
             failable=True,
         ),
         _Case(
@@ -232,7 +252,7 @@ class TestParameters:
             name="frozenset[choice]",
             repr="FROZENSET[Choice(['a', 'b', 'c'])]",
             strategy=frozensets(sampled_from(["a", "b", "c"])),
-            serialize=_lift_serializer(str, sort=True),
+            serialize=_lift_serializer_for_iterables(str, sort=True),
             failable=True,
         ),
         _Case(
@@ -240,7 +260,7 @@ class TestParameters:
             name="frozenset[enum[_ExampleEnum]]",
             repr="FROZENSET[ENUM[_ExampleEnum]]",
             strategy=frozensets(sampled_from(_ExampleEnum)),
-            serialize=_lift_serializer(attrgetter("name"), sort=True),
+            serialize=_lift_serializer_for_iterables(attrgetter("name"), sort=True),
             failable=True,
         ),
         _Case(
@@ -248,7 +268,7 @@ class TestParameters:
             name="frozenset[text]",
             repr="FROZENSET[STRING]",
             strategy=frozensets(text_ascii()),
-            serialize=_lift_serializer(str, sort=True),
+            serialize=_lift_serializer_for_iterables(str, sort=True),
         ),
         _Case(
             param=IPv4Address(),
@@ -269,7 +289,7 @@ class TestParameters:
             name="list[choice]",
             repr="LIST[Choice(['a', 'b', 'c'])]",
             strategy=lists(sampled_from(["a", "b", "c"])),
-            serialize=_lift_serializer(str),
+            serialize=_lift_serializer_for_iterables(str),
             failable=True,
         ),
         _Case(
@@ -277,7 +297,7 @@ class TestParameters:
             name="list[integer]",
             repr="LIST[INT]",
             strategy=lists(integers()),
-            serialize=_lift_serializer(str),
+            serialize=_lift_serializer_for_iterables(str),
             failable=True,
         ),
         _Case(
@@ -285,7 +305,7 @@ class TestParameters:
             name="list[enum[_ExampleEnum]]",
             repr="LIST[ENUM[_ExampleEnum]]",
             strategy=lists(sampled_from(_ExampleEnum)),
-            serialize=_lift_serializer(attrgetter("name")),
+            serialize=_lift_serializer_for_iterables(attrgetter("name")),
             failable=True,
         ),
         _Case(
@@ -359,7 +379,7 @@ class TestParameters:
             echo(f"value = {serialize(value)}")
 
         result = CliRunner().invoke(cli, args=[])
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.stderr
         assert result.stdout == f"value = {serialize(default)}\n"
 
     @given(data=data())
@@ -383,7 +403,7 @@ class TestParameters:
         value = data.draw(strategy)
         ser = serialize(value)
         result = CliRunner().invoke(cli, args=[f"--value={ser}"])
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.stderr
         assert result.stdout == f"value = {ser}\n"
 
     @mark.parametrize(
@@ -399,7 +419,7 @@ class TestParameters:
             echo(f"value = {serialize(value)}")
 
         result = CliRunner().invoke(cli, args=["invalid"])
-        assert result.exit_code == 2
+        assert result.exit_code == 2, result.stderr
 
     @mark.parametrize(("param", "name"), [param(c.param, c.name) for c in cases])
     def test_name(self, *, param: ParamType, name: str) -> None:
@@ -419,7 +439,7 @@ class TestParameters:
             echo(f"value = {value}")
 
         result = CliRunner().invoke(cli, "invalid")
-        assert result.exit_code == 2
+        assert result.exit_code == 2, result.stderr
         assert search(
             "Invalid value for '{a,b}': Unable to ensure enum; got 'invalid'",
             result.stderr,
@@ -432,7 +452,7 @@ class TestParameters:
             echo(f"value = {value}")
 
         result = CliRunner().invoke(cli, "c")
-        assert result.exit_code == 2
+        assert result.exit_code == 2, result.stderr
         assert search(
             "Invalid value for '{a,b}': 3 is not a selected member", result.stderr
         )
@@ -449,7 +469,7 @@ class TestParameters:
             echo(f"value = {value}")
 
         result = CliRunner().invoke(cli)
-        assert result.exit_code == 2
+        assert result.exit_code == 2, result.stderr
         assert search(
             "Invalid value for '--value': Object '0' of type 'int' must be a string",
             result.stderr,
@@ -559,6 +579,6 @@ class TestCLIHelp:
             echo(f"value = {value}")
 
         result = CliRunner().invoke(cli, ["--help"])
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.stderr
         expected = normalize_multi_line_str(expected)
         assert result.stdout == expected
