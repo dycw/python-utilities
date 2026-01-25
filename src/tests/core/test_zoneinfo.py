@@ -16,11 +16,11 @@ from utilities.constants import (
     Tokyo,
 )
 from utilities.core import (
-    _ToTimeZoneNameInvalidKeyError,
-    _ToTimeZoneNameInvalidTZInfoError,
-    _ToTimeZoneNamePlainDateTimeError,
-    _ToZoneInfoInvalidTZInfoError,
-    _ToZoneInfoPlainDateTimeError,
+    ToTimeZoneNameInvalidKeyError,
+    ToTimeZoneNameInvalidTZInfoError,
+    ToTimeZoneNamePlainDateTimeError,
+    ToZoneInfoInvalidTZInfoError,
+    ToZoneInfoPlainDateTimeError,
     to_time_zone_name,
     to_zone_info,
 )
@@ -65,13 +65,13 @@ class TestToZoneInfo:
     def test_error_invalid_tz_info(self) -> None:
         time_zone = dt.timezone(dt.timedelta(hours=12))
         with raises(
-            _ToZoneInfoInvalidTZInfoError, match=r"Invalid time-zone: UTC\+12:00"
+            ToZoneInfoInvalidTZInfoError, match=r"Invalid time-zone: UTC\+12:00"
         ):
             _ = to_zone_info(time_zone)
 
     @given(date_time=datetimes())
     def test_error_plain_date_time(self, *, date_time: dt.datetime) -> None:
-        with raises(_ToZoneInfoPlainDateTimeError, match=r"Plain date-time: .*"):
+        with raises(ToZoneInfoPlainDateTimeError, match=r"Plain date-time: .*"):
             _ = to_zone_info(date_time)
 
 
@@ -114,18 +114,18 @@ class TestToTimeZoneName:
 
     def test_error_invalid_key(self) -> None:
         with raises(
-            _ToTimeZoneNameInvalidKeyError, match=r"Invalid time-zone: 'invalid'"
+            ToTimeZoneNameInvalidKeyError, match=r"Invalid time-zone: 'invalid'"
         ):
             _ = to_time_zone_name(cast("TimeZoneLike", "invalid"))
 
     def test_error_invalid_tz_info(self) -> None:
         time_zone = dt.timezone(dt.timedelta(hours=12))
-        with raises(_ToTimeZoneNameInvalidTZInfoError, match=r"Invalid time-zone: .*"):
+        with raises(ToTimeZoneNameInvalidTZInfoError, match=r"Invalid time-zone: .*"):
             _ = to_time_zone_name(time_zone)
 
     @given(date_time=datetimes())
     def test_error_plain_date_time(self, *, date_time: dt.datetime) -> None:
-        with raises(_ToTimeZoneNamePlainDateTimeError, match=r"Plain date-time: .*"):
+        with raises(ToTimeZoneNamePlainDateTimeError, match=r"Plain date-time: .*"):
             _ = to_time_zone_name(date_time)
 
 
