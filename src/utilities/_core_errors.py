@@ -350,6 +350,63 @@ class FileOrDirTypeError(FileOrDirError):
 
 
 ###############################################################################
+#### permissions ##############################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsError(Exception):
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromHumanIntError(PermissionsError):
+    n: int
+
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromHumanIntRangeError(PermissionsFromHumanIntError):
+    @override
+    def __str__(self) -> str:
+        return f"Invalid human integer for permissions; got {self.n}"
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromHumanIntDigitError(PermissionsFromHumanIntError):
+    digit: int
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Invalid human integer for permissions; got digit {self.digit} in {self.n}"
+        )
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromIntError(PermissionsError):
+    n: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid integer for permissions; got {self.n} = {oct(self.n)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class PermissionsFromTextError(PermissionsError):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid string for permissions; got {self.text!r}"
+
+
+###############################################################################
 #### writers ##################################################################
 ###############################################################################
 
@@ -386,6 +443,12 @@ __all__ = [
     "OneEmptyError",
     "OneError",
     "OneNonUniqueError",
+    "PermissionsError",
+    "PermissionsFromHumanIntDigitError",
+    "PermissionsFromHumanIntRangeError",
+    "PermissionsFromIntError",
+    "PermissionsFromIntError",
+    "PermissionsFromTextError",
     "YieldBZ2Error",
     "YieldGzipError",
     "YieldLZMAError",

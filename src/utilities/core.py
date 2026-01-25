@@ -102,6 +102,11 @@ from utilities._core_errors import (
     OneStrEmptyError,
     OneStrError,
     OneStrNonUniqueError,
+    PermissionsError,
+    PermissionsFromHumanIntDigitError,
+    PermissionsFromHumanIntRangeError,
+    PermissionsFromIntError,
+    PermissionsFromTextError,
     YieldBZ2Error,
     YieldGzipError,
     YieldLZMAError,
@@ -1444,7 +1449,7 @@ class Permissions:
     @classmethod
     def from_human_int(cls, n: int, /) -> Self:
         if not (0 <= n <= 777):
-            raise _PermissionsFromHumanIntRangeError(n=n)
+            raise PermissionsFromHumanIntRangeError(n=n)
         user_read, user_write, user_execute = cls._from_human_int(n, (n // 100) % 10)
         group_read, group_write, group_execute = cls._from_human_int(n, (n // 10) % 10)
         others_read, others_write, others_execute = cls._from_human_int(n, n % 10)
@@ -1463,7 +1468,7 @@ class Permissions:
     @classmethod
     def _from_human_int(cls, n: int, digit: int, /) -> Triple[bool]:
         if not (0 <= digit <= 7):
-            raise _PermissionsFromHumanIntDigitError(n=n, digit=digit)
+            raise PermissionsFromHumanIntDigitError(n=n, digit=digit)
         return bool(4 & digit), bool(2 & digit), bool(1 & digit)
 
     @classmethod
@@ -1480,7 +1485,7 @@ class Permissions:
                 others_write=bool(n & S_IWOTH),
                 others_execute=bool(n & S_IXOTH),
             )
-        raise _PermissionsFromIntError(n=n)
+        raise PermissionsFromIntError(n=n)
 
     @classmethod
     def from_path(cls, path: PathLike, /) -> Self:
@@ -1493,7 +1498,7 @@ class Permissions:
                 r"^u=(r?w?x?),g=(r?w?x?),o=(r?w?x?)$", text
             )
         except ExtractGroupsError:
-            raise _PermissionsFromTextError(text=text) from None
+            raise PermissionsFromTextError(text=text) from None
         user_read, user_write, user_execute = cls._from_text_part(user)
         group_read, group_write, group_execute = cls._from_text_part(group)
         others_read, others_write, others_execute = cls._from_text_part(others)
@@ -1562,51 +1567,6 @@ class Permissions:
             others_write=others_write,
             others_execute=others_execute,
         )
-
-
-@dataclass(kw_only=True, slots=True)
-class PermissionsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _PermissionsFromHumanIntError(PermissionsError):
-    n: int
-
-
-@dataclass(kw_only=True, slots=True)
-class _PermissionsFromHumanIntRangeError(_PermissionsFromHumanIntError):
-    @override
-    def __str__(self) -> str:
-        return f"Invalid human integer for permissions; got {self.n}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _PermissionsFromHumanIntDigitError(_PermissionsFromHumanIntError):
-    digit: int
-
-    @override
-    def __str__(self) -> str:
-        return (
-            f"Invalid human integer for permissions; got digit {self.digit} in {self.n}"
-        )
-
-
-@dataclass(kw_only=True, slots=True)
-class _PermissionsFromIntError(PermissionsError):
-    n: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid integer for permissions; got {self.n} = {oct(self.n)}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _PermissionsFromTextError(PermissionsError):
-    text: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid string for permissions; got {self.text!r}"
 
 
 ###############################################################################
@@ -3304,6 +3264,11 @@ __all__ = [
     "OneStrNonUniqueError",
     "Permissions",
     "PermissionsError",
+    "PermissionsFromHumanIntDigitError",
+    "PermissionsFromHumanIntRangeError",
+    "PermissionsFromIntError",
+    "PermissionsFromIntError",
+    "PermissionsFromTextError",
     "PermissionsLike",
     "ReadBytesError",
     "ReadPickleError",
