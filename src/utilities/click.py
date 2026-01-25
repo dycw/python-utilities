@@ -233,7 +233,7 @@ class IPv4Address(ParamType):
     def convert(
         self, value: IPv4AddressLike, param: Parameter | None, ctx: Context | None
     ) -> ipaddress.IPv4Address | None:
-        """Convert a value into an `IPv4Address, or None."""
+        """Convert a value into an IPv4Address, or None."""
         match value:
             case ipaddress.IPv4Address():
                 return value
