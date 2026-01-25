@@ -15,8 +15,7 @@ from utilities.core import get_class, get_class_name, one
 from utilities.enum import EnsureEnumError, ensure_enum
 from utilities.functions import EnsureStrError, ensure_str
 from utilities.iterables import is_iterable_not_str
-from utilities.parse import ParseObjectError, parse_object
-from utilities.text import split_str
+from utilities.text import ParseBoolError, parse_bool, split_str
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -59,6 +58,34 @@ CONTEXT_SETTINGS = _ContextSettings(context_settings=_CONTEXT_SETTINGS_INNER)
 
 
 # parameters
+
+
+class Bool(ParamType):
+    """A boolean-valued parameter."""
+
+    name = "bool"
+
+    @override
+    def __repr__(self) -> str:
+        return self.name.upper()
+
+    @override
+    def convert(
+        self, value: str, param: Parameter | None, ctx: Context | None
+    ) -> bool | None:
+        """Convert a value into a boolean value, or None."""
+        match value:
+            case bool():
+                return value
+            case str():
+                if value == "":
+                    return None
+                try:
+                    return parse_bool(value)
+                except ParseBoolError as error:
+                    self.fail(str(error), param, ctx)
+            case never:
+                assert_never(never)
 
 
 class Date(ParamType):
@@ -239,8 +266,8 @@ class IPv4Address(ParamType):
                 return value
             case str():
                 try:
-                    return parse_object(ipaddress.IPv4Address, value)
-                except ParseObjectError as error:
+                    return ipaddress.IPv4Address(value)
+                except ValueError as error:
                     self.fail(str(error), param, ctx)
             case never:
                 assert_never(never)
@@ -265,8 +292,8 @@ class IPv6Address(ParamType):
                 return value
             case str():
                 try:
-                    return parse_object(ipaddress.IPv6Address, value)
-                except ParseObjectError as error:
+                    return ipaddress.IPv6Address(value)
+                except ValueError as error:
                     self.fail(str(error), param, ctx)
             case never:
                 assert_never(never)
@@ -312,6 +339,7 @@ class Path(ParamType):
         self, value: PathLike, param: Parameter | None, ctx: Context | None
     ) -> pathlib.Path:
         """Convert a value into the `Path` type."""
+        _ = (param, ctx)
         match value:
             case pathlib.Path():
                 return value.expanduser()
@@ -345,6 +373,24 @@ class PlainDateTime(ParamType):
                     self.fail(str(error), param, ctx)
             case never:
                 assert_never(never)
+
+
+class Str(ParamType):
+    """A string-valued parameter."""
+
+    name = "text"
+
+    @override
+    def __repr__(self) -> str:
+        return self.name.upper()
+
+    @override
+    def convert(
+        self, value: str, param: Parameter | None, ctx: Context | None
+    ) -> str | None:
+        """Convert a value into a non-empty string."""
+        _ = (param, ctx)
+        return None if value == "" else value
 
 
 class Time(ParamType):
@@ -658,6 +704,7 @@ def _make_metavar(param: Parameter, desc: str, /) -> str:
 __all__ = [
     "CONTEXT_SETTINGS",
     "UUID",
+    "Bool",
     "Date",
     "DateDelta",
     "DateTimeDelta",
@@ -678,6 +725,7 @@ __all__ = [
     "Path",
     "Path",
     "PlainDateTime",
+    "Str",
     "Time",
     "TimeDelta",
     "YearMonth",
