@@ -431,23 +431,38 @@ class TestParameters:
         assert result.exit_code == 0, result.stderr
 
     @mark.parametrize(
-        ("param", "serialize"),
-        [
-            param(c.param, c.serialize, id=get_class_name(c.param))
-            for c in cases
-            if c.failable
-        ],
+        "param",
+        [param(c.param, id=get_class_name(c.param)) for c in cases if c.failable],
     )
-    def test_cli_fail(
-        self, *, param: ParamType, serialize: Callable[[Any], str]
-    ) -> None:
+    def test_cli_fail(self, *, param: ParamType) -> None:
         @command()
         @argument("value", type=param)
         def cli(*, value: Any) -> None:
-            echo(f"value = {serialize(value)}")
+            _ = value
 
         result = CliRunner().invoke(cli, args=["invalid"])
         assert result.exit_code == 2, result.stderr
+        assert search(
+            "Invalid value for '--value': Enum member 'ak' of type '_ExampleStrEnum' is not an instance of '_ExampleEnum'",
+            result.stderr,
+        )
+
+    @mark.parametrize(
+        ("param", "default"),
+        [
+            param(ListEnums(_ExampleEnum), [], id=get_class_name(ListEnums)),
+            param(FrozenSetEnums(_ExampleEnum), {}, id=get_class_name(FrozenSetEnums)),
+        ],
+        ids=str,
+    )
+    def test_empty_frozensets_parse(self, *, param: ParamType, default: Any) -> None:
+        @command()
+        @option("--value", type=param, default=default)
+        def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
+            assert value is None
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0, result.stderr
 
     @mark.parametrize(
         ("param", "name"),
