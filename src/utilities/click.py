@@ -540,10 +540,18 @@ class FrozenSetParameter[P: ParamType, T](ParamType):
                 return None
             case str():
                 strings = split_str(value, separator=self._separator)
+                if len(strings) == 0:
+                    return None
                 return frozenset(self._param.convert(s, param, ctx) for s in strings)
             case Iterable():
-                return frozenset(value)
+                as_list = list(value)
+                return frozenset(as_list) if len(as_list) >= 1 else None
             case never:
+                self.fail(
+                    f"Object {str(value)!r} of type {get_class_name(value)!r} must be a frozenset",
+                    param,
+                    ctx,
+                )
                 assert_never(never)
 
     @override
@@ -631,6 +639,11 @@ class ListParameter[P: ParamType, T](ParamType):
             case Iterable():
                 return list(value)
             case never:
+                self.fail(
+                    f"Object {str(value)!r} of type {get_class_name(value)!r} must be a list",
+                    param,
+                    ctx,
+                )
                 assert_never(never)
 
     @override

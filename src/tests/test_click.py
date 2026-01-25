@@ -21,7 +21,6 @@ from hypothesis.strategies import (
     integers,
     ip_addresses,
     lists,
-    none,
     sampled_from,
     uuids,
 )
@@ -198,7 +197,7 @@ class TestParameters:
         _Case(
             param=Bool(),
             name="bool",
-            strategy=booleans() | none(),
+            strategy=booleans(),
             serialize=_lift_serializer_for_nulls(serialize_object),
             failable=True,
         ),
@@ -235,7 +234,7 @@ class TestParameters:
             param=FrozenSetInts(),
             name="frozenset[integer]",
             repr="FROZENSET[INT]",
-            strategy=frozensets(integers()),
+            strategy=frozensets(integers(), min_size=1),
             serialize=_lift_serializer_for_iterables(str, sort=True),
             failable=True,
         ),
@@ -243,7 +242,7 @@ class TestParameters:
             param=FrozenSetChoices(["a", "b", "c"]),
             name="frozenset[choice]",
             repr="FROZENSET[Choice(['a', 'b', 'c'])]",
-            strategy=frozensets(sampled_from(["a", "b", "c"])),
+            strategy=frozensets(sampled_from(["a", "b", "c"]), min_size=1),
             serialize=_lift_serializer_for_iterables(str, sort=True),
             failable=True,
         ),
@@ -251,7 +250,7 @@ class TestParameters:
             param=FrozenSetEnums(_ExampleEnum),
             name="frozenset[enum[_ExampleEnum]]",
             repr="FROZENSET[ENUM[_ExampleEnum]]",
-            strategy=frozensets(sampled_from(_ExampleEnum)),
+            strategy=frozensets(sampled_from(_ExampleEnum), min_size=1),
             serialize=_lift_serializer_for_iterables(attrgetter("name"), sort=True),
             failable=True,
         ),
@@ -259,7 +258,7 @@ class TestParameters:
             param=FrozenSetStrs(),
             name="frozenset[text]",
             repr="FROZENSET[STRING]",
-            strategy=frozensets(text_ascii()),
+            strategy=frozensets(text_ascii(), min_size=1),
             serialize=_lift_serializer_for_iterables(str, sort=True),
         ),
         _Case(
@@ -280,7 +279,7 @@ class TestParameters:
             param=ListChoices(["a", "b", "c"]),
             name="list[choice]",
             repr="LIST[Choice(['a', 'b', 'c'])]",
-            strategy=lists(sampled_from(["a", "b", "c"])),
+            strategy=lists(sampled_from(["a", "b", "c"]), min_size=1),
             serialize=_lift_serializer_for_iterables(str),
             failable=True,
         ),
@@ -288,7 +287,7 @@ class TestParameters:
             param=ListInts(),
             name="list[integer]",
             repr="LIST[INT]",
-            strategy=lists(integers()),
+            strategy=lists(integers(), min_size=1),
             serialize=_lift_serializer_for_iterables(str),
             failable=True,
         ),
@@ -296,7 +295,7 @@ class TestParameters:
             param=ListEnums(_ExampleEnum),
             name="list[enum[_ExampleEnum]]",
             repr="LIST[ENUM[_ExampleEnum]]",
-            strategy=lists(sampled_from(_ExampleEnum)),
+            strategy=lists(sampled_from(_ExampleEnum), min_size=1),
             serialize=_lift_serializer_for_iterables(attrgetter("name")),
             failable=True,
         ),
@@ -320,7 +319,7 @@ class TestParameters:
         _Case(
             param=Str(),
             name="text",
-            strategy=text_ascii(min_size=1) | none(),
+            strategy=text_ascii(min_size=1),
             serialize=serialize_object,
             failable=False,
         ),
@@ -481,12 +480,12 @@ class TestParameters:
         @command()
         @option("--value", type=param, default=0)
         def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
-            echo(f"value = {value}")
+            _ = value
 
         result = CliRunner().invoke(cli)
         assert result.exit_code == 2, result.stderr
         assert search(
-            "Invalid value for '--value': Object '0' of type 'int' must be a string",
+            "Invalid value for '--value': Object '0' of type 'int' must be a (frozenset|list)",
             result.stderr,
         )
 
