@@ -322,11 +322,11 @@ class Path(ParamType):
         _ = (param, ctx)
         match value:
             case pathlib.Path():
-                return value.expanduser()
+                return value
             case "":
                 return None
             case str():
-                return pathlib.Path(value).expanduser()
+                return pathlib.Path(value)
             case never:
                 assert_never(never)
 
