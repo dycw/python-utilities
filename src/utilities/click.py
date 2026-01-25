@@ -529,11 +529,14 @@ class FrozenSetParameter[P: ParamType, T](ParamType):
 
     @override
     def convert(
-        self, value: MaybeStr[Iterable[T]], param: Parameter | None, ctx: Context | None
+        self,
+        value: MaybeStr[Iterable[T]] | None,
+        param: Parameter | None,
+        ctx: Context | None,
     ) -> frozenset[T] | None:
         """Convert a value into a frozenset, or None."""
         match value:
-            case "":
+            case None | "":
                 return None
             case str():
                 strings = split_str(value, separator=self._separator)

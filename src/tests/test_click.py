@@ -391,6 +391,16 @@ class TestParameters:
         result = CliRunner().invoke(cli, args=[""])
         assert result.exit_code == 0, result.stderr
 
+    @mark.parametrize("param", [param(c.param) for c in cases])
+    def test_none(self, *, param: ParamType) -> None:
+        @command()
+        @option("--value", type=param, default=None)
+        def cli(*, value: Any) -> None:
+            assert value is None
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0, result.stderr
+
     @given(data=data())
     @mark.parametrize(
         ("param", "strategy", "serialize"),
