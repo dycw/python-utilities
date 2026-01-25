@@ -51,7 +51,7 @@ from utilities.click import (
     MonthDay,
     Path,
     PlainDateTime,
-    TextNonEmpty,
+    Str,
     Time,
     TimeDelta,
     YearMonth,
@@ -327,7 +327,7 @@ class TestParameters:
             failable=True,
         ),
         _Case(
-            param=TextNonEmpty(),
+            param=Str(),
             name="text",
             strategy=text_ascii(min_size=1) | none(),
             serialize=serialize_object,

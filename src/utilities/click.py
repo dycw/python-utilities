@@ -375,8 +375,8 @@ class PlainDateTime(ParamType):
                 assert_never(never)
 
 
-class TextNonEmpty(ParamType):
-    """A non-empty str-valued parameter."""
+class Str(ParamType):
+    """A string-valued parameter."""
 
     name = "text"
 
@@ -725,7 +725,7 @@ __all__ = [
     "Path",
     "Path",
     "PlainDateTime",
-    "TextNonEmpty",
+    "Str",
     "Time",
     "TimeDelta",
     "YearMonth",
