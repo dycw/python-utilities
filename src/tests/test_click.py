@@ -51,6 +51,7 @@ from utilities.click import (
     MonthDay,
     Path,
     PlainDateTime,
+    TextNonEmpty,
     Time,
     TimeDelta,
     YearMonth,
@@ -324,6 +325,13 @@ class TestParameters:
             strategy=plain_date_times(),
             serialize=whenever.PlainDateTime.format_iso,
             failable=True,
+        ),
+        _Case(
+            param=TextNonEmpty(),
+            name="text",
+            strategy=text_ascii(min_size=1) | none(),
+            serialize=_lift_serializer_for_nulls(serialize_object),
+            failable=False,
         ),
         _Case(
             param=Time(),
