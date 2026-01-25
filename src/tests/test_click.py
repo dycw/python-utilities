@@ -368,43 +368,33 @@ class TestParameters:
         strategy: SearchStrategy[Any],
         serialize: Callable[[Any], str],
     ) -> None:
+        value_use = data.draw(strategy)
+
         @command()
         @option("--value", type=param)
         def cli(*, value: Any) -> None:
-            echo(f"value = {serialize(value)}")
+            assert value == value_use
 
-        value = data.draw(strategy)
-        ser = serialize(value)
-        result = CliRunner().invoke(cli, args=[f"--value={ser}"])
+        result = CliRunner().invoke(cli, args=[f"--value={serialize(value_use)}"])
         assert result.exit_code == 0, result.stderr
-        assert result.stdout == f"value = {ser}\n"
 
     @given(data=data())
     @mark.parametrize(
-        ("param", "strategy", "serialize"),
-        [
-            param(c.param, c.strategy, c.serialize, id=get_class_name(c.param))
-            for c in cases
-        ],
+        ("param", "strategy"),
+        [param(c.param, c.strategy, id=get_class_name(c.param)) for c in cases],
     )
     def test_default(
-        self,
-        *,
-        data: DataObject,
-        param: ParamType,
-        strategy: SearchStrategy[Any],
-        serialize: Callable[[Any], str],
+        self, *, data: DataObject, param: ParamType, strategy: SearchStrategy[Any]
     ) -> None:
         default = data.draw(strategy)
 
         @command()
         @option("--value", type=param, default=default)
         def cli(*, value: Any) -> None:
-            echo(f"value = {serialize(value)}")
+            assert value == default
 
-        result = CliRunner().invoke(cli, args=[])
+        result = CliRunner().invoke(cli)
         assert result.exit_code == 0, result.stderr
-        assert result.stdout == f"value = {serialize(default)}\n"
 
     @mark.parametrize(
         "param", [param(c.param, id=get_class_name(c.param)) for c in cases]
