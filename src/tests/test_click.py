@@ -264,14 +264,14 @@ class TestParameters:
         ),
         _Case(
             param=IPv4Address(),
-            name="ipv4 address",
+            name="ipv4",
             strategy=ip_addresses(v=4),
             serialize=str,
             failable=True,
         ),
         _Case(
             param=IPv6Address(),
-            name="ipv6 address",
+            name="ipv6",
             strategy=ip_addresses(v=6),
             serialize=str,
             failable=True,

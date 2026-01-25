@@ -4,6 +4,7 @@ import enum
 import ipaddress
 import pathlib
 import uuid
+from collections.abc import Iterable
 from enum import StrEnum
 from typing import TYPE_CHECKING, TypedDict, assert_never, override
 
@@ -13,13 +14,9 @@ from click.types import IntParamType, StringParamType
 
 from utilities.core import get_class_name
 from utilities.enum import ParseEnumError, parse_enum
-from utilities.functions import EnsureStrError, ensure_str
-from utilities.iterables import is_iterable_not_str
 from utilities.text import ParseBoolError, parse_bool, split_str
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-
     from utilities.types import (
         DateDeltaLike,
         DateLike,
@@ -236,7 +233,7 @@ class IPv4Address(ParamType):
     def convert(
         self, value: IPv4AddressLike, param: Parameter | None, ctx: Context | None
     ) -> ipaddress.IPv4Address | None:
-        """Convert a value into the `IPv4Address` type."""
+        """Convert a value into an `IPv4Address, or None."""
         match value:
             case ipaddress.IPv4Address():
                 return value
@@ -254,7 +251,7 @@ class IPv4Address(ParamType):
 class IPv6Address(ParamType):
     """An IPv6 address-valued parameter."""
 
-    name = "ipv6 address"
+    name = "ipv6"
 
     @override
     def __repr__(self) -> str:
@@ -264,7 +261,7 @@ class IPv6Address(ParamType):
     def convert(
         self, value: IPv6AddressLike, param: Parameter | None, ctx: Context | None
     ) -> ipaddress.IPv6Address:
-        """Convert a value into the `IPv6Address` type."""
+        """Convert a value into an IPv6Address, or None."""
         match value:
             case ipaddress.IPv6Address():
                 return value
@@ -290,7 +287,7 @@ class MonthDay(ParamType):
     def convert(
         self, value: MonthDayLike, param: Parameter | None, ctx: Context | None
     ) -> whenever.MonthDay:
-        """Convert a value into the `MonthDay` type."""
+        """Convert a value into a MonthDay, or None."""
         match value:
             case whenever.MonthDay():
                 return value
@@ -315,12 +312,14 @@ class Path(ParamType):
     @override
     def convert(
         self, value: PathLike, param: Parameter | None, ctx: Context | None
-    ) -> pathlib.Path:
-        """Convert a value into the `Path` type."""
+    ) -> pathlib.Path | None:
+        """Convert a value into a Path, or None."""
         _ = (param, ctx)
         match value:
             case pathlib.Path():
                 return value.expanduser()
+            case "":
+                return None
             case str():
                 return pathlib.Path(value).expanduser()
             case never:
@@ -339,11 +338,13 @@ class PlainDateTime(ParamType):
     @override
     def convert(
         self, value: PlainDateTimeLike, param: Parameter | None, ctx: Context | None
-    ) -> whenever.PlainDateTime:
-        """Convert a value into the `PlainDateTime` type."""
+    ) -> whenever.PlainDateTime | None:
+        """Convert a value into a PlainDateTime, or None."""
         match value:
             case whenever.PlainDateTime():
                 return value
+            case "":
+                return None
             case str():
                 try:
                     return whenever.PlainDateTime.parse_iso(value)
@@ -366,7 +367,7 @@ class Str(ParamType):
     def convert(
         self, value: str, param: Parameter | None, ctx: Context | None
     ) -> str | None:
-        """Convert a value into a non-empty string."""
+        """Convert a value into a string, or None."""
         _ = (param, ctx)
         return None if value == "" else value
 
@@ -383,11 +384,13 @@ class Time(ParamType):
     @override
     def convert(
         self, value: TimeLike, param: Parameter | None, ctx: Context | None
-    ) -> whenever.Time:
-        """Convert a value into the `Time` type."""
+    ) -> whenever.Time | None:
+        """Convert a value into a Time, or None."""
         match value:
             case whenever.Time():
                 return value
+            case "":
+                return None
             case str():
                 try:
                     return whenever.Time.parse_iso(value)
@@ -409,11 +412,13 @@ class TimeDelta(ParamType):
     @override
     def convert(
         self, value: TimeDeltaLike, param: Parameter | None, ctx: Context | None
-    ) -> whenever.TimeDelta:
-        """Convert a value into the `TimeDelta` type."""
+    ) -> whenever.TimeDelta | None:
+        """Convert a value into a TimeDelta, or None."""
         match value:
             case whenever.TimeDelta():
                 return value
+            case "":
+                return None
             case str():
                 try:
                     return whenever.TimeDelta.parse_iso(value)
@@ -436,7 +441,7 @@ class UUID(ParamType):
     def convert(
         self, value: uuid.UUID | str, param: Parameter | None, ctx: Context | None
     ) -> uuid.UUID:
-        """Convert a value into the `UUID` type."""
+        """Convert a value into a UUID, or None."""
         match value:
             case uuid.UUID():
                 return value
@@ -461,11 +466,13 @@ class YearMonth(ParamType):
     @override
     def convert(
         self, value: YearMonthLike, param: Parameter | None, ctx: Context | None
-    ) -> whenever.YearMonth:
-        """Convert a value into the `YearMonth` type."""
+    ) -> whenever.YearMonth | None:
+        """Convert a value into a YearMonth, or None."""
         match value:
             case whenever.YearMonth():
                 return value
+            case "":
+                return None
             case str():
                 try:
                     return whenever.YearMonth.parse_iso(value)
@@ -487,11 +494,13 @@ class ZonedDateTime(ParamType):
     @override
     def convert(
         self, value: ZonedDateTimeLike, param: Parameter | None, ctx: Context | None
-    ) -> whenever.ZonedDateTime:
-        """Convert a value into the `ZonedDateTime` type."""
+    ) -> whenever.ZonedDateTime | None:
+        """Convert a value into a ZonedDateTime, or None."""
         match value:
             case whenever.ZonedDateTime():
                 return value
+            case "":
+                return None
             case str():
                 try:
                     return whenever.ZonedDateTime.parse_iso(value)
@@ -521,16 +530,18 @@ class FrozenSetParameter[P: ParamType, T](ParamType):
     @override
     def convert(
         self, value: MaybeStr[Iterable[T]], param: Parameter | None, ctx: Context | None
-    ) -> frozenset[T]:
-        """Convert a value into the `ListDates` type."""
-        if is_iterable_not_str(value):
-            return frozenset(value)
-        try:
-            text = ensure_str(value)
-        except EnsureStrError as error:
-            return self.fail(str(error), param=param, ctx=ctx)
-        values = split_str(text, separator=self._separator)
-        return frozenset(self._param.convert(v, param, ctx) for v in values)
+    ) -> frozenset[T] | None:
+        """Convert a value into a frozenset, or None."""
+        match value:
+            case "":
+                return None
+            case str():
+                strings = split_str(value, separator=self._separator)
+                return frozenset(self._param.convert(s, param, ctx) for s in strings)
+            case Iterable():
+                return frozenset(value)
+            case never:
+                assert_never(never)
 
     @override
     def get_metavar(self, param: Parameter, ctx: Context) -> str | None:
@@ -606,16 +617,18 @@ class ListParameter[P: ParamType, T](ParamType):
     @override
     def convert(
         self, value: MaybeStr[Iterable[T]], param: Parameter | None, ctx: Context | None
-    ) -> list[T]:
-        """Convert a value into the `List` type."""
-        if is_iterable_not_str(value):
-            return list(value)
-        try:
-            text = ensure_str(value)
-        except EnsureStrError as error:
-            return self.fail(str(error), param=param, ctx=ctx)
-        values = split_str(text, separator=self._separator)
-        return [self._param.convert(v, param, ctx) for v in values]
+    ) -> list[T] | None:
+        """Convert a value into a list, or None."""
+        match value:
+            case "":
+                return None
+            case str():
+                strings = split_str(value, separator=self._separator)
+                return [self._param.convert(s, param, ctx) for s in strings]
+            case Iterable():
+                return list(value)
+            case never:
+                assert_never(never)
 
     @override
     def get_metavar(self, param: Parameter, ctx: Context) -> str | None:
