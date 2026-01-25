@@ -260,11 +260,13 @@ class IPv6Address(ParamType):
     @override
     def convert(
         self, value: IPv6AddressLike, param: Parameter | None, ctx: Context | None
-    ) -> ipaddress.IPv6Address:
+    ) -> ipaddress.IPv6Address | None:
         """Convert a value into an IPv6Address, or None."""
         match value:
             case ipaddress.IPv6Address():
                 return value
+            case "":
+                return None
             case str():
                 try:
                     return ipaddress.IPv6Address(value)
@@ -286,11 +288,13 @@ class MonthDay(ParamType):
     @override
     def convert(
         self, value: MonthDayLike, param: Parameter | None, ctx: Context | None
-    ) -> whenever.MonthDay:
+    ) -> whenever.MonthDay | None:
         """Convert a value into a MonthDay, or None."""
         match value:
             case whenever.MonthDay():
                 return value
+            case "":
+                return None
             case str():
                 try:
                     return whenever.MonthDay.parse_iso(value)
@@ -440,11 +444,13 @@ class UUID(ParamType):
     @override
     def convert(
         self, value: uuid.UUID | str, param: Parameter | None, ctx: Context | None
-    ) -> uuid.UUID:
+    ) -> uuid.UUID | None:
         """Convert a value into a UUID, or None."""
         match value:
             case uuid.UUID():
                 return value
+            case "":
+                return None
             case str():
                 try:
                     return uuid.UUID(value)
