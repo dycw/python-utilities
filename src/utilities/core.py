@@ -87,6 +87,7 @@ from utilities._core_errors import (
     CopyDestinationExistsError,
     CopyError,
     CopySourceNotFoundError,
+    DeltaComponentsError,
     ExtractGroupError,
     ExtractGroupMultipleCaptureGroupsError,
     ExtractGroupMultipleMatchesError,
@@ -2294,7 +2295,7 @@ class _DeltaComponentsOutput:
             or ((self.years < 0) and (self.days > 0))
             or ((self.months < 0) and (self.days > 0))
         ):
-            raise _DeltaComponentsMixedSignError(
+            raise DeltaComponentsError(
                 years=self.years, months=self.months, days=self.days
             )
 
@@ -2450,21 +2451,6 @@ class _DeltaComponentsOutput:
             self.microseconds -= microseconds
             return False
         return True
-
-
-@dataclass(kw_only=True, slots=True)
-class DeltaComponentsError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _DeltaComponentsMixedSignError(DeltaComponentsError):
-    years: int = 0
-    months: int = 0
-    days: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Years, months and days must have the same sign; got {self.years}, {self.months} and {self.days}"
 
 
 ##

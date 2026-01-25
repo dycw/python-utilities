@@ -556,6 +556,22 @@ class WriteTextError(Exception):
 
 
 ###############################################################################
+#### whenever #################################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class DeltaComponentsError(Exception):
+    years: int = 0
+    months: int = 0
+    days: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Years, months and days must have the same sign; got {self.years}, {self.months} and {self.days}"
+
+
+###############################################################################
 #### writers ##################################################################
 ###############################################################################
 
@@ -580,6 +596,7 @@ __all__ = [
     "CopyOrMoveDestinationExistsError",
     "CopyOrMoveSourceNotFoundError",
     "CopySourceNotFoundError",
+    "DeltaComponentsError",
     "ExtractGroupError",
     "ExtractGroupMultipleCaptureGroupsError",
     "ExtractGroupMultipleMatchesError",
