@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, assert_never, override
 from utilities.types import CopyOrMove, PathLike, SupportsRichComparison
 
 if TYPE_CHECKING:
+    import datetime as dt
     from collections.abc import Iterable
     from pathlib import Path
     from re import Pattern
@@ -556,6 +557,34 @@ class WriteTextError(Exception):
 
 
 ###############################################################################
+#### shutil ###################################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class WhichError(Exception):
+    cmd: str
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.cmd!r} not found"
+
+
+###############################################################################
+#### text #####################################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class SubstituteError(Exception):
+    key: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Missing key: {self.key!r}"
+
+
+###############################################################################
 #### whenever #################################################################
 ###############################################################################
 
@@ -571,6 +600,150 @@ class DeltaComponentsError(Exception):
         return f"Years, months and days must have the same sign; got {self.years}, {self.months} and {self.days}"
 
 
+##
+
+
+@dataclass(kw_only=True, slots=True)
+class NumYearsError(Exception):
+    months: int = 0
+    weeks: int = 0
+    days: int = 0
+    hours: int = 0
+    minutes: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain months ({self.months}), weeks ({self.weeks}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumMonthsError(Exception):
+    weeks: int = 0
+    days: int = 0
+    hours: int = 0
+    minutes: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain weeks ({self.weeks}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumWeeksError(Exception):
+    years: int = 0
+    months: int = 0
+    days: int = 0
+    hours: int = 0
+    minutes: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumDaysError(Exception):
+    years: int = 0
+    months: int = 0
+    hours: int = 0
+    minutes: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumHoursError(Exception):
+    years: int = 0
+    months: int = 0
+    minutes: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumMinutesError(Exception):
+    years: int = 0
+    months: int = 0
+    seconds: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumSecondsError(Exception):
+    years: int = 0
+    months: int = 0
+    milliseconds: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumMilliSecondsError(Exception):
+    years: int = 0
+    months: int = 0
+    microseconds: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumMicroSecondsError(Exception):
+    years: int = 0
+    months: int = 0
+    nanoseconds: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}), months ({self.months}) or nanoseconds ({self.nanoseconds})"
+
+
+@dataclass(kw_only=True, slots=True)
+class NumNanoSecondsError(Exception):
+    years: int = 0
+    months: int = 0
+
+    @override
+    def __str__(self) -> str:
+        return f"Delta must not contain years ({self.years}) or months ({self.months})"
+
+
 ###############################################################################
 #### writers ##################################################################
 ###############################################################################
@@ -583,6 +756,73 @@ class YieldWritePathError(Exception):
     @override
     def __str__(self) -> str:
         return f"Cannot write to {str(self.path)!r} since it already exists"
+
+
+###############################################################################
+#### zoneinfo #################################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class ToTimeZoneNameError(Exception):
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class ToTimeZoneNameInvalidKeyError(ToTimeZoneNameError):
+    time_zone: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid time-zone: {self.time_zone!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class ToTimeZoneNameInvalidTZInfoError(ToTimeZoneNameError):
+    time_zone: dt.tzinfo
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid time-zone: {self.time_zone}"
+
+
+@dataclass(kw_only=True, slots=True)
+class ToTimeZoneNamePlainDateTimeError(ToTimeZoneNameError):
+    date_time: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Plain date-time: {self.date_time}"
+
+
+##
+
+
+@dataclass(kw_only=True, slots=True)
+class ToZoneInfoError(Exception):
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class ToZoneInfoInvalidTZInfoError(ToZoneInfoError):
+    time_zone: dt.tzinfo
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid time-zone: {self.time_zone}"
+
+
+@dataclass(kw_only=True, slots=True)
+class ToZoneInfoPlainDateTimeError(ToZoneInfoError):
+    date_time: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Plain date-time: {self.date_time}"
 
 
 __all__ = [
@@ -615,6 +855,16 @@ __all__ = [
     "MoveDestinationExistsError",
     "MoveError",
     "MoveSourceNotFoundError",
+    "NumDaysError",
+    "NumHoursError",
+    "NumMicroSecondsError",
+    "NumMilliSecondsError",
+    "NumMinutesError",
+    "NumMonthsError",
+    "NumNanoSecondsError",
+    "NumSecondsError",
+    "NumWeeksError",
+    "NumYearsError",
     "OneEmptyError",
     "OneError",
     "OneNonUniqueError",
@@ -627,6 +877,15 @@ __all__ = [
     "ReadBytesError",
     "ReadPickleError",
     "ReadTextError",
+    "SubstituteError",
+    "ToTimeZoneNameError",
+    "ToTimeZoneNameError",
+    "ToTimeZoneNameInvalidKeyError",
+    "ToTimeZoneNameInvalidTZInfoError",
+    "ToTimeZoneNamePlainDateTimeError",
+    "ToZoneInfoError",
+    "ToZoneInfoPlainDateTimeError",
+    "WhichError",
     "WriteBytesError",
     "WritePickleError",
     "WriteTextError",

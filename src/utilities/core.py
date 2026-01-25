@@ -106,6 +106,16 @@ from utilities._core_errors import (
     MoveDestinationExistsError,
     MoveError,
     MoveSourceNotFoundError,
+    NumDaysError,
+    NumHoursError,
+    NumMicroSecondsError,
+    NumMilliSecondsError,
+    NumMinutesError,
+    NumMonthsError,
+    NumNanoSecondsError,
+    NumSecondsError,
+    NumWeeksError,
+    NumYearsError,
     OneEmptyError,
     OneError,
     OneNonUniqueError,
@@ -120,6 +130,15 @@ from utilities._core_errors import (
     ReadBytesError,
     ReadPickleError,
     ReadTextError,
+    SubstituteError,
+    ToTimeZoneNameError,
+    ToTimeZoneNameInvalidKeyError,
+    ToTimeZoneNameInvalidTZInfoError,
+    ToTimeZoneNamePlainDateTimeError,
+    ToZoneInfoError,
+    ToZoneInfoInvalidTZInfoError,
+    ToZoneInfoPlainDateTimeError,
+    WhichError,
     WriteBytesError,
     WritePickleError,
     WriteTextError,
@@ -1889,15 +1908,6 @@ def which(cmd: str, /) -> Path:
     return Path(path)
 
 
-@dataclass(kw_only=True, slots=True)
-class WhichError(Exception):
-    cmd: str
-
-    @override
-    def __str__(self) -> str:
-        return f"{self.cmd!r} not found"
-
-
 ###############################################################################
 #### tempfile #################################################################
 ###############################################################################
@@ -2162,15 +2172,6 @@ def substitute(
                 raise SubstituteError(key=error.args[0]) from None
         case never:
             assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class SubstituteError(Exception):
-    key: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Missing key: {repr_(self.key)}"
 
 
 ##
@@ -2556,23 +2557,6 @@ def num_years(delta: Delta, /) -> int:
     return components.years
 
 
-@dataclass(kw_only=True, slots=True)
-class NumYearsError(Exception):
-    months: int = 0
-    weeks: int = 0
-    days: int = 0
-    hours: int = 0
-    minutes: int = 0
-    seconds: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain months ({self.months}), weeks ({self.weeks}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
-
-
 def num_months(delta: Delta, /) -> int:
     """Compute the number of months in a delta."""
     components = delta_components(delta)
@@ -2597,22 +2581,6 @@ def num_months(delta: Delta, /) -> int:
             nanoseconds=components.nanoseconds,
         )
     return MONTHS_PER_YEAR * components.years + components.months
-
-
-@dataclass(kw_only=True, slots=True)
-class NumMonthsError(Exception):
-    weeks: int = 0
-    days: int = 0
-    hours: int = 0
-    minutes: int = 0
-    seconds: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain weeks ({self.weeks}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
 
 
 def num_weeks(delta: Delta, /) -> int:
@@ -2643,23 +2611,6 @@ def num_weeks(delta: Delta, /) -> int:
     return components.weeks
 
 
-@dataclass(kw_only=True, slots=True)
-class NumWeeksError(Exception):
-    years: int = 0
-    months: int = 0
-    days: int = 0
-    hours: int = 0
-    minutes: int = 0
-    seconds: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}), months ({self.months}), days ({self.days}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
-
-
 def num_days(delta: Delta, /) -> int:
     """Compute the number of days in a delta."""
     components = delta_components(delta)
@@ -2684,22 +2635,6 @@ def num_days(delta: Delta, /) -> int:
             nanoseconds=components.nanoseconds,
         )
     return DAYS_PER_WEEK * components.weeks + components.days
-
-
-@dataclass(kw_only=True, slots=True)
-class NumDaysError(Exception):
-    years: int = 0
-    months: int = 0
-    hours: int = 0
-    minutes: int = 0
-    seconds: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}), months ({self.months}), hours ({self.hours}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
 
 
 def num_hours(delta: Delta, /) -> int:
@@ -2730,21 +2665,6 @@ def num_hours(delta: Delta, /) -> int:
     )
 
 
-@dataclass(kw_only=True, slots=True)
-class NumHoursError(Exception):
-    years: int = 0
-    months: int = 0
-    minutes: int = 0
-    seconds: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}), months ({self.months}), minutes ({self.minutes}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
-
-
 def num_minutes(delta: Delta, /) -> int:
     """Compute the number of minutes in a delta."""
     components = delta_components(delta)
@@ -2770,20 +2690,6 @@ def num_minutes(delta: Delta, /) -> int:
         + MINUTES_PER_HOUR * components.hours
         + components.minutes
     )
-
-
-@dataclass(kw_only=True, slots=True)
-class NumMinutesError(Exception):
-    years: int = 0
-    months: int = 0
-    seconds: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}), months ({self.months}), seconds ({self.seconds}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
 
 
 def num_seconds(delta: Delta, /) -> int:
@@ -2812,19 +2718,6 @@ def num_seconds(delta: Delta, /) -> int:
     )
 
 
-@dataclass(kw_only=True, slots=True)
-class NumSecondsError(Exception):
-    years: int = 0
-    months: int = 0
-    milliseconds: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}), months ({self.months}), milliseconds ({self.milliseconds}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
-
-
 def num_milliseconds(delta: Delta, /) -> int:
     """Compute the number of milliseconds in a delta."""
     components = delta_components(delta)
@@ -2848,18 +2741,6 @@ def num_milliseconds(delta: Delta, /) -> int:
         + MILLISECONDS_PER_SECOND * components.seconds
         + components.milliseconds
     )
-
-
-@dataclass(kw_only=True, slots=True)
-class NumMilliSecondsError(Exception):
-    years: int = 0
-    months: int = 0
-    microseconds: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}), months ({self.months}), microseconds ({self.microseconds}) or nanoseconds ({self.nanoseconds})"
 
 
 def num_microseconds(delta: Delta, /) -> int:
@@ -2886,17 +2767,6 @@ def num_microseconds(delta: Delta, /) -> int:
     )
 
 
-@dataclass(kw_only=True, slots=True)
-class NumMicroSecondsError(Exception):
-    years: int = 0
-    months: int = 0
-    nanoseconds: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}), months ({self.months}) or nanoseconds ({self.nanoseconds})"
-
-
 def num_nanoseconds(delta: Delta, /) -> int:
     """Compute the number of nanoseconds in a delta."""
     components = delta_components(delta)
@@ -2912,16 +2782,6 @@ def num_nanoseconds(delta: Delta, /) -> int:
         + NANOSECONDS_PER_MICROSECOND * components.microseconds
         + components.nanoseconds
     )
-
-
-@dataclass(kw_only=True, slots=True)
-class NumNanoSecondsError(Exception):
-    years: int = 0
-    months: int = 0
-
-    @override
-    def __str__(self) -> str:
-        return f"Delta must not contain years ({self.years}) or months ({self.months})"
 
 
 ##
@@ -2998,6 +2858,34 @@ def yield_write_path(
 ###############################################################################
 
 
+def to_time_zone_name(obj: TimeZoneLike, /) -> TimeZone:
+    """Convert to a time zone name."""
+    match obj:
+        case ZoneInfo() as zone_info:
+            return cast("TimeZone", zone_info.key)
+        case ZonedDateTime() as date_time:
+            return cast("TimeZone", date_time.tz)
+        case "local" | "localtime":
+            return LOCAL_TIME_ZONE_NAME
+        case str() as time_zone:
+            if time_zone in TIME_ZONES:
+                return time_zone
+            raise ToTimeZoneNameInvalidKeyError(time_zone=time_zone)
+        case dt.tzinfo() as tzinfo:
+            if tzinfo is dt.UTC:
+                return cast("TimeZone", UTC.key)
+            raise ToTimeZoneNameInvalidTZInfoError(time_zone=obj)
+        case dt.datetime() as date_time:
+            if date_time.tzinfo is None:
+                raise ToTimeZoneNamePlainDateTimeError(date_time=date_time)
+            return to_time_zone_name(date_time.tzinfo)
+        case never:
+            assert_never(never)
+
+
+##
+
+
 def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
     """Convert an object to a time-zone."""
     match obj:
@@ -3012,94 +2900,13 @@ def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
         case dt.tzinfo() as tzinfo:
             if tzinfo is dt.UTC:
                 return UTC
-            raise _ToZoneInfoInvalidTZInfoError(time_zone=obj)
+            raise ToZoneInfoInvalidTZInfoError(time_zone=obj)
         case dt.datetime() as date_time:
             if date_time.tzinfo is None:
-                raise _ToZoneInfoPlainDateTimeError(date_time=date_time)
+                raise ToZoneInfoPlainDateTimeError(date_time=date_time)
             return to_zone_info(date_time.tzinfo)
         case never:
             assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class ToTimeZoneError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToZoneInfoInvalidTZInfoError(ToTimeZoneError):
-    time_zone: dt.tzinfo
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid time-zone: {self.time_zone}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToZoneInfoPlainDateTimeError(ToTimeZoneError):
-    date_time: dt.datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"Plain date-time: {self.date_time}"
-
-
-##
-
-
-def to_time_zone_name(obj: TimeZoneLike, /) -> TimeZone:
-    """Convert to a time zone name."""
-    match obj:
-        case ZoneInfo() as zone_info:
-            return cast("TimeZone", zone_info.key)
-        case ZonedDateTime() as date_time:
-            return cast("TimeZone", date_time.tz)
-        case "local" | "localtime":
-            return LOCAL_TIME_ZONE_NAME
-        case str() as time_zone:
-            if time_zone in TIME_ZONES:
-                return time_zone
-            raise _ToTimeZoneNameInvalidKeyError(time_zone=time_zone)
-        case dt.tzinfo() as tzinfo:
-            if tzinfo is dt.UTC:
-                return cast("TimeZone", UTC.key)
-            raise _ToTimeZoneNameInvalidTZInfoError(time_zone=obj)
-        case dt.datetime() as date_time:
-            if date_time.tzinfo is None:
-                raise _ToTimeZoneNamePlainDateTimeError(date_time=date_time)
-            return to_time_zone_name(date_time.tzinfo)
-        case never:
-            assert_never(never)
-
-
-@dataclass(kw_only=True, slots=True)
-class ToTimeZoneNameError(Exception): ...
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToTimeZoneNameInvalidKeyError(ToTimeZoneNameError):
-    time_zone: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid time-zone: {self.time_zone!r}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToTimeZoneNameInvalidTZInfoError(ToTimeZoneNameError):
-    time_zone: dt.tzinfo
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid time-zone: {self.time_zone}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToTimeZoneNamePlainDateTimeError(ToTimeZoneNameError):
-    date_time: dt.datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"Plain date-time: {self.date_time}"
 
 
 __all__ = [
@@ -3158,8 +2965,13 @@ __all__ = [
     "SubstituteError",
     "TemporaryDirectory",
     "TemporaryFile",
-    "ToTimeZoneError",
     "ToTimeZoneNameError",
+    "ToTimeZoneNameInvalidKeyError",
+    "ToTimeZoneNameInvalidTZInfoError",
+    "ToTimeZoneNamePlainDateTimeError",
+    "ToZoneInfoError",
+    "ToZoneInfoInvalidTZInfoError",
+    "ToZoneInfoPlainDateTimeError",
     "WhichError",
     "WriteBytesError",
     "WriteBytesError",
