@@ -258,7 +258,7 @@ Options:
 
 
 class TestEnum:
-    def test_error_enum_parse(self) -> None:
+    def test_error(self) -> None:
         @command()
         @option(
             "--value",
