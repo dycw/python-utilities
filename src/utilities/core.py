@@ -1897,46 +1897,6 @@ def read_text(path: PathLike, /, *, decompress: bool = False) -> str:
             ) from None
 
 
-def write_bytes(
-    path: PathLike,
-    data: bytes,
-    /,
-    *,
-    compress: bool = False,
-    overwrite: bool = False,
-    perms: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
-    json: bool = False,
-) -> None:
-    """Write data to a file."""
-    try:
-        with yield_write_path(
-            path,
-            compress=compress,
-            overwrite=overwrite,
-            perms=perms,
-            owner=owner,
-            group=group,
-        ) as temp:
-            if json:  # pragma: no cover
-                with suppress(FileNotFoundError):
-                    data = check_output(["prettier", "--parser=json"], input=data)
-            _ = temp.write_bytes(data)
-    except YieldWritePathError as error:
-        raise WriteBytesError(path=error.path) from None
-
-
-##
-
-
-def read_pickle(path: PathLike, /) -> Any:
-    """Read an object from disk."""
-    path = Path(path)
-    try:
-        with gzip.open(path, mode="rb") as gz:
-
-
 def write_text(
     path: PathLike,
     text: str,
