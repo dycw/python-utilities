@@ -16,6 +16,7 @@ from utilities.core import (
     YieldGzipFileNotFoundError,
     YieldGzipIsADirectoryError,
     YieldLZMAFileNotFoundError,
+    YieldLZMAIsADirectoryError,
     YieldZipFileNotFoundError,
     YieldZipIsADirectoryError,
     compress_bz2,
@@ -67,7 +68,7 @@ type Data = tuple[
             yield_lzma,
             CompressLZMAError,
             YieldLZMAFileNotFoundError,
-            YieldGzipIsADirectoryError,
+            YieldLZMAIsADirectoryError,
         ),
         (
             compress_zip,
@@ -305,7 +306,7 @@ class TestCompressAndYieldUncompressed:
         with (
             raises(
                 error_yield_uncompressed_is_a_directory,
-                match=r"Cannot uncompress '.*' since it does not exist",
+                match=r"Cannot uncompress '.*' since it is a directory",
             ),
             yield_uncompressed(tmp_path),
         ):
