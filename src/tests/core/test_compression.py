@@ -11,10 +11,13 @@ from utilities.core import (
     CompressGzipError,
     CompressLZMAError,
     CompressZipError,
-    YieldBZ2Error,
-    YieldGzipError,
-    YieldLZMAError,
-    YieldZipError,
+    YieldBZ2FileNotFoundError,
+    YieldBZ2IsADirectoryError,
+    YieldGzipFileNotFoundError,
+    YieldGzipIsADirectoryError,
+    YieldLZMAFileNotFoundError,
+    YieldZipFileNotFoundError,
+    YieldZipIsADirectoryError,
     compress_bz2,
     compress_gzip,
     compress_lzma,
@@ -38,15 +41,41 @@ if TYPE_CHECKING:
 
 type Compress = Callable[..., None]
 type YieldUncompressed = Callable[[PathLike], AbstractContextManager[Path]]
-type Data = tuple[Compress, YieldUncompressed, type[Exception], type[Exception]]
+type Data = tuple[
+    Compress, YieldUncompressed, type[Exception], type[Exception], type[Exception]
+]
 
 
 @fixture(
     params=[
-        (compress_bz2, yield_bz2, CompressBZ2Error, YieldBZ2Error),
-        (compress_gzip, yield_gzip, CompressGzipError, YieldGzipError),
-        (compress_lzma, yield_lzma, CompressLZMAError, YieldLZMAError),
-        (compress_zip, yield_zip, CompressZipError, YieldZipError),
+        (
+            compress_bz2,
+            yield_bz2,
+            CompressBZ2Error,
+            YieldBZ2FileNotFoundError,
+            YieldBZ2IsADirectoryError,
+        ),
+        (
+            compress_gzip,
+            yield_gzip,
+            CompressGzipError,
+            YieldGzipFileNotFoundError,
+            YieldGzipIsADirectoryError,
+        ),
+        (
+            compress_lzma,
+            yield_lzma,
+            CompressLZMAError,
+            YieldLZMAFileNotFoundError,
+            YieldGzipIsADirectoryError,
+        ),
+        (
+            compress_zip,
+            yield_zip,
+            CompressZipError,
+            YieldZipFileNotFoundError,
+            YieldZipIsADirectoryError,
+        ),
     ]
 )
 def data(*, request: SubRequest) -> Data:
@@ -55,25 +84,31 @@ def data(*, request: SubRequest) -> Data:
 
 @fixture
 def compress(*, data: Data) -> Compress:
-    compress, _, _, _ = data
+    compress, _, _, _, _ = data
     return compress
 
 
 @fixture
 def yield_uncompressed(*, data: Data) -> YieldUncompressed:
-    _, yield_uncompressed, _, _ = data
+    _, yield_uncompressed, _, _, _ = data
     return yield_uncompressed
 
 
 @fixture
 def error_compress(*, data: Data) -> type[Exception]:
-    _, _, error, _ = data
+    _, _, error, _, _ = data
     return error
 
 
 @fixture
-def error_yield_uncompressed(*, data: Data) -> type[Exception]:
-    _, _, _, error = data
+def error_yield_uncompressed_file_not_found(*, data: Data) -> type[Exception]:
+    _, _, _, error, _ = data
+    return error
+
+
+@fixture
+def error_yield_uncompressed_is_a_directory(*, data: Data) -> type[Exception]:
+    _, _, _, _, error = data
     return error
 
 
@@ -244,18 +279,34 @@ class TestCompressAndYieldUncompressed:
         ):
             compress(src, dest)
 
-    def test_error_yield_uncompressed(
+    def test_error_yield_uncompressed_file_not_found(
         self,
         *,
         temp_path_not_exist: Path,
         yield_uncompressed: YieldUncompressed,
-        error_yield_uncompressed: type[Exception],
+        error_yield_uncompressed_file_not_found: type[Exception],
     ) -> None:
         with (
             raises(
-                error_yield_uncompressed,
+                error_yield_uncompressed_file_not_found,
                 match=r"Cannot uncompress '.*' since it does not exist",
             ),
             yield_uncompressed(temp_path_not_exist),
+        ):
+            ...
+
+    def test_error_yield_uncompressed_is_a_directory(
+        self,
+        *,
+        tmp_path: Path,
+        yield_uncompressed: YieldUncompressed,
+        error_yield_uncompressed_is_a_directory: type[Exception],
+    ) -> None:
+        with (
+            raises(
+                error_yield_uncompressed_is_a_directory,
+                match=r"Cannot uncompress '.*' since it does not exist",
+            ),
+            yield_uncompressed(tmp_path),
         ):
             ...

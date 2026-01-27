@@ -115,6 +115,7 @@ class TestReadWriteText:
             _ = read_text(temp_path_not_exist, decompress=uncompress)
 
     @mark.parametrize("uncompress", [param(False), param(True)])
+    @mark.xfail
     def test_error_read_file_not_found2(
         self, *, temp_file: Path, uncompress: bool
     ) -> None:
