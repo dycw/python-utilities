@@ -118,8 +118,6 @@ class YieldBZ2Error(Exception):
 
 @dataclass(kw_only=True, slots=True)
 class YieldBZ2FileNotFoundError(YieldBZ2Error):
-    path: Path
-
     @override
     def __str__(self) -> str:
         return _yield_uncompressed_file_not_found_error_msg(self.path)
@@ -127,8 +125,6 @@ class YieldBZ2FileNotFoundError(YieldBZ2Error):
 
 @dataclass(kw_only=True, slots=True)
 class YieldBZ2IsADirectoryError(YieldBZ2Error):
-    path: Path
-
     @override
     def __str__(self) -> str:
         return _yield_uncompressed_file_is_a_directory_error_msg(self.path)
@@ -145,8 +141,6 @@ class YieldGzipError(Exception):
 
 @dataclass(kw_only=True, slots=True)
 class YieldGzipFileNotFoundError(YieldGzipError):
-    path: Path
-
     @override
     def __str__(self) -> str:
         return _yield_uncompressed_file_not_found_error_msg(self.path)
@@ -154,8 +148,6 @@ class YieldGzipFileNotFoundError(YieldGzipError):
 
 @dataclass(kw_only=True, slots=True)
 class YieldGzipIsADirectoryError(YieldGzipError):
-    path: Path
-
     @override
     def __str__(self) -> str:
         return _yield_uncompressed_file_is_a_directory_error_msg(self.path)
@@ -172,8 +164,6 @@ class YieldLZMAError(Exception):
 
 @dataclass(kw_only=True, slots=True)
 class YieldLZMAFileNotFoundError(YieldLZMAError):
-    path: Path
-
     @override
     def __str__(self) -> str:
         return _yield_uncompressed_file_not_found_error_msg(self.path)
@@ -181,8 +171,6 @@ class YieldLZMAFileNotFoundError(YieldLZMAError):
 
 @dataclass(kw_only=True, slots=True)
 class YieldLZMAIsADirectoryError(YieldLZMAError):
-    path: Path
-
     @override
     def __str__(self) -> str:
         return _yield_uncompressed_file_is_a_directory_error_msg(self.path)
@@ -199,8 +187,6 @@ class YieldZipError(Exception):
 
 @dataclass(kw_only=True, slots=True)
 class YieldZipFileNotFoundError(YieldZipError):
-    path: Path
-
     @override
     def __str__(self) -> str:
         return _yield_uncompressed_file_not_found_error_msg(self.path)
@@ -208,8 +194,6 @@ class YieldZipFileNotFoundError(YieldZipError):
 
 @dataclass(kw_only=True, slots=True)
 class YieldZipIsADirectoryError(YieldZipError):
-    path: Path
-
     @override
     def __str__(self) -> str:
         return _yield_uncompressed_file_is_a_directory_error_msg(self.path)
@@ -226,8 +210,6 @@ class YieldUncompressedError(Exception):
 
 @dataclass(kw_only=True, slots=True)
 class YieldUncompressedFileNotFoundError(YieldUncompressedError):
-    path: Path
-
     @override
     def __str__(self) -> str:
         raise NotImplementedError  # pragma: no cover
@@ -235,8 +217,6 @@ class YieldUncompressedFileNotFoundError(YieldUncompressedError):
 
 @dataclass(kw_only=True, slots=True)
 class YieldUncompressedIsADirectoryError(YieldUncompressedError):
-    path: Path
-
     @override
     def __str__(self) -> str:
         raise NotImplementedError  # pragma: no cover
@@ -623,8 +603,6 @@ class ReadBytesError(Exception):
 
 @dataclass(kw_only=True, slots=True)
 class ReadBytesFileNotFoundError(ReadBytesError):
-    path: Path
-
     @override
     def __str__(self) -> str:
         return _read_file_file_not_found_error(self.path)
@@ -632,8 +610,6 @@ class ReadBytesFileNotFoundError(ReadBytesError):
 
 @dataclass(kw_only=True, slots=True)
 class ReadBytesIsADirectoryError(ReadBytesError):
-    path: Path
-
     @override
     def __str__(self) -> str:
         return _read_file_is_a_directory_error(self.path)
@@ -659,8 +635,6 @@ class ReadPickleError(Exception):
 
 @dataclass(kw_only=True, slots=True)
 class ReadPickleFileNotFoundError(ReadPickleError):
-    path: Path
-
     @override
     def __str__(self) -> str:
         return _read_file_file_not_found_error(self.path)
@@ -668,8 +642,6 @@ class ReadPickleFileNotFoundError(ReadPickleError):
 
 @dataclass(kw_only=True, slots=True)
 class ReadPickleIsADirectoryError(ReadPickleError):
-    path: Path
-
     @override
     def __str__(self) -> str:
         return _read_file_is_a_directory_error(self.path)
@@ -695,8 +667,6 @@ class ReadTextError(Exception):
 
 @dataclass(kw_only=True, slots=True)
 class ReadTextFileNotFoundError(ReadTextError):
-    path: Path
-
     @override
     def __str__(self) -> str:
         return _read_file_file_not_found_error(self.path)
@@ -704,8 +674,6 @@ class ReadTextFileNotFoundError(ReadTextError):
 
 @dataclass(kw_only=True, slots=True)
 class ReadTextIsADirectoryError(ReadTextError):
-    path: Path
-
     @override
     def __str__(self) -> str:
         return _read_file_is_a_directory_error(self.path)
