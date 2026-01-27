@@ -152,19 +152,24 @@ from utilities._core_errors import (
     YieldBZ2Error,
     YieldBZ2FileNotFoundError,
     YieldBZ2IsADirectoryError,
+    YieldBZ2NotADirectoryError,
     YieldGzipError,
     YieldGzipFileNotFoundError,
     YieldGzipIsADirectoryError,
+    YieldGzipNotADirectoryError,
     YieldLZMAError,
     YieldLZMAFileNotFoundError,
     YieldLZMAIsADirectoryError,
+    YieldLZMANotADirectoryError,
     YieldUncompressedError,
     YieldUncompressedFileNotFoundError,
     YieldUncompressedIsADirectoryError,
+    YieldUncompressedNotADirectoryError,
     YieldWritePathError,
     YieldZipError,
     YieldZipFileNotFoundError,
     YieldZipIsADirectoryError,
+    YieldZipNotADirectoryError,
 )
 from utilities._core_errors import CompressFilesError as _CompressFilesError
 from utilities._core_errors import (
@@ -178,6 +183,9 @@ from utilities._core_errors import (
 )
 from utilities._core_errors import (
     YieldUncompressedIsADirectoryError as _YieldUncompressedIsADirectoryError,
+)
+from utilities._core_errors import (
+    YieldUncompressedNotADirectoryError as _YieldUncompressedNotADirectoryError,
 )
 from utilities.constants import (
     ABS_TOL,
@@ -524,6 +532,8 @@ def yield_bz2(path: PathLike, /) -> Iterator[Path]:
         raise YieldBZ2FileNotFoundError(path=error.path) from None
     except _YieldUncompressedIsADirectoryError as error:
         raise YieldBZ2IsADirectoryError(path=error.path) from None
+    except _YieldUncompressedNotADirectoryError as error:
+        raise YieldBZ2NotADirectoryError(path=error.path) from None
 
 
 @contextmanager
@@ -540,6 +550,8 @@ def yield_gzip(path: PathLike, /) -> Iterator[Path]:
         raise YieldGzipFileNotFoundError(path=error.path) from None
     except _YieldUncompressedIsADirectoryError as error:
         raise YieldGzipIsADirectoryError(path=error.path) from None
+    except _YieldUncompressedNotADirectoryError as error:
+        raise YieldGzipNotADirectoryError(path=error.path) from None
 
 
 @contextmanager
@@ -556,6 +568,8 @@ def yield_lzma(path: PathLike, /) -> Iterator[Path]:
         raise YieldLZMAFileNotFoundError(path=error.path) from None
     except _YieldUncompressedIsADirectoryError as error:
         raise YieldLZMAIsADirectoryError(path=error.path) from None
+    except _YieldUncompressedNotADirectoryError as error:
+        raise YieldLZMANotADirectoryError(path=error.path) from None
 
 
 @contextmanager
@@ -587,6 +601,8 @@ def _yield_uncompressed(path: PathLike, func: PathToBinaryIO, /) -> Iterator[Pat
         raise _YieldUncompressedFileNotFoundError(path=path) from None
     except IsADirectoryError:
         raise _YieldUncompressedIsADirectoryError(path=path) from None
+    except NotADirectoryError:
+        raise _YieldUncompressedNotADirectoryError(path=path) from None
 
 
 ##
@@ -607,6 +623,8 @@ def yield_zip(path: PathLike, /) -> Iterator[Path]:
         raise YieldZipFileNotFoundError(path=path) from None
     except IsADirectoryError:
         raise YieldZipIsADirectoryError(path=path) from None
+    except NotADirectoryError:
+        raise YieldZipNotADirectoryError(path=path) from None
 
 
 ###############################################################################
@@ -3035,18 +3053,23 @@ __all__ = [
     "YieldBZ2Error",
     "YieldBZ2FileNotFoundError",
     "YieldBZ2IsADirectoryError",
+    "YieldBZ2NotADirectoryError",
     "YieldGzipError",
     "YieldGzipFileNotFoundError",
     "YieldGzipIsADirectoryError",
+    "YieldGzipNotADirectoryError",
     "YieldLZMAError",
     "YieldLZMAFileNotFoundError",
     "YieldLZMAIsADirectoryError",
+    "YieldLZMANotADirectoryError",
     "YieldUncompressedError",
     "YieldUncompressedFileNotFoundError",
     "YieldUncompressedIsADirectoryError",
+    "YieldUncompressedNotADirectoryError",
     "YieldZipError",
     "YieldZipFileNotFoundError",
     "YieldZipIsADirectoryError",
+    "YieldZipNotADirectoryError",
     "always_iterable",
     "async_sleep",
     "chmod",
