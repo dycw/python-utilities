@@ -52,9 +52,16 @@ def mode(*, request: SubRequest) -> CopyOrMove:
 
 class TestChMod:
     def test_main(self, *, temp_file: Path) -> None:
-        perms = Permissions.from_text("u=rw,g=r,o=r")
+        perms = Permissions.from_text("u=rwx,g=rx,o=rx")
         chmod(temp_file, perms)
         assert Permissions.from_path(temp_file) == perms
+
+    def test_recursive(self, *, tmp_path: Path, temp_files: tuple[Path, Path]) -> None:
+        perms = Permissions.from_text("u=rwx,g=rx,o=rx")
+        chmod(tmp_path, perms, recursive=True)
+        path1, path2 = temp_files
+        assert Permissions.from_path(path1) == perms
+        assert Permissions.from_path(path2) == perms
 
 
 class TestCopyOrMove:

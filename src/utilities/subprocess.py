@@ -198,17 +198,29 @@ def chattr_cmd(path: PathLike, /, *, immutable: bool | None = None) -> list[str]
 ##
 
 
-def chmod(path: PathLike, perms: PermissionsLike, /, *, sudo: bool = False) -> None:
+def chmod(
+    path: PathLike,
+    perms: PermissionsLike,
+    /,
+    *,
+    sudo: bool = False,
+    recursive: bool = False,
+) -> None:
     """Change file mode."""
     if sudo:  # pragma: no cover
-        run(*sudo_cmd(*chmod_cmd(path, perms)))
+        run(*sudo_cmd(*chmod_cmd(path, perms, recursive=recursive)))
     else:  # pragma: no cover
-        utilities.core.chmod(path, perms)
+        utilities.core.chmod(path, perms, recursive=recursive)
 
 
-def chmod_cmd(path: PathLike, perms: PermissionsLike, /) -> list[str]:
+def chmod_cmd(
+    path: PathLike, perms: PermissionsLike, /, *, recursive: bool = False
+) -> list[str]:
     """Command to use 'chmod' to change file mode."""
-    return ["chmod", str(Permissions.new(perms)), str(path)]
+    args: list[str] = ["chmod"]
+    if recursive:
+        args.append("-R")
+    return [*args, str(Permissions.new(perms)), str(path)]
 
 
 ##

@@ -250,6 +250,11 @@ class TestChModCmd:
         expected = ["chmod", "u=rw,g=r,o=r", "path"]
         assert result == expected
 
+    def test_recursive(self) -> None:
+        result = chmod_cmd("path", "u=rw,g=r,o=r", recursive=True)
+        expected = ["chmod", "-R", "u=rw,g=r,o=r", "path"]
+        assert result == expected
+
 
 class TestChOwnCmd:
     def test_user(self) -> None:

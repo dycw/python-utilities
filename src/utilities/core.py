@@ -1146,9 +1146,14 @@ def is_close(
 ###############################################################################
 
 
-def chmod(path: PathLike, perms: PermissionsLike, /) -> None:
+def chmod(
+    path: PathLike, perms: PermissionsLike, /, *, recursive: bool = False
+) -> None:
     """Change file mode."""
-    Path(path).chmod(int(Permissions.new(perms)))
+    path = Path(path)
+    paths = list(path.rglob("**/*")) if recursive else [path]
+    for p in paths:
+        p.chmod(int(Permissions.new(perms)))
 
 
 ##
