@@ -534,7 +534,9 @@ def yield_bz2(path: PathLike, /) -> Iterator[Path]:
     except _YieldUncompressedIsADirectoryError as error:
         raise YieldBZ2IsADirectoryError(path=error.path) from None
     except _YieldUncompressedNotADirectoryError as error:
-        raise YieldBZ2NotADirectoryError(path=error.path) from None
+        raise YieldBZ2NotADirectoryError(
+            path=error.path, parent=first_non_directory_parent(error.path)
+        ) from None
 
 
 @contextmanager
@@ -552,7 +554,9 @@ def yield_gzip(path: PathLike, /) -> Iterator[Path]:
     except _YieldUncompressedIsADirectoryError as error:
         raise YieldGzipIsADirectoryError(path=error.path) from None
     except _YieldUncompressedNotADirectoryError as error:
-        raise YieldGzipNotADirectoryError(path=error.path) from None
+        raise YieldGzipNotADirectoryError(
+            path=error.path, parent=first_non_directory_parent(error.path)
+        ) from None
 
 
 @contextmanager
@@ -570,7 +574,9 @@ def yield_lzma(path: PathLike, /) -> Iterator[Path]:
     except _YieldUncompressedIsADirectoryError as error:
         raise YieldLZMAIsADirectoryError(path=error.path) from None
     except _YieldUncompressedNotADirectoryError as error:
-        raise YieldLZMANotADirectoryError(path=error.path) from None
+        raise YieldLZMANotADirectoryError(
+            path=error.path, parent=first_non_directory_parent(error.path)
+        ) from None
 
 
 @contextmanager
@@ -625,7 +631,9 @@ def yield_zip(path: PathLike, /) -> Iterator[Path]:
     except IsADirectoryError:
         raise YieldZipIsADirectoryError(path=path) from None
     except NotADirectoryError:
-        raise YieldZipNotADirectoryError(path=path) from None
+        raise YieldZipNotADirectoryError(
+            path=path, parent=first_non_directory_parent(path)
+        ) from None
 
 
 ###############################################################################
