@@ -658,7 +658,7 @@ def _read_file_is_a_directory_error(path: PathLike, /) -> str:
 
 
 def _read_file_not_a_directory_error(path: PathLike, parent: PathLike, /) -> str:
-    return f"Cannot read from {str(path)!r} since its parent {str(path)!r} is not a directory"
+    return f"Cannot read from {str(path)!r} since its parent {str(parent)!r} is not a directory"
 
 
 def _write_file_error(path: PathLike, /) -> str:
