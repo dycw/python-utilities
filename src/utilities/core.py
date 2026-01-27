@@ -1896,7 +1896,7 @@ def read_text(path: PathLike, /, *, decompress: bool = False) -> str:
         except IsADirectoryError:
             raise ReadTextIsADirectoryError(path=path) from None
         except NotADirectoryError:
-            raise ReadBytesNotADirectoryError(
+            raise ReadTextNotADirectoryError(
                 path=path, parent=first_non_directory_parent(path)
             ) from None
 
