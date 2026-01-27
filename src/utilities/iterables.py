@@ -186,7 +186,7 @@ class CheckIterablesEqualError[T](Exception):
         parts = list(self._yield_parts())
         match parts:
             case (desc,):
-                pass
+                ...
             case first, second:
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
@@ -203,7 +203,7 @@ class CheckIterablesEqualError[T](Exception):
             case "right_longer":
                 yield "right was longer"
             case None:
-                pass
+                ...
             case never:
                 assert_never(never)
 
@@ -341,7 +341,7 @@ class CheckMappingsEqualError[K, V](Exception):
         parts = list(self._yield_parts())
         match parts:
             case (desc,):
-                pass
+                ...
             case first, second:
                 desc = f"{first} and {second}"
             case first, second, third:
@@ -392,7 +392,7 @@ class CheckSetsEqualError[T](Exception):
         parts = list(self._yield_parts())
         match parts:
             case (desc,):
-                pass
+                ...
             case first, second:
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
@@ -439,7 +439,7 @@ class CheckSubMappingError[K, V](Exception):
         parts = list(self._yield_parts())
         match parts:
             case (desc,):
-                pass
+                ...
             case first, second:
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
@@ -510,7 +510,7 @@ class CheckSuperMappingError[K, V](Exception):
         parts = list(self._yield_parts())
         match parts:
             case (desc,):
-                pass
+                ...
             case first, second:
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
@@ -779,7 +779,7 @@ def _merge_str_mappings_one(acc: StrMapping, el: StrMapping, /) -> StrMapping:
         try:
             key_del = one_str(out, key_add)
         except OneStrEmptyError:
-            pass
+            ...
         else:
             del out[key_del]
         out[key_add] = value

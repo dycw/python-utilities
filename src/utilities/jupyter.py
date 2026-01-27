@@ -55,7 +55,7 @@ class _Show:
         try:
             from pandas import option_context
         except ModuleNotFoundError:  # pragma: no cover
-            pass
+            ...
         else:
             kwargs: StrDict = {}
             if self.dp is not None:
@@ -72,7 +72,7 @@ class _Show:
         try:
             from polars import Config
         except ModuleNotFoundError:  # pragma: no cover
-            pass
+            ...
         else:
             kwargs: StrDict = {}
             if self.dp is not None:

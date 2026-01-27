@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 try:
     from pytest import fixture
 except ModuleNotFoundError:
-    pass
+    ...
 else:
 
     @fixture

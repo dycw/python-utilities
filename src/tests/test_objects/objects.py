@@ -206,20 +206,16 @@ def _into_set(elements: list[Any], /) -> set[Any]:
 class CustomError(Exception): ...
 
 
-class SubFrozenSet(frozenset):
-    pass
+class SubFrozenSet(frozenset): ...
 
 
-class SubList(list):
-    pass
+class SubList(list): ...
 
 
-class SubSet(set):
-    pass
+class SubSet(set): ...
 
 
-class SubTuple(tuple):  # noqa: SLOT001
-    pass
+class SubTuple(tuple): ...  # noqa: SLOT001
 
 
 class TruthEnum(Enum):
