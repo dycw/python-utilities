@@ -116,15 +116,14 @@ class TestReadWriteText:
 
     @mark.parametrize("uncompress", [param(False), param(True)])
     @mark.xfail
-    def test_error_read_file_not_found2(
-        self, *, temp_file: Path, uncompress: bool
+    def test_error_read_not_a_directory(
+        self, *, temp_path_parent_file: Path, uncompress: bool
     ) -> None:
-        path = temp_file / temp_file.name
         with raises(
             ReadTextFileNotFoundError,
             match=r"Cannot read from '.*' since it does not exist",
         ):
-            _ = read_text(path, decompress=uncompress)
+            _ = read_text(temp_path_parent_file, decompress=uncompress)
 
     @mark.parametrize("uncompress", [param(False), param(True)])
     def test_error_read_is_a_directory(

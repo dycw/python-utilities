@@ -657,6 +657,10 @@ def _read_file_is_a_directory_error(path: PathLike, /) -> str:
     return f"Cannot read from {str(path)!r} since it is a directory"
 
 
+def _read_file_not_a_directory_error(path: PathLike, parent: PathLike, /) -> str:
+    return f"Cannot read from {str(path)!r} since its parent {str(path)!r} is not a directory"
+
+
 def _write_file_error(path: PathLike, /) -> str:
     return f"Cannot write to {str(path)!r} since it already exists"
 
@@ -682,6 +686,15 @@ class ReadBytesIsADirectoryError(ReadBytesError):
     @override
     def __str__(self) -> str:
         return _read_file_is_a_directory_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadBytesNotADirectoryError(ReadBytesError):
+    parent: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_not_a_directory_error(self.path, self.parent)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -717,6 +730,15 @@ class ReadPickleIsADirectoryError(ReadPickleError):
 
 
 @dataclass(kw_only=True, slots=True)
+class ReadPickleNotADirectoryError(ReadPickleError):
+    parent: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_not_a_directory_error(self.path, self.parent)
+
+
+@dataclass(kw_only=True, slots=True)
 class WritePickleError(Exception):
     path: Path
 
@@ -746,6 +768,15 @@ class ReadTextIsADirectoryError(ReadTextError):
     @override
     def __str__(self) -> str:
         return _read_file_is_a_directory_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadTextNotADirectoryError(ReadTextError):
+    parent: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_not_a_directory_error(self.path, self.parent)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1079,13 +1110,16 @@ __all__ = [
     "ReadBytesError",
     "ReadBytesFileNotFoundError",
     "ReadBytesIsADirectoryError",
+    "ReadBytesNotADirectoryError",
     "ReadPickleError",
     "ReadPickleFileNotFoundError",
     "ReadPickleIsADirectoryError",
+    "ReadPickleNotADirectoryError",
     "ReadTextError",
     "ReadTextFileNotFoundError",
     "ReadTextIfExistingFileError",
     "ReadTextIsADirectoryError",
+    "ReadTextNotADirectoryError",
     "SubstituteError",
     "ToTimeZoneNameError",
     "ToTimeZoneNameError",

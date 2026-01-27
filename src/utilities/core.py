@@ -131,13 +131,16 @@ from utilities._core_errors import (
     ReadBytesError,
     ReadBytesFileNotFoundError,
     ReadBytesIsADirectoryError,
+    ReadBytesNotADirectoryError,
     ReadPickleError,
     ReadPickleFileNotFoundError,
     ReadPickleIsADirectoryError,
+    ReadPickleNotADirectoryError,
     ReadTextError,
     ReadTextFileNotFoundError,
     ReadTextIfExistingFileError,
     ReadTextIsADirectoryError,
+    ReadTextNotADirectoryError,
     SubstituteError,
     ToTimeZoneNameError,
     ToTimeZoneNameInvalidKeyError,
@@ -1789,6 +1792,10 @@ def read_bytes(path: PathLike, /, *, decompress: bool = False) -> bytes:
             raise ReadBytesFileNotFoundError(path=error.path) from None
         except YieldGzipIsADirectoryError as error:
             raise ReadBytesIsADirectoryError(path=error.path) from None
+        except YieldGzipNotADirectoryError as error:
+            raise ReadBytesNotADirectoryError(
+                path=error.path, parent=first_non_directory_parent(error.path)
+            ) from None
     else:
         try:
             return path.read_bytes()
@@ -1796,6 +1803,10 @@ def read_bytes(path: PathLike, /, *, decompress: bool = False) -> bytes:
             raise ReadBytesFileNotFoundError(path=path) from None
         except IsADirectoryError:
             raise ReadBytesIsADirectoryError(path=path) from None
+        except NotADirectoryError:
+            raise ReadBytesNotADirectoryError(
+                path=path, parent=first_non_directory_parent(path)
+            ) from None
 
 
 def write_bytes(
@@ -1869,6 +1880,10 @@ def read_text(path: PathLike, /, *, decompress: bool = False) -> str:
             raise ReadTextFileNotFoundError(path=error.path) from None
         except YieldGzipIsADirectoryError as error:
             raise ReadTextIsADirectoryError(path=error.path) from None
+        except YieldGzipNotADirectoryError as error:
+            raise ReadTextNotADirectoryError(
+                path=error.path, parent=first_non_directory_parent(error.path)
+            ) from None
     else:
         try:
             return path.read_text()
@@ -1876,6 +1891,50 @@ def read_text(path: PathLike, /, *, decompress: bool = False) -> str:
             raise ReadTextFileNotFoundError(path=path) from None
         except IsADirectoryError:
             raise ReadTextIsADirectoryError(path=path) from None
+        except NotADirectoryError:
+            raise ReadBytesNotADirectoryError(
+                path=path, parent=first_non_directory_parent(path)
+            ) from None
+
+
+def write_bytes(
+    path: PathLike,
+    data: bytes,
+    /,
+    *,
+    compress: bool = False,
+    overwrite: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
+    json: bool = False,
+) -> None:
+    """Write data to a file."""
+    try:
+        with yield_write_path(
+            path,
+            compress=compress,
+            overwrite=overwrite,
+            perms=perms,
+            owner=owner,
+            group=group,
+        ) as temp:
+            if json:  # pragma: no cover
+                with suppress(FileNotFoundError):
+                    data = check_output(["prettier", "--parser=json"], input=data)
+            _ = temp.write_bytes(data)
+    except YieldWritePathError as error:
+        raise WriteBytesError(path=error.path) from None
+
+
+##
+
+
+def read_pickle(path: PathLike, /) -> Any:
+    """Read an object from disk."""
+    path = Path(path)
+    try:
+        with gzip.open(path, mode="rb") as gz:
 
 
 def write_text(
@@ -3051,13 +3110,16 @@ __all__ = [
     "ReadBytesError",
     "ReadBytesFileNotFoundError",
     "ReadBytesIsADirectoryError",
+    "ReadBytesNotADirectoryError",
     "ReadPickleError",
     "ReadPickleFileNotFoundError",
     "ReadPickleIsADirectoryError",
+    "ReadPickleNotADirectoryError",
     "ReadTextError",
     "ReadTextFileNotFoundError",
     "ReadTextIfExistingFileError",
     "ReadTextIsADirectoryError",
+    "ReadTextNotADirectoryError",
     "SubstituteError",
     "TemporaryDirectory",
     "TemporaryFile",
