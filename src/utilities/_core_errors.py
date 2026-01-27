@@ -486,6 +486,18 @@ class FileOrDirTypeError(FileOrDirError):
 
 
 @dataclass(kw_only=True, slots=True)
+class FirstNonDirectoryParentError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Path has no non-directory parents: {str(self.path)!r}"
+
+
+##
+
+
+@dataclass(kw_only=True, slots=True)
 class ReadTextIfExistingFileError(Exception):
     path: Path
 
@@ -1038,6 +1050,7 @@ __all__ = [
     "FileOrDirError",
     "FileOrDirMissingError",
     "FileOrDirTypeError",
+    "FirstNonDirectoryParentError",
     "GetEnvError",
     "MaxNullableError",
     "MinNullableError",

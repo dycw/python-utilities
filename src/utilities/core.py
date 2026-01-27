@@ -100,6 +100,7 @@ from utilities._core_errors import (
     FileOrDirError,
     FileOrDirMissingError,
     FileOrDirTypeError,
+    FirstNonDirectoryParentError,
     GetEnvError,
     MaxNullableError,
     MinNullableError,
@@ -1425,6 +1426,18 @@ def file_or_dir(path: PathLike, /, *, exists: bool = False) -> FileOrDir | None:
             return None
         case _:
             raise FileOrDirTypeError(path=path)
+
+
+##
+
+
+def first_non_directory_parent(path: PathLike, /) -> Path:
+    """Get the first non-directory parent."""
+    path = Path(path)
+    for p in reversed(path.parents):
+        if not p.is_dir():
+            return p
+    raise FirstNonDirectoryParentError(path=path)
 
 
 ##
@@ -2996,6 +3009,7 @@ __all__ = [
     "FileOrDirError",
     "FileOrDirMissingError",
     "FileOrDirTypeError",
+    "FirstNonDirectoryParentError",
     "GetEnvError",
     "MaxNullableError",
     "MinNullableError",
@@ -3085,6 +3099,7 @@ __all__ = [
     "extract_group",
     "extract_groups",
     "file_or_dir",
+    "first_non_directory_parent",
     "get_class",
     "get_class_name",
     "get_env",
