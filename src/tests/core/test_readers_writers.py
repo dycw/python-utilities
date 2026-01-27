@@ -87,6 +87,13 @@ class TestReadWriteText:
         ):
             _ = read_text(temp_path_not_exist, decompress=uncompress)
 
+    @mark.parametrize("uncompress", [param(False), param(True)])
+    def test_error_read2(self, *, tmp_path: Path, uncompress: bool) -> None:
+        with raises(
+            ReadTextError, match=r"Cannot read from '.*' since it does not exist"
+        ):
+            _ = read_text(tmp_path, decompress=uncompress)
+
     def test_error_write(self, *, temp_file: Path) -> None:
         with raises(
             WriteTextError, match=r"Cannot write to '.*' since it already exists"

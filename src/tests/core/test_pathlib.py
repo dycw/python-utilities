@@ -9,6 +9,7 @@ from utilities.core import (
     FileOrDirMissingError,
     FileOrDirTypeError,
     file_or_dir,
+    read_text_if_existing_file,
     yield_temp_cwd,
 )
 
@@ -43,6 +44,15 @@ class TestFileOrDir:
             FileOrDirTypeError, match=r"Path is neither a file nor a directory: '.*'"
         ):
             _ = file_or_dir(path)
+
+
+class TestReadTextIfExistingFile:
+    def test_main(self, *, temp_file: Path) -> None:
+        _ = temp_file.write_text("text")
+        assert read_text_if_existing_file(temp_file) == "text"
+
+    def test_error(self, *, temp_path_not_exist: Path) -> None:
+        _ = read_text_if_existing_file(temp_path_not_exist)
 
 
 class TestYieldTempCwd:

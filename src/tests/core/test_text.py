@@ -160,13 +160,7 @@ class TestSubstitute:
          - value = '$TEMPLATE_VALUE'
     """)
 
-    def test_path(self, *, temp_file: Path) -> None:
-        _ = temp_file.write_text(self.template)
-        key, value = unique_str(), unique_str()
-        result = substitute(temp_file, TEMPLATE_KEY=key, TEMPLATE_VALUE=value)
-        self._assert_equal(result, key, value)
-
-    def test_text(self) -> None:
+    def test_main(self) -> None:
         key, value = unique_str(), unique_str()
         result = substitute(self.template, TEMPLATE_KEY=key, TEMPLATE_VALUE=value)
         self._assert_equal(result, key, value)

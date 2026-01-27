@@ -130,6 +130,8 @@ from utilities._core_errors import (
     ReadBytesError,
     ReadPickleError,
     ReadTextError,
+    ReadTextFileNotFoundError,
+    ReadTextIsADirectoryError,
     SubstituteError,
     ToTimeZoneNameError,
     ToTimeZoneNameInvalidKeyError,
@@ -155,7 +157,12 @@ from utilities._core_errors import (
 from utilities._core_errors import (
     CopyOrMoveSourceNotFoundError as _CopyOrMoveSourceNotFoundError,
 )
-from utilities._core_errors import YieldUncompressedError as _YieldUncompressedError
+from utilities._core_errors import (
+    YieldUncompressedFileNotFoundError as _YieldUncompressedFileNotFoundError,
+)
+from utilities._core_errors import (
+    YieldUncompressedIsADirectoryError as _YieldUncompressedIsADirectoryError,
+)
 from utilities.constants import (
     ABS_TOL,
     DAYS_PER_WEEK,
@@ -497,7 +504,9 @@ def yield_bz2(path: PathLike, /) -> Iterator[Path]:
     try:
         with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
             yield temp
-    except _YieldUncompressedError as error:
+    except _YieldUncompressedFileNotFoundError as error:
+        raise YieldBZ2Error(path=error.path) from None
+    except _YieldUncompressedIsADirectoryError as error:
         raise YieldBZ2Error(path=error.path) from None
 
 
@@ -555,7 +564,9 @@ def _yield_uncompressed(path: PathLike, func: PathToBinaryIO, /) -> Iterator[Pat
                 else:  # pragma: no cover
                     raise NotImplementedError(arg) from None
     except FileNotFoundError:
-        raise _YieldUncompressedError(path=path) from None
+        raise _YieldUncompressedFileNotFoundError(path=path) from None
+    except IsADirectoryError:
+        raise _YieldUncompressedIsADirectoryError(path=path) from None
 
 
 ##
@@ -1379,6 +1390,32 @@ def file_or_dir(path: PathLike, /, *, exists: bool = False) -> FileOrDir | None:
 ##
 
 
+def read_text_if_existing_file(path_or_text: PathLike, /) -> str:
+    """Read a text file if it exists."""
+    match path_or_text:
+        case Path() as path:
+            try:
+                return read_text(path)
+            except ReadTextError as error:
+                raise _ReadTextError from None
+        case str() as text:
+            match file_or_dir(text):
+                case "firead_text_if_existing_file()le":
+                    try:
+                        return read_text(text)
+                    except ReadTextError as error:
+                        raise ReadTextError from None
+                case "dir":
+                    asas
+
+            if Path(text).is_file():
+                return text
+    return None
+
+
+##
+
+
 @contextmanager
 def yield_temp_cwd(path: PathLike, /) -> Iterator[None]:
     """Yield a temporary working directory."""
@@ -1780,7 +1817,9 @@ def read_text(path: PathLike, /, *, decompress: bool = False) -> str:
         try:
             return path.read_text()
         except FileNotFoundError:
-            raise ReadTextError(path=path) from None
+            raise ReadTextFileNotFoundError(path=path) from None
+        except IsADirectoryError:
+            raise ReadTextIsADirectoryError(path=path) from None
 
 
 def write_text(
@@ -2155,23 +2194,16 @@ def substitute(
     **kwargs: Any,
 ) -> str:
     """Substitute from a Path or string."""
-    match path_or_text:
-        case Path() as path:
-            return substitute(
-                path.read_text(), environ=environ, mapping=mapping, safe=safe, **kwargs
-            )
-        case str() as text:
-            template = Template(text)
-            mapping_use: StrMapping = {} if mapping is None else mapping
-            kwargs_use: StrDict = (os.environ if environ else {}) | kwargs
-            if safe:
-                return template.safe_substitute(mapping_use, **kwargs_use)
-            try:
-                return template.substitute(mapping_use, **kwargs_use)
-            except KeyError as error:
-                raise SubstituteError(key=error.args[0]) from None
-        case never:
-            assert_never(never)
+    text = read_text_if_existing_file(path_or_text)
+    template = Template(text)
+    mapping_use: StrMapping = {} if mapping is None else mapping
+    kwargs_use: StrDict = (os.environ if environ else {}) | kwargs
+    if safe:
+        return template.safe_substitute(mapping_use, **kwargs_use)
+    try:
+        return template.substitute(mapping_use, **kwargs_use)
+    except KeyError as error:
+        raise SubstituteError(key=error.args[0]) from None
 
 
 ##
