@@ -694,7 +694,7 @@ class ReadTextError(Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class ReadTextFileNotFoundError(Exception):
+class ReadTextFileNotFoundError(ReadTextError):
     path: Path
 
     @override
@@ -703,7 +703,7 @@ class ReadTextFileNotFoundError(Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class ReadTextIsADirectoryError(Exception):
+class ReadTextIsADirectoryError(ReadTextError):
     path: Path
 
     @override
