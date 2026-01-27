@@ -4,16 +4,14 @@ from typing import TYPE_CHECKING
 
 from pytest import mark, param, raises
 
-from utilities._core_errors import (
+from utilities.constants import IS_CI
+from utilities.core import (
     ReadBytesFileNotFoundError,
     ReadBytesIsADirectoryError,
     ReadPickleFileNotFoundError,
     ReadPickleIsADirectoryError,
     ReadTextFileNotFoundError,
     ReadTextIsADirectoryError,
-)
-from utilities.constants import IS_CI
-from utilities.core import (
     WriteBytesError,
     WritePickleError,
     WriteTextError,
