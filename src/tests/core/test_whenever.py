@@ -172,6 +172,18 @@ class TestDeltaComponents:
         })
         assert result == signed_expected
 
+    def test_multiply(self) -> None:
+        components = delta_components(SECOND)
+        result = 2 * components
+        expected = delta_components(2 * SECOND)
+        assert result == expected
+
+    def test_replace(self) -> None:
+        components = delta_components(SECOND)
+        result = components.replace(seconds=2)
+        expected = delta_components(2 * SECOND)
+        assert result == expected
+
     @mark.parametrize(
         ("years", "months", "days"),
         [param(1, 0, -1), param(0, 1, -1), param(-1, 0, 1), param(0, -1, 1)],

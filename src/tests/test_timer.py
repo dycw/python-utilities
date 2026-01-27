@@ -14,6 +14,8 @@ from utilities.timer import Timer
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from utilities.types import Duration
+
 
 _DURATION: TimeDelta = 0.05 * SECOND
 _MULTIPLE: int = 2
@@ -56,6 +58,7 @@ class TestTimer:
         with raises(TypeError):
             _ = op(timer, "")
 
+    @mark.parametrize("other", [param(1), param(1.0), param(SECOND)])
     @mark.parametrize(
         ("op", "expected"),
         [
@@ -68,11 +71,11 @@ class TestTimer:
         ],
     )
     def test_comparison(
-        self, *, op: Callable[[Any, Any], bool], expected: bool
+        self, *, op: Callable[[Any, Any], bool], other: Duration, expected: bool
     ) -> None:
         with Timer() as timer:
             ...
-        assert op(timer, SECOND) is expected
+        assert op(timer, other) is expected
 
     @mark.parametrize(
         "op", [param(eq), param(ne), param(ge), param(gt), param(le), param(lt)]
