@@ -872,8 +872,7 @@ class TestReducedExamples:
     @given(frac=floats(0.0, 10.0))
     def test_main(self, *, frac: float) -> None:
         @settings_with_reduced_examples(frac)
-        def test() -> None:
-            pass
+        def test() -> None: ...
 
         result = cast("Any", test)._hypothesis_internal_use_settings.max_examples
         expected = max(round(frac * ensure_int(settings().max_examples)), 1)

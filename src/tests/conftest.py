@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 try:
     from utilities.hypothesis import setup_hypothesis_profiles
 except ModuleNotFoundError:
-    pass
+    ...
 else:
     setup_hypothesis_profiles(suppress_health_check={HealthCheck.differing_executors})
 

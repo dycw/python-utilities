@@ -644,7 +644,7 @@ class _CheckPolarsDataFramePredicatesError(CheckPolarsDataFrameError):
         parts = list(self._yield_parts())
         match parts:
             case (desc,):
-                pass
+                ...
             case first, second:
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover

@@ -418,7 +418,7 @@ class SizeAndTimeRotatingFileHandler(BaseRotatingHandler):
             try:
                 size = self._filename.stat().st_size
             except FileNotFoundError:
-                pass
+                ...
             else:
                 if size >= self._max_bytes:
                     return True
@@ -524,7 +524,7 @@ class _RotatingLogFile:
         try:
             index, start, end = extract_groups(patterns.pattern3, path.name)
         except ExtractGroupsError:
-            pass
+            ...
         else:
             return cls(
                 directory=path.parent,
@@ -537,7 +537,7 @@ class _RotatingLogFile:
         try:
             index, end = extract_groups(patterns.pattern2, path.name)
         except ExtractGroupsError:
-            pass
+            ...
         else:
             return cls(
                 directory=path.parent,
@@ -549,7 +549,7 @@ class _RotatingLogFile:
         try:
             index = extract_group(patterns.pattern1, path.name)
         except ExtractGroupError:
-            pass
+            ...
         else:
             return cls(
                 directory=path.parent, stem=stem, suffix=suffix, index=int(index)

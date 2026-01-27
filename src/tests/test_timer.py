@@ -35,7 +35,7 @@ class TestTimer:
         self, *, op: Callable[[Any, Any], Any], other: Any
     ) -> None:
         with Timer() as timer:
-            pass
+            ...
         assert isinstance(op(timer, other), TimeDelta)
 
     @mark.parametrize(
@@ -52,7 +52,7 @@ class TestTimer:
     @mark.parametrize(("op"), [param(add), param(sub), param(mul), param(truediv)])
     def test_arithmetic_error(self, *, op: Callable[[Any, Any], Any]) -> None:
         with Timer() as timer:
-            pass
+            ...
         with raises(TypeError):
             _ = op(timer, "")
 
@@ -71,7 +71,7 @@ class TestTimer:
         self, *, op: Callable[[Any, Any], bool], expected: bool
     ) -> None:
         with Timer() as timer:
-            pass
+            ...
         assert op(timer, SECOND) is expected
 
     @mark.parametrize(
@@ -79,9 +79,9 @@ class TestTimer:
     )
     def test_comparison_between_timers(self, *, op: Callable[[Any, Any], bool]) -> None:
         with Timer() as timer1:
-            pass
+            ...
         with Timer() as timer2:
-            pass
+            ...
         assert isinstance(op(timer1, timer2), bool)
 
     @mark.parametrize(("op", "expected"), [param(eq, False), param(ne, True)])
@@ -89,13 +89,13 @@ class TestTimer:
         self, *, op: Callable[[Any, Any], bool], expected: bool
     ) -> None:
         with Timer() as timer:
-            pass
+            ...
         assert op(timer, "") is expected
 
     @mark.parametrize("op", [param(ge), param(gt), param(le), param(lt)])
     def test_comparison_error(self, *, op: Callable[[Any, Any], bool]) -> None:
         with Timer() as timer:
-            pass
+            ...
         with raises(TypeError):
             _ = op(timer, "")
 

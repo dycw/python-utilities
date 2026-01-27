@@ -81,8 +81,8 @@ async def yield_chart(chart: Chart, /) -> AsyncIterator[None]:
     """Yield a chart for visualization in a notebook."""
     try:  # pragma: no cover
         yield await chart.show_async()
-    except BaseException:  # pragma: no cover  # noqa: BLE001, S110
-        pass
+    except BaseException:  # pragma: no cover  # noqa: BLE001
+        ...
     finally:  # pragma: no cover
         chart.exit()
 

@@ -17,4 +17,4 @@ class TestGetPublicIP:
 class TestYieldConnection:
     def test_main(self) -> None:
         with yield_connection("api.ipify.org"):
-            pass
+            ...

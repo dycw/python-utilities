@@ -2406,7 +2406,7 @@ class _DeltaComponentsOutput:
 
     def __post_init__(self) -> None:
         while not self._normalize():
-            pass
+            ...
         if (
             ((self.years > 0) and (self.days < 0))
             or ((self.months > 0) and (self.days < 0))

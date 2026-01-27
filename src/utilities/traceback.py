@@ -290,7 +290,7 @@ def _make_except_hook_purge(path: PathLike, max_age: Delta, /) -> None:
             try:
                 date_time = to_zoned_date_time(p.stem)
             except ValueError:
-                pass
+                ...
             else:
                 if date_time <= threshold:
                     paths.add(p)

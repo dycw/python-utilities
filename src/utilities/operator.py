@@ -31,7 +31,7 @@ def is_equal[T](
             try:
                 cmp = next(cmp for cls, cmp in extra.items() if isinstance(x, cls))
             except StopIteration:
-                pass
+                ...
             else:
                 x = cast("T", x)
                 y = cast("T", y)
