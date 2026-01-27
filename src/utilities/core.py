@@ -128,8 +128,15 @@ from utilities._core_errors import (
     PermissionsFromIntError,
     PermissionsFromTextError,
     ReadBytesError,
+    ReadBytesFileNotFoundError,
+    ReadBytesIsADirectoryError,
     ReadPickleError,
+    ReadPickleFileNotFoundError,
+    ReadPickleIsADirectoryError,
     ReadTextError,
+    ReadTextFileNotFoundError,
+    ReadTextIfExistingFileError,
+    ReadTextIsADirectoryError,
     SubstituteError,
     ToTimeZoneNameError,
     ToTimeZoneNameInvalidKeyError,
@@ -143,10 +150,21 @@ from utilities._core_errors import (
     WritePickleError,
     WriteTextError,
     YieldBZ2Error,
+    YieldBZ2FileNotFoundError,
+    YieldBZ2IsADirectoryError,
     YieldGzipError,
+    YieldGzipFileNotFoundError,
+    YieldGzipIsADirectoryError,
     YieldLZMAError,
+    YieldLZMAFileNotFoundError,
+    YieldLZMAIsADirectoryError,
+    YieldUncompressedError,
+    YieldUncompressedFileNotFoundError,
+    YieldUncompressedIsADirectoryError,
     YieldWritePathError,
     YieldZipError,
+    YieldZipFileNotFoundError,
+    YieldZipIsADirectoryError,
 )
 from utilities._core_errors import CompressFilesError as _CompressFilesError
 from utilities._core_errors import (
@@ -155,7 +173,12 @@ from utilities._core_errors import (
 from utilities._core_errors import (
     CopyOrMoveSourceNotFoundError as _CopyOrMoveSourceNotFoundError,
 )
-from utilities._core_errors import YieldUncompressedError as _YieldUncompressedError
+from utilities._core_errors import (
+    YieldUncompressedFileNotFoundError as _YieldUncompressedFileNotFoundError,
+)
+from utilities._core_errors import (
+    YieldUncompressedIsADirectoryError as _YieldUncompressedIsADirectoryError,
+)
 from utilities.constants import (
     ABS_TOL,
     DAYS_PER_WEEK,
@@ -497,8 +520,10 @@ def yield_bz2(path: PathLike, /) -> Iterator[Path]:
     try:
         with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
             yield temp
-    except _YieldUncompressedError as error:
-        raise YieldBZ2Error(path=error.path) from None
+    except _YieldUncompressedFileNotFoundError as error:
+        raise YieldBZ2FileNotFoundError(path=error.path) from None
+    except _YieldUncompressedIsADirectoryError as error:
+        raise YieldBZ2IsADirectoryError(path=error.path) from None
 
 
 @contextmanager
@@ -511,8 +536,10 @@ def yield_gzip(path: PathLike, /) -> Iterator[Path]:
     try:
         with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
             yield temp
-    except _YieldUncompressedError as error:
-        raise YieldGzipError(path=error.path) from None
+    except _YieldUncompressedFileNotFoundError as error:
+        raise YieldGzipFileNotFoundError(path=error.path) from None
+    except _YieldUncompressedIsADirectoryError as error:
+        raise YieldGzipIsADirectoryError(path=error.path) from None
 
 
 @contextmanager
@@ -525,8 +552,10 @@ def yield_lzma(path: PathLike, /) -> Iterator[Path]:
     try:
         with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
             yield temp
-    except _YieldUncompressedError as error:
-        raise YieldLZMAError(path=error.path) from None
+    except _YieldUncompressedFileNotFoundError as error:
+        raise YieldLZMAFileNotFoundError(path=error.path) from None
+    except _YieldUncompressedIsADirectoryError as error:
+        raise YieldLZMAIsADirectoryError(path=error.path) from None
 
 
 @contextmanager
@@ -555,7 +584,9 @@ def _yield_uncompressed(path: PathLike, func: PathToBinaryIO, /) -> Iterator[Pat
                 else:  # pragma: no cover
                     raise NotImplementedError(arg) from None
     except FileNotFoundError:
-        raise _YieldUncompressedError(path=path) from None
+        raise _YieldUncompressedFileNotFoundError(path=path) from None
+    except IsADirectoryError:
+        raise _YieldUncompressedIsADirectoryError(path=path) from None
 
 
 ##
@@ -573,7 +604,9 @@ def yield_zip(path: PathLike, /) -> Iterator[Path]:
             except (OneEmptyError, OneNonUniqueError):
                 yield temp
     except FileNotFoundError:
-        raise YieldZipError(path=path) from None
+        raise YieldZipFileNotFoundError(path=path) from None
+    except IsADirectoryError:
+        raise YieldZipIsADirectoryError(path=path) from None
 
 
 ###############################################################################
@@ -1379,6 +1412,19 @@ def file_or_dir(path: PathLike, /, *, exists: bool = False) -> FileOrDir | None:
 ##
 
 
+def read_text_if_existing_file(path_or_text: PathLike, /) -> str:
+    """Read a text file if it exists."""
+    try:
+        return read_text(path_or_text)
+    except ReadTextFileNotFoundError:
+        return str(path_or_text)
+    except ReadTextIsADirectoryError as error:
+        raise ReadTextIfExistingFileError(path=error.path) from None
+
+
+##
+
+
 @contextmanager
 def yield_temp_cwd(path: PathLike, /) -> Iterator[None]:
     """Yield a temporary working directory."""
@@ -1700,13 +1746,17 @@ def read_bytes(path: PathLike, /, *, decompress: bool = False) -> bytes:
         try:
             with yield_gzip(path) as temp:
                 return temp.read_bytes()
-        except YieldGzipError as error:
-            raise ReadBytesError(path=error.path) from None
+        except YieldGzipFileNotFoundError as error:
+            raise ReadBytesFileNotFoundError(path=error.path) from None
+        except YieldGzipIsADirectoryError as error:
+            raise ReadBytesIsADirectoryError(path=error.path) from None
     else:
         try:
             return path.read_bytes()
         except FileNotFoundError:
-            raise ReadBytesError(path=path) from None
+            raise ReadBytesFileNotFoundError(path=path) from None
+        except IsADirectoryError:
+            raise ReadBytesIsADirectoryError(path=path) from None
 
 
 def write_bytes(
@@ -1749,7 +1799,9 @@ def read_pickle(path: PathLike, /) -> Any:
         with gzip.open(path, mode="rb") as gz:
             return pickle.load(gz)  # noqa: S301
     except FileNotFoundError:
-        raise ReadPickleError(path=path) from None
+        raise ReadPickleFileNotFoundError(path=path) from None
+    except IsADirectoryError:
+        raise ReadPickleIsADirectoryError(path=path) from None
 
 
 def write_pickle(path: PathLike, obj: Any, /, *, overwrite: bool = False) -> None:
@@ -1774,13 +1826,17 @@ def read_text(path: PathLike, /, *, decompress: bool = False) -> str:
         try:
             with yield_gzip(path) as temp:
                 return temp.read_text()
-        except YieldGzipError as error:
-            raise ReadTextError(path=error.path) from None
+        except YieldGzipFileNotFoundError as error:
+            raise ReadTextFileNotFoundError(path=error.path) from None
+        except YieldGzipIsADirectoryError as error:
+            raise ReadTextIsADirectoryError(path=error.path) from None
     else:
         try:
             return path.read_text()
         except FileNotFoundError:
-            raise ReadTextError(path=path) from None
+            raise ReadTextFileNotFoundError(path=path) from None
+        except IsADirectoryError:
+            raise ReadTextIsADirectoryError(path=path) from None
 
 
 def write_text(
@@ -2155,23 +2211,16 @@ def substitute(
     **kwargs: Any,
 ) -> str:
     """Substitute from a Path or string."""
-    match path_or_text:
-        case Path() as path:
-            return substitute(
-                path.read_text(), environ=environ, mapping=mapping, safe=safe, **kwargs
-            )
-        case str() as text:
-            template = Template(text)
-            mapping_use: StrMapping = {} if mapping is None else mapping
-            kwargs_use: StrDict = (os.environ if environ else {}) | kwargs
-            if safe:
-                return template.safe_substitute(mapping_use, **kwargs_use)
-            try:
-                return template.substitute(mapping_use, **kwargs_use)
-            except KeyError as error:
-                raise SubstituteError(key=error.args[0]) from None
-        case never:
-            assert_never(never)
+    text = read_text_if_existing_file(path_or_text)
+    template = Template(text)
+    mapping_use: StrMapping = {} if mapping is None else mapping
+    kwargs_use: StrDict = (os.environ if environ else {}) | kwargs
+    if safe:
+        return template.safe_substitute(mapping_use, **kwargs_use)
+    try:
+        return template.substitute(mapping_use, **kwargs_use)
+    except KeyError as error:
+        raise SubstituteError(key=error.args[0]) from None
 
 
 ##
@@ -2960,8 +3009,15 @@ __all__ = [
     "PermissionsFromTextError",
     "PermissionsLike",
     "ReadBytesError",
+    "ReadBytesFileNotFoundError",
+    "ReadBytesIsADirectoryError",
     "ReadPickleError",
+    "ReadPickleFileNotFoundError",
+    "ReadPickleIsADirectoryError",
     "ReadTextError",
+    "ReadTextFileNotFoundError",
+    "ReadTextIfExistingFileError",
+    "ReadTextIsADirectoryError",
     "SubstituteError",
     "TemporaryDirectory",
     "TemporaryFile",
@@ -2974,14 +3030,23 @@ __all__ = [
     "ToZoneInfoPlainDateTimeError",
     "WhichError",
     "WriteBytesError",
-    "WriteBytesError",
     "WritePickleError",
     "WriteTextError",
-    "WriteTextError",
     "YieldBZ2Error",
+    "YieldBZ2FileNotFoundError",
+    "YieldBZ2IsADirectoryError",
     "YieldGzipError",
+    "YieldGzipFileNotFoundError",
+    "YieldGzipIsADirectoryError",
     "YieldLZMAError",
+    "YieldLZMAFileNotFoundError",
+    "YieldLZMAIsADirectoryError",
+    "YieldUncompressedError",
+    "YieldUncompressedFileNotFoundError",
+    "YieldUncompressedIsADirectoryError",
     "YieldZipError",
+    "YieldZipFileNotFoundError",
+    "YieldZipIsADirectoryError",
     "always_iterable",
     "async_sleep",
     "chmod",

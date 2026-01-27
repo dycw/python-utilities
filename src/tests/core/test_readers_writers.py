@@ -6,9 +6,12 @@ from pytest import mark, param, raises
 
 from utilities.constants import IS_CI
 from utilities.core import (
-    ReadBytesError,
-    ReadPickleError,
-    ReadTextError,
+    ReadBytesFileNotFoundError,
+    ReadBytesIsADirectoryError,
+    ReadPickleFileNotFoundError,
+    ReadPickleIsADirectoryError,
+    ReadTextFileNotFoundError,
+    ReadTextIsADirectoryError,
     WriteBytesError,
     WritePickleError,
     WriteTextError,
@@ -38,11 +41,24 @@ class TestReadWriteBytes:
         assert read_bytes(temp_path_not_exist) == expected
 
     @mark.parametrize("uncompress", [param(False), param(True)])
-    def test_error_read(self, *, temp_path_not_exist: Path, uncompress: bool) -> None:
+    def test_error_read_file_not_found(
+        self, *, temp_path_not_exist: Path, uncompress: bool
+    ) -> None:
         with raises(
-            ReadBytesError, match=r"Cannot read from '.*' since it does not exist"
+            ReadBytesFileNotFoundError,
+            match=r"Cannot read from '.*' since it does not exist",
         ):
             _ = read_bytes(temp_path_not_exist, decompress=uncompress)
+
+    @mark.parametrize("uncompress", [param(False), param(True)])
+    def test_error_read_is_a_directory(
+        self, *, tmp_path: Path, uncompress: bool
+    ) -> None:
+        with raises(
+            ReadBytesIsADirectoryError,
+            match=r"Cannot read from '.*' since it is a directory",
+        ):
+            _ = read_bytes(tmp_path, decompress=uncompress)
 
     def test_error_write(self, *, temp_file: Path) -> None:
         with raises(
@@ -57,11 +73,19 @@ class TestReadWritePickle:
         assert temp_path_not_exist.is_file()
         assert read_pickle(temp_path_not_exist) is None
 
-    def test_error_read(self, *, temp_path_not_exist: Path) -> None:
+    def test_error_read_file_not_found(self, *, temp_path_not_exist: Path) -> None:
         with raises(
-            ReadPickleError, match=r"Cannot read from '.*' since it does not exist"
+            ReadPickleFileNotFoundError,
+            match=r"Cannot read from '.*' since it does not exist",
         ):
             _ = read_pickle(temp_path_not_exist)
+
+    def test_error_read_is_a_directory(self, *, tmp_path: Path) -> None:
+        with raises(
+            ReadPickleIsADirectoryError,
+            match=r"Cannot read from '.*' since it is a directory",
+        ):
+            _ = read_pickle(tmp_path)
 
     def test_error_write(self, *, temp_file: Path) -> None:
         with raises(
@@ -81,11 +105,24 @@ class TestReadWriteText:
         assert read_text(temp_path_not_exist, decompress=compress) == "text\n"
 
     @mark.parametrize("uncompress", [param(False), param(True)])
-    def test_error_read(self, *, temp_path_not_exist: Path, uncompress: bool) -> None:
+    def test_error_read_file_not_found(
+        self, *, temp_path_not_exist: Path, uncompress: bool
+    ) -> None:
         with raises(
-            ReadTextError, match=r"Cannot read from '.*' since it does not exist"
+            ReadTextFileNotFoundError,
+            match=r"Cannot read from '.*' since it does not exist",
         ):
             _ = read_text(temp_path_not_exist, decompress=uncompress)
+
+    @mark.parametrize("uncompress", [param(False), param(True)])
+    def test_error_read_is_a_directory(
+        self, *, tmp_path: Path, uncompress: bool
+    ) -> None:
+        with raises(
+            ReadTextIsADirectoryError,
+            match=r"Cannot read from '.*' since it is a directory",
+        ):
+            _ = read_text(tmp_path, decompress=uncompress)
 
     def test_error_write(self, *, temp_file: Path) -> None:
         with raises(
