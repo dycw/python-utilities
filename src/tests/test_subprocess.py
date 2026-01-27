@@ -845,7 +845,7 @@ class TestRsyncCmd:
         ]
         assert result == expected
 
-    def test_tmieout(self, *, temp_file: Path) -> None:
+    def test_timeout(self, *, temp_file: Path) -> None:
         result = rsync_cmd(temp_file, "user", "hostname", "dest", timeout=10)
         expected: list[str] = [
             "rsync",
