@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
 from pytest import mark, param, raises
 
@@ -15,9 +15,6 @@ from utilities.core import (
     unique_str,
     yield_temp_environ,
 )
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 class TestNormalizeMultiLineStr:

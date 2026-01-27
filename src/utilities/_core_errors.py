@@ -445,6 +445,18 @@ class FileOrDirTypeError(FileOrDirError):
         return f"Path is neither a file nor a directory: {str(self.path)!r}"
 
 
+##
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadTextIfExistingFileError(Exception):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_is_a_directory_error(self.path)
+
+
 ###############################################################################
 #### permissions ##############################################################
 ###############################################################################
@@ -588,8 +600,12 @@ class ExtractGroupsNoMatchesError(ExtractGroupsError):
 ###############################################################################
 
 
-def _read_file_error(path: PathLike, /) -> str:
+def _read_file_file_not_found_error(path: PathLike, /) -> str:
     return f"Cannot read from {str(path)!r} since it does not exist"
+
+
+def _read_file_is_a_directory_error(path: PathLike, /) -> str:
+    return f"Cannot read from {str(path)!r} since it is a directory"
 
 
 def _write_file_error(path: PathLike, /) -> str:
@@ -602,7 +618,25 @@ class ReadBytesError(Exception):
 
     @override
     def __str__(self) -> str:
-        return _read_file_error(self.path)
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadBytesFileNotFoundError(ReadBytesError):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_file_not_found_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadBytesIsADirectoryError(ReadBytesError):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_is_a_directory_error(self.path)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -620,7 +654,25 @@ class ReadPickleError(Exception):
 
     @override
     def __str__(self) -> str:
-        return _read_file_error(self.path)
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadPickleFileNotFoundError(ReadPickleError):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_file_not_found_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadPickleIsADirectoryError(ReadPickleError):
+    path: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_is_a_directory_error(self.path)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -638,7 +690,7 @@ class ReadTextError(Exception):
 
     @override
     def __str__(self) -> str:
-        return _read_file_error(self.path)
+        raise NotImplementedError  # pragma: no cover
 
 
 @dataclass(kw_only=True, slots=True)
@@ -647,7 +699,7 @@ class ReadTextFileNotFoundError(Exception):
 
     @override
     def __str__(self) -> str:
-        return _read_file_error(self.path)
+        return _read_file_file_not_found_error(self.path)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -656,7 +708,7 @@ class ReadTextIsADirectoryError(Exception):
 
     @override
     def __str__(self) -> str:
-        return _read_file_error(self.path)
+        return _read_file_is_a_directory_error(self.path)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -987,8 +1039,15 @@ __all__ = [
     "PermissionsFromIntError",
     "PermissionsFromTextError",
     "ReadBytesError",
+    "ReadBytesFileNotFoundError",
+    "ReadBytesIsADirectoryError",
     "ReadPickleError",
+    "ReadPickleFileNotFoundError",
+    "ReadPickleIsADirectoryError",
     "ReadTextError",
+    "ReadTextFileNotFoundError",
+    "ReadTextIfExistingFileError",
+    "ReadTextIsADirectoryError",
     "SubstituteError",
     "ToTimeZoneNameError",
     "ToTimeZoneNameError",
@@ -1008,6 +1067,8 @@ __all__ = [
     "YieldGzipFileNotFoundError",
     "YieldGzipIsADirectoryError",
     "YieldLZMAError",
+    "YieldLZMAFileNotFoundError",
+    "YieldLZMAIsADirectoryError",
     "YieldUncompressedError",
     "YieldUncompressedFileNotFoundError",
     "YieldUncompressedIsADirectoryError",

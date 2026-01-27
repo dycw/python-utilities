@@ -5,6 +5,7 @@ from pathlib import Path
 
 from pytest import raises
 
+from utilities._core_errors import ReadTextIfExistingFileError
 from utilities.core import (
     FileOrDirMissingError,
     FileOrDirTypeError,
@@ -47,12 +48,21 @@ class TestFileOrDir:
 
 
 class TestReadTextIfExistingFile:
-    def test_main(self, *, temp_file: Path) -> None:
+    def test_existing_file(self, *, temp_file: Path) -> None:
         _ = temp_file.write_text("text")
         assert read_text_if_existing_file(temp_file) == "text"
 
-    def test_error(self, *, temp_path_not_exist: Path) -> None:
-        _ = read_text_if_existing_file(temp_path_not_exist)
+    def test_not_existing(self, *, temp_path_not_exist: Path) -> None:
+        assert read_text_if_existing_file(temp_path_not_exist) == str(
+            temp_path_not_exist
+        )
+
+    def test_error(self, *, tmp_path: Path) -> None:
+        with raises(
+            ReadTextIfExistingFileError,
+            match=r"Cannot read from '.*' since it is a directory",
+        ):
+            _ = read_text_if_existing_file(tmp_path)
 
 
 class TestYieldTempCwd:
