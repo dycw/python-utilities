@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass
 from io import StringIO
 from itertools import chain, repeat
@@ -365,6 +366,7 @@ def curl(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: Literal[True],
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
@@ -386,6 +388,7 @@ def curl(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: Literal[False] = False,
     return_stdout: Literal[True],
     return_stderr: Literal[False] = False,
@@ -407,6 +410,7 @@ def curl(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[True],
@@ -428,6 +432,7 @@ def curl(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
@@ -449,6 +454,7 @@ def curl(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -469,6 +475,7 @@ def curl(
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -493,6 +500,7 @@ def curl(
         print=print,
         print_stdout=print_stdout,
         print_stderr=print_stderr,
+        suppress=suppress,
         return_=return_,
         return_stdout=return_stdout,
         return_stderr=return_stderr,
@@ -1059,6 +1067,7 @@ def run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -1080,6 +1089,7 @@ def run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
@@ -1101,6 +1111,7 @@ def run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
@@ -1122,6 +1133,7 @@ def run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
@@ -1143,6 +1155,7 @@ def run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -1163,6 +1176,7 @@ def run(
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -1212,19 +1226,19 @@ def run(
                 proc.stdin.flush()
                 proc.stdin.close()
             return_code = proc.wait()
-        match return_code, return_ or return_stdout, return_ or return_stderr:
-            case 0, True, True:
+        match return_code, suppress, return_ or return_stdout, return_ or return_stderr:
+            case (0, _, True, True) | (_, True, True, True):
                 _ = buffer.seek(0)
                 return buffer.read().rstrip("\n")
-            case 0, True, False:
+            case (0, _, True, False) | (_, True, True, False):
                 _ = stdout.seek(0)
                 return stdout.read().rstrip("\n")
-            case 0, False, True:
+            case (0, _, False, True) | (_, True, False, True):
                 _ = stderr.seek(0)
                 return stderr.read().rstrip("\n")
-            case 0, False, False:
+            case (0, _, False, False) | (_, True, False, False):
                 return None
-            case _, _, _:
+            case _, False, _, _:
                 _ = stdout.seek(0)
                 stdout_text = stdout.read()
                 _ = stderr.seek(0)
@@ -1290,7 +1304,7 @@ def run(
                 assert_never(never)
 
 
-@enhanced_context_manager
+@contextmanager
 def _run_yield_write(input_: IO[str], /, *outputs: IO[str]) -> Iterator[None]:
     thread = Thread(target=_run_daemon_target, args=(input_, *outputs), daemon=True)
     thread.start()
@@ -1337,6 +1351,7 @@ def ssh(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -1358,6 +1373,7 @@ def ssh(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
@@ -1379,6 +1395,7 @@ def ssh(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
@@ -1400,6 +1417,7 @@ def ssh(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
@@ -1421,6 +1439,7 @@ def ssh(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -1441,6 +1460,7 @@ def ssh(
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -1465,6 +1485,7 @@ def ssh(
             print=print,
             print_stdout=print_stdout,
             print_stderr=print_stderr,
+            suppress=suppress,
             return_=return_,
             return_stdout=return_stdout,
             return_stderr=return_stderr,
@@ -1488,6 +1509,7 @@ def ssh(
             print=print,
             print_stdout=print_stdout,
             print_stderr=print_stderr,
+            suppress=suppress,
             return_=return_,
             return_stdout=return_stdout,
             return_stderr=return_stderr,
@@ -1924,6 +1946,7 @@ def uv_run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -1948,6 +1971,7 @@ def uv_run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
@@ -1972,6 +1996,7 @@ def uv_run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
@@ -1996,6 +2021,7 @@ def uv_run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
@@ -2020,6 +2046,7 @@ def uv_run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -2043,6 +2070,7 @@ def uv_run(
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -2068,6 +2096,7 @@ def uv_run(
         print=print,
         print_stdout=print_stdout,
         print_stderr=print_stderr,
+        suppress=suppress,
         return_=return_,
         return_stdout=return_stdout,
         return_stderr=return_stderr,
@@ -2139,6 +2168,7 @@ def uv_tool_install(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -2158,6 +2188,7 @@ def uv_tool_install(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
@@ -2177,6 +2208,7 @@ def uv_tool_install(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
@@ -2196,6 +2228,7 @@ def uv_tool_install(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
@@ -2215,6 +2248,7 @@ def uv_tool_install(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -2233,6 +2267,7 @@ def uv_tool_install(
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -2247,6 +2282,7 @@ def uv_tool_install(
         print=print,
         print_stdout=print_stdout,
         print_stderr=print_stderr,
+        suppress=suppress,
         return_=return_,
         return_stdout=return_stdout,
         return_stderr=return_stderr,
@@ -2297,6 +2333,7 @@ def uv_tool_run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: Literal[True],
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -2318,6 +2355,7 @@ def uv_tool_run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: Literal[True],
     return_stderr: bool = False,
@@ -2339,6 +2377,7 @@ def uv_tool_run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: Literal[True],
@@ -2360,6 +2399,7 @@ def uv_tool_run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: Literal[False] = False,
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
@@ -2381,6 +2421,7 @@ def uv_tool_run(
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -2401,6 +2442,7 @@ def uv_tool_run(
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
     return_: bool = False,
     return_stdout: bool = False,
     return_stderr: bool = False,
@@ -2423,6 +2465,7 @@ def uv_tool_run(
         print=print,
         print_stdout=print_stdout,
         print_stderr=print_stderr,
+        suppress=suppress,
         return_=return_,
         return_stdout=return_stdout,
         return_stderr=return_stderr,
@@ -2475,7 +2518,7 @@ def uv_with_cmd(*, with_: MaybeSequenceStr | None = None) -> list[str]:
 ##
 
 
-@enhanced_context_manager
+@contextmanager
 def yield_git_repo(url: str, /, *, branch: str | None = None) -> Iterator[Path]:
     """Yield a temporary git repository."""
     with TemporaryDirectory() as temp_dir:
