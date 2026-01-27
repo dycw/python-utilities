@@ -853,8 +853,8 @@ class TestRsyncCmd:
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
-            "--rsync-path",
-            "sudo rsync",
+            "--timeout",
+            "10",
             str(temp_file),
             "user@hostname:dest",
         ]
