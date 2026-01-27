@@ -25,6 +25,7 @@ from utilities.core import (
     TemporaryDirectory,
     always_iterable,
     copy,
+    duration_to_seconds,
     file_or_dir,
     log_info,
     move,
@@ -35,6 +36,7 @@ from utilities.core import (
     to_logger,
 )
 from utilities.errors import ImpossibleCaseError
+from utilities.math import safe_round
 from utilities.version import (
     ParseVersion2Or3Error,
     Version2,
@@ -776,6 +778,7 @@ def rsync(
     chown_user: str | None = None,
     chown_group: str | None = None,
     exclude: MaybeIterable[str] | None = None,
+    timeout: Duration | None = None,
     chmod: PermissionsLike | None = None,
 ) -> None:
     """Remote & local file copying."""
@@ -805,6 +808,7 @@ def rsync(
         host_key_algorithms=host_key_algorithms,
         strict_host_key_checking=strict_host_key_checking,
         sudo=sudo,
+        timeout=timeout,
     )
     run(*rsync_args, print=print, retry=retry, logger=logger)  # skipif-ci
     if chmod is not None:  # skipif-ci
@@ -837,6 +841,7 @@ def rsync_cmd(
     host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     sudo: bool = False,
+    timeout: Duration | None = None,
 ) -> list[str]:
     """Command to use 'rsync' to do remote & local file copying."""
     args: list[str] = ["rsync"]
@@ -866,6 +871,8 @@ def rsync_cmd(
     args.extend(["--rsh", join(rsh_args)])
     if sudo:
         args.extend(["--rsync-path", join(sudo_cmd("rsync"))])
+    if timeout is not None:
+        args.extend(["--timeout", str(safe_round(duration_to_seconds(timeout)))])
     srcs = list(always_iterable(src_or_srcs))  # do not Path()
     if len(srcs) == 0:
         raise _RsyncCmdNoSourcesError(user=user, hostname=hostname, dest=dest)

@@ -845,6 +845,21 @@ class TestRsyncCmd:
         ]
         assert result == expected
 
+    def test_timeout(self, *, temp_file: Path) -> None:
+        result = rsync_cmd(temp_file, "user", "hostname", "dest", timeout=10)
+        expected: list[str] = [
+            "rsync",
+            "--checksum",
+            "--compress",
+            "--rsh",
+            "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
+            "--timeout",
+            "10",
+            str(temp_file),
+            "user@hostname:dest",
+        ]
+        assert result == expected
+
     def test_error_no_sources(self) -> None:
         with raises(
             _RsyncCmdNoSourcesError,
