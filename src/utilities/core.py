@@ -1852,6 +1852,10 @@ def read_pickle(path: PathLike, /) -> Any:
         raise ReadPickleFileNotFoundError(path=path) from None
     except IsADirectoryError:
         raise ReadPickleIsADirectoryError(path=path) from None
+    except NotADirectoryError:
+        raise ReadPickleNotADirectoryError(
+            path=path, parent=first_non_directory_parent(path)
+        ) from None
 
 
 def write_pickle(path: PathLike, obj: Any, /, *, overwrite: bool = False) -> None:
