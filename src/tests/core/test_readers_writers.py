@@ -126,15 +126,15 @@ class TestReadWriteText:
         assert temp_path_not_exist.is_file()
         assert read_text(temp_path_not_exist, decompress=compress) == "text\n"
 
-    @mark.parametrize("uncompress", [param(False), param(True)])
+    @mark.parametrize("decompress", [param(False), param(True)])
     def test_error_read_file_not_found(
-        self, *, temp_path_not_exist: Path, uncompress: bool
+        self, *, temp_path_not_exist: Path, decompress: bool
     ) -> None:
         with raises(
             ReadTextFileNotFoundError,
             match=r"Cannot read from '.*' since it does not exist",
         ):
-            _ = read_text(temp_path_not_exist, decompress=uncompress)
+            _ = read_text(temp_path_not_exist, decompress=decompress)
 
     @mark.parametrize("uncompress", [param(False), param(True)])
     def test_error_read_not_a_directory(
