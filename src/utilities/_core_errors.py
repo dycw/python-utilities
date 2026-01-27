@@ -110,7 +110,7 @@ def _yield_uncompressed_file_is_a_directory_error_msg(path: PathLike, /) -> str:
 def _yield_uncompressed_file_not_a_directory_error_msg(
     path: PathLike, parent: Path, /
 ) -> str:
-    return f"Cannot uncompress {str(path)!r} since its path {str(parent)!r} is not a directory"
+    return f"Cannot uncompress {str(path)!r} since its parent {str(parent)!r} is not a directory"
 
 
 @dataclass(kw_only=True, slots=True)
