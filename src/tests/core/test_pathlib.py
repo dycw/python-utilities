@@ -7,7 +7,8 @@ from pytest import raises
 
 from utilities._core_errors import (
     FirstNonDirectoryParentError,
-    ReadTextIfExistingFileError,
+    ReadTextIfExistingFileIsADirectoryError,
+    ReadTextIfExistingFileNotADirectoryError,
 )
 from utilities.core import (
     FileOrDirMissingError,
@@ -78,12 +79,19 @@ class TestReadTextIfExistingFile:
             temp_path_not_exist
         )
 
-    def test_error(self, *, tmp_path: Path) -> None:
+    def test_error_is_a_directory(self, *, tmp_path: Path) -> None:
         with raises(
-            ReadTextIfExistingFileError,
+            ReadTextIfExistingFileIsADirectoryError,
             match=r"Cannot read from '.*' since it is a directory",
         ):
             _ = read_text_if_existing_file(tmp_path)
+
+    def test_error_not_a_directory(self, *, temp_path_parent_file: Path) -> None:
+        with raises(
+            ReadTextIfExistingFileNotADirectoryError,
+            match=r"Cannot read from '.*' since its parent '.*' is not a directory",
+        ):
+            _ = read_text_if_existing_file(temp_path_parent_file)
 
 
 class TestYieldTempCwd:
