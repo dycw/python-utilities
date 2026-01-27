@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from io import StringIO
-from logging import Formatter, Logger, LoggerAdapter, StreamHandler, getLogger
+from logging import (
+    INFO,
+    NOTSET,
+    Formatter,
+    Logger,
+    LoggerAdapter,
+    StreamHandler,
+    getLogger,
+)
 from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, cast
@@ -35,7 +43,6 @@ from utilities.whenever import format_compact
 if TYPE_CHECKING:
     from collections.abc import Mapping
     from contextlib import AbstractContextManager
-    from logging import _FilterType
 
     from whenever import TimeDelta, ZonedDateTime
 
@@ -83,28 +90,33 @@ class TestAddFilters:
 
 
 class TestBasicConfig:
-    @mark.parametrize(
-        "filters",
-        [
-            param(lambda _: True),  # pyright: ignore[reportUnknownLambdaType]
-            param(None),
-        ],
-    )
-    @mark.parametrize("plain", [param(True), param(False)])
-    def test_main(
-        self,
-        *,
-        set_log_factory: AbstractContextManager[None],
-        logger: Logger,
-        filters: _FilterType | None,
-        plain: bool,
-        caplog: LogCaptureFixture,
-    ) -> None:
-        with set_log_factory:
-            basic_config(obj=logger, filters=filters, plain=plain)
+    def test_main(self) -> None:
+        basic_config()
+
+    def test_logger(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
+        basic_config(obj=logger)
         logger.info("message")
         record = one(r for r in caplog.records if r.name == logger.name)
         assert record.message == "message"
+
+    def test_str(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
+        basic_config(obj=logger.name)
+        logger.info("message")
+        record = one(r for r in caplog.records if r.name == logger.name)
+        assert record.message == "message"
+
+    def test_handler(self) -> None:
+        handler = StreamHandler()
+        assert handler.level == NOTSET
+        assert handler.formatter is None
+        basic_config(obj=handler)
+        assert handler.level == INFO
+        assert handler.formatter is not None
+
+    def test_handler_filters(self) -> None:
+        handler = StreamHandler()
+        basic_config(obj=handler, filters=lambda _: True)
+        assert len(handler.filters) == 1
 
     @mark.parametrize("format_", [param("{message}"), param(None)])
     def test_none(
