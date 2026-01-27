@@ -4,6 +4,10 @@ from typing import TYPE_CHECKING
 
 from pytest import mark, param, raises
 
+from utilities._core_errors import (
+    ReadBytesNotADirectoryError,
+    ReadPickleNotADirectoryError,
+)
 from utilities.constants import IS_CI
 from utilities.core import (
     ReadBytesFileNotFoundError,
@@ -12,6 +16,7 @@ from utilities.core import (
     ReadPickleIsADirectoryError,
     ReadTextFileNotFoundError,
     ReadTextIsADirectoryError,
+    ReadTextNotADirectoryError,
     WriteBytesError,
     WritePickleError,
     WriteTextError,
@@ -40,15 +45,15 @@ class TestReadWriteBytes:
         expected = data if IS_CI else b"""{ "foo": 0, "bar": [1, 2, 3] }\n"""
         assert read_bytes(temp_path_not_exist) == expected
 
-    @mark.parametrize("uncompress", [param(False), param(True)])
+    @mark.parametrize("decompress", [param(False), param(True)])
     def test_error_read_file_not_found(
-        self, *, temp_path_not_exist: Path, uncompress: bool
+        self, *, temp_path_not_exist: Path, decompress: bool
     ) -> None:
         with raises(
             ReadBytesFileNotFoundError,
             match=r"Cannot read from '.*' since it does not exist",
         ):
-            _ = read_bytes(temp_path_not_exist, decompress=uncompress)
+            _ = read_bytes(temp_path_not_exist, decompress=decompress)
 
     @mark.parametrize("uncompress", [param(False), param(True)])
     def test_error_read_is_a_directory(
@@ -59,6 +64,16 @@ class TestReadWriteBytes:
             match=r"Cannot read from '.*' since it is a directory",
         ):
             _ = read_bytes(tmp_path, decompress=uncompress)
+
+    @mark.parametrize("uncompress", [param(False), param(True)])
+    def test_error_read_not_a_directory(
+        self, *, temp_path_parent_file: Path, uncompress: bool
+    ) -> None:
+        with raises(
+            ReadBytesNotADirectoryError,
+            match=r"Cannot read from '.*' since its parent '.*' is not a directory",
+        ):
+            _ = read_bytes(temp_path_parent_file, decompress=uncompress)
 
     def test_error_write(self, *, temp_file: Path) -> None:
         with raises(
@@ -87,6 +102,13 @@ class TestReadWritePickle:
         ):
             _ = read_pickle(tmp_path)
 
+    def test_error_read_not_a_directory(self, *, temp_path_parent_file: Path) -> None:
+        with raises(
+            ReadPickleNotADirectoryError,
+            match=r"Cannot read from '.*' since its parent '.*' is not a directory",
+        ):
+            _ = read_pickle(temp_path_parent_file)
+
     def test_error_write(self, *, temp_file: Path) -> None:
         with raises(
             WritePickleError, match=r"Cannot write to '.*' since it already exists"
@@ -104,15 +126,25 @@ class TestReadWriteText:
         assert temp_path_not_exist.is_file()
         assert read_text(temp_path_not_exist, decompress=compress) == "text\n"
 
-    @mark.parametrize("uncompress", [param(False), param(True)])
+    @mark.parametrize("decompress", [param(False), param(True)])
     def test_error_read_file_not_found(
-        self, *, temp_path_not_exist: Path, uncompress: bool
+        self, *, temp_path_not_exist: Path, decompress: bool
     ) -> None:
         with raises(
             ReadTextFileNotFoundError,
             match=r"Cannot read from '.*' since it does not exist",
         ):
-            _ = read_text(temp_path_not_exist, decompress=uncompress)
+            _ = read_text(temp_path_not_exist, decompress=decompress)
+
+    @mark.parametrize("uncompress", [param(False), param(True)])
+    def test_error_read_not_a_directory(
+        self, *, temp_path_parent_file: Path, uncompress: bool
+    ) -> None:
+        with raises(
+            ReadTextNotADirectoryError,
+            match=r"Cannot read from '.*' since its parent '.*' is not a directory",
+        ):
+            _ = read_text(temp_path_parent_file, decompress=uncompress)
 
     @mark.parametrize("uncompress", [param(False), param(True)])
     def test_error_read_is_a_directory(

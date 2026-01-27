@@ -5,11 +5,15 @@ from pathlib import Path
 
 from pytest import raises
 
-from utilities._core_errors import ReadTextIfExistingFileError
+from utilities._core_errors import (
+    FirstNonDirectoryParentError,
+    ReadTextIfExistingFileError,
+)
 from utilities.core import (
     FileOrDirMissingError,
     FileOrDirTypeError,
     file_or_dir,
+    first_non_directory_parent,
     read_text_if_existing_file,
     yield_temp_cwd,
 )
@@ -45,6 +49,23 @@ class TestFileOrDir:
             FileOrDirTypeError, match=r"Path is neither a file nor a directory: '.*'"
         ):
             _ = file_or_dir(path)
+
+
+class TestFirstNonDirectoryParent:
+    def test_depth1(self, *, temp_file: Path) -> None:
+        path = temp_file / "foo"
+        assert first_non_directory_parent(path) == temp_file
+
+    def test_depth2(self, *, temp_file: Path) -> None:
+        path = temp_file / "foo/bar"
+        assert first_non_directory_parent(path) == temp_file
+
+    def test_error(self, *, tmp_path: Path) -> None:
+        with raises(
+            FirstNonDirectoryParentError,
+            match=r"Path has no non-directory parents: '.*'",
+        ):
+            _ = first_non_directory_parent(tmp_path)
 
 
 class TestReadTextIfExistingFile:

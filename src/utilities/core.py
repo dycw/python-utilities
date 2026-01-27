@@ -100,6 +100,7 @@ from utilities._core_errors import (
     FileOrDirError,
     FileOrDirMissingError,
     FileOrDirTypeError,
+    FirstNonDirectoryParentError,
     GetEnvError,
     MaxNullableError,
     MinNullableError,
@@ -130,13 +131,16 @@ from utilities._core_errors import (
     ReadBytesError,
     ReadBytesFileNotFoundError,
     ReadBytesIsADirectoryError,
+    ReadBytesNotADirectoryError,
     ReadPickleError,
     ReadPickleFileNotFoundError,
     ReadPickleIsADirectoryError,
+    ReadPickleNotADirectoryError,
     ReadTextError,
     ReadTextFileNotFoundError,
     ReadTextIfExistingFileError,
     ReadTextIsADirectoryError,
+    ReadTextNotADirectoryError,
     SubstituteError,
     ToTimeZoneNameError,
     ToTimeZoneNameInvalidKeyError,
@@ -152,19 +156,24 @@ from utilities._core_errors import (
     YieldBZ2Error,
     YieldBZ2FileNotFoundError,
     YieldBZ2IsADirectoryError,
+    YieldBZ2NotADirectoryError,
     YieldGzipError,
     YieldGzipFileNotFoundError,
     YieldGzipIsADirectoryError,
+    YieldGzipNotADirectoryError,
     YieldLZMAError,
     YieldLZMAFileNotFoundError,
     YieldLZMAIsADirectoryError,
+    YieldLZMANotADirectoryError,
     YieldUncompressedError,
     YieldUncompressedFileNotFoundError,
     YieldUncompressedIsADirectoryError,
+    YieldUncompressedNotADirectoryError,
     YieldWritePathError,
     YieldZipError,
     YieldZipFileNotFoundError,
     YieldZipIsADirectoryError,
+    YieldZipNotADirectoryError,
 )
 from utilities._core_errors import CompressFilesError as _CompressFilesError
 from utilities._core_errors import (
@@ -178,6 +187,9 @@ from utilities._core_errors import (
 )
 from utilities._core_errors import (
     YieldUncompressedIsADirectoryError as _YieldUncompressedIsADirectoryError,
+)
+from utilities._core_errors import (
+    YieldUncompressedNotADirectoryError as _YieldUncompressedNotADirectoryError,
 )
 from utilities.constants import (
     ABS_TOL,
@@ -524,6 +536,10 @@ def yield_bz2(path: PathLike, /) -> Iterator[Path]:
         raise YieldBZ2FileNotFoundError(path=error.path) from None
     except _YieldUncompressedIsADirectoryError as error:
         raise YieldBZ2IsADirectoryError(path=error.path) from None
+    except _YieldUncompressedNotADirectoryError as error:
+        raise YieldBZ2NotADirectoryError(
+            path=error.path, parent=first_non_directory_parent(error.path)
+        ) from None
 
 
 @contextmanager
@@ -540,6 +556,10 @@ def yield_gzip(path: PathLike, /) -> Iterator[Path]:
         raise YieldGzipFileNotFoundError(path=error.path) from None
     except _YieldUncompressedIsADirectoryError as error:
         raise YieldGzipIsADirectoryError(path=error.path) from None
+    except _YieldUncompressedNotADirectoryError as error:
+        raise YieldGzipNotADirectoryError(
+            path=error.path, parent=first_non_directory_parent(error.path)
+        ) from None
 
 
 @contextmanager
@@ -556,6 +576,10 @@ def yield_lzma(path: PathLike, /) -> Iterator[Path]:
         raise YieldLZMAFileNotFoundError(path=error.path) from None
     except _YieldUncompressedIsADirectoryError as error:
         raise YieldLZMAIsADirectoryError(path=error.path) from None
+    except _YieldUncompressedNotADirectoryError as error:
+        raise YieldLZMANotADirectoryError(
+            path=error.path, parent=first_non_directory_parent(error.path)
+        ) from None
 
 
 @contextmanager
@@ -587,6 +611,8 @@ def _yield_uncompressed(path: PathLike, func: PathToBinaryIO, /) -> Iterator[Pat
         raise _YieldUncompressedFileNotFoundError(path=path) from None
     except IsADirectoryError:
         raise _YieldUncompressedIsADirectoryError(path=path) from None
+    except NotADirectoryError:
+        raise _YieldUncompressedNotADirectoryError(path=path) from None
 
 
 ##
@@ -607,6 +633,10 @@ def yield_zip(path: PathLike, /) -> Iterator[Path]:
         raise YieldZipFileNotFoundError(path=path) from None
     except IsADirectoryError:
         raise YieldZipIsADirectoryError(path=path) from None
+    except NotADirectoryError:
+        raise YieldZipNotADirectoryError(
+            path=path, parent=first_non_directory_parent(path)
+        ) from None
 
 
 ###############################################################################
@@ -1412,6 +1442,18 @@ def file_or_dir(path: PathLike, /, *, exists: bool = False) -> FileOrDir | None:
 ##
 
 
+def first_non_directory_parent(path: PathLike, /) -> Path:
+    """Get the first non-directory parent."""
+    path = Path(path)
+    for p in reversed(path.parents):
+        if not p.is_dir():
+            return p
+    raise FirstNonDirectoryParentError(path=path)
+
+
+##
+
+
 def read_text_if_existing_file(path_or_text: PathLike, /) -> str:
     """Read a text file if it exists."""
     try:
@@ -1750,6 +1792,10 @@ def read_bytes(path: PathLike, /, *, decompress: bool = False) -> bytes:
             raise ReadBytesFileNotFoundError(path=error.path) from None
         except YieldGzipIsADirectoryError as error:
             raise ReadBytesIsADirectoryError(path=error.path) from None
+        except YieldGzipNotADirectoryError as error:
+            raise ReadBytesNotADirectoryError(
+                path=error.path, parent=first_non_directory_parent(error.path)
+            ) from None
     else:
         try:
             return path.read_bytes()
@@ -1757,6 +1803,10 @@ def read_bytes(path: PathLike, /, *, decompress: bool = False) -> bytes:
             raise ReadBytesFileNotFoundError(path=path) from None
         except IsADirectoryError:
             raise ReadBytesIsADirectoryError(path=path) from None
+        except NotADirectoryError:
+            raise ReadBytesNotADirectoryError(
+                path=path, parent=first_non_directory_parent(path)
+            ) from None
 
 
 def write_bytes(
@@ -1802,6 +1852,10 @@ def read_pickle(path: PathLike, /) -> Any:
         raise ReadPickleFileNotFoundError(path=path) from None
     except IsADirectoryError:
         raise ReadPickleIsADirectoryError(path=path) from None
+    except NotADirectoryError:
+        raise ReadPickleNotADirectoryError(
+            path=path, parent=first_non_directory_parent(path)
+        ) from None
 
 
 def write_pickle(path: PathLike, obj: Any, /, *, overwrite: bool = False) -> None:
@@ -1830,6 +1884,10 @@ def read_text(path: PathLike, /, *, decompress: bool = False) -> str:
             raise ReadTextFileNotFoundError(path=error.path) from None
         except YieldGzipIsADirectoryError as error:
             raise ReadTextIsADirectoryError(path=error.path) from None
+        except YieldGzipNotADirectoryError as error:
+            raise ReadTextNotADirectoryError(
+                path=error.path, parent=first_non_directory_parent(error.path)
+            ) from None
     else:
         try:
             return path.read_text()
@@ -1837,6 +1895,10 @@ def read_text(path: PathLike, /, *, decompress: bool = False) -> str:
             raise ReadTextFileNotFoundError(path=path) from None
         except IsADirectoryError:
             raise ReadTextIsADirectoryError(path=path) from None
+        except NotADirectoryError:
+            raise ReadTextNotADirectoryError(
+                path=path, parent=first_non_directory_parent(path)
+            ) from None
 
 
 def write_text(
@@ -2978,6 +3040,7 @@ __all__ = [
     "FileOrDirError",
     "FileOrDirMissingError",
     "FileOrDirTypeError",
+    "FirstNonDirectoryParentError",
     "GetEnvError",
     "MaxNullableError",
     "MinNullableError",
@@ -3011,13 +3074,16 @@ __all__ = [
     "ReadBytesError",
     "ReadBytesFileNotFoundError",
     "ReadBytesIsADirectoryError",
+    "ReadBytesNotADirectoryError",
     "ReadPickleError",
     "ReadPickleFileNotFoundError",
     "ReadPickleIsADirectoryError",
+    "ReadPickleNotADirectoryError",
     "ReadTextError",
     "ReadTextFileNotFoundError",
     "ReadTextIfExistingFileError",
     "ReadTextIsADirectoryError",
+    "ReadTextNotADirectoryError",
     "SubstituteError",
     "TemporaryDirectory",
     "TemporaryFile",
@@ -3035,18 +3101,23 @@ __all__ = [
     "YieldBZ2Error",
     "YieldBZ2FileNotFoundError",
     "YieldBZ2IsADirectoryError",
+    "YieldBZ2NotADirectoryError",
     "YieldGzipError",
     "YieldGzipFileNotFoundError",
     "YieldGzipIsADirectoryError",
+    "YieldGzipNotADirectoryError",
     "YieldLZMAError",
     "YieldLZMAFileNotFoundError",
     "YieldLZMAIsADirectoryError",
+    "YieldLZMANotADirectoryError",
     "YieldUncompressedError",
     "YieldUncompressedFileNotFoundError",
     "YieldUncompressedIsADirectoryError",
+    "YieldUncompressedNotADirectoryError",
     "YieldZipError",
     "YieldZipFileNotFoundError",
     "YieldZipIsADirectoryError",
+    "YieldZipNotADirectoryError",
     "always_iterable",
     "async_sleep",
     "chmod",
@@ -3062,6 +3133,7 @@ __all__ = [
     "extract_group",
     "extract_groups",
     "file_or_dir",
+    "first_non_directory_parent",
     "get_class",
     "get_class_name",
     "get_env",
