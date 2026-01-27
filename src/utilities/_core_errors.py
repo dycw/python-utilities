@@ -503,7 +503,23 @@ class ReadTextIfExistingFileError(Exception):
 
     @override
     def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadTextIfExistingFileIsADirectoryError(ReadTextIfExistingFileError):
+    @override
+    def __str__(self) -> str:
         return _read_file_is_a_directory_error(self.path)
+
+
+@dataclass(kw_only=True, slots=True)
+class ReadTextIfExistingFileNotADirectoryError(ReadTextIfExistingFileError):
+    parent: Path
+
+    @override
+    def __str__(self) -> str:
+        return _read_file_not_a_directory_error(self.path, self.parent)
 
 
 ###############################################################################
@@ -1118,6 +1134,8 @@ __all__ = [
     "ReadTextError",
     "ReadTextFileNotFoundError",
     "ReadTextIfExistingFileError",
+    "ReadTextIfExistingFileIsADirectoryError",
+    "ReadTextIfExistingFileNotADirectoryError",
     "ReadTextIsADirectoryError",
     "ReadTextNotADirectoryError",
     "SubstituteError",

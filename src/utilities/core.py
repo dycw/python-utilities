@@ -139,6 +139,8 @@ from utilities._core_errors import (
     ReadTextError,
     ReadTextFileNotFoundError,
     ReadTextIfExistingFileError,
+    ReadTextIfExistingFileIsADirectoryError,
+    ReadTextIfExistingFileNotADirectoryError,
     ReadTextIsADirectoryError,
     ReadTextNotADirectoryError,
     SubstituteError,
@@ -1461,7 +1463,11 @@ def read_text_if_existing_file(path_or_text: PathLike, /) -> str:
     except ReadTextFileNotFoundError:
         return str(path_or_text)
     except ReadTextIsADirectoryError as error:
-        raise ReadTextIfExistingFileError(path=error.path) from None
+        raise ReadTextIfExistingFileIsADirectoryError(path=error.path) from None
+    except ReadTextNotADirectoryError as error:
+        raise ReadTextIfExistingFileNotADirectoryError(
+            path=error.path, parent=error.parent
+        ) from None
 
 
 ##
@@ -3082,6 +3088,8 @@ __all__ = [
     "ReadTextError",
     "ReadTextFileNotFoundError",
     "ReadTextIfExistingFileError",
+    "ReadTextIfExistingFileIsADirectoryError",
+    "ReadTextIfExistingFileNotADirectoryError",
     "ReadTextIsADirectoryError",
     "ReadTextNotADirectoryError",
     "SubstituteError",
