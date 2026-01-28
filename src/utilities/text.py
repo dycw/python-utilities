@@ -45,7 +45,7 @@ class ParseBoolError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to parse boolean value; got {self.text!r}"
+        return f"Unable to parse boolean value; got {pretty_repr(self.text)}"
 
 
 ##
@@ -64,7 +64,7 @@ class ParseNoneError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to parse null value; got {self.text!r}"
+        return f"Unable to parse null value; got {pretty_repr(self.text)}"
 
 
 ##
@@ -160,7 +160,7 @@ class _SplitKeyValuePairsSplitError(SplitKeyValuePairsError):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to split {self.text!r} into key-value pairs"
+        return f"Unable to split {pretty_repr(self.text)} into key-value pairs"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -169,7 +169,7 @@ class _SplitKeyValuePairsDuplicateKeysError(SplitKeyValuePairsError):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to split {self.text!r} into a mapping since there are duplicate keys; got {pretty_repr(self.counts)}"
+        return f"Unable to split {pretty_repr(self.text)} into a mapping since there are duplicate keys; got {pretty_repr(self.counts)}"
 
 
 ##
@@ -313,7 +313,7 @@ class _SplitStrCountError(SplitStrError):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to split {self.text!r} into {self.n} part(s); got {len(self.texts)}"
+        return f"Unable to split {pretty_repr(self.text)} into {self.n} part(s); got {len(self.texts)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -325,7 +325,7 @@ class _SplitStrClosingBracketMismatchedError(SplitStrError):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to split {self.text!r}; got mismatched {self.opening_token!r} at position {self.opening_position} and {self.closing_token!r} at position {self.closing_position}"
+        return f"Unable to split {pretty_repr(self.text)}; got mismatched {pretty_repr(self.opening_token)} at position {self.opening_position} and {pretty_repr(self.closing_token)} at position {self.closing_position}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -335,7 +335,7 @@ class _SplitStrClosingBracketUnmatchedError(SplitStrError):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to split {self.text!r}; got unmatched {self.token!r} at position {self.position}"
+        return f"Unable to split {pretty_repr(self.text)}; got unmatched {pretty_repr(self.token)} at position {self.position}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -345,7 +345,7 @@ class _SplitStrOpeningBracketUnmatchedError(SplitStrError):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to split {self.text!r}; got unmatched {self.token!r} at position {self.position}"
+        return f"Unable to split {pretty_repr(self.text)}; got unmatched {pretty_repr(self.token)} at position {self.position}"
 
 
 def join_strs(
