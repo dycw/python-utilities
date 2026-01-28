@@ -44,6 +44,8 @@ if TYPE_CHECKING:
     from traceback import FrameSummary
     from types import TracebackType
 
+    from rich.table import Table
+
     from utilities.types import (
         Delta,
         MaybeCallableBoolLike,
@@ -132,7 +134,7 @@ def _get_frame_summaries(
     items: list[tuple[int, str]] = [
         (
             i,
-            _get_frame_summary(
+            _yield_frame_summary_tables(
                 frame,
                 max_width=max_width,
                 indent_size=indent_size,
@@ -158,7 +160,7 @@ def _get_frame_summaries(
     )
 
 
-def _get_frame_summary(
+def _yield_frame_summary_tables(
     frame: FrameSummary,
     /,
     *,
@@ -168,13 +170,13 @@ def _get_frame_summary(
     max_string: int | None = RICH_MAX_STRING,
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
-) -> str:
-    parts: list[str] = []
+) -> Iterator[Table]:
     module = _path_to_dots(frame.filename)
-    table1 = repr_table((f"{module}:{frame.lineno}",), (frame.name,), (frame.line,))
-    parts.append(table1)
+    yield repr_table(
+        (f"{module}:{frame.lineno}",), (frame.name,), (frame.line,), table=True
+    )
     if frame.locals is not None:
-        table2 = repr_mapping(
+        yield repr_mapping(
             frame.locals,
             max_width=max_width,
             indent_size=indent_size,
@@ -183,8 +185,6 @@ def _get_frame_summary(
             max_depth=max_depth,
             expand_all=expand_all,
         )
-        parts.append(table2)
-    return "\n\n".join(parts)
 
 
 def _path_to_dots(path: PathLike, /) -> str:

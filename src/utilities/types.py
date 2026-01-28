@@ -23,6 +23,7 @@ from typing import (
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
+from rich.table import Table
 from whenever import (
     Date,
     DateDelta,
@@ -251,6 +252,10 @@ type Seed = int | float | str | bytes | bytearray | Random
 type PatternLike = MaybeStr[Pattern[str]]
 
 
+# rich
+type TableLike = MaybeStr[Table]
+
+
 # retry
 type Retry = tuple[int, Duration | None]
 
@@ -396,6 +401,7 @@ __all__ = [
     "SupportsRichComparison",
     "SupportsRound",
     "System",
+    "TableLike",
     "TimeDeltaLike",
     "TimeLike",
     "TimeOrDateTimeDelta",

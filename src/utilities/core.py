@@ -236,6 +236,8 @@ from utilities.constants import (
     RICH_MAX_LENGTH,
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
+    RICH_SHOW_EDGE,
+    RICH_SHOW_LINES,
     SECONDS_PER_DAY,
     SECONDS_PER_HOUR,
     SECONDS_PER_MINUTE,
@@ -262,6 +264,7 @@ from utilities.types import (
     StrDict,
     StrMapping,
     SupportsRichComparison,
+    TableLike,
     TimeZone,
     TimeZoneLike,
     Triple,
@@ -1994,29 +1997,86 @@ def write_text(
 ###############################################################################
 
 
+@overload
 def repr_mapping(
     mapping: StrMapping,
     /,
     *,
     header: SequenceStr | None = None,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
     max_length: int | None = RICH_MAX_LENGTH,
     max_string: int | None = RICH_MAX_STRING,
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
-) -> str:
+    table: Literal[True],
+) -> Table: ...
+@overload
+def repr_mapping(
+    mapping: StrMapping,
+    /,
+    *,
+    header: SequenceStr | None = None,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+    table: Literal[False] = False,
+) -> str: ...
+@overload
+def repr_mapping(
+    mapping: StrMapping,
+    /,
+    *,
+    header: SequenceStr | None = None,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+    table: bool = False,
+) -> TableLike: ...
+def repr_mapping(
+    mapping: StrMapping,
+    /,
+    *,
+    header: SequenceStr | None = None,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+    table: bool = False,
+) -> TableLike:
     """Get the representation of a mapping as a table."""
     return repr_table(
         *mapping.items(),
         header=header,
+        show_edge=show_edge,
+        show_lines=show_lines,
         max_width=max_width,
         indent_size=indent_size,
         max_length=max_length,
         max_string=max_string,
         max_depth=max_depth,
         expand_all=expand_all,
+        table=table,
     )
+
+
+##
 
 
 def repr_str(
@@ -2049,8 +2109,8 @@ def repr_str(
 def repr_table(
     *items: tuple[Any, ...],
     header: SequenceStr | None = None,
-    show_edge: bool = True,
-    show_lines: bool = False,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
     max_length: int | None = RICH_MAX_LENGTH,
@@ -2063,8 +2123,8 @@ def repr_table(
 def repr_table(
     *items: tuple[Any, ...],
     header: SequenceStr | None = None,
-    show_edge: bool = True,
-    show_lines: bool = False,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
     max_length: int | None = RICH_MAX_LENGTH,
@@ -2073,11 +2133,12 @@ def repr_table(
     expand_all: bool = RICH_EXPAND_ALL,
     table: Literal[False] = False,
 ) -> str: ...
+@overload
 def repr_table(
     *items: tuple[Any, ...],
     header: SequenceStr | None = None,
-    show_edge: bool = True,
-    show_lines: bool = False,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
     max_length: int | None = RICH_MAX_LENGTH,
@@ -2085,7 +2146,20 @@ def repr_table(
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
     table: bool = False,
-) -> Table | str:
+) -> TableLike: ...
+def repr_table(
+    *items: tuple[Any, ...],
+    header: SequenceStr | None = None,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+    table: bool = False,
+) -> TableLike:
     """Get the representation of a table."""
     header_use = [] if header is None else header
     tab = Table(

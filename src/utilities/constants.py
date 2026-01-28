@@ -216,6 +216,8 @@ SYSTEM_RANDOM: SystemRandom = SystemRandom()
 # rich
 
 
+RICH_SHOW_EDGE: bool = True
+RICH_SHOW_LINES: bool = False
 RICH_MAX_WIDTH: int = 80
 RICH_INDENT_SIZE: int = 4
 RICH_MAX_LENGTH: int | None = 20
@@ -519,6 +521,8 @@ __all__ = [
     "PAIR_SEPARATOR",
     "PWD",
     "REL_TOL",
+    "RICH_SHOW_EDGE",
+    "RICH_SHOW_LINES",
     "ROOT_GROUP_NAME",
     "ROOT_USER_NAME",
     "SECOND",
