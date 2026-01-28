@@ -36,7 +36,13 @@ from typing import (
 )
 
 from utilities.constants import SYSTEM_RANDOM, Sentinel, sentinel
-from utilities.core import async_sleep, duration_to_seconds, get_now, is_pytest, repr_
+from utilities.core import (
+    async_sleep,
+    duration_to_seconds,
+    get_now,
+    is_pytest,
+    pretty_repr,
+)
 from utilities.functions import ensure_int, ensure_not_none
 from utilities.shelve import yield_shelf
 from utilities.text import to_bool
@@ -418,7 +424,7 @@ class OneAsyncError[T](Exception):
 class OneAsyncEmptyError[T](OneAsyncError[T]):
     @override
     def __str__(self) -> str:
-        return f"Iterable(s) {repr_(self.iterables)} must not be empty"
+        return f"Iterable(s) {pretty_repr(self.iterables)} must not be empty"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -428,7 +434,7 @@ class OneAsyncNonUniqueError[T](OneAsyncError):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable(s) {repr_(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
+        return f"Iterable(s) {pretty_repr(self.iterables)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
 
 
 ##

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal, overload, override
 
 from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
-from utilities.core import get_class_name, repr_, repr_str
+from utilities.core import get_class_name, pretty_repr, repr_str
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Container, Iterable, Iterator
@@ -250,7 +250,9 @@ class EnsureMemberError(Exception):
     @override
     def __str__(self) -> str:
         return _make_error_msg(
-            self.obj, f"a member of {repr_(self.container)}", nullable=self.nullable
+            self.obj,
+            f"a member of {pretty_repr(self.container)}",
+            nullable=self.nullable,
         )
 
 

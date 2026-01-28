@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, cast, override
 
 import utilities.math
 from utilities.constants import ABS_TOL, REL_TOL
-from utilities.core import repr_
+from utilities.core import pretty_repr
 from utilities.iterables import SortIterableError, sort_iterable
 from utilities.typing import is_dataclass_instance
 
@@ -110,7 +110,7 @@ class IsEqualError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to sort {repr_(self.x)} and {repr_(self.y)}"  # pragma: no cover
+        return f"Unable to sort {pretty_repr(self.x)} and {pretty_repr(self.y)}"  # pragma: no cover
 
 
 __all__ = ["IsEqualError", "is_equal"]

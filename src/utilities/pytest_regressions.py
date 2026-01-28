@@ -10,7 +10,7 @@ from pytest_datadir.plugin import LazyDataDir
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from utilities._core_errors import CopySourceNotFoundError
-from utilities.core import copy, repr_
+from utilities.core import copy, pretty_repr
 from utilities.functions import ensure_str
 from utilities.operator import is_equal
 
@@ -96,7 +96,7 @@ class OrjsonRegressionError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Obtained object (at {str(self.path_obtained)!r}) and existing object (at {str(self.path_existing)!r}) differ; got {repr_(self.obtained)} and {repr_(self.existing)}"
+        return f"Obtained object (at {str(self.path_obtained)!r}) and existing object (at {str(self.path_existing)!r}) differ; got {pretty_repr(self.obtained)} and {pretty_repr(self.existing)}"
 
 
 ##

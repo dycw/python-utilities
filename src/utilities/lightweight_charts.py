@@ -4,7 +4,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
 
 from utilities.contextlib import enhanced_async_context_manager
-from utilities.core import OneEmptyError, OneNonUniqueError, one, repr_, write_bytes
+from utilities.core import (
+    OneEmptyError,
+    OneNonUniqueError,
+    one,
+    pretty_repr,
+    write_bytes,
+)
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -70,7 +76,7 @@ class _SetDataFrameNonUniqueError(SetDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"{repr_(self.schema)} must contain exactly 1 date/datetime column; got {self.first!r}, {self.second!r} and perhaps more"
+        return f"{pretty_repr(self.schema)} must contain exactly 1 date/datetime column; got {self.first!r}, {self.second!r} and perhaps more"
 
 
 ##

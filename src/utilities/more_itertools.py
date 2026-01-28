@@ -19,7 +19,13 @@ from more_itertools import bucket, partition, split_into
 from more_itertools import peekable as _peekable
 
 from utilities.constants import Sentinel, sentinel
-from utilities.core import OneNonUniqueError, get_class_name, is_sentinel, one, repr_
+from utilities.core import (
+    OneNonUniqueError,
+    get_class_name,
+    is_sentinel,
+    one,
+    pretty_repr,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping, Sequence
@@ -230,7 +236,7 @@ class BucketMappingError[K: Hashable, V](Exception):
     @override
     def __str__(self) -> str:
         parts = [
-            f"{repr_(key)} (#1: {repr_(first)}, #2: {repr_(second)})"
+            f"{pretty_repr(key)} (#1: {pretty_repr(first)}, #2: {pretty_repr(second)})"
             for key, (first, second) in self.errors.items()
         ]
         desc = ", ".join(parts)

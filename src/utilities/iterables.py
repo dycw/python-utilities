@@ -28,7 +28,7 @@ from typing import (
     override,
 )
 
-from utilities.core import OneStrEmptyError, always_iterable, one, one_str, repr_
+from utilities.core import OneStrEmptyError, always_iterable, one, one_str, pretty_repr
 from utilities.errors import ImpossibleCaseError
 from utilities.math import (
     _CheckIntegerEqualError,
@@ -76,7 +76,7 @@ class ApplyBijectionError[T](Exception):
 class _ApplyBijectionDuplicateKeysError[T](ApplyBijectionError[T]):
     @override
     def __str__(self) -> str:
-        return f"Keys {repr_(self.keys)} must not contain duplicates; got {repr_(self.counts)}"
+        return f"Keys {pretty_repr(self.keys)} must not contain duplicates; got {pretty_repr(self.counts)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -85,7 +85,7 @@ class _ApplyBijectionDuplicateValuesError[T, U](ApplyBijectionError[T]):
 
     @override
     def __str__(self) -> str:
-        return f"Values {repr_(self.values)} must not contain duplicates; got {repr_(self.counts)}"
+        return f"Values {pretty_repr(self.values)} must not contain duplicates; got {pretty_repr(self.counts)}"
 
 
 ##
@@ -119,7 +119,7 @@ class CheckBijectionError[THashable](Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {repr_(self.mapping)} must be a bijection; got duplicates {repr_(self.counts)}"
+        return f"Mapping {pretty_repr(self.mapping)} must be a bijection; got duplicates {pretty_repr(self.counts)}"
 
 
 ##
@@ -139,7 +139,7 @@ class CheckDuplicatesError[THashable](Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {repr_(self.iterable)} must not contain duplicates; got {repr_(self.counts)}"
+        return f"Iterable {pretty_repr(self.iterable)} must not contain duplicates; got {pretty_repr(self.counts)}"
 
 
 ##
@@ -191,12 +191,12 @@ class CheckIterablesEqualError[T](Exception):
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return f"Iterables {repr_(self.left)} and {repr_(self.right)} must be equal; {desc}"
+        return f"Iterables {pretty_repr(self.left)} and {pretty_repr(self.right)} must be equal; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.errors) >= 1:
             errors = [(f"{i=}", lv, rv) for i, lv, rv in self.errors]
-            yield f"differing items were {repr_(errors)}"
+            yield f"differing items were {pretty_repr(errors)}"
         match self.state:
             case "left_longer":
                 yield "left was longer"
@@ -247,7 +247,7 @@ class _CheckLengthEqualError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {repr_(self.obj)} must have length {self.equal}; got {len(self.obj)}"
+        return f"Object {pretty_repr(self.obj)} must have length {self.equal}; got {len(self.obj)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -261,7 +261,7 @@ class _CheckLengthEqualOrApproxError(CheckLengthError):
                 desc = f"approximate length {target} (error {error:%})"
             case target:
                 desc = f"length {target}"
-        return f"Object {repr_(self.obj)} must have {desc}; got {len(self.obj)}"
+        return f"Object {pretty_repr(self.obj)} must have {desc}; got {len(self.obj)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -270,7 +270,7 @@ class _CheckLengthMinError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {repr_(self.obj)} must have minimum length {self.min_}; got {len(self.obj)}"
+        return f"Object {pretty_repr(self.obj)} must have minimum length {self.min_}; got {len(self.obj)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -279,7 +279,7 @@ class _CheckLengthMaxError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {repr_(self.obj)} must have maximum length {self.max_}; got {len(self.obj)}"
+        return f"Object {pretty_repr(self.obj)} must have maximum length {self.max_}; got {len(self.obj)}"
 
 
 ##
@@ -298,7 +298,7 @@ class CheckLengthsEqualError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Sized objects {repr_(self.left)} and {repr_(self.right)} must have the same length; got {len(self.left)} and {len(self.right)}"
+        return f"Sized objects {pretty_repr(self.left)} and {pretty_repr(self.right)} must have the same length; got {len(self.left)} and {len(self.right)}"
 
 
 ##
@@ -348,18 +348,16 @@ class CheckMappingsEqualError[K, V](Exception):
                 desc = f"{first}, {second} and {third}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return (
-            f"Mappings {repr_(self.left)} and {repr_(self.right)} must be equal; {desc}"
-        )
+        return f"Mappings {pretty_repr(self.left)} and {pretty_repr(self.right)} must be equal; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.left_extra) >= 1:
-            yield f"left had extra keys {repr_(self.left_extra)}"
+            yield f"left had extra keys {pretty_repr(self.left_extra)}"
         if len(self.right_extra) >= 1:
-            yield f"right had extra keys {repr_(self.right_extra)}"
+            yield f"right had extra keys {pretty_repr(self.right_extra)}"
         if len(self.errors) >= 1:
             errors = [(f"{k=}", lv, rv) for k, lv, rv in self.errors]
-            yield f"differing values were {repr_(errors)}"
+            yield f"differing values were {pretty_repr(errors)}"
 
 
 ##
@@ -397,13 +395,13 @@ class CheckSetsEqualError[T](Exception):
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return f"Sets {repr_(self.left)} and {repr_(self.right)} must be equal; {desc}"
+        return f"Sets {pretty_repr(self.left)} and {pretty_repr(self.right)} must be equal; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.left_extra) >= 1:
-            yield f"left had extra items {repr_(self.left_extra)}"
+            yield f"left had extra items {pretty_repr(self.left_extra)}"
         if len(self.right_extra) >= 1:
-            yield f"right had extra items {repr_(self.right_extra)}"
+            yield f"right had extra items {pretty_repr(self.right_extra)}"
 
 
 ##
@@ -444,14 +442,14 @@ class CheckSubMappingError[K, V](Exception):
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return f"Mapping {repr_(self.left)} must be a submapping of {repr_(self.right)}; {desc}"
+        return f"Mapping {pretty_repr(self.left)} must be a submapping of {pretty_repr(self.right)}; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.extra) >= 1:
-            yield f"left had extra keys {repr_(self.extra)}"
+            yield f"left had extra keys {pretty_repr(self.extra)}"
         if len(self.errors) >= 1:
             errors = [(f"{k=}", lv, rv) for k, lv, rv in self.errors]
-            yield f"differing values were {repr_(errors)}"
+            yield f"differing values were {pretty_repr(errors)}"
 
 
 ##
@@ -474,7 +472,7 @@ class CheckSubSetError[T](Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Set {repr_(self.left)} must be a subset of {repr_(self.right)}; left had extra items {repr_(self.extra)}"
+        return f"Set {pretty_repr(self.left)} must be a subset of {pretty_repr(self.right)}; left had extra items {pretty_repr(self.extra)}"
 
 
 ##
@@ -515,14 +513,14 @@ class CheckSuperMappingError[K, V](Exception):
                 desc = f"{first} and {second}"
             case _:  # pragma: no cover
                 raise ImpossibleCaseError(case=[f"{parts=}"])
-        return f"Mapping {repr_(self.left)} must be a supermapping of {repr_(self.right)}; {desc}"
+        return f"Mapping {pretty_repr(self.left)} must be a supermapping of {pretty_repr(self.right)}; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.extra) >= 1:
-            yield f"right had extra keys {repr_(self.extra)}"
+            yield f"right had extra keys {pretty_repr(self.extra)}"
         if len(self.errors) >= 1:
             errors = [(f"{k=}", lv, rv) for k, lv, rv in self.errors]
-            yield f"differing values were {repr_(errors)}"
+            yield f"differing values were {pretty_repr(errors)}"
 
 
 ##
@@ -545,7 +543,7 @@ class CheckSuperSetError[T](Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Set {repr_(self.left)} must be a superset of {repr_(self.right)}; right had extra items {repr_(self.extra)}."
+        return f"Set {pretty_repr(self.left)} must be a superset of {pretty_repr(self.right)}; right had extra items {pretty_repr(self.extra)}."
 
 
 ##
@@ -575,7 +573,7 @@ class CheckUniqueModuloCaseError(Exception):
 class _CheckUniqueModuloCaseDuplicateStringsError(CheckUniqueModuloCaseError):
     @override
     def __str__(self) -> str:
-        return f"Strings {repr_(self.keys)} must not contain duplicates; got {repr_(self.counts)}"
+        return f"Strings {pretty_repr(self.keys)} must not contain duplicates; got {pretty_repr(self.counts)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -584,7 +582,7 @@ class _CheckUniqueModuloCaseDuplicateLowerCaseStringsError(CheckUniqueModuloCase
 
     @override
     def __str__(self) -> str:
-        return f"Strings {repr_(self.values)} must not contain duplicates (modulo case); got {repr_(self.counts)}"
+        return f"Strings {pretty_repr(self.values)} must not contain duplicates (modulo case); got {pretty_repr(self.counts)}"
 
 
 ##
@@ -621,7 +619,7 @@ class EnsureIterableError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Object {repr_(self.obj)} must be iterable"
+        return f"Object {pretty_repr(self.obj)} must be iterable"
 
 
 ##
@@ -793,7 +791,7 @@ class MergeStrMappingsError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {repr_(self.mapping)} keys must not contain duplicates (modulo case); got {repr_(self.counts)}"
+        return f"Mapping {pretty_repr(self.mapping)} keys must not contain duplicates (modulo case); got {pretty_repr(self.counts)}"
 
 
 ##
@@ -824,7 +822,7 @@ class ResolveIncludeAndExcludeError[T](Exception):
         include = list(self.include)
         exclude = list(self.exclude)
         overlap = set(include) & set(exclude)
-        return f"Iterables {repr_(include)} and {repr_(exclude)} must not overlap; got {repr_(overlap)}"
+        return f"Iterables {pretty_repr(include)} and {pretty_repr(exclude)} must not overlap; got {pretty_repr(overlap)}"
 
 
 ##
@@ -891,7 +889,7 @@ class SortIterableError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to sort {repr_(self.x)} and {repr_(self.y)}"
+        return f"Unable to sort {pretty_repr(self.x)} and {pretty_repr(self.y)}"
 
 
 def _sort_iterable_cmp_floats(x: float, y: float, /) -> Sign:

@@ -17,7 +17,7 @@ from typing import (
 )
 
 from utilities.constants import BRACKETS, LIST_SEPARATOR, PAIR_SEPARATOR, Sentinel
-from utilities.core import repr_, transpose
+from utilities.core import pretty_repr, transpose
 from utilities.iterables import CheckDuplicatesError, check_duplicates
 
 if TYPE_CHECKING:
@@ -168,7 +168,7 @@ class _SplitKeyValuePairsDuplicateKeysError(SplitKeyValuePairsError):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to split {self.text!r} into a mapping since there are duplicate keys; got {repr_(self.counts)}"
+        return f"Unable to split {self.text!r} into a mapping since there are duplicate keys; got {pretty_repr(self.counts)}"
 
 
 ##

@@ -74,7 +74,7 @@ from utilities.core import (
     is_pytest,
     normalize_multi_line_str,
     one,
-    repr_,
+    pretty_repr,
     snake_case,
 )
 from utilities.functions import ensure_str, yield_object_attributes
@@ -192,7 +192,7 @@ class CheckEngineError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"{repr_(self.engine)} must have {self.expected} table(s); got {len(self.rows)}"
+        return f"{pretty_repr(self.engine)} must have {self.expected} table(s); got {len(self.rows)}"
 
 
 ##
@@ -1108,7 +1108,7 @@ class _MapMappingToTableExtraColumnsError(_MapMappingToTableError):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {repr_(self.mapping)} must be a subset of table columns {repr_(self.columns)}; got extra {self.extra}"
+        return f"Mapping {pretty_repr(self.mapping)} must be a subset of table columns {pretty_repr(self.columns)}; got extra {self.extra}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1117,7 +1117,7 @@ class _MapMappingToTableSnakeMapEmptyError(_MapMappingToTableError):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {repr_(self.mapping)} must be a subset of table columns {repr_(self.columns)}; cannot find column to map to {self.key!r} modulo snake casing"
+        return f"Mapping {pretty_repr(self.mapping)} must be a subset of table columns {pretty_repr(self.columns)}; cannot find column to map to {self.key!r} modulo snake casing"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1128,7 +1128,7 @@ class _MapMappingToTableSnakeMapNonUniqueError(_MapMappingToTableError):
 
     @override
     def __str__(self) -> str:
-        return f"Mapping {repr_(self.mapping)} must be a subset of table columns {repr_(self.columns)}; found columns {self.first!r}, {self.second!r} and perhaps more to map to {self.key!r} modulo snake casing"
+        return f"Mapping {pretty_repr(self.mapping)} must be a subset of table columns {pretty_repr(self.columns)}; found columns {self.first!r}, {self.second!r} and perhaps more to map to {self.key!r} modulo snake casing"
 
 
 ##

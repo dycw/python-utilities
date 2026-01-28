@@ -7,7 +7,6 @@ import math
 import os
 import pickle
 import re
-import reprlib
 import shutil
 import tempfile
 import time
@@ -67,6 +66,7 @@ from warnings import catch_warnings, filterwarnings
 from zipfile import ZipFile
 from zoneinfo import ZoneInfo
 
+from rich.pretty import pretty_repr
 from typing_extensions import TypeIs
 from whenever import (
     Date,
@@ -1960,38 +1960,8 @@ def write_text(
 
 
 ###############################################################################
-#### reprlib ##################################################################
+#### rich #####################################################################
 ###############################################################################
-
-
-def repr_(
-    obj: Any,
-    /,
-    *,
-    max_width: int = RICH_MAX_WIDTH,
-    indent_size: int = RICH_INDENT_SIZE,
-    max_length: int | None = RICH_MAX_LENGTH,
-    max_string: int | None = RICH_MAX_STRING,
-    max_depth: int | None = RICH_MAX_DEPTH,
-    expand_all: bool = RICH_EXPAND_ALL,
-) -> str:
-    """Get the representation of an object."""
-    try:
-        from rich.pretty import pretty_repr
-    except ModuleNotFoundError:  # pragma: no cover
-        return reprlib.repr(obj)
-    return pretty_repr(
-        obj,
-        max_width=max_width,
-        indent_size=indent_size,
-        max_length=max_length,
-        max_string=max_string,
-        max_depth=max_depth,
-        expand_all=expand_all,
-    )
-
-
-##
 
 
 def repr_str(
@@ -2006,7 +1976,7 @@ def repr_str(
     expand_all: bool = RICH_EXPAND_ALL,
 ) -> str:
     """Get the representation of the string of an object."""
-    return repr_(
+    return pretty_repr(
         str(obj),
         max_width=max_width,
         indent_size=indent_size,
@@ -3219,7 +3189,6 @@ __all__ = [
     "read_pickle",
     "read_text",
     "replace_non_sentinel",
-    "repr_",
     "repr_error",
     "repr_str",
     "substitute",
