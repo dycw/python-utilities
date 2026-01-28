@@ -246,6 +246,7 @@ from utilities.types import (
     FilterWarningsAction,
     LoggerLike,
     MaybeCallableDateLike,
+    MaybeType,
     Number,
     Pair,
     PathToBinaryIO,
@@ -726,6 +727,26 @@ def replace_non_sentinel[T: Dataclass](
                 setattr(obj, k, v)
         return None
     return replace(obj, **{k: v for k, v in kwargs.items() if not is_sentinel(v)})
+
+
+###############################################################################
+#### dataclass ################################################################
+###############################################################################
+
+
+def repr_error(error: MaybeType[BaseException], /) -> str:
+    """Get a string representation of an error."""
+    match error:
+        case ExceptionGroup() as group:
+            descs = list(map(repr_error, group.exceptions))
+            joined = ", ".join(descs)
+            return f"{get_class_name(group)}({joined})"
+        case BaseException():
+            return f"{get_class_name(error)}({error})"
+        case type():
+            return get_class_name(error)
+        case never:
+            assert_never(never)
 
 
 ###############################################################################
@@ -3199,6 +3220,7 @@ __all__ = [
     "read_text",
     "replace_non_sentinel",
     "repr_",
+    "repr_error",
     "repr_str",
     "substitute",
     "suppress_super_attribute_error",
