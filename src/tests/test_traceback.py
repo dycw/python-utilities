@@ -84,7 +84,7 @@ class TestFormatExceptionStack:
                 │ User       │ \w+ \s+ │
                 │ Host       │ [\w\-]+ \s+ │
                 │ Process ID │ \d+ \s+ │
-                │ Version    │                             │
+                │ Version    │ \s+ │
                 └────────────┴──+┘
 
                 ┏━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
