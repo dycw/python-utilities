@@ -5,9 +5,10 @@ from os import environ, name
 from pathlib import Path
 from typing import Literal, override
 
+from rich.pretty import pretty_repr
 from shellingham import ShellDetectionFailure, detect_shell
 
-from utilities.core import OneEmptyError, one, pretty_repr
+from utilities.core import OneEmptyError, one
 from utilities.typing import get_args
 
 type Shell = Literal["bash", "fish", "posix", "sh", "zsh"]

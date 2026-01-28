@@ -8,9 +8,10 @@ from typing import TYPE_CHECKING, Any, assert_never, override
 
 from pytest_datadir.plugin import LazyDataDir
 from pytest_regressions.file_regression import FileRegressionFixture
+from rich.pretty import pretty_repr
 
 from utilities._core_errors import CopySourceNotFoundError
-from utilities.core import copy, pretty_repr
+from utilities.core import copy
 from utilities.functions import ensure_str
 from utilities.operator import is_equal
 

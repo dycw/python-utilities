@@ -6,9 +6,10 @@ from inspect import getattr_static
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, overload, override
 
+from rich.pretty import pretty_repr
 from whenever import Date, PlainDateTime, Time, TimeDelta, ZonedDateTime
 
-from utilities.core import get_class_name, pretty_repr, repr_str
+from utilities.core import get_class_name, repr_str
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Container, Iterable, Iterator

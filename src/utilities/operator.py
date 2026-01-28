@@ -5,9 +5,10 @@ from collections.abc import Set as AbstractSet
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, cast, override
 
+from rich.pretty import pretty_repr
+
 import utilities.math
 from utilities.constants import ABS_TOL, REL_TOL
-from utilities.core import pretty_repr
 from utilities.iterables import SortIterableError, sort_iterable
 from utilities.typing import is_dataclass_instance
 

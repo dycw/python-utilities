@@ -23,12 +23,13 @@ from polars import (
     concat,
     read_database,
 )
+from rich.pretty import pretty_repr
 from sqlalchemy import Column, Select, select
 from sqlalchemy.exc import DuplicateColumnError
 
 import utilities.asyncio
 from utilities.constants import UTC
-from utilities.core import OneError, chunked, identity, one, pretty_repr, snake_case
+from utilities.core import OneError, chunked, identity, one, snake_case
 from utilities.iterables import CheckDuplicatesError, check_duplicates
 from utilities.polars import zoned_date_time_dtype
 from utilities.sqlalchemy import (

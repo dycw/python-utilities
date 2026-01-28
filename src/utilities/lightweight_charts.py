@@ -3,14 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
 
+from rich.pretty import pretty_repr
+
 from utilities.contextlib import enhanced_async_context_manager
-from utilities.core import (
-    OneEmptyError,
-    OneNonUniqueError,
-    one,
-    pretty_repr,
-    write_bytes,
-)
+from utilities.core import OneEmptyError, OneNonUniqueError, one, write_bytes
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator

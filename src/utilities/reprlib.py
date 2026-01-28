@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from functools import partial
 from typing import TYPE_CHECKING
+
+from rich.pretty import pretty_repr
 
 from utilities.constants import (
     RICH_EXPAND_ALL,
@@ -22,30 +23,25 @@ def yield_mapping_repr(
     mapping: StrMapping,
     /,
     *,
-    _max_width: int = RICH_MAX_WIDTH,
-    _indent_size: int = RICH_INDENT_SIZE,
-    _max_length: int | None = RICH_MAX_LENGTH,
-    _max_string: int | None = RICH_MAX_STRING,
-    _max_depth: int | None = RICH_MAX_DEPTH,
-    _expand_all: bool = RICH_EXPAND_ALL,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
 ) -> Iterator[str]:
     """Pretty print of a set of keyword arguments."""
-    try:
-        from rich.pretty import pretty_repr
-    except ModuleNotFoundError:  # pragma: no cover
-        repr_use = repr
-    else:
-        repr_use = partial(
-            pretty_repr,
-            max_width=_max_width,
-            indent_size=_indent_size,
-            max_length=_max_length,
-            max_string=_max_string,
-            max_depth=_max_depth,
-            expand_all=_expand_all,
-        )
     for k, v in mapping.items():
-        yield f"{k} = {repr_use(v)}"
+        repr_use = pretty_repr(
+            v,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
+        )
+        yield f"{k} = {repr_use}"
 
 
 __all__ = ["yield_mapping_repr"]
