@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pytest import mark, raises
+from pytest import raises
 
 from utilities._core_errors import ReprTableHeaderError
 from utilities.core import (
