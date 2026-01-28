@@ -20,7 +20,28 @@ class TestReprError:
         error = CalledProcessError(1, "cmd", "stdout", "stderr")
         result = repr_error(error)
         expected = normalize_multi_line_str("""
-            asdf
+            CalledProcessError(
+                returncode │ 1
+                cmd        │ cmd
+                stdout     │ stdout
+                stderr     │ stderr
+            )
+        """)
+        assert result == expected
+
+    def test_called_process_long_cmd(self) -> None:
+        error = CalledProcessError(
+            1, " ".join(["cmd", *(f"arg{i}" for i in range(20))]), "stdout", "stderr"
+        )
+        result = repr_error(error)
+        expected = normalize_multi_line_str("""
+            CalledProcessError(
+                returncode │ 1
+                cmd        │ cmd arg0 arg1 arg2 arg3 arg4 arg5 arg6 arg7 arg8 arg9 arg10 arg11
+                           │ arg12 arg13 arg14 arg15 arg16 arg17 arg18 arg19
+                stdout     │ stdout
+                stderr     │ stderr
+            )
         """)
         assert result == expected
 

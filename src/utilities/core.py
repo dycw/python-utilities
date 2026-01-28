@@ -755,16 +755,18 @@ def repr_error(error: MaybeType[BaseException], /) -> str:
                 ("cmd", error.cmd),
                 ("stdout", error.stdout),
                 ("stderr", error.stderr),
+                show_edge=False,
             )
+            table = normalize_multi_line_str(table)
             indented = indent(table, 4 * " ")
-            return f"{get_class_name(error)}(\n{indented})"
+            wrapped = f"{get_class_name(error)}(\n{indented})"
+            return normalize_str(wrapped)
         case BaseException():
             return f"{get_class_name(error)}({error})"
         case type():
             return get_class_name(error)
         case never:
             assert_never(never)
-    return None
 
 
 ###############################################################################
@@ -2383,13 +2385,15 @@ _kebab_pascal_pattern = re.compile(
 
 def normalize_multi_line_str(text: str, /) -> str:
     """Normalize a multi-line string."""
-    stripped = text.strip("\n")
-    return normalize_str(dedent(stripped))
+    stripped1 = text.strip("\n")
+    dedented = dedent(stripped1)
+    stripped2 = "\n".join(line.rstrip(" ") for line in dedented.splitlines())
+    return stripped2 + "\n"
 
 
 def normalize_str(text: str, /) -> str:
     """Normalize a string."""
-    return text.strip("\n") + "\n"
+    return text.strip(" \n") + "\n"
 
 
 ##
