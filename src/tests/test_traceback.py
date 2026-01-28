@@ -27,7 +27,6 @@ if TYPE_CHECKING:
     from utilities.types import Delta
 
 
-@mark.only
 class TestFormatExceptionStack:
     @classmethod
     def func(cls, a: int, b: int, /, *args: int, c: int = 0, **kwargs: int) -> int:
