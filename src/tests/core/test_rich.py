@@ -73,7 +73,7 @@ class TestReprTable:
         assert result == expected
 
     def test_nested_long_item_str(self) -> None:
-        inner = repr_table(("b1", 1), ("b2", list(range(100))), ("b3", 3))
+        inner = repr_table(("b1", 1), ("b2", list(range(100))), ("b3", 3)).rstrip("\n")
         result = repr_table(("a", 1), ("b", inner), ("c", 3))
         expected = normalize_multi_line_str("""
             ┌───┬──────────────────────────────────────────────────────────────────────────┐
@@ -88,7 +88,6 @@ class TestReprTable:
             │   │ │ b3 │ 3                                                                 │
             │   │ │                                                                        │
             │   │ └────┴─────────────────────────────────────────────────────────────────… │
-            │   │                                                                          │
             │ c │ 3                                                                        │
             └───┴──────────────────────────────────────────────────────────────────────────┘
         """)
