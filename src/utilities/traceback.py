@@ -4,16 +4,15 @@ import re
 import sys
 from dataclasses import dataclass
 from functools import partial
-from getpass import getuser
-from itertools import repeat
 from os import getpid
 from pathlib import Path
-from socket import gethostname
 from sys import stderr
+from textwrap import indent
 from traceback import TracebackException
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, Any, Literal, override
 
 from utilities.constants import (
+    HOSTNAME,
     LOCAL_TIME_ZONE_NAME,
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
@@ -21,11 +20,19 @@ from utilities.constants import (
     RICH_MAX_LENGTH,
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
+    USER,
 )
-from utilities.core import OneEmptyError, get_now, get_now_local, one, write_text
-from utilities.errors import repr_error
+from utilities.core import (
+    OneEmptyError,
+    get_now,
+    get_now_local,
+    one,
+    repr_error,
+    repr_mapping,
+    repr_table,
+    write_text,
+)
 from utilities.pathlib import module_path, to_path
-from utilities.reprlib import yield_mapping_repr
 from utilities.text import to_bool
 from utilities.version import to_version3
 from utilities.whenever import format_compact, to_zoned_date_time
@@ -41,6 +48,7 @@ if TYPE_CHECKING:
         MaybeCallablePathLike,
         MaybeCallableZonedDateTimeLike,
         PathLike,
+        TableLike,
     )
     from utilities.version import MaybeCallableVersion3Like
 
@@ -64,11 +72,11 @@ def format_exception_stack(
     expand_all: bool = RICH_EXPAND_ALL,
 ) -> str:
     """Format an exception stack."""
-    lines: list[str] = []
+    parts: list[str] = []
     if header:
-        lines.extend(_yield_header_lines(start=start, version=version))
-    lines.extend(
-        _yield_formatted_frame_summary(
+        parts.append(_get_header(start=start, version=version))
+    parts.append(
+        _get_frame_summaries(
             error,
             capture_locals=capture_locals,
             max_width=max_width,
@@ -79,29 +87,32 @@ def format_exception_stack(
             expand_all=expand_all,
         )
     )
-    return "\n".join(lines)
+    return "\n".join(parts)
 
 
-def _yield_header_lines(
+def _get_header(
     *,
     start: MaybeCallableZonedDateTimeLike = get_now,
     version: MaybeCallableVersion3Like | None = None,
-) -> Iterator[str]:
-    """Yield the header lines."""
-    now = get_now_local()
-    yield f"Date/time  | {format_compact(now)}"
+) -> str:
+    """Get the header."""
+    items: list[tuple[str, Any]] = []
     start_use = to_zoned_date_time(start).to_tz(LOCAL_TIME_ZONE_NAME)
-    yield f"Started    | {format_compact(start_use)}"
-    yield f"Duration   | {(now - start_use).format_iso()}"
-    yield f"User       | {getuser()}"
-    yield f"Host       | {gethostname()}"
-    yield f"Process ID | {getpid()}"
+    now = get_now_local()
+    items.append(("Date/time", format_compact(now)))
+    items.extend([
+        ("Started", format_compact(start_use)),
+        ("Duration", (now - start_use).format_iso()),
+        ("User", USER),
+        ("Host", HOSTNAME),
+        ("Process ID", getpid()),
+    ])
     version_use = "" if version is None else to_version3(version)
-    yield f"Version    | {version_use}"
-    yield ""
+    items.append(("Version", version_use))
+    return repr_table(*items)
 
 
-def _yield_formatted_frame_summary(
+def _get_frame_summaries(
     error: BaseException,
     /,
     *,
@@ -112,15 +123,14 @@ def _yield_formatted_frame_summary(
     max_string: int | None = RICH_MAX_STRING,
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
-) -> Iterator[str]:
-    """Yield the formatted frame summary lines."""
+) -> str:
+    """Get the frame summaries."""
     stack = TracebackException.from_exception(
         error, capture_locals=capture_locals
     ).stack
-    n = len(stack)
+    items: list[tuple[int | Literal["E", ""], TableLike]] = []
     for i, frame in enumerate(stack, start=1):
-        num = f"{i}/{n}"
-        first, *rest = _yield_frame_summary_lines(
+        first, *rest = _yield_frame_summary_tables(
             frame,
             max_width=max_width,
             indent_size=indent_size,
@@ -129,14 +139,23 @@ def _yield_formatted_frame_summary(
             max_depth=max_depth,
             expand_all=expand_all,
         )
-        yield f"{num} | {first}"
-        blank = "".join(repeat(" ", len(num)))
-        for rest_i in rest:
-            yield f"{blank} | {rest_i}"
-    yield repr_error(error)
+        items.append((i, first))
+        items.extend([("", t) for t in rest])
+    items.append(("E", repr_error(error)))
+    return repr_table(
+        *items,
+        show_lines=True,
+        max_width=max_width,
+        indent_size=indent_size,
+        max_length=max_length,
+        max_string=max_string,
+        max_depth=max_depth,
+        expand_all=expand_all,
+        header=[f"n={len(stack)}", ""],
+    )
 
 
-def _yield_frame_summary_lines(
+def _yield_frame_summary_tables(
     frame: FrameSummary,
     /,
     *,
@@ -146,18 +165,22 @@ def _yield_frame_summary_lines(
     max_string: int | None = RICH_MAX_STRING,
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
-) -> Iterator[str]:
+) -> Iterator[TableLike]:
     module = _path_to_dots(frame.filename)
-    yield f"{module}:{frame.lineno} | {frame.name} | {frame.line}"
+    parts: list[str] = [f"{module}:{frame.lineno}:{frame.name}"]
+    if frame.line is not None:
+        parts.append(indent(frame.line, 4 * " "))
+    yield "\n".join(parts)
     if frame.locals is not None:
-        yield from yield_mapping_repr(
+        yield repr_mapping(
             frame.locals,
-            _max_width=max_width,
-            _indent_size=indent_size,
-            _max_length=max_length,
-            _max_string=max_string,
-            _max_depth=max_depth,
-            _expand_all=expand_all,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
+            table=True,
         )
 
 

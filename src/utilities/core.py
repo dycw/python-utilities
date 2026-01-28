@@ -7,12 +7,12 @@ import math
 import os
 import pickle
 import re
-import reprlib
 import shutil
 import tempfile
 import time
 from bz2 import BZ2File
-from collections.abc import Callable, Iterable, Iterator
+from collections import Counter
+from collections.abc import Callable, Hashable, Iterable, Iterator
 from contextlib import ExitStack, contextmanager, suppress
 from dataclasses import dataclass, replace
 from functools import _lru_cache_wrapper, partial, reduce, wraps
@@ -38,10 +38,10 @@ from stat import (
     S_IXUSR,
 )
 from string import Template
-from subprocess import check_output
+from subprocess import CalledProcessError, check_output
 from tarfile import ReadError, TarFile
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
-from textwrap import dedent
+from textwrap import dedent, indent
 from threading import get_ident
 from time import time_ns
 from types import (
@@ -67,6 +67,9 @@ from warnings import catch_warnings, filterwarnings
 from zipfile import ZipFile
 from zoneinfo import ZoneInfo
 
+from rich.console import Console
+from rich.pretty import pretty_repr
+from rich.table import Table
 from typing_extensions import TypeIs
 from whenever import (
     Date,
@@ -80,6 +83,7 @@ from whenever import (
 
 import utilities.constants
 from utilities._core_errors import (
+    CheckUniqueError,
     CompressBZ2Error,
     CompressGzipError,
     CompressLZMAError,
@@ -143,6 +147,9 @@ from utilities._core_errors import (
     ReadTextIfExistingFileNotADirectoryError,
     ReadTextIsADirectoryError,
     ReadTextNotADirectoryError,
+    ReprTableError,
+    ReprTableHeaderError,
+    ReprTableItemsError,
     SubstituteError,
     ToTimeZoneNameError,
     ToTimeZoneNameInvalidKeyError,
@@ -229,6 +236,8 @@ from utilities.constants import (
     RICH_MAX_LENGTH,
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
+    RICH_SHOW_EDGE,
+    RICH_SHOW_LINES,
     SECONDS_PER_DAY,
     SECONDS_PER_HOUR,
     SECONDS_PER_MINUTE,
@@ -246,13 +255,16 @@ from utilities.types import (
     FilterWarningsAction,
     LoggerLike,
     MaybeCallableDateLike,
+    MaybeType,
     Number,
     Pair,
     PathToBinaryIO,
     PatternLike,
+    SequenceStr,
     StrDict,
     StrMapping,
     SupportsRichComparison,
+    TableLike,
     TimeZone,
     TimeZoneLike,
     Triple,
@@ -729,6 +741,37 @@ def replace_non_sentinel[T: Dataclass](
 
 
 ###############################################################################
+#### errors ###################################################################
+###############################################################################
+
+
+def repr_error(error: MaybeType[BaseException], /) -> str:
+    """Get a string representation of an error."""
+    match error:
+        case ExceptionGroup() as group:
+            descs = list(map(repr_error, group.exceptions))
+            joined = ", ".join(descs)
+            return f"{get_class_name(group)}({joined})"
+        case CalledProcessError():
+            table = repr_table(
+                ("returncode", error.returncode),
+                ("cmd", error.cmd),
+                ("stdout", error.stdout),
+                ("stderr", error.stderr),
+                show_edge=False,
+            )
+            table = normalize_multi_line_str(table)
+            indented = indent(table, 4 * " ")
+            return f"{get_class_name(error)}(\n{indented})"
+        case BaseException():
+            return f"{get_class_name(error)}({error})"
+        case type():
+            return get_class_name(error)
+        case never:
+            assert_never(never)
+
+
+###############################################################################
 #### functools ################################################################
 ###############################################################################
 
@@ -821,6 +864,16 @@ def always_iterable[T](obj: MaybeIterable[T], /) -> Iterable[T]:
         return iter(cast("Iterable[T]", obj))
     except TypeError:
         return cast("list[T]", [obj])
+
+
+##
+
+
+def check_unique(*items: Hashable) -> None:
+    """Check an iterable contains only unique items."""
+    counts = {k: v for k, v in Counter(items).items() if v > 1}
+    if len(counts) >= 1:
+        raise CheckUniqueError(items=items, counts=counts)
 
 
 ##
@@ -1939,34 +1992,86 @@ def write_text(
 
 
 ###############################################################################
-#### reprlib ##################################################################
+#### rich #####################################################################
 ###############################################################################
 
 
-def repr_(
-    obj: Any,
+@overload
+def repr_mapping(
+    mapping: StrMapping,
     /,
     *,
+    header: SequenceStr | None = None,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
     max_length: int | None = RICH_MAX_LENGTH,
     max_string: int | None = RICH_MAX_STRING,
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
-) -> str:
-    """Get the representation of an object."""
-    try:
-        from rich.pretty import pretty_repr
-    except ModuleNotFoundError:  # pragma: no cover
-        return reprlib.repr(obj)
-    return pretty_repr(
-        obj,
+    table: Literal[True],
+) -> Table: ...
+@overload
+def repr_mapping(
+    mapping: StrMapping,
+    /,
+    *,
+    header: SequenceStr | None = None,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+    table: Literal[False] = False,
+) -> str: ...
+@overload
+def repr_mapping(
+    mapping: StrMapping,
+    /,
+    *,
+    header: SequenceStr | None = None,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+    table: bool = False,
+) -> TableLike: ...
+def repr_mapping(
+    mapping: StrMapping,
+    /,
+    *,
+    header: SequenceStr | None = None,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+    table: bool = False,
+) -> TableLike:
+    """Get the representation of a mapping as a table."""
+    return repr_table(
+        *mapping.items(),
+        header=header,
+        show_edge=show_edge,
+        show_lines=show_lines,
         max_width=max_width,
         indent_size=indent_size,
         max_length=max_length,
         max_string=max_string,
         max_depth=max_depth,
         expand_all=expand_all,
+        table=table,
     )
 
 
@@ -1985,7 +2090,7 @@ def repr_str(
     expand_all: bool = RICH_EXPAND_ALL,
 ) -> str:
     """Get the representation of the string of an object."""
-    return repr_(
+    return pretty_repr(
         str(obj),
         max_width=max_width,
         indent_size=indent_size,
@@ -1994,6 +2099,130 @@ def repr_str(
         max_depth=max_depth,
         expand_all=expand_all,
     )
+
+
+##
+
+
+@overload
+def repr_table(
+    *items: tuple[Any, ...],
+    header: SequenceStr | None = None,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+    table: Literal[True],
+) -> Table: ...
+@overload
+def repr_table(
+    *items: tuple[Any, ...],
+    header: SequenceStr | None = None,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+    table: Literal[False] = False,
+) -> str: ...
+@overload
+def repr_table(
+    *items: tuple[Any, ...],
+    header: SequenceStr | None = None,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+    table: bool = False,
+) -> TableLike: ...
+def repr_table(
+    *items: tuple[Any, ...],
+    header: SequenceStr | None = None,
+    show_edge: bool = RICH_SHOW_EDGE,
+    show_lines: bool = RICH_SHOW_LINES,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+    table: bool = False,
+) -> TableLike:
+    """Get the representation of a table."""
+    header_use = [] if header is None else header
+    tab = Table(
+        *header_use,
+        show_header=header is not None,
+        show_edge=show_edge,
+        show_lines=show_lines,
+    )
+    try:
+        n = one(sorted({len(i) for i in items}))
+    except OneEmptyError:
+        n = None
+    except OneNonUniqueError as error:
+        raise ReprTableItemsError(
+            items=list(items), first=error.first, second=error.second
+        ) from None
+    if (header is not None) and (n is not None) and (len(header) != n):
+        raise ReprTableHeaderError(
+            header=header, header_len=len(header), item_len=n
+        ) from None
+    for row in items:
+        row_strs = _repr_table_row(
+            row,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
+        )
+        tab.add_row(*row_strs)
+    if table:
+        return tab
+    console = Console(width=max_width, record=True)
+    with console.capture() as capture:
+        console.print(tab)
+    return capture.get()
+
+
+def _repr_table_row(
+    row: Iterable[Any],
+    /,
+    *,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+) -> list[Any]:
+    return [
+        i
+        if isinstance(i, (Table, str))
+        else pretty_repr(
+            i,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
+        )
+        for i in row
+    ]
 
 
 ###############################################################################
@@ -2262,13 +2491,15 @@ _kebab_pascal_pattern = re.compile(
 
 def normalize_multi_line_str(text: str, /) -> str:
     """Normalize a multi-line string."""
-    stripped = text.strip("\n")
-    return normalize_str(dedent(stripped))
+    stripped1 = text.strip("\n")
+    dedented = dedent(stripped1)
+    stripped2 = "\n".join(line.rstrip(" ") for line in dedented.splitlines())
+    return stripped2 + "\n"
 
 
 def normalize_str(text: str, /) -> str:
     """Normalize a string."""
-    return text.strip("\n") + "\n"
+    return text.strip(" \n") + "\n"
 
 
 ##
@@ -3032,6 +3263,7 @@ def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
 
 
 __all__ = [
+    "CheckUniqueError",
     "CompressBZ2Error",
     "CompressGzipError",
     "CompressLZMAError",
@@ -3097,6 +3329,9 @@ __all__ = [
     "ReadTextIfExistingFileNotADirectoryError",
     "ReadTextIsADirectoryError",
     "ReadTextNotADirectoryError",
+    "ReprTableError",
+    "ReprTableHeaderError",
+    "ReprTableItemsError",
     "SubstituteError",
     "TemporaryDirectory",
     "TemporaryFile",
@@ -3133,6 +3368,7 @@ __all__ = [
     "YieldZipNotADirectoryError",
     "always_iterable",
     "async_sleep",
+    "check_unique",
     "chmod",
     "chown",
     "chunked",
@@ -3198,8 +3434,9 @@ __all__ = [
     "read_pickle",
     "read_text",
     "replace_non_sentinel",
-    "repr_",
+    "repr_error",
     "repr_str",
+    "repr_table",
     "substitute",
     "suppress_super_attribute_error",
     "suppress_warnings",

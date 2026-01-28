@@ -51,6 +51,7 @@ from polars.exceptions import (
 )
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
+from rich.pretty import pretty_repr
 from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 import utilities.math
@@ -61,7 +62,6 @@ from utilities.core import (
     always_iterable,
     one,
     read_bytes,
-    repr_,
     suppress_warnings,
     to_time_zone_name,
     write_bytes,
@@ -346,7 +346,7 @@ class AppendRowError(Exception):
 class _AppendRowPredicateError(AppendRowError):
     @override
     def __str__(self) -> str:
-        return f"Predicate failed; got {repr_(self.row)}"
+        return f"Predicate failed; got {pretty_repr(self.row)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -355,7 +355,7 @@ class _AppendRowExtraKeysError(AppendRowError):
 
     @override
     def __str__(self) -> str:
-        return f"Extra key(s) found; got {repr_(self.extra)}"
+        return f"Extra key(s) found; got {pretty_repr(self.extra)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -364,7 +364,7 @@ class _AppendRowMissingKeysError(AppendRowError):
 
     @override
     def __str__(self) -> str:
-        return f"Missing key(s) found; got {repr_(self.missing)}"
+        return f"Missing key(s) found; got {pretty_repr(self.missing)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -373,7 +373,7 @@ class _AppendRowNullColumnsError(AppendRowError):
 
     @override
     def __str__(self) -> str:
-        return f"Null column(s) found; got {repr_(self.columns)}"
+        return f"Null column(s) found; got {pretty_repr(self.columns)}"
 
 
 ##
@@ -572,7 +572,7 @@ class _CheckPolarsDataFrameColumnsError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must have columns {repr_(self.columns)}; got {repr_(self.df.columns)}:\n\n{self.df}"
+        return f"DataFrame must have columns {pretty_repr(self.columns)}; got {pretty_repr(self.df.columns)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_dtypes(
@@ -590,7 +590,7 @@ class _CheckPolarsDataFrameDTypesError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must have dtypes {repr_(self.dtypes)}; got {repr_(self.df.dtypes)}:\n\n{self.df}"
+        return f"DataFrame must have dtypes {pretty_repr(self.dtypes)}; got {pretty_repr(self.df.dtypes)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_height(
@@ -653,9 +653,9 @@ class _CheckPolarsDataFramePredicatesError(CheckPolarsDataFrameError):
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.missing) >= 1:
-            yield f"missing columns were {repr_(self.missing)}"
+            yield f"missing columns were {pretty_repr(self.missing)}"
         if len(self.failed) >= 1:
-            yield f"failed predicates were {repr_(self.failed)}"
+            yield f"failed predicates were {pretty_repr(self.failed)}"
 
 
 def _check_polars_dataframe_schema_list(df: DataFrame, schema: SchemaDict, /) -> None:
@@ -675,7 +675,7 @@ class _CheckPolarsDataFrameSchemaListError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must have schema {repr_(self.schema)} (ordered); got {repr_(self.df.schema)}:\n\n{self.df}"
+        return f"DataFrame must have schema {pretty_repr(self.schema)} (ordered); got {pretty_repr(self.df.schema)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_schema_set(df: DataFrame, schema: SchemaDict, /) -> None:
@@ -691,7 +691,7 @@ class _CheckPolarsDataFrameSchemaSetError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must have schema {repr_(self.schema)} (unordered); got {repr_(self.df.schema)}:\n\n{self.df}"
+        return f"DataFrame must have schema {pretty_repr(self.schema)} (unordered); got {pretty_repr(self.df.schema)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_schema_subset(df: DataFrame, schema: SchemaDict, /) -> None:
@@ -707,7 +707,7 @@ class _CheckPolarsDataFrameSchemaSubsetError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame schema must include {repr_(self.schema)} (unordered); got {repr_(self.df.schema)}:\n\n{self.df}"
+        return f"DataFrame schema must include {pretty_repr(self.schema)} (unordered); got {pretty_repr(self.df.schema)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_shape(df: DataFrame, shape: tuple[int, int], /) -> None:
@@ -745,7 +745,7 @@ class _CheckPolarsDataFrameSortedError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must be sorted on {repr_(self.by)}:\n\n{self.df}"
+        return f"DataFrame must be sorted on {pretty_repr(self.by)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_unique(
@@ -764,7 +764,7 @@ class _CheckPolarsDataFrameUniqueError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"DataFrame must be unique on {repr_(self.by)}:\n\n{self.df}"
+        return f"DataFrame must be unique on {pretty_repr(self.by)}:\n\n{self.df}"
 
 
 def _check_polars_dataframe_width(df: DataFrame, width: int, /) -> None:
@@ -1135,7 +1135,7 @@ class _DataClassToDataFrameNonUniqueError(DataClassToDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {repr_(self.objs)} must contain exactly 1 class; got {self.first}, {self.second} and perhaps more"
+        return f"Iterable {pretty_repr(self.objs)} must contain exactly 1 class; got {self.first}, {self.second} and perhaps more"
 
 
 ##
@@ -2668,7 +2668,9 @@ class SelectExactError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"All columns must be selected; got {repr_(self.columns)} remaining"
+        return (
+            f"All columns must be selected; got {pretty_repr(self.columns)} remaining"
+        )
 
 
 ##

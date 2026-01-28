@@ -70,7 +70,9 @@ class TestToTimeZoneName:
 
     def test_error_invalid_tz_info(self) -> None:
         time_zone = dt.timezone(dt.timedelta(hours=12))
-        with raises(ToTimeZoneNameInvalidTZInfoError, match=r"Invalid time-zone: .*"):
+        with raises(
+            ToTimeZoneNameInvalidTZInfoError, match=r"Invalid time-zone: 'UTC\+12:00'"
+        ):
             _ = to_time_zone_name(time_zone)
 
     @given(date_time=datetimes())
@@ -114,7 +116,7 @@ class TestToZoneInfo:
     def test_error_invalid_tz_info(self) -> None:
         time_zone = dt.timezone(dt.timedelta(hours=12))
         with raises(
-            ToZoneInfoInvalidTZInfoError, match=r"Invalid time-zone: UTC\+12:00"
+            ToZoneInfoInvalidTZInfoError, match=r"Invalid time-zone: 'UTC\+12:00'"
         ):
             _ = to_zone_info(time_zone)
 

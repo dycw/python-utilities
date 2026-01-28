@@ -23,13 +23,21 @@ from polars import (
     concat,
     read_database,
 )
+from rich.pretty import pretty_repr
 from sqlalchemy import Column, Select, select
 from sqlalchemy.exc import DuplicateColumnError
 
 import utilities.asyncio
 from utilities.constants import UTC
-from utilities.core import OneError, chunked, identity, one, repr_, snake_case
-from utilities.iterables import CheckDuplicatesError, check_duplicates
+from utilities.core import (
+    CheckUniqueError,
+    OneError,
+    check_unique,
+    chunked,
+    identity,
+    one,
+    snake_case,
+)
 from utilities.polars import zoned_date_time_dtype
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
@@ -160,7 +168,7 @@ class _InsertDataFrameMapDFColumnToTableColumnAndTypeError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to map DataFrame column {self.df_col_name!r} into table schema {repr_(self.table_schema)} with snake={self.snake}"
+        return f"Unable to map DataFrame column {pretty_repr(self.df_col_name)} into table schema {pretty_repr(self.table_schema)} with snake={self.snake}"
 
 
 def _insert_dataframe_check_df_and_db_types(
@@ -381,9 +389,9 @@ def _select_to_dataframe_check_duplicates(
     """Check a select for duplicate columns."""
     names = [col.name for col in columns]
     try:
-        check_duplicates(names)
-    except CheckDuplicatesError as error:
-        msg = f"Columns must not contain duplicates; got {error.counts}"
+        check_unique(*names)
+    except CheckUniqueError as error:
+        msg = f"Columns must not contain duplicates; got {pretty_repr(error.counts)}"
         raise DuplicateColumnError(msg) from None
 
 

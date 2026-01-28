@@ -20,11 +20,13 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 
 from utilities.core import (
+    CheckUniqueError,
     OneEmptyError,
     OneNonUniqueError,
     OneStrEmptyError,
     OneStrNonUniqueError,
     always_iterable,
+    check_unique,
     chunked,
     one,
     one_str,
@@ -74,6 +76,18 @@ class TestAlwaysIterable:
             yield 1
 
         assert list(always_iterable(yield_ints())) == [0, 1]
+
+
+class TestCheckUnique:
+    def test_main(self) -> None:
+        check_unique("a", "b", "c")
+
+    def test_error(self) -> None:
+        with raises(
+            CheckUniqueError,
+            match=r"Iterable .* must only contain unique elements; got {'a': 2}",
+        ):
+            check_unique("a", "a", "b", "c")
 
 
 class TestChunked:
