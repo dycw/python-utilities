@@ -59,14 +59,14 @@ def apply_bijection[T, U](
     """Apply a function bijectively."""
     keys = list(iterable)
     try:
-        check_unique(keys)
+        check_unique(*keys)
     except CheckUniqueError as error:
         raise _ApplyBijectionDuplicateKeysError(
             keys=keys, counts=error.counts
         ) from None
     values = list(map(func, keys))
     try:
-        check_unique(values)
+        check_unique(*values)
     except CheckUniqueError as error:
         raise _ApplyBijectionDuplicateValuesError(
             keys=keys, values=values, counts=error.counts
@@ -115,7 +115,7 @@ def apply_to_varargs[T](func: Callable[..., T], *args: Any) -> T:
 def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
     """Check if a mapping is a bijection."""
     try:
-        check_unique(mapping.values())
+        check_unique(*mapping.values())
     except CheckUniqueError as error:
         raise CheckBijectionError(mapping=mapping, counts=error.counts) from None
 

@@ -2,7 +2,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from utilities.core import normalize_multi_line_str, repr_mapping, repr_str, repr_table
+from pytest import raises
+
+from utilities._core_errors import ReprTableHeaderError
+from utilities.core import (
+    ReprTableItemsError,
+    normalize_multi_line_str,
+    repr_mapping,
+    repr_str,
+    repr_table,
+)
 
 
 class TestReprMapping:
@@ -75,3 +84,17 @@ class TestReprTable:
             └───────┴───────────┘
         """)
         assert result == expected
+
+    def test_error_items(self) -> None:
+        with raises(
+            ReprTableItemsError,
+            match=r"Items .* must all be of the same length; got 2, 3 and perhaps more",
+        ):
+            _ = repr_table(("a", 1), ("b", 2, 3))
+
+    def test_error_header(self) -> None:
+        with raises(
+            ReprTableHeaderError,
+            match=r"Header .* must be of the same length as the items; got 3 for the header and 2 for the items",
+        ):
+            _ = repr_table(("a", 1), header=["b1", "b2", "b3"])

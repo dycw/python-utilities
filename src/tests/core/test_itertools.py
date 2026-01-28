@@ -80,14 +80,14 @@ class TestAlwaysIterable:
 
 class TestCheckUnique:
     def test_main(self) -> None:
-        check_unique([True, False])
+        check_unique("a", "b", "c")
 
     def test_error(self) -> None:
         with raises(
             CheckUniqueError,
-            match=r"Iterable .* must only contain unique elements; got {None: 2}",
+            match=r"Iterable .* must only contain unique elements; got {'a': 2}",
         ):
-            check_unique([None, None, True, False])
+            check_unique("a", "a", "b", "c")
 
 
 class TestChunked:

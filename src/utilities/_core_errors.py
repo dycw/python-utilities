@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from collections.abc import Hashable, Iterable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, assert_never, override
+from typing import TYPE_CHECKING, Any, assert_never, override
 
 from rich.pretty import pretty_repr
 
-from utilities.types import CopyOrMove, PathLike, SupportsRichComparison
+from utilities.types import CopyOrMove, PathLike, SequenceStr, SupportsRichComparison
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -287,12 +287,12 @@ class YieldUncompressedIsADirectoryError(YieldUncompressedError):
 
 @dataclass(kw_only=True, slots=True)
 class CheckUniqueError[T: Hashable](Exception):
-    iterable: Iterable[T]
+    items: tuple[T, ...]
     counts: Mapping[T, int]
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {pretty_repr(self.iterable)} must only contain unique elements; got {pretty_repr(self.counts)}"
+        return f"Iterable {pretty_repr(self.items)} must only contain unique elements; got {pretty_repr(self.counts)}"
 
 
 ##
@@ -834,9 +834,24 @@ class ReprTableError(Exception):
 
 @dataclass(kw_only=True, slots=True)
 class ReprTableItemsError(ReprTableError):
+    items: list[tuple[Any, ...]]
+    first: int
+    second: int
+
     @override
     def __str__(self) -> str:
-        raise NotImplementedError  # pragma: no cover
+        return f"Items {pretty_repr(self.items)} must all be of the same length; got {self.first}, {self.second} and perhaps more"
+
+
+@dataclass(kw_only=True, slots=True)
+class ReprTableHeaderError(ReprTableError):
+    header: SequenceStr
+    header_len: int
+    item_len: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Header {pretty_repr(self.header)} must be of the same length as the items; got {self.header_len} for the header and {self.item_len} for the items"
 
 
 ###############################################################################
@@ -1174,6 +1189,7 @@ __all__ = [
     "ReadTextIfExistingFileNotADirectoryError",
     "ReadTextIsADirectoryError",
     "ReadTextNotADirectoryError",
+    "ReprTableHeaderError",
     "SubstituteError",
     "ToTimeZoneNameError",
     "ToTimeZoneNameError",

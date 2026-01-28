@@ -147,6 +147,9 @@ from utilities._core_errors import (
     ReadTextIfExistingFileNotADirectoryError,
     ReadTextIsADirectoryError,
     ReadTextNotADirectoryError,
+    ReprTableError,
+    ReprTableHeaderError,
+    ReprTableItemsError,
     SubstituteError,
     ToTimeZoneNameError,
     ToTimeZoneNameInvalidKeyError,
@@ -852,11 +855,11 @@ def always_iterable[T](obj: MaybeIterable[T], /) -> Iterable[T]:
 ##
 
 
-def check_unique(iterable: Iterable[Hashable], /) -> None:
+def check_unique(*items: Hashable) -> None:
     """Check an iterable contains only unique items."""
-    counts = {k: v for k, v in Counter(iterable).items() if v > 1}
+    counts = {k: v for k, v in Counter(items).items() if v > 1}
     if len(counts) >= 1:
-        raise CheckUniqueError(iterable=iterable, counts=counts)
+        raise CheckUniqueError(items=items, counts=counts)
 
 
 ##
@@ -2045,6 +2048,16 @@ def repr_table(
         table = Table(show_header=False)
     else:
         table = Table(*header, show_header=True, header_style=None)
+    try:
+        _ = one(sorted({len(i) for i in items}))
+    except OneNonUniqueError as error:
+        raise ReprTableItemsError(
+            items=list(items), first=error.first, second=error.second
+        ) from None
+    if (len(items) >= 1) and (header is not None) and (len(header) != len(items[0])):
+        raise ReprTableHeaderError(
+            header=header, header_len=len(header), item_len=len(items[0])
+        ) from None
     for row in items:
         row_strs = _repr_table_row(
             row,
@@ -3191,6 +3204,9 @@ __all__ = [
     "ReadTextIfExistingFileNotADirectoryError",
     "ReadTextIsADirectoryError",
     "ReadTextNotADirectoryError",
+    "ReprTableError",
+    "ReprTableHeaderError",
+    "ReprTableItemsError",
     "SubstituteError",
     "TemporaryDirectory",
     "TemporaryFile",
