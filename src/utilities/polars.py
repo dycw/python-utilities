@@ -51,6 +51,7 @@ from polars.exceptions import (
 )
 from polars.schema import Schema
 from polars.testing import assert_frame_equal, assert_series_equal
+from rich.pretty import pretty_repr
 from whenever import DateDelta, DateTimeDelta, PlainDateTime, TimeDelta, ZonedDateTime
 
 import utilities.math
@@ -60,7 +61,6 @@ from utilities.core import (
     OneNonUniqueError,
     always_iterable,
     one,
-    pretty_repr,
     read_bytes,
     suppress_warnings,
     to_time_zone_name,

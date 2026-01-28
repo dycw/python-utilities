@@ -31,6 +31,7 @@ from typing import (
 )
 
 import sqlalchemy
+from rich.pretty import pretty_repr
 from sqlalchemy import (
     URL,
     Column,
@@ -74,7 +75,6 @@ from utilities.core import (
     is_pytest,
     normalize_multi_line_str,
     one,
-    pretty_repr,
     snake_case,
 )
 from utilities.functions import ensure_str, yield_object_attributes

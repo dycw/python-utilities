@@ -28,7 +28,9 @@ from typing import (
     override,
 )
 
-from utilities.core import OneStrEmptyError, always_iterable, one, one_str, pretty_repr
+from rich.pretty import pretty_repr
+
+from utilities.core import OneStrEmptyError, always_iterable, one, one_str
 from utilities.errors import ImpossibleCaseError
 from utilities.math import (
     _CheckIntegerEqualError,

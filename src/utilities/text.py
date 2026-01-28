@@ -16,8 +16,10 @@ from typing import (
     override,
 )
 
+from rich.pretty import pretty_repr
+
 from utilities.constants import BRACKETS, LIST_SEPARATOR, PAIR_SEPARATOR, Sentinel
-from utilities.core import pretty_repr, transpose
+from utilities.core import transpose
 from utilities.iterables import CheckDuplicatesError, check_duplicates
 
 if TYPE_CHECKING:

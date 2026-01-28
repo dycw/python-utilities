@@ -17,15 +17,10 @@ from typing import (
 
 from more_itertools import bucket, partition, split_into
 from more_itertools import peekable as _peekable
+from rich.pretty import pretty_repr
 
 from utilities.constants import Sentinel, sentinel
-from utilities.core import (
-    OneNonUniqueError,
-    get_class_name,
-    is_sentinel,
-    one,
-    pretty_repr,
-)
+from utilities.core import OneNonUniqueError, get_class_name, is_sentinel, one
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping, Sequence
