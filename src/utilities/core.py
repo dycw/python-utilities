@@ -83,6 +83,7 @@ from whenever import (
 
 import utilities.constants
 from utilities._core_errors import (
+    CheckUniqueError,
     CompressBZ2Error,
     CompressGzipError,
     CompressLZMAError,
@@ -857,8 +858,6 @@ def check_unique(iterable: Iterable[Hashable], /) -> None:
     if len(counts) >= 1:
         raise CheckUniqueError(iterable=iterable, counts=counts)
 
-
-##
 
 ##
 
@@ -1984,6 +1983,7 @@ def repr_mapping(
     mapping: StrMapping,
     /,
     *,
+    header: SequenceStr | None = None,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
     max_length: int | None = RICH_MAX_LENGTH,
@@ -1992,22 +1992,16 @@ def repr_mapping(
     expand_all: bool = RICH_EXPAND_ALL,
 ) -> str:
     """Get the representation of a mapping as a table."""
-    [
-        (
-            k,
-            pretty_repr(
-                v,
-                max_width=max_width,
-                indent_size=indent_size,
-                max_length=max_length,
-                max_string=max_string,
-                max_depth=max_depth,
-                expand_all=expand_all,
-            ),
-        )
-        for k, v in mapping.items()
-    ]
-    return f"{k} = {repr_use}"
+    return repr_table(
+        *mapping.items(),
+        header=header,
+        max_width=max_width,
+        indent_size=indent_size,
+        max_length=max_length,
+        max_string=max_string,
+        max_depth=max_depth,
+        expand_all=expand_all,
+    )
 
 
 def repr_str(
@@ -2046,7 +2040,7 @@ def repr_table(
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
 ) -> str:
-    """Represent a table."""
+    """Get the representation of a table."""
     if header is None:
         table = Table(show_header=False)
     else:
@@ -3131,6 +3125,7 @@ def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
 
 
 __all__ = [
+    "CheckUniqueError",
     "CompressBZ2Error",
     "CompressGzipError",
     "CompressLZMAError",
@@ -3232,6 +3227,7 @@ __all__ = [
     "YieldZipNotADirectoryError",
     "always_iterable",
     "async_sleep",
+    "check_unique",
     "chmod",
     "chown",
     "chunked",

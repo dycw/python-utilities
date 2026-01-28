@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import Counter
 from collections.abc import (
     Callable,
     Hashable,
@@ -30,7 +29,14 @@ from typing import (
 
 from rich.pretty import pretty_repr
 
-from utilities.core import OneStrEmptyError, always_iterable, one, one_str
+from utilities.core import (
+    CheckUniqueError,
+    OneStrEmptyError,
+    always_iterable,
+    check_unique,
+    one,
+    one_str,
+)
 from utilities.errors import ImpossibleCaseError
 from utilities.math import (
     _CheckIntegerEqualError,
@@ -122,26 +128,6 @@ class CheckBijectionError[THashable](Exception):
     @override
     def __str__(self) -> str:
         return f"Mapping {pretty_repr(self.mapping)} must be a bijection; got duplicates {pretty_repr(self.counts)}"
-
-
-##
-
-
-def check_unique(iterable: Iterable[Hashable], /) -> None:
-    """Check an iterable contains only unique items."""
-    counts = {k: v for k, v in Counter(iterable).items() if v > 1}
-    if len(counts) >= 1:
-        raise CheckUniqueError(iterable=iterable, counts=counts)
-
-
-@dataclass(kw_only=True, slots=True)
-class CheckUniqueError[THashable](Exception):
-    iterable: Iterable[THashable]
-    counts: Mapping[THashable, int]
-
-    @override
-    def __str__(self) -> str:
-        return f"Iterable {pretty_repr(self.iterable)} must not contain duplicates; got {pretty_repr(self.counts)}"
 
 
 ##
@@ -924,7 +910,6 @@ __all__ = [
     "CheckSubSetError",
     "CheckSuperMappingError",
     "CheckSuperSetError",
-    "CheckUniqueError",
     "CheckUniqueModuloCaseError",
     "EnsureIterableError",
     "MergeStrMappingsError",

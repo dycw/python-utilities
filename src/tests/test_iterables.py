@@ -22,7 +22,6 @@ from hypothesis.strategies import (
     none,
     permutations,
     sampled_from,
-    sets,
 )
 from pytest import mark, param, raises
 
@@ -40,7 +39,6 @@ from utilities.iterables import (
     CheckSubSetError,
     CheckSuperMappingError,
     CheckSuperSetError,
-    CheckUniqueError,
     EnsureIterableError,
     MergeStrMappingsError,
     ResolveIncludeAndExcludeError,
@@ -63,7 +61,6 @@ from utilities.iterables import (
     check_subset,
     check_supermapping,
     check_superset,
-    check_unique,
     check_unique_modulo_case,
     cmp_nullable,
     ensure_iterable,
@@ -144,19 +141,6 @@ class TestCheckBijection:
             match=r"Mapping .* must be a bijection; got duplicates {None: 2}",
         ):
             check_bijection({True: None, False: None})
-
-
-class TestCheckDuplicates:
-    @given(x=sets(integers()))
-    def test_main(self, *, x: set[int]) -> None:
-        check_unique(x)
-
-    def test_error(self) -> None:
-        with raises(
-            CheckUniqueError,
-            match=r"Iterable .* must not contain duplicates; got {None: 2}",
-        ):
-            check_unique([None, None])
 
 
 class TestCheckIterablesEqual:

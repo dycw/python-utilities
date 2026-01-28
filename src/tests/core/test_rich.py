@@ -2,22 +2,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pytest import mark
-
 from utilities.core import normalize_multi_line_str, repr_mapping, repr_str, repr_table
 
 
 class TestReprMapping:
-    @mark.xfail
     def test_main(self) -> None:
-        mapping = {"a": 1, "b": 2, "c": 3, "d": list(range(100))}
+        mapping = {"a": 1, "b": 2, "c": 3}
         result = repr_mapping(mapping)
-        expected = [
-            "a = 1",
-            "b = 2",
-            "c = 3",
-            "d = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, ... +80]",
-        ]
+        expected = normalize_multi_line_str("""
+            ┌───┬───┐
+            │ a │ 1 │
+            │ b │ 2 │
+            │ c │ 3 │
+            └───┴───┘
+        """)
         assert result == expected
 
 
@@ -35,6 +33,18 @@ class TestReprTable:
             │ b │ 2 │
             │ c │ 3 │
             └───┴───┘
+        """)
+        assert result == expected
+
+    def test_long_item(self) -> None:
+        result = repr_table(("a", 1), ("b", list(range(100))), ("c", 3))
+        expected = normalize_multi_line_str("""
+            ┌───┬──────────────────────────────────────────────────────────────────────────┐
+            │ a │ 1                                                                        │
+            │ b │ [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,   │
+            │   │ ... +80]                                                                 │
+            │ c │ 3                                                                        │
+            └───┴──────────────────────────────────────────────────────────────────────────┘
         """)
         assert result == expected
 

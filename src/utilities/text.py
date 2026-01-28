@@ -19,8 +19,7 @@ from typing import (
 from rich.pretty import pretty_repr
 
 from utilities.constants import BRACKETS, LIST_SEPARATOR, PAIR_SEPARATOR, Sentinel
-from utilities.core import transpose
-from utilities.iterables import CheckUniqueError, check_unique
+from utilities.core import CheckUniqueError, check_unique, transpose
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence

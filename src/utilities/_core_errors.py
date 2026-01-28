@@ -292,7 +292,7 @@ class CheckUniqueError[T: Hashable](Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {pretty_repr(self.iterable)} must not contain duplicates; got {pretty_repr(self.counts)}"
+        return f"Iterable {pretty_repr(self.iterable)} must only contain unique elements; got {pretty_repr(self.counts)}"
 
 
 ##
@@ -1109,6 +1109,7 @@ class ToZoneInfoPlainDateTimeError(ToZoneInfoError):
 
 
 __all__ = [
+    "CheckUniqueError",
     "CompressBZ2Error",
     "CompressFilesError",
     "CompressGzipError",

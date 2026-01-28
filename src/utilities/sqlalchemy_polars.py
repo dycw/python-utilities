@@ -29,8 +29,15 @@ from sqlalchemy.exc import DuplicateColumnError
 
 import utilities.asyncio
 from utilities.constants import UTC
-from utilities.core import OneError, chunked, identity, one, snake_case
-from utilities.iterables import CheckUniqueError, check_unique
+from utilities.core import (
+    CheckUniqueError,
+    OneError,
+    check_unique,
+    chunked,
+    identity,
+    one,
+    snake_case,
+)
 from utilities.polars import zoned_date_time_dtype
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
