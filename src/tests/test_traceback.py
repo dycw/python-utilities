@@ -81,7 +81,7 @@ class TestFormatExceptionStack:
                 │ Started    │ \d{8}T\d{6}\[.+\]\s+│
                 │ Duration   │ PT\d+\.\d+S \s+ │
                 │ User       │ \w+ \s+ │
-                │ Host       │ [\w\-]+ \s+ │
+                │ Host       │ [\-\.\w…]+ \s+ │
                 │ Process ID │ \d+ \s+ │
                 │ Version    │ \s+ │
                 └────────────┴──+┘
