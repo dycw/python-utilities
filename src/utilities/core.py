@@ -38,10 +38,10 @@ from stat import (
     S_IXUSR,
 )
 from string import Template
-from subprocess import check_output
+from subprocess import CalledProcessError, check_output
 from tarfile import ReadError, TarFile
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
-from textwrap import dedent
+from textwrap import dedent, indent
 from threading import get_ident
 from time import time_ns
 from types import (
@@ -749,12 +749,22 @@ def repr_error(error: MaybeType[BaseException], /) -> str:
             descs = list(map(repr_error, group.exceptions))
             joined = ", ".join(descs)
             return f"{get_class_name(group)}({joined})"
+        case CalledProcessError():
+            table = repr_table(
+                ("returncode", error.returncode),
+                ("cmd", error.cmd),
+                ("stdout", error.stdout),
+                ("stderr", error.stderr),
+            )
+            indented = indent(table, 4 * " ")
+            return f"{get_class_name(error)}(\n{indented})"
         case BaseException():
             return f"{get_class_name(error)}({error})"
         case type():
             return get_class_name(error)
         case never:
             assert_never(never)
+    return None
 
 
 ###############################################################################
@@ -2036,6 +2046,8 @@ def repr_str(
 def repr_table(
     *items: tuple[Any, ...],
     header: SequenceStr | None = None,
+    show_edge: bool = True,
+    show_lines: bool = False,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
     max_length: int | None = RICH_MAX_LENGTH,
@@ -2044,10 +2056,13 @@ def repr_table(
     expand_all: bool = RICH_EXPAND_ALL,
 ) -> str:
     """Get the representation of a table."""
-    if header is None:
-        table = Table(show_header=False)
-    else:
-        table = Table(*header, show_header=True, header_style=None)
+    header_use = [] if header is None else header
+    table = Table(
+        *header_use,
+        show_header=header is not None,
+        show_edge=show_edge,
+        show_lines=show_lines,
+    )
     try:
         _ = one(sorted({len(i) for i in items}))
     except OneNonUniqueError as error:

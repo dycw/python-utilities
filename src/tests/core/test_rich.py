@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from textwrap import indent
 
 from pytest import raises
 
@@ -8,6 +9,7 @@ from utilities._core_errors import ReprTableHeaderError
 from utilities.core import (
     ReprTableItemsError,
     normalize_multi_line_str,
+    normalize_str,
     repr_mapping,
     repr_str,
     repr_table,
@@ -57,6 +59,21 @@ class TestReprTable:
         """)
         assert result == expected
 
+    def test_nested(self) -> None:
+        inner = repr_table(("a", 1), ("b", 2)).rstrip("\n")
+        result = repr_table(("c", 3), ("table", inner), ("d", 4))
+        expected = normalize_multi_line_str("""
+            ┌───────┬───────────┐
+            │ c     │ 3         │
+            │ table │ ┌───┬───┐ │
+            │       │ │ a │ 1 │ │
+            │       │ │ b │ 2 │ │
+            │       │ └───┴───┘ │
+            │ d     │ 4         │
+            └───────┴───────────┘
+        """)
+        assert result == expected
+
     def test_header(self) -> None:
         result = repr_table(("a", 1), ("b", 2), ("c", 3), header=["key", "value"])
         expected = normalize_multi_line_str("""
@@ -70,18 +87,28 @@ class TestReprTable:
         """)
         assert result == expected
 
-    def test_nested(self) -> None:
-        inner = repr_table(("a", 1), ("b", 2)).rstrip("\n")
-        result = repr_table(("c", 3), ("table", inner), ("d", 4))
+    def test_show_edge(self) -> None:
+        result = repr_table(("a", 1), ("b", 2), ("c", 3), show_edge=False)
         expected = normalize_multi_line_str("""
-            ┌───────┬───────────┐
-            │ c     │ 3         │
-            │ table │ ┌───┬───┐ │
-            │       │ │ a │ 1 │ │
-            │       │ │ b │ 2 │ │
-            │       │ └───┴───┘ │
-            │ d     │ 4         │
-            └───────┴───────────┘
+            a │ 1
+            b │ 2
+            c │ 3
+        """)
+        expected = normalize_str(
+            "\n".join(f" {line} " for line in expected.splitlines())
+        )
+        assert result == expected
+
+    def test_show_lines(self) -> None:
+        result = repr_table(("a", 1), ("b", 2), ("c", 3), show_lines=True)
+        expected = normalize_multi_line_str("""
+            ┌───┬───┐
+            │ a │ 1 │
+            ├───┼───┤
+            │ b │ 2 │
+            ├───┼───┤
+            │ c │ 3 │
+            └───┴───┘
         """)
         assert result == expected
 

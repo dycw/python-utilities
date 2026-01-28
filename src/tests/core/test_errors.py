@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
+from subprocess import CalledProcessError, run
 
 from pytest import RaisesGroup
 
-from utilities.core import async_sleep, repr_error
+from utilities.core import async_sleep, normalize_multi_line_str, repr_error
 
 
 class TestReprError:
@@ -13,6 +14,14 @@ class TestReprError:
 
         result = repr_error(CustomError)
         expected = "CustomError"
+        assert result == expected
+
+    def test_called_process(self) -> None:
+        error = CalledProcessError(1, "cmd", "stdout", "stderr")
+        result = repr_error(error)
+        expected = normalize_multi_line_str("""
+            asdf
+        """)
         assert result == expected
 
     async def test_group(self) -> None:
