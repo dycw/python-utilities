@@ -31,7 +31,6 @@ from utilities.constants import sentinel
 from utilities.hypothesis import pairs, sets_fixed_length, text_ascii
 from utilities.iterables import (
     CheckBijectionError,
-    CheckDuplicatesError,
     CheckIterablesEqualError,
     CheckLengthError,
     CheckLengthsEqualError,
@@ -41,6 +40,7 @@ from utilities.iterables import (
     CheckSubSetError,
     CheckSuperMappingError,
     CheckSuperSetError,
+    CheckUniqueError,
     EnsureIterableError,
     MergeStrMappingsError,
     ResolveIncludeAndExcludeError,
@@ -54,7 +54,6 @@ from utilities.iterables import (
     apply_to_tuple,
     apply_to_varargs,
     check_bijection,
-    check_duplicates,
     check_iterables_equal,
     check_length,
     check_lengths_equal,
@@ -64,6 +63,7 @@ from utilities.iterables import (
     check_subset,
     check_supermapping,
     check_superset,
+    check_unique,
     check_unique_modulo_case,
     cmp_nullable,
     ensure_iterable,
@@ -149,14 +149,14 @@ class TestCheckBijection:
 class TestCheckDuplicates:
     @given(x=sets(integers()))
     def test_main(self, *, x: set[int]) -> None:
-        check_duplicates(x)
+        check_unique(x)
 
     def test_error(self) -> None:
         with raises(
-            CheckDuplicatesError,
+            CheckUniqueError,
             match=r"Iterable .* must not contain duplicates; got {None: 2}",
         ):
-            check_duplicates([None, None])
+            check_unique([None, None])
 
 
 class TestCheckIterablesEqual:

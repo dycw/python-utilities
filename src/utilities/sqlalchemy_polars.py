@@ -30,7 +30,7 @@ from sqlalchemy.exc import DuplicateColumnError
 import utilities.asyncio
 from utilities.constants import UTC
 from utilities.core import OneError, chunked, identity, one, snake_case
-from utilities.iterables import CheckDuplicatesError, check_duplicates
+from utilities.iterables import CheckUniqueError, check_unique
 from utilities.polars import zoned_date_time_dtype
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
@@ -382,8 +382,8 @@ def _select_to_dataframe_check_duplicates(
     """Check a select for duplicate columns."""
     names = [col.name for col in columns]
     try:
-        check_duplicates(names)
-    except CheckDuplicatesError as error:
+        check_unique(names)
+    except CheckUniqueError as error:
         msg = f"Columns must not contain duplicates; got {error.counts}"
         raise DuplicateColumnError(msg) from None
 

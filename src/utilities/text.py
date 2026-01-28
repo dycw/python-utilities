@@ -20,7 +20,7 @@ from rich.pretty import pretty_repr
 
 from utilities.constants import BRACKETS, LIST_SEPARATOR, PAIR_SEPARATOR, Sentinel
 from utilities.core import transpose
-from utilities.iterables import CheckDuplicatesError, check_duplicates
+from utilities.iterables import CheckUniqueError, check_unique
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -142,8 +142,8 @@ def split_key_value_pairs(
     if not mapping:
         return pairs
     try:
-        check_duplicates(k for k, _ in pairs)
-    except CheckDuplicatesError as error:
+        check_unique(k for k, _ in pairs)
+    except CheckUniqueError as error:
         raise _SplitKeyValuePairsDuplicateKeysError(
             text=text, counts=error.counts
         ) from None

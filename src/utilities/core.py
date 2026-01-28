@@ -11,7 +11,8 @@ import shutil
 import tempfile
 import time
 from bz2 import BZ2File
-from collections.abc import Callable, Iterable, Iterator
+from collections import Counter
+from collections.abc import Callable, Hashable, Iterable, Iterator
 from contextlib import ExitStack, contextmanager, suppress
 from dataclasses import dataclass, replace
 from functools import _lru_cache_wrapper, partial, reduce, wraps
@@ -66,7 +67,9 @@ from warnings import catch_warnings, filterwarnings
 from zipfile import ZipFile
 from zoneinfo import ZoneInfo
 
+from rich.console import Console
 from rich.pretty import pretty_repr
+from rich.table import Table
 from typing_extensions import TypeIs
 from whenever import (
     Date,
@@ -251,6 +254,7 @@ from utilities.types import (
     Pair,
     PathToBinaryIO,
     PatternLike,
+    SequenceStr,
     StrDict,
     StrMapping,
     SupportsRichComparison,
@@ -843,6 +847,18 @@ def always_iterable[T](obj: MaybeIterable[T], /) -> Iterable[T]:
     except TypeError:
         return cast("list[T]", [obj])
 
+
+##
+
+
+def check_unique(iterable: Iterable[Hashable], /) -> None:
+    """Check an iterable contains only unique items."""
+    counts = {k: v for k, v in Counter(iterable).items() if v > 1}
+    if len(counts) >= 1:
+        raise CheckUniqueError(iterable=iterable, counts=counts)
+
+
+##
 
 ##
 
@@ -1964,6 +1980,36 @@ def write_text(
 ###############################################################################
 
 
+def repr_mapping(
+    mapping: StrMapping,
+    /,
+    *,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+) -> str:
+    """Get the representation of a mapping as a table."""
+    [
+        (
+            k,
+            pretty_repr(
+                v,
+                max_width=max_width,
+                indent_size=indent_size,
+                max_length=max_length,
+                max_string=max_string,
+                max_depth=max_depth,
+                expand_all=expand_all,
+            ),
+        )
+        for k, v in mapping.items()
+    ]
+    return f"{k} = {repr_use}"
+
+
 def repr_str(
     obj: Any,
     /,
@@ -1985,6 +2031,68 @@ def repr_str(
         max_depth=max_depth,
         expand_all=expand_all,
     )
+
+
+##
+
+
+def repr_table(
+    *items: tuple[Any, ...],
+    header: SequenceStr | None = None,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+) -> str:
+    """Represent a table."""
+    if header is None:
+        table = Table(show_header=False)
+    else:
+        table = Table(*header, show_header=True, header_style=None)
+    for row in items:
+        row_strs = _repr_table_row(
+            row,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
+        )
+        table.add_row(*row_strs)
+    console = Console(width=max_width, record=True)
+    with console.capture() as capture:
+        console.print(table)
+    return capture.get()
+
+
+def _repr_table_row(
+    row: Iterable[Any],
+    /,
+    *,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+) -> list[str]:
+    return [
+        i
+        if isinstance(i, str)
+        else pretty_repr(
+            i,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
+        )
+        for i in row
+    ]
 
 
 ###############################################################################
@@ -3191,6 +3299,7 @@ __all__ = [
     "replace_non_sentinel",
     "repr_error",
     "repr_str",
+    "repr_table",
     "substitute",
     "suppress_super_attribute_error",
     "suppress_warnings",

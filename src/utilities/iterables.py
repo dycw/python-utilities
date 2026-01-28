@@ -53,15 +53,15 @@ def apply_bijection[T, U](
     """Apply a function bijectively."""
     keys = list(iterable)
     try:
-        check_duplicates(keys)
-    except CheckDuplicatesError as error:
+        check_unique(keys)
+    except CheckUniqueError as error:
         raise _ApplyBijectionDuplicateKeysError(
             keys=keys, counts=error.counts
         ) from None
     values = list(map(func, keys))
     try:
-        check_duplicates(values)
-    except CheckDuplicatesError as error:
+        check_unique(values)
+    except CheckUniqueError as error:
         raise _ApplyBijectionDuplicateValuesError(
             keys=keys, values=values, counts=error.counts
         ) from None
@@ -109,8 +109,8 @@ def apply_to_varargs[T](func: Callable[..., T], *args: Any) -> T:
 def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
     """Check if a mapping is a bijection."""
     try:
-        check_duplicates(mapping.values())
-    except CheckDuplicatesError as error:
+        check_unique(mapping.values())
+    except CheckUniqueError as error:
         raise CheckBijectionError(mapping=mapping, counts=error.counts) from None
 
 
@@ -127,15 +127,15 @@ class CheckBijectionError[THashable](Exception):
 ##
 
 
-def check_duplicates(iterable: Iterable[Hashable], /) -> None:
-    """Check if an iterable contains any duplicates."""
+def check_unique(iterable: Iterable[Hashable], /) -> None:
+    """Check an iterable contains only unique items."""
     counts = {k: v for k, v in Counter(iterable).items() if v > 1}
     if len(counts) >= 1:
-        raise CheckDuplicatesError(iterable=iterable, counts=counts)
+        raise CheckUniqueError(iterable=iterable, counts=counts)
 
 
 @dataclass(kw_only=True, slots=True)
-class CheckDuplicatesError[THashable](Exception):
+class CheckUniqueError[THashable](Exception):
     iterable: Iterable[THashable]
     counts: Mapping[THashable, int]
 
@@ -916,7 +916,6 @@ def _sort_iterable_cmp_floats(x: float, y: float, /) -> Sign:
 __all__ = [
     "ApplyBijectionError",
     "CheckBijectionError",
-    "CheckDuplicatesError",
     "CheckIterablesEqualError",
     "CheckLengthsEqualError",
     "CheckMappingsEqualError",
@@ -925,6 +924,7 @@ __all__ = [
     "CheckSubSetError",
     "CheckSuperMappingError",
     "CheckSuperSetError",
+    "CheckUniqueError",
     "CheckUniqueModuloCaseError",
     "EnsureIterableError",
     "MergeStrMappingsError",
@@ -935,7 +935,6 @@ __all__ = [
     "apply_to_tuple",
     "apply_to_varargs",
     "check_bijection",
-    "check_duplicates",
     "check_iterables_equal",
     "check_lengths_equal",
     "check_mappings_equal",
@@ -944,6 +943,7 @@ __all__ = [
     "check_subset",
     "check_supermapping",
     "check_superset",
+    "check_unique",
     "check_unique_modulo_case",
     "cmp_nullable",
     "ensure_iterable",

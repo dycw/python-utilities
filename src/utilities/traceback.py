@@ -22,10 +22,16 @@ from utilities.constants import (
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
 )
-from utilities.core import OneEmptyError, get_now, get_now_local, one, write_text
-from utilities.errors import repr_error
+from utilities.core import (
+    OneEmptyError,
+    get_now,
+    get_now_local,
+    one,
+    repr_error,
+    repr_mapping,
+    write_text,
+)
 from utilities.pathlib import module_path, to_path
-from utilities.reprlib import yield_mapping_repr
 from utilities.text import to_bool
 from utilities.version import to_version3
 from utilities.whenever import format_compact, to_zoned_date_time
@@ -150,14 +156,14 @@ def _yield_frame_summary_lines(
     module = _path_to_dots(frame.filename)
     yield f"{module}:{frame.lineno} | {frame.name} | {frame.line}"
     if frame.locals is not None:
-        yield from yield_mapping_repr(
+        yield repr_mapping(
             frame.locals,
-            _max_width=max_width,
-            _indent_size=indent_size,
-            _max_length=max_length,
-            _max_string=max_string,
-            _max_depth=max_depth,
-            _expand_all=expand_all,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
         )
 
 

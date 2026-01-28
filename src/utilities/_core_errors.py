@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Hashable, Iterable
 from dataclasses import dataclass
-from reprlib import repr as repr_
 from typing import TYPE_CHECKING, assert_never, override
+
+from rich.pretty import pretty_repr
 
 from utilities.types import CopyOrMove, PathLike, SupportsRichComparison
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping
     from pathlib import Path
     from re import Pattern
 
@@ -25,7 +26,7 @@ class MinNullableError[T: SupportsRichComparison](Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Minimum of {repr_(self.iterable)} is undefined"
+        return f"Minimum of {pretty_repr(self.iterable)} is undefined"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -34,7 +35,7 @@ class MaxNullableError[T: SupportsRichComparison](Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Maximum of {repr_(self.iterable)} is undefined"
+        return f"Maximum of {pretty_repr(self.iterable)} is undefined"
 
 
 ###############################################################################
@@ -43,7 +44,7 @@ class MaxNullableError[T: SupportsRichComparison](Exception):
 
 
 def _compress_error_msg(srcs: Iterable[PathLike], dest: PathLike, /) -> str:
-    return f"Cannot compress source(s) {[repr(str(s)) for s in srcs]} since destination {str(dest)!r} already exists"
+    return f"Cannot compress source(s) {pretty_repr(map(str, srcs))} since destination {pretty_repr(str(dest))} already exists"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -100,17 +101,17 @@ class CompressFilesError(Exception):
 
 
 def _yield_uncompressed_file_not_found_error_msg(path: PathLike, /) -> str:
-    return f"Cannot uncompress {str(path)!r} since it does not exist"
+    return f"Cannot uncompress {pretty_repr(str(path))} since it does not exist"
 
 
 def _yield_uncompressed_file_is_a_directory_error_msg(path: PathLike, /) -> str:
-    return f"Cannot uncompress {str(path)!r} since it is a directory"
+    return f"Cannot uncompress {pretty_repr(str(path))} since it is a directory"
 
 
 def _yield_uncompressed_file_not_a_directory_error_msg(
     path: PathLike, parent: Path, /
 ) -> str:
-    return f"Cannot uncompress {str(path)!r} since its parent {str(parent)!r} is not a directory"
+    return f"Cannot uncompress {pretty_repr(str(path))} since its parent {pretty_repr(str(parent))} is not a directory"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -285,6 +286,19 @@ class YieldUncompressedIsADirectoryError(YieldUncompressedError):
 
 
 @dataclass(kw_only=True, slots=True)
+class CheckUniqueError[T: Hashable](Exception):
+    iterable: Iterable[T]
+    counts: Mapping[T, int]
+
+    @override
+    def __str__(self) -> str:
+        return f"Iterable {pretty_repr(self.iterable)} must not contain duplicates; got {pretty_repr(self.counts)}"
+
+
+##
+
+
+@dataclass(kw_only=True, slots=True)
 class OneError[T](Exception):
     iterables: tuple[Iterable[T], ...]
 
@@ -293,7 +307,7 @@ class OneError[T](Exception):
 class OneEmptyError[T](OneError[T]):
     @override
     def __str__(self) -> str:
-        return f"Iterable(s) {repr_(self.iterables)} must not be empty"
+        return f"Iterable(s) {pretty_repr(self.iterables)} must not be empty"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -303,7 +317,7 @@ class OneNonUniqueError[T](OneError):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable(s) {repr_(self.iterables)} must contain exactly one item; got {repr_(self.first)}, {repr_(self.second)} and perhaps more"
+        return f"Iterable(s) {pretty_repr(self.iterables)} must contain exactly one item; got {pretty_repr(self.first)}, {pretty_repr(self.second)} and perhaps more"
 
 
 ##
@@ -321,16 +335,18 @@ class OneStrError(Exception):
 class OneStrEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
-        head = f"Iterable {repr_(self.iterable)} does not contain"
+        head = f"Iterable {pretty_repr(self.iterable)} does not contain"
         match self.head, self.case_sensitive:
             case False, True:
-                tail = repr(self.text)
+                tail = pretty_repr(self.text)
             case False, False:
-                tail = f"{self.text!r} (modulo case)"
+                tail = f"{pretty_repr(self.text)} (modulo case)"
             case True, True:
-                tail = f"any string starting with {self.text!r}"
+                tail = f"any string starting with {pretty_repr(self.text)}"
             case True, False:
-                tail = f"any string starting with {self.text!r} (modulo case)"
+                tail = (
+                    f"any string starting with {pretty_repr(self.text)} (modulo case)"
+                )
             case never:
                 assert_never(never)
         return f"{head} {tail}"
@@ -343,19 +359,19 @@ class OneStrNonUniqueError(OneStrError):
 
     @override
     def __str__(self) -> str:
-        head = f"Iterable {repr_(self.iterable)} must contain"
+        head = f"Iterable {pretty_repr(self.iterable)} must contain"
         match self.head, self.case_sensitive:
             case False, True:
-                mid = f"{self.text!r} exactly once"
+                mid = f"{pretty_repr(self.text)} exactly once"
             case False, False:
-                mid = f"{self.text!r} exactly once (modulo case)"
+                mid = f"{pretty_repr(self.text)} exactly once (modulo case)"
             case True, True:
-                mid = f"exactly one string starting with {self.text!r}"
+                mid = f"exactly one string starting with {pretty_repr(self.text)}"
             case True, False:
-                mid = f"exactly one string starting with {self.text!r} (modulo case)"
+                mid = f"exactly one string starting with {pretty_repr(self.text)} (modulo case)"
             case never:
                 assert_never(never)
-        return f"{head} {mid}; got {self.first!r}, {self.second!r} and perhaps more"
+        return f"{head} {mid}; got {pretty_repr(self.first)}, {pretty_repr(self.second)} and perhaps more"
 
 
 ###############################################################################
@@ -364,13 +380,13 @@ class OneStrNonUniqueError(OneStrError):
 
 
 def _copy_or_move_source_not_found_error_msg(src: PathLike, /) -> str:
-    return f"Source {str(src)!r} does not exist"
+    return f"Source {pretty_repr(str(src))} does not exist"
 
 
 def _copy_or_move_dest_already_exists_error_msg(
     mode: CopyOrMove, src: PathLike, dest: PathLike, /
 ) -> str:
-    return f"Cannot {mode} source {str(src)!r} since destination {str(dest)!r} already exists"
+    return f"Cannot {mode} source {pretty_repr(str(src))} since destination {pretty_repr(str(dest))} already exists"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -450,7 +466,7 @@ class GetEnvError(Exception):
 
     @override
     def __str__(self) -> str:
-        desc = f"No environment variable {str(self.key)!r}"
+        desc = f"No environment variable {pretty_repr(str(self.key))}"
         return desc if self.case_sensitive else f"{desc} (modulo case)"
 
 
@@ -472,14 +488,14 @@ class FileOrDirError(Exception):
 class FileOrDirMissingError(FileOrDirError):
     @override
     def __str__(self) -> str:
-        return f"Path does not exist: {str(self.path)!r}"
+        return f"Path does not exist: {pretty_repr(str(self.path))}"
 
 
 @dataclass(kw_only=True, slots=True)
 class FileOrDirTypeError(FileOrDirError):
     @override
     def __str__(self) -> str:
-        return f"Path is neither a file nor a directory: {str(self.path)!r}"
+        return f"Path is neither a file nor a directory: {pretty_repr(str(self.path))}"
 
 
 ##
@@ -491,7 +507,7 @@ class FirstNonDirectoryParentError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Path has no non-directory parents: {str(self.path)!r}"
+        return f"Path has no non-directory parents: {pretty_repr(str(self.path))}"
 
 
 ##
@@ -576,7 +592,7 @@ class PermissionsFromTextError(PermissionsError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid string for permissions; got {self.text!r}"
+        return f"Invalid string for permissions; got {pretty_repr(self.text)}"
 
 
 ###############################################################################
@@ -598,7 +614,7 @@ class ExtractGroupError(Exception):
 class ExtractGroupMultipleCaptureGroupsError(ExtractGroupError):
     @override
     def __str__(self) -> str:
-        return f"Pattern {str(self.pattern)!r} must contain exactly one capture group; it had multiple"
+        return f"Pattern {pretty_repr(str(self.pattern))} must contain exactly one capture group; it had multiple"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -607,21 +623,21 @@ class ExtractGroupMultipleMatchesError(ExtractGroupError):
 
     @override
     def __str__(self) -> str:
-        return f"Pattern {str(self.pattern)!r} must match against {self.text!r} exactly once; matches were {', '.join([repr(str(m)) for m in self.matches])}"
+        return f"Pattern {pretty_repr(str(self.pattern))} must match against {pretty_repr(self.text)} exactly once; matches were {pretty_repr(list(map(str, self.matches)))}"
 
 
 @dataclass(kw_only=True, slots=True)
 class ExtractGroupNoCaptureGroupsError(ExtractGroupError):
     @override
     def __str__(self) -> str:
-        return f"Pattern {str(self.pattern)!r} must contain exactly one capture group; it had none"
+        return f"Pattern {pretty_repr(str(self.pattern))} must contain exactly one capture group; it had none"
 
 
 @dataclass(kw_only=True, slots=True)
 class ExtractGroupNoMatchesError(ExtractGroupError):
     @override
     def __str__(self) -> str:
-        return f"Pattern {str(self.pattern)!r} must match against {self.text!r}"
+        return f"Pattern {pretty_repr(str(self.pattern))} must match against {pretty_repr(self.text)}"
 
 
 ##
@@ -643,21 +659,21 @@ class ExtractGroupsMultipleMatchesError(ExtractGroupsError):
 
     @override
     def __str__(self) -> str:
-        return f"Pattern {str(self.pattern)!r} must match against {self.text!r} exactly once; matches were {', '.join(repr(str(m)) for m in self.matches)}"
+        return f"Pattern {pretty_repr(str(self.pattern))} must match against {pretty_repr(self.text)} exactly once; matches were {pretty_repr(list(map(str, self.matches)))}"
 
 
 @dataclass(kw_only=True, slots=True)
 class ExtractGroupsNoCaptureGroupsError(ExtractGroupsError):
     @override
     def __str__(self) -> str:
-        return f"Pattern {str(self.pattern)!r} must contain at least one capture group"
+        return f"Pattern {pretty_repr(str(self.pattern))} must contain at least one capture group"
 
 
 @dataclass(kw_only=True, slots=True)
 class ExtractGroupsNoMatchesError(ExtractGroupsError):
     @override
     def __str__(self) -> str:
-        return f"Pattern {str(self.pattern)!r} must match against {self.text!r}"
+        return f"Pattern {pretty_repr(str(self.pattern))} must match against {pretty_repr(self.text)}"
 
 
 ###############################################################################
@@ -666,19 +682,19 @@ class ExtractGroupsNoMatchesError(ExtractGroupsError):
 
 
 def _read_file_file_not_found_error(path: PathLike, /) -> str:
-    return f"Cannot read from {str(path)!r} since it does not exist"
+    return f"Cannot read from {pretty_repr(str(path))} since it does not exist"
 
 
 def _read_file_is_a_directory_error(path: PathLike, /) -> str:
-    return f"Cannot read from {str(path)!r} since it is a directory"
+    return f"Cannot read from {pretty_repr(str(path))} since it is a directory"
 
 
 def _read_file_not_a_directory_error(path: PathLike, parent: PathLike, /) -> str:
-    return f"Cannot read from {str(path)!r} since its parent {str(parent)!r} is not a directory"
+    return f"Cannot read from {pretty_repr(str(path))} since its parent {pretty_repr(str(parent))} is not a directory"
 
 
 def _write_file_error(path: PathLike, /) -> str:
-    return f"Cannot write to {str(path)!r} since it already exists"
+    return f"Cannot write to {pretty_repr(str(path))} since it already exists"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -805,6 +821,25 @@ class WriteTextError(Exception):
 
 
 ###############################################################################
+#### rich #####################################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class ReprTableError(Exception):
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class ReprTableItemsError(ReprTableError):
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+###############################################################################
 #### shutil ###################################################################
 ###############################################################################
 
@@ -815,7 +850,7 @@ class WhichError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"{self.cmd!r} not found"
+        return f"{pretty_repr(self.cmd)} not found"
 
 
 ###############################################################################
@@ -829,7 +864,7 @@ class SubstituteError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Missing key: {self.key!r}"
+        return f"Missing key: {pretty_repr(self.key)}"
 
 
 ###############################################################################
@@ -1003,7 +1038,7 @@ class YieldWritePathError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Cannot write to {str(self.path)!r} since it already exists"
+        return f"Cannot write to {pretty_repr(str(self.path))} since it already exists"
 
 
 ###############################################################################
@@ -1024,7 +1059,7 @@ class ToTimeZoneNameInvalidKeyError(ToTimeZoneNameError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid time-zone: {self.time_zone!r}"
+        return f"Invalid time-zone: {pretty_repr(self.time_zone)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1033,7 +1068,7 @@ class ToTimeZoneNameInvalidTZInfoError(ToTimeZoneNameError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid time-zone: {self.time_zone}"
+        return f"Invalid time-zone: {pretty_repr(self.time_zone)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1042,7 +1077,7 @@ class ToTimeZoneNamePlainDateTimeError(ToTimeZoneNameError):
 
     @override
     def __str__(self) -> str:
-        return f"Plain date-time: {self.date_time}"
+        return f"Plain date-time: {pretty_repr(self.date_time)}"
 
 
 ##
@@ -1061,7 +1096,7 @@ class ToZoneInfoInvalidTZInfoError(ToZoneInfoError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid time-zone: {self.time_zone}"
+        return f"Invalid time-zone: {pretty_repr(self.time_zone)}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1070,7 +1105,7 @@ class ToZoneInfoPlainDateTimeError(ToZoneInfoError):
 
     @override
     def __str__(self) -> str:
-        return f"Plain date-time: {self.date_time}"
+        return f"Plain date-time: {pretty_repr(self.date_time)}"
 
 
 __all__ = [
