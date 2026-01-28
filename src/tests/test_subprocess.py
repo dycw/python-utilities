@@ -1166,12 +1166,15 @@ class TestRun:
 
     def test_suppress(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
-            "echo stdout; echo stderr 1>&2", shell=True, suppress=True
+            "echo stdout; echo stderr 1>&2; exit 1",
+            shell=True,
+            print=True,
+            suppress=True,
         )
         assert result is None
         cap = capsys.readouterr()
-        assert cap.out == ""
-        assert cap.err == ""
+        assert cap.out == "stdout\n"
+        assert cap.err == "stderr\n"
 
     def test_return(self, *, capsys: CaptureFixture) -> None:
         result = run(  # noqa: S604
