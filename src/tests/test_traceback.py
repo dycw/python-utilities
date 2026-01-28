@@ -53,6 +53,9 @@ class TestFormatExceptionStack:
                 │ 2   │ tests.test_traceback:\d+:func                                           │
                 │     │     assert result % 10 == 0, f"Result \({result}\) must be divisible by  │
                 │     │ 10"                                                                    │
+                ├─────┼────────────────────────────────────────────────────────────────────────┤
+                │ E   │ AssertionError\(Result \(56\) must be divisible by 10                     │
+                │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
             result_lines, pattern_lines = [t.splitlines() for t in [result, pattern]]
@@ -88,6 +91,9 @@ class TestFormatExceptionStack:
                 │ 2   │ tests.test_traceback:\d+:func \s+ │
                 │     │     assert result % 10 == 0, f"Result \({result}\) must be divisible by  │
                 │     │ 10"                                                                    │
+                ├─────┼────────────────────────────────────────────────────────────────────────┤
+                │ E   │ AssertionError\(Result \(56\) must be divisible by 10                     │
+                │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
             result_lines, pattern_lines = [t.splitlines() for t in [result, pattern]]
@@ -138,6 +144,9 @@ class TestFormatExceptionStack:
                 │     │ │ @py_format9 │ 'Result \(56\) must be divisible by 10\\n>assert \(56 %  │ │
                 │     │ │             │ 10\) == 0'                                            │ │
                 │     │ └─────────────┴──────────────────────────────────────────────────────┘ │
+                ├─────┼────────────────────────────────────────────────────────────────────────┤
+                │ E   │ AssertionError\(Result \(56\) must be divisible by 10                     │
+                │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
             result_lines, pattern_lines = [t.splitlines() for t in [result, pattern]]

@@ -27,6 +27,7 @@ from utilities.core import (
     get_now,
     get_now_local,
     one,
+    repr_error,
     repr_mapping,
     repr_table,
     write_text,
@@ -40,8 +41,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from traceback import FrameSummary
     from types import TracebackType
-
-    from rich.table import Table
 
     from utilities.types import (
         Delta,
@@ -129,7 +128,7 @@ def _get_frame_summaries(
     stack = TracebackException.from_exception(
         error, capture_locals=capture_locals
     ).stack
-    items: list[tuple[int | Literal[""], Table]] = []
+    items: list[tuple[int | Literal["E", ""], TableLike]] = []
     for i, frame in enumerate(stack, start=1):
         first, *rest = _yield_frame_summary_tables(
             frame,
@@ -142,6 +141,7 @@ def _get_frame_summaries(
         )
         items.append((i, first))
         items.extend([("", t) for t in rest])
+    items.append(("E", repr_error(error)))
     return repr_table(
         *items,
         show_lines=True,
