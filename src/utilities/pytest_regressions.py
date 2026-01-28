@@ -97,7 +97,7 @@ class OrjsonRegressionError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Obtained object (at {str(self.path_obtained)!r}) and existing object (at {str(self.path_existing)!r}) differ; got {pretty_repr(self.obtained)} and {pretty_repr(self.existing)}"
+        return f"Obtained object (at {pretty_repr(str(self.path_obtained))}) and existing object (at {pretty_repr(str(self.path_existing))}) differ; got {pretty_repr(self.obtained)} and {pretty_repr(self.existing)}"
 
 
 ##
