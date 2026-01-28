@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from asyncio import TaskGroup
-from subprocess import CalledProcessError, run
+from subprocess import CalledProcessError
 
 from pytest import RaisesGroup
 
