@@ -44,7 +44,7 @@ class MaxNullableError[T: SupportsRichComparison](Exception):
 
 
 def _compress_error_msg(srcs: Iterable[PathLike], dest: PathLike, /) -> str:
-    return f"Cannot compress source(s) {pretty_repr(map(str, srcs))} since destination {pretty_repr(str(dest))} already exists"
+    return f"Cannot compress source(s) {pretty_repr(list(map(str, srcs)))} since destination {pretty_repr(str(dest))} already exists"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1068,7 +1068,7 @@ class ToTimeZoneNameInvalidTZInfoError(ToTimeZoneNameError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid time-zone: {pretty_repr(self.time_zone)}"
+        return f"Invalid time-zone: {pretty_repr(str(self.time_zone))}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1096,7 +1096,7 @@ class ToZoneInfoInvalidTZInfoError(ToZoneInfoError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid time-zone: {pretty_repr(self.time_zone)}"
+        return f"Invalid time-zone: {pretty_repr(str(self.time_zone))}"
 
 
 @dataclass(kw_only=True, slots=True)
