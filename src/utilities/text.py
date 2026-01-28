@@ -141,7 +141,7 @@ def split_key_value_pairs(
     if not mapping:
         return pairs
     try:
-        check_unique(k for k, _ in pairs)
+        check_unique(*(k for k, _ in pairs))
     except CheckUniqueError as error:
         raise _SplitKeyValuePairsDuplicateKeysError(
             text=text, counts=error.counts

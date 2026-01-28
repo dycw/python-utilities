@@ -389,9 +389,9 @@ def _select_to_dataframe_check_duplicates(
     """Check a select for duplicate columns."""
     names = [col.name for col in columns]
     try:
-        check_unique(names)
+        check_unique(*names)
     except CheckUniqueError as error:
-        msg = f"Columns must not contain duplicates; got {error.counts}"
+        msg = f"Columns must not contain duplicates; got {pretty_repr(error.counts)}"
         raise DuplicateColumnError(msg) from None
 
 
