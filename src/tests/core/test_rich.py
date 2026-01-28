@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pytest import raises
+from pytest import mark, raises
 
 from utilities._core_errors import ReprTableHeaderError
 from utilities.core import (
@@ -69,6 +69,45 @@ class TestReprTable:
             │       │ └───┴───┘ │
             │ d     │ 4         │
             └───────┴───────────┘
+        """)
+        assert result == expected
+
+    def test_nested_long_item_str(self) -> None:
+        inner = repr_table(("b1", 1), ("b2", list(range(100))), ("b3", 3))
+        result = repr_table(("a", 1), ("b", inner), ("c", 3))
+        expected = normalize_multi_line_str("""
+            ┌───┬──────────────────────────────────────────────────────────────────────────┐
+            │ a │ 1                                                                        │
+            │ b │ ┌────┬─────────────────────────────────────────────────────────────────… │
+            │   │ │ b1 │ 1                                                                 │
+            │   │ │                                                                        │
+            │   │ │ b2 │ [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,    │
+            │   │ 18, 19,  │                                                               │
+            │   │ │    │ ... +80]                                                          │
+            │   │ │                                                                        │
+            │   │ │ b3 │ 3                                                                 │
+            │   │ │                                                                        │
+            │   │ └────┴─────────────────────────────────────────────────────────────────… │
+            │   │                                                                          │
+            │ c │ 3                                                                        │
+            └───┴──────────────────────────────────────────────────────────────────────────┘
+        """)
+        assert result == expected
+
+    def test_nested_long_item_table(self) -> None:
+        inner = repr_table(("b1", 1), ("b2", list(range(100))), ("b3", 3), table=True)
+        result = repr_table(("a", 1), ("b", inner), ("c", 3))
+        expected = normalize_multi_line_str("""
+            ┌───┬──────────────────────────────────────────────────────────────────────────┐
+            │ a │ 1                                                                        │
+            │ b │ ┌────┬─────────────────────────────────────────────────────────────────┐ │
+            │   │ │ b1 │ 1                                                               │ │
+            │   │ │ b2 │ [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,  │ │
+            │   │ │    │ 18, 19, ... +80]                                                │ │
+            │   │ │ b3 │ 3                                                               │ │
+            │   │ └────┴─────────────────────────────────────────────────────────────────┘ │
+            │ c │ 3                                                                        │
+            └───┴──────────────────────────────────────────────────────────────────────────┘
         """)
         assert result == expected
 

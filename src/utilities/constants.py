@@ -213,7 +213,7 @@ EFFECTIVE_USER_NAME: str | None = (
 SYSTEM_RANDOM: SystemRandom = SystemRandom()
 
 
-# reprlib
+# rich
 
 
 RICH_MAX_WIDTH: int = 80

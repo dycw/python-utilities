@@ -2045,22 +2045,50 @@ def repr_str(
 ##
 
 
+@overload
 def repr_table(
     *items: tuple[Any, ...],
     header: SequenceStr | None = None,
     show_edge: bool = True,
     show_lines: bool = False,
-    no_wrap: MaybeIterable[int] | MaybeIterable[str] | None = None,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
     max_length: int | None = RICH_MAX_LENGTH,
     max_string: int | None = RICH_MAX_STRING,
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
-) -> str:
+    table: Literal[True],
+) -> Table: ...
+@overload
+def repr_table(
+    *items: tuple[Any, ...],
+    header: SequenceStr | None = None,
+    show_edge: bool = True,
+    show_lines: bool = False,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+    table: Literal[False] = False,
+) -> str: ...
+def repr_table(
+    *items: tuple[Any, ...],
+    header: SequenceStr | None = None,
+    show_edge: bool = True,
+    show_lines: bool = False,
+    max_width: int = RICH_MAX_WIDTH,
+    indent_size: int = RICH_INDENT_SIZE,
+    max_length: int | None = RICH_MAX_LENGTH,
+    max_string: int | None = RICH_MAX_STRING,
+    max_depth: int | None = RICH_MAX_DEPTH,
+    expand_all: bool = RICH_EXPAND_ALL,
+    table: bool = False,
+) -> Table | str:
     """Get the representation of a table."""
     header_use = [] if header is None else header
-    table = Table(
+    tab = Table(
         *header_use,
         show_header=header is not None,
         show_edge=show_edge,
@@ -2078,8 +2106,6 @@ def repr_table(
         raise ReprTableHeaderError(
             header=header, header_len=len(header), item_len=n
         ) from None
-    if n is not None:
-        no_wrap
     for row in items:
         row_strs = _repr_table_row(
             row,
@@ -2090,10 +2116,12 @@ def repr_table(
             max_depth=max_depth,
             expand_all=expand_all,
         )
-        table.add_row(*row_strs)
+        tab.add_row(*row_strs)
+    if table:
+        return tab
     console = Console(width=max_width, record=True)
     with console.capture() as capture:
-        console.print(table)
+        console.print(tab)
     return capture.get()
 
 
@@ -2107,10 +2135,10 @@ def _repr_table_row(
     max_string: int | None = RICH_MAX_STRING,
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
-) -> list[str]:
+) -> list[Any]:
     return [
         i
-        if isinstance(i, str)
+        if isinstance(i, (Table, str))
         else pretty_repr(
             i,
             max_width=max_width,
