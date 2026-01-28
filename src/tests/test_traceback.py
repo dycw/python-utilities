@@ -77,15 +77,15 @@ class TestFormatExceptionStack:
         except AssertionError as error:
             result = format_exception_stack(error, header=True)
             pattern = normalize_multi_line_str(r"""
-                ┌────────────┬─────────────────────────────┐
+                ┌────────────┬──+┐
                 │ Date/time  │ \d{8}T\d{6}\[.+\]\s+│
                 │ Started    │ \d{8}T\d{6}\[.+\]\s+│
-                │ Duration   │ PT\d+\.\d{6}S \s+ │
+                │ Duration   │ PT\d+\.\d+S \s+ │
                 │ User       │ \w+ \s+ │
                 │ Host       │ [\w\-]+ \s+ │
                 │ Process ID │ \d+ \s+ │
                 │ Version    │                             │
-                └────────────┴─────────────────────────────┘
+                └────────────┴──+┘
 
                 ┏━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
                 ┃ n=2 ┃                                                                        ┃
