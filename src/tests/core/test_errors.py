@@ -26,7 +26,7 @@ class TestReprError:
                 stdout     │ stdout
                 stderr     │ stderr
             )
-        """)
+        """).rstrip("\n")
         assert result == expected
 
     def test_called_process_long_cmd(self) -> None:
@@ -42,7 +42,7 @@ class TestReprError:
                 stdout     │ stdout
                 stderr     │ stderr
             )
-        """)
+        """).rstrip("\n")
         assert result == expected
 
     async def test_group(self) -> None:

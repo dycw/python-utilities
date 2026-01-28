@@ -762,8 +762,7 @@ def repr_error(error: MaybeType[BaseException], /) -> str:
             )
             table = normalize_multi_line_str(table)
             indented = indent(table, 4 * " ")
-            wrapped = f"{get_class_name(error)}(\n{indented})"
-            return normalize_str(wrapped)
+            return f"{get_class_name(error)}(\n{indented})"
         case BaseException():
             return f"{get_class_name(error)}({error})"
         case type():

@@ -42,7 +42,10 @@ class TestFormatExceptionStack:
     @classmethod
     def func_subprocess(cls) -> None:
         _ = run(
-            "echo stdout; sleep 0.5; echo stderr 1>&2; exit 1", check=True, shell=True
+            "echo stdout; sleep 0.5; echo stderr 1>&2; exit 1",
+            capture_output=True,
+            check=True,
+            shell=True,
         )
 
     def test_main(self) -> None:
@@ -167,10 +170,9 @@ class TestFormatExceptionStack:
                 │ E   │ CalledProcessError\(                                               │
                 │     │     returncode │ 1                                                │
                 │     │     cmd        │ echo stdout; sleep 0.5; echo stderr 1>&2; exit 1 │
-                │     │     stdout     │ None                                             │
-                │     │     stderr     │ None                                             │
+                │     │     stdout     │ b'stdout\\n'                                      │
+                │     │     stderr     │ b'stderr\\n'                                      │
                 │     │ \)                                                                 │
-                │     │                                                                   │
                 └─────┴───────────────────────────────────────────────────────────────────┘
             """)
             self._run_test(result, pattern)
