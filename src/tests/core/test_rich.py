@@ -8,7 +8,6 @@ from utilities._core_errors import ReprTableHeaderError
 from utilities.core import (
     ReprTableItemsError,
     normalize_multi_line_str,
-    normalize_str,
     repr_mapping,
     repr_str,
     repr_table,
@@ -93,9 +92,7 @@ class TestReprTable:
             b │ 2
             c │ 3
         """)
-        expected = normalize_str(
-            "\n".join(f" {line} " for line in expected.splitlines())
-        )
+        expected = "\n".join(f" {line} " for line in expected.splitlines()) + "\n"
         assert result == expected
 
     def test_show_lines(self) -> None:
