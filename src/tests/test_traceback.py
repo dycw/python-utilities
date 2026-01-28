@@ -3,6 +3,7 @@ from __future__ import annotations
 from itertools import chain
 from pathlib import Path
 from re import search
+from subprocess import CalledProcessError, run
 from sys import exc_info
 from typing import TYPE_CHECKING
 
@@ -38,6 +39,12 @@ class TestFormatExceptionStack:
         assert result % 10 == 0, f"Result ({result}) must be divisible by 10"
         return result
 
+    @classmethod
+    def func_subprocess(cls) -> None:
+        _ = run(
+            "echo stdout; sleep 0.5; echo stderr 1>&2; exit 1", check=True, shell=True
+        )
+
     def test_main(self) -> None:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
@@ -58,13 +65,7 @@ class TestFormatExceptionStack:
                 │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
-            result_lines, pattern_lines = [t.splitlines() for t in [result, pattern]]
-            m, n = [len(lines) for lines in [result_lines, pattern_lines]]
-            assert m == n
-            for i in range(m):
-                result_i = "\n".join(result_lines[:i])
-                pattern_i = "\n".join(pattern_lines[:i])
-                assert search(pattern_i, result_i) is not None
+            self._run_test(result, pattern)
 
     def test_header(self) -> None:
         try:
@@ -96,13 +97,7 @@ class TestFormatExceptionStack:
                 │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
-            result_lines, pattern_lines = [t.splitlines() for t in [result, pattern]]
-            m, n = [len(lines) for lines in [result_lines, pattern_lines]]
-            assert m == n
-            for i in range(m):
-                result_i = "\n".join(result_lines[:i])
-                pattern_i = "\n".join(pattern_lines[:i])
-                assert search(pattern_i, result_i) is not None
+            self._run_test(result, pattern)
 
     def test_capture_locals(self) -> None:
         try:
@@ -149,13 +144,45 @@ class TestFormatExceptionStack:
                 │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
-            result_lines, pattern_lines = [t.splitlines() for t in [result, pattern]]
-            m, n = [len(lines) for lines in [result_lines, pattern_lines]]
-            assert m == n
-            for i in range(m):
-                result_i = "\n".join(result_lines[:i])
-                pattern_i = "\n".join(pattern_lines[:i])
-                assert search(pattern_i, result_i) is not None
+            self._run_test(result, pattern)
+
+    def test_subprocess(self) -> None:
+        try:
+            _ = self.func_subprocess()
+        except CalledProcessError as error:
+            result = format_exception_stack(error)
+            pattern = normalize_multi_line_str(r"""
+                ┏━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+                ┃ n=3 ┃                                                                   ┃
+                ┡━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+                │ 1   │ tests.test_traceback:\d+:test_subprocess \s+ │
+                │     │     _ = self.func_subprocess\(\)                                    │
+                ├─────┼───────────────────────────────────────────────────────────────────┤
+                │ 2   │ tests.test_traceback:\d+:func_subprocess \s+ │
+                │     │     _ = run\(                                                      │
+                ├─────┼───────────────────────────────────────────────────────────────────┤
+                │ 3   │ subprocess:\d+:run \s+ │
+                │     │     raise CalledProcessError\(retcode, process.args,               │
+                ├─────┼───────────────────────────────────────────────────────────────────┤
+                │ E   │ CalledProcessError\(                                               │
+                │     │     returncode │ 1                                                │
+                │     │     cmd        │ echo stdout; sleep 0.5; echo stderr 1>&2; exit 1 │
+                │     │     stdout     │ None                                             │
+                │     │     stderr     │ None                                             │
+                │     │ \)                                                                 │
+                │     │                                                                   │
+                └─────┴───────────────────────────────────────────────────────────────────┘
+            """)
+            self._run_test(result, pattern)
+
+    def _run_test(self, result: str, pattern: str, /) -> None:
+        result_lines, pattern_lines = [t.splitlines() for t in [result, pattern]]
+        m, n = [len(lines) for lines in [result_lines, pattern_lines]]
+        assert m == n
+        for i in range(m):
+            result_i = "\n".join(result_lines[:i])
+            pattern_i = "\n".join(pattern_lines[:i])
+            assert search(pattern_i, result_i) is not None
 
 
 class TestMakeExceptHook:
