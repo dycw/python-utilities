@@ -181,10 +181,17 @@ class TestFormatExceptionStack:
         result_lines, pattern_lines = [t.splitlines() for t in [result, pattern]]
         m, n = [len(lines) for lines in [result_lines, pattern_lines]]
         assert m == n
-        for i in range(m):
+        for i in range(1, m + 1):
             result_i = "\n".join(result_lines[:i])
             pattern_i = "\n".join(pattern_lines[:i])
-            assert search(pattern_i, result_i) is not None
+            assert search(pattern_i, result_i) is not None, f"""\
+Failure up to line {i}/{m}:
+
+---- RESULT -------------------------------------------------------------------
+{result}
+
+---- PATTERN ------------------------------------------------------------------
+{pattern}"""
 
 
 class TestMakeExceptHook:
