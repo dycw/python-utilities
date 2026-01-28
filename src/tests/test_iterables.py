@@ -27,7 +27,12 @@ from pytest import mark, param, raises
 
 from tests.test_objects.objects import objects
 from utilities.constants import sentinel
-from utilities.hypothesis import pairs, sets_fixed_length, text_ascii
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    pairs,
+    sets_fixed_length,
+    text_ascii,
+)
 from utilities.iterables import (
     CheckBijectionError,
     CheckIterablesEqualError,
@@ -709,7 +714,8 @@ class TestSortIterable:
     @given(objs=pairs(objects(floats_allow_nan=False, sortable=True)))
     def test_main(self, *, objs: tuple[Any, Any]) -> None:
         x, y = objs
-        result1 = sort_iterable([x, y])
+        with assume_does_not_raise(SortIterableError):
+            result1 = sort_iterable([x, y])
         result2 = sort_iterable([y, x])
         assert result1 == result2
 

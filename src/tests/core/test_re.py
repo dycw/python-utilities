@@ -31,25 +31,25 @@ class TestExtractGroup:
                 r"\d",
                 "0",
                 ExtractGroupNoCaptureGroupsError,
-                "Pattern .* must contain exactly one capture group; it had none",
+                'Pattern ".*" must contain exactly one capture group; it had none',
             ),
             param(
                 r"(\d)(\w)",
                 "0A",
                 ExtractGroupMultipleCaptureGroupsError,
-                "Pattern .* must contain exactly one capture group; it had multiple",
+                'Pattern ".*" must contain exactly one capture group; it had multiple',
             ),
             param(
                 r"(\d)",
                 "A",
                 ExtractGroupNoMatchesError,
-                "Pattern .* must match against '.*'",
+                """Pattern ".*" must match against '.*'""",
             ),
             param(
                 r"(\d)",
                 "0A0",
                 ExtractGroupMultipleMatchesError,
-                "Pattern .* must match against '.*' exactly once; matches were '.*', '.*'",
+                r"""Pattern ".*" must match against '.*' exactly once; matches were \[.*, .*\]""",
             ),
         ],
     )
@@ -94,7 +94,7 @@ class TestExtractGroups:
                 r"(\d)",
                 "0A0",
                 ExtractGroupsMultipleMatchesError,
-                r"Pattern .* must match against '.*' exactly once; matches were '.*', '.*'",
+                r"""Pattern ".*" must match against '.*' exactly once; matches were \[.*, .*\]""",
             ),
             param(
                 r"(\d)(\w)",
@@ -106,7 +106,7 @@ class TestExtractGroups:
                 r"(\d)(\w)",
                 "0A0A",
                 ExtractGroupsMultipleMatchesError,
-                r'''Pattern .* must match against '.*' exactly once; matches were ".*", ".*"''',
+                r"""Pattern ".*" must match against '.*' exactly once; matches were \[.*, .*\]""",
             ),
         ],
     )
