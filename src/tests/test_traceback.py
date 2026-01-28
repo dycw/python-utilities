@@ -11,8 +11,8 @@ from hypothesis.strategies import sampled_from
 from pytest import CaptureFixture, mark, param, raises
 from pytest_lazy_fixtures import lf
 
-from utilities.constants import LOCAL_TIME_ZONE_NAME, SECOND
-from utilities.core import get_now, one
+from utilities.constants import SECOND
+from utilities.core import get_now, normalize_multi_line_str, one
 from utilities.traceback import (
     MakeExceptHookError,
     _make_except_hook_purge,
@@ -23,8 +23,6 @@ from utilities.traceback import (
 from utilities.whenever import format_compact
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-
     from utilities.types import Delta
 
 
@@ -45,52 +43,110 @@ class TestFormatExceptionStack:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
             result = format_exception_stack(error)
-            z
-            result = format_exception_stack(error).splitlines()
-            self._assert_lines(result)
+            pattern = normalize_multi_line_str(r"""
+                ┏━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+                ┃ n=2 ┃                                                                        ┃
+                ┡━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+                │ 1   │ tests.test_traceback:\d+:test_main \s+ │
+                │     │     _ = self.func\(1, 2, 3, 4, c=5, d=6, e=7\)                           │
+                ├─────┼────────────────────────────────────────────────────────────────────────┤
+                │ 2   │ tests.test_traceback:\d+:func                                           │
+                │     │     assert result % 10 == 0, f"Result \({result}\) must be divisible by  │
+                │     │ 10"                                                                    │
+                └─────┴────────────────────────────────────────────────────────────────────────┘
+            """)
+            result_lines, pattern_lines = [t.splitlines() for t in [result, pattern]]
+            m, n = [len(lines) for lines in [result_lines, pattern_lines]]
+            assert m == n
+            for i in range(m):
+                result_i = "\n".join(result_lines[:i])
+                pattern_i = "\n".join(pattern_lines[:i])
+                assert search(pattern_i, result_i) is not None
 
-    @mark.only
     def test_header(self) -> None:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
             result = format_exception_stack(error, header=True)
-            z
-            result = format_exception_stack(error, header=True).splitlines()
-            patterns = [
-                rf"^Date/time  \| \d{{8}}T\d{{6}}\[{LOCAL_TIME_ZONE_NAME}\]$",
-                rf"^Started    \| (\d{{8}}T\d{{6}}\[{LOCAL_TIME_ZONE_NAME}\]|)$",
-                r"^Duration   \| (-?PT\d+\.\d+S|)$",
-                r"^User       \| .+$",
-                r"^Host       \| .+$",
-                r"^Process ID \| \d+$",
-                r"^Version    \|\s$",
-                r"^$",
-            ]
-            for line, pattern in zip(result[:8], patterns, strict=False):
-                assert search(pattern, line), line
-            self._assert_lines(result[len(patterns) :])
+            pattern = normalize_multi_line_str(r"""
+                ┌────────────┬─────────────────────────────┐
+                │ Date/time  │ \d{8}T\d{6}\[.+\]\s+│
+                │ Started    │ \d{8}T\d{6}\[.+\]\s+│
+                │ Duration   │ PT0.\d{6}S \s+ │
+                │ User       │ \w+ \s+ │
+                │ Host       │ [\w\-]+ \s+ │
+                │ Process ID │ \d+ \s+ │
+                │ Version    │                             │
+                └────────────┴─────────────────────────────┘
+
+                ┏━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+                ┃ n=2 ┃                                                                        ┃
+                ┡━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+                │ 1   │ tests.test_traceback:\d+:test_header \s+ │
+                │     │     _ = self.func\(1, 2, 3, 4, c=5, d=6, e=7\)                           │
+                ├─────┼────────────────────────────────────────────────────────────────────────┤
+                │ 2   │ tests.test_traceback:\d+:func \s+ │
+                │     │     assert result % 10 == 0, f"Result \({result}\) must be divisible by  │
+                │     │ 10"                                                                    │
+                └─────┴────────────────────────────────────────────────────────────────────────┘
+            """)
+            result_lines, pattern_lines = [t.splitlines() for t in [result, pattern]]
+            m, n = [len(lines) for lines in [result_lines, pattern_lines]]
+            assert m == n
+            for i in range(m):
+                result_i = "\n".join(result_lines[:i])
+                pattern_i = "\n".join(pattern_lines[:i])
+                assert search(pattern_i, result_i) is not None
 
     def test_capture_locals(self) -> None:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
-            result = format_exception_stack(error, capture_locals=True).splitlines()
-            assert len(result) == 19
-            indices = [0, 3, 17, 18]
-            self._assert_lines([result[i] for i in indices])
-            for i in set(range(len(result))) - set(indices):
-                assert search(r"^    \| .+ = .+$", result[i])
-
-    def _assert_lines(self, lines: Iterable[str], /) -> None:
-        expected = [
-            r"^1/2 \| tests\.test_traceback:\d+ \| test_\w+ \| _ = self\.func\(1, 2, 3, 4, c=5, d=6, e=7\)$",
-            r'^2/2 \| tests\.test_traceback:\d+ \| func \| assert result % 10 == 0, f"Result \({result}\) must be divisible by 10"$',
-            r"^AssertionError\(Result \(56\) must be divisible by 10$",
-            r"^assert \(56 % 10\) == 0\)$",
-        ]
-        for line, pattern in zip(lines, expected, strict=True):
-            assert search(pattern, line), line
+            result = format_exception_stack(error, capture_locals=True)
+            pattern = normalize_multi_line_str(r"""
+                ┏━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+                ┃ n=2 ┃                                                                        ┃
+                ┡━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+                │ 1   │ tests.test_traceback:\d+:test_capture_locals \s+ │
+                │     │     _ = self.func\(1, 2, 3, 4, c=5, d=6, e=7\)                           │
+                ├─────┼────────────────────────────────────────────────────────────────────────┤
+                │     │ ┌───────┬────────────────────────────────────────────────────────────┐ │
+                │     │ │ self  │ <tests.test_traceback.TestFormatExceptionStack object at   │ │
+                │     │ │       │ 0x[0-9a-z]{9}>                                               │ │
+                │     │ │ error │ AssertionError\('Result \(56\) must be divisible by           │ │
+                │     │ │       │ 10\\nassert \(56 % 10\) == 0'\)                                │ │
+                │     │ └───────┴────────────────────────────────────────────────────────────┘ │
+                ├─────┼────────────────────────────────────────────────────────────────────────┤
+                │ 2   │ tests.test_traceback:40:func                                           │
+                │     │     assert result % 10 == 0, f"Result \({result}\) must be divisible by  │
+                │     │ 10"                                                                    │
+                ├─────┼────────────────────────────────────────────────────────────────────────┤
+                │     │ ┌─────────────┬──────────────────────────────────────────────────────┐ │
+                │     │ │ cls         │ <class                                               │ │
+                │     │ │             │ 'tests.test_traceback.TestFormatExceptionStack'>     │ │
+                │     │ │ a           │ 2                                                    │ │
+                │     │ │ b           │ 4                                                    │ │
+                │     │ │ c           │ 10                                                   │ │
+                │     │ │ args        │ \(6, 8\)                                               │ │
+                │     │ │ kwargs      │ {'d': 12, 'e': 14}                                   │ │
+                │     │ │ result      │ 56                                                   │ │
+                │     │ │ @py_assert1 │ 10                                                   │ │
+                │     │ │ @py_assert3 │ 6                                                    │ │
+                │     │ │ @py_assert5 │ 0                                                    │ │
+                │     │ │ @py_assert4 │ False                                                │ │
+                │     │ │ @py_format7 │ '\(56 % 10\) == 0'                                     │ │
+                │     │ │ @py_format9 │ 'Result \(56\) must be divisible by 10\\n>assert \(56 %  │ │
+                │     │ │             │ 10\) == 0'                                            │ │
+                │     │ └─────────────┴──────────────────────────────────────────────────────┘ │
+                └─────┴────────────────────────────────────────────────────────────────────────┘
+            """)
+            result_lines, pattern_lines = [t.splitlines() for t in [result, pattern]]
+            m, n = [len(lines) for lines in [result_lines, pattern_lines]]
+            assert m == n
+            for i in range(m):
+                result_i = "\n".join(result_lines[:i])
+                pattern_i = "\n".join(pattern_lines[:i])
+                assert search(pattern_i, result_i) is not None
 
 
 class TestMakeExceptHook:

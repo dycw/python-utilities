@@ -4,14 +4,12 @@ import re
 import sys
 from dataclasses import dataclass
 from functools import partial
-from getpass import getuser
-from itertools import repeat
 from os import getpid
 from pathlib import Path
-from socket import gethostname
 from sys import stderr
+from textwrap import indent
 from traceback import TracebackException
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, Any, Literal, override
 
 from utilities.constants import (
     HOSTNAME,
@@ -29,7 +27,6 @@ from utilities.core import (
     get_now,
     get_now_local,
     one,
-    repr_error,
     repr_mapping,
     repr_table,
     write_text,
@@ -52,6 +49,7 @@ if TYPE_CHECKING:
         MaybeCallablePathLike,
         MaybeCallableZonedDateTimeLike,
         PathLike,
+        TableLike,
     )
     from utilities.version import MaybeCallableVersion3Like
 
@@ -90,7 +88,7 @@ def format_exception_stack(
             expand_all=expand_all,
         )
     )
-    return "\n\n".join(parts)
+    return "\n".join(parts)
 
 
 def _get_header(
@@ -100,9 +98,9 @@ def _get_header(
 ) -> str:
     """Get the header."""
     items: list[tuple[str, Any]] = []
+    start_use = to_zoned_date_time(start).to_tz(LOCAL_TIME_ZONE_NAME)
     now = get_now_local()
     items.append(("Date/time", format_compact(now)))
-    start_use = to_zoned_date_time(start).to_tz(LOCAL_TIME_ZONE_NAME)
     items.extend([
         ("Started", format_compact(start_use)),
         ("Duration", (now - start_use).format_iso()),
@@ -131,32 +129,29 @@ def _get_frame_summaries(
     stack = TracebackException.from_exception(
         error, capture_locals=capture_locals
     ).stack
-    items: list[tuple[int, str]] = [
-        (
-            i,
-            _yield_frame_summary_tables(
-                frame,
-                max_width=max_width,
-                indent_size=indent_size,
-                max_length=max_length,
-                max_string=max_string,
-                max_depth=max_depth,
-                expand_all=expand_all,
-            ),
+    items: list[tuple[int | Literal[""], Table]] = []
+    for i, frame in enumerate(stack, start=1):
+        first, *rest = _yield_frame_summary_tables(
+            frame,
+            max_width=max_width,
+            indent_size=indent_size,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
+            expand_all=expand_all,
         )
-        for i, frame in enumerate(stack, start=1)
-    ]
-    n = len(stack)
+        items.append((i, first))
+        items.extend([("", t) for t in rest])
     return repr_table(
         *items,
-        show_edge=True,
+        show_lines=True,
         max_width=max_width,
         indent_size=indent_size,
         max_length=max_length,
         max_string=max_string,
         max_depth=max_depth,
         expand_all=expand_all,
-        header=[f"n={n}", "data"],
+        header=[f"n={len(stack)}", ""],
     )
 
 
@@ -170,11 +165,12 @@ def _yield_frame_summary_tables(
     max_string: int | None = RICH_MAX_STRING,
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
-) -> Iterator[Table]:
+) -> Iterator[TableLike]:
     module = _path_to_dots(frame.filename)
-    yield repr_table(
-        (f"{module}:{frame.lineno}",), (frame.name,), (frame.line,), table=True
-    )
+    parts: list[str] = [f"{module}:{frame.lineno}:{frame.name}"]
+    if frame.line is not None:
+        parts.append(indent(frame.line, 4 * " "))
+    yield "\n".join(parts)
     if frame.locals is not None:
         yield repr_mapping(
             frame.locals,
@@ -184,6 +180,7 @@ def _yield_frame_summary_tables(
             max_string=max_string,
             max_depth=max_depth,
             expand_all=expand_all,
+            table=True,
         )
 
 
