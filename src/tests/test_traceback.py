@@ -44,13 +44,18 @@ class TestFormatExceptionStack:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
+            result = format_exception_stack(error)
+            z
             result = format_exception_stack(error).splitlines()
             self._assert_lines(result)
 
+    @mark.only
     def test_header(self) -> None:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
+            result = format_exception_stack(error, header=True)
+            z
             result = format_exception_stack(error, header=True).splitlines()
             patterns = [
                 rf"^Date/time  \| \d{{8}}T\d{{6}}\[{LOCAL_TIME_ZONE_NAME}\]$",

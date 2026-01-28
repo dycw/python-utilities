@@ -11,9 +11,10 @@ from pathlib import Path
 from socket import gethostname
 from sys import stderr
 from traceback import TracebackException
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, Any, override
 
 from utilities.constants import (
+    HOSTNAME,
     LOCAL_TIME_ZONE_NAME,
     RICH_EXPAND_ALL,
     RICH_INDENT_SIZE,
@@ -21,6 +22,7 @@ from utilities.constants import (
     RICH_MAX_LENGTH,
     RICH_MAX_STRING,
     RICH_MAX_WIDTH,
+    USER,
 )
 from utilities.core import (
     OneEmptyError,
@@ -29,6 +31,7 @@ from utilities.core import (
     one,
     repr_error,
     repr_mapping,
+    repr_table,
     write_text,
 )
 from utilities.pathlib import module_path, to_path
@@ -70,11 +73,11 @@ def format_exception_stack(
     expand_all: bool = RICH_EXPAND_ALL,
 ) -> str:
     """Format an exception stack."""
-    lines: list[str] = []
+    parts: list[str] = []
     if header:
-        lines.extend(_yield_header_lines(start=start, version=version))
-    lines.extend(
-        _yield_formatted_frame_summary(
+        parts.append(_get_header(start=start, version=version))
+    parts.append(
+        _get_frame_summaries(
             error,
             capture_locals=capture_locals,
             max_width=max_width,
@@ -85,29 +88,32 @@ def format_exception_stack(
             expand_all=expand_all,
         )
     )
-    return "\n".join(lines)
+    return "\n\n".join(parts)
 
 
-def _yield_header_lines(
+def _get_header(
     *,
     start: MaybeCallableZonedDateTimeLike = get_now,
     version: MaybeCallableVersion3Like | None = None,
-) -> Iterator[str]:
-    """Yield the header lines."""
+) -> str:
+    """Get the header."""
+    items: list[tuple[str, Any]] = []
     now = get_now_local()
-    yield f"Date/time  | {format_compact(now)}"
+    items.append(("Date/time", format_compact(now)))
     start_use = to_zoned_date_time(start).to_tz(LOCAL_TIME_ZONE_NAME)
-    yield f"Started    | {format_compact(start_use)}"
-    yield f"Duration   | {(now - start_use).format_iso()}"
-    yield f"User       | {getuser()}"
-    yield f"Host       | {gethostname()}"
-    yield f"Process ID | {getpid()}"
+    items.extend([
+        ("Started", format_compact(start_use)),
+        ("Duration", (now - start_use).format_iso()),
+        ("User", USER),
+        ("Host", HOSTNAME),
+        ("Process ID", getpid()),
+    ])
     version_use = "" if version is None else to_version3(version)
-    yield f"Version    | {version_use}"
-    yield ""
+    items.append(("Version", version_use))
+    return repr_table(*items)
 
 
-def _yield_formatted_frame_summary(
+def _get_frame_summaries(
     error: BaseException,
     /,
     *,
@@ -118,31 +124,41 @@ def _yield_formatted_frame_summary(
     max_string: int | None = RICH_MAX_STRING,
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
-) -> Iterator[str]:
-    """Yield the formatted frame summary lines."""
+) -> str:
+    """Get the frame summaries."""
     stack = TracebackException.from_exception(
         error, capture_locals=capture_locals
     ).stack
-    n = len(stack)
-    for i, frame in enumerate(stack, start=1):
-        num = f"{i}/{n}"
-        first, *rest = _yield_frame_summary_lines(
-            frame,
-            max_width=max_width,
-            indent_size=indent_size,
-            max_length=max_length,
-            max_string=max_string,
-            max_depth=max_depth,
-            expand_all=expand_all,
+    items: list[tuple[int, str]] = [
+        (
+            i,
+            _get_frame_summary(
+                frame,
+                max_width=max_width,
+                indent_size=indent_size,
+                max_length=max_length,
+                max_string=max_string,
+                max_depth=max_depth,
+                expand_all=expand_all,
+            ),
         )
-        yield f"{num} | {first}"
-        blank = "".join(repeat(" ", len(num)))
-        for rest_i in rest:
-            yield f"{blank} | {rest_i}"
-    yield repr_error(error)
+        for i, frame in enumerate(stack, start=1)
+    ]
+    n = len(stack)
+    return repr_table(
+        *items,
+        show_edge=True,
+        max_width=max_width,
+        indent_size=indent_size,
+        max_length=max_length,
+        max_string=max_string,
+        max_depth=max_depth,
+        expand_all=expand_all,
+        header=[f"n={n}", "data"],
+    )
 
 
-def _yield_frame_summary_lines(
+def _get_frame_summary(
     frame: FrameSummary,
     /,
     *,
@@ -152,11 +168,13 @@ def _yield_frame_summary_lines(
     max_string: int | None = RICH_MAX_STRING,
     max_depth: int | None = RICH_MAX_DEPTH,
     expand_all: bool = RICH_EXPAND_ALL,
-) -> Iterator[str]:
+) -> str:
+    parts: list[str] = []
     module = _path_to_dots(frame.filename)
-    yield f"{module}:{frame.lineno} | {frame.name} | {frame.line}"
+    table1 = repr_table((f"{module}:{frame.lineno}",), (frame.name,), (frame.line,))
+    parts.append(table1)
     if frame.locals is not None:
-        yield repr_mapping(
+        table2 = repr_mapping(
             frame.locals,
             max_width=max_width,
             indent_size=indent_size,
@@ -165,6 +183,8 @@ def _yield_frame_summary_lines(
             max_depth=max_depth,
             expand_all=expand_all,
         )
+        parts.append(table2)
+    return "\n\n".join(parts)
 
 
 def _path_to_dots(path: PathLike, /) -> str:

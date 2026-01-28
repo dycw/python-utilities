@@ -2050,6 +2050,7 @@ def repr_table(
     header: SequenceStr | None = None,
     show_edge: bool = True,
     show_lines: bool = False,
+    no_wrap: MaybeIterable[int] | MaybeIterable[str] | None = None,
     max_width: int = RICH_MAX_WIDTH,
     indent_size: int = RICH_INDENT_SIZE,
     max_length: int | None = RICH_MAX_LENGTH,
@@ -2066,15 +2067,19 @@ def repr_table(
         show_lines=show_lines,
     )
     try:
-        _ = one(sorted({len(i) for i in items}))
+        n = one(sorted({len(i) for i in items}))
+    except OneEmptyError:
+        n = None
     except OneNonUniqueError as error:
         raise ReprTableItemsError(
             items=list(items), first=error.first, second=error.second
         ) from None
-    if (len(items) >= 1) and (header is not None) and (len(header) != len(items[0])):
+    if (header is not None) and (n is not None) and (len(header) != n):
         raise ReprTableHeaderError(
-            header=header, header_len=len(header), item_len=len(items[0])
+            header=header, header_len=len(header), item_len=n
         ) from None
+    if n is not None:
+        no_wrap
     for row in items:
         row_strs = _repr_table_row(
             row,
