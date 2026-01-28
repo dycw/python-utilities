@@ -168,7 +168,7 @@ class _InsertDataFrameMapDFColumnToTableColumnAndTypeError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to map DataFrame column {self.df_col_name!r} into table schema {pretty_repr(self.table_schema)} with snake={self.snake}"
+        return f"Unable to map DataFrame column {pretty_repr(self.df_col_name)} into table schema {pretty_repr(self.table_schema)} with snake={self.snake}"
 
 
 def _insert_dataframe_check_df_and_db_types(
