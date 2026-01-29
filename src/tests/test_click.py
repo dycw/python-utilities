@@ -7,8 +7,9 @@ from operator import attrgetter
 from re import search
 from typing import TYPE_CHECKING, Any, ClassVar
 
+import pydantic
 import whenever
-from click import ParamType, argument, command, echo, option
+from click import ParamType, argument, command, option
 from click.testing import CliRunner
 from hypothesis import given
 from hypothesis.strategies import (
@@ -61,13 +62,13 @@ from utilities.hypothesis import (
     month_days,
     paths,
     plain_date_times,
+    secret_strs,
     text_ascii,
     time_deltas,
     times,
     year_months,
     zoned_date_times,
 )
-from utilities.parse import serialize_object
 from utilities.text import join_strs
 
 if TYPE_CHECKING:
@@ -113,87 +114,114 @@ class _Case[T]:
 
 class TestCLIHelp:
     @mark.parametrize(
-        ("param", "expected"),
+        ("param", "default", "expected"),
         [
             param(
                 str,
+                None,
                 """
-                Usage: cli [OPTIONS] VALUE
+                Usage: cli [OPTIONS]
 
                 Options:
-                  --help  Show this message and exit.
+                  --value TEXT
+                  --help        Show this message and exit.
                 """,
             ),
             param(
                 utilities.click.Enum(_ExampleEnum),
+                None,
                 """
-                Usage: cli [OPTIONS] {a,b,c}
+                Usage: cli [OPTIONS]
 
                 Options:
-                  --help  Show this message and exit.
+                  --value [a,b,c]
+                  --help           Show this message and exit.
                 """,
             ),
             param(
                 utilities.click.Enum(_ExampleEnum, value=True),
+                None,
                 """
-                Usage: cli [OPTIONS] {1,2,3}
+                Usage: cli [OPTIONS]
 
                 Options:
-                  --help  Show this message and exit.
+                  --value [1,2,3]
+                  --help           Show this message and exit.
                 """,
             ),
             param(
                 utilities.click.Enum(_ExampleStrEnum),
+                None,
                 """
-                Usage: cli [OPTIONS] {av,bv,cv}
+                Usage: cli [OPTIONS]
 
                 Options:
-                  --help  Show this message and exit.
+                  --value [av,bv,cv]
+                  --help              Show this message and exit.
                 """,
             ),
             param(
                 FrozenSetEnums(_ExampleEnum),
+                None,
                 """
-                Usage: cli [OPTIONS] {FROZENSET{a,b,c} SEP=,}
+                Usage: cli [OPTIONS]
 
                 Options:
-                  --help  Show this message and exit.
+                  --value [FROZENSET[a,b,c] SEP=,]
+                  --help                          Show this message and exit.
                 """,
             ),
             param(
                 FrozenSetStrs(),
+                None,
                 """
-                Usage: cli [OPTIONS] {FROZENSET[TEXT] SEP=,}
+                Usage: cli [OPTIONS]
 
                 Options:
-                  --help  Show this message and exit.
+                  --value [FROZENSET[TEXT] SEP=,]
+                  --help                          Show this message and exit.
                 """,
             ),
             param(
                 ListEnums(_ExampleEnum),
+                None,
                 """
-                Usage: cli [OPTIONS] {LIST{a,b,c} SEP=,}
+                Usage: cli [OPTIONS]
 
                 Options:
-                  --help  Show this message and exit.
+                  --value [LIST[a,b,c] SEP=,]
+                  --help                       Show this message and exit.
                 """,
             ),
             param(
                 ListStrs(),
+                None,
                 """
-                Usage: cli [OPTIONS] {LIST[TEXT] SEP=,}
+                Usage: cli [OPTIONS]
 
                 Options:
-                  --help  Show this message and exit.
+                  --value [LIST[TEXT] SEP=,]
+                  --help                      Show this message and exit.
+                """,
+            ),
+            param(
+                utilities.click.SecretStr(),
+                pydantic.SecretStr("secret"),
+                """
+                Usage: cli [OPTIONS]
+
+                Options:
+                  --value SECRET STR  [default: **********]
+                  --help              Show this message and exit.
                 """,
             ),
         ],
     )
-    def test_main(self, *, param: Any, expected: str) -> None:
+    def test_main(self, *, param: Any, default: Any, expected: str) -> None:
         @command()
-        @argument("value", type=param)
+        @option("--value", type=param, default=default, show_default=True)
         def cli(*, value: Any) -> None:
-            echo(f"value = {value}")
+            _ = value
 
         result = CliRunner().invoke(cli, ["--help"])
         assert result.exit_code == 0, result.stderr
@@ -441,10 +469,17 @@ class TestParameters:
             failable=True,
         ),
         _Case(
+            param=utilities.click.SecretStr(),
+            name="secret str",
+            strategy=secret_strs(min_size=1),
+            serialize=lambda x: x.get_secret_value(),
+            failable=False,
+        ),
+        _Case(
             param=Str(),
             name="text",
             strategy=text_ascii(min_size=1),
-            serialize=serialize_object,
+            serialize=str,
             failable=False,
         ),
         _Case(
