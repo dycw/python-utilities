@@ -61,19 +61,19 @@ if TYPE_CHECKING:
     )
 
 
-_HOST_KEY_ALGORITHMS = ["ssh-ed25519"]
-APT_UPDATE = ["apt", "update", "-y"]
-BASH_LC = ["bash", "-lc"]
-BASH_LS = ["bash", "-ls"]
-CHPASSWD = "chpasswd"
-GIT_BRANCH_SHOW_CURRENT = ["git", "branch", "--show-current"]
-ISOLATED = "--isolated"
-KNOWN_HOSTS = HOME / ".ssh/known_hosts"
-MANAGED_PYTHON = "--managed-python"
-MKTEMP_DIR_CMD = ["mktemp", "-d"]
-PRERELEASE_DISALLOW = ["--prerelease", "disallow"]
-RESOLUTION_HIGHEST = ["--resolution", "highest"]
-RESTART_SSHD = ["systemctl", "restart", "sshd"]
+APT_UPDATE: list[str] = ["apt", "update", "-y"]
+BASH_LC: list[str] = ["bash", "-lc"]
+BASH_LS: list[str] = ["bash", "-ls"]
+CHPASSWD: str = "chpasswd"
+GIT_BRANCH_SHOW_CURRENT: list[str] = ["git", "branch", "--show-current"]
+HOST_KEY_ALGORITHMS: list[str] = ["ssh-ed25519"]
+ISOLATED: str = "--isolated"
+KNOWN_HOSTS: Path = HOME / ".ssh/known_hosts"
+MANAGED_PYTHON: str = "--managed-python"
+MKTEMP_DIR_CMD: list[str] = ["mktemp", "-d"]
+PRERELEASE_DISALLOW: list[str] = ["--prerelease", "disallow"]
+RESOLUTION_HIGHEST: list[str] = ["--resolution", "highest"]
+RESTART_SSHD: list[str] = ["systemctl", "restart", "sshd"]
 UPDATE_CA_CERTIFICATES: str = "update-ca-certificates"
 
 
@@ -790,14 +790,14 @@ def rsync(
     *,
     sudo: bool = False,
     batch_mode: bool = True,
-    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    host_key_algorithms: MaybeSequenceStr = HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     print: bool = False,  # noqa: A002
     retry: Retry | None = None,
     logger: LoggerLike | None = None,
     chown_user: str | None = None,
     chown_group: str | None = None,
-    exclude: MaybeIterable[str] | None = None,
+    exclude: MaybeSequenceStr | None = None,
     timeout: Duration | None = None,
     chmod: PermissionsLike | None = None,
 ) -> None:
@@ -856,9 +856,9 @@ def rsync_cmd(
     archive: bool = False,
     chown_user: str | None = None,
     chown_group: str | None = None,
-    exclude: MaybeIterable[str] | None = None,
+    exclude: MaybeSequenceStr | None = None,
     batch_mode: bool = True,
-    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    host_key_algorithms: MaybeSequenceStr = HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     sudo: bool = False,
     timeout: Duration | None = None,
@@ -943,10 +943,10 @@ def rsync_many(
     logger: LoggerLike | None = None,
     keep: bool = False,
     batch_mode: bool = True,
-    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    host_key_algorithms: MaybeSequenceStr = HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     print: bool = False,  # noqa: A002
-    exclude: MaybeIterable[str] | None = None,
+    exclude: MaybeSequenceStr | None = None,
 ) -> None:
     cmds: list[list[str]] = []  # skipif-ci
     with (  # skipif-ci
@@ -1343,7 +1343,7 @@ def ssh(
     /,
     *cmd_and_args: str,
     batch_mode: bool = True,
-    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    host_key_algorithms: MaybeSequenceStr = HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
     env: StrStrMapping | None = None,
@@ -1365,7 +1365,7 @@ def ssh(
     /,
     *cmd_and_args: str,
     batch_mode: bool = True,
-    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    host_key_algorithms: MaybeSequenceStr = HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
     env: StrStrMapping | None = None,
@@ -1387,7 +1387,7 @@ def ssh(
     /,
     *cmd_and_args: str,
     batch_mode: bool = True,
-    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    host_key_algorithms: MaybeSequenceStr = HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
     env: StrStrMapping | None = None,
@@ -1409,7 +1409,7 @@ def ssh(
     /,
     *cmd_and_args: str,
     batch_mode: bool = True,
-    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    host_key_algorithms: MaybeSequenceStr = HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
     env: StrStrMapping | None = None,
@@ -1431,7 +1431,7 @@ def ssh(
     /,
     *cmd_and_args: str,
     batch_mode: bool = True,
-    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    host_key_algorithms: MaybeSequenceStr = HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
     env: StrStrMapping | None = None,
@@ -1452,7 +1452,7 @@ def ssh(
     /,
     *cmd_and_args: str,
     batch_mode: bool = True,
-    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    host_key_algorithms: MaybeSequenceStr = HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
     env: StrStrMapping | None = None,
@@ -1538,7 +1538,7 @@ def ssh_cmd(
     /,
     *cmd_and_args: str,
     batch_mode: bool = True,
-    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    host_key_algorithms: MaybeSequenceStr = HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
     env: StrStrMapping | None = None,
@@ -1559,7 +1559,7 @@ def ssh_cmd(
 def ssh_opts_cmd(
     *,
     batch_mode: bool = True,
-    host_key_algorithms: list[str] = _HOST_KEY_ALGORITHMS,
+    host_key_algorithms: MaybeSequenceStr = HOST_KEY_ALGORITHMS,
     strict_host_key_checking: bool = True,
     port: int | None = None,
 ) -> list[str]:
@@ -1567,7 +1567,8 @@ def ssh_opts_cmd(
     args: list[str] = ["ssh"]
     if batch_mode:
         args.extend(["-o", "BatchMode=yes"])
-    args.extend(["-o", f"HostKeyAlgorithms={','.join(host_key_algorithms)}"])
+    joined = ",".join(always_iterable(host_key_algorithms))
+    args.extend(["-o", f"HostKeyAlgorithms={joined}"])
     if strict_host_key_checking:
         args.extend(["-o", "StrictHostKeyChecking=yes"])
     if port is not None:
@@ -2558,6 +2559,7 @@ __all__ = [
     "BASH_LS",
     "CHPASSWD",
     "GIT_BRANCH_SHOW_CURRENT",
+    "HOST_KEY_ALGORITHMS",
     "ISOLATED",
     "MANAGED_PYTHON",
     "MKTEMP_DIR_CMD",
