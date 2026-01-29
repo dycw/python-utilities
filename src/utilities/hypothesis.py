@@ -9,7 +9,7 @@ from math import ceil, floor, inf, isclose, isfinite, nan
 from os import environ
 from pathlib import Path
 from re import search
-from string import ascii_letters, ascii_lowercase, ascii_uppercase, digits, printable
+from string import ascii_letters, digits, printable
 from subprocess import check_call
 from typing import TYPE_CHECKING, Any, Literal, assert_never, cast, overload, override
 
@@ -122,6 +122,7 @@ if TYPE_CHECKING:
     from hypothesis.database import ExampleDatabase
     from libcst import Import, ImportFrom
     from numpy.random import RandomState
+    from pydantic import SecretStr
     from sqlalchemy import URL
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
@@ -995,6 +996,24 @@ def random_states(
 ##
 
 
+@composite
+def secret_strs(
+    draw: DrawFn,
+    /,
+    *,
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[int | None] = None,
+) -> SecretStr:
+    """Strategy for generating secret strings."""
+    from pydantic import SecretStr
+
+    text = draw(text_ascii(min_size=min_size, max_size=max_size))
+    return SecretStr(text)
+
+
+##
+
+
 def sentinels() -> SearchStrategy[Sentinel]:
     """Strategy for generating sentinels."""
     return just(sentinel)
@@ -1202,36 +1221,6 @@ def text_ascii(
 ) -> str:
     """Strategy for generating ASCII text."""
     alphabet = characters(whitelist_categories=[], whitelist_characters=ascii_letters)
-    return draw(
-        text(alphabet, min_size=draw2(draw, min_size), max_size=draw2(draw, max_size))
-    )
-
-
-@composite
-def text_ascii_lower(
-    draw: DrawFn,
-    /,
-    *,
-    min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[int | None] = None,
-) -> str:
-    """Strategy for generating ASCII lower-case text."""
-    alphabet = characters(whitelist_categories=[], whitelist_characters=ascii_lowercase)
-    return draw(
-        text(alphabet, min_size=draw2(draw, min_size), max_size=draw2(draw, max_size))
-    )
-
-
-@composite
-def text_ascii_upper(
-    draw: DrawFn,
-    /,
-    *,
-    min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[int | None] = None,
-) -> str:
-    """Strategy for generating ASCII upper-case text."""
-    alphabet = characters(whitelist_categories=[], whitelist_characters=ascii_uppercase)
     return draw(
         text(alphabet, min_size=draw2(draw, min_size), max_size=draw2(draw, max_size))
     )
@@ -1671,6 +1660,7 @@ __all__ = [
     "py_datetimes",
     "quadruples",
     "random_states",
+    "secret_strs",
     "sentinels",
     "sets_fixed_length",
     "setup_hypothesis_profiles",
@@ -1679,8 +1669,6 @@ __all__ = [
     "temp_dirs",
     "temp_paths",
     "text_ascii",
-    "text_ascii_lower",
-    "text_ascii_upper",
     "text_clean",
     "text_digits",
     "text_printable",
