@@ -30,14 +30,23 @@ if TYPE_CHECKING:
 def docker_compose_down(
     *,
     files: MaybeIterable[PathLike] | None = None,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
+    logger: LoggerLike | None = None,
 ) -> None:
     """Stop and remove containers."""
     args = docker_compose_down_cmd(files=files)  # pragma: no cover
     run(  # pragma: no cover
-        *args, print=print, print_stdout=print_stdout, print_stderr=print_stderr
+        *args,
+        cwd=cwd,
+        env=env,
+        print=print,
+        print_stdout=print_stdout,
+        print_stderr=print_stderr,
+        logger=logger,
     )
 
 
@@ -51,14 +60,23 @@ def docker_compose_down_cmd(
 def docker_compose_pull(
     *,
     files: MaybeIterable[PathLike] | None = None,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
+    logger: LoggerLike | None = None,
 ) -> None:
     """Pull service images."""
     args = docker_compose_pull_cmd(files=files)  # pragma: no cover
     run(  # pragma: no cover
-        *args, print=print, print_stdout=print_stdout, print_stderr=print_stderr
+        *args,
+        cwd=cwd,
+        env=env,
+        print=print,
+        print_stdout=print_stdout,
+        print_stderr=print_stderr,
+        logger=logger,
     )
 
 
@@ -73,14 +91,23 @@ def docker_compose_up(
     *,
     files: MaybeIterable[PathLike] | None = None,
     detach: bool = True,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
+    logger: LoggerLike | None = None,
 ) -> None:
     """Create and start containers."""
     args = docker_compose_up_cmd(files=files, detach=detach)  # pragma: no cover
     run(  # pragma: no cover
-        *args, print=print, print_stdout=print_stdout, print_stderr=print_stderr
+        *args,
+        cwd=cwd,
+        env=env,
+        print=print,
+        print_stdout=print_stdout,
+        print_stderr=print_stderr,
+        logger=logger,
     )
 
 
