@@ -17,6 +17,8 @@ from utilities.enum import ParseEnumError, parse_enum
 from utilities.text import ParseBoolError, parse_bool, split_str
 
 if TYPE_CHECKING:
+    import pydantic
+
     from utilities.types import (
         DateDeltaLike,
         DateLike,
@@ -28,6 +30,7 @@ if TYPE_CHECKING:
         MonthDayLike,
         PathLike,
         PlainDateTimeLike,
+        SecretLike,
         TimeDeltaLike,
         TimeLike,
         YearMonthLike,
@@ -423,6 +426,37 @@ class PlainDateTime(ParamType):
                     return whenever.PlainDateTime.parse_iso(value)
                 except ValueError as error:
                     self.fail(str(error), param, ctx)
+            case never:
+                assert_never(never)
+
+
+##
+
+
+class SecretStr(ParamType):
+    """A secret-str-valued parameter."""
+
+    name = "secret str"
+
+    @override
+    def __repr__(self) -> str:
+        return self.name.upper()
+
+    @override
+    def convert(
+        self, value: SecretLike, param: Parameter | None, ctx: Context | None
+    ) -> pydantic.SecretStr | None:
+        """Convert a value into a PlainDateTime, or None."""
+        import pydantic
+
+        _ = (param, ctx)
+        match value:
+            case pydantic.SecretStr():
+                return value
+            case "":
+                return None
+            case str():
+                return pydantic.SecretStr(value)
             case never:
                 assert_never(never)
 
@@ -829,6 +863,7 @@ __all__ = [
     "Path",
     "Path",
     "PlainDateTime",
+    "SecretStr",
     "Str",
     "Time",
     "TimeDelta",

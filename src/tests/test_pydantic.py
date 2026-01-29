@@ -1,5 +1,4 @@
 # ruff: noqa: TC001
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -8,8 +7,8 @@ from pydantic import BaseModel, SecretStr
 from pytest import mark, param
 
 from utilities.constants import HOME
-from utilities.pydantic import ExpandedPath, SecretLike, extract_secret
-from utilities.types import PathLike
+from utilities.pydantic import ExpandedPath, extract_secret
+from utilities.types import PathLike, SecretLike
 
 
 class TestExpandedPath:
@@ -29,16 +28,3 @@ class TestExtractSecret:
     def test_main(self, *, value: SecretLike) -> None:
         result = extract_secret(value)
         assert result == "x"
-
-
-class TestSecretLike:
-    @mark.parametrize("secret", [param(SecretStr("x")), param("x")])
-    def test_main(self, *, secret: SecretLike) -> None:
-        class Example(BaseModel):
-            secret: SecretLike
-
-        _ = Example.model_rebuild()
-
-        result = Example(secret=secret).secret
-        expected = SecretStr("x")
-        assert result == expected

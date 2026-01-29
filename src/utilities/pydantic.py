@@ -5,10 +5,9 @@ from typing import Annotated, assert_never
 
 from pydantic import BeforeValidator, SecretStr
 
-from utilities.types import PathLike
+from utilities.types import PathLike, SecretLike
 
 type ExpandedPath = Annotated[PathLike, BeforeValidator(lambda p: Path(p).expanduser())]
-type SecretLike = SecretStr | str
 
 
 def extract_secret(value: SecretLike, /) -> str:
@@ -22,4 +21,4 @@ def extract_secret(value: SecretLike, /) -> str:
             assert_never(never)
 
 
-__all__ = ["ExpandedPath", "SecretLike", "extract_secret"]
+__all__ = ["ExpandedPath", "extract_secret"]

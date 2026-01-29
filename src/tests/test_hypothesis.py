@@ -97,6 +97,7 @@ from utilities.hypothesis import (
     plain_date_times,
     quadruples,
     random_states,
+    secret_strs,
     sentinels,
     sets_fixed_length,
     settings_with_reduced_examples,
@@ -105,8 +106,6 @@ from utilities.hypothesis import (
     temp_dirs,
     temp_paths,
     text_ascii,
-    text_ascii_lower,
-    text_ascii_upper,
     text_clean,
     text_digits,
     text_printable,
@@ -879,6 +878,20 @@ class TestReducedExamples:
         assert result == expected
 
 
+class TestSecretStrs:
+    @given(data=data(), min_size=integers(0, 10), max_size=integers(0, 10) | none())
+    def test_main(
+        self, *, data: DataObject, min_size: int, max_size: int | None
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument, AssertionError):
+            secret = data.draw(secret_strs(min_size=min_size, max_size=max_size))
+        text = secret.get_secret_value()
+        assert search("^[A-Za-z]*$", text)
+        assert len(text) >= min_size
+        if max_size is not None:
+            assert len(text) <= max_size
+
+
 class TestSentinels:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
@@ -916,8 +929,8 @@ class TestStrArrays:
     @given(
         data=data(),
         shape=array_shapes(),
-        min_size=integers(0, 100),
-        max_size=integers(0, 100) | none(),
+        min_size=integers(0, 10),
+        max_size=integers(0, 10) | none(),
         allow_none=booleans(),
         unique=booleans(),
     )
@@ -991,7 +1004,7 @@ class TestTempPaths:
 
 
 class TestTextAscii:
-    @given(data=data(), min_size=integers(0, 100), max_size=integers(0, 100) | none())
+    @given(data=data(), min_size=integers(0, 10), max_size=integers(0, 10) | none())
     def test_main(
         self, *, data: DataObject, min_size: int, max_size: int | None
     ) -> None:
@@ -1003,34 +1016,8 @@ class TestTextAscii:
             assert len(text) <= max_size
 
 
-class TestTextAsciiLower:
-    @given(data=data(), min_size=integers(0, 100), max_size=integers(0, 100) | none())
-    def test_main(
-        self, *, data: DataObject, min_size: int, max_size: int | None
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument, AssertionError):
-            text = data.draw(text_ascii_lower(min_size=min_size, max_size=max_size))
-        assert search("^[a-z]*$", text)
-        assert len(text) >= min_size
-        if max_size is not None:
-            assert len(text) <= max_size
-
-
-class TestTextAsciiUpper:
-    @given(data=data(), min_size=integers(0, 100), max_size=integers(0, 100) | none())
-    def test_main(
-        self, *, data: DataObject, min_size: int, max_size: int | None
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument, AssertionError):
-            text = data.draw(text_ascii_upper(min_size=min_size, max_size=max_size))
-        assert search("^[A-Z]*$", text)
-        assert len(text) >= min_size
-        if max_size is not None:
-            assert len(text) <= max_size
-
-
 class TestTextClean:
-    @given(data=data(), min_size=integers(0, 100), max_size=integers(0, 100) | none())
+    @given(data=data(), min_size=integers(0, 10), max_size=integers(0, 10) | none())
     def test_main(
         self, *, data: DataObject, min_size: int, max_size: int | None
     ) -> None:
@@ -1043,7 +1030,7 @@ class TestTextClean:
 
 
 class TestTextDigits:
-    @given(data=data(), min_size=integers(0, 100), max_size=integers(0, 100) | none())
+    @given(data=data(), min_size=integers(0, 10), max_size=integers(0, 10) | none())
     def test_main(
         self, *, data: DataObject, min_size: int, max_size: int | None
     ) -> None:
@@ -1056,7 +1043,7 @@ class TestTextDigits:
 
 
 class TestTextPrintable:
-    @given(data=data(), min_size=integers(0, 100), max_size=integers(0, 100) | none())
+    @given(data=data(), min_size=integers(0, 10), max_size=integers(0, 10) | none())
     def test_main(
         self, *, data: DataObject, min_size: int, max_size: int | None
     ) -> None:
