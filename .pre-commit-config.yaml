@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/dycw/pre-commit-hooks
-    rev: 0.14.120
+    rev: 0.14.127
     hooks:
       - id: add-hooks
         args:
@@ -22,8 +22,6 @@ repos:
         priority: 30
       - id: format-requirements
         priority: 30
-      - id: pin-cli-requirements
-        priority: 20
       - id: replace-sequence-str
         priority: 20
       - id: run-prek-autoupdate
@@ -126,17 +124,6 @@ repos:
         priority: 20
       - id: ruff-format
         priority: 30
-  - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.9.27
-    hooks:
-      - id: uv-lock
-        args:
-          - --upgrade
-          - --resolution
-          - highest
-          - --prerelease
-          - disallow
-        priority: 20
   - repo: https://github.com/compwa/taplo-pre-commit
     rev: v0.9.3
     hooks:
