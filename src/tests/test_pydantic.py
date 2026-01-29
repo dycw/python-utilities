@@ -8,8 +8,8 @@ from pydantic import BaseModel, SecretStr
 from pytest import mark, param
 
 from utilities.constants import HOME
-from utilities.pydantic import ExpandedPath, SecretLike, extract_secret
-from utilities.types import PathLike
+from utilities.pydantic import ExpandedPath, extract_secret
+from utilities.types import PathLike, SecretLike
 
 
 class TestExpandedPath:

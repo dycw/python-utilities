@@ -10,6 +10,7 @@ from random import Random
 from re import Pattern
 from types import TracebackType
 from typing import (
+    TYPE_CHECKING,
     Any,
     BinaryIO,
     ClassVar,
@@ -35,6 +36,10 @@ from whenever import (
     YearMonth,
     ZonedDateTime,
 )
+
+if TYPE_CHECKING:
+    from pydantic import SecretStr
+
 
 _T = TypeVar("_T")
 _T_co = TypeVar("_T_co", covariant=True)
@@ -244,6 +249,10 @@ type MaybeCallablePathLike = MaybeCallable[PathLike]
 type System = Literal["windows", "mac", "linux"]
 
 
+# pydantic
+type SecretLike = SecretStr | str
+
+
 # random
 type Seed = int | float | str | bytes | bytearray | Random
 
@@ -380,6 +389,7 @@ __all__ = [
     "PlainDateTimeLike",
     "Quadruple",
     "Retry",
+    "SecretLike",
     "Seed",
     "SequenceStr",
     "SerializeObjectExtra",
