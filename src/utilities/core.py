@@ -1328,8 +1328,7 @@ def _set_up_logging_file_handlers(
     handler = RotatingFileHandler(
         filename, maxBytes=max_bytes, backupCount=backup_count
     )
-    _set_up_logging_handler(handler, fmt, color=color)
-    handler.setLevel(level)
+    _set_up_logging_handler(handler, fmt, level, color=color)
     logger.addHandler(handler)
 
 
