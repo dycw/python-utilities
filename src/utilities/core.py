@@ -15,10 +15,23 @@ from collections import Counter
 from collections.abc import Callable, Hashable, Iterable, Iterator
 from contextlib import ExitStack, contextmanager, suppress
 from dataclasses import dataclass, replace
-from functools import _lru_cache_wrapper, partial, reduce, wraps
+from functools import _lru_cache_wrapper, cache, partial, reduce, wraps
 from gzip import GzipFile
 from itertools import chain, islice
-from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, Logger, getLogger
+from logging import (
+    CRITICAL,
+    DEBUG,
+    ERROR,
+    INFO,
+    WARNING,
+    Formatter,
+    Handler,
+    Logger,
+    LogRecord,
+    StreamHandler,
+    getLogger,
+    setLogRecordFactory,
+)
 from lzma import LZMAFile
 from operator import or_
 from os import chdir, environ, getenv, getpid
@@ -67,6 +80,7 @@ from warnings import catch_warnings, filterwarnings
 from zipfile import ZipFile
 from zoneinfo import ZoneInfo
 
+from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
 from rich.console import Console
 from rich.pretty import pretty_repr
 from rich.table import Table
@@ -203,6 +217,7 @@ from utilities._core_errors import (
 from utilities.constants import (
     ABS_TOL,
     DAYS_PER_WEEK,
+    HOSTNAME,
     HOURS_PER_DAY,
     HOURS_PER_WEEK,
     LOCAL_TIME_ZONE,
@@ -252,6 +267,8 @@ from utilities.types import (
     CopyOrMove,
     Dataclass,
     Duration,
+    FieldStyleDict,
+    FieldStyleKeys,
     FilterWarningsAction,
     LoggerLike,
     MaybeCallableDateLike,
@@ -274,7 +291,7 @@ from utilities.types import (
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping, Sequence
     from contextvars import ContextVar
-    from logging import _ExcInfoType
+    from logging import _ExcInfoType, _FilterType
     from types import TracebackType
 
     from whenever import PlainDateTime, Time
@@ -1005,6 +1022,17 @@ def unique_everseen[T](
 ###############################################################################
 
 
+def add_filters(
+    handler: Handler, filter_: _FilterType, /, *filters: _FilterType
+) -> None:
+    """Add a set of filters to a handler."""
+    for f in [filter_, *filters]:
+        handler.addFilter(f)
+
+
+##
+
+
 def log_debug(
     logger: LoggerLike | None,
     msg: str,
@@ -1163,6 +1191,50 @@ def _log_if_given(
 ##
 
 
+def set_up_logging(
+    logger: LoggerLike,
+    /,
+    *,
+    filters: MaybeIterable[_FilterType] | None = None,
+    files: bool = False,
+) -> None:
+    """Setup logging."""
+    setLogRecordFactory(WheneverLogRecord)
+    logger = to_logger(logger)
+    logger.setLevel(DEBUG)
+    logger.addHandler(handler := StreamHandler())
+    formatter = ColoredFormatter()
+    handler.setLevel(DEBUG)
+    if filters is not None:
+        add_filters(handler, *always_iterable(filters))
+
+
+def _set_up_logging_get_formatter(
+    *, prefix: str | None = None, plain: bool = False
+) -> Formatter:
+    """Get the formatter; colored if available."""
+    if plain:
+        return Formatter(fmt=_LOGGING_FORMAT_STR, style="{")
+    styles = cast("dict[FieldStyleKeys, FieldStyleDict]", DEFAULT_FIELD_STYLES.copy())
+    field_styles = {cast("str", k): v for k, v in styles.items()}
+    field_styles["zoned_datetime"] = styles["asctime"]
+    field_styles["hostname"] = styles["hostname"]
+    field_styles["process"] = styles["hostname"]
+    field_styles["lineno"] = styles["name"]
+    field_styles["funcName"] = styles["name"]
+    if color_field_styles is not None:
+        field_styles.update({k: styles[v] for k, v in color_field_styles.items()})
+    return ColoredFormatter(
+        fmt=format_use, datefmt=datefmt, style="{", field_styles=field_styles
+    )
+
+
+_LOGGING_FORMAT_STR = f"{{zoned_datetime}} | {HOSTNAME}:{{process}} | {{name}}:{{funcName}}:{{lineno}} | {{levelname}} | {{message}}"
+
+
+##
+
+
 def to_logger(logger: LoggerLike, /) -> Logger:
     """Convert to a logger."""
     match logger:
@@ -1172,6 +1244,42 @@ def to_logger(logger: LoggerLike, /) -> Logger:
             return getLogger(logger)
         case never:
             assert_never(never)
+
+
+##
+
+
+class WheneverLogRecord(LogRecord):
+    """Log record powered by `whenever`."""
+
+    zoned_datetime: str
+
+    @override
+    def __init__(
+        self,
+        name: str,
+        level: int,
+        pathname: str,
+        lineno: int,
+        msg: object,
+        args: Any,
+        exc_info: Any,
+        func: str | None = None,
+        sinfo: str | None = None,
+    ) -> None:
+        super().__init__(
+            name, level, pathname, lineno, msg, args, exc_info, func, sinfo
+        )
+        length = self._get_length()
+        plain = format(get_now_local().to_plain().format_iso(), f"{length}s")
+        self.zoned_datetime = f"{plain}[{LOCAL_TIME_ZONE_NAME}]"
+
+    @classmethod
+    @cache
+    def _get_length(cls) -> int:
+        """Get maximum length of a formatted string."""
+        now = get_now_local().replace(nanosecond=1000).to_plain()
+        return len(now.format_iso())
 
 
 ###############################################################################
@@ -3366,6 +3474,7 @@ __all__ = [
     "YieldZipFileNotFoundError",
     "YieldZipIsADirectoryError",
     "YieldZipNotADirectoryError",
+    "add_filters",
     "always_iterable",
     "async_sleep",
     "check_unique",

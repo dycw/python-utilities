@@ -111,11 +111,7 @@ class SupportsKeysAndGetItem(Protocol[_T, _T_co]):
     def __getitem__(self, key: _T, /) -> _T_co: ...  # pragma: no cover
 
 
-###############################################################################
-#### coloredlogs ##############################################################
-###############################################################################
-
-
+# coloredlogs
 class FieldStyles(TypedDict):
     asctime: FieldStyleDict
     hostname: FieldStyleDict
@@ -130,11 +126,7 @@ class FieldStyleDict(TypedDict):
     bold: NotRequired[bool]
 
 
-###############################################################################
-#### compression ##############################################################
-###############################################################################
-
-
+# compression
 type Compression = Literal["bz2", "gzip", "lzma"]
 type PathToBinaryIO = Callable[[PathLike], BinaryIO]
 
