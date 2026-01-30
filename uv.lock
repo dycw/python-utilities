@@ -579,7 +579,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.187.5"
+version = "0.187.6"
 source = { editable = "." }
 dependencies = [
     { name = "rich" },

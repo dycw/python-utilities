@@ -21,6 +21,7 @@ from utilities._core_errors import CopySourceNotFoundError, MoveSourceNotFoundEr
 from utilities.constants import HOME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
+    CalledProcessWithInputError,
     OneEmptyError,
     Permissions,
     TemporaryDirectory,
@@ -1276,7 +1277,7 @@ def run(
                         else:
                             msg = f"{msg}\n\nRetrying {attempts} more time(s) after {duration}..."
                     to_logger(logger).error(msg)
-                error = CalledProcessError(
+                error = CalledProcessWithInputError(
                     return_code, args, output=stdout_text, stderr=stderr_text
                 )
                 if (attempts is None) or (attempts <= 0):
