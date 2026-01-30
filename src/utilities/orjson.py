@@ -38,11 +38,17 @@ from whenever import (
 
 from utilities.concurrent import concurrent_map
 from utilities.constants import LOCAL_TIME_ZONE, MAX_INT64, MIN_INT64
-from utilities.core import OneEmptyError, always_iterable, one, read_bytes, write_bytes
+from utilities.core import (
+    OneEmptyError,
+    always_iterable,
+    get_logging_level_number,
+    one,
+    read_bytes,
+    write_bytes,
+)
 from utilities.dataclasses import dataclass_to_dict
 from utilities.functions import ensure_class
 from utilities.iterables import merge_sets
-from utilities.logging import get_logging_level_number
 from utilities.types import Dataclass, LogLevel, MaybeIterable, PathLike, StrMapping
 from utilities.typing import is_str_mapping
 from utilities.version import Version2, Version3
