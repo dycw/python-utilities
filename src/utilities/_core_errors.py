@@ -6,7 +6,13 @@ from typing import TYPE_CHECKING, Any, assert_never, override
 
 from rich.pretty import pretty_repr
 
-from utilities.types import CopyOrMove, PathLike, SequenceStr, SupportsRichComparison
+from utilities.types import (
+    CopyOrMove,
+    LogLevel,
+    PathLike,
+    SequenceStr,
+    SupportsRichComparison,
+)
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -372,6 +378,20 @@ class OneStrNonUniqueError(OneStrError):
             case never:
                 assert_never(never)
         return f"{head} {mid}; got {pretty_repr(self.first)}, {pretty_repr(self.second)} and perhaps more"
+
+
+###############################################################################
+#### os #######################################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class GetLoggingLevelNumberError(Exception):
+    level: LogLevel
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid logging level: {self.level!r}"
 
 
 ###############################################################################
@@ -1150,6 +1170,7 @@ __all__ = [
     "FileOrDirTypeError",
     "FirstNonDirectoryParentError",
     "GetEnvError",
+    "GetLoggingLevelNumberError",
     "MaxNullableError",
     "MinNullableError",
     "MoveDestinationExistsError",

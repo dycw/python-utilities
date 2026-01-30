@@ -9,7 +9,8 @@ from hypothesis.strategies import sampled_from
 from pytest import mark, param
 
 from utilities.constants import HOME, SYSTEM
-from utilities.types import TIME_ZONES, Dataclass, Number, PathLike
+from utilities.types import TIME_ZONES, Dataclass, LogLevel, Number, PathLike
+from utilities.typing import get_args
 
 
 class TestDataClassProtocol:
@@ -22,6 +23,11 @@ class TestDataClassProtocol:
             x: None = None
 
         _ = identity(Example())
+
+
+class TestLogLevel:
+    def test_main(self) -> None:
+        assert len(get_args(LogLevel)) == 5
 
 
 class TestNumber:

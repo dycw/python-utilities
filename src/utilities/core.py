@@ -12,7 +12,7 @@ import tempfile
 import time
 from bz2 import BZ2File
 from collections import Counter
-from collections.abc import Callable, Hashable, Iterable, Iterator
+from collections.abc import Callable, Hashable, Iterable, Iterator, MutableMapping
 from contextlib import ExitStack, contextmanager, suppress
 from dataclasses import dataclass, replace
 from functools import _lru_cache_wrapper, cache, partial, reduce, wraps
@@ -27,11 +27,14 @@ from logging import (
     Formatter,
     Handler,
     Logger,
+    LoggerAdapter,
     LogRecord,
     StreamHandler,
+    getLevelNamesMapping,
     getLogger,
     setLogRecordFactory,
 )
+from logging.handlers import RotatingFileHandler
 from lzma import LZMAFile
 from operator import or_
 from os import chdir, environ, getenv, getpid
@@ -68,6 +71,7 @@ from types import (
 from typing import (
     TYPE_CHECKING,
     Any,
+    Concatenate,
     Literal,
     Self,
     assert_never,
@@ -80,7 +84,7 @@ from warnings import catch_warnings, filterwarnings
 from zipfile import ZipFile
 from zoneinfo import ZoneInfo
 
-from coloredlogs import DEFAULT_FIELD_STYLES, ColoredFormatter
+from coloredlogs import ColoredFormatter
 from rich.console import Console
 from rich.pretty import pretty_repr
 from rich.table import Table
@@ -120,6 +124,7 @@ from utilities._core_errors import (
     FileOrDirTypeError,
     FirstNonDirectoryParentError,
     GetEnvError,
+    GetLoggingLevelNumberError,
     MaxNullableError,
     MinNullableError,
     MoveDestinationExistsError,
@@ -216,12 +221,15 @@ from utilities._core_errors import (
 )
 from utilities.constants import (
     ABS_TOL,
+    BACKUP_COUNT,
+    COLOREDLOGS_FIELD_STYLES,
     DAYS_PER_WEEK,
     HOSTNAME,
     HOURS_PER_DAY,
     HOURS_PER_WEEK,
     LOCAL_TIME_ZONE,
     LOCAL_TIME_ZONE_NAME,
+    MAX_BYTES,
     MICROSECONDS_PER_DAY,
     MICROSECONDS_PER_HOUR,
     MICROSECONDS_PER_MILLISECOND,
@@ -264,13 +272,14 @@ from utilities.constants import (
 )
 from utilities.types import (
     TIME_ZONES,
+    ArgsAndKwargs,
     CopyOrMove,
     Dataclass,
     Duration,
     FieldStyleDict,
-    FieldStyleKeys,
     FilterWarningsAction,
     LoggerLike,
+    LogLevel,
     MaybeCallableDateLike,
     MaybeType,
     Number,
@@ -1022,12 +1031,57 @@ def unique_everseen[T](
 ###############################################################################
 
 
+def add_adapter[**P](
+    logger: LoggerLike,
+    process: Callable[Concatenate[str, P], str],
+    /,
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> LoggerAdapter:
+    """Add an adapter to a logger."""
+
+    class CustomAdapter(LoggerAdapter):
+        @override
+        def process(
+            self, msg: str, kwargs: MutableMapping[str, Any]
+        ) -> tuple[str, MutableMapping[str, Any]]:
+            extra = cast("ArgsAndKwargs", self.extra)
+            new_msg = process(msg, *extra["args"], **extra["kwargs"])
+            return new_msg, kwargs
+
+    return CustomAdapter(logger, extra=ArgsAndKwargs(args=args, kwargs=kwargs))
+
+
+##
+
+
 def add_filters(
-    handler: Handler, filter_: _FilterType, /, *filters: _FilterType
+    obj: LoggerLike | Handler, filter_: _FilterType, /, *filters: _FilterType
 ) -> None:
     """Add a set of filters to a handler."""
-    for f in [filter_, *filters]:
-        handler.addFilter(f)
+    all_filters = [filter_, *filters]
+    match obj:
+        case Logger() | str() as logger_like:
+            logger = to_logger(logger_like)
+            for filter_i in all_filters:
+                logger.addFilter(filter_i)
+        case Handler() as handler:
+            for filter_i in all_filters:
+                handler.addFilter(filter_i)
+        case never:
+            assert_never(never)
+
+
+##
+
+
+def get_logging_level_number(level: LogLevel, /) -> int:
+    """Get the logging level number."""
+    mapping = getLevelNamesMapping()
+    try:
+        return mapping[level]
+    except KeyError:
+        raise GetLoggingLevelNumberError(level=level) from None
 
 
 ##
@@ -1196,40 +1250,58 @@ def set_up_logging(
     /,
     *,
     filters: MaybeIterable[_FilterType] | None = None,
-    files: bool = False,
+    files: PathLike | None = None,
+    max_bytes: int = MAX_BYTES,
+    backup_count: int = BACKUP_COUNT,
 ) -> None:
     """Setup logging."""
-    setLogRecordFactory(WheneverLogRecord)
+    setLogRecordFactory(EnhancedLogRecord)
     logger = to_logger(logger)
     logger.setLevel(DEBUG)
-    logger.addHandler(handler := StreamHandler())
-    ColoredFormatter()
-    handler.setLevel(DEBUG)
     if filters is not None:
-        add_filters(handler, *always_iterable(filters))
+        add_filters(logger, *always_iterable(filters))
+    stream = StreamHandler()
+    stream.setFormatter(_set_up_logging_get_formatter(color=True))
+    stream.setLevel(DEBUG)
+    logger.addHandler(stream)
+    if files is not None:
+        levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]
+        for level in levels:
+            _set_up_logging_file_handlers(
+                files, level, logger, max_bytes=max_bytes, backup_count=backup_count
+            )
 
 
-def _set_up_logging_get_formatter(
-    *, prefix: str | None = None, plain: bool = False
-) -> Formatter:
+def _set_up_logging_get_formatter(*, color: bool = True) -> Formatter:
     """Get the formatter; colored if available."""
-    if plain:
-        return Formatter(fmt=_LOGGING_FORMAT_STR, style="{")
-    styles = cast("dict[FieldStyleKeys, FieldStyleDict]", DEFAULT_FIELD_STYLES.copy())
-    field_styles = {cast("str", k): v for k, v in styles.items()}
-    field_styles["zoned_datetime"] = styles["asctime"]
-    field_styles["hostname"] = styles["hostname"]
-    field_styles["process"] = styles["hostname"]
-    field_styles["lineno"] = styles["name"]
-    field_styles["funcName"] = styles["name"]
-    if color_field_styles is not None:
-        field_styles.update({k: styles[v] for k, v in color_field_styles.items()})
-    return ColoredFormatter(
-        fmt=format_use, datefmt=datefmt, style="{", field_styles=field_styles
+    fmt = "{zoned_date_time_str} | {hostname}:{process} | {name}:{funcName}:{lineno} | {levelname} | {message}"
+    if not color:
+        return Formatter(fmt=fmt, style="{")
+    styles = {k: cast("FieldStyleDict", v) for k, v in COLOREDLOGS_FIELD_STYLES.items()}
+    styles["zoned_date_time_str"] = COLOREDLOGS_FIELD_STYLES["asctime"]
+    styles["hostname"] = COLOREDLOGS_FIELD_STYLES["name"]
+    styles["process"] = COLOREDLOGS_FIELD_STYLES["name"]
+    styles["funcName"] = styles["name"]
+    styles["lineno"] = styles["name"]
+    return ColoredFormatter(fmt=fmt, style="{", field_styles=styles)
+
+
+def _set_up_logging_file_handlers(
+    path: PathLike,
+    level: LogLevel,
+    logger: Logger,
+    /,
+    *,
+    max_bytes: int = MAX_BYTES,
+    backup_count: int = BACKUP_COUNT,
+) -> None:
+    filename = Path(path, f"{level.lower()}.txt")
+    handler = RotatingFileHandler(
+        filename, maxBytes=max_bytes, backupCount=backup_count
     )
-
-
-_LOGGING_FORMAT_STR = f"{{zoned_datetime}} | {HOSTNAME}:{{process}} | {{name}}:{{funcName}}:{{lineno}} | {{levelname}} | {{message}}"
+    handler.setFormatter(_set_up_logging_get_formatter())
+    handler.setLevel(level)
+    logger.addHandler(handler)
 
 
 ##
@@ -1249,10 +1321,12 @@ def to_logger(logger: LoggerLike, /) -> Logger:
 ##
 
 
-class WheneverLogRecord(LogRecord):
-    """Log record powered by `whenever`."""
+class EnhancedLogRecord(LogRecord):
+    """Enhanced log record."""
 
-    zoned_datetime: str
+    hostname: str
+    zoned_date_time: ZonedDateTime
+    zoned_date_time_str: str
 
     @override
     def __init__(
@@ -1270,9 +1344,11 @@ class WheneverLogRecord(LogRecord):
         super().__init__(
             name, level, pathname, lineno, msg, args, exc_info, func, sinfo
         )
-        length = self._get_length()
-        plain = format(get_now_local().to_plain().format_iso(), f"{length}s")
-        self.zoned_datetime = f"{plain}[{LOCAL_TIME_ZONE_NAME}]"
+        self.hostname = HOSTNAME
+        self.zoned_date_time = get_now_local()
+        fmt = self._get_format_str()
+        plain = format(get_now_local().to_plain().format_iso(), fmt)
+        self.zoned_date_time_str = f"{plain}[{LOCAL_TIME_ZONE_NAME}]"
 
     @classmethod
     @cache
@@ -1280,6 +1356,13 @@ class WheneverLogRecord(LogRecord):
         """Get maximum length of a formatted string."""
         now = get_now_local().replace(nanosecond=1000).to_plain()
         return len(now.format_iso())
+
+    @classmethod
+    @cache
+    def _get_format_str(cls) -> str:
+        """Get the format string."""
+        length = cls._get_length()
+        return f"{length}s"
 
 
 ###############################################################################
@@ -3379,6 +3462,7 @@ __all__ = [
     "CopyDestinationExistsError",
     "CopyError",
     "CopySourceNotFoundError",
+    "EnhancedLogRecord",
     "ExtractGroupError",
     "ExtractGroupMultipleCaptureGroupsError",
     "ExtractGroupMultipleMatchesError",
@@ -3393,6 +3477,7 @@ __all__ = [
     "FileOrDirTypeError",
     "FirstNonDirectoryParentError",
     "GetEnvError",
+    "GetLoggingLevelNumberError",
     "MaxNullableError",
     "MinNullableError",
     "MoveDestinationExistsError",
@@ -3474,6 +3559,7 @@ __all__ = [
     "YieldZipFileNotFoundError",
     "YieldZipIsADirectoryError",
     "YieldZipNotADirectoryError",
+    "add_adapter",
     "add_filters",
     "always_iterable",
     "async_sleep",
@@ -3499,6 +3585,7 @@ __all__ = [
     "get_file_owner",
     "get_func_name",
     "get_gid_name",
+    "get_logging_level_number",
     "get_now",
     "get_now_local",
     "get_now_local_plain",
@@ -3546,6 +3633,7 @@ __all__ = [
     "repr_error",
     "repr_str",
     "repr_table",
+    "set_up_logging",
     "substitute",
     "suppress_super_attribute_error",
     "suppress_warnings",

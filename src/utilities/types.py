@@ -88,6 +88,11 @@ type MaybeCallableBoolLike = MaybeCallable[BoolLike]
 type BoolLike = MaybeStr[bool]
 
 
+class ArgsAndKwargs(TypedDict):
+    args: tuple[Any, ...]
+    kwargs: StrMapping
+
+
 ###############################################################################
 #### asyncio ##################################################################
 ###############################################################################
@@ -221,6 +226,9 @@ type MaybeSequenceStr = str | SequenceStr
 
 type LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 type LoggerLike = MaybeStr[Logger]
+type When = Literal[
+    "S", "M", "H", "D", "midnight", "W0", "W1", "W2", "W3", "W4", "W5", "W6"
+]
 
 
 ###############################################################################
@@ -475,6 +483,7 @@ type TimeZoneLike = (
 
 __all__ = [
     "TIME_ZONES",
+    "ArgsAndKwargs",
     "Compression",
     "CopyOrMove",
     "Coro",
@@ -564,6 +573,7 @@ __all__ = [
     "TypeLike",
     "UUIDLike",
     "WeekDay",
+    "When",
     "YearMonthLike",
     "ZonedDateTimeLike",
 ]
