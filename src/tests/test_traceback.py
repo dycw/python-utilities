@@ -54,6 +54,7 @@ class TestFormatExceptionStack:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
+            text = format_exception_stack(error)
             pattern = normalize_multi_line_str(r"""
                 ┏━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
                 ┃ n=2 ┃                                                                        ┃
@@ -69,13 +70,13 @@ class TestFormatExceptionStack:
                 │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
-            text = format_exception_stack(error)
             multiline_regex(pattern, text)
 
     def test_header(self, *, multiline_regex: Callable[[str, str], None]) -> None:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
+            text = format_exception_stack(error, header=True)
             pattern = normalize_multi_line_str(r"""
                 ┌────────────┬──+┐
                 │ Date/time  │ \d{8}T\d{6}\[.+\]\s+│
@@ -101,7 +102,6 @@ class TestFormatExceptionStack:
                 │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
-            text = format_exception_stack(error, header=True)
             multiline_regex(pattern, text)
 
     def test_capture_locals(
@@ -110,6 +110,7 @@ class TestFormatExceptionStack:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
+            text = format_exception_stack(error, capture_locals=True)
             pattern = normalize_multi_line_str(r"""
                 ┏━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
                 ┃ n=2 ┃                                                                        ┃
@@ -117,12 +118,14 @@ class TestFormatExceptionStack:
                 │ 1   │ tests.test_traceback:\d+:test_capture_locals \s+ │
                 │     │     _ = self.func\(1, 2, 3, 4, c=5, d=6, e=7\)                           │
                 ├─────┼────────────────────────────────────────────────────────────────────────┤
-                │     │ ┌───────┬────────────────────────────────────────────────────────────┐ │
-                │     │ │ self  │ <tests.test_traceback.TestFormatExceptionStack object at   │ │
-                │     │ │       │ 0x[0-9a-z]+> \s+ │ │
-                │     │ │ error │ AssertionError\('Result \(56\) must be divisible by           │ │
-                │     │ │       │ 10\\nassert \(56 % 10\) == 0'\)                                │ │
-                │     │ └───────┴────────────────────────────────────────────────────────────┘ │
+                │     │ ┌─────────────────┬──────────────────────────────────────────────────┐ │
+                │     │ │ self            │ <tests.test_traceback.TestFormatExceptionStack   │ │
+                │     │ │                 │ object at 0x[0-9a-z]+> \s+ │ │
+                │     │ │ multiline_regex │ <function multiline_regex.<locals>.func at       │ │
+                │     │ │                 │ 0x[0-9a-z]+> \s+ │ │
+                │     │ │ error           │ AssertionError\('Result \(56\) must be divisible by │ │
+                │     │ │                 │ 10\\nassert \(56 % 10\) == 0'\)                      │ │
+                │     │ └─────────────────┴──────────────────────────────────────────────────┘ │
                 ├─────┼────────────────────────────────────────────────────────────────────────┤
                 │ 2   │ tests.test_traceback:\d+:func \s+ │
                 │     │     assert result % 10 == 0, f"Result \({result}\) must be divisible by  │
@@ -150,13 +153,13 @@ class TestFormatExceptionStack:
                 │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
-            text = format_exception_stack(error, capture_locals=True)
             multiline_regex(pattern, text)
 
     def test_subprocess(self, *, multiline_regex: Callable[[str, str], None]) -> None:
         try:
             _ = self.func_subprocess()
         except CalledProcessError as error:
+            text = format_exception_stack(error)
             pattern = normalize_multi_line_str(r"""
                 ┏━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
                 ┃ n=3 ┃                                                                   ┃
@@ -178,7 +181,6 @@ class TestFormatExceptionStack:
                 │     │ \)                                                                 │
                 └─────┴───────────────────────────────────────────────────────────────────┘
             """)
-            text = format_exception_stack(error)
             multiline_regex(pattern, text)
 
 
