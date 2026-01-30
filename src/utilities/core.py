@@ -261,7 +261,6 @@ from utilities.constants import (
     RICH_MAX_WIDTH,
     RICH_SHOW_EDGE,
     RICH_SHOW_LINES,
-    ROOT_LOGGER,
     SECONDS_PER_DAY,
     SECONDS_PER_HOUR,
     SECONDS_PER_MINUTE,
@@ -1315,13 +1314,10 @@ def to_logger(logger: LoggerLike, /, *, root: bool = False) -> Logger:
         case Logger(), False:
             return logger
         case Logger(), True:
-            while True:
-                parent = logger.parent
-                if (parent is ROOT_LOGGER) or (parent is None):
-                    return logger
-                logger = parent
+            first, *_ = logger.name.split(".")
+            return getLogger(name=first)
         case str(), _:
-            return to_logger(getLogger(logger), root=root)
+            return to_logger(getLogger(name=logger), root=root)
         case never:
             assert_never(never)
 

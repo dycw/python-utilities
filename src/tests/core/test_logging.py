@@ -201,12 +201,16 @@ class TestToLogger:
         assert to_logger(name).name == name
 
     @mark.parametrize(
-        ("logger", "expected"),
+        ("name", "expected"),
         [
-            param(getLogger("foo"), getLogger("foo")),
-            param(getLogger("foo.bar"), getLogger("foo")),
-            param(getLogger("foo.bar.baz"), getLogger("foo")),
+            param("foo1", "foo1"),
+            param("foo1.bar", "foo1"),
+            param("foo1.bar.baz", "foo1"),
+            param("foo2.bar.baz", "foo2"),
         ],
     )
-    def test_root(self, *, logger: Logger, expected: Logger) -> None:
-        assert to_logger(logger, root=True) is expected
+    @mark.parametrize("use_logger", [param(False), param(True)])
+    def test_root(self, *, name: str, use_logger: bool, expected: str) -> None:
+        logger_use = getLogger(name) if use_logger else name
+        result = to_logger(logger_use, root=True)
+        assert result.name == expected
