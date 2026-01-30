@@ -72,7 +72,6 @@ from types import (
 from typing import (
     TYPE_CHECKING,
     Any,
-    ClassVar,
     Concatenate,
     Literal,
     Self,
@@ -1357,14 +1356,14 @@ def to_logger(logger: LoggerLike, /, *, root: bool = False) -> Logger:
 class EnhancedLogRecord(LogRecord):
     """Enhanced log record."""
 
-    hostname: ClassVar[str] = HOSTNAME
-    time_zone: ClassVar[str] = LOCAL_TIME_ZONE_NAME
+    hostname: str
     zoned_date_time: ZonedDateTime
     date: str
     date_basic: str
     time: str
     time_basic: str
     millis: str
+    time_zone: str
 
     @override
     def __init__(
@@ -1382,6 +1381,7 @@ class EnhancedLogRecord(LogRecord):
         super().__init__(
             name, level, pathname, lineno, msg, args, exc_info, func, sinfo
         )
+        self.hostname = HOSTNAME
         zoned_date_time = self.zoned_date_time = get_now_local()
         date = zoned_date_time.date()
         self.date = date.format_iso()
@@ -1390,6 +1390,7 @@ class EnhancedLogRecord(LogRecord):
         self.time = time.format_iso()
         self.time_basic = time.format_iso(basic=True)
         self.millis = format(zoned_date_time.nanosecond // 1000, "06d")
+        self.time_zone = LOCAL_TIME_ZONE_NAME
 
 
 ###############################################################################
