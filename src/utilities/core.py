@@ -1263,26 +1263,43 @@ def set_up_logging(
     if filters is not None:
         add_filters(logger, *always_iterable(filters))
     stream = StreamHandler()
-    _set_up_logging_set_formatter(
+    _set_up_logging_handler(
         stream,
         normalize_multi_line_str("""
             {date} {time}.{millis}{time_zone} │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}
             {message}
         """),
+        "DEBUG",
         color=True,
     )
-    stream.setLevel(DEBUG)
     logger.addHandler(stream)
     if files is not None:
+        fmt = "{date_basic}T{time_basic}.{millis}{time_zone} │ {hostname} {name} {funcName} {lineno} │ {levelname} │ {process} │ {message}"
         levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]
         for level in levels:
             _set_up_logging_file_handlers(
-                files, level, logger, max_bytes=max_bytes, backup_count=backup_count
+                files,
+                level.lower(),
+                fmt,
+                level,
+                logger,
+                max_bytes=max_bytes,
+                backup_count=backup_count,
+                color=True,
             )
+        _set_up_logging_file_handlers(
+            files,
+            "plain",
+            fmt,
+            "DEBUG",
+            logger,
+            max_bytes=max_bytes,
+            backup_count=backup_count,
+        )
 
 
-def _set_up_logging_set_formatter(
-    handler: Handler, fmt: str, /, *, color: bool = True
+def _set_up_logging_handler(
+    handler: Handler, fmt: str, level: LogLevel, /, *, color: bool = True
 ) -> None:
     """Get the formatter; colored if available."""
     if color:
@@ -1292,6 +1309,7 @@ def _set_up_logging_set_formatter(
     else:
         formatter = Formatter(fmt=fmt, style="{")
     handler.setFormatter(formatter)
+    handler.setLevel(level)
 
 
 def _set_up_logging_file_handlers(
@@ -1311,7 +1329,7 @@ def _set_up_logging_file_handlers(
     handler = RotatingFileHandler(
         filename, maxBytes=max_bytes, backupCount=backup_count
     )
-    _set_up_logging_set_formatter(handler, fmt, color=color)
+    _set_up_logging_handler(handler, fmt, color=color)
     handler.setLevel(level)
     logger.addHandler(handler)
 
