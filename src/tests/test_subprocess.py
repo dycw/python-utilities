@@ -1338,7 +1338,6 @@ class TestRun:
         record = one(r for r in caplog.records if r.name == logger.name)
         assert not search("Retrying", record.message, flags=MULTILINE)
 
-    @mark.only
     def test_logger(
         self,
         *,
@@ -1375,7 +1374,6 @@ stderr
 """)
         multiline_regex(pattern, record.message)
 
-    @mark.only
     def test_logger_and_input(
         self,
         *,
