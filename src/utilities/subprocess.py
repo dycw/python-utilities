@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import sys
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from io import StringIO
 from itertools import chain, repeat
 from json import JSONDecodeError
@@ -12,16 +12,15 @@ from re import MULTILINE, escape, search
 from shlex import join
 from shutil import rmtree
 from string import Template
-from subprocess import PIPE, CalledProcessError, Popen
+from subprocess import PIPE, Popen
 from threading import Thread
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
 import utilities.core
 from utilities._core_errors import CopySourceNotFoundError, MoveSourceNotFoundError
-from utilities.constants import HOME, PWD, SECOND
+from utilities.constants import HOME, HOSTNAME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
-    CalledProcessWithInputError,
     OneEmptyError,
     Permissions,
     TemporaryDirectory,
@@ -35,6 +34,7 @@ from utilities.core import (
     normalize_str,
     one,
     repr_str,
+    repr_table,
     sync_sleep,
     to_logger,
 )
@@ -95,7 +95,7 @@ def append_text(
     """Append text to a file."""
     try:
         existing = cat(path, sudo=sudo)
-    except (CalledProcessError, FileNotFoundError):
+    except (FileNotFoundError, RunError):
         tee(path, text, sudo=sudo)
         return
     if existing == "":
@@ -743,8 +743,8 @@ def ripgrep(*args: str, path: PathLike = PWD) -> str | None:
     """Search for lines."""
     try:  # skipif-ci
         return run(*ripgrep_cmd(*args, path=path), return_=True)
-    except CalledProcessError as error:  # skipif-ci
-        if error.returncode == 1:
+    except RunError as error:  # skipif-ci
+        if error.return_code == 1:
             return None
         raise
 
@@ -1253,37 +1253,28 @@ def run(
                     attempts = duration = None
                 else:
                     attempts, duration = retry
+                error = RunError(
+                    cmd=cmd,
+                    cmds_or_args=list(cmds_or_args),
+                    user=user,
+                    hostname=HOSTNAME,
+                    executable=executable,
+                    shell=shell,
+                    cwd=cwd,
+                    env=env,
+                    return_code=return_code,
+                    input=input,
+                    stdout=stdout_text,
+                    stderr=stderr_text,
+                )
                 if logger is not None:
-                    msg = normalize_multi_line_str(f"""
-'run' failed with:
- - cmd          = {cmd}
- - cmds_or_args = {cmds_or_args}
- - user         = {user}
- - executable   = {executable}
- - shell        = {shell}
- - cwd          = {cwd}
- - env          = {env}
-
--- stdin ----------------------------------------------------------------------
-{"" if input is None else input}-------------------------------------------------------------------------------
--- stdout ---------------------------------------------------------------------
-{stdout_text}-------------------------------------------------------------------------------
--- stderr ---------------------------------------------------------------------
-{stderr_text}-------------------------------------------------------------------------------
-""")
+                    msg = str(error)
                     if (attempts is not None) and (attempts >= 1):
                         if duration is None:
                             msg = f"{msg}\n\nRetrying {attempts} more time(s)..."
                         else:
                             msg = f"{msg}\n\nRetrying {attempts} more time(s) after {duration}..."
                     to_logger(logger).error(msg)
-                error = CalledProcessWithInputError(
-                    return_code,
-                    args,
-                    output=stdout_text,
-                    stderr=stderr_text,
-                    input=input,
-                )
                 if (attempts is None) or (attempts <= 0):
                     raise error
                 if duration is not None:
@@ -1329,6 +1320,46 @@ def _run_daemon_target(input_: IO[str], /, *outputs: IO[str]) -> None:
 def _run_write_to_streams(text: str, /, *outputs: IO[str]) -> None:
     for output in outputs:
         _ = output.write(text)
+
+
+@dataclass(kw_only=True, slots=True)
+class RunError(Exception):
+    cmd: str
+    cmds_or_args: list[str] = field(default_factory=list)
+    user: str | int | None = None
+    hostname: str = HOSTNAME
+    executable: str | None = None
+    shell: bool = False
+    cwd: PathLike | None = None
+    env: StrStrMapping | None = None
+    return_code: int = 0
+    input: str | None = None
+    stdout: str
+    stderr: str
+
+    @override
+    def __str__(self) -> str:
+        table = repr_table(
+            ("cmd", self.cmd),
+            ("cmds_or_args", self.cmds_or_args),
+            ("user", self.user),
+            ("hostname", self.hostname),
+            ("executable", self.executable),
+            ("shell", self.shell),
+            ("cwd", self.cwd),
+            ("env", self.env),
+            ("return_code", self.return_code),
+        )
+        stdin = normalize_multi_line_str(f"""
+-- stdin ----------------------------------------------------------------------
+{"" if self.input is None else self.input}-------------------------------------------------------------------------------""")
+        stdout = normalize_multi_line_str(f"""
+-- stdout ---------------------------------------------------------------------
+{self.stdout}-------------------------------------------------------------------------------""")
+        stderr = normalize_multi_line_str(f"""
+-- stderr ---------------------------------------------------------------------
+{self.stderr}-------------------------------------------------------------------------------""")
+        return f"{table}\n{stdin}\n{stdout}\n{stderr}"
 
 
 ##
@@ -1499,7 +1530,7 @@ def ssh(
             retry_skip=_ssh_retry_skip,
             logger=logger,
         )
-    except CalledProcessError as error:  # pragma: no cover
+    except RunError as error:  # pragma: no cover
         if not _ssh_is_strict_checking_error(error.stderr):
             raise
         ssh_keyscan(hostname, port=port)
@@ -1597,7 +1628,7 @@ def ssh_await(
         log_info(logger, "Waiting for %r...", hostname)
         try:
             ssh(user, hostname, "true")
-        except CalledProcessError:  # pragma: no cover
+        except RunError:  # pragma: no cover
             sync_sleep(duration)
         else:
             log_info(logger, "%r is up", hostname)

@@ -745,35 +745,6 @@ def replace_non_sentinel[T: Dataclass](
 ###############################################################################
 
 
-class CalledProcessWithInputError(CalledProcessError):
-    """A subclass of `CalledProcessError` which records its input."""
-
-    @override
-    def __init__(
-        self,
-        returncode: int,
-        cmd: list[str],
-        output: str | None = None,
-        stderr: str | None = None,
-        *,
-        input: str | None = None,
-    ) -> None:
-        super().__init__(returncode, cmd, output=output, stderr=stderr)
-        self.returncode = returncode
-        self.cmd = cmd
-        self.output = output
-        self.stderr = stderr
-        self.input = input
-
-    @property
-    def stdin(self) -> str | None:
-        """Alias for input attribute, to match stdout/stderr."""
-        return self.input
-
-
-##
-
-
 def repr_error(error: MaybeType[BaseException], /) -> str:
     """Get a string representation of an error."""
     match error:
@@ -781,18 +752,6 @@ def repr_error(error: MaybeType[BaseException], /) -> str:
             descs = list(map(repr_error, group.exceptions))
             joined = ", ".join(descs)
             return f"{get_class_name(group)}({joined})"
-        case CalledProcessWithInputError():
-            table = repr_table(
-                ("returncode", error.returncode),
-                ("cmd", error.cmd),
-                ("stdin", error.stdin),
-                ("stdout", error.stdout),
-                ("stderr", error.stderr),
-                show_edge=False,
-            )
-            table = normalize_multi_line_str(table)
-            indented = indent(table, 4 * " ")
-            return f"{get_class_name(error)}(\n{indented})"
         case CalledProcessError():
             table = repr_table(
                 ("returncode", error.returncode),
@@ -3304,7 +3263,6 @@ def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
 
 
 __all__ = [
-    "CalledProcessWithInputError",
     "CheckUniqueError",
     "CompressBZ2Error",
     "CompressGzipError",

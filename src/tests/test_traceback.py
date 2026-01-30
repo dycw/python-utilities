@@ -24,6 +24,8 @@ from utilities.traceback import (
 from utilities.whenever import format_compact
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from utilities.types import Delta
 
 
@@ -48,11 +50,11 @@ class TestFormatExceptionStack:
             shell=True,
         )
 
-    def test_main(self) -> None:
+    def test_main(self, *, multiline_regex: Callable[[str, str], None]) -> None:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
-            result = format_exception_stack(error)
+            text = format_exception_stack(error)
             pattern = normalize_multi_line_str(r"""
                 ┏━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
                 ┃ n=2 ┃                                                                        ┃
@@ -68,13 +70,13 @@ class TestFormatExceptionStack:
                 │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
-            self._run_test(result, pattern)
+            multiline_regex(pattern, text)
 
-    def test_header(self) -> None:
+    def test_header(self, *, multiline_regex: Callable[[str, str], None]) -> None:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
-            result = format_exception_stack(error, header=True)
+            text = format_exception_stack(error, header=True)
             pattern = normalize_multi_line_str(r"""
                 ┌────────────┬──+┐
                 │ Date/time  │ \d{8}T\d{6}\[.+\]\s+│
@@ -100,13 +102,15 @@ class TestFormatExceptionStack:
                 │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
-            self._run_test(result, pattern)
+            multiline_regex(pattern, text)
 
-    def test_capture_locals(self) -> None:
+    def test_capture_locals(
+        self, *, multiline_regex: Callable[[str, str], None]
+    ) -> None:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
-            result = format_exception_stack(error, capture_locals=True)
+            text = format_exception_stack(error, capture_locals=True)
             pattern = normalize_multi_line_str(r"""
                 ┏━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
                 ┃ n=2 ┃                                                                        ┃
@@ -114,12 +118,14 @@ class TestFormatExceptionStack:
                 │ 1   │ tests.test_traceback:\d+:test_capture_locals \s+ │
                 │     │     _ = self.func\(1, 2, 3, 4, c=5, d=6, e=7\)                           │
                 ├─────┼────────────────────────────────────────────────────────────────────────┤
-                │     │ ┌───────┬────────────────────────────────────────────────────────────┐ │
-                │     │ │ self  │ <tests.test_traceback.TestFormatExceptionStack object at   │ │
-                │     │ │       │ 0x[0-9a-z]+> \s+ │ │
-                │     │ │ error │ AssertionError\('Result \(56\) must be divisible by           │ │
-                │     │ │       │ 10\\nassert \(56 % 10\) == 0'\)                                │ │
-                │     │ └───────┴────────────────────────────────────────────────────────────┘ │
+                │     │ ┌─────────────────┬──────────────────────────────────────────────────┐ │
+                │     │ │ self            │ <tests.test_traceback.TestFormatExceptionStack   │ │
+                │     │ │                 │ object at 0x[0-9a-z]+> \s+ │ │
+                │     │ │ multiline_regex │ <function multiline_regex.<locals>.func at       │ │
+                │     │ │                 │ 0x[0-9a-z]+> \s+ │ │
+                │     │ │ error           │ AssertionError\('Result \(56\) must be divisible by │ │
+                │     │ │                 │ 10\\nassert \(56 % 10\) == 0'\)                      │ │
+                │     │ └─────────────────┴──────────────────────────────────────────────────┘ │
                 ├─────┼────────────────────────────────────────────────────────────────────────┤
                 │ 2   │ tests.test_traceback:\d+:func \s+ │
                 │     │     assert result % 10 == 0, f"Result \({result}\) must be divisible by  │
@@ -147,13 +153,13 @@ class TestFormatExceptionStack:
                 │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
-            self._run_test(result, pattern)
+            multiline_regex(pattern, text)
 
-    def test_subprocess(self) -> None:
+    def test_subprocess(self, *, multiline_regex: Callable[[str, str], None]) -> None:
         try:
             _ = self.func_subprocess()
         except CalledProcessError as error:
-            result = format_exception_stack(error)
+            text = format_exception_stack(error)
             pattern = normalize_multi_line_str(r"""
                 ┏━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
                 ┃ n=3 ┃                                                                   ┃
@@ -175,23 +181,7 @@ class TestFormatExceptionStack:
                 │     │ \)                                                                 │
                 └─────┴───────────────────────────────────────────────────────────────────┘
             """)
-            self._run_test(result, pattern)
-
-    def _run_test(self, result: str, pattern: str, /) -> None:
-        result_lines, pattern_lines = [t.splitlines() for t in [result, pattern]]
-        m, n = [len(lines) for lines in [result_lines, pattern_lines]]
-        assert m == n
-        for i in range(1, m + 1):
-            result_i = "\n".join(result_lines[:i])
-            pattern_i = "\n".join(pattern_lines[:i])
-            assert search(pattern_i, result_i) is not None, f"""\
-Failure up to line {i}/{m}:
-
----- RESULT -------------------------------------------------------------------
-{result}
-
----- PATTERN ------------------------------------------------------------------
-{pattern}"""
+            multiline_regex(pattern, text)
 
 
 class TestMakeExceptHook:
