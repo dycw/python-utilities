@@ -1271,8 +1271,8 @@ def set_up_logging(
     console.setLevel(DEBUG)
     logger.addHandler(console)
     if files is not None:
-        levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]
-        for level in levels:
+        live_levels: list[LogLevel] = ["DEBUG", "INFO"]
+        for level in live_levels:
             _set_up_logging_file_handlers(
                 files,
                 f"live-{level.lower()}",
@@ -1286,7 +1286,8 @@ def set_up_logging(
             fmt="{date_basic}T{time_basic}.{millis}[{time_zone}] | {hostname}:{name}:{funcName}:{lineno} | {levelname} | {process} | {message}",
             style="{",
         )
-        for level in levels:
+        log_levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]
+        for level in log_levels:
             _set_up_logging_file_handlers(
                 files,
                 f"log-{level.lower()}",
