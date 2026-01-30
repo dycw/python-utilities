@@ -1278,7 +1278,11 @@ def run(
                             msg = f"{msg}\n\nRetrying {attempts} more time(s) after {duration}..."
                     to_logger(logger).error(msg)
                 error = CalledProcessWithInputError(
-                    return_code, args, output=stdout_text, stderr=stderr_text
+                    return_code,
+                    args,
+                    output=stdout_text,
+                    stderr=stderr_text,
+                    input=input,
                 )
                 if (attempts is None) or (attempts <= 0):
                     raise error
