@@ -24,6 +24,7 @@ from utilities.core import (
     get_file_group,
     get_file_owner,
     normalize_multi_line_str,
+    normalize_str,
     one,
     which,
 )
@@ -1552,18 +1553,35 @@ class TestSSHRetrySkip:
 
 class TestSSHKeyScan:
     @skipif_ci
+    @throttle_test(duration=5 * MINUTE)
     def test_missing(
         self, *, temp_path_not_exist: Path, github_public_key: str
     ) -> None:
         ssh_keyscan("github.com", path=temp_path_not_exist)
         result = temp_path_not_exist.read_text()
-        assert result == github_public_key
+        assert result == normalize_str(github_public_key)
 
     @skipif_ci
+    @throttle_test(duration=5 * MINUTE)
     def test_existing(self, *, temp_file: Path, github_public_key: str) -> None:
         ssh_keyscan("github.com", path=temp_file)
         result = temp_file.read_text()
-        assert result == github_public_key
+        assert result == normalize_str(github_public_key)
+
+    @skipif_ci
+    @throttle_test(duration=5 * MINUTE)
+    def test_multiple(
+        self,
+        *,
+        temp_path_not_exist: Path,
+        github_public_key: str,
+        gitlab_public_key: str,
+    ) -> None:
+        ssh_keyscan("github.com", path=temp_path_not_exist)
+        ssh_keyscan("gitlab.com", path=temp_path_not_exist)
+        result = temp_path_not_exist.read_text()
+        expected = normalize_str(f"{github_public_key}\n{gitlab_public_key}")
+        assert result == expected
 
 
 class TestSSHKeyScanCmd:
