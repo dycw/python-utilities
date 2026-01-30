@@ -47,6 +47,7 @@ unsafe-fixes = true
   select = ["ALL", "RUF022", "RUF029"]
 
   [lint.extend-per-file-ignores]
+    "conftest.py" = ["S101", "SLF001"]
     "src/tests/test_typing_funcs/no_future.py" = ["I002"]
     "test_*.py" = ["S101", "SLF001"]
 
