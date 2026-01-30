@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 from re import MULTILINE, search
-from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -36,6 +35,7 @@ from utilities.subprocess import (
     ChownCmdError,
     CpError,
     MvFileError,
+    RunError,
     _rsync_many_prepare,
     _RsyncCmdNoSourcesError,
     _RsyncCmdSourcesNotFoundError,
@@ -466,7 +466,7 @@ class TestInstall:
         assert result == EFFECTIVE_GROUP_NAME
 
     def test_error_file(self, *, temp_path_nested_not_exist: Path) -> None:
-        with raises(CalledProcessError):
+        with raises(RunError):
             install(temp_path_nested_not_exist)
 
 
@@ -587,9 +587,9 @@ class TestRipGrep:
 
     @skipif_ci
     def test_error(self, *, tmp_path: Path) -> None:
-        with raises(CalledProcessError) as exc_info:
+        with raises(RunError) as exc_info:
             _ = ripgrep("--invalid", path=tmp_path)
-        assert exc_info.value.returncode == 2
+        assert exc_info.value.return_code == 2
 
 
 class TestRipGrepCmd:
@@ -1221,9 +1221,9 @@ class TestRun:
         assert cap.err == "stderr\n"
 
     def test_error(self, *, capsys: CaptureFixture) -> None:
-        with raises(CalledProcessError) as exc_info:
+        with raises(RunError) as exc_info:
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True)  # noqa: S604
-        assert exc_info.value.returncode == 1
+        assert exc_info.value.return_code == 1
         assert exc_info.value.stdout == "stdout\n"
         assert exc_info.value.stderr == "stderr\n"
         cap = capsys.readouterr()
@@ -1231,9 +1231,9 @@ class TestRun:
         assert cap.err == ""
 
     def test_error_and_print(self, *, capsys: CaptureFixture) -> None:
-        with raises(CalledProcessError) as exc_info:
+        with raises(RunError) as exc_info:
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, print=True)  # noqa: S604
-        assert exc_info.value.returncode == 1
+        assert exc_info.value.return_code == 1
         assert exc_info.value.stdout == "stdout\n"
         assert exc_info.value.stderr == "stderr\n"
         cap = capsys.readouterr()
@@ -1258,7 +1258,7 @@ class TestRun:
     def test_retry_1_attempt_failure(
         self, *, tmp_path: Path, logger: Logger, caplog: LogCaptureFixture
     ) -> None:
-        with raises(CalledProcessError):
+        with raises(RunError):
             _ = run(
                 *BASH_LS,
                 input=self._test_retry_cmd(tmp_path, 2),
@@ -1288,7 +1288,7 @@ class TestRun:
     def test_retry_2_attempts_failure(
         self, *, tmp_path: Path, logger: Logger, caplog: LogCaptureFixture
     ) -> None:
-        with raises(CalledProcessError):
+        with raises(RunError):
             _ = run(
                 *BASH_LS,
                 input=self._test_retry_cmd(tmp_path, 3),
@@ -1326,7 +1326,7 @@ class TestRun:
             _ = (return_code, stdout, stderr)
             return True
 
-        with raises(CalledProcessError):
+        with raises(RunError):
             _ = run(
                 *BASH_LS,
                 input=self._test_retry_cmd(tmp_path, 1),
@@ -1338,24 +1338,29 @@ class TestRun:
         assert not search("Retrying", record.message, flags=MULTILINE)
 
     def test_logger(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
-        with raises(CalledProcessError):
+        with raises(RunError):
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, logger=logger)  # noqa: S604
         record = one(r for r in caplog.records if r.name == logger.name)
         expected = normalize_multi_line_str("""
-'run' failed with:
- - cmd          = echo stdout; echo stderr 1>&2; exit 1
- - cmds_or_args = ()
- - user         = None
- - executable   = None
- - shell        = True
- - cwd          = None
- - env          = None
+┌──────────────┬───────────────────────────────────────┐
+│ cmd          │ echo stdout; echo stderr 1>&2; exit 1 │
+│ cmds_or_args │ []                                    │
+│ user         │ None                                  │
+│ hostname     │ DW-Mac                                │
+│ executable   │ None                                  │
+│ shell        │ True                                  │
+│ cwd          │ None                                  │
+│ env          │ None                                  │
+│ return_code  │ 1                                     │
+└──────────────┴───────────────────────────────────────┘
 
 -- stdin ----------------------------------------------------------------------
 -------------------------------------------------------------------------------
+
 -- stdout ---------------------------------------------------------------------
 stdout
 -------------------------------------------------------------------------------
+
 -- stderr ---------------------------------------------------------------------
 stderr
 -------------------------------------------------------------------------------
@@ -1371,18 +1376,21 @@ stderr
             echo ${key}@stderr 1>&2
             exit 1
         """)
-        with raises(CalledProcessError):
+        with raises(RunError):
             _ = run(*BASH_LS, input=input_, logger=logger)
         record = one(r for r in caplog.records if r.name == logger.name)
         expected = normalize_multi_line_str("""
-'run' failed with:
- - cmd          = bash
- - cmds_or_args = ('-ls',)
- - user         = None
- - executable   = None
- - shell        = False
- - cwd          = None
- - env          = None
+┌──────────────┬─────────┐
+│ cmd          │ bash    │
+│ cmds_or_args │ ['-ls'] │
+│ user         │ None    │
+│ hostname     │ DW-Mac  │
+│ executable   │ None    │
+│ shell        │ False   │
+│ cwd          │ None    │
+│ env          │ None    │
+│ return_code  │ 1       │
+└──────────────┴─────────┘
 
 -- stdin ----------------------------------------------------------------------
 key=value
@@ -1390,9 +1398,11 @@ echo ${key}@stdout
 echo ${key}@stderr 1>&2
 exit 1
 -------------------------------------------------------------------------------
+
 -- stdout ---------------------------------------------------------------------
 value@stdout
 -------------------------------------------------------------------------------
+
 -- stderr ---------------------------------------------------------------------
 value@stderr
 -------------------------------------------------------------------------------
@@ -2283,10 +2293,10 @@ class TestYieldSSHTempDir:
     def test_main(self, *, ssh_user: str, ssh_hostname: str) -> None:
         with yield_ssh_temp_dir(ssh_user, ssh_hostname) as temp:
             ssh(ssh_user, ssh_hostname, input=self._raise_missing(temp))
-            with raises(CalledProcessError):
+            with raises(RunError):
                 ssh(ssh_user, ssh_hostname, input=self._raise_present(temp))
         ssh(ssh_user, ssh_hostname, input=self._raise_present(temp))
-        with raises(CalledProcessError):
+        with raises(RunError):
             ssh(ssh_user, ssh_hostname, input=self._raise_missing(temp))
 
     @skipif_ci

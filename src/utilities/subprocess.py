@@ -12,7 +12,7 @@ from re import MULTILINE, escape, search
 from shlex import join
 from shutil import rmtree
 from string import Template
-from subprocess import PIPE, CalledProcessError, Popen
+from subprocess import PIPE, Popen
 from threading import Thread
 from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
@@ -95,7 +95,7 @@ def append_text(
     """Append text to a file."""
     try:
         existing = cat(path, sudo=sudo)
-    except (CalledProcessError, FileNotFoundError):
+    except (FileNotFoundError, RunError):
         tee(path, text, sudo=sudo)
         return
     if existing == "":
@@ -743,8 +743,8 @@ def ripgrep(*args: str, path: PathLike = PWD) -> str | None:
     """Search for lines."""
     try:  # skipif-ci
         return run(*ripgrep_cmd(*args, path=path), return_=True)
-    except CalledProcessError as error:  # skipif-ci
-        if error.returncode == 1:
+    except RunError as error:  # skipif-ci
+        if error.return_code == 1:
             return None
         raise
 
@@ -1262,6 +1262,7 @@ def run(
                     shell=shell,
                     cwd=cwd,
                     env=env,
+                    return_code=return_code,
                     input=input,
                     stdout=stdout_text,
                     stderr=stderr_text,
@@ -1331,6 +1332,7 @@ class RunError(Exception):
     shell: bool = False
     cwd: PathLike | None = None
     env: StrStrMapping | None = None
+    return_code: int = 0
     input: str | None = None
     stdout: str
     stderr: str
@@ -1346,6 +1348,7 @@ class RunError(Exception):
             ("shell", self.shell),
             ("cwd", self.cwd),
             ("env", self.env),
+            ("return_code", self.return_code),
         )
         stdin = normalize_multi_line_str(f"""
 -- stdin ----------------------------------------------------------------------
@@ -1527,7 +1530,7 @@ def ssh(
             retry_skip=_ssh_retry_skip,
             logger=logger,
         )
-    except CalledProcessError as error:  # pragma: no cover
+    except RunError as error:  # pragma: no cover
         if not _ssh_is_strict_checking_error(error.stderr):
             raise
         ssh_keyscan(hostname, port=port)
@@ -1625,7 +1628,7 @@ def ssh_await(
         log_info(logger, "Waiting for %r...", hostname)
         try:
             ssh(user, hostname, "true")
-        except CalledProcessError:  # pragma: no cover
+        except RunError:  # pragma: no cover
             sync_sleep(duration)
         else:
             log_info(logger, "%r is up", hostname)

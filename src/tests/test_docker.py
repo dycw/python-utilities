@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from logging import INFO, getLogger
 from re import MULTILINE, Pattern, search
-from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
 from pytest import CaptureFixture, LogCaptureFixture, mark, param, raises
@@ -22,7 +21,7 @@ from utilities.docker import (
     yield_docker_temp_dir,
 )
 from utilities.pytest import skipif_ci, throttle_test
-from utilities.subprocess import BASH_LS, touch_cmd
+from utilities.subprocess import BASH_LS, RunError, touch_cmd
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -182,10 +181,10 @@ class TestYieldDockerTempDir:
     def test_main(self, *, container: str) -> None:
         with yield_docker_temp_dir(container) as temp:
             docker_exec(container, *BASH_LS, input=self._raise_missing(temp))
-            with raises(CalledProcessError):
+            with raises(RunError):
                 docker_exec(container, *BASH_LS, input=self._raise_present(temp))
         docker_exec(container, *BASH_LS, input=self._raise_present(temp))
-        with raises(CalledProcessError):
+        with raises(RunError):
             docker_exec(container, *BASH_LS, input=self._raise_missing(temp))
 
     @skipif_ci
