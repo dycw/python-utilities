@@ -198,8 +198,8 @@ def temp_path_parent_file(*, temp_file: Path) -> Path:
 @fixture
 def multiline_regex() -> Callable[[str, str], None]:
     def func(pattern: str, text: str, /) -> None:
-        pattern_lines, text_lines = [t.splitlines() for t in [text, pattern]]
-        m, n = [len(lines) for lines in [text_lines, pattern_lines]]
+        pattern_lines, text_lines = [t.splitlines() for t in [pattern, text]]
+        m, n = [len(lines) for lines in [pattern_lines, text_lines]]
         assert m == n
         for i in range(1, m + 1):
             pattern_i = "\n".join(pattern_lines[:i])
