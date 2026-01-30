@@ -1386,7 +1386,7 @@ class EnhancedLogRecord(LogRecord):
         self.date = date.format_iso()
         self.DATE = date.format_iso()
         self.date_basic = date.format_iso(basic=True)
-        time = zoned_date_time.time()
+        time = zoned_date_time.time().replace(nanosecond=0)
         self.time = time.format_iso()
         self.TIME = time.format_iso()
         self.time_basic = time.format_iso(basic=True)
