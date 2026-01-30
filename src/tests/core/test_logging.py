@@ -178,18 +178,25 @@ class TestSetUpLogging:
         assert record.hostname == HOSTNAME
         assert record.message == "message"
         assert isinstance(record.zoned_date_time, ZonedDateTime)
-        assert search(
-            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}\s{0,8}\[[\w\/]+\]$",
-            record.zoned_date_time_str,
-        )
+        assert search(r"\d{4}-\d{2}-\d{2}$", record.date)
+        assert search(r"\d{8}$", record.date_basic)
+        assert search(r"\d{2}:\d{2}:\d{2}$", record.time)
+        assert search(r"\d{6}$", record.time_basic)
+        assert search(r"\d{6}$", record.millis)
 
     def test_files(self, *, logger: Logger, temp_path_not_exist: Path) -> None:
         set_up_logging(logger, files=temp_path_not_exist)
-        assert len(logger.handlers) == 4
+        assert len(logger.handlers) == 6
         assert temp_path_not_exist.is_dir()
         logger.info("message")
         files = {p.name for p in temp_path_not_exist.iterdir() if p.is_file()}
-        expected = {"debug.txt", "info.txt", "error.txt"}
+        expected = {
+            "live-debug.txt",
+            "live-info.txt",
+            "log-debug.txt",
+            "log-info.txt",
+            "log-error.txt",
+        }
         assert files == expected
 
     def test_nested(self, *, logger: Logger, temp_path_nested_not_exist: Path) -> None:

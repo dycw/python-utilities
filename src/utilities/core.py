@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001
 from __future__ import annotations
 
 import asyncio
@@ -15,7 +16,7 @@ from collections import Counter
 from collections.abc import Callable, Hashable, Iterable, Iterator, MutableMapping
 from contextlib import ExitStack, contextmanager, suppress
 from dataclasses import dataclass, replace
-from functools import _lru_cache_wrapper, cache, partial, reduce, wraps
+from functools import _lru_cache_wrapper, partial, reduce, wraps
 from gzip import GzipFile
 from itertools import chain, islice
 from logging import (
@@ -222,7 +223,7 @@ from utilities._core_errors import (
 from utilities.constants import (
     ABS_TOL,
     BACKUP_COUNT,
-    COLOREDLOGS_FIELD_STYLES,
+    CUSTOM_FIELD_STYLES,
     DAYS_PER_WEEK,
     HOSTNAME,
     HOURS_PER_DAY,
@@ -276,7 +277,6 @@ from utilities.types import (
     CopyOrMove,
     Dataclass,
     Duration,
-    FieldStyleDict,
     FilterWarningsAction,
     LoggerLike,
     LogLevel,
@@ -1261,49 +1261,75 @@ def set_up_logging(
     logger.setLevel(DEBUG)
     if filters is not None:
         add_filters(logger, *always_iterable(filters))
-    stream = StreamHandler()
-    stream.setFormatter(_set_up_logging_get_formatter(color=True))
-    stream.setLevel(DEBUG)
-    logger.addHandler(stream)
+    console = StreamHandler()
+    console_fmt = _ConsoleFormatter(
+        fmt="{date} {time}.{millis}[{time_zone}] │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}\n{message}",
+        style="{",
+        field_styles=CUSTOM_FIELD_STYLES,
+    )
+    console.setFormatter(console_fmt)
+    console.setLevel(DEBUG)
+    logger.addHandler(console)
     if files is not None:
-        levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]
-        for level in levels:
+        live_levels: list[LogLevel] = ["DEBUG", "INFO"]
+        for level in live_levels:
             _set_up_logging_file_handlers(
-                files, level, logger, max_bytes=max_bytes, backup_count=backup_count
+                files,
+                f"live-{level.lower()}",
+                1,
+                console_fmt,
+                level,
+                logger,
+                max_bytes=max_bytes,
             )
-
-
-def _set_up_logging_get_formatter(*, color: bool = True) -> Formatter:
-    """Get the formatter; colored if available."""
-    fmt = "{zoned_date_time_str} | {hostname}:{process} | {name}:{funcName}:{lineno} | {levelname} | {message}"
-    if not color:
-        return Formatter(fmt=fmt, style="{")
-    styles = {k: cast("FieldStyleDict", v) for k, v in COLOREDLOGS_FIELD_STYLES.items()}
-    styles["zoned_date_time_str"] = COLOREDLOGS_FIELD_STYLES["asctime"]
-    styles["hostname"] = COLOREDLOGS_FIELD_STYLES["name"]
-    styles["process"] = COLOREDLOGS_FIELD_STYLES["name"]
-    styles["funcName"] = styles["name"]
-    styles["lineno"] = styles["name"]
-    return ColoredFormatter(fmt=fmt, style="{", field_styles=styles)
+        single_line_fmt = _SingleLineFormatter(
+            fmt="{date_basic}T{time_basic}.{millis}[{time_zone}] | {hostname}:{name}:{funcName}:{lineno} | {levelname} | {process} | {message}",
+            style="{",
+        )
+        log_levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]
+        for level in log_levels:
+            _set_up_logging_file_handlers(
+                files,
+                f"log-{level.lower()}",
+                backup_count,
+                single_line_fmt,
+                level,
+                logger,
+                max_bytes=max_bytes,
+            )
 
 
 def _set_up_logging_file_handlers(
     path: PathLike,
+    stem: str,
+    backup_count: int,
+    formatter: Formatter,
     level: LogLevel,
     logger: Logger,
     /,
     *,
     max_bytes: int = MAX_BYTES,
-    backup_count: int = BACKUP_COUNT,
 ) -> None:
-    filename = Path(path, f"{level.lower()}.txt")
+    filename = Path(path, f"{stem}.txt")
     filename.parent.mkdir(parents=True, exist_ok=True)
     handler = RotatingFileHandler(
         filename, maxBytes=max_bytes, backupCount=backup_count
     )
-    handler.setFormatter(_set_up_logging_get_formatter())
+    handler.setFormatter(formatter)
     handler.setLevel(level)
     logger.addHandler(handler)
+
+
+class _ConsoleFormatter(ColoredFormatter):
+    @override
+    def format(self, record: LogRecord) -> str:
+        return indent_non_head(super().format(record), "  ")
+
+
+class _SingleLineFormatter(Formatter):
+    @override
+    def format(self, record: LogRecord) -> str:
+        return super().format(record).replace("\n", " ")
 
 
 ##
@@ -1331,7 +1357,12 @@ class EnhancedLogRecord(LogRecord):
 
     hostname: str
     zoned_date_time: ZonedDateTime
-    zoned_date_time_str: str
+    date: str
+    date_basic: str
+    time: str
+    time_basic: str
+    millis: str
+    time_zone: str
 
     @override
     def __init__(
@@ -1350,24 +1381,15 @@ class EnhancedLogRecord(LogRecord):
             name, level, pathname, lineno, msg, args, exc_info, func, sinfo
         )
         self.hostname = HOSTNAME
-        self.zoned_date_time = get_now_local()
-        fmt = self._get_format_str()
-        plain = format(get_now_local().to_plain().format_iso(), fmt)
-        self.zoned_date_time_str = f"{plain}[{LOCAL_TIME_ZONE_NAME}]"
-
-    @classmethod
-    @cache
-    def _get_length(cls) -> int:
-        """Get maximum length of a formatted string."""
-        now = get_now_local().replace(nanosecond=1000).to_plain()
-        return len(now.format_iso())
-
-    @classmethod
-    @cache
-    def _get_format_str(cls) -> str:
-        """Get the format string."""
-        length = cls._get_length()
-        return f"{length}s"
+        zoned_date_time = self.zoned_date_time = get_now_local()
+        date = zoned_date_time.date()
+        self.date = date.format_iso()
+        self.date_basic = date.format_iso(basic=True)
+        time = zoned_date_time.time().replace(nanosecond=0)
+        self.time = time.format_iso()
+        self.time_basic = time.format_iso(basic=True)
+        self.millis = format(zoned_date_time.nanosecond // 1000, "06d")
+        self.time_zone = LOCAL_TIME_ZONE_NAME
 
 
 ###############################################################################
@@ -2736,6 +2758,20 @@ def unique_str() -> str:
 
 
 ###############################################################################
+#### textwrap #################################################################
+###############################################################################
+
+
+def indent_non_head(text: str, prefix: str, /) -> str:
+    """Indent all non-head lines."""
+    if text == "":
+        return ""
+    first, *rest = text.splitlines(keepends=True)
+    indented = indent("".join(rest), prefix)
+    return f"{first}{indented}"
+
+
+###############################################################################
 #### time #####################################################################
 ###############################################################################
 
@@ -3601,6 +3637,7 @@ __all__ = [
     "get_today_local",
     "get_uid_name",
     "has_env",
+    "indent_non_head",
     "is_close",
     "is_debug",
     "is_none",

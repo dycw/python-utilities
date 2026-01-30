@@ -44,6 +44,24 @@ COLOREDLOGS_FIELD_STYLES = FieldStyles(
     programname=FieldStyleDict(color="cyan"),
     username=FieldStyleDict(color="yellow"),
 )
+CUSTOM_FIELD_STYLES = {
+    "asctime": COLOREDLOGS_FIELD_STYLES["asctime"],
+    "hostname": COLOREDLOGS_FIELD_STYLES["name"],  # changed
+    "levelname": COLOREDLOGS_FIELD_STYLES["levelname"],
+    "name": COLOREDLOGS_FIELD_STYLES["name"],
+    "programname": COLOREDLOGS_FIELD_STYLES["programname"],
+    "username": COLOREDLOGS_FIELD_STYLES["username"],
+    # custom
+    "date": COLOREDLOGS_FIELD_STYLES["asctime"],
+    "date_basic": COLOREDLOGS_FIELD_STYLES["asctime"],
+    "time": COLOREDLOGS_FIELD_STYLES["asctime"],
+    "time_basic": COLOREDLOGS_FIELD_STYLES["asctime"],
+    "millis": FieldStyleDict(color="white"),
+    "time_zone": FieldStyleDict(color="white"),
+    "funcName": COLOREDLOGS_FIELD_STYLES["name"],
+    "lineno": FieldStyleDict(color="white"),
+    "process": COLOREDLOGS_FIELD_STYLES["hostname"],  # changed
+}
 
 
 ###############################################################################
@@ -502,6 +520,7 @@ __all__ = [
     "BRACKETS",
     "COLOREDLOGS_FIELD_STYLES",
     "CPU_COUNT",
+    "CUSTOM_FIELD_STYLES",
     "DATE_DELTA_MAX",
     "DATE_DELTA_MIN",
     "DATE_TIME_DELTA_MAX",
