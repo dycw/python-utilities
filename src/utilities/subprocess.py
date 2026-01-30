@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import sys
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from io import StringIO
 from itertools import chain, repeat
 from json import JSONDecodeError
@@ -21,7 +21,6 @@ from utilities._core_errors import CopySourceNotFoundError, MoveSourceNotFoundEr
 from utilities.constants import HOME, HOSTNAME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
-    CalledProcessWithInputError,
     OneEmptyError,
     Permissions,
     TemporaryDirectory,
@@ -35,6 +34,7 @@ from utilities.core import (
     normalize_str,
     one,
     repr_str,
+    repr_table,
     sync_sleep,
     to_logger,
 )
@@ -1253,37 +1253,27 @@ def run(
                     attempts = duration = None
                 else:
                     attempts, duration = retry
+                error = RunError(
+                    cmd=cmd,
+                    cmds_or_args=list(cmds_or_args),
+                    user=user,
+                    hostname=HOSTNAME,
+                    executable=executable,
+                    shell=shell,
+                    cwd=cwd,
+                    env=env,
+                    input=input,
+                    stdout=stdout_text,
+                    stderr=stderr_text,
+                )
                 if logger is not None:
-                    msg = normalize_multi_line_str(f"""
-'run' failed with:
- - cmd          = {cmd}
- - cmds_or_args = {cmds_or_args}
- - user         = {user}
- - executable   = {executable}
- - shell        = {shell}
- - cwd          = {cwd}
- - env          = {env}
-
--- stdin ----------------------------------------------------------------------
-{"" if input is None else input}-------------------------------------------------------------------------------
--- stdout ---------------------------------------------------------------------
-{stdout_text}-------------------------------------------------------------------------------
--- stderr ---------------------------------------------------------------------
-{stderr_text}-------------------------------------------------------------------------------
-""")
+                    msg = str(error)
                     if (attempts is not None) and (attempts >= 1):
                         if duration is None:
                             msg = f"{msg}\n\nRetrying {attempts} more time(s)..."
                         else:
                             msg = f"{msg}\n\nRetrying {attempts} more time(s) after {duration}..."
                     to_logger(logger).error(msg)
-                error = CalledProcessWithInputError(
-                    return_code,
-                    args,
-                    output=stdout_text,
-                    stderr=stderr_text,
-                    input=input,
-                )
                 if (attempts is None) or (attempts <= 0):
                     raise error
                 if duration is not None:
@@ -1334,8 +1324,7 @@ def _run_write_to_streams(text: str, /, *outputs: IO[str]) -> None:
 @dataclass(kw_only=True, slots=True)
 class RunError(Exception):
     cmd: str
-    cmds_or_args: list[str]
-    equal_or_approx: int | tuple[int, float]
+    cmds_or_args: list[str] = field(default_factory=list)
     user: str | int | None = None
     hostname: str = HOSTNAME
     executable: str | None = None
@@ -1343,15 +1332,31 @@ class RunError(Exception):
     cwd: PathLike | None = None
     env: StrStrMapping | None = None
     input: str | None = None
+    stdout: str
+    stderr: str
 
     @override
     def __str__(self) -> str:
-        match self.equal_or_approx:
-            case target, error:
-                desc = f"approximate length {target} (error {error:%})"
-            case target:
-                desc = f"length {target}"
-        return f"Object {pretty_repr(self.obj)} must have {desc}; got {len(self.obj)}"
+        table = repr_table(
+            ("cmd", self.cmd),
+            ("cmds_or_args", self.cmds_or_args),
+            ("user", self.user),
+            ("hostname", self.hostname),
+            ("executable", self.executable),
+            ("shell", self.shell),
+            ("cwd", self.cwd),
+            ("env", self.env),
+        )
+        stdin = normalize_multi_line_str(f"""
+-- stdin ----------------------------------------------------------------------
+{"" if self.input is None else self.input}-------------------------------------------------------------------------------""")
+        stdout = normalize_multi_line_str(f"""
+-- stdout ---------------------------------------------------------------------
+{self.stdout}-------------------------------------------------------------------------------""")
+        stderr = normalize_multi_line_str(f"""
+-- stderr ---------------------------------------------------------------------
+{self.stderr}-------------------------------------------------------------------------------""")
+        return f"{table}\n{stdin}\n{stdout}\n{stderr}"
 
 
 ##
