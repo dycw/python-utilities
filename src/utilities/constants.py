@@ -52,13 +52,15 @@ CUSTOM_FIELD_STYLES = {
     "programname": COLOREDLOGS_FIELD_STYLES["programname"],
     "username": COLOREDLOGS_FIELD_STYLES["username"],
     # custom
-    # "date": COLOREDLOGS_FIELD_STYLES["asctime"],
-    # "date_basic": COLOREDLOGS_FIELD_STYLES["asctime"],
-    # "time": COLOREDLOGS_FIELD_STYLES["asctime"],
-    # "time_basic": COLOREDLOGS_FIELD_STYLES["asctime"],
-    # "process": COLOREDLOGS_FIELD_STYLES["hostname"],  # changed
-    # "funcName": COLOREDLOGS_FIELD_STYLES["name"],
+    "date": COLOREDLOGS_FIELD_STYLES["asctime"],
+    "date_basic": COLOREDLOGS_FIELD_STYLES["asctime"],
+    "time": COLOREDLOGS_FIELD_STYLES["asctime"],
+    "time_basic": COLOREDLOGS_FIELD_STYLES["asctime"],
+    "millis": FieldStyleDict(color="white"),
+    "time_zone": FieldStyleDict(color="white"),
+    "funcName": COLOREDLOGS_FIELD_STYLES["name"],
     # "lineno": COLOREDLOGS_FIELD_STYLES["name"],
+    "process": COLOREDLOGS_FIELD_STYLES["hostname"],  # changed
 }
 
 

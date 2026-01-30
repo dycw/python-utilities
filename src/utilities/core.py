@@ -1265,7 +1265,7 @@ def set_up_logging(
     _set_up_logging_handler(
         stream,
         normalize_multi_line_str("""
-            {DATE} {TIME}.{millis}{time_zone} │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}
+            {date} {time}.{millis}[{time_zone}] │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}
             {message}
         """).rstrip("\n"),
         "DEBUG",
@@ -1273,7 +1273,7 @@ def set_up_logging(
     )
     logger.addHandler(stream)
     if files is not None:
-        fmt = "{date_basic}T{time_basic}.{millis}{time_zone} │ {hostname} {name} {funcName} {lineno} │ {levelname} │ {process} │ {message}"
+        fmt = "{date_basic}T{time_basic}.{millis}[{time_zone}] | {hostname} | {name} | {funcName} | {lineno} | {levelname} | {process} | {message}"
         levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]
         for level in levels:
             _set_up_logging_file_handlers(
@@ -1282,19 +1282,11 @@ def set_up_logging(
                 fmt,
                 level,
                 logger,
-                max_bytes=max_bytes,
-                backup_count=backup_count,
-                color=True,
+                max_bytes=5000,
+                backup_count=1,
+                # max_bytes=max_bytes,
+                # backup_count=backup_count,
             )
-        _set_up_logging_file_handlers(
-            files,
-            "plain",
-            fmt,
-            "DEBUG",
-            logger,
-            max_bytes=max_bytes,
-            backup_count=backup_count,
-        )
 
 
 def _set_up_logging_handler(
@@ -1302,7 +1294,7 @@ def _set_up_logging_handler(
 ) -> None:
     """Get the formatter; colored if available."""
     if color:
-        formatter = ColoredFormatter(
+        formatter = IndentedColoredFormatter(
             fmt=fmt, style="{", field_styles=CUSTOM_FIELD_STYLES
         )
     else:
@@ -1321,15 +1313,37 @@ def _set_up_logging_file_handlers(
     *,
     max_bytes: int = MAX_BYTES,
     backup_count: int = BACKUP_COUNT,
-    color: bool = False,
 ) -> None:
     filename = Path(path, f"{stem}.txt")
     filename.parent.mkdir(parents=True, exist_ok=True)
     handler = RotatingFileHandler(
         filename, maxBytes=max_bytes, backupCount=backup_count
     )
-    _set_up_logging_handler(handler, fmt, level, color=color)
+    formatter = SingleLineFormatter(fmt=fmt, style="{")
+    handler.setFormatter(formatter)
+    handler.setLevel(level)
     logger.addHandler(handler)
+
+
+class IndentedColoredFormatter(ColoredFormatter):
+    @override
+    def format(self, record: LogRecord) -> str:
+        return indent_after_first(super().format(record), "  ")
+
+
+def indent_after_first(s: str, prefix: str) -> str:
+    import textwrap
+
+    lines = s.splitlines(keepends=True)
+    if len(lines) <= 1:
+        return s
+    return lines[0] + textwrap.indent("".join(lines[1:]), prefix)
+
+
+class SingleLineFormatter(Formatter):
+    @override
+    def format(self, record: LogRecord) -> str:
+        return super().format(record).replace("\n", " ")
 
 
 ##
@@ -2760,6 +2774,19 @@ def unique_str() -> str:
 
 
 ###############################################################################
+#### textwrap #################################################################
+###############################################################################
+
+
+def indent_non_head(text: str, prefix: str, /) -> str:
+    """Indent all non-head lines."""
+    if text == "":
+        return ""
+    first, *rest = text.splitlines(keepends=True)
+    return "\n".join([first, indent("".join(rest), prefix)])
+
+
+###############################################################################
 #### time #####################################################################
 ###############################################################################
 
@@ -3625,6 +3652,7 @@ __all__ = [
     "get_today_local",
     "get_uid_name",
     "has_env",
+    "indent_non_head",
     "is_close",
     "is_debug",
     "is_none",
