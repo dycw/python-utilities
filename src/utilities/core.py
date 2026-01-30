@@ -1203,7 +1203,7 @@ def set_up_logging(
     logger = to_logger(logger)
     logger.setLevel(DEBUG)
     logger.addHandler(handler := StreamHandler())
-    formatter = ColoredFormatter()
+    ColoredFormatter()
     handler.setLevel(DEBUG)
     if filters is not None:
         add_filters(handler, *always_iterable(filters))
