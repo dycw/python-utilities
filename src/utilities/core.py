@@ -1265,9 +1265,9 @@ def set_up_logging(
     _set_up_logging_handler(
         stream,
         normalize_multi_line_str("""
-            {date} {time}.{millis}{time_zone} │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}
+            {DATE} {TIME}.{millis}{time_zone} │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}
             {message}
-        """),
+        """).rstrip("\n"),
         "DEBUG",
         color=True,
     )
