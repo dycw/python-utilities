@@ -1384,9 +1384,11 @@ class EnhancedLogRecord(LogRecord):
         zoned_date_time = self.zoned_date_time = get_now_local()
         date = zoned_date_time.date()
         self.date = date.format_iso()
+        self.DATE = date.format_iso()
         self.date_basic = date.format_iso(basic=True)
         time = zoned_date_time.time()
         self.time = time.format_iso()
+        self.TIME = time.format_iso()
         self.time_basic = time.format_iso(basic=True)
         self.millis = format(zoned_date_time.nanosecond // 1000, "06d")
         self.time_zone = LOCAL_TIME_ZONE_NAME
