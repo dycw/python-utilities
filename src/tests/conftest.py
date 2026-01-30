@@ -342,6 +342,11 @@ def github_public_key() -> str:
 
 
 @fixture
+def gitlab_public_key() -> str:
+    return "gitlab.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAfuCHKVTjquxvt6CM6tdG4SLp1Btn/nOeHHE5UOzRdf"
+
+
+@fixture
 def ssh_user() -> str:
     return "root"
 

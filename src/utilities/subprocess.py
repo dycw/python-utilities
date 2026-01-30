@@ -31,6 +31,7 @@ from utilities.core import (
     log_info,
     move,
     normalize_multi_line_str,
+    normalize_str,
     one,
     repr_str,
     sync_sleep,
@@ -1611,8 +1612,8 @@ def ssh_keyscan(
 ) -> None:
     """Add a known host."""
     ssh_keygen_remove(hostname, path=path, retry=retry)  # skipif-ci
-    result = run(  # skipif-ci
-        *ssh_keyscan_cmd(hostname, port=port), return_=True, retry=retry
+    result = normalize_str(  # skipif-ci
+        run(*ssh_keyscan_cmd(hostname, port=port), return_=True, retry=retry)
     )
     tee(path, result, append=True)  # skipif-ci
 
