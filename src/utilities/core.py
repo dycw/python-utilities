@@ -1297,6 +1297,7 @@ def _set_up_logging_file_handlers(
     backup_count: int = BACKUP_COUNT,
 ) -> None:
     filename = Path(path, f"{level.lower()}.txt")
+    filename.parent.mkdir(parents=True, exist_ok=True)
     handler = RotatingFileHandler(
         filename, maxBytes=max_bytes, backupCount=backup_count
     )
