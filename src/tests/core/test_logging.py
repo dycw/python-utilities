@@ -183,13 +183,18 @@ class TestSetUpLogging:
             record.zoned_date_time_str,
         )
 
-    def test_files(self, *, logger: Logger, tmp_path: Path) -> None:
-        set_up_logging(logger, files=tmp_path)
+    def test_files(self, *, logger: Logger, temp_path_not_exist: Path) -> None:
+        set_up_logging(logger, files=temp_path_not_exist)
         assert len(logger.handlers) == 4
+        assert temp_path_not_exist.is_dir()
         logger.info("message")
-        files = {p.name for p in tmp_path.iterdir() if p.is_file()}
+        files = {p.name for p in temp_path_not_exist.iterdir() if p.is_file()}
         expected = {"debug.txt", "info.txt", "error.txt"}
         assert files == expected
+
+    def test_nested(self, *, logger: Logger, temp_path_nested_not_exist: Path) -> None:
+        set_up_logging(logger, files=temp_path_nested_not_exist)
+        assert temp_path_nested_not_exist.is_dir()
 
 
 class TestToLogger:
