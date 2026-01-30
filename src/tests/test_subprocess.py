@@ -1393,17 +1393,17 @@ stderr
             _ = run(*BASH_LS, input=input_, logger=logger)
         record = one(r for r in caplog.records if r.name == logger.name)
         pattern = normalize_multi_line_str(r"""
-┌──────────────┬─────────┐
-│ cmd          │ bash    │
-│ cmds_or_args │ \['-ls'\] │
-│ user         │ None    │
+┌──────────────┬──+┐
+│ cmd          │ bash \s+ │
+│ cmds_or_args │ \['-ls'\]\s+│
+│ user         │ None \s+ │
 │ hostname     │ [\-\.\w…]+\s+│
-│ executable   │ None    │
-│ shell        │ False   │
-│ cwd          │ None    │
-│ env          │ None    │
-│ return_code  │ 1       │
-└──────────────┴─────────┘
+│ executable   │ None \s+ │
+│ shell        │ False \s+ │
+│ cwd          │ None \s+ │
+│ env          │ None \s+ │
+│ return_code  │ 1 \s+ │
+└──────────────┴─+─┘
 
 -- stdin ----------------------------------------------------------------------
 key=value
