@@ -263,6 +263,7 @@ from utilities.types import (
     SequenceStr,
     StrDict,
     StrMapping,
+    StrStrMapping,
     SupportsRichComparison,
     TableLike,
     TimeZone,
@@ -745,17 +746,23 @@ def replace_non_sentinel[T: Dataclass](
 ###############################################################################
 
 
-class CalledProcessWithInputError(CalledProcessError):
-    """A subclass of `CalledProcessError` which records its input."""
+class RunError(CalledProcessError):
+    """A subclass of `CalledProcessError` with additional information."""
 
     @override
     def __init__(
         self,
         returncode: int,
-        cmd: list[str],
+        cmd: str,
         output: str | None = None,
         stderr: str | None = None,
         *,
+        args: tuple[str, ...] = (),
+        user: str | int | None = None,
+        executable: str | None = None,
+        shell: bool = False,
+        cwd: PathLike | None = None,
+        env: StrStrMapping | None = None,
         input: str | None = None,
     ) -> None:
         super().__init__(returncode, cmd, output=output, stderr=stderr)
@@ -781,7 +788,7 @@ def repr_error(error: MaybeType[BaseException], /) -> str:
             descs = list(map(repr_error, group.exceptions))
             joined = ", ".join(descs)
             return f"{get_class_name(group)}({joined})"
-        case CalledProcessWithInputError():
+        case RunError():
             table = repr_table(
                 ("returncode", error.returncode),
                 ("cmd", error.cmd),
@@ -3304,7 +3311,6 @@ def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
 
 
 __all__ = [
-    "CalledProcessWithInputError",
     "CheckUniqueError",
     "CompressBZ2Error",
     "CompressGzipError",
@@ -3374,6 +3380,7 @@ __all__ = [
     "ReprTableError",
     "ReprTableHeaderError",
     "ReprTableItemsError",
+    "RunError",
     "SubstituteError",
     "TemporaryDirectory",
     "TemporaryFile",

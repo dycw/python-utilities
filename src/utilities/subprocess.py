@@ -18,7 +18,7 @@ from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
 
 import utilities.core
 from utilities._core_errors import CopySourceNotFoundError, MoveSourceNotFoundError
-from utilities.constants import HOME, PWD, SECOND
+from utilities.constants import HOME, HOSTNAME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
     CalledProcessWithInputError,
@@ -1329,6 +1329,29 @@ def _run_daemon_target(input_: IO[str], /, *outputs: IO[str]) -> None:
 def _run_write_to_streams(text: str, /, *outputs: IO[str]) -> None:
     for output in outputs:
         _ = output.write(text)
+
+
+@dataclass(kw_only=True, slots=True)
+class RunError(Exception):
+    cmd: str
+    cmds_or_args: list[str]
+    equal_or_approx: int | tuple[int, float]
+    user: str | int | None = None
+    hostname: str = HOSTNAME
+    executable: str | None = None
+    shell: bool = False
+    cwd: PathLike | None = None
+    env: StrStrMapping | None = None
+    input: str | None = None
+
+    @override
+    def __str__(self) -> str:
+        match self.equal_or_approx:
+            case target, error:
+                desc = f"approximate length {target} (error {error:%})"
+            case target:
+                desc = f"length {target}"
+        return f"Object {pretty_repr(self.obj)} must have {desc}; got {len(self.obj)}"
 
 
 ##
