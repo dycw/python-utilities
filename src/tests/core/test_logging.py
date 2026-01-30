@@ -10,6 +10,7 @@ from logging import (
     Logger,
     LoggerAdapter,
     StreamHandler,
+    getLogger,
 )
 from re import search
 from typing import TYPE_CHECKING, Any, cast
@@ -178,7 +179,7 @@ class TestSetUpLogging:
         assert record.message == "message"
         assert isinstance(record.zoned_date_time, ZonedDateTime)
         assert search(
-            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,6}\s{0,6}\[[\w\/]+\]$",
+            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}\s{0,8}\[[\w\/]+\]$",
             record.zoned_date_time_str,
         )
 
@@ -198,3 +199,14 @@ class TestToLogger:
     def test_str(self) -> None:
         name = unique_str()
         assert to_logger(name).name == name
+
+    @mark.parametrize(
+        ("logger", "expected"),
+        [
+            param(getLogger("foo"), getLogger("foo")),
+            param(getLogger("foo.bar"), getLogger("foo")),
+            param(getLogger("foo.bar.baz"), getLogger("foo")),
+        ],
+    )
+    def test_root(self, *, logger: Logger, expected: Logger) -> None:
+        assert to_logger(logger, root=True) is expected

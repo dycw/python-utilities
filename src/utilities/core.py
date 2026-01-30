@@ -261,6 +261,7 @@ from utilities.constants import (
     RICH_MAX_WIDTH,
     RICH_SHOW_EDGE,
     RICH_SHOW_LINES,
+    ROOT_LOGGER,
     SECONDS_PER_DAY,
     SECONDS_PER_HOUR,
     SECONDS_PER_MINUTE,
@@ -1249,6 +1250,7 @@ def set_up_logging(
     logger: LoggerLike,
     /,
     *,
+    root: bool = False,
     filters: MaybeIterable[_FilterType] | None = None,
     files: PathLike | None = None,
     max_bytes: int = MAX_BYTES,
@@ -1256,7 +1258,7 @@ def set_up_logging(
 ) -> None:
     """Setup logging."""
     setLogRecordFactory(EnhancedLogRecord)
-    logger = to_logger(logger)
+    logger = to_logger(logger, root=root)
     logger.setLevel(DEBUG)
     if filters is not None:
         add_filters(logger, *always_iterable(filters))
@@ -1307,13 +1309,19 @@ def _set_up_logging_file_handlers(
 ##
 
 
-def to_logger(logger: LoggerLike, /) -> Logger:
+def to_logger(logger: LoggerLike, /, *, root: bool = False) -> Logger:
     """Convert to a logger."""
-    match logger:
-        case Logger():
+    match logger, root:
+        case Logger(), False:
             return logger
-        case str():
-            return getLogger(logger)
+        case Logger(), True:
+            while True:
+                parent = logger.parent
+                if (parent is ROOT_LOGGER) or (parent is None):
+                    return logger
+                logger = parent
+        case str(), _:
+            return to_logger(getLogger(logger), root=root)
         case never:
             assert_never(never)
 
