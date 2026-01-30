@@ -14,7 +14,7 @@ from shutil import rmtree
 from string import Template
 from subprocess import PIPE, Popen
 from threading import Thread
-from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
+from typing import IO, TYPE_CHECKING, Any, Literal, assert_never, overload, override
 
 import utilities.core
 from utilities._core_errors import CopySourceNotFoundError, MoveSourceNotFoundError
@@ -1339,9 +1339,16 @@ class RunError(Exception):
 
     @override
     def __str__(self) -> str:
+        args: list[tuple[str, Any]] = [("cmd", self.cmd)]
+        try:
+            first, *rest = self.cmds_or_args
+        except ValueError:
+            pass
+        else:
+            args.append(("cmds_or_args", first))
+            args.extend(("", r) for r in rest)
         table = repr_table(
-            ("cmd", self.cmd),
-            ("cmds_or_args", self.cmds_or_args),
+            *args,
             ("user", self.user),
             ("hostname", self.hostname),
             ("executable", self.executable),
