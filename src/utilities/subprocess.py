@@ -95,7 +95,7 @@ def append_text(
     """Append text to a file."""
     try:
         existing = cat(path, sudo=sudo)
-    except RunError:
+    except FileNotFoundError:
         tee(path, text, sudo=sudo)
         return
     if existing == "":
@@ -743,7 +743,7 @@ def ripgrep(*args: str, path: PathLike = PWD) -> str | None:
     """Search for lines."""
     try:  # skipif-ci
         return run(*ripgrep_cmd(*args, path=path), return_=True)
-    except RunError as error:  # skipif-ci
+    except RunCalledProcessError as error:  # skipif-ci
         if error.return_code == 1:
             return None
         raise
@@ -1561,7 +1561,7 @@ def ssh(
             retry_skip=_ssh_retry_skip,
             logger=logger,
         )
-    except RunError as error:  # pragma: no cover
+    except RunCalledProcessError as error:  # pragma: no cover
         if not _ssh_is_strict_checking_error(error.stderr):
             raise
         ssh_keyscan(hostname, port=port)
