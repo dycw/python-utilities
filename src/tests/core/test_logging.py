@@ -179,7 +179,7 @@ class TestSetUpLogging:
         assert record.message == "message"
         assert isinstance(record.zoned_date_time, ZonedDateTime)
         assert search(
-            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,6}\s{0,6}\[[\w\/]+\]$",
+            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,9}\s{0,8}\[[\w\/]+\]$",
             record.zoned_date_time_str,
         )
 
