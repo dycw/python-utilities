@@ -1261,86 +1261,71 @@ def set_up_logging(
     logger.setLevel(DEBUG)
     if filters is not None:
         add_filters(logger, *always_iterable(filters))
-    stream = StreamHandler()
-    _set_up_logging_handler(
-        stream,
-        normalize_multi_line_str("""
-            {date} {time}.{millis}[{time_zone}] │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}
-            {message}
-        """).rstrip("\n"),
-        "DEBUG",
-        color=True,
+    console = StreamHandler()
+    console_fmt = _ConsoleFormatter(
+        fmt="{date} {time}.{millis}[{time_zone}] │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}\n{message}",
+        style="{",
+        field_styles=CUSTOM_FIELD_STYLES,
     )
-    logger.addHandler(stream)
+    console.setFormatter(console_fmt)
+    console.setLevel(DEBUG)
+    logger.addHandler(console)
     if files is not None:
-        fmt = "{date_basic}T{time_basic}.{millis}[{time_zone}] | {hostname} | {name} | {funcName} | {lineno} | {levelname} | {process} | {message}"
         levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]
         for level in levels:
             _set_up_logging_file_handlers(
                 files,
-                level.lower(),
-                fmt,
+                f"live-{level.lower()}",
+                1,
+                console_fmt,
                 level,
                 logger,
-                max_bytes=5000,
-                backup_count=1,
-                # max_bytes=max_bytes,
-                # backup_count=backup_count,
+                max_bytes=max_bytes,
             )
-
-
-def _set_up_logging_handler(
-    handler: Handler, fmt: str, level: LogLevel, /, *, color: bool = True
-) -> None:
-    """Get the formatter; colored if available."""
-    if color:
-        formatter = IndentedColoredFormatter(
-            fmt=fmt, style="{", field_styles=CUSTOM_FIELD_STYLES
+        single_line_fmt = _SingleLineFormatter(
+            fmt="{date_basic}T{time_basic}.{millis}[{time_zone}] | {hostname}:{name}:{funcName}:{lineno} | {levelname} | {process} | {message}",
+            style="{",
         )
-    else:
-        formatter = Formatter(fmt=fmt, style="{")
-    handler.setFormatter(formatter)
-    handler.setLevel(level)
+        for level in levels:
+            _set_up_logging_file_handlers(
+                files,
+                f"log-{level.lower()}",
+                backup_count,
+                single_line_fmt,
+                level,
+                logger,
+                max_bytes=max_bytes,
+            )
 
 
 def _set_up_logging_file_handlers(
     path: PathLike,
     stem: str,
-    fmt: str,
+    backup_count: int,
+    formatter: Formatter,
     level: LogLevel,
     logger: Logger,
     /,
     *,
     max_bytes: int = MAX_BYTES,
-    backup_count: int = BACKUP_COUNT,
 ) -> None:
     filename = Path(path, f"{stem}.txt")
     filename.parent.mkdir(parents=True, exist_ok=True)
     handler = RotatingFileHandler(
         filename, maxBytes=max_bytes, backupCount=backup_count
     )
-    formatter = SingleLineFormatter(fmt=fmt, style="{")
     handler.setFormatter(formatter)
     handler.setLevel(level)
     logger.addHandler(handler)
 
 
-class IndentedColoredFormatter(ColoredFormatter):
+class _ConsoleFormatter(ColoredFormatter):
     @override
     def format(self, record: LogRecord) -> str:
-        return indent_after_first(super().format(record), "  ")
+        return indent_non_head(super().format(record), "  ")
 
 
-def indent_after_first(s: str, prefix: str) -> str:
-    import textwrap
-
-    lines = s.splitlines(keepends=True)
-    if len(lines) <= 1:
-        return s
-    return lines[0] + textwrap.indent("".join(lines[1:]), prefix)
-
-
-class SingleLineFormatter(Formatter):
+class _SingleLineFormatter(Formatter):
     @override
     def format(self, record: LogRecord) -> str:
         return super().format(record).replace("\n", " ")
@@ -1398,11 +1383,9 @@ class EnhancedLogRecord(LogRecord):
         zoned_date_time = self.zoned_date_time = get_now_local()
         date = zoned_date_time.date()
         self.date = date.format_iso()
-        self.DATE = date.format_iso()
         self.date_basic = date.format_iso(basic=True)
         time = zoned_date_time.time().replace(nanosecond=0)
         self.time = time.format_iso()
-        self.TIME = time.format_iso()
         self.time_basic = time.format_iso(basic=True)
         self.millis = format(zoned_date_time.nanosecond // 1000, "06d")
         self.time_zone = LOCAL_TIME_ZONE_NAME
@@ -2783,7 +2766,8 @@ def indent_non_head(text: str, prefix: str, /) -> str:
     if text == "":
         return ""
     first, *rest = text.splitlines(keepends=True)
-    return "\n".join([first, indent("".join(rest), prefix)])
+    indented = indent("".join(rest), prefix)
+    return f"{first}{indented}"
 
 
 ###############################################################################
