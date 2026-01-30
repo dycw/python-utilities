@@ -1350,17 +1350,17 @@ class TestRun:
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, logger=logger)  # noqa: S604
         record = one(r for r in caplog.records if r.name == logger.name)
         pattern = normalize_multi_line_str(r"""
-┌──────────────┬───────────────────────────────────────┐
-│ cmd          │ echo stdout; echo stderr 1>&2; exit 1 │
-│ cmds_or_args │ \[\]                                    │
-│ user         │ None                                  │
+┌──────────────┬──+┐
+│ cmd          │ echo stdout; echo stderr 1>&2; exit 1\s+│
+│ cmds_or_args │ \[\] \s+ │
+│ user         │ None \s+ │
 │ hostname     │ [\-\.\w…]+\s+│
-│ executable   │ None                                  │
-│ shell        │ True                                  │
-│ cwd          │ None                                  │
-│ env          │ None                                  │
-│ return_code  │ 1                                     │
-└──────────────┴───────────────────────────────────────┘
+│ executable   │ None \s+ │
+│ shell        │ True \s+ │
+│ cwd          │ None \s+ │
+│ env          │ None \s+ │
+│ return_code  │ 1 \s+ │
+└──────────────┴─+─┘
 
 -- stdin ----------------------------------------------------------------------
 -------------------------------------------------------------------------------
