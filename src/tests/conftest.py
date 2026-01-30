@@ -205,9 +205,9 @@ def multiline_regex() -> Callable[[str, str], None]:
             pattern_i = "\n".join(pattern_lines[:i])
             text_i = "\n".join(text_lines[:i])
             assert search(pattern_i, text_i) is not None, f"""\
--- PATTERN (first {n}) --------------------------------------------------------
+-- PATTERN (first {i}) --------------------------------------------------------
 {pattern}
--- TEXT (first {n}) -----------------------------------------------------------
+-- TEXT (first {i}) -----------------------------------------------------------
 {text}
 -- PATTERN --------------------------------------------------------------------
 {pattern}
