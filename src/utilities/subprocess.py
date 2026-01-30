@@ -1343,7 +1343,7 @@ class RunError(Exception):
         try:
             first, *rest = self.cmds_or_args
         except ValueError:
-            pass
+            args.append(("cmds_or_args", None))
         else:
             args.append(("cmds_or_args", first))
             args.extend(("", r) for r in rest)

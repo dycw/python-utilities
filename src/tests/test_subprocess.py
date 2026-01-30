@@ -1351,7 +1351,7 @@ class TestRun:
         pattern = normalize_multi_line_str(r"""
 ┌──────────────┬──+┐
 │ cmd          │ echo stdout; echo stderr 1>&2; exit 1\s+│
-│ cmds_or_args │ \[\] \s+ │
+│ cmds_or_args │ None \s+ │
 │ user         │ None \s+ │
 │ hostname     │ [\-\.\w…]+\s+│
 │ executable   │ None \s+ │
@@ -1370,6 +1370,41 @@ stdout
 
 -- stderr ---------------------------------------------------------------------
 stderr
+-------------------------------------------------------------------------------
+""")
+        multiline_regex(pattern, record.message)
+
+    def test_logger_and_multiple_cmds_or_args(
+        self,
+        *,
+        logger: Logger,
+        caplog: LogCaptureFixture,
+        multiline_regex: Callable[[str, str], None],
+    ) -> None:
+        with raises(RunError):
+            _ = run("exit 1", "arg1", "arg2", shell=True, logger=logger)  # noqa: S604
+        record = one(r for r in caplog.records if r.name == logger.name)
+        pattern = normalize_multi_line_str(r"""
+┌──────────────┬──+┐
+│ cmd          │ exit 1\s+│
+│ cmds_or_args │ arg1 \s+ │
+│              │ arg2 \s+ │
+│ user         │ None \s+ │
+│ hostname     │ [\-\.\w…]+\s+│
+│ executable   │ None \s+ │
+│ shell        │ True \s+ │
+│ cwd          │ None \s+ │
+│ env          │ None \s+ │
+│ return_code  │ 1 \s+ │
+└──────────────┴─+─┘
+
+-- stdin ----------------------------------------------------------------------
+-------------------------------------------------------------------------------
+
+-- stdout ---------------------------------------------------------------------
+-------------------------------------------------------------------------------
+
+-- stderr ---------------------------------------------------------------------
 -------------------------------------------------------------------------------
 """)
         multiline_regex(pattern, record.message)
@@ -1393,11 +1428,11 @@ stderr
         pattern = normalize_multi_line_str(r"""
 ┌──────────────┬──+┐
 │ cmd          │ bash \s+ │
-│ cmds_or_args │ \['-ls'\]\s+│
+│ cmds_or_args │ -ls \s+ │
 │ user         │ None \s+ │
 │ hostname     │ [\-\.\w…]+\s+│
 │ executable   │ None \s+ │
-│ shell        │ False \s+ │
+│ shell        │ False\s+│
 │ cwd          │ None \s+ │
 │ env          │ None \s+ │
 │ return_code  │ 1 \s+ │
