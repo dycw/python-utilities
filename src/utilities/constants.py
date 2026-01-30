@@ -14,6 +14,7 @@ from tempfile import gettempdir
 from typing import TYPE_CHECKING, Any, assert_never, cast, override
 from zoneinfo import ZoneInfo
 
+from coloredlogs import DEFAULT_FIELD_STYLES
 from tzlocal import get_localzone
 from whenever import (
     Date,
@@ -25,17 +26,62 @@ from whenever import (
     ZonedDateTime,
 )
 
+from utilities.types import (
+    TIME_ZONES,
+    CopyOrMove,
+    Dataclass,
+    Duration,
+    FieldStyleDict,
+    FieldStyles,
+    FilterWarningsAction,
+    LoggerLike,
+    MaybeCallableDateLike,
+    MaybeType,
+    Number,
+    Pair,
+    PathToBinaryIO,
+    PatternLike,
+    SequenceStr,
+    StrDict,
+    StrMapping,
+    SupportsRichComparison,
+    TableLike,
+    TimeZone,
+    TimeZoneLike,
+    Triple,
+    TypeLike,
+)
+
 if TYPE_CHECKING:
     from utilities.types import System, TimeZone
 
 
-# getpass
+###############################################################################
+#### coloredlogs ##############################################################
+###############################################################################
+
+
+COLOREDLOGS_FIELD_STYLES = FieldStyles(
+    asctime=FieldStyleDict(color="green"),
+    hostname=FieldStyleDict(color="magenta"),
+    levelname=FieldStyleDict(color="black", bold=True),
+    name=FieldStyleDict(color="blue"),
+    programname=FieldStyleDict(color="cyan"),
+    username=FieldStyleDict(color="yellow"),
+)
+
+
+###############################################################################
+#### getpass ##################################################################
+###############################################################################
 
 
 USER: str = getuser()
 
 
-# math
+###############################################################################
+#### math #####################################################################
+###############################################################################
 
 
 MIN_FLOAT32, MAX_FLOAT32 = -3.4028234663852886e38, 3.4028234663852886e38
@@ -71,7 +117,9 @@ def _get_cpu_count() -> int:
 CPU_COUNT: int = _get_cpu_count()
 
 
-# platform
+###############################################################################
+#### platform #################################################################
+###############################################################################
 
 
 def _get_system() -> System:
@@ -121,14 +169,18 @@ def _get_max_pid() -> int | None:
 MAX_PID: int | None = _get_max_pid()
 
 
-# pathlib
+###############################################################################
+#### pathlib ##################################################################
+###############################################################################
 
 
 HOME: Path = Path.home()
 PWD: Path = Path.cwd()
 
 
-# platform -> os
+###############################################################################
+#### platform -> os ###########################################################
+###############################################################################
 
 
 def _get_effective_group_id() -> int | None:
@@ -434,6 +486,7 @@ NOW_UTC_PLAIN: PlainDateTime = NOW_UTC.to_plain()
 __all__ = [
     "ABS_TOL",
     "BRACKETS",
+    "COLOREDLOGS_FIELD_STYLES",
     "CPU_COUNT",
     "DATE_DELTA_MAX",
     "DATE_DELTA_MIN",

@@ -15,7 +15,9 @@ from typing import (
     BinaryIO,
     ClassVar,
     Literal,
+    NotRequired,
     Protocol,
+    TypedDict,
     TypeVar,
     get_args,
     overload,
@@ -95,6 +97,21 @@ type SupportsFloatOrIndex = SupportsFloat | SupportsIndex
 class SupportsKeysAndGetItem(Protocol[_T, _T_co]):
     def keys(self) -> Iterable[_T]: ...  # pragma: no cover
     def __getitem__(self, key: _T, /) -> _T_co: ...  # pragma: no cover
+
+
+# coloredlogs
+class FieldStyles(TypedDict):
+    asctime: FieldStyleDict
+    hostname: FieldStyleDict
+    levelname: FieldStyleDict
+    name: FieldStyleDict
+    programname: FieldStyleDict
+    username: FieldStyleDict
+
+
+class FieldStyleDict(TypedDict):
+    color: str
+    bold: NotRequired[bool]
 
 
 # compression
@@ -349,6 +366,8 @@ __all__ = [
     "EnumLike",
     "ExcInfo",
     "ExceptionTypeLike",
+    "FieldStyleDict",
+    "FieldStyles",
     "FileOrDir",
     "FilterWarningsAction",
     "IPv4AddressLike",
