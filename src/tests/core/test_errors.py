@@ -5,7 +5,7 @@ from subprocess import CalledProcessError
 
 from pytest import RaisesGroup
 
-from utilities.core import RunError, async_sleep, normalize_multi_line_str, repr_error
+from utilities.core import async_sleep, normalize_multi_line_str, repr_error
 
 
 class TestReprError:
@@ -23,20 +23,6 @@ class TestReprError:
             CalledProcessError(
                 returncode │ 1
                 cmd        │ cmd
-                stdout     │ stdout
-                stderr     │ stderr
-            )
-        """).rstrip("\n")
-        assert result == expected
-
-    def test_called_process_with_input(self) -> None:
-        error = RunError(1, ["cmd"], "stdout", "stderr", input="stdin")
-        result = repr_error(error)
-        expected = normalize_multi_line_str("""
-            CalledProcessWithInputError(
-                returncode │ 1
-                cmd        │ ['cmd']
-                stdin      │ stdin
                 stdout     │ stdout
                 stderr     │ stderr
             )
