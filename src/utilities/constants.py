@@ -25,7 +25,7 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.types import FieldStyleDict, FieldStyles, TimeZone
+from utilities.types import FieldStyleDict, FieldStyles, TimeZone, When
 
 if TYPE_CHECKING:
     from utilities.types import System, TimeZone
@@ -52,6 +52,16 @@ COLOREDLOGS_FIELD_STYLES = FieldStyles(
 
 
 USER: str = getuser()
+
+
+###############################################################################
+#### logging ##################################################################
+###############################################################################
+
+
+BACKUP_COUNT: int = 100
+MAX_BYTES: int = 10 * 1024**2
+WHEN: When = "D"
 
 
 ###############################################################################
@@ -488,6 +498,7 @@ NOW_UTC_PLAIN: PlainDateTime = NOW_UTC.to_plain()
 
 __all__ = [
     "ABS_TOL",
+    "BACKUP_COUNT",
     "BRACKETS",
     "COLOREDLOGS_FIELD_STYLES",
     "CPU_COUNT",
@@ -522,6 +533,7 @@ __all__ = [
     "LIST_SEPARATOR",
     "LOCAL_TIME_ZONE",
     "LOCAL_TIME_ZONE_NAME",
+    "MAX_BYTES",
     "MAX_FLOAT32",
     "MAX_FLOAT64",
     "MAX_INT8",
@@ -598,6 +610,7 @@ __all__ = [
     "USER",
     "UTC",
     "WEEK",
+    "WHEN",
     "YEAR",
     "ZERO_DAYS",
     "ZERO_TIME",
