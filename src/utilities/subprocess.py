@@ -95,7 +95,7 @@ def append_text(
     """Append text to a file."""
     try:
         existing = cat(path, sudo=sudo)
-    except (FileNotFoundError, RunError):
+    except RunError:
         tee(path, text, sudo=sudo)
         return
     if existing == "":

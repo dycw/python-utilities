@@ -1300,7 +1300,7 @@ class TestRun:
     def test_retry_1_attempt_failure(
         self, *, tmp_path: Path, logger: Logger, caplog: LogCaptureFixture
     ) -> None:
-        with raises(RunError):
+        with raises(RunCalledProcessError):
             _ = run(
                 *BASH_LS,
                 input=self._test_retry_cmd(tmp_path, 2),
@@ -1330,7 +1330,7 @@ class TestRun:
     def test_retry_2_attempts_failure(
         self, *, tmp_path: Path, logger: Logger, caplog: LogCaptureFixture
     ) -> None:
-        with raises(RunError):
+        with raises(RunCalledProcessError):
             _ = run(
                 *BASH_LS,
                 input=self._test_retry_cmd(tmp_path, 3),
@@ -1428,7 +1428,7 @@ stderr
             echo ${key}@stderr 1>&2
             exit 1
         """)
-        with raises(RunError):
+        with raises(RunCalledProcessError):
             _ = run(*BASH_LS, input=input_, logger=logger)
         record = one(r for r in caplog.records if r.name == logger.name)
         pattern = normalize_multi_line_str(r"""
