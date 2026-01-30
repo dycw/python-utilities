@@ -1262,42 +1262,6 @@ class TestRun:
 """)
         multiline_regex(pattern, str(error.value))
 
-    @mark.skip
-    def test_logger_and_multiple_cmds_or_args(
-        self,
-        *,
-        logger: Logger,
-        caplog: LogCaptureFixture,
-        multiline_regex: Callable[[str, str], None],
-    ) -> None:
-        with raises(RunError):
-            _ = run("exit 1", "arg1", "arg2", shell=True, logger=logger)  # noqa: S604
-        record = one(r for r in caplog.records if r.name == logger.name)
-        pattern = normalize_multi_line_str(r"""
-┌──────────────┬──+┐
-│ cmd          │ exit 1\s+│
-│ cmds_or_args │ arg1 \s+ │
-│              │ arg2 \s+ │
-│ user         │ None \s+ │
-│ hostname     │ [\-\.\w…]+\s+│
-│ executable   │ None \s+ │
-│ shell        │ True \s+ │
-│ cwd          │ None \s+ │
-│ env          │ None \s+ │
-│ return_code  │ 1 \s+ │
-└──────────────┴─+─┘
-
--- stdin ----------------------------------------------------------------------
--------------------------------------------------------------------------------
-
--- stdout ---------------------------------------------------------------------
--------------------------------------------------------------------------------
-
--- stderr ---------------------------------------------------------------------
--------------------------------------------------------------------------------
-""")
-        multiline_regex(pattern, record.message)
-
     def test_error_called_process(self, *, capsys: CaptureFixture) -> None:
         with raises(RunCalledProcessError) as exc_info:
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True)  # noqa: S604
@@ -1308,7 +1272,7 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == ""
 
-    def test_error_and_print(self, *, capsys: CaptureFixture) -> None:
+    def test_error_called_process_and_print(self, *, capsys: CaptureFixture) -> None:
         with raises(RunCalledProcessError) as exc_info:
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, print=True)  # noqa: S604
         assert exc_info.value.return_code == 1
