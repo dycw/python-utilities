@@ -10,6 +10,7 @@ from logging import (
     Logger,
     LoggerAdapter,
     StreamHandler,
+    getLogger,
 )
 from re import search
 from typing import TYPE_CHECKING, Any, cast
@@ -198,3 +199,14 @@ class TestToLogger:
     def test_str(self) -> None:
         name = unique_str()
         assert to_logger(name).name == name
+
+    @mark.parametrize(
+        ("logger", "expected"),
+        [
+            param(getLogger("foo"), getLogger("foo")),
+            param(getLogger("foo.bar"), getLogger("foo")),
+            param(getLogger("foo.bar.baz"), getLogger("foo")),
+        ],
+    )
+    def test_root(self, *, logger: Logger, expected: Logger) -> None:
+        assert to_logger(logger, root=True) is expected

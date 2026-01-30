@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from getpass import getuser
-from logging import getLogger
+from logging import Logger, getLogger
 from os import cpu_count, environ
 from pathlib import Path
 from platform import system
@@ -25,7 +25,7 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.types import FieldStyleDict, FieldStyles, TimeZone, When
+from utilities.types import FieldStyleDict, FieldStyles, TimeZone
 
 if TYPE_CHECKING:
     from utilities.types import System, TimeZone
@@ -61,7 +61,7 @@ USER: str = getuser()
 
 BACKUP_COUNT: int = 100
 MAX_BYTES: int = 10 * 1024**2
-WHEN: When = "D"
+ROOT_LOGGER: Logger = getLogger()
 
 
 ###############################################################################
@@ -592,6 +592,7 @@ __all__ = [
     "RICH_SHOW_EDGE",
     "RICH_SHOW_LINES",
     "ROOT_GROUP_NAME",
+    "ROOT_LOGGER",
     "ROOT_USER_NAME",
     "SECOND",
     "SECONDS_PER_DAY",
@@ -610,7 +611,6 @@ __all__ = [
     "USER",
     "UTC",
     "WEEK",
-    "WHEN",
     "YEAR",
     "ZERO_DAYS",
     "ZERO_TIME",
