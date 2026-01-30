@@ -119,6 +119,7 @@ from utilities.typing import is_sequence_of
 from utilities.version import Version3
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from logging import Logger
 
     from pytest import CaptureFixture
@@ -1337,16 +1338,23 @@ class TestRun:
         record = one(r for r in caplog.records if r.name == logger.name)
         assert not search("Retrying", record.message, flags=MULTILINE)
 
-    def test_logger(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
+    @mark.only
+    def test_logger(
+        self,
+        *,
+        logger: Logger,
+        caplog: LogCaptureFixture,
+        multiline_regex: Callable[[str, str], None],
+    ) -> None:
         with raises(RunError):
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, logger=logger)  # noqa: S604
         record = one(r for r in caplog.records if r.name == logger.name)
-        expected = normalize_multi_line_str("""
+        pattern = normalize_multi_line_str(r"""
 ┌──────────────┬───────────────────────────────────────┐
 │ cmd          │ echo stdout; echo stderr 1>&2; exit 1 │
-│ cmds_or_args │ []                                    │
+│ cmds_or_args │ \[\]                                    │
 │ user         │ None                                  │
-│ hostname     │ DW-Mac                                │
+│ hostname     │ [\-\.\w…]+\s+│
 │ executable   │ None                                  │
 │ shell        │ True                                  │
 │ cwd          │ None                                  │
@@ -1365,10 +1373,15 @@ stdout
 stderr
 -------------------------------------------------------------------------------
 """)
-        assert record.message == expected
+        multiline_regex(pattern, record.message)
 
+    @mark.only
     def test_logger_and_input(
-        self, *, logger: Logger, caplog: LogCaptureFixture
+        self,
+        *,
+        logger: Logger,
+        caplog: LogCaptureFixture,
+        multiline_regex: Callable[[str, str], None],
     ) -> None:
         input_ = normalize_multi_line_str("""
             key=value
@@ -1379,12 +1392,12 @@ stderr
         with raises(RunError):
             _ = run(*BASH_LS, input=input_, logger=logger)
         record = one(r for r in caplog.records if r.name == logger.name)
-        expected = normalize_multi_line_str("""
+        pattern = normalize_multi_line_str(r"""
 ┌──────────────┬─────────┐
 │ cmd          │ bash    │
-│ cmds_or_args │ ['-ls'] │
+│ cmds_or_args │ \['-ls'\] │
 │ user         │ None    │
-│ hostname     │ DW-Mac  │
+│ hostname     │ [\-\.\w…]+\s+│
 │ executable   │ None    │
 │ shell        │ False   │
 │ cwd          │ None    │
@@ -1394,8 +1407,8 @@ stderr
 
 -- stdin ----------------------------------------------------------------------
 key=value
-echo ${key}@stdout
-echo ${key}@stderr 1>&2
+echo \${key}@stdout
+echo \${key}@stderr 1>&2
 exit 1
 -------------------------------------------------------------------------------
 
@@ -1407,7 +1420,7 @@ value@stdout
 value@stderr
 -------------------------------------------------------------------------------
 """)
-        assert record.message == expected
+        multiline_regex(pattern, record.message)
 
     def _test_retry_cmd(self, path: PathLike, attempts: int, /) -> str:
         return normalize_multi_line_str(f"""
