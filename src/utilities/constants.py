@@ -59,7 +59,7 @@ CUSTOM_FIELD_STYLES = {
     "millis": FieldStyleDict(color="white"),
     "time_zone": FieldStyleDict(color="white"),
     "funcName": COLOREDLOGS_FIELD_STYLES["name"],
-    # "lineno": COLOREDLOGS_FIELD_STYLES["name"],
+    "lineno": FieldStyleDict(color="white"),
     "process": COLOREDLOGS_FIELD_STYLES["hostname"],  # changed
 }
 
