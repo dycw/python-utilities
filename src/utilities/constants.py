@@ -14,7 +14,6 @@ from tempfile import gettempdir
 from typing import TYPE_CHECKING, Any, assert_never, cast, override
 from zoneinfo import ZoneInfo
 
-from coloredlogs import DEFAULT_FIELD_STYLES
 from tzlocal import get_localzone
 from whenever import (
     Date,
@@ -26,31 +25,7 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.types import (
-    TIME_ZONES,
-    CopyOrMove,
-    Dataclass,
-    Duration,
-    FieldStyleDict,
-    FieldStyles,
-    FilterWarningsAction,
-    LoggerLike,
-    MaybeCallableDateLike,
-    MaybeType,
-    Number,
-    Pair,
-    PathToBinaryIO,
-    PatternLike,
-    SequenceStr,
-    StrDict,
-    StrMapping,
-    SupportsRichComparison,
-    TableLike,
-    TimeZone,
-    TimeZoneLike,
-    Triple,
-    TypeLike,
-)
+from utilities.types import FieldStyleDict, FieldStyles, TimeZone
 
 if TYPE_CHECKING:
     from utilities.types import System, TimeZone
@@ -215,7 +190,9 @@ def _get_effective_user_id() -> int | None:
 EFFECTIVE_USER_ID: int | None = _get_effective_user_id()
 
 
-# platform -> os -> grp
+###############################################################################
+#### platform -> os -> grp ####################################################
+###############################################################################
 
 
 def _get_gid_name(gid: int, /) -> str | None:
@@ -237,7 +214,9 @@ EFFECTIVE_GROUP_NAME: str | None = (
 )
 
 
-# platform -> os -> pwd
+###############################################################################
+#### platform -> os -> pwd ####################################################
+###############################################################################
 
 
 def _get_uid_name(uid: int, /) -> str | None:
@@ -259,13 +238,17 @@ EFFECTIVE_USER_NAME: str | None = (
 )
 
 
-# random
+###############################################################################
+#### random ###################################################################
+###############################################################################
 
 
 SYSTEM_RANDOM: SystemRandom = SystemRandom()
 
 
-# rich
+###############################################################################
+#### rich #####################################################################
+###############################################################################
 
 
 RICH_SHOW_EDGE: bool = True
@@ -278,7 +261,9 @@ RICH_MAX_DEPTH: int | None = None
 RICH_EXPAND_ALL: bool = False
 
 
-# sentinel
+###############################################################################
+#### sentinel #################################################################
+###############################################################################
 
 
 class _SentinelMeta(type):
@@ -328,19 +313,25 @@ class SentinelParseError(Exception):
 sentinel = Sentinel()
 
 
-# socket
+###############################################################################
+#### socket ###################################################################
+###############################################################################
 
 
 HOSTNAME = gethostname()
 
 
-# tempfile
+###############################################################################
+#### tempfile #################################################################
+###############################################################################
 
 
 TEMP_DIR: Path = Path(gettempdir())
 
 
-# text
+###############################################################################
+#### text #####################################################################
+###############################################################################
 
 
 LIST_SEPARATOR: str = ","
@@ -348,7 +339,9 @@ PAIR_SEPARATOR: str = "="
 BRACKETS: set[tuple[str, str]] = {("(", ")"), ("[", "]"), ("{", "}")}
 
 
-# tzlocal
+###############################################################################
+#### tzlocal ##################################################################
+###############################################################################
 
 
 def _get_local_time_zone() -> ZoneInfo:
@@ -365,7 +358,9 @@ LOCAL_TIME_ZONE: ZoneInfo = _get_local_time_zone()
 LOCAL_TIME_ZONE_NAME: TimeZone = cast("TimeZone", LOCAL_TIME_ZONE.key)
 
 
-# tzlocal -> whenever
+###############################################################################
+#### tzlocal -> whenever ######################################################
+###############################################################################
 
 
 def _get_now_local() -> ZonedDateTime:
@@ -379,7 +374,9 @@ TIME_LOCAL: Time = NOW_LOCAL.time()
 NOW_LOCAL_PLAIN: PlainDateTime = NOW_LOCAL.to_plain()
 
 
-# whenever
+###############################################################################
+#### whenever #################################################################
+###############################################################################
 
 
 ZERO_DAYS: DateDelta = DateDelta()
@@ -455,7 +452,9 @@ NANOSECONDS_PER_DAY: int = NANOSECONDS_PER_MICROSECOND * MICROSECONDS_PER_DAY
 NANOSECONDS_PER_WEEK: int = NANOSECONDS_PER_MICROSECOND * MICROSECONDS_PER_WEEK
 
 
-# zoneinfo
+###############################################################################
+#### zoneinfo #################################################################
+###############################################################################
 
 
 UTC: ZoneInfo = ZoneInfo("UTC")
@@ -465,7 +464,9 @@ USCentral: ZoneInfo = ZoneInfo("US/Central")
 USEastern: ZoneInfo = ZoneInfo("US/Eastern")
 
 
-# zoneinfo -> whenever
+###############################################################################
+#### zoneinfo -> whenever #####################################################
+###############################################################################
 
 
 ZONED_DATE_TIME_MIN: ZonedDateTime = PlainDateTime.MIN.assume_tz(UTC.key)
