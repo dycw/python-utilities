@@ -1368,7 +1368,8 @@ class RunError(Exception):
 class RunFileNotFoundError(RunError):
     @override
     def __str__(self) -> str:
-        return repr_table(*self._yield_pairs())
+        table = repr_table(*self._yield_pairs())
+        return f"\n{table}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1390,7 +1391,7 @@ class RunCalledProcessError(RunError):
         stderr = normalize_multi_line_str(f"""
 -- stderr ---------------------------------------------------------------------
 {self.stderr}-------------------------------------------------------------------------------""")
-        return f"{table}\n{stdin}\n{stdout}\n{stderr}"
+        return f"\n{table}\n{stdin}\n{stdout}\n{stderr}"
 
 
 ##
