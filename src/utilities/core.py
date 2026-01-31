@@ -1680,15 +1680,45 @@ def _copy_or_move__shutil_dir(
 
 
 @overload
+def get_env(
+    key: str,
+    /,
+    *,
+    case_sensitive: bool = False,
+    default: None = None,
+    nullable: Literal[False] = False,
+    transform: None = None,
+) -> str: ...
+@overload
 def get_env[T](
     key: str,
     /,
     *,
     case_sensitive: bool = False,
-    default: str,
-    nullable: bool = False,
+    default: None = None,
+    nullable: Literal[False] = False,
     transform: Callable[[str], T],
 ) -> T: ...
+@overload
+def get_env(
+    key: str,
+    /,
+    *,
+    case_sensitive: bool = False,
+    default: None = None,
+    nullable: Literal[True],
+    transform: None = None,
+) -> str | None: ...
+@overload
+def get_env[T](
+    key: str,
+    /,
+    *,
+    case_sensitive: bool = False,
+    default: None = None,
+    nullable: Literal[True],
+    transform: Callable[[str], T],
+) -> T | None: ...
 @overload
 def get_env(
     key: str,
@@ -1705,20 +1735,10 @@ def get_env[T](
     /,
     *,
     case_sensitive: bool = False,
-    default: None = None,
-    nullable: Literal[False] = False,
+    default: str,
+    nullable: bool = False,
     transform: Callable[[str], T],
-) -> T | None: ...
-@overload
-def get_env[T](
-    key: str,
-    /,
-    *,
-    case_sensitive: bool = False,
-    default: None = None,
-    nullable: Literal[False] = False,
-    transform: None = None,
-) -> str | None: ...
+) -> T: ...
 @overload
 def get_env[T](
     key: str,

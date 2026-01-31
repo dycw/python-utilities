@@ -231,20 +231,24 @@ class TestGetEnv:
     def test_main(self) -> None:
         key, value = generate_pair()
         with yield_temp_environ({key: value}):
-            assert get_env(key) == value
+            result = get_env(key)  # str
+        assert result == value
 
     def test_case_insensitive(self) -> None:
         key, value = generate_pair()
         with yield_temp_environ({key.lower(): value}):
-            assert get_env(key.upper()) == value
+            result = get_env(key.upper())  # str
+        assert result == value
 
     def test_default(self) -> None:
         key, value = generate_pair()
-        assert get_env(key, default=value) == value
+        result = get_env(key, default=value)  # str
+        assert result == value
 
     def test_nullable(self) -> None:
         key, _ = generate_pair()
-        assert get_env(key, nullable=True) is None
+        result = get_env(key, nullable=True)  # str | None
+        assert result is None
 
     def test_error_case_insensitive(self) -> None:
         key1, value = generate_pair()
