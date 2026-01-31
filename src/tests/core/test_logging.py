@@ -15,15 +15,17 @@ from logging import (
 from re import search
 from typing import TYPE_CHECKING, Any, cast
 
-from pytest import LogCaptureFixture, mark, param, raises
+from pytest import CaptureFixture, LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
 
 from utilities.constants import HOSTNAME
 from utilities.core import (
     EnhancedLogRecord,
+    GetLoggingLevelNameError,
     GetLoggingLevelNumberError,
     add_adapter,
     add_filters,
+    get_logging_level_name,
     get_logging_level_number,
     log_critical,
     log_debug,
@@ -90,15 +92,34 @@ class TestAddFilters:
         assert len(handler.filters) == 1
 
 
+class TestGetLoggingLevelName:
+    @mark.parametrize(
+        ("level", "expected"),
+        [
+            param(DEBUG, "DEBUG"),
+            param(INFO, "INFO"),
+            param(WARNING, "WARNING"),
+            param(ERROR, "ERROR"),
+            param(CRITICAL, "CRITICAL"),
+        ],
+    )
+    def test_main(self, *, level: int, expected: LogLevel) -> None:
+        assert get_logging_level_name(level) == expected
+
+    def test_error(self) -> None:
+        with raises(GetLoggingLevelNameError, match=r"Invalid logging level: 1"):
+            _ = get_logging_level_name(1)
+
+
 class TestGetLoggingLevelNumber:
     @mark.parametrize(
         ("level", "expected"),
         [
-            param("DEBUG", 10),
-            param("INFO", 20),
-            param("WARNING", 30),
-            param("ERROR", 40),
-            param("CRITICAL", 50),
+            param("DEBUG", DEBUG),
+            param("INFO", INFO),
+            param("WARNING", WARNING),
+            param("ERROR", ERROR),
+            param("CRITICAL", CRITICAL),
         ],
     )
     def test_main(self, *, level: LogLevel, expected: int) -> None:
@@ -169,9 +190,11 @@ class TestLogDebugInfoWarningErrorCritical:
 
 
 class TestSetUpLogging:
-    def test_main(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
+    def test_main_enhanced_log_record(
+        self, *, logger: Logger, caplog: LogCaptureFixture
+    ) -> None:
         set_up_logging(logger)
-        assert len(logger.handlers) == 1
+        assert len(logger.handlers) == 2
         logger.info("message")
         record = one(r for r in caplog.records if r.name == logger.name)
         assert isinstance(record, EnhancedLogRecord)
@@ -184,9 +207,73 @@ class TestSetUpLogging:
         assert search(r"\d{6}$", record.time_basic)
         assert search(r"\d{6}$", record.micros)
 
+    @mark.parametrize(
+        ("level", "message", "exp_out", "exp_err"),
+        [
+            param(
+                INFO,
+                "",
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ INFO │ \d+\n$",  # noqa: RUF001
+                None,
+            ),
+            param(
+                INFO,
+                "message",
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ INFO │ \d+\n  message\n$",  # noqa: RUF001
+                None,
+            ),
+            param(
+                WARNING,
+                "",
+                None,
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ WARNING │ \d+\n$",  # noqa: RUF001
+            ),
+            param(
+                WARNING,
+                "message",
+                None,
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ WARNING │ \d+\n  message\n$",  # noqa: RUF001
+            ),
+        ],
+    )
+    def test_console_logging(
+        self,
+        *,
+        logger: Logger,
+        level: int,
+        message: str,
+        capsys: CaptureFixture,
+        exp_out: str | None,
+        exp_err: str | None,
+    ) -> None:
+        set_up_logging(logger, console_color=False)
+        logger.log(level, message)
+        result = capsys.readouterr()
+        if exp_out is None:
+            assert result.out == ""
+        else:
+            assert search(exp_out, result.out) is not None
+        if exp_err is None:
+            assert result.err == ""
+        else:
+            assert search(exp_err, result.err) is not None
+
+    def test_filters(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
+        set_up_logging(logger, filters=lambda _: False)
+        assert len(logger.filters) == 1
+        logger.info("message")
+        records = [r for r in caplog.records if r.name == logger.name]
+        assert len(records) == 0
+
+    def test_console_debug(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
+        set_up_logging(logger, console_debug=True)
+        logger.debug("message")
+        record = one(r for r in caplog.records if r.name == logger.name)
+        assert record.message == "message"
+
     def test_files(self, *, logger: Logger, temp_path_not_exist: Path) -> None:
         set_up_logging(logger, files=temp_path_not_exist)
-        assert len(logger.handlers) == 6
+        assert len(logger.handlers) == 7
         assert temp_path_not_exist.is_dir()
         logger.info("message")
         files = {p.name for p in temp_path_not_exist.iterdir() if p.is_file()}

@@ -121,18 +121,10 @@ class SupportsKeysAndGetItem(Protocol[_T, _T_co]):
 ###############################################################################
 
 
-class FieldStyles(TypedDict):
-    asctime: FieldStyleDict
-    hostname: FieldStyleDict
-    levelname: FieldStyleDict
-    name: FieldStyleDict
-    programname: FieldStyleDict
-    username: FieldStyleDict
-
-
-class FieldStyleDict(TypedDict):
-    color: str
+class ColorDict(TypedDict):
+    color: NotRequired[str]
     bold: NotRequired[bool]
+    faint: NotRequired[bool]
 
 
 ###############################################################################
@@ -225,6 +217,9 @@ type MaybeSequenceStr = str | SequenceStr
 
 
 type LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+LOG_LEVELS: list[LogLevel] = list(get_args(LogLevel.__value__))
+
+
 type LoggerLike = MaybeStr[Logger]
 type When = Literal[
     "S", "M", "H", "D", "midnight", "W0", "W1", "W2", "W3", "W4", "W5", "W6"
@@ -482,8 +477,10 @@ type TimeZoneLike = (
 
 
 __all__ = [
+    "LOG_LEVELS",
     "TIME_ZONES",
     "ArgsAndKwargs",
+    "ColorDict",
     "Compression",
     "CopyOrMove",
     "Coro",
@@ -498,8 +495,6 @@ __all__ = [
     "EnumLike",
     "ExcInfo",
     "ExceptionTypeLike",
-    "FieldStyleDict",
-    "FieldStyles",
     "FileOrDir",
     "FilterWarningsAction",
     "IPv4AddressLike",

@@ -11,12 +11,14 @@ from utilities.types import (
     LogLevel,
     PathLike,
     SequenceStr,
+    StrMapping,
     SupportsRichComparison,
 )
 
 if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import Iterable, Mapping
+    from logging import _FormatStyle
     from pathlib import Path
     from re import Pattern
 
@@ -42,6 +44,22 @@ class MaxNullableError[T: SupportsRichComparison](Exception):
     @override
     def __str__(self) -> str:
         return f"Maximum of {pretty_repr(self.iterable)} is undefined"
+
+
+###############################################################################
+#### coloredlogs ##############################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class MaybeColoredFormatterError(Exception):
+    datefmt: str | None = None
+    style: _FormatStyle = "%"
+    defaults: StrMapping | None = None
+
+    @override
+    def __str__(self) -> str:
+        return f"Cannot supply ignored arguments: {pretty_repr(self.datefmt)}, {pretty_repr(self.style)}, {pretty_repr(self.defaults)}"
 
 
 ###############################################################################
@@ -386,12 +404,21 @@ class OneStrNonUniqueError(OneStrError):
 
 
 @dataclass(kw_only=True, slots=True)
+class GetLoggingLevelNameError(Exception):
+    level: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid logging level: {self.level}"
+
+
+@dataclass(kw_only=True, slots=True)
 class GetLoggingLevelNumberError(Exception):
     level: LogLevel
 
     @override
     def __str__(self) -> str:
-        return f"Invalid logging level: {self.level!r}"
+        return f"Invalid logging level: {pretty_repr(self.level)}"
 
 
 ###############################################################################
@@ -1170,8 +1197,10 @@ __all__ = [
     "FileOrDirTypeError",
     "FirstNonDirectoryParentError",
     "GetEnvError",
+    "GetLoggingLevelNameError",
     "GetLoggingLevelNumberError",
     "MaxNullableError",
+    "MaybeColoredFormatterError",
     "MinNullableError",
     "MoveDestinationExistsError",
     "MoveError",
