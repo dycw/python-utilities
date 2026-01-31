@@ -1392,6 +1392,18 @@ class EnhancedLogRecord(LogRecord):
         self.time_zone = LOCAL_TIME_ZONE_NAME
 
 
+ENHANCED_LOG_RECORD_EXTRA_ATTRS = {
+    "hostname",
+    "zoned_date_time",
+    "date",
+    "date_basic",
+    "time",
+    "time_basic",
+    "micros",
+    "time_zone",
+}
+
+
 ###############################################################################
 #### math #####################################################################
 ###############################################################################
@@ -3495,6 +3507,7 @@ def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
 
 
 __all__ = [
+    "ENHANCED_LOG_RECORD_EXTRA_ATTRS",
     "CheckUniqueError",
     "CompressBZ2Error",
     "CompressGzipError",

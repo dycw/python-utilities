@@ -39,6 +39,7 @@ from whenever import (
 from utilities.concurrent import concurrent_map
 from utilities.constants import LOCAL_TIME_ZONE, MAX_INT64, MIN_INT64
 from utilities.core import (
+    ENHANCED_LOG_RECORD_EXTRA_ATTRS,
     OneEmptyError,
     always_iterable,
     get_logging_level_number,
@@ -812,7 +813,7 @@ _LOG_RECORD_DEFAULT_ATTRS = {
     "taskName",
     "thread",
     "threadName",
-}
+} | ENHANCED_LOG_RECORD_EXTRA_ATTRS
 
 
 class OrjsonFormatter(Formatter):
