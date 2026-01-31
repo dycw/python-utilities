@@ -1431,7 +1431,7 @@ stderr
         with raises(RunCalledProcessError):
             _ = run(*BASH_LS, input=input_, logger=logger)
         record = one(r for r in caplog.records if r.name == logger.name)
-        pattern = normalize_multi_line_str(r"""
+        pattern = "\n" + normalize_multi_line_str(r"""
 ┌──────────────┬──+┐
 │ cmd          │ bash \s+ │
 │ cmds_or_args │ -ls \s+ │
