@@ -24,6 +24,7 @@ from utilities.core import (
     GetLoggingLevelNumberError,
     add_adapter,
     add_filters,
+    get_logging_level_name,
     get_logging_level_number,
     log_critical,
     log_debug,
@@ -90,15 +91,31 @@ class TestAddFilters:
         assert len(handler.filters) == 1
 
 
+class TestGetLoggingLevelName:
+    @mark.parametrize(
+        ("level", "expected"),
+        [
+            param(DEBUG, "DEBUG"),
+            param(INFO, "INFO"),
+            param(WARNING, "WARNING"),
+            param(ERROR, "ERROR"),
+            param(CRITICAL, "CRITICAL"),
+            param(1, "Level 1"),
+        ],
+    )
+    def test_main(self, *, level: int, expected: LogLevel) -> None:
+        assert get_logging_level_name(level) == expected
+
+
 class TestGetLoggingLevelNumber:
     @mark.parametrize(
         ("level", "expected"),
         [
-            param("DEBUG", 10),
-            param("INFO", 20),
-            param("WARNING", 30),
-            param("ERROR", 40),
-            param("CRITICAL", 50),
+            param("DEBUG", DEBUG),
+            param("INFO", INFO),
+            param("WARNING", WARNING),
+            param("ERROR", ERROR),
+            param("CRITICAL", CRITICAL),
         ],
     )
     def test_main(self, *, level: LogLevel, expected: int) -> None:
