@@ -268,8 +268,8 @@ class TestSetUpLogging:
     def test_console_debug(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
         set_up_logging(logger, console_debug=True)
         logger.debug("message")
-        records = [r for r in caplog.records if r.name == logger.name]
-        assert len(records) == 0
+        record = one(r for r in caplog.records if r.name == logger.name)
+        assert record.message == "message"
 
     def test_files(self, *, logger: Logger, temp_path_not_exist: Path) -> None:
         set_up_logging(logger, files=temp_path_not_exist)
