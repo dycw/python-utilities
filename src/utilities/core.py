@@ -1680,49 +1680,81 @@ def _copy_or_move__shutil_dir(
 
 
 @overload
-def get_env(
-    key: str, /, *, case_sensitive: bool = False, default: str, nullable: bool = False
-) -> str: ...
+def get_env[T](
+    key: str,
+    /,
+    *,
+    case_sensitive: bool = False,
+    default: str,
+    nullable: bool = False,
+    transform: Callable[[str], T],
+) -> T: ...
 @overload
 def get_env(
+    key: str,
+    /,
+    *,
+    case_sensitive: bool = False,
+    default: str,
+    nullable: bool = False,
+    transform: None = None,
+) -> str: ...
+@overload
+def get_env[T](
     key: str,
     /,
     *,
     case_sensitive: bool = False,
     default: None = None,
     nullable: Literal[False] = False,
-) -> str: ...
+    transform: Callable[[str], T],
+) -> T | None: ...
 @overload
-def get_env(
+def get_env[T](
     key: str,
     /,
     *,
     case_sensitive: bool = False,
-    default: str | None = None,
-    nullable: bool = False,
+    default: None = None,
+    nullable: Literal[False] = False,
+    transform: None = None,
 ) -> str | None: ...
-def get_env(
+@overload
+def get_env[T](
     key: str,
     /,
     *,
     case_sensitive: bool = False,
     default: str | None = None,
     nullable: bool = False,
-) -> str | None:
+    transform: Callable[[str], T] | None = None,
+) -> str | T | None: ...
+def get_env[T](
+    key: str,
+    /,
+    *,
+    case_sensitive: bool = False,
+    default: str | None = None,
+    nullable: bool = False,
+    transform: Callable[[str], T] | None = None,
+) -> str | T | None:
     """Get an environment variable."""
     try:
         key_use = one_str(environ, key, case_sensitive=case_sensitive)
     except OneStrEmptyError:
-        match default, nullable:
-            case None, False:
+        match default, nullable, transform:
+            case None, False, _:
                 raise GetEnvError(key=key, case_sensitive=case_sensitive) from None
-            case None, True:
+            case None, True, _:
                 return None
-            case str(), _:
+            case str(), _, None:
                 return default
+            case str(), _, Callable():
+                return transform(default)
             case never:
                 assert_never(never)
-    return environ[key_use]
+    value = environ[key_use]
+    return value if transform is None else transform(value)
 
 
 ##
