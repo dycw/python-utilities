@@ -12,7 +12,7 @@ from utilities._core_errors import (
     MoveDestinationExistsError,
     MoveSourceNotFoundError,
 )
-from utilities.constants import EFFECTIVE_GROUP_NAME, EFFECTIVE_USER_NAME
+from utilities.constants import EFFECTIVE_GROUP_NAME, EFFECTIVE_USER_NAME, SYSTEM_RANDOM
 from utilities.core import (
     GetEnvError,
     Permissions,
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 def generate_pair() -> tuple[str, str]:
     key = f"_TEST_OS_{unique_str()}"
-    value = unique_str()
+    value = str(SYSTEM_RANDOM.randint(0, 100))
     return key, value
 
 
@@ -248,6 +248,22 @@ class TestGetEnv:
     def test_nullable(self) -> None:
         key, _ = generate_pair()
         result = get_env(key, nullable=True)  # str | None
+        assert result is None
+
+    def test_transform(self) -> None:
+        key, value = generate_pair()
+        with yield_temp_environ({key: value}):
+            result = get_env(key, transform=int)  # int
+        assert result == int(value)
+
+    def test_default_and_transform(self) -> None:
+        key, value = generate_pair()
+        result = get_env(key, default=value, transform=int)  # int
+        assert result == int(value)
+
+    def test_nullable_and_transform(self) -> None:
+        key, _ = generate_pair()
+        result = get_env(key, nullable=True, transform=int)  # int | None
         assert result is None
 
     def test_error_case_insensitive(self) -> None:
