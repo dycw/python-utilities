@@ -14,7 +14,7 @@ from shutil import rmtree
 from string import Template
 from subprocess import PIPE, Popen
 from threading import Thread
-from typing import IO, TYPE_CHECKING, Literal, assert_never, overload, override
+from typing import IO, TYPE_CHECKING, Any, Literal, assert_never, overload, override
 
 import utilities.core
 from utilities._core_errors import CopySourceNotFoundError, MoveSourceNotFoundError
@@ -95,7 +95,7 @@ def append_text(
     """Append text to a file."""
     try:
         existing = cat(path, sudo=sudo)
-    except (FileNotFoundError, RunError):
+    except FileNotFoundError:
         tee(path, text, sudo=sudo)
         return
     if existing == "":
@@ -743,7 +743,7 @@ def ripgrep(*args: str, path: PathLike = PWD) -> str | None:
     """Search for lines."""
     try:  # skipif-ci
         return run(*ripgrep_cmd(*args, path=path), return_=True)
-    except RunError as error:  # skipif-ci
+    except RunCalledProcessError as error:  # skipif-ci
         if error.return_code == 1:
             return None
         raise
@@ -1200,19 +1200,32 @@ def run(
     stderr_outputs: list[IO[str]] = [buffer, stderr]
     if print or print_stderr:
         stderr_outputs.append(sys.stderr)
-    with Popen(
-        args,
-        bufsize=1,
-        executable=executable,
-        stdin=PIPE,
-        stdout=PIPE,
-        stderr=PIPE,
-        shell=shell,
-        cwd=cwd,
-        env=env,
-        text=True,
-        user=user,
-    ) as proc:
+    try:
+        proc = Popen(
+            args,
+            bufsize=1,
+            executable=executable,
+            stdin=PIPE,
+            stdout=PIPE,
+            stderr=PIPE,
+            shell=shell,
+            cwd=cwd,
+            env=env,
+            text=True,
+            user=user,
+        )
+    except FileNotFoundError:
+        raise RunFileNotFoundError(
+            cmd=cmd,
+            cmds_or_args=list(cmds_or_args),
+            user=user,
+            hostname=HOSTNAME,
+            executable=executable,
+            shell=shell,
+            cwd=cwd,
+            env=env,
+        ) from None
+    with proc:
         if proc.stdin is None:  # pragma: no cover
             raise ImpossibleCaseError(case=[f"{proc.stdin=}"])
         if proc.stdout is None:  # pragma: no cover
@@ -1253,7 +1266,7 @@ def run(
                     attempts = duration = None
                 else:
                     attempts, duration = retry
-                error = RunError(
+                error = RunCalledProcessError(
                     cmd=cmd,
                     cmds_or_args=list(cmds_or_args),
                     user=user,
@@ -1332,6 +1345,34 @@ class RunError(Exception):
     shell: bool = False
     cwd: PathLike | None = None
     env: StrStrMapping | None = None
+
+    def _yield_pairs(self) -> Iterator[tuple[str, Any]]:
+        yield ("cmd", self.cmd)
+        try:
+            first, *rest = self.cmds_or_args
+        except ValueError:
+            yield ("cmds_or_args", None)
+        else:
+            yield ("cmds_or_args", first)
+            for r in rest:
+                yield ("", r)
+        yield ("user", self.user)
+        yield ("hostname", self.hostname)
+        yield ("executable", self.executable)
+        yield ("shell", self.shell)
+        yield ("cwd", self.cwd)
+        yield ("env", self.env)
+
+
+@dataclass(kw_only=True, slots=True)
+class RunFileNotFoundError(RunError):
+    @override
+    def __str__(self) -> str:
+        return repr_table(*self._yield_pairs())
+
+
+@dataclass(kw_only=True, slots=True)
+class RunCalledProcessError(RunError):
     return_code: int = 0
     input: str | None = None
     stdout: str
@@ -1339,17 +1380,7 @@ class RunError(Exception):
 
     @override
     def __str__(self) -> str:
-        table = repr_table(
-            ("cmd", self.cmd),
-            ("cmds_or_args", self.cmds_or_args),
-            ("user", self.user),
-            ("hostname", self.hostname),
-            ("executable", self.executable),
-            ("shell", self.shell),
-            ("cwd", self.cwd),
-            ("env", self.env),
-            ("return_code", self.return_code),
-        )
+        table = repr_table(*self._yield_pairs(), ("return_code", self.return_code))
         stdin = normalize_multi_line_str(f"""
 -- stdin ----------------------------------------------------------------------
 {"" if self.input is None else self.input}-------------------------------------------------------------------------------""")
@@ -1530,7 +1561,7 @@ def ssh(
             retry_skip=_ssh_retry_skip,
             logger=logger,
         )
-    except RunError as error:  # pragma: no cover
+    except RunCalledProcessError as error:  # pragma: no cover
         if not _ssh_is_strict_checking_error(error.stderr):
             raise
         ssh_keyscan(hostname, port=port)
@@ -2608,6 +2639,8 @@ __all__ = [
     "CpError",
     "MvFileError",
     "RsyncCmdError",
+    "RunCalledProcessError",
+    "RunFileNotFoundError",
     "UvPipListError",
     "append_text",
     "apt_install",

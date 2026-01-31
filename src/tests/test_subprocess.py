@@ -35,7 +35,9 @@ from utilities.subprocess import (
     ChownCmdError,
     CpError,
     MvFileError,
+    RunCalledProcessError,
     RunError,
+    RunFileNotFoundError,
     _rsync_many_prepare,
     _RsyncCmdNoSourcesError,
     _RsyncCmdSourcesNotFoundError,
@@ -588,7 +590,7 @@ class TestRipGrep:
 
     @skipif_ci
     def test_error(self, *, tmp_path: Path) -> None:
-        with raises(RunError) as exc_info:
+        with raises(RunCalledProcessError) as exc_info:
             _ = ripgrep("--invalid", path=tmp_path)
         assert exc_info.value.return_code == 2
 
@@ -1221,8 +1223,47 @@ class TestRun:
         assert cap.out == "stdout\n"
         assert cap.err == "stderr\n"
 
-    def test_error(self, *, capsys: CaptureFixture) -> None:
-        with raises(RunError) as exc_info:
+    def test_error_file_not_found(
+        self, *, multiline_regex: Callable[[str, str], None]
+    ) -> None:
+        with raises(RunFileNotFoundError) as error:
+            _ = run("invalid-executable")
+        pattern = normalize_multi_line_str(r"""
+┌──────────────┬──+┐
+│ cmd          │ invalid-executable\s+│
+│ cmds_or_args │ None \s+ │
+│ user         │ None \s+ │
+│ hostname     │ [\-\.\w…]+\s+│
+│ executable   │ None \s+ │
+│ shell        │ False \s+ │
+│ cwd          │ None \s+ │
+│ env          │ None \s+ │
+└──────────────┴─+─┘
+""")
+        multiline_regex(pattern, str(error.value))
+
+    def test_error_file_not_found_multiple_cmds_or_args(
+        self, *, multiline_regex: Callable[[str, str], None]
+    ) -> None:
+        with raises(RunFileNotFoundError) as error:
+            _ = run("invalid-executable", "arg1", "arg2")
+        pattern = normalize_multi_line_str(r"""
+┌──────────────┬──+┐
+│ cmd          │ invalid-executable\s+│
+│ cmds_or_args │ arg1 \s+ │
+│              │ arg2 \s+ │
+│ user         │ None \s+ │
+│ hostname     │ [\-\.\w…]+\s+│
+│ executable   │ None \s+ │
+│ shell        │ False \s+ │
+│ cwd          │ None \s+ │
+│ env          │ None \s+ │
+└──────────────┴─+─┘
+""")
+        multiline_regex(pattern, str(error.value))
+
+    def test_error_called_process(self, *, capsys: CaptureFixture) -> None:
+        with raises(RunCalledProcessError) as exc_info:
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True)  # noqa: S604
         assert exc_info.value.return_code == 1
         assert exc_info.value.stdout == "stdout\n"
@@ -1231,8 +1272,8 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == ""
 
-    def test_error_and_print(self, *, capsys: CaptureFixture) -> None:
-        with raises(RunError) as exc_info:
+    def test_error_called_process_and_print(self, *, capsys: CaptureFixture) -> None:
+        with raises(RunCalledProcessError) as exc_info:
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, print=True)  # noqa: S604
         assert exc_info.value.return_code == 1
         assert exc_info.value.stdout == "stdout\n"
@@ -1259,7 +1300,7 @@ class TestRun:
     def test_retry_1_attempt_failure(
         self, *, tmp_path: Path, logger: Logger, caplog: LogCaptureFixture
     ) -> None:
-        with raises(RunError):
+        with raises(RunCalledProcessError):
             _ = run(
                 *BASH_LS,
                 input=self._test_retry_cmd(tmp_path, 2),
@@ -1289,7 +1330,7 @@ class TestRun:
     def test_retry_2_attempts_failure(
         self, *, tmp_path: Path, logger: Logger, caplog: LogCaptureFixture
     ) -> None:
-        with raises(RunError):
+        with raises(RunCalledProcessError):
             _ = run(
                 *BASH_LS,
                 input=self._test_retry_cmd(tmp_path, 3),
@@ -1327,7 +1368,7 @@ class TestRun:
             _ = (return_code, stdout, stderr)
             return True
 
-        with raises(RunError):
+        with raises(RunCalledProcessError):
             _ = run(
                 *BASH_LS,
                 input=self._test_retry_cmd(tmp_path, 1),
@@ -1345,13 +1386,13 @@ class TestRun:
         caplog: LogCaptureFixture,
         multiline_regex: Callable[[str, str], None],
     ) -> None:
-        with raises(RunError):
+        with raises(RunCalledProcessError):
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, logger=logger)  # noqa: S604
         record = one(r for r in caplog.records if r.name == logger.name)
         pattern = normalize_multi_line_str(r"""
 ┌──────────────┬──+┐
 │ cmd          │ echo stdout; echo stderr 1>&2; exit 1\s+│
-│ cmds_or_args │ \[\] \s+ │
+│ cmds_or_args │ None \s+ │
 │ user         │ None \s+ │
 │ hostname     │ [\-\.\w…]+\s+│
 │ executable   │ None \s+ │
@@ -1387,17 +1428,17 @@ stderr
             echo ${key}@stderr 1>&2
             exit 1
         """)
-        with raises(RunError):
+        with raises(RunCalledProcessError):
             _ = run(*BASH_LS, input=input_, logger=logger)
         record = one(r for r in caplog.records if r.name == logger.name)
         pattern = normalize_multi_line_str(r"""
 ┌──────────────┬──+┐
 │ cmd          │ bash \s+ │
-│ cmds_or_args │ \['-ls'\]\s+│
+│ cmds_or_args │ -ls \s+ │
 │ user         │ None \s+ │
 │ hostname     │ [\-\.\w…]+\s+│
 │ executable   │ None \s+ │
-│ shell        │ False \s+ │
+│ shell        │ False\s+│
 │ cwd          │ None \s+ │
 │ env          │ None \s+ │
 │ return_code  │ 1 \s+ │
