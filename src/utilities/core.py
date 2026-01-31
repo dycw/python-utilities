@@ -229,6 +229,7 @@ from utilities.constants import (
     ABS_TOL,
     BACKUP_COUNT,
     CUSTOM_FIELD_STYLES,
+    CUSTOM_LEVEL_STYLES,
     DAYS_PER_WEEK,
     HOSTNAME,
     HOURS_PER_DAY,
@@ -454,7 +455,10 @@ class MaybeColoredFormatter(Formatter):
         super().__init__(fmt, datefmt, "{", validate, defaults=defaults)
         if color:
             self._formatter = ColoredFormatter(
-                fmt=fmt, style="{", field_styles=CUSTOM_FIELD_STYLES
+                fmt=fmt,
+                style="{",
+                level_styles=CUSTOM_LEVEL_STYLES,
+                field_styles=CUSTOM_FIELD_STYLES,
             )
         else:
             self._formatter = Formatter(fmt=fmt, style="{")

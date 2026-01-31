@@ -25,7 +25,7 @@ from whenever import (
     ZonedDateTime,
 )
 
-from utilities.types import FieldStyleDict, FieldStyles, TimeZone
+from utilities.types import ColorDict, TimeZone
 
 if TYPE_CHECKING:
     from utilities.types import System, TimeZone
@@ -36,31 +36,25 @@ if TYPE_CHECKING:
 ###############################################################################
 
 
-COLOREDLOGS_FIELD_STYLES = FieldStyles(
-    asctime=FieldStyleDict(color="green"),
-    hostname=FieldStyleDict(color="magenta"),
-    levelname=FieldStyleDict(color="black", bold=True),
-    name=FieldStyleDict(color="blue"),
-    programname=FieldStyleDict(color="cyan"),
-    username=FieldStyleDict(color="yellow"),
-)
 CUSTOM_FIELD_STYLES = {
-    "asctime": COLOREDLOGS_FIELD_STYLES["asctime"],
-    "hostname": COLOREDLOGS_FIELD_STYLES["name"],  # changed
-    "levelname": COLOREDLOGS_FIELD_STYLES["levelname"],
-    "name": COLOREDLOGS_FIELD_STYLES["name"],
-    "programname": COLOREDLOGS_FIELD_STYLES["programname"],
-    "username": COLOREDLOGS_FIELD_STYLES["username"],
-    # custom
-    "date": COLOREDLOGS_FIELD_STYLES["asctime"],
-    "date_basic": COLOREDLOGS_FIELD_STYLES["asctime"],
-    "time": COLOREDLOGS_FIELD_STYLES["asctime"],
-    "time_basic": COLOREDLOGS_FIELD_STYLES["asctime"],
-    "millis": FieldStyleDict(color="white"),
-    "time_zone": FieldStyleDict(color="white"),
-    "funcName": COLOREDLOGS_FIELD_STYLES["name"],
-    "lineno": FieldStyleDict(color="white"),
-    "process": COLOREDLOGS_FIELD_STYLES["hostname"],  # changed
+    "date": ColorDict(color="green"),
+    "date_basic": ColorDict(color="green"),
+    "time": ColorDict(color="green"),
+    "time_basic": ColorDict(color="green"),
+    "millis": ColorDict(),
+    "time_zone": ColorDict(),
+    "hostname": ColorDict(color="blue"),
+    "name": ColorDict(color="blue"),
+    "funcName": ColorDict(color="blue"),
+    "lineno": ColorDict(),
+    "process": ColorDict(color="magenta"),
+}
+CUSTOM_LEVEL_STYLES = {
+    "debug": ColorDict(color="grey"),
+    "info": ColorDict(),
+    "warning": ColorDict(color="yellow"),
+    "error": ColorDict(color="red"),
+    "critical": ColorDict(color="red", bold=True),
 }
 
 
@@ -518,9 +512,9 @@ __all__ = [
     "ABS_TOL",
     "BACKUP_COUNT",
     "BRACKETS",
-    "COLOREDLOGS_FIELD_STYLES",
     "CPU_COUNT",
     "CUSTOM_FIELD_STYLES",
+    "CUSTOM_LEVEL_STYLES",
     "DATE_DELTA_MAX",
     "DATE_DELTA_MIN",
     "DATE_TIME_DELTA_MAX",

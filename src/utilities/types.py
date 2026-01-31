@@ -121,17 +121,8 @@ class SupportsKeysAndGetItem(Protocol[_T, _T_co]):
 ###############################################################################
 
 
-class FieldStyles(TypedDict):
-    asctime: FieldStyleDict
-    hostname: FieldStyleDict
-    levelname: FieldStyleDict
-    name: FieldStyleDict
-    programname: FieldStyleDict
-    username: FieldStyleDict
-
-
-class FieldStyleDict(TypedDict):
-    color: str
+class ColorDict(TypedDict):
+    color: NotRequired[str]
     bold: NotRequired[bool]
 
 
@@ -488,6 +479,7 @@ __all__ = [
     "LOG_LEVELS",
     "TIME_ZONES",
     "ArgsAndKwargs",
+    "ColorDict",
     "Compression",
     "CopyOrMove",
     "Coro",
@@ -502,8 +494,6 @@ __all__ = [
     "EnumLike",
     "ExcInfo",
     "ExceptionTypeLike",
-    "FieldStyleDict",
-    "FieldStyles",
     "FileOrDir",
     "FilterWarningsAction",
     "IPv4AddressLike",
