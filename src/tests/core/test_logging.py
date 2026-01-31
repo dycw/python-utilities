@@ -15,7 +15,7 @@ from logging import (
 from re import search
 from typing import TYPE_CHECKING, Any, cast
 
-from pytest import LogCaptureFixture, mark, param, raises
+from pytest import CaptureFixture, LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
 
 from utilities.constants import HOSTNAME
@@ -169,9 +169,11 @@ class TestLogDebugInfoWarningErrorCritical:
 
 
 class TestSetUpLogging:
-    def test_main(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
+    def test_enhanced_log_record(
+        self, *, logger: Logger, caplog: LogCaptureFixture
+    ) -> None:
         set_up_logging(logger)
-        assert len(logger.handlers) == 1
+        assert len(logger.handlers) == 2
         logger.info("message")
         record = one(r for r in caplog.records if r.name == logger.name)
         assert isinstance(record, EnhancedLogRecord)
@@ -184,9 +186,49 @@ class TestSetUpLogging:
         assert search(r"\d{6}$", record.time_basic)
         assert search(r"\d{6}$", record.micros)
 
+    def test_console_info_empty(
+        self, *, logger: Logger, capsys: CaptureFixture
+    ) -> None:
+        set_up_logging(logger, console_color=False)
+        logger.info("")
+        result = capsys.readouterr()
+        pattern = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_info_empty ❯ \d+ │ INFO │ \d+\n$"  # noqa: RUF001
+        assert search(pattern, result.out)
+        assert result.err == ""
+
+    def test_console_info_non_empty(
+        self, *, logger: Logger, capsys: CaptureFixture
+    ) -> None:
+        set_up_logging(logger, console_color=False)
+        logger.info("message")
+        result = capsys.readouterr()
+        pattern = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_info_non_empty ❯ \d+ │ INFO │ \d+\n  message\n$"  # noqa: RUF001
+        assert search(pattern, result.out)
+        assert result.err == ""
+
+    def test_console_warning_empty(
+        self, *, logger: Logger, capsys: CaptureFixture
+    ) -> None:
+        set_up_logging(logger, console_color=False)
+        logger.warning("")
+        result = capsys.readouterr()
+        assert result.out == ""
+        pattern = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_warning_empty ❯ \d+ │ WARNING │ \d+\n$"  # noqa: RUF001
+        assert search(pattern, result.err)
+
+    def test_console_warning_non_empty(
+        self, *, logger: Logger, capsys: CaptureFixture
+    ) -> None:
+        set_up_logging(logger, console_color=False)
+        logger.warning("message")
+        result = capsys.readouterr()
+        assert result.out == ""
+        pattern = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_warning_non_empty ❯ \d+ │ WARNING │ \d+\n  message\n$"  # noqa: RUF001
+        assert search(pattern, result.err)
+
     def test_files(self, *, logger: Logger, temp_path_not_exist: Path) -> None:
         set_up_logging(logger, files=temp_path_not_exist)
-        assert len(logger.handlers) == 6
+        assert len(logger.handlers) == 7
         assert temp_path_not_exist.is_dir()
         logger.info("message")
         files = {p.name for p in temp_path_not_exist.iterdir() if p.is_file()}

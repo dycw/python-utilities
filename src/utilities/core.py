@@ -9,6 +9,7 @@ import os
 import pickle
 import re
 import shutil
+import sys
 import tempfile
 import time
 from bz2 import BZ2File
@@ -25,12 +26,14 @@ from logging import (
     ERROR,
     INFO,
     WARNING,
+    Filter,
     Formatter,
     Handler,
     Logger,
     LoggerAdapter,
     LogRecord,
     StreamHandler,
+    getLevelName,
     getLevelNamesMapping,
     getLogger,
     setLogRecordFactory,
@@ -300,7 +303,7 @@ from utilities.types import (
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping, Sequence
     from contextvars import ContextVar
-    from logging import _ExcInfoType, _FilterType
+    from logging import _ExcInfoType, _FilterType, _FormatStyle
     from types import TracebackType
 
     from whenever import PlainDateTime, Time
@@ -418,6 +421,42 @@ def max_nullable[T: SupportsRichComparison, U](
         except ValueError:
             raise MaxNullableError(iterable=iterable) from None
     return max(values, default=default)
+
+
+###############################################################################
+#### coloredlogs ##############################################################
+###############################################################################
+
+
+class MaybeColoredFormatter(Formatter):
+    """Formatter with easy toggling of colour."""
+
+    _formatter: Formatter
+
+    @override
+    def __init__(
+        self,
+        fmt: str | None = None,
+        datefmt: str | None = None,
+        style: _FormatStyle = "%",
+        validate: bool = True,
+        *,
+        defaults: Mapping[str, Any] | None = None,
+        color: bool = False,
+    ) -> None:
+        if (datefmt is not None) or (style != "%") or (defaults is not None):
+            raise ValueError
+        super().__init__(fmt, datefmt, "{", validate, defaults=defaults)
+        if color:
+            self._formatter = ColoredFormatter(
+                fmt=fmt, style="{", field_styles=CUSTOM_FIELD_STYLES
+            )
+        else:
+            self._formatter = Formatter(fmt=fmt, style="{")
+
+    @override
+    def format(self, record: LogRecord) -> str:
+        return self._formatter.format(record)
 
 
 ###############################################################################
@@ -1075,6 +1114,11 @@ def add_filters(
 ##
 
 
+def get_logging_level_name(level: int, /) -> LogLevel:
+    """Get the logging level name."""
+    return cast("LogLevel", getLevelName(level))
+
+
 def get_logging_level_number(level: LogLevel, /) -> int:
     """Get the logging level number."""
     mapping = getLevelNamesMapping()
@@ -1251,6 +1295,7 @@ def set_up_logging(
     *,
     root: bool = False,
     filters: MaybeIterable[_FilterType] | None = None,
+    console_color: bool = True,
     files: PathLike | None = None,
     max_bytes: int = MAX_BYTES,
     backup_count: int = BACKUP_COUNT,
@@ -1261,55 +1306,60 @@ def set_up_logging(
     logger.setLevel(DEBUG)
     if filters is not None:
         add_filters(logger, *always_iterable(filters))
-    console = StreamHandler()
-    console_fmt = _ConsoleFormatter(
-        fmt="{date} {time}.{micros}[{time_zone}] │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}\n{message}",
-        style="{",
-        field_styles=CUSTOM_FIELD_STYLES,
-    )
-    console.setFormatter(console_fmt)
-    console.setLevel(DEBUG)
-    logger.addHandler(console)
+    console_fmt = _ConsoleFormatter(color=console_color)
+    for stream, level, filter_ in [
+        (sys.stdout, INFO, _StdOutFilter()),
+        (sys.stderr, WARNING, None),
+    ]:
+        _set_up_logging_console_handlers(
+            stream, console_fmt, level, logger, filter_=filter_
+        )
     if files is not None:
-        live_levels: list[LogLevel] = ["DEBUG", "INFO"]
-        for level in live_levels:
-            _set_up_logging_file_handlers(
-                files,
-                f"live-{level.lower()}",
-                1,
-                console_fmt,
-                level,
-                logger,
-                max_bytes=max_bytes,
-            )
-        single_line_fmt = _SingleLineFormatter(
-            fmt="{date_basic}T{time_basic}.{micros}[{time_zone}] | {hostname}:{name}:{funcName}:{lineno} | {levelname} | {process} | {message}",
+        single_fmt = _SingleFormatter(
+            fmt="{date_basic}T{time_basic}.{millis}[{time_zone}] | {hostname}:{name}:{funcName}:{lineno} | {levelname} | {process} | {message}",
             style="{",
         )
-        log_levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]
-        for level in log_levels:
+        for stem, level, bc, formatter in [
+            ("live-${level}", DEBUG, 1, console_fmt),
+            ("live-${level}", INFO, 1, console_fmt),
+            ("log-${level}", DEBUG, backup_count, single_fmt),
+            ("log-${level}", INFO, backup_count, single_fmt),
+            ("log-${level}", ERROR, backup_count, single_fmt),
+        ]:
             _set_up_logging_file_handlers(
-                files,
-                f"log-{level.lower()}",
-                backup_count,
-                single_line_fmt,
-                level,
-                logger,
-                max_bytes=max_bytes,
+                stem, level, files, bc, formatter, logger, max_bytes=max_bytes
             )
+
+
+def _set_up_logging_console_handlers(
+    stream: Any,
+    formatter: _ConsoleFormatter,
+    level: int,
+    logger: Logger,
+    /,
+    *,
+    filter_: _FilterType | None = None,
+) -> None:
+    handler = StreamHandler(stream=stream)
+    handler.setFormatter(formatter)
+    handler.setLevel(level)
+    if filter_ is not None:
+        handler.addFilter(filter_)
+    logger.addHandler(handler)
 
 
 def _set_up_logging_file_handlers(
-    path: PathLike,
     stem: str,
+    level: int,
+    path: PathLike,
     backup_count: int,
     formatter: Formatter,
-    level: LogLevel,
     logger: Logger,
     /,
     *,
     max_bytes: int = MAX_BYTES,
 ) -> None:
+    stem = substitute(stem, safe=True, level=get_logging_level_name(level).lower())
     filename = Path(path, f"{stem}.txt")
     filename.parent.mkdir(parents=True, exist_ok=True)
     handler = RotatingFileHandler(
@@ -1320,13 +1370,46 @@ def _set_up_logging_file_handlers(
     logger.addHandler(handler)
 
 
-class _ConsoleFormatter(ColoredFormatter):
+class _ConsoleFormatter(Formatter):
+    @override
+    def __init__(
+        self,
+        fmt: str | None = None,
+        datefmt: str | None = None,
+        style: _FormatStyle = "%",
+        validate: bool = True,
+        *,
+        defaults: Mapping[str, Any] | None = None,
+        color: bool = False,
+    ) -> None:
+        if (
+            (fmt is not None)
+            or (datefmt is not None)
+            or (style != "%")
+            or (defaults is not None)
+        ):
+            raise ValueError
+        super().__init__(fmt, datefmt, style, validate, defaults=defaults)
+        header = "{date} {time}.{millis}[{time_zone}] │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}"
+        self._empty = MaybeColoredFormatter(fmt=header, color=color)
+        self._non_empty = MaybeColoredFormatter(
+            fmt=f"{header}\n{{message}}", color=color
+        )
+
     @override
     def format(self, record: LogRecord) -> str:
-        return indent_non_head(super().format(record), "  ")
+        if len(record.msg) >= 1:
+            return indent_non_head(self._non_empty.format(record), "  ")
+        return self._empty.format(record)
 
 
-class _SingleLineFormatter(Formatter):
+class _StdOutFilter(Filter):
+    @override
+    def filter(self, record: LogRecord) -> bool | LogRecord:
+        return record.levelno <= INFO
+
+
+class _SingleFormatter(Formatter):
     @override
     def format(self, record: LogRecord) -> str:
         return super().format(record).replace("\n", " ")
@@ -3639,6 +3722,7 @@ __all__ = [
     "get_file_owner",
     "get_func_name",
     "get_gid_name",
+    "get_logging_level_name",
     "get_logging_level_number",
     "get_now",
     "get_now_local",
