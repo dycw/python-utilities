@@ -128,6 +128,7 @@ from utilities._core_errors import (
     FileOrDirTypeError,
     FirstNonDirectoryParentError,
     GetEnvError,
+    GetLoggingLevelNameError,
     GetLoggingLevelNumberError,
     MaxNullableError,
     MaybeColoredFormatterError,
@@ -276,6 +277,7 @@ from utilities.constants import (
     sentinel,
 )
 from utilities.types import (
+    LOG_LEVELS,
     TIME_ZONES,
     ArgsAndKwargs,
     CopyOrMove,
@@ -1119,7 +1121,10 @@ def add_filters(
 
 def get_logging_level_name(level: int, /) -> LogLevel:
     """Get the logging level name."""
-    return cast("LogLevel", getLevelName(level))
+    name = getLevelName(level)
+    if name in LOG_LEVELS:
+        return name
+    raise GetLoggingLevelNameError(level=level) from None
 
 
 def get_logging_level_number(level: LogLevel, /) -> int:
@@ -3610,6 +3615,7 @@ __all__ = [
     "FileOrDirTypeError",
     "FirstNonDirectoryParentError",
     "GetEnvError",
+    "GetLoggingLevelNameError",
     "GetLoggingLevelNumberError",
     "MaxNullableError",
     "MaybeColoredFormatterError",

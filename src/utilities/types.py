@@ -225,6 +225,9 @@ type MaybeSequenceStr = str | SequenceStr
 
 
 type LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+LOG_LEVELS: list[LogLevel] = list(get_args(LogLevel.__value__))
+
+
 type LoggerLike = MaybeStr[Logger]
 type When = Literal[
     "S", "M", "H", "D", "midnight", "W0", "W1", "W2", "W3", "W4", "W5", "W6"
@@ -482,6 +485,7 @@ type TimeZoneLike = (
 
 
 __all__ = [
+    "LOG_LEVELS",
     "TIME_ZONES",
     "ArgsAndKwargs",
     "Compression",

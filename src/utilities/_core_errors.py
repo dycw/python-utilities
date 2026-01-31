@@ -404,12 +404,21 @@ class OneStrNonUniqueError(OneStrError):
 
 
 @dataclass(kw_only=True, slots=True)
+class GetLoggingLevelNameError(Exception):
+    level: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid logging level: {self.level}"
+
+
+@dataclass(kw_only=True, slots=True)
 class GetLoggingLevelNumberError(Exception):
     level: LogLevel
 
     @override
     def __str__(self) -> str:
-        return f"Invalid logging level: {self.level!r}"
+        return f"Invalid logging level: {pretty_repr(self.level)}"
 
 
 ###############################################################################
@@ -1188,6 +1197,7 @@ __all__ = [
     "FileOrDirTypeError",
     "FirstNonDirectoryParentError",
     "GetEnvError",
+    "GetLoggingLevelNameError",
     "GetLoggingLevelNumberError",
     "MaxNullableError",
     "MaybeColoredFormatterError",

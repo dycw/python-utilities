@@ -21,6 +21,7 @@ from whenever import ZonedDateTime
 from utilities.constants import HOSTNAME
 from utilities.core import (
     EnhancedLogRecord,
+    GetLoggingLevelNameError,
     GetLoggingLevelNumberError,
     add_adapter,
     add_filters,
@@ -100,11 +101,14 @@ class TestGetLoggingLevelName:
             param(WARNING, "WARNING"),
             param(ERROR, "ERROR"),
             param(CRITICAL, "CRITICAL"),
-            param(1, "Level 1"),
         ],
     )
     def test_main(self, *, level: int, expected: LogLevel) -> None:
         assert get_logging_level_name(level) == expected
+
+    def test_error(self) -> None:
+        with raises(GetLoggingLevelNameError, match=r"Invalid logging level: 5"):
+            _ = get_logging_level_name(1)
 
 
 class TestGetLoggingLevelNumber:
