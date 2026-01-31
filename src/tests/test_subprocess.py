@@ -1389,7 +1389,7 @@ class TestRun:
         with raises(RunCalledProcessError):
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, logger=logger)  # noqa: S604
         record = one(r for r in caplog.records if r.name == logger.name)
-        pattern = normalize_multi_line_str(r"""
+        pattern = "\n" + normalize_multi_line_str(r"""
 ┌──────────────┬──+┐
 │ cmd          │ echo stdout; echo stderr 1>&2; exit 1\s+│
 │ cmds_or_args │ None \s+ │
