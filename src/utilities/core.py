@@ -1316,7 +1316,7 @@ def set_up_logging(
         )
     if files is not None:
         single_fmt = _SingleFormatter(
-            fmt="{date_basic}T{time_basic}.{millis}[{time_zone}] | {hostname}:{name}:{funcName}:{lineno} | {levelname} | {process} | {message}",
+            fmt="{date_basic}T{time_basic}.{micros}[{time_zone}] | {hostname}:{name}:{funcName}:{lineno} | {levelname} | {process} | {message}",
             style="{",
         )
         for stem, level, bc, formatter in [
@@ -1390,7 +1390,7 @@ class _ConsoleFormatter(Formatter):
         ):
             raise ValueError
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
-        header = "{date} {time}.{millis}[{time_zone}] │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}"
+        header = "{date} {time}.{micros}[{time_zone}] │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}"
         self._empty = MaybeColoredFormatter(fmt=header, color=color)
         self._non_empty = MaybeColoredFormatter(
             fmt=f"{header}\n{{message}}", color=color
