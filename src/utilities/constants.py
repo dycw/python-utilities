@@ -46,7 +46,7 @@ CUSTOM_FIELD_STYLES = {
     "hostname": ColorDict(color="blue"),
     "name": ColorDict(color="blue"),
     "funcName": ColorDict(color="blue"),
-    "lineno": ColorDict(),
+    "lineno": ColorDict(color="white", faint=True),
     "levelname": ColorDict(color="white"),
     "process": ColorDict(color="magenta", faint=True),
 }
