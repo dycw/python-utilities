@@ -107,7 +107,7 @@ class TestGetLoggingLevelName:
         assert get_logging_level_name(level) == expected
 
     def test_error(self) -> None:
-        with raises(GetLoggingLevelNameError, match=r"Invalid logging level: 5"):
+        with raises(GetLoggingLevelNameError, match=r"Invalid logging level: 1"):
             _ = get_logging_level_name(1)
 
 
