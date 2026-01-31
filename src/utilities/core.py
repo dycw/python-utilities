@@ -1308,6 +1308,7 @@ def set_up_logging(
     root: bool = False,
     filters: MaybeIterable[_FilterType] | None = None,
     console_color: bool = True,
+    console_debug: bool = False,
     files: PathLike | None = None,
     max_bytes: int = MAX_BYTES,
     backup_count: int = BACKUP_COUNT,
@@ -1320,7 +1321,7 @@ def set_up_logging(
         add_filters(logger, *always_iterable(filters))
     console_fmt = _ConsoleFormatter(color=console_color)
     for stream, level, filter_ in [
-        (sys.stdout, INFO, _StdOutFilter()),
+        (sys.stdout, DEBUG if console_debug else INFO, _StdOutFilter()),
         (sys.stderr, WARNING, None),
     ]:
         _set_up_logging_console_handlers(

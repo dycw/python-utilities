@@ -190,7 +190,7 @@ class TestLogDebugInfoWarningErrorCritical:
 
 
 class TestSetUpLogging:
-    def test_enhanced_log_record(
+    def test_main_enhanced_log_record(
         self, *, logger: Logger, caplog: LogCaptureFixture
     ) -> None:
         set_up_logging(logger)
@@ -207,45 +207,69 @@ class TestSetUpLogging:
         assert search(r"\d{6}$", record.time_basic)
         assert search(r"\d{6}$", record.micros)
 
-    def test_console_info_empty(
-        self, *, logger: Logger, capsys: CaptureFixture
+    @mark.parametrize(
+        ("level", "message", "exp_out", "exp_err"),
+        [
+            param(
+                INFO,
+                "",
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ INFO │ \d+\n$",  # noqa: RUF001
+                None,
+            ),
+            param(
+                INFO,
+                "message",
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ INFO │ \d+\n  message\n$",  # noqa: RUF001
+                None,
+            ),
+            param(
+                WARNING,
+                "",
+                None,
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ WARNING │ \d+\n$",  # noqa: RUF001
+            ),
+            param(
+                WARNING,
+                "message",
+                None,
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ WARNING │ \d+\n  message\n$",  # noqa: RUF001
+            ),
+        ],
+    )
+    def test_console_logging(
+        self,
+        *,
+        logger: Logger,
+        level: int,
+        message: str,
+        capsys: CaptureFixture,
+        exp_out: str | None,
+        exp_err: str | None,
     ) -> None:
         set_up_logging(logger, console_color=False)
-        logger.info("")
+        logger.log(level, message)
         result = capsys.readouterr()
-        pattern = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_info_empty ❯ \d+ │ INFO │ \d+\n$"  # noqa: RUF001
-        assert search(pattern, result.out)
-        assert result.err == ""
+        if exp_out is None:
+            assert result.out == ""
+        else:
+            assert search(exp_out, result.out) is not None
+        if exp_err is None:
+            assert result.err == ""
+        else:
+            assert search(exp_err, result.err) is not None
 
-    def test_console_info_non_empty(
-        self, *, logger: Logger, capsys: CaptureFixture
-    ) -> None:
-        set_up_logging(logger, console_color=False)
+    def test_filters(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
+        set_up_logging(logger, filters=lambda _: False)
+        assert len(logger.filters) == 1
         logger.info("message")
-        result = capsys.readouterr()
-        pattern = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_info_non_empty ❯ \d+ │ INFO │ \d+\n  message\n$"  # noqa: RUF001
-        assert search(pattern, result.out)
-        assert result.err == ""
+        records = [r for r in caplog.records if r.name == logger.name]
+        assert len(records) == 0
 
-    def test_console_warning_empty(
-        self, *, logger: Logger, capsys: CaptureFixture
-    ) -> None:
-        set_up_logging(logger, console_color=False)
-        logger.warning("")
-        result = capsys.readouterr()
-        assert result.out == ""
-        pattern = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_warning_empty ❯ \d+ │ WARNING │ \d+\n$"  # noqa: RUF001
-        assert search(pattern, result.err)
-
-    def test_console_warning_non_empty(
-        self, *, logger: Logger, capsys: CaptureFixture
-    ) -> None:
-        set_up_logging(logger, console_color=False)
-        logger.warning("message")
-        result = capsys.readouterr()
-        assert result.out == ""
-        pattern = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_warning_non_empty ❯ \d+ │ WARNING │ \d+\n  message\n$"  # noqa: RUF001
-        assert search(pattern, result.err)
+    def test_console_debug(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
+        set_up_logging(logger, console_debug=True)
+        logger.debug("message")
+        records = [r for r in caplog.records if r.name == logger.name]
+        assert len(records) == 0
 
     def test_files(self, *, logger: Logger, temp_path_not_exist: Path) -> None:
         set_up_logging(logger, files=temp_path_not_exist)

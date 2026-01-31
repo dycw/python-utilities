@@ -124,6 +124,7 @@ class SupportsKeysAndGetItem(Protocol[_T, _T_co]):
 class ColorDict(TypedDict):
     color: NotRequired[str]
     bold: NotRequired[bool]
+    faint: NotRequired[bool]
 
 
 ###############################################################################
