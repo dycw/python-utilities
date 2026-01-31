@@ -182,7 +182,7 @@ class TestSetUpLogging:
         assert search(r"\d{8}$", record.date_basic)
         assert search(r"\d{2}:\d{2}:\d{2}$", record.time)
         assert search(r"\d{6}$", record.time_basic)
-        assert search(r"\d{6}$", record.millis)
+        assert search(r"\d{6}$", record.micros)
 
     def test_files(self, *, logger: Logger, temp_path_not_exist: Path) -> None:
         set_up_logging(logger, files=temp_path_not_exist)

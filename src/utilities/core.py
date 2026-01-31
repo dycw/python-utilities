@@ -1263,7 +1263,7 @@ def set_up_logging(
         add_filters(logger, *always_iterable(filters))
     console = StreamHandler()
     console_fmt = _ConsoleFormatter(
-        fmt="{date} {time}.{millis}[{time_zone}] │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}\n{message}",
+        fmt="{date} {time}.{micros}[{time_zone}] │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}\n{message}",
         style="{",
         field_styles=CUSTOM_FIELD_STYLES,
     )
@@ -1283,7 +1283,7 @@ def set_up_logging(
                 max_bytes=max_bytes,
             )
         single_line_fmt = _SingleLineFormatter(
-            fmt="{date_basic}T{time_basic}.{millis}[{time_zone}] | {hostname}:{name}:{funcName}:{lineno} | {levelname} | {process} | {message}",
+            fmt="{date_basic}T{time_basic}.{micros}[{time_zone}] | {hostname}:{name}:{funcName}:{lineno} | {levelname} | {process} | {message}",
             style="{",
         )
         log_levels: list[LogLevel] = ["DEBUG", "INFO", "ERROR"]
@@ -1361,7 +1361,7 @@ class EnhancedLogRecord(LogRecord):
     date_basic: str
     time: str
     time_basic: str
-    millis: str
+    micros: str
     time_zone: str
 
     @override
@@ -1388,7 +1388,7 @@ class EnhancedLogRecord(LogRecord):
         time = zoned_date_time.time().replace(nanosecond=0)
         self.time = time.format_iso()
         self.time_basic = time.format_iso(basic=True)
-        self.millis = format(zoned_date_time.nanosecond // 1000, "06d")
+        self.micros = format(zoned_date_time.nanosecond // 1000, "06d")
         self.time_zone = LOCAL_TIME_ZONE_NAME
 
 
