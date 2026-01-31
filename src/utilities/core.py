@@ -130,6 +130,7 @@ from utilities._core_errors import (
     GetEnvError,
     GetLoggingLevelNumberError,
     MaxNullableError,
+    MaybeColoredFormatterError,
     MinNullableError,
     MoveDestinationExistsError,
     MoveError,
@@ -441,11 +442,13 @@ class MaybeColoredFormatter(Formatter):
         style: _FormatStyle = "%",
         validate: bool = True,
         *,
-        defaults: Mapping[str, Any] | None = None,
+        defaults: StrMapping | None = None,
         color: bool = False,
     ) -> None:
         if (datefmt is not None) or (style != "%") or (defaults is not None):
-            raise ValueError
+            raise MaybeColoredFormatterError(
+                datefmt=datefmt, style=style, defaults=defaults
+            )
         super().__init__(fmt, datefmt, "{", validate, defaults=defaults)
         if color:
             self._formatter = ColoredFormatter(
@@ -1382,13 +1385,6 @@ class _ConsoleFormatter(Formatter):
         defaults: Mapping[str, Any] | None = None,
         color: bool = False,
     ) -> None:
-        if (
-            (fmt is not None)
-            or (datefmt is not None)
-            or (style != "%")
-            or (defaults is not None)
-        ):
-            raise ValueError
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
         header = "{date} {time}.{micros}[{time_zone}] │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}"
         self._empty = MaybeColoredFormatter(fmt=header, color=color)
@@ -3616,6 +3612,7 @@ __all__ = [
     "GetEnvError",
     "GetLoggingLevelNumberError",
     "MaxNullableError",
+    "MaybeColoredFormatterError",
     "MinNullableError",
     "MoveDestinationExistsError",
     "MoveError",
