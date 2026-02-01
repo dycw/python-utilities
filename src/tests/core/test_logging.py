@@ -207,7 +207,6 @@ class TestSetUpLogging:
         assert search(r"\d{6}$", record.time_basic)
         assert search(r"\d{6}$", record.micros)
 
-    @mark.only
     @mark.parametrize(
         ("level", "message", "exp_out", "exp_err"),
         [
@@ -227,13 +226,13 @@ class TestSetUpLogging:
                 WARNING,
                 "",
                 None,
-                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ WARNING │ \d+\n$",  # noqa: RUF001
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-\.]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ WARNING │ \d+\n$",  # noqa: RUF001
             ),
             param(
                 WARNING,
                 "message",
                 None,
-                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ WARNING │ \d+\n  message\n$",  # noqa: RUF001
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-\.]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ WARNING │ \d+\n  message\n$",  # noqa: RUF001
             ),
         ],
     )
