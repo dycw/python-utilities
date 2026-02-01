@@ -728,6 +728,16 @@ class FrozenSetInts(FrozenSetParameter[IntParamType, int]):
         super().__init__(IntParamType(), separator=separator)
 
 
+class FrozenSetPaths(FrozenSetParameter[Path, pathlib.Path]):
+    """A frozenset-of-paths-valued parameter."""
+
+    @override
+    def __init__(
+        self, *, exist: _PathExist | None = None, separator: str = ","
+    ) -> None:
+        super().__init__(Path(exist=exist), separator=separator)
+
+
 class FrozenSetStrs(FrozenSetParameter[StringParamType, str]):
     """A frozenset-of-strs-valued parameter."""
 
@@ -824,6 +834,16 @@ class ListInts(ListParameter[IntParamType, int]):
         super().__init__(IntParamType(), separator=separator)
 
 
+class ListPaths(ListParameter[Path, pathlib.Path]):
+    """A list-of-paths-valued parameter."""
+
+    @override
+    def __init__(
+        self, *, exist: _PathExist | None = None, separator: str = ","
+    ) -> None:
+        super().__init__(Path(exist=exist), separator=separator)
+
+
 class ListStrs(ListParameter[StringParamType, str]):
     """A list-of-strs-valued parameter."""
 
@@ -851,6 +871,7 @@ __all__ = [
     "FrozenSetChoices",
     "FrozenSetEnums",
     "FrozenSetParameter",
+    "FrozenSetPaths",
     "FrozenSetStrs",
     "IPv4Address",
     "IPv6Address",
@@ -858,6 +879,7 @@ __all__ = [
     "ListEnums",
     "ListInts",
     "ListParameter",
+    "ListPaths",
     "ListStrs",
     "MonthDay",
     "Path",
