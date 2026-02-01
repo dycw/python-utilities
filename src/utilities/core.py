@@ -70,6 +70,7 @@ from types import (
     MethodDescriptorType,
     MethodType,
     MethodWrapperType,
+    ModuleType,
     WrapperDescriptorType,
 )
 from typing import (
@@ -1312,6 +1313,7 @@ def set_up_logging(
     files: PathLike | None = None,
     max_bytes: int = MAX_BYTES,
     backup_count: int = BACKUP_COUNT,
+    log_version: tuple[ModuleType, str] | None = None,
 ) -> None:
     """Setup logging."""
     setLogRecordFactory(EnhancedLogRecord)
@@ -1342,6 +1344,9 @@ def set_up_logging(
             _set_up_logging_file_handlers(
                 stem, level, files, bc, formatter, logger, max_bytes=max_bytes
             )
+    if log_version is not None:
+        module, version = log_version
+        logger.info("Setting up logging for %r (%s)...", module.__name__, version)
 
 
 def _set_up_logging_console_handlers(

@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, cast
 from pytest import CaptureFixture, LogCaptureFixture, mark, param, raises
 from whenever import ZonedDateTime
 
+import utilities
 from utilities.constants import HOSTNAME
 from utilities.core import (
     EnhancedLogRecord,
@@ -286,9 +287,16 @@ class TestSetUpLogging:
         }
         assert files == expected
 
-    def test_nested(self, *, logger: Logger, temp_path_nested_not_exist: Path) -> None:
+    def test_files_nested_path(
+        self, *, logger: Logger, temp_path_nested_not_exist: Path
+    ) -> None:
         set_up_logging(logger, files=temp_path_nested_not_exist)
         assert temp_path_nested_not_exist.is_dir()
+
+    def test_log_version(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
+        set_up_logging(logger, log_version=(utilities, "0.0.1"))
+        record = one(r for r in caplog.records if r.name == logger.name)
+        assert record.message == "Setting up logging for 'utilities' (0.0.1)..."
 
 
 class TestToLogger:
