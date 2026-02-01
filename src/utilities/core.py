@@ -1344,7 +1344,7 @@ def set_up_logging(
                 stem, level, files, bc, formatter, logger, max_bytes=max_bytes
             )
     if log_version is not None:
-        logger.info("Setting up logging (v%s)...", log_version)
+        logger.info("Setting up logger %r %s...", logger.name, log_version)
 
 
 def _set_up_logging_console_handlers(
