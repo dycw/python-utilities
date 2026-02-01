@@ -213,26 +213,26 @@ class TestSetUpLogging:
             param(
                 INFO,
                 "",
-                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ INFO │ \d+\n$",  # noqa: RUF001
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-\.]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ INFO │ \d+\n$",  # noqa: RUF001
                 None,
             ),
             param(
                 INFO,
                 "message",
-                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ INFO │ \d+\n  message\n$",  # noqa: RUF001
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-\.]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ INFO │ \d+\n  message\n$",  # noqa: RUF001
                 None,
             ),
             param(
                 WARNING,
                 "",
                 None,
-                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ WARNING │ \d+\n$",  # noqa: RUF001
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-\.]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ WARNING │ \d+\n$",  # noqa: RUF001
             ),
             param(
                 WARNING,
                 "message",
                 None,
-                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ WARNING │ \d+\n  message\n$",  # noqa: RUF001
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-\.]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ WARNING │ \d+\n  message\n$",  # noqa: RUF001
             ),
         ],
     )
