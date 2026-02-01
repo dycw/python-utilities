@@ -459,7 +459,7 @@ class TestParameters:
         ),
         _Case(
             param=ListPaths(),
-            name="list[PATH]",
+            name="list[path]",
             repr="LIST[PATH]",
             strategy=lists(paths(), min_size=1),
             serialize=_lift_serializer(str),
