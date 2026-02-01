@@ -207,19 +207,20 @@ class TestSetUpLogging:
         assert search(r"\d{6}$", record.time_basic)
         assert search(r"\d{6}$", record.micros)
 
+    @mark.only
     @mark.parametrize(
         ("level", "message", "exp_out", "exp_err"),
         [
             param(
                 INFO,
                 "",
-                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ INFO │ \d+\n$",  # noqa: RUF001
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-\.]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ INFO │ \d+\n$",  # noqa: RUF001
                 None,
             ),
             param(
                 INFO,
                 "message",
-                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ INFO │ \d+\n  message\n$",  # noqa: RUF001
+                r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\[[\w\/]+\] │ [\w\-\.]+ ❯ \w+ ❯ test_console_logging ❯ \d+ │ INFO │ \d+\n  message\n$",  # noqa: RUF001
                 None,
             ),
             param(
