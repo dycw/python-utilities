@@ -295,7 +295,7 @@ class TestSetUpLogging:
     def test_log_version(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
         set_up_logging(logger, log_version="0.0.1")
         record = one(r for r in caplog.records if r.name == logger.name)
-        assert record.message == "Setting up logging (v0.0.1)..."
+        assert record.message == f"Setting up logger {logger.name!r} 0.0.1..."
 
 
 class TestToLogger:
