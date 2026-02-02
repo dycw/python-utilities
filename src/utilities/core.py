@@ -43,7 +43,7 @@ from lzma import LZMAFile
 from operator import or_
 from os import chdir, environ, getenv, getpid
 from pathlib import Path
-from re import VERBOSE, Pattern, findall
+from re import VERBOSE, Pattern, findall, search
 from shutil import copyfile, copyfileobj, copytree
 from stat import (
     S_IMODE,
@@ -105,6 +105,9 @@ from whenever import (
 
 import utilities.constants
 from utilities._core_errors import (
+    CheckMultiLineRegexError,
+    CheckMultiLineRegexNoMatchError,
+    CheckMultiLineRegexNumberOfLinesError,
     CheckUniqueError,
     CompressBZ2Error,
     CompressGzipError,
@@ -2149,6 +2152,29 @@ def get_file_owner(path: PathLike, /) -> str | None:
 ###############################################################################
 
 
+def check_multi_line_regex(pattern: PatternLike, text: str, /) -> None:
+    """Check that a multi-line regex matches."""
+
+    pattern_use = _to_pattern(pattern)
+    pattern_text, pattern_flags = pattern_use.pattern, pattern_use.flags
+    pattern_lines, text_lines = [t.splitlines() for t in [pattern_text, text]]
+    num_pattern, num_text = [len(lines) for lines in [pattern_lines, text_lines]]
+    if num_pattern != num_text:
+        raise CheckMultiLineRegexNumberOfLinesError(
+            pattern=pattern_text, text=text, num_pattern=num_pattern, num_text=num_text
+        )
+    for i, (pattern_i, text_i) in enumerate(
+        zip(pattern_lines, text_lines, strict=True), start=1
+    ):
+        if search(pattern_i, text_i, flags=pattern_flags) is None:
+            raise CheckMultiLineRegexNoMatchError(
+                pattern=pattern_i, text=text_i, line_num=i, total=num_pattern
+            )
+
+
+##
+
+
 def extract_group(pattern: PatternLike, text: str, /, *, flags: int = 0) -> str:
     """Extract a group.
 
@@ -3652,6 +3678,9 @@ def to_zone_info(obj: TimeZoneLike, /) -> ZoneInfo:
 
 __all__ = [
     "ENHANCED_LOG_RECORD_EXTRA_ATTRS",
+    "CheckMultiLineRegexError",
+    "CheckMultiLineRegexNoMatchError",
+    "CheckMultiLineRegexNumberOfLinesError",
     "CheckUniqueError",
     "CompressBZ2Error",
     "CompressGzipError",

@@ -648,6 +648,39 @@ class PermissionsFromTextError(PermissionsError):
 
 
 @dataclass(kw_only=True, slots=True)
+class CheckMultiLineRegexError(Exception):
+    pattern: str
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        raise NotImplementedError  # pragma: no cover
+
+
+@dataclass(kw_only=True, slots=True)
+class CheckMultiLineRegexNumberOfLinesError(CheckMultiLineRegexError):
+    num_pattern: int
+    num_text: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {pretty_repr(str(self.pattern))} and text {pretty_repr(self.text)} must contain the same number of lines; got {self.num_pattern} and {self.num_text}"
+
+
+@dataclass(kw_only=True, slots=True)
+class CheckMultiLineRegexNoMatchError(CheckMultiLineRegexError):
+    line_num: int
+    total: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Pattern line {self.line_num} of {self.total} {pretty_repr(str(self.pattern))} must match against {pretty_repr(self.text)}"
+
+
+##
+
+
+@dataclass(kw_only=True, slots=True)
 class ExtractGroupError(Exception):
     pattern: Pattern[str]
     text: str
@@ -1171,6 +1204,9 @@ class ToZoneInfoPlainDateTimeError(ToZoneInfoError):
 
 
 __all__ = [
+    "CheckMultiLineRegexError",
+    "CheckMultiLineRegexNoMatchError",
+    "CheckMultiLineRegexNumberOfLinesError",
     "CheckUniqueError",
     "CompressBZ2Error",
     "CompressFilesError",
