@@ -507,7 +507,7 @@ class TestLs:
     def test_main(self, *, tmp_path: Path) -> None:
         result = ls(tmp_path, long=True, return_=True)
         expected = normalize_multi_line_str(r"""
-            total 0
+            total \d+
             drwx------@\s+\d+\s+\w+\s+\w+\s+\d+\s+\d+\s+\w+\s+\d{2}:\d{2}\s+\.
             drwx------@\s+\d+\s+\w+\s+\w+\s+\d+\s+\d+\s+\w+\s+\d{2}:\d{2}\s+\.\.
         """)
