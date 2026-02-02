@@ -4,11 +4,9 @@ from re import DOTALL, escape
 
 from pytest import mark, param, raises
 
-from utilities._core_errors import (
+from utilities.core import (
     CheckMultiLineRegexNoMatchError,
     CheckMultiLineRegexNumberOfLinesError,
-)
-from utilities.core import (
     ExtractGroupMultipleCaptureGroupsError,
     ExtractGroupMultipleMatchesError,
     ExtractGroupNoCaptureGroupsError,
