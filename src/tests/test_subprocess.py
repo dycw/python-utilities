@@ -503,7 +503,6 @@ class TestInstallCmd:
 
 
 class TestLs:
-    @mark.only
     def test_main(self, *, tmp_path: Path) -> None:
         result = ls(tmp_path, long=True, return_=True)
         expected = normalize_multi_line_str(r"""
