@@ -74,6 +74,8 @@ from utilities.subprocess import (
     git_clone_cmd,
     install,
     install_cmd,
+    ls,
+    ls_cmd,
     maybe_parent,
     maybe_sudo_cmd,
     mkdir,
@@ -497,6 +499,29 @@ class TestInstallCmd:
     def test_group(self) -> None:
         result = install_cmd("path", group="group")
         expected = ["install", "-g", "group", "/dev/null", "path"]
+        assert result == expected
+
+
+class TestLs:
+    def test_main(self, *, tmp_path: Path) -> None:
+        result = ls(tmp_path, long=True, return_=True)
+        expected = normalize_multi_line_str(r"""
+            total \d+
+            drwx------@?\s+\d+\s+\w+\s+\w+\s+\d+\s+(\d+\s+\w+|\w+\s+\d+)\s+\d{2}:\d{2}\s+\.
+            drwx------@?\s+\d+\s+\w+\s+\w+\s+\d+\s+(\d+\s+\w+|\w+\s+\d+)\s+\d{2}:\d{2}\s+\.\.
+        """)
+        check_multi_line_regex(expected, result)
+
+
+class TestLsCmd:
+    def test_main(self) -> None:
+        result = ls_cmd("~/path")
+        expected = ["ls", "-a", "~/path"]
+        assert result == expected
+
+    def test_long(self) -> None:
+        result = ls_cmd("~/path", long=True)
+        expected = ["ls", "-a", "-l", "~/path"]
         assert result == expected
 
 
