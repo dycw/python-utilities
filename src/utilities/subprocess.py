@@ -655,6 +655,119 @@ def install_cmd(
 ##
 
 
+@overload
+def ls(
+    path: PathLike,
+    /,
+    *,
+    sudo: bool = False,
+    long: bool = False,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[True],
+    return_stdout: Literal[False] = False,
+    return_stderr: Literal[False] = False,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def ls(
+    path: PathLike,
+    /,
+    *,
+    sudo: bool = False,
+    long: bool = False,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[False] = False,
+    return_stdout: Literal[True],
+    return_stderr: Literal[False] = False,
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def ls(
+    path: PathLike,
+    /,
+    *,
+    sudo: bool = False,
+    long: bool = False,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[False] = False,
+    return_stdout: Literal[False] = False,
+    return_stderr: Literal[True],
+    logger: LoggerLike | None = None,
+) -> str: ...
+@overload
+def ls(
+    path: PathLike,
+    /,
+    *,
+    sudo: bool = False,
+    long: bool = False,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: Literal[False] = False,
+    return_stdout: Literal[False] = False,
+    return_stderr: Literal[False] = False,
+    logger: LoggerLike | None = None,
+) -> None: ...
+@overload
+def ls(
+    path: PathLike,
+    /,
+    *,
+    sudo: bool = False,
+    long: bool = False,
+    print: bool = False,
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    logger: LoggerLike | None = None,
+) -> str | None: ...
+def ls(
+    path: PathLike,
+    /,
+    *,
+    sudo: bool = False,
+    long: bool = False,
+    print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    return_: bool = False,
+    return_stdout: bool = False,
+    return_stderr: bool = False,
+    logger: LoggerLike | None = None,
+) -> str | None:
+    """List directory contents."""
+    return run(
+        *maybe_sudo_cmd(*ls_cmd(path, long=long), sudo=sudo),
+        print=print,
+        print_stdout=print_stdout,
+        print_stderr=print_stderr,
+        return_=return_,
+        return_stdout=return_stdout,
+        return_stderr=return_stderr,
+        logger=logger,
+    )
+
+
+def ls_cmd(path: PathLike, /, *, long: bool = False) -> list[str]:
+    """Command to use 'ls' to list directory contents."""
+    args: list[str] = ["ls", "-a"]
+    if long:
+        args.append("-l")
+    return [*args, str(path)]
+
+
+##
+
+
 def maybe_parent(path: PathLike, /, *, parent: bool = False) -> Path:
     """Get the parent of a path, if required."""
     path = Path(path)
@@ -670,9 +783,6 @@ def mkdir(path: PathLike, /, *, sudo: bool = False, parent: bool = False) -> Non
         run(*sudo_cmd(*mkdir_cmd(path, parent=parent)))
     else:
         maybe_parent(path, parent=parent).mkdir(parents=True, exist_ok=True)
-
-
-##
 
 
 def mkdir_cmd(path: PathLike, /, *, parent: bool = False) -> list[str]:
@@ -2672,6 +2782,8 @@ __all__ = [
     "git_clone_cmd",
     "install",
     "install_cmd",
+    "ls",
+    "ls_cmd",
     "maybe_parent",
     "maybe_sudo_cmd",
     "mkdir",
