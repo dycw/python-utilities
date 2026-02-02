@@ -2158,18 +2158,23 @@ def check_multi_line_regex(pattern: PatternLike, text: str, /) -> None:
     pattern_use = _to_pattern(pattern)
     pattern_text, pattern_flags = pattern_use.pattern, pattern_use.flags
     pattern_lines, text_lines = [t.splitlines() for t in [pattern_text, text]]
-    num_pattern, num_text = [len(lines) for lines in [pattern_lines, text_lines]]
-    if num_pattern != num_text:
+    try:
+        for i, (pattern_i, text_i) in enumerate(
+            zip(pattern_lines, text_lines, strict=True), start=1
+        ):
+            if search(pattern_i, text_i, flags=pattern_flags) is None:
+                raise CheckMultiLineRegexNoMatchError(
+                    pattern=pattern_text,
+                    text=text,
+                    i=i,
+                    pattern_i=pattern_i,
+                    text_i=text_i,
+                )
+    except ValueError:
+        num_pattern, num_text = [len(lines) for lines in [pattern_lines, text_lines]]
         raise CheckMultiLineRegexNumberOfLinesError(
             pattern=pattern_text, text=text, num_pattern=num_pattern, num_text=num_text
-        )
-    for i, (pattern_i, text_i) in enumerate(
-        zip(pattern_lines, text_lines, strict=True), start=1
-    ):
-        if search(pattern_i, text_i, flags=pattern_flags) is None:
-            raise CheckMultiLineRegexNoMatchError(
-                pattern=pattern_i, text=text_i, line_num=i, total=num_pattern
-            )
+        ) from None
 
 
 ##

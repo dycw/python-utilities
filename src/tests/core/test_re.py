@@ -37,21 +37,6 @@ class TestCheckMultiLineRegex:
         """)
         check_multi_line_regex(pattern, text)
 
-    def test_error_number_of_lines(self) -> None:
-        pattern = normalize_multi_line_str("""
-            [A-Z]+
-            [a-z]+
-            [0-9]+
-        """)
-        text = normalize_multi_line_str("""
-            ABC
-        """)
-        with raises(
-            CheckMultiLineRegexNumberOfLinesError,
-            match=r"Pattern '.*' and text '.*' must contain the same number of lines; got 3 and 1",
-        ):
-            check_multi_line_regex(pattern, text)
-
     def test_error_no_match(self) -> None:
         pattern = normalize_multi_line_str("""
             [A-Z]+
@@ -65,7 +50,41 @@ class TestCheckMultiLineRegex:
         """)
         with raises(
             CheckMultiLineRegexNoMatchError,
-            match=escape(r"Pattern line 2 of 3 '[a-z]+' must match against '123'"),
+            match=escape(r"Line 2: pattern '[a-z]+' must match against '123'"),
+        ):
+            check_multi_line_regex(pattern, text)
+
+    @mark.parametrize(
+        ("pattern", "text"),
+        [
+            param(
+                """
+                    [A-Z]+
+                    [a-z]+
+                    [0-9]+
+                """,
+                """
+                    ABC
+                """,
+            ),
+            param(
+                """
+                    [A-Z]+
+                """,
+                """
+                    ABC
+                    def
+                    123
+                """,
+            ),
+        ],
+    )
+    def test_error_number_of_lines(self, *, pattern: str, text: str) -> None:
+        pattern = normalize_multi_line_str(pattern)
+        text = normalize_multi_line_str(text)
+        with raises(
+            CheckMultiLineRegexNumberOfLinesError,
+            match=r"Pattern '.*' and text '.*' must contain the same number of lines; got \d+ and \d+",
         ):
             check_multi_line_regex(pattern, text)
 
