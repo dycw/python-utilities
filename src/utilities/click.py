@@ -4,12 +4,14 @@ import enum
 import ipaddress
 import pathlib
 import uuid
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from enum import StrEnum
-from typing import TYPE_CHECKING, Literal, TypedDict, assert_never, cast, override
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, assert_never, cast, override
 
+import click
 import whenever
-from click import Choice, Context, Parameter, ParamType
+from click import Choice, Context, Option, Parameter, ParamType
+from click._utils import UNSET
 from click.types import IntParamType, StringParamType
 
 from utilities.core import get_class_name
@@ -18,6 +20,8 @@ from utilities.text import ParseBoolError, parse_bool, split_str
 
 if TYPE_CHECKING:
     import pydantic
+    from click.decorators import FC
+    from click.shell_completion import CompletionItem
 
     from utilities.types import (
         DateDeltaLike,
@@ -55,6 +59,80 @@ _CONTEXT_SETTINGS_INNER = _ContextSettingsInner(
     show_default=True,
 )
 CONTEXT_SETTINGS = _ContextSettings(context_settings=_CONTEXT_SETTINGS_INNER)
+
+
+# options
+
+
+def option(
+    *param_decls: str,
+    type: ParamType | Any | None = None,  # noqa: A002
+    required: bool = False,
+    default: Any | Callable[[], Any] | None = UNSET,
+    callback: Callable[[Context, Parameter, Any], Any] | None = None,
+    nargs: int | None = None,
+    multiple: bool = False,
+    metavar: str | None = None,
+    expose_value: bool = True,
+    is_eager: bool = False,
+    envvar: str | list[str] | None = None,
+    shell_complete: Callable[
+        [Context, Parameter, str], list[CompletionItem] | list[str]
+    ]
+    | None = None,
+    deprecated: bool | str = False,
+    show_default: bool | str | None = None,
+    prompt: bool | str = False,
+    confirmation_prompt: bool | str = False,
+    prompt_required: bool = True,
+    hide_input: bool = False,
+    is_flag: bool | None = None,
+    flag_value: Any = UNSET,
+    count: bool = False,
+    allow_from_autoenv: bool = True,
+    help: str | None = None,  # noqa: A002
+    hidden: bool = False,
+    show_choices: bool = True,
+    show_envvar: bool = False,
+    **attrs: Any,
+) -> Callable[[FC], FC]:
+    """Create an option, but with all the arguments present."""
+    return click.option(
+        *param_decls,
+        type=type,
+        required=required,
+        default=default,
+        callback=callback,
+        nargs=nargs,
+        multiple=multiple,
+        metavar=metavar,
+        expose_value=expose_value,
+        is_eager=is_eager,
+        envvar=envvar,
+        shell_complete=shell_complete,
+        deprecated=deprecated,
+        show_default=show_default,
+        prompt=prompt,
+        confirmation_prompt=confirmation_prompt,
+        prompt_required=prompt_required,
+        hide_input=hide_input,
+        is_flag=is_flag,
+        flag_value=flag_value,
+        count=count,
+        allow_from_autoenv=allow_from_autoenv,
+        help=help,
+        hidden=hidden,
+        show_choices=show_choices,
+        show_envvar=show_envvar,
+        **attrs,
+    )
+
+
+def flag(
+    *param_decls: str, cls: type[Option] | None = None, **attrs: Any
+) -> Callable[[FC], FC]:
+    """Create a flag."""
+    return option(*param_decls, is_flag=True, cls=cls, **attrs)
 
 
 # parameters
