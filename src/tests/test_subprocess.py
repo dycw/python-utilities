@@ -20,6 +20,7 @@ from utilities.core import (
     Permissions,
     TemporaryDirectory,
     TemporaryFile,
+    check_multi_line_regex,
     get_file_group,
     get_file_owner,
     normalize_multi_line_str,
@@ -121,7 +122,6 @@ from utilities.typing import is_sequence_of
 from utilities.version import Version3
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from logging import Logger
 
     from pytest import CaptureFixture
@@ -1223,9 +1223,7 @@ class TestRun:
         assert cap.out == "stdout\n"
         assert cap.err == "stderr\n"
 
-    def test_error_file_not_found(
-        self, *, multiline_regex: Callable[[str, str], None]
-    ) -> None:
+    def test_error_file_not_found(self) -> None:
         with raises(RunFileNotFoundError) as error:
             _ = run("invalid-executable")
         pattern = normalize_multi_line_str(r"""
@@ -1240,11 +1238,9 @@ class TestRun:
 │ env          │ None \s+ │
 └──────────────┴─+─┘
 """)
-        multiline_regex(pattern, str(error.value))
+        check_multi_line_regex(pattern, str(error.value))
 
-    def test_error_file_not_found_multiple_cmds_or_args(
-        self, *, multiline_regex: Callable[[str, str], None]
-    ) -> None:
+    def test_error_file_not_found_multiple_cmds_or_args(self) -> None:
         with raises(RunFileNotFoundError) as error:
             _ = run("invalid-executable", "arg1", "arg2")
         pattern = normalize_multi_line_str(r"""
@@ -1260,7 +1256,7 @@ class TestRun:
 │ env          │ None \s+ │
 └──────────────┴─+─┘
 """)
-        multiline_regex(pattern, str(error.value))
+        check_multi_line_regex(pattern, str(error.value))
 
     def test_error_called_process(self, *, capsys: CaptureFixture) -> None:
         with raises(RunCalledProcessError) as exc_info:
@@ -1379,13 +1375,7 @@ class TestRun:
         record = one(r for r in caplog.records if r.name == logger.name)
         assert not search("Retrying", record.message, flags=MULTILINE)
 
-    def test_logger(
-        self,
-        *,
-        logger: Logger,
-        caplog: LogCaptureFixture,
-        multiline_regex: Callable[[str, str], None],
-    ) -> None:
+    def test_logger(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
         with raises(RunCalledProcessError):
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, logger=logger)  # noqa: S604
         record = one(r for r in caplog.records if r.name == logger.name)
@@ -1413,14 +1403,10 @@ stdout
 stderr
 -------------------------------------------------------------------------------
 """)
-        multiline_regex(pattern, record.message)
+        check_multi_line_regex(pattern, record.message)
 
     def test_logger_and_input(
-        self,
-        *,
-        logger: Logger,
-        caplog: LogCaptureFixture,
-        multiline_regex: Callable[[str, str], None],
+        self, *, logger: Logger, caplog: LogCaptureFixture
     ) -> None:
         input_ = normalize_multi_line_str("""
             key=value
@@ -1459,7 +1445,7 @@ value@stdout
 value@stderr
 -------------------------------------------------------------------------------
 """)
-        multiline_regex(pattern, record.message)
+        check_multi_line_regex(pattern, record.message)
 
     def _test_retry_cmd(self, path: PathLike, attempts: int, /) -> str:
         return normalize_multi_line_str(f"""

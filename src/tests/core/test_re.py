@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from re import DOTALL
+from re import DOTALL, escape
 
 from pytest import mark, param, raises
 
 from utilities.core import (
+    CheckMultiLineRegexNoMatchError,
+    CheckMultiLineRegexNumberOfLinesError,
     ExtractGroupMultipleCaptureGroupsError,
     ExtractGroupMultipleMatchesError,
     ExtractGroupNoCaptureGroupsError,
@@ -12,9 +14,77 @@ from utilities.core import (
     ExtractGroupsMultipleMatchesError,
     ExtractGroupsNoCaptureGroupsError,
     ExtractGroupsNoMatchesError,
+    check_multi_line_regex,
     extract_group,
     extract_groups,
+    normalize_multi_line_str,
 )
+
+
+class TestCheckMultiLineRegex:
+    def test_main(self) -> None:
+        pattern = normalize_multi_line_str("""
+            [A-Z]+
+            [a-z]+
+            [0-9]+
+        """)
+        text = normalize_multi_line_str("""
+            ABC
+            def
+            123
+        """)
+        check_multi_line_regex(pattern, text)
+
+    def test_error_no_match(self) -> None:
+        pattern = normalize_multi_line_str("""
+            [A-Z]+
+            [a-z]+
+            [0-9]+
+        """)
+        text = normalize_multi_line_str("""
+            ABC
+            123
+            def
+        """)
+        with raises(
+            CheckMultiLineRegexNoMatchError,
+            match=escape(r"Line 2: pattern '[a-z]+' must match against '123'"),
+        ):
+            check_multi_line_regex(pattern, text)
+
+    @mark.parametrize(
+        ("pattern", "text"),
+        [
+            param(
+                """
+                    [A-Z]+
+                    [a-z]+
+                    [0-9]+
+                """,
+                """
+                    ABC
+                """,
+            ),
+            param(
+                """
+                    [A-Z]+
+                """,
+                """
+                    ABC
+                    def
+                    123
+                """,
+            ),
+        ],
+    )
+    def test_error_number_of_lines(self, *, pattern: str, text: str) -> None:
+        pattern = normalize_multi_line_str(pattern)
+        text = normalize_multi_line_str(text)
+        with raises(
+            CheckMultiLineRegexNumberOfLinesError,
+            match=r"Pattern '.*' and text '.*' must contain the same number of lines; got \d+ and \d+",
+        ):
+            check_multi_line_regex(pattern, text)
 
 
 class TestExtractGroup:

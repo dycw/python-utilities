@@ -13,7 +13,12 @@ from pytest import CaptureFixture, mark, param, raises
 from pytest_lazy_fixtures import lf
 
 from utilities.constants import SECOND
-from utilities.core import get_now, normalize_multi_line_str, one
+from utilities.core import (
+    check_multi_line_regex,
+    get_now,
+    normalize_multi_line_str,
+    one,
+)
 from utilities.traceback import (
     MakeExceptHookError,
     _make_except_hook_purge,
@@ -24,8 +29,6 @@ from utilities.traceback import (
 from utilities.whenever import format_compact
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from utilities.types import Delta
 
 
@@ -50,7 +53,7 @@ class TestFormatExceptionStack:
             shell=True,
         )
 
-    def test_main(self, *, multiline_regex: Callable[[str, str], None]) -> None:
+    def test_main(self) -> None:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
@@ -70,9 +73,9 @@ class TestFormatExceptionStack:
                 │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
-            multiline_regex(pattern, text)
+            check_multi_line_regex(pattern, text)
 
-    def test_header(self, *, multiline_regex: Callable[[str, str], None]) -> None:
+    def test_header(self) -> None:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
@@ -102,11 +105,9 @@ class TestFormatExceptionStack:
                 │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
-            multiline_regex(pattern, text)
+            check_multi_line_regex(pattern, text)
 
-    def test_capture_locals(
-        self, *, multiline_regex: Callable[[str, str], None]
-    ) -> None:
+    def test_capture_locals(self) -> None:
         try:
             _ = self.func(1, 2, 3, 4, c=5, d=6, e=7)
         except AssertionError as error:
@@ -118,14 +119,12 @@ class TestFormatExceptionStack:
                 │ 1   │ tests.test_traceback:\d+:test_capture_locals \s+ │
                 │     │     _ = self.func\(1, 2, 3, 4, c=5, d=6, e=7\)                           │
                 ├─────┼────────────────────────────────────────────────────────────────────────┤
-                │     │ ┌─────────────────┬──────────────────────────────────────────────────┐ │
-                │     │ │ self            │ <tests.test_traceback.TestFormatExceptionStack   │ │
-                │     │ │                 │ object at 0x[0-9a-z]+> \s+ │ │
-                │     │ │ multiline_regex │ <function multiline_regex.<locals>.func at       │ │
-                │     │ │                 │ 0x[0-9a-z]+> \s+ │ │
-                │     │ │ error           │ AssertionError\('Result \(56\) must be divisible by │ │
-                │     │ │                 │ 10\\nassert \(56 % 10\) == 0'\)                      │ │
-                │     │ └─────────────────┴──────────────────────────────────────────────────┘ │
+                │     │ ┌───────┬────────────────────────────────────────────────────────────┐ │
+                │     │ │ self  │ <tests.test_traceback.TestFormatExceptionStack object at   │ │
+                │     │ │       │ 0x[0-9a-z]+> \s+ │ │
+                │     │ │ error │ AssertionError\('Result \(56\) must be divisible by           │ │
+                │     │ │       │ 10\\nassert \(56 % 10\) == 0'\)                                │ │
+                │     │ └───────┴────────────────────────────────────────────────────────────┘ │
                 ├─────┼────────────────────────────────────────────────────────────────────────┤
                 │ 2   │ tests.test_traceback:\d+:func \s+ │
                 │     │     assert result % 10 == 0, f"Result \({result}\) must be divisible by  │
@@ -153,9 +152,9 @@ class TestFormatExceptionStack:
                 │     │ assert \(56 % 10\) == 0\)                                                 │
                 └─────┴────────────────────────────────────────────────────────────────────────┘
             """)
-            multiline_regex(pattern, text)
+            check_multi_line_regex(pattern, text)
 
-    def test_subprocess(self, *, multiline_regex: Callable[[str, str], None]) -> None:
+    def test_subprocess(self) -> None:
         try:
             _ = self.func_subprocess()
         except CalledProcessError as error:
@@ -181,7 +180,7 @@ class TestFormatExceptionStack:
                 │     │ \)                                                                 │
                 └─────┴───────────────────────────────────────────────────────────────────┘
             """)
-            multiline_regex(pattern, text)
+            check_multi_line_regex(pattern, text)
 
 
 class TestMakeExceptHook:
