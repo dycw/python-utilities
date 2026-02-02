@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from re import DOTALL
+from re import DOTALL, escape
 
 from pytest import mark, param, raises
 
+from utilities._core_errors import (
+    CheckMultiLineRegexNoMatchError,
+    CheckMultiLineRegexNumberOfLinesError,
+)
 from utilities.core import (
     ExtractGroupMultipleCaptureGroupsError,
     ExtractGroupMultipleMatchesError,
@@ -12,9 +16,58 @@ from utilities.core import (
     ExtractGroupsMultipleMatchesError,
     ExtractGroupsNoCaptureGroupsError,
     ExtractGroupsNoMatchesError,
+    check_multi_line_regex,
     extract_group,
     extract_groups,
+    normalize_multi_line_str,
 )
+
+
+class TestCheckMultiLineRegex:
+    def test_main(self) -> None:
+        pattern = normalize_multi_line_str("""
+            [A-Z]+
+            [a-z]+
+            [0-9]+
+        """)
+        text = normalize_multi_line_str("""
+            ABC
+            def
+            123
+        """)
+        check_multi_line_regex(pattern, text)
+
+    def test_error_number_of_lines(self) -> None:
+        pattern = normalize_multi_line_str("""
+            [A-Z]+
+            [a-z]+
+            [0-9]+
+        """)
+        text = normalize_multi_line_str("""
+            ABC
+        """)
+        with raises(
+            CheckMultiLineRegexNumberOfLinesError,
+            match=r"Pattern '.*' and text '.*' must contain the same number of lines; got 3 and 1",
+        ):
+            check_multi_line_regex(pattern, text)
+
+    def test_error_no_match(self) -> None:
+        pattern = normalize_multi_line_str("""
+            [A-Z]+
+            [a-z]+
+            [0-9]+
+        """)
+        text = normalize_multi_line_str("""
+            ABC
+            123
+            def
+        """)
+        with raises(
+            CheckMultiLineRegexNoMatchError,
+            match=escape(r"Pattern line 2 of 3 '[a-z]+' must match against '123'"),
+        ):
+            check_multi_line_regex(pattern, text)
 
 
 class TestExtractGroup:

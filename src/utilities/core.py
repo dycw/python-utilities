@@ -3792,6 +3792,7 @@ __all__ = [
     "add_filters",
     "always_iterable",
     "async_sleep",
+    "check_multi_line_regex",
     "check_unique",
     "chmod",
     "chown",
