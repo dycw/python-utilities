@@ -20,6 +20,7 @@ from utilities.core import (
     Permissions,
     TemporaryDirectory,
     TemporaryFile,
+    check_multi_line_regex,
     get_file_group,
     get_file_owner,
     normalize_multi_line_str,
@@ -1223,9 +1224,7 @@ class TestRun:
         assert cap.out == "stdout\n"
         assert cap.err == "stderr\n"
 
-    def test_error_file_not_found(
-        self, *, multiline_regex: Callable[[str, str], None]
-    ) -> None:
+    def test_error_file_not_found(self) -> None:
         with raises(RunFileNotFoundError) as error:
             _ = run("invalid-executable")
         pattern = normalize_multi_line_str(r"""
@@ -1240,11 +1239,9 @@ class TestRun:
 │ env          │ None \s+ │
 └──────────────┴─+─┘
 """)
-        multiline_regex(pattern, str(error.value))
+        check_multi_line_regex(pattern, str(error.value))
 
-    def test_error_file_not_found_multiple_cmds_or_args(
-        self, *, multiline_regex: Callable[[str, str], None]
-    ) -> None:
+    def test_error_file_not_found_multiple_cmds_or_args(self) -> None:
         with raises(RunFileNotFoundError) as error:
             _ = run("invalid-executable", "arg1", "arg2")
         pattern = normalize_multi_line_str(r"""
@@ -1260,7 +1257,7 @@ class TestRun:
 │ env          │ None \s+ │
 └──────────────┴─+─┘
 """)
-        multiline_regex(pattern, str(error.value))
+        check_multi_line_regex(pattern, str(error.value))
 
     def test_error_called_process(self, *, capsys: CaptureFixture) -> None:
         with raises(RunCalledProcessError) as exc_info:

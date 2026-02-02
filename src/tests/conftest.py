@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from contextlib import AbstractContextManager, contextmanager, suppress
 from logging import DEBUG, Logger, LogRecord, getLogger, setLogRecordFactory
-from re import search
 from typing import TYPE_CHECKING
 
 from hypothesis import HealthCheck
@@ -22,7 +21,7 @@ from utilities.core import (
 from utilities.pytest import skipif_ci
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Callable, Iterator
+    from collections.abc import AsyncIterator, Iterator
     from pathlib import Path
 
     from _pytest.fixtures import SubRequest
@@ -190,37 +189,6 @@ def temp_path_nested_not_exist(*, tmp_path: Path, temp_path_not_exist: Path) -> 
 @fixture
 def temp_path_parent_file(*, temp_file: Path) -> Path:
     return temp_file / temp_file.name
-
-
-# fixtures - re
-
-
-@fixture
-def multiline_regex() -> Callable[[str, str], None]:
-    def func(pattern: str, text: str, /) -> None:
-        pattern_lines, text_lines = [t.splitlines() for t in [pattern, text]]
-        m, n = [len(lines) for lines in [pattern_lines, text_lines]]
-        assert m == n
-        for i in range(1, m + 1):
-            pattern_i = "\n".join(pattern_lines[:i])
-            text_i = "\n".join(text_lines[:i])
-            assert search(pattern_i, text_i) is not None, f"""\
--------------------------------------------------------------------------------
--- PATTERN (line {i}) ---------------------------------------------------------
-{pattern_i.splitlines()[-1]}
--------------------------------------------------------------------------------
--- TEXT (line {i}) ------------------------------------------------------------
-{text_i.splitlines()[-1]}
--------------------------------------------------------------------------------
--- PATTERN --------------------------------------------------------------------
-{pattern}
--------------------------------------------------------------------------------
--- TEXT -----------------------------------------------------------------------
-{text}
--------------------------------------------------------------------------------
-"""
-
-    return func
 
 
 # fixtures - redis
