@@ -122,7 +122,6 @@ from utilities.typing import is_sequence_of
 from utilities.version import Version3
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from logging import Logger
 
     from pytest import CaptureFixture
@@ -1376,13 +1375,7 @@ class TestRun:
         record = one(r for r in caplog.records if r.name == logger.name)
         assert not search("Retrying", record.message, flags=MULTILINE)
 
-    def test_logger(
-        self,
-        *,
-        logger: Logger,
-        caplog: LogCaptureFixture,
-        multiline_regex: Callable[[str, str], None],
-    ) -> None:
+    def test_logger(self, *, logger: Logger, caplog: LogCaptureFixture) -> None:
         with raises(RunCalledProcessError):
             _ = run("echo stdout; echo stderr 1>&2; exit 1", shell=True, logger=logger)  # noqa: S604
         record = one(r for r in caplog.records if r.name == logger.name)
@@ -1410,14 +1403,10 @@ stdout
 stderr
 -------------------------------------------------------------------------------
 """)
-        multiline_regex(pattern, record.message)
+        check_multi_line_regex(pattern, record.message)
 
     def test_logger_and_input(
-        self,
-        *,
-        logger: Logger,
-        caplog: LogCaptureFixture,
-        multiline_regex: Callable[[str, str], None],
+        self, *, logger: Logger, caplog: LogCaptureFixture
     ) -> None:
         input_ = normalize_multi_line_str("""
             key=value
@@ -1456,7 +1445,7 @@ value@stdout
 value@stderr
 -------------------------------------------------------------------------------
 """)
-        multiline_regex(pattern, record.message)
+        check_multi_line_regex(pattern, record.message)
 
     def _test_retry_cmd(self, path: PathLike, attempts: int, /) -> str:
         return normalize_multi_line_str(f"""

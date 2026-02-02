@@ -29,8 +29,6 @@ from utilities.traceback import (
 from utilities.whenever import format_compact
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from utilities.types import Delta
 
 
@@ -156,7 +154,7 @@ class TestFormatExceptionStack:
             """)
             check_multi_line_regex(pattern, text)
 
-    def test_subprocess(self, *, multiline_regex: Callable[[str, str], None]) -> None:
+    def test_subprocess(self) -> None:
         try:
             _ = self.func_subprocess()
         except CalledProcessError as error:
@@ -182,7 +180,7 @@ class TestFormatExceptionStack:
                 │     │ \)                                                                 │
                 └─────┴───────────────────────────────────────────────────────────────────┘
             """)
-            multiline_regex(pattern, text)
+            check_multi_line_regex(pattern, text)
 
 
 class TestMakeExceptHook:
