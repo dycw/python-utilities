@@ -508,8 +508,8 @@ class TestLs:
         result = ls(tmp_path, long=True, return_=True)
         expected = normalize_multi_line_str(r"""
             total \d+
-            drwx------@\s+\d+\s+\w+\s+\w+\s+\d+\s+\d+\s+\w+\s+\d{2}:\d{2}\s+\.
-            drwx------@\s+\d+\s+\w+\s+\w+\s+\d+\s+\d+\s+\w+\s+\d{2}:\d{2}\s+\.\.
+            drwx------@?\s+\d+\s+\w+\s+\w+\s+\d+\s+(\d+\s+\w+|\w+\s+\d+)\s+\d{2}:\d{2}\s+\.
+            drwx------@?\s+\d+\s+\w+\s+\w+\s+\d+\s+(\d+\s+\w+|\w+\s+\d+)\s+\d{2}:\d{2}\s+\.\.
         """)
         check_multi_line_regex(expected, result)
 
