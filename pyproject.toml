@@ -59,6 +59,7 @@
   authors = [{ email = "d.wan@icloud.com", name = "Derek Wan" }]
   dependencies = [
     "coloredlogs>=15.0.1",
+    "more-itertools>=10.8.0",
     "rich>=14.3.2",
     "typing-extensions>=4.15.0",
     "tzdata>=2025.3",

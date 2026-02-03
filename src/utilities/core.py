@@ -89,6 +89,7 @@ from zipfile import ZipFile
 from zoneinfo import ZoneInfo
 
 from coloredlogs import ColoredFormatter
+from more_itertools import peekable
 from rich.console import Console
 from rich.pretty import pretty_repr
 from rich.table import Table
@@ -1017,6 +1018,20 @@ def one_str(
             first=error.first,
             second=error.second,
         ) from None
+
+
+##
+
+
+def pairwise_tail[T](iterable: Iterable[T], /) -> Iterator[tuple[T, T | Sentinel]]:
+    """Return successive overlapping pairs taken from the input iterable."""
+    peek = peekable(iterable)
+    curr: T | Sentinel = sentinel
+    next_: T | Sentinel = sentinel
+    while bool(peek):
+        curr = next(peek)
+        next_ = peek.peek(sentinel)
+        yield curr, next_
 
 
 ##
@@ -3863,6 +3878,7 @@ __all__ = [
     "num_years",
     "one",
     "one_str",
+    "pairwise_tail",
     "read_bytes",
     "read_pickle",
     "read_text",
