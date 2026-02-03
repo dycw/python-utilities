@@ -6,7 +6,6 @@ import pathlib
 import uuid
 from collections.abc import Callable, Iterable
 from enum import StrEnum
-from re import search
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, assert_never, cast, override
 
 import click
@@ -16,7 +15,7 @@ from click._utils import UNSET
 from click.types import IntParamType, StringParamType
 
 from utilities._core_errors import ExtractGroupError
-from utilities.core import Sentinel, extract_group, get_class_name, pairwise_tail
+from utilities.core import extract_group, get_class_name
 from utilities.enum import ParseEnumError, parse_enum
 from utilities.text import ParseBoolError, parse_bool, split_str
 
@@ -202,18 +201,13 @@ def flag(
 ) -> Callable[[FC], FC]:
     """Create a flag."""
     param_decls_use: list[str] = []
-    for curr, next_ in pairwise_tail(param_decls):
+    for arg in param_decls:
         try:
-            flag_name = extract_group(r"^--([\w\-]+)$", curr)
+            flag_name = extract_group(r"^--([\w\-]+)$", arg)
         except ExtractGroupError:
-            param_decls_use.append(curr)
+            param_decls_use.append(arg)
         else:
-            if (isinstance(next_, str) and not search(r"^--no", next_)) or isinstance(
-                next_, Sentinel
-            ):
-                param_decls_use.append(f"--{flag_name} / --no-{flag_name}")
-            else:
-                param_decls_use.append(curr)
+            param_decls_use.append(f"--{flag_name} / --no-{flag_name}")
     return option(
         *param_decls_use,
         type=type,
