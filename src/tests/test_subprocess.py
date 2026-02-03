@@ -519,6 +519,11 @@ class TestLsCmd:
         expected = ["ls", "-a", "~/path"]
         assert result == expected
 
+    def test_human(self) -> None:
+        result = ls_cmd("~/path", human=True)
+        expected = ["ls", "-a", "-h", "~/path"]
+        assert result == expected
+
     def test_long(self) -> None:
         result = ls_cmd("~/path", long=True)
         expected = ["ls", "-a", "-l", "~/path"]

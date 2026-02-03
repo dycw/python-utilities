@@ -661,6 +661,7 @@ def ls(
     /,
     *,
     sudo: bool = False,
+    human: bool = False,
     long: bool = False,
     print: bool = False,
     print_stdout: bool = False,
@@ -676,6 +677,7 @@ def ls(
     /,
     *,
     sudo: bool = False,
+    human: bool = False,
     long: bool = False,
     print: bool = False,
     print_stdout: bool = False,
@@ -691,6 +693,7 @@ def ls(
     /,
     *,
     sudo: bool = False,
+    human: bool = False,
     long: bool = False,
     print: bool = False,
     print_stdout: bool = False,
@@ -706,6 +709,7 @@ def ls(
     /,
     *,
     sudo: bool = False,
+    human: bool = False,
     long: bool = False,
     print: bool = False,
     print_stdout: bool = False,
@@ -721,6 +725,7 @@ def ls(
     /,
     *,
     sudo: bool = False,
+    human: bool = False,
     long: bool = False,
     print: bool = False,
     print_stdout: bool = False,
@@ -735,6 +740,7 @@ def ls(
     /,
     *,
     sudo: bool = False,
+    human: bool = False,
     long: bool = False,
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
@@ -746,7 +752,7 @@ def ls(
 ) -> str | None:
     """List directory contents."""
     return run(
-        *maybe_sudo_cmd(*ls_cmd(path, long=long), sudo=sudo),
+        *maybe_sudo_cmd(*ls_cmd(path, human=human, long=long), sudo=sudo),
         print=print,
         print_stdout=print_stdout,
         print_stderr=print_stderr,
@@ -757,9 +763,11 @@ def ls(
     )
 
 
-def ls_cmd(path: PathLike, /, *, long: bool = False) -> list[str]:
+def ls_cmd(path: PathLike, /, *, human: bool = False, long: bool = False) -> list[str]:
     """Command to use 'ls' to list directory contents."""
     args: list[str] = ["ls", "-a"]
+    if human:
+        args.append("-h")
     if long:
         args.append("-l")
     return [*args, str(path)]
