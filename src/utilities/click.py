@@ -171,7 +171,6 @@ def option(
 
 def flag(
     *param_decls: str,
-    type: ParamType | Any | None = None,  # noqa: A002
     required: bool = False,
     default: Any | Callable[[], Any] | None = UNSET,
     callback: Callable[[Context, Parameter, Any], Any] | None = None,
@@ -210,7 +209,6 @@ def flag(
             param_decls_use.append(f"--{flag_name} / --no-{flag_name}")
     return option(
         *param_decls_use,
-        type=type,
         required=required,
         default=default,
         callback=callback,
