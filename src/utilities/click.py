@@ -4,20 +4,25 @@ import enum
 import ipaddress
 import pathlib
 import uuid
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from enum import StrEnum
-from typing import TYPE_CHECKING, Literal, TypedDict, assert_never, cast, override
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, assert_never, cast, override
 
+import click
 import whenever
-from click import Choice, Context, Parameter, ParamType
+from click import Argument, Choice, Context, Option, Parameter, ParamType
+from click._utils import UNSET
 from click.types import IntParamType, StringParamType
 
-from utilities.core import get_class_name
+from utilities._core_errors import ExtractGroupError
+from utilities.core import extract_group, get_class_name
 from utilities.enum import ParseEnumError, parse_enum
 from utilities.text import ParseBoolError, parse_bool, split_str
 
 if TYPE_CHECKING:
     import pydantic
+    from click.decorators import FC
+    from click.shell_completion import CompletionItem
 
     from utilities.types import (
         DateDeltaLike,
@@ -55,6 +60,182 @@ _CONTEXT_SETTINGS_INNER = _ContextSettingsInner(
     show_default=True,
 )
 CONTEXT_SETTINGS = _ContextSettings(context_settings=_CONTEXT_SETTINGS_INNER)
+
+
+# options
+
+
+def argument(
+    *param_decls: str,
+    cls: type[Argument] | None = None,
+    type: ParamType | Any | None = None,  # noqa: A002
+    required: bool | None = None,
+    default: Any | Callable[[], Any] | None = UNSET,
+    callback: Callable[[Context, Parameter, Any], Any] | None = None,
+    nargs: int | None = None,
+    metavar: str | None = None,
+    expose_value: bool = True,
+    is_eager: bool = False,
+    envvar: str | list[str] | None = None,
+    shell_complete: Callable[
+        [Context, Parameter, str], list[CompletionItem] | list[str]
+    ]
+    | None = None,
+    deprecated: bool | str = False,
+) -> Callable[[FC], FC]:
+    """Create an option, but with all the function arguments present."""
+    if required is None:
+        required_use = (default is UNSET) and (nargs is not None)
+    else:
+        required_use = required
+    return click.argument(
+        *param_decls,
+        cls=cls,
+        type=type,
+        required=required_use,
+        default=default,
+        callback=callback,
+        nargs=nargs,
+        metavar=metavar,
+        expose_value=expose_value,
+        is_eager=is_eager,
+        envvar=envvar,
+        shell_complete=shell_complete,
+        deprecated=deprecated,
+    )
+
+
+def option(
+    *param_decls: str,
+    cls: type[Option] | None = None,
+    type: ParamType | Any | None = None,  # noqa: A002
+    required: bool = False,
+    default: Any | Callable[[], Any] | None = UNSET,
+    callback: Callable[[Context, Parameter, Any], Any] | None = None,
+    nargs: int | None = None,
+    multiple: bool = False,
+    metavar: str | None = None,
+    expose_value: bool = True,
+    is_eager: bool = False,
+    envvar: str | list[str] | None = None,
+    shell_complete: Callable[
+        [Context, Parameter, str], list[CompletionItem] | list[str]
+    ]
+    | None = None,
+    deprecated: bool | str = False,
+    show_default: bool | str | None = None,
+    prompt: bool | str = False,
+    confirmation_prompt: bool | str = False,
+    prompt_required: bool = True,
+    hide_input: bool = False,
+    is_flag: bool | None = None,
+    flag_value: Any = UNSET,
+    count: bool = False,
+    allow_from_autoenv: bool = True,
+    help: str | None = None,  # noqa: A002
+    hidden: bool = False,
+    show_choices: bool = True,
+    show_envvar: bool = False,
+) -> Callable[[FC], FC]:
+    """Create an option, but with all the function arguments present."""
+    return click.option(
+        *param_decls,
+        cls=cls,
+        type=type,
+        required=required,
+        default=default,
+        callback=callback,
+        nargs=nargs,
+        multiple=multiple,
+        metavar=metavar,
+        expose_value=expose_value,
+        is_eager=is_eager,
+        envvar=envvar,
+        shell_complete=shell_complete,
+        deprecated=deprecated,
+        show_default=show_default,
+        prompt=prompt,
+        confirmation_prompt=confirmation_prompt,
+        prompt_required=prompt_required,
+        hide_input=hide_input,
+        is_flag=is_flag,
+        flag_value=flag_value,
+        count=count,
+        allow_from_autoenv=allow_from_autoenv,
+        help=help,
+        hidden=hidden,
+        show_choices=show_choices,
+        show_envvar=show_envvar,
+    )
+
+
+def flag(
+    *param_decls: str,
+    type: ParamType | Any | None = None,  # noqa: A002
+    required: bool = False,
+    default: Any | Callable[[], Any] | None = UNSET,
+    callback: Callable[[Context, Parameter, Any], Any] | None = None,
+    nargs: int | None = None,
+    multiple: bool = False,
+    metavar: str | None = None,
+    expose_value: bool = True,
+    is_eager: bool = False,
+    envvar: str | list[str] | None = None,
+    shell_complete: Callable[
+        [Context, Parameter, str], list[CompletionItem] | list[str]
+    ]
+    | None = None,
+    deprecated: bool | str = False,
+    show_default: bool | str | None = None,
+    prompt: bool | str = False,
+    confirmation_prompt: bool | str = False,
+    prompt_required: bool = True,
+    hide_input: bool = False,
+    flag_value: Any = UNSET,
+    count: bool = False,
+    allow_from_autoenv: bool = True,
+    help: str | None = None,  # noqa: A002
+    hidden: bool = False,
+    show_choices: bool = True,
+    show_envvar: bool = False,
+) -> Callable[[FC], FC]:
+    """Create a flag."""
+    param_decls_use: list[str] = []
+    for arg in param_decls:
+        try:
+            flag_name = extract_group(r"^--([\w\-]+)$", arg)
+        except ExtractGroupError:
+            param_decls_use.append(arg)
+        else:
+            param_decls_use.append(f"--{flag_name} / --no-{flag_name}")
+    return option(
+        *param_decls_use,
+        type=type,
+        required=required,
+        default=default,
+        callback=callback,
+        nargs=nargs,
+        multiple=multiple,
+        metavar=metavar,
+        expose_value=expose_value,
+        is_eager=is_eager,
+        envvar=envvar,
+        shell_complete=shell_complete,
+        deprecated=deprecated,
+        show_default=show_default,
+        prompt=prompt,
+        confirmation_prompt=confirmation_prompt,
+        prompt_required=prompt_required,
+        hide_input=hide_input,
+        is_flag=True,
+        flag_value=flag_value,
+        count=count,
+        allow_from_autoenv=allow_from_autoenv,
+        help=help,
+        hidden=hidden,
+        show_choices=show_choices,
+        show_envvar=show_envvar,
+    )
 
 
 # parameters
@@ -891,4 +1072,7 @@ __all__ = [
     "TimeDelta",
     "YearMonth",
     "ZonedDateTime",
+    "argument",
+    "flag",
+    "option",
 ]

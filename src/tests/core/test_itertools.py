@@ -30,6 +30,8 @@ from utilities.core import (
     chunked,
     one,
     one_str,
+    pairwise_tail,
+    sentinel,
     take,
     transpose,
     unique_everseen,
@@ -39,6 +41,8 @@ from utilities.typing import is_sequence_of
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
+
+    from utilities.constants import Sentinel
 
 
 class TestAlwaysIterable:
@@ -210,6 +214,22 @@ class TestOneStr:
             match=r"Iterable .* must contain exactly one string starting with 'ab'; got 'abc', 'abd' and perhaps more",
         ):
             _ = one_str(["abc", "abd"], "ab", head=True, case_sensitive=True)
+
+
+class TestPairwiseTail:
+    @mark.parametrize(
+        ("iterable", "expected"),
+        [
+            param([], []),
+            param([0], [(0, sentinel)]),
+            param([0, 1], [(0, 1), (1, sentinel)]),
+            param([0, 1, 2], [(0, 1), (1, 2), (2, sentinel)]),
+        ],
+    )
+    def test_empty(
+        self, *, iterable: list[int], expected: list[int | Sentinel]
+    ) -> None:
+        assert list(pairwise_tail(iterable)) == expected
 
 
 class TestTake:

@@ -7,9 +7,10 @@ from operator import attrgetter
 from re import search
 from typing import TYPE_CHECKING, Any, ClassVar
 
+import click
 import pydantic
 import whenever
-from click import ParamType, argument, command, option
+from click import ParamType, command
 from click.testing import CliRunner
 from hypothesis import given
 from hypothesis.strategies import (
@@ -55,8 +56,9 @@ from utilities.click import (
     TimeDelta,
     YearMonth,
     ZonedDateTime,
+    flag,
 )
-from utilities.core import get_class_name, normalize_multi_line_str
+from utilities.core import get_class_name, normalize_multi_line_str, substitute
 from utilities.hypothesis import (
     date_deltas,
     date_time_deltas,
@@ -112,6 +114,17 @@ class _Case[T]:
 
 
 ##
+
+
+class TestArgument:
+    def test_main(self) -> None:
+        @command()
+        @utilities.click.argument("value", type=str)
+        def cli(*, value: str) -> None:
+            assert value == ""
+
+        result = CliRunner().invoke(cli, args=[""])
+        assert result.exit_code == 0, result.stderr
 
 
 class TestCLIHelp:
@@ -221,7 +234,7 @@ class TestCLIHelp:
     )
     def test_main(self, *, param: Any, default: Any, expected: str) -> None:
         @command()
-        @option("--value", type=param, default=default, show_default=True)
+        @click.option("--value", type=param, default=default, show_default=True)
         def cli(*, value: Any) -> None:
             _ = value
 
@@ -239,7 +252,7 @@ class TestContextSettings:
                 **_CONTEXT_SETTINGS_INNER,
             }
         )
-        @option(
+        @click.option(
             "--flag",
             help="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
         )
@@ -271,7 +284,7 @@ Options:
 
     def test_show_default(self) -> None:
         @command(**CONTEXT_SETTINGS)
-        @option("--flag", default=False)
+        @click.option("--flag", default=False)
         def cli(*, flag: bool) -> None:
             _ = flag
 
@@ -290,7 +303,7 @@ Options:
 class TestEnum:
     def test_error(self) -> None:
         @command()
-        @option(
+        @click.option(
             "--value",
             type=utilities.click.Enum(_ExampleEnum),
             default=_ExampleStrEnum.ak,
@@ -306,6 +319,33 @@ class TestEnum:
         )
 
 
+class TestFlag:
+    @mark.parametrize(
+        ("default", "text"), [param(False, "no-value"), param(True, "value")]
+    )
+    def test_main(self, *, default: bool, text: str) -> None:
+        @command()
+        @flag("--value", default=default, show_default=True)
+        def cli(*, value: bool) -> None:
+            _ = value
+
+        result = CliRunner().invoke(cli, ["--help"])
+        assert result.exit_code == 0, result.stderr
+        expected = normalize_multi_line_str(
+            substitute(
+                """
+                    Usage: cli [OPTIONS]
+
+                    Options:
+                      --value / --no-value  [default: ${default}]
+                      --help                Show this message and exit.
+                """,
+                default=text,
+            )
+        )
+        assert result.stdout == expected
+
+
 class TestFrozenSetAndList:
     @mark.parametrize(
         ("param", "default"),
@@ -317,7 +357,7 @@ class TestFrozenSetAndList:
     )
     def test_empty(self, *, param: ParamType, default: Any) -> None:
         @command()
-        @option("--value", type=param, default=default)
+        @click.option("--value", type=param, default=default)
         def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
             assert value is None
 
@@ -334,7 +374,7 @@ class TestFrozenSetAndList:
     )
     def test_error(self, *, param: ParamType) -> None:
         @command()
-        @option("--value", type=param, default=0)
+        @click.option("--value", type=param, default=0)
         def cli(*, value: list[_ExampleEnum] | frozenset[_ExampleEnum]) -> None:
             _ = value
 
@@ -344,6 +384,17 @@ class TestFrozenSetAndList:
             "Invalid value for '--value': Object '0' of type 'int' must be a (frozenset|list)",
             result.stderr,
         )
+
+
+class TestOption:
+    def test_main(self) -> None:
+        @command()
+        @utilities.click.option("--value", type=str, default=None)
+        def cli(*, value: str | None) -> None:
+            assert value is None
+
+        result = CliRunner().invoke(cli, args=[])
+        assert result.exit_code == 0, result.stderr
 
 
 class TestParameters:
@@ -552,7 +603,7 @@ class TestParameters:
         value_use = data.draw(strategy)
 
         @command()
-        @option("--value", type=param)
+        @click.option("--value", type=param)
         def cli(*, value: Any) -> None:
             assert value == value_use
 
@@ -570,7 +621,7 @@ class TestParameters:
         default = data.draw(strategy)
 
         @command()
-        @option("--value", type=param, default=default)
+        @click.option("--value", type=param, default=default)
         def cli(*, value: Any) -> None:
             assert value == default
 
@@ -582,7 +633,7 @@ class TestParameters:
     )
     def test_empty_string(self, *, param: ParamType) -> None:
         @command()
-        @argument("value", type=param)
+        @click.argument("value", type=param)
         def cli(*, value: Any) -> None:
             assert value is None
 
@@ -594,7 +645,7 @@ class TestParameters:
     )
     def test_none(self, *, param: ParamType) -> None:
         @command()
-        @option("--value", type=param, default=None)
+        @click.option("--value", type=param, default=None)
         def cli(*, value: Any) -> None:
             assert value is None
 
@@ -607,7 +658,7 @@ class TestParameters:
     )
     def test_cli_fail(self, *, param: ParamType) -> None:
         @command()
-        @argument("value", type=param)
+        @click.argument("value", type=param)
         def cli(*, value: Any) -> None:
             _ = value
 
@@ -634,7 +685,9 @@ class TestParameters:
 class TestPath:
     def test_exists(self, *, temp_file: pathlib.Path) -> None:
         @command()
-        @option("--path", type=utilities.click.Path(exist=True), default=temp_file)
+        @click.option(
+            "--path", type=utilities.click.Path(exist=True), default=temp_file
+        )
         def cli(*, path: pathlib.Path) -> None:
             assert path.exists()
 
@@ -643,7 +696,7 @@ class TestPath:
 
     def test_not_exist(self, *, temp_path_not_exist: pathlib.Path) -> None:
         @command()
-        @option(
+        @click.option(
             "--path",
             type=utilities.click.Path(exist=False),
             default=temp_path_not_exist,
@@ -656,7 +709,7 @@ class TestPath:
 
     def test_existing_file(self, *, temp_file: pathlib.Path) -> None:
         @command()
-        @option(
+        @click.option(
             "--path",
             type=utilities.click.Path(exist="existing file"),
             default=temp_file,
@@ -669,7 +722,7 @@ class TestPath:
 
     def test_existing_dir(self, *, tmp_path: pathlib.Path) -> None:
         @command()
-        @option(
+        @click.option(
             "--path", type=utilities.click.Path(exist="existing dir"), default=tmp_path
         )
         def cli(*, path: pathlib.Path) -> None:
@@ -686,7 +739,7 @@ class TestPath:
             temp_path_not_exist.touch()
 
         @command()
-        @option(
+        @click.option(
             "--path",
             type=utilities.click.Path(exist="file if exists"),
             default=temp_path_not_exist,
@@ -705,7 +758,7 @@ class TestPath:
             temp_path_not_exist.mkdir()
 
         @command()
-        @option(
+        @click.option(
             "--path",
             type=utilities.click.Path(exist="dir if exists"),
             default=temp_path_not_exist,
@@ -718,7 +771,7 @@ class TestPath:
 
     def test_error_exists(self, *, temp_path_not_exist: pathlib.Path) -> None:
         @command()
-        @option(
+        @click.option(
             "--path", type=utilities.click.Path(exist=True), default=temp_path_not_exist
         )
         def cli(*, path: pathlib.Path) -> None:
@@ -730,7 +783,9 @@ class TestPath:
 
     def test_error_not_exist(self, *, temp_file: pathlib.Path) -> None:
         @command()
-        @option("--path", type=utilities.click.Path(exist=False), default=temp_file)
+        @click.option(
+            "--path", type=utilities.click.Path(exist=False), default=temp_file
+        )
         def cli(*, path: pathlib.Path) -> None:
             _ = path
 
@@ -740,7 +795,7 @@ class TestPath:
 
     def test_error_existing_file(self, *, tmp_path: pathlib.Path) -> None:
         @command()
-        @option(
+        @click.option(
             "--path", type=utilities.click.Path(exist="existing file"), default=tmp_path
         )
         def cli(*, path: pathlib.Path) -> None:
@@ -752,7 +807,7 @@ class TestPath:
 
     def test_error_existing_dir(self, *, temp_file: pathlib.Path) -> None:
         @command()
-        @option(
+        @click.option(
             "--path", type=utilities.click.Path(exist="existing dir"), default=temp_file
         )
         def cli(*, path: pathlib.Path) -> None:
@@ -766,7 +821,7 @@ class TestPath:
 
     def test_error_file_if_exists(self, *, tmp_path: pathlib.Path) -> None:
         @command()
-        @option(
+        @click.option(
             "--path",
             type=utilities.click.Path(exist="file if exists"),
             default=tmp_path,
@@ -782,7 +837,7 @@ class TestPath:
 
     def test_error_dir_if_exists(self, *, temp_file: pathlib.Path) -> None:
         @command()
-        @option(
+        @click.option(
             "--path",
             type=utilities.click.Path(exist="dir if exists"),
             default=temp_file,
