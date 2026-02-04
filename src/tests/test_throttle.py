@@ -171,7 +171,7 @@ class TestThrottle:
             with raises(CustomError):
                 await func()
             assert counter == (i + 1)
-            assert await anyio.Path(temp_file).is_file()
+            assert not await anyio.Path(temp_file).exists()
 
     async def test_async_on_func_on_try_failing(self, *, temp_file: Path) -> None:
         class CustomError(Exception): ...
