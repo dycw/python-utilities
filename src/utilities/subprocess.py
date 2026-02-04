@@ -1994,10 +1994,13 @@ def uv_pip_list(
             exclude_editable=exclude_editable,
             format_="json",
             outdated=outdated,
-            index=index,
-            native_tls=native_tls,
+            index=index_i,
+            native_tls=native_tls_i,
         )
-        for outdated in [False, True]
+        for outdated, index_i, native_tls_i in [
+            (False, None, False),
+            (True, index, native_tls),
+        ]
     ]
     text_base, text_outdated = [
         run(*cmds, return_stdout=True) for cmds in [cmds_base, cmds_outdated]
