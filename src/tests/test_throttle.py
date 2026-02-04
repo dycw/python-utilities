@@ -3,6 +3,7 @@ from __future__ import annotations
 from inspect import signature
 from typing import TYPE_CHECKING, NoReturn
 
+import anyio
 from pytest import mark, param, raises
 
 from utilities.constants import IS_CI, SECOND
@@ -122,7 +123,7 @@ class TestThrottle:
         for _ in range(2):
             await func()
             assert counter == 1
-            assert temp_file.is_file()
+            assert await anyio.Path(temp_file).is_file()
 
         await async_sleep(_MULTIPLE * _DURATION)
 
@@ -149,7 +150,7 @@ class TestThrottle:
 
         await func()
         assert counter == 1
-        assert temp_file.is_file()
+        assert await anyio.Path(temp_file).is_file()
         with raises(CustomError):
             await func()
         assert counter == 1
@@ -170,7 +171,7 @@ class TestThrottle:
             with raises(CustomError):
                 await func()
             assert counter == (i + 1)
-            assert not temp_file.exists()
+            assert await anyio.Path(temp_file).is_file()
 
     async def test_async_on_func_on_try_failing(self, *, temp_file: Path) -> None:
         class CustomError(Exception): ...
@@ -187,7 +188,7 @@ class TestThrottle:
         with raises(CustomError):
             await func()
         assert counter == 1
-        assert temp_file.is_file()
+        assert await anyio.Path(temp_file).is_file()
         await func()
         assert counter == 1
 
@@ -196,7 +197,7 @@ class TestThrottle:
         with raises(CustomError):
             await func()
         assert counter == 2
-        assert temp_file.is_file()
+        assert await anyio.Path(temp_file).is_file()
         await func()
         assert counter == 2
 

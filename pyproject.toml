@@ -7,6 +7,7 @@
     "aiohttp>=3.13.3",
     "aiosqlite>=0.22.1",
     "altair>=6.0.0",
+    "anyio>=4.12.1",
     "asyncpg>=0.31.0",
     "atools>=0.14.2",
     "cachetools>=7.0.0",
