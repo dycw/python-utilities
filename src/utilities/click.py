@@ -85,7 +85,7 @@ def argument(
 ) -> Callable[[FC], FC]:
     """Create an option, but with all the function arguments present."""
     if required is None:
-        required_use = (default is UNSET) and (nargs is not None)
+        required_use = (default is UNSET) and ((nargs is None) or (nargs > 0))
     else:
         required_use = required
     return click.argument(
