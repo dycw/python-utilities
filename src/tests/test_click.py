@@ -126,6 +126,16 @@ class TestArgument:
         result = CliRunner().invoke(cli, args=[""])
         assert result.exit_code == 0, result.stderr
 
+    @mark.only
+    def test_error(self) -> None:
+        @command()
+        @utilities.click.argument("value", type=str)
+        def cli(*, value: str) -> None:
+            _ = value
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code != 0, result.stderr
+
 
 class TestCLIHelp:
     @mark.parametrize(
