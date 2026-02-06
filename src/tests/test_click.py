@@ -126,7 +126,15 @@ class TestArgument:
         result = CliRunner().invoke(cli, args=[""])
         assert result.exit_code == 0, result.stderr
 
-    @mark.only
+    def test_required(self) -> None:
+        @command()
+        @utilities.click.argument("value", type=str)
+        def cli(*, value: str) -> None:
+            assert value == ""
+
+        result = CliRunner().invoke(cli, args=[""])
+        assert result.exit_code == 0, result.stderr
+
     def test_error(self) -> None:
         @command()
         @utilities.click.argument("value", type=str)

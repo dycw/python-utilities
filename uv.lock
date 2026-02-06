@@ -579,7 +579,7 @@ wheels = [
 
 [[package]]
 name = "dycw-utilities"
-version = "0.188.20"
+version = "0.188.21"
 source = { editable = "." }
 dependencies = [
     { name = "coloredlogs" },
