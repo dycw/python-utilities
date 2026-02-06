@@ -126,15 +126,27 @@ class TestArgument:
         result = CliRunner().invoke(cli, args=[""])
         assert result.exit_code == 0, result.stderr
 
-    @mark.only
-    def test_error(self) -> None:
+    @mark.parametrize(
+        ("required", "args", "expected"),
+        [
+            param(False, [], 0),
+            param(False, "", 0),
+            param(True, [], 2),
+            param(True, [""], 0),
+            param(None, [], 2),
+            param(None, [""], 0),
+        ],
+    )
+    def test_required(
+        self, *, required: bool | None, args: list[str], expected: int
+    ) -> None:
         @command()
-        @utilities.click.argument("value", type=str)
+        @utilities.click.argument("value", type=str, required=required)
         def cli(*, value: str) -> None:
             _ = value
 
-        result = CliRunner().invoke(cli)
-        assert result.exit_code != 0, result.stderr
+        result = CliRunner().invoke(cli, args=args)
+        assert result.exit_code == expected, result.stderr
 
 
 class TestCLIHelp:
