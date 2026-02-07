@@ -238,6 +238,8 @@ from utilities.constants import (
     HOSTNAME,
     HOURS_PER_DAY,
     HOURS_PER_WEEK,
+    IS_LINUX,
+    IS_MAC,
     LOCAL_TIME_ZONE,
     LOCAL_TIME_ZONE_NAME,
     MAX_BYTES,
@@ -1911,7 +1913,10 @@ def read_text_if_existing_file(path_or_text: PathLike, /) -> str:
     try:
         return read_text(path_or_text)
     except OSError as error:
-        if (error.errno == 63) and (error.strerror == "File name too long"):
+        if (IS_MAC and (error.errno == 63)) or (
+            (IS_LINUX and (error.errno == 36))
+            and (error.strerror == "File name too long")
+        ):
             return str(path_or_text)
         raise  # pragma: no cover
     except ReadTextFileNotFoundError:
