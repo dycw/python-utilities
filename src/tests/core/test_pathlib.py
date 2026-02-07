@@ -80,7 +80,7 @@ class TestReadTextIfExistingFile:
         )
 
     @mark.only
-    def test_long_text_cannot_path(self) -> None:
+    def test_text_file_name_too_long(self) -> None:
         text = 100 * "text"
         with raises(OSError, match="File name too long"):
             _ = Path(text)
