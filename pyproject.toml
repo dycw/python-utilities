@@ -14,7 +14,7 @@
     "click>=8.3.1",
     "cvxpy>=1.8.1",
     "dycw-utilities[test]>=0.184.3",
-    "fastapi>=0.128.2",
+    "fastapi>=0.128.3",
     "fpdf2>=2.8.5",
     "greenlet>=3.3.1",
     "httpx>=0.28.1",
@@ -32,7 +32,7 @@
     "pandas>=3.0.0",
     "pathvalidate>=3.3.1",
     "polars-ols>=0.3.5",
-    "polars>=1.38.0",
+    "polars>=1.38.1",
     "pottery>=3.0.1",
     "pqdm>=0.2.0",
     "psutil>=7.2.2",
@@ -71,7 +71,7 @@
   name = "dycw-utilities"
   readme = "README.md"
   requires-python = ">= 3.12"
-  version = "0.188.21"
+  version = "0.188.22"
 
   [project.entry-points.pytest11]
     pytest-randomly = "utilities.pytest_plugins.pytest_randomly"

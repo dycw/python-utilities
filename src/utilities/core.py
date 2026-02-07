@@ -1910,6 +1910,10 @@ def read_text_if_existing_file(path_or_text: PathLike, /) -> str:
     """Read a text file if it exists."""
     try:
         return read_text(path_or_text)
+    except OSError as error:
+        if (error.errno == 63) and (error.strerror == "File name too long"):
+            return str(path_or_text)
+        raise  # pragma: no cover
     except ReadTextFileNotFoundError:
         return str(path_or_text)
     except ReadTextIsADirectoryError as error:

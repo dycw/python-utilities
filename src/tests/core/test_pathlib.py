@@ -79,6 +79,10 @@ class TestReadTextIfExistingFile:
             temp_path_not_exist
         )
 
+    def test_long_text_cannot_file(self) -> None:
+        text = 100 * "text"
+        assert read_text_if_existing_file(text) == text
+
     def test_error_is_a_directory(self, *, tmp_path: Path) -> None:
         with raises(
             ReadTextIfExistingFileIsADirectoryError,
