@@ -79,8 +79,10 @@ class TestReadTextIfExistingFile:
             temp_path_not_exist
         )
 
-    def test_long_text_cannot_file(self) -> None:
-        text = 100 * "text"
+    def test_text_file_name_too_long(self, *, tmp_path: Path) -> None:
+        text = 1000 * "text"
+        with raises(OSError, match="File name too long"):
+            _ = (tmp_path / text).touch()
         assert read_text_if_existing_file(text) == text
 
     def test_error_is_a_directory(self, *, tmp_path: Path) -> None:
