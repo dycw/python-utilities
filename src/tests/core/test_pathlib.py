@@ -3,7 +3,7 @@ from __future__ import annotations
 from os import mkfifo
 from pathlib import Path
 
-from pytest import raises
+from pytest import mark, raises
 
 from utilities._core_errors import (
     FirstNonDirectoryParentError,
@@ -79,8 +79,11 @@ class TestReadTextIfExistingFile:
             temp_path_not_exist
         )
 
-    def test_long_text_cannot_file(self) -> None:
+    @mark.only
+    def test_long_text_cannot_path(self) -> None:
         text = 100 * "text"
+        with raises(OSError, match="File name too long"):
+            _ = Path(text)
         assert read_text_if_existing_file(text) == text
 
     def test_error_is_a_directory(self, *, tmp_path: Path) -> None:
