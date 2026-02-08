@@ -4,6 +4,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
 from typing import TYPE_CHECKING, Any, assert_never
 
+from utilities.core import apply
 from utilities.iterables import apply_to_tuple
 from utilities.os import get_cpu_use
 from utilities.types import Parallelism
@@ -92,12 +93,32 @@ def concurrent_starmap[T](
 ##
 
 
-def concurrent_apply() -> None:
+def concurrent_apply(
+    *funcs: Callable[[], None],
+    parallelism: Parallelism = "processes",
+    max_workers: IntOrAll = "all",
+    mp_context: BaseContext | None = None,
+    initializer: Callable[[], object] | None = None,
+    initargs: tuple[Any, ...] = (),
+    max_tasks_per_child: int | None = None,
+    thread_name_prefix: str = "",
+    timeout: float | None = None,
+    chunksize: int = 1,
+) -> None:
     """Concurrent function application."""
-
-
-def _apply(func: Callable[[], None], /) -> None:
-    func()
+    _ = concurrent_map(
+        apply,
+        funcs,
+        parallelism=parallelism,
+        max_workers=max_workers,
+        mp_context=mp_context,
+        initializer=initializer,
+        initargs=initargs,
+        max_tasks_per_child=max_tasks_per_child,
+        thread_name_prefix=thread_name_prefix,
+        timeout=timeout,
+        chunksize=chunksize,
+    )
 
 
 __all__ = ["Parallelism", "concurrent_map", "concurrent_starmap"]
