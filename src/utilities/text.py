@@ -49,14 +49,6 @@ class ParseNoneError(Exception):
 ##
 
 
-def prompt_bool(prompt: object = "", /, *, confirm: bool = False) -> bool:
-    """Prompt for a boolean."""
-    return True if confirm else parse_bool(input(prompt))
-
-
-##
-
-
 def split_f_str_equals(text: str, /) -> tuple[str, str]:
     """Split an `f`-string with `=`."""
     first, second = text.split(sep="=", maxsplit=1)
@@ -433,7 +425,6 @@ __all__ = [
     "join_strs",
     "parse_bool",
     "parse_none",
-    "prompt_bool",
     "secret_str",
     "split_f_str_equals",
     "split_key_value_pairs",

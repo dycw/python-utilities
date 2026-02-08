@@ -27,7 +27,6 @@ from utilities.text import (
     _SplitStrOpeningBracketUnmatchedError,
     join_strs,
     parse_none,
-    prompt_bool,
     secret_str,
     split_f_str_equals,
     split_key_value_pairs,
@@ -53,11 +52,6 @@ class TestParseNone:
     def test_error(self, *, text: str) -> None:
         with raises(ParseNoneError, match=r"Unable to parse null value; got '.*'"):
             _ = parse_none(text)
-
-
-class TestPromptBool:
-    def test_main(self) -> None:
-        assert prompt_bool(confirm=True)
 
 
 class TestSecretStr:

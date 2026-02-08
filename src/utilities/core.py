@@ -2953,6 +2953,27 @@ def normalize_str(text: str, /) -> str:
 ##
 
 
+def prompt_bool(
+    prompt: object = "", /, *, default: bool | None = None, confirm: bool = False
+) -> bool:
+    """Prompt for a boolean."""
+
+    match default, confirm:
+        case None, False:
+            return parse_bool(input(prompt))
+        case bool(), False:
+            return default if (result := input(prompt)) == "" else parse_bool(result)
+        case None, True:
+            return True
+        case bool(), True:
+            return True
+        case never:
+            assert_never(never)
+
+
+##
+
+
 def substitute(
     path_or_text: PathLike,
     /,
@@ -3909,6 +3930,7 @@ __all__ = [
     "one_str",
     "pairwise_tail",
     "parse_bool",
+    "prompt_bool",
     "read_bytes",
     "read_pickle",
     "read_text",

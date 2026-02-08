@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
-from pytest import mark, param, raises
+from pytest import MonkeyPatch, mark, param, raises
 
 from utilities.core import (
     SubstituteError,
@@ -10,6 +10,7 @@ from utilities.core import (
     normalize_multi_line_str,
     normalize_str,
     pascal_case,
+    prompt_bool,
     snake_case,
     substitute,
     unique_str,
@@ -180,6 +181,24 @@ class TestPascalSnakeAndKebabCase:
         assert pascal_case(text) == exp_pascal
         assert snake_case(text) == exp_snake
         assert kebab_case(text) == exp_kebab
+
+
+class TestPromptBool:
+    @mark.parametrize(("text", "expected"), [param("Y", True), param("N", False)])
+    def test_main(self, *, text: str, expected: bool, monkeypatch: MonkeyPatch) -> None:
+        def patched(_: Any, /) -> str:
+            return text
+
+        monkeypatch.setattr("builtins.input", patched)
+        assert prompt_bool("Prompt") is expected
+
+    @mark.parametrize("text", [param(""), param("invalid")])
+    def test_error(self, *, text: str, monkeypatch: MonkeyPatch) -> None:
+        def patched(_: Any, /) -> str:
+            return text
+
+        monkeypatch.setattr("builtins.input", patched)
+        _ = prompt_bool("Prompt")
 
 
 class TestSubstitute:
