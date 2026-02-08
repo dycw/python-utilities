@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+from operator import add
+
 from hypothesis import given
 from hypothesis.strategies import integers
 
-from utilities.core import first, identity, last, second
+from utilities.core import apply, first, identity, last, second
 from utilities.hypothesis import pairs, quadruples, triples
+
+
+class TestApply:
+    def test_main(self) -> None:
+        assert apply(add, 1, 2) == 3
 
 
 class TestFirst:

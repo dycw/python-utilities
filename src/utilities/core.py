@@ -875,6 +875,14 @@ def not_func[**P](func: Callable[P, bool], /) -> Callable[P, bool]:
 ###############################################################################
 
 
+def apply[**P, T](func: Callable[P, T], /, *args: P.args, **kwargs: P.kwargs) -> T:
+    """Apply a set of arguments to a function."""
+    return func(*args, **kwargs)
+
+
+##
+
+
 @overload
 def first[T](tup: tuple[T], /) -> T: ...
 @overload
@@ -3876,6 +3884,7 @@ __all__ = [
     "add_adapter",
     "add_filters",
     "always_iterable",
+    "apply",
     "async_sleep",
     "check_multi_line_regex",
     "check_unique",
