@@ -43,6 +43,7 @@ from tests.test_typing_funcs.with_future import (
     TrueOrFalseFutureTypeLit,
 )
 from utilities.constants import Sentinel, sentinel
+from utilities.core import parse_bool
 from utilities.errors import ImpossibleCaseError
 from utilities.functions import ensure_path
 from utilities.hypothesis import (
@@ -69,7 +70,6 @@ from utilities.parse import (
     parse_object,
     serialize_object,
 )
-from utilities.text import parse_bool
 from utilities.types import Number
 from utilities.version import Version2, Version3
 

@@ -32,17 +32,17 @@ from utilities.core import (
     ExtractGroupError,
     OneEmptyError,
     OneNonUniqueError,
+    ParseBoolError,
     extract_group,
     one,
     one_str,
+    parse_bool,
 )
 from utilities.enum import ParseEnumError, parse_enum
 from utilities.math import ParseNumberError, parse_number
 from utilities.text import (
-    ParseBoolError,
     ParseNoneError,
     join_strs,
-    parse_bool,
     parse_none,
     split_key_value_pairs,
     split_str,

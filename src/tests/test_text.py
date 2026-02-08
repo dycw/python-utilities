@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from itertools import chain
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import given
@@ -19,7 +18,6 @@ from pytest import mark, param, raises
 
 from utilities.hypothesis import sentinels, text_ascii
 from utilities.text import (
-    ParseBoolError,
     ParseNoneError,
     _SplitKeyValuePairsDuplicateKeysError,
     _SplitKeyValuePairsSplitError,
@@ -28,9 +26,7 @@ from utilities.text import (
     _SplitStrCountError,
     _SplitStrOpeningBracketUnmatchedError,
     join_strs,
-    parse_bool,
     parse_none,
-    prompt_bool,
     secret_str,
     split_f_str_equals,
     split_key_value_pairs,
@@ -42,47 +38,6 @@ from utilities.text import (
 
 if TYPE_CHECKING:
     from utilities.constants import Sentinel
-
-
-class TestParseBool:
-    @given(data=data(), value=booleans())
-    def test_main(self, *, data: DataObject, value: bool) -> None:
-        match value:
-            case True:
-                extra_cased_texts = ["Y", "Yes", "On"]
-            case False:
-                extra_cased_texts = ["N", "No", "Off"]
-        all_cased_texts = list(chain([str(value), str(int(value))], extra_cased_texts))
-        all_texts = list(
-            chain(
-                extra_cased_texts,
-                map(str.lower, all_cased_texts),
-                map(str.upper, all_cased_texts),
-            )
-        )
-        text = data.draw(sampled_from(all_texts))
-        result = parse_bool(text)
-        assert result is value
-
-    @mark.parametrize(
-        "text",
-        [
-            param("00"),
-            param("11"),
-            param("ffalsee"),
-            param("invalid"),
-            param("nn"),
-            param("nnoo"),
-            param("oofff"),
-            param("oonn"),
-            param("ttruee"),
-            param("yy"),
-            param("yyess"),
-        ],
-    )
-    def test_error(self, *, text: str) -> None:
-        with raises(ParseBoolError, match=r"Unable to parse boolean value; got '.*'"):
-            _ = parse_bool(text)
 
 
 class TestParseNone:
@@ -97,11 +52,6 @@ class TestParseNone:
     def test_error(self, *, text: str) -> None:
         with raises(ParseNoneError, match=r"Unable to parse null value; got '.*'"):
             _ = parse_none(text)
-
-
-class TestPromptBool:
-    def test_main(self) -> None:
-        assert prompt_bool(confirm=True)
 
 
 class TestSecretStr:

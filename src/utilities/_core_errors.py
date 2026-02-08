@@ -938,6 +938,20 @@ class ReprTableHeaderError(ReprTableError):
 
 
 ###############################################################################
+#### serialization ############################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseBoolError(Exception):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse boolean value; got {pretty_repr(self.text)}"
+
+
+###############################################################################
 #### shutil ###################################################################
 ###############################################################################
 
@@ -954,6 +968,29 @@ class WhichError(Exception):
 ###############################################################################
 #### text #####################################################################
 ###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class PromptBoolError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class PromptBoolParseError(PromptBoolError):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Non-boolean response; got {pretty_repr(self.text)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class PromptBoolConfirmNoDefaultError(PromptBoolError):
+    @override
+    def __str__(self) -> str:
+        return "Unable to confirm a no-default prompt"
+
+
+##
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1257,12 +1294,16 @@ __all__ = [
     "OneEmptyError",
     "OneError",
     "OneNonUniqueError",
+    "ParseBoolError",
     "PermissionsError",
     "PermissionsFromHumanIntDigitError",
     "PermissionsFromHumanIntRangeError",
     "PermissionsFromIntError",
     "PermissionsFromIntError",
     "PermissionsFromTextError",
+    "PromptBoolConfirmNoDefaultError",
+    "PromptBoolError",
+    "PromptBoolParseError",
     "ReadBytesError",
     "ReadBytesFileNotFoundError",
     "ReadBytesIsADirectoryError",
