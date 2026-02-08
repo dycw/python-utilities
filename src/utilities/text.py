@@ -19,33 +19,12 @@ from typing import (
 from rich.pretty import pretty_repr
 
 from utilities.constants import BRACKETS, LIST_SEPARATOR, PAIR_SEPARATOR, Sentinel
-from utilities.core import CheckUniqueError, check_unique, transpose
+from utilities.core import CheckUniqueError, check_unique, parse_bool, transpose
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
     from utilities.types import MaybeCallableBoolLike, MaybeCallableStr, StrStrMapping
-
-
-##
-
-
-def parse_bool(text: str, /) -> bool:
-    """Parse text into a boolean value."""
-    if search(r"^(0|False|N|No|Off)$", text, flags=IGNORECASE):
-        return False
-    if search(r"^(1|True|Y|Yes|On)$", text, flags=IGNORECASE):
-        return True
-    raise ParseBoolError(text=text)
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseBoolError(Exception):
-    text: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse boolean value; got {pretty_repr(self.text)}"
 
 
 ##
@@ -448,7 +427,6 @@ def to_str(text: MaybeCallableStr | None | Sentinel, /) -> str | None | Sentinel
 
 
 __all__ = [
-    "ParseBoolError",
     "ParseNoneError",
     "SplitKeyValuePairsError",
     "SplitStrError",
@@ -461,6 +439,5 @@ __all__ = [
     "split_key_value_pairs",
     "split_str",
     "str_encode",
-    "to_bool",
     "to_str",
 ]

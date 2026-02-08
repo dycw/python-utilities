@@ -938,6 +938,20 @@ class ReprTableHeaderError(ReprTableError):
 
 
 ###############################################################################
+#### serialization ############################################################
+###############################################################################
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseBoolError(Exception):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse boolean value; got {pretty_repr(self.text)}"
+
+
+###############################################################################
 #### shutil ###################################################################
 ###############################################################################
 
@@ -1257,6 +1271,7 @@ __all__ = [
     "OneEmptyError",
     "OneError",
     "OneNonUniqueError",
+    "ParseBoolError",
     "PermissionsError",
     "PermissionsFromHumanIntDigitError",
     "PermissionsFromHumanIntRangeError",

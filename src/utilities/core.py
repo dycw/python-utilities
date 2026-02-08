@@ -43,7 +43,7 @@ from lzma import LZMAFile
 from operator import or_
 from os import chdir, environ, getenv, getpid
 from pathlib import Path
-from re import VERBOSE, Pattern, findall, search
+from re import IGNORECASE, VERBOSE, Pattern, findall, search
 from shutil import copyfile, copyfileobj, copytree
 from stat import (
     S_IMODE,
@@ -156,6 +156,7 @@ from utilities._core_errors import (
     OneStrEmptyError,
     OneStrError,
     OneStrNonUniqueError,
+    ParseBoolError,
     PermissionsError,
     PermissionsFromHumanIntDigitError,
     PermissionsFromHumanIntRangeError,
@@ -767,7 +768,7 @@ def suppress_super_attribute_error() -> Iterator[None]:
     try:
         yield
     except AttributeError as error:
-        if not _suppress_super_attribute_error_pattern.search(error.args[0]):
+        if _suppress_super_attribute_error_pattern.search(error.args[0]) is None:
             raise
 
 
@@ -2655,6 +2656,24 @@ def _repr_table_row(
 
 
 ###############################################################################
+#### serialization ############################################################
+###############################################################################
+
+
+def parse_bool(text: str, /) -> bool:
+    """Parse text into a boolean value."""
+    if _parse_bool_true_pattern.search(text) is not None:
+        return True
+    if _parse_bool_false_pattern.search(text) is not None:
+        return False
+    raise ParseBoolError(text=text)
+
+
+_parse_bool_true_pattern = re.compile(r"^(1|True|Y|Yes|On)$", flags=IGNORECASE)
+_parse_bool_false_pattern = re.compile(r"^(0|False|N|No|Off)$", flags=IGNORECASE)
+
+
+###############################################################################
 #### shutil ###################################################################
 ###############################################################################
 
@@ -3757,6 +3776,7 @@ __all__ = [
     "OneStrEmptyError",
     "OneStrError",
     "OneStrNonUniqueError",
+    "ParseBoolError",
     "Permissions",
     "PermissionsError",
     "PermissionsFromHumanIntDigitError",
@@ -3888,6 +3908,7 @@ __all__ = [
     "one",
     "one_str",
     "pairwise_tail",
+    "parse_bool",
     "read_bytes",
     "read_pickle",
     "read_text",
