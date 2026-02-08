@@ -971,6 +971,15 @@ class WhichError(Exception):
 
 
 @dataclass(kw_only=True, slots=True)
+class PromptBoolError(Exception):
+    text: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Non-boolean response; got {pretty_repr(self.text)}"
+
+
+@dataclass(kw_only=True, slots=True)
 class SubstituteError(Exception):
     key: str
 
@@ -1278,6 +1287,7 @@ __all__ = [
     "PermissionsFromIntError",
     "PermissionsFromIntError",
     "PermissionsFromTextError",
+    "PromptBoolError",
     "ReadBytesError",
     "ReadBytesFileNotFoundError",
     "ReadBytesIsADirectoryError",

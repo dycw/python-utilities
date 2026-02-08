@@ -4,6 +4,7 @@ from typing import Any, ClassVar
 
 from pytest import MonkeyPatch, mark, param, raises
 
+from utilities._core_errors import PromptBoolError
 from utilities.core import (
     SubstituteError,
     kebab_case,
@@ -192,13 +193,34 @@ class TestPromptBool:
         monkeypatch.setattr("builtins.input", patched)
         assert prompt_bool("Prompt") is expected
 
+    @mark.parametrize(
+        ("default", "text", "expected"),
+        [
+            param(True, "", True),
+            param(True, "Y", True),
+            param(True, "N", False),
+            param(False, "", False),
+            param(False, "Y", True),
+            param(False, "N", False),
+        ],
+    )
+    def test_default(
+        self, *, default: bool, text: str, expected: bool, monkeypatch: MonkeyPatch
+    ) -> None:
+        def patched(_: Any, /) -> str:
+            return text
+
+        monkeypatch.setattr("builtins.input", patched)
+        assert prompt_bool("Prompt", default=default) is expected
+
     @mark.parametrize("text", [param(""), param("invalid")])
     def test_error(self, *, text: str, monkeypatch: MonkeyPatch) -> None:
         def patched(_: Any, /) -> str:
             return text
 
         monkeypatch.setattr("builtins.input", patched)
-        _ = prompt_bool("Prompt")
+        with raises(PromptBoolError, match=r"Non-boolean response; got '.*'"):
+            _ = prompt_bool("Prompt")
 
 
 class TestSubstitute:
