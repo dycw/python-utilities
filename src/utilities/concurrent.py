@@ -121,4 +121,4 @@ def concurrent_apply(
     )
 
 
-__all__ = ["Parallelism", "concurrent_map", "concurrent_starmap"]
+__all__ = ["Parallelism", "concurrent_apply", "concurrent_map", "concurrent_starmap"]
