@@ -7,13 +7,12 @@ from typing import TYPE_CHECKING, Any, assert_never
 from utilities.core import apply
 from utilities.iterables import apply_to_tuple
 from utilities.os import get_cpu_use
-from utilities.types import Parallelism
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
     from multiprocessing.context import BaseContext
 
-    from utilities.types import IntOrAll
+    from utilities.types import IntOrAll, Parallelism
 
 
 def concurrent_map[T](
@@ -121,4 +120,4 @@ def concurrent_apply(
     )
 
 
-__all__ = ["Parallelism", "concurrent_apply", "concurrent_map", "concurrent_starmap"]
+__all__ = ["concurrent_apply", "concurrent_map", "concurrent_starmap"]
