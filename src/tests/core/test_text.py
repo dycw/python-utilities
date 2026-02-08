@@ -4,8 +4,9 @@ from typing import Any, ClassVar
 
 from pytest import MonkeyPatch, mark, param, raises
 
-from utilities._core_errors import PromptBoolError
 from utilities.core import (
+    PromptBoolConfirmNoDefaultError,
+    PromptBoolParseError,
     SubstituteError,
     kebab_case,
     normalize_multi_line_str,
@@ -213,14 +214,35 @@ class TestPromptBool:
         monkeypatch.setattr("builtins.input", patched)
         assert prompt_bool("Prompt", default=default) is expected
 
-    @mark.parametrize("text", [param(""), param("invalid")])
-    def test_error(self, *, text: str, monkeypatch: MonkeyPatch) -> None:
+    @mark.parametrize("value", [param(True), param(False)])
+    def test_confirm(self, *, value: bool) -> None:
+        assert prompt_bool("Prompt", default=value, confirm=True) is value
+
+    @mark.parametrize(
+        ("default", "text"),
+        [
+            param(None, ""),
+            param(None, "invalid"),
+            param(True, "invalid"),
+            param(False, "invalid"),
+        ],
+    )
+    def test_error_parse(
+        self, *, default: bool | None, text: str, monkeypatch: MonkeyPatch
+    ) -> None:
         def patched(_: Any, /) -> str:
             return text
 
         monkeypatch.setattr("builtins.input", patched)
-        with raises(PromptBoolError, match=r"Non-boolean response; got '.*'"):
-            _ = prompt_bool("Prompt")
+        with raises(PromptBoolParseError, match=r"Non-boolean response; got '.*'"):
+            _ = prompt_bool("Prompt", default=default)
+
+    def test_error_confirm_no_default(self) -> None:
+        with raises(
+            PromptBoolConfirmNoDefaultError,
+            match=r"Unable to confirm a no-default prompt",
+        ):
+            _ = prompt_bool("Prompt", confirm=True)
 
 
 class TestSubstitute:

@@ -162,7 +162,9 @@ from utilities._core_errors import (
     PermissionsFromHumanIntRangeError,
     PermissionsFromIntError,
     PermissionsFromTextError,
+    PromptBoolConfirmNoDefaultError,
     PromptBoolError,
+    PromptBoolParseError,
     ReadBytesError,
     ReadBytesFileNotFoundError,
     ReadBytesIsADirectoryError,
@@ -2964,7 +2966,7 @@ def prompt_bool(
             try:
                 return parse_bool(input(prompt))
             except ParseBoolError as error:
-                raise PromptBoolError(text=error.text) from error
+                raise PromptBoolParseError(text=error.text) from error
         case bool(), False:
             result = input(prompt)
             if result == "":
@@ -2972,11 +2974,11 @@ def prompt_bool(
             try:
                 return parse_bool(result)
             except ParseBoolError as error:
-                raise PromptBoolError(text=error.text) from error
+                raise PromptBoolParseError(text=error.text) from error
         case None, True:
-            return True
+            raise PromptBoolConfirmNoDefaultError
         case bool(), True:
-            return True
+            return default
         case never:
             assert_never(never)
 
@@ -3816,7 +3818,9 @@ __all__ = [
     "PermissionsFromIntError",
     "PermissionsFromTextError",
     "PermissionsLike",
+    "PromptBoolConfirmNoDefaultError",
     "PromptBoolError",
+    "PromptBoolParseError",
     "ReadBytesError",
     "ReadBytesFileNotFoundError",
     "ReadBytesIsADirectoryError",

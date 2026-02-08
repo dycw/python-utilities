@@ -971,12 +971,26 @@ class WhichError(Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class PromptBoolError(Exception):
+class PromptBoolError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class PromptBoolParseError(PromptBoolError):
     text: str
 
     @override
     def __str__(self) -> str:
         return f"Non-boolean response; got {pretty_repr(self.text)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class PromptBoolConfirmNoDefaultError(PromptBoolError):
+    @override
+    def __str__(self) -> str:
+        return "Unable to confirm a no-default prompt"
+
+
+##
 
 
 @dataclass(kw_only=True, slots=True)
@@ -1287,7 +1301,9 @@ __all__ = [
     "PermissionsFromIntError",
     "PermissionsFromIntError",
     "PermissionsFromTextError",
+    "PromptBoolConfirmNoDefaultError",
     "PromptBoolError",
+    "PromptBoolParseError",
     "ReadBytesError",
     "ReadBytesFileNotFoundError",
     "ReadBytesIsADirectoryError",
