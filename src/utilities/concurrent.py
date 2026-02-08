@@ -89,4 +89,15 @@ def concurrent_starmap[T](
     return list(result)
 
 
+##
+
+
+def concurrent_apply() -> None:
+    """Concurrent function application."""
+
+
+def _apply(func: Callable[[], None], /) -> None:
+    func()
+
+
 __all__ = ["Parallelism", "concurrent_map", "concurrent_starmap"]
