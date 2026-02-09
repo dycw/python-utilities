@@ -19,6 +19,7 @@ from contextlib import ExitStack, contextmanager, suppress
 from dataclasses import dataclass, replace
 from functools import _lru_cache_wrapper, partial, reduce, wraps
 from gzip import GzipFile
+from ipaddress import IPv4Address
 from itertools import chain, islice
 from logging import (
     CRITICAL,
@@ -45,6 +46,7 @@ from os import chdir, environ, getenv, getpid
 from pathlib import Path
 from re import IGNORECASE, VERBOSE, Pattern, findall, search
 from shutil import copyfile, copyfileobj, copytree
+from socket import AF_INET, SOCK_DGRAM, socket
 from stat import (
     S_IMODE,
     S_IRGRP,
@@ -2726,6 +2728,18 @@ def which(cmd: str, /) -> Path:
 
 
 ###############################################################################
+#### socket ###################################################################
+###############################################################################
+
+
+def get_local_ip() -> IPv4Address:
+    with socket(family=AF_INET, type=SOCK_DGRAM) as s:
+        s.connect(("8.8.8.8", 80))
+        address, *_ = s.getsockname()
+        return IPv4Address(address)
+
+
+###############################################################################
 #### tempfile #################################################################
 ###############################################################################
 
@@ -3909,6 +3923,7 @@ __all__ = [
     "get_file_owner",
     "get_func_name",
     "get_gid_name",
+    "get_local_ip",
     "get_logging_level_name",
     "get_logging_level_number",
     "get_now",
