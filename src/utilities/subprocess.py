@@ -915,8 +915,8 @@ def rsync(
     print: bool = False,  # noqa: A002
     retry: Retry | None = None,
     logger: LoggerLike | None = None,
-    chown_user: str | None = None,
-    chown_group: str | None = None,
+    chown_user: str | int | None = None,
+    chown_group: str | int | None = None,
     exclude: MaybeSequenceStr | None = None,
     timeout: Duration | None = None,
     chmod: PermissionsLike | None = None,
@@ -974,8 +974,8 @@ def rsync_cmd(
     /,
     *,
     archive: bool = False,
-    chown_user: str | None = None,
-    chown_group: str | None = None,
+    chown_user: str | int | None = None,
+    chown_group: str | int | None = None,
     exclude: MaybeSequenceStr | None = None,
     batch_mode: bool = True,
     host_key_algorithms: MaybeSequenceStr = HOST_KEY_ALGORITHMS,
@@ -991,11 +991,11 @@ def rsync_cmd(
     match chown_user, chown_group:
         case None, None:
             ...
-        case str(), None:
-            args.extend(["--chown", chown_user])
-        case None, str():
+        case str() | int(), None:
+            args.extend(["--chown", str(chown_user)])
+        case None, str() | int():
             args.extend(["--chown", f":{chown_group}"])
-        case str(), str():
+        case str() | int(), str() | int():
             args.extend(["--chown", f"{chown_user}:{chown_group}"])
         case never:
             assert_never(never)
