@@ -1099,15 +1099,6 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == ""
 
-    @skipif_ci
-    @skipif_mac
-    def test_user(self, *, capsys: CaptureFixture) -> None:
-        result = run("whoami", user="root", print=True)
-        assert result is None
-        cap = capsys.readouterr()
-        assert cap.out == "root\n"
-        assert cap.err == ""
-
     @mark.parametrize("executable", [param("sh"), param("bash")])
     def test_executable(self, *, executable: str, capsys: CaptureFixture) -> None:
         result = run("echo $0", executable=executable, shell=True, print=True)  # noqa: S604
@@ -1135,6 +1126,15 @@ class TestRun:
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == "KEY=value\n"
+        assert cap.err == ""
+
+    @skipif_ci
+    @skipif_mac
+    def test_user(self, *, capsys: CaptureFixture) -> None:
+        result = run("whoami", user="root", print=True)
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == "root\n"
         assert cap.err == ""
 
     def test_input_bash(self, *, capsys: CaptureFixture) -> None:
@@ -1260,12 +1260,12 @@ class TestRun:
 ┌──────────────┬──+┐
 │ cmd          │ invalid-executable\s+│
 │ cmds_or_args │ None \s+ │
-│ user         │ None \s+ │
 │ hostname     │ [\-\.\w…]+\s+│
 │ executable   │ None \s+ │
 │ shell        │ False \s+ │
 │ cwd          │ None \s+ │
 │ env          │ None \s+ │
+│ user         │ None \s+ │
 └──────────────┴─+─┘
 """)
         check_multi_line_regex(pattern, str(error.value))
@@ -1278,12 +1278,12 @@ class TestRun:
 │ cmd          │ invalid-executable\s+│
 │ cmds_or_args │ arg1 \s+ │
 │              │ arg2 \s+ │
-│ user         │ None \s+ │
 │ hostname     │ [\-\.\w…]+\s+│
 │ executable   │ None \s+ │
 │ shell        │ False \s+ │
 │ cwd          │ None \s+ │
 │ env          │ None \s+ │
+│ user         │ None \s+ │
 └──────────────┴─+─┘
 """)
         check_multi_line_regex(pattern, str(error.value))
@@ -1413,12 +1413,12 @@ class TestRun:
 ┌──────────────┬──+┐
 │ cmd          │ echo stdout; echo stderr 1>&2; exit 1\s+│
 │ cmds_or_args │ None \s+ │
-│ user         │ None \s+ │
 │ hostname     │ [\-\.\w…]+\s+│
 │ executable   │ None \s+ │
 │ shell        │ True \s+ │
 │ cwd          │ None \s+ │
 │ env          │ None \s+ │
+│ user         │ None \s+ │
 │ return_code  │ 1 \s+ │
 └──────────────┴─+─┘
 
@@ -1451,12 +1451,12 @@ stderr
 ┌──────────────┬──+┐
 │ cmd          │ bash \s+ │
 │ cmds_or_args │ -ls \s+ │
-│ user         │ None \s+ │
 │ hostname     │ [\-\.\w…]+\s+│
 │ executable   │ None \s+ │
 │ shell        │ False\s+│
 │ cwd          │ None \s+ │
 │ env          │ None \s+ │
+│ user         │ None \s+ │
 │ return_code  │ 1 \s+ │
 └──────────────┴─+─┘
 
