@@ -1543,7 +1543,7 @@ def year_months(
 def zone_infos(draw: DrawFn, /) -> ZoneInfo:
     """Strategy for generating time-zones."""
     time_zone = draw(timezones())
-    if IS_LINUX:  # skipif-not-linux
+    if IS_LINUX:  # pragma: no cover
         _ = assume(time_zone.key not in _LINUX_DISALLOW_TIME_ZONES)
     with assume_does_not_raise(TimeZoneNotFoundError):
         _ = get_now(time_zone)
