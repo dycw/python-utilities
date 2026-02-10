@@ -68,6 +68,11 @@ class TestTemporaryFile:
         with TemporaryFile(name="name") as temp:
             assert temp.name == "name"
 
+    def test_delete(self, *, tmp_path: Path) -> None:
+        with TemporaryFile(dir=tmp_path, delete=False) as temp:
+            assert temp.is_file()
+        assert temp.is_file()
+
     def test_data(self) -> None:
         data = b"data"
         with TemporaryFile(data=data) as temp:
