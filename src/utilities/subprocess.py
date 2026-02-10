@@ -1178,11 +1178,11 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -1200,11 +1200,11 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -1222,11 +1222,11 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -1244,11 +1244,11 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -1266,11 +1266,11 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     input: str | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -1287,11 +1287,11 @@ def run(
     cmd: str,
     /,
     *cmds_or_args: str,
-    user: str | int | None = None,
     executable: str | None = None,
     shell: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     input: str | None = None,  # noqa: A002
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
@@ -1305,10 +1305,6 @@ def run(
     logger: LoggerLike | None = None,
 ) -> str | None:
     """Run a command in a subprocess."""
-    args: list[str] = []
-    if user is not None:  # pragma: no cover
-        args.extend(["su", "-", str(user)])
-    args.extend([cmd, *cmds_or_args])
     buffer = StringIO()
     stdout = StringIO()
     stderr = StringIO()
@@ -1320,7 +1316,7 @@ def run(
         stderr_outputs.append(sys.stderr)
     try:
         proc = Popen(
-            args,
+            [cmd, *cmds_or_args],
             bufsize=1,
             executable=executable,
             stdin=PIPE,
@@ -1336,12 +1332,12 @@ def run(
         raise RunFileNotFoundError(
             cmd=cmd,
             cmds_or_args=list(cmds_or_args),
-            user=user,
             hostname=HOSTNAME,
             executable=executable,
             shell=shell,
             cwd=cwd,
             env=env,
+            user=user,
         ) from None
     with proc:
         if proc.stdin is None:  # pragma: no cover
@@ -1413,19 +1409,21 @@ def run(
                 return run(
                     cmd,
                     *cmds_or_args,
-                    user=user,
                     executable=executable,
                     shell=shell,
                     cwd=cwd,
                     env=env,
+                    user=user,
                     input=input,
                     print=print,
                     print_stdout=print_stdout,
                     print_stderr=print_stderr,
+                    suppress=suppress,
                     return_=return_,
                     return_stdout=return_stdout,
                     return_stderr=return_stderr,
                     retry=(attempts - 1, duration),
+                    retry_skip=retry_skip,
                     logger=logger,
                 )
             case never:
@@ -1457,12 +1455,12 @@ def _run_write_to_streams(text: str, /, *outputs: IO[str]) -> None:
 class RunError(Exception):
     cmd: str
     cmds_or_args: list[str] = field(default_factory=list)
-    user: str | int | None = None
     hostname: str = HOSTNAME
     executable: str | None = None
     shell: bool = False
     cwd: PathLike | None = None
     env: StrStrMapping | None = None
+    user: str | int | None = None
 
     def _yield_pairs(self) -> Iterator[tuple[str, Any]]:
         yield ("cmd", self.cmd)
@@ -1474,12 +1472,12 @@ class RunError(Exception):
             yield ("cmds_or_args", first)
             for r in rest:
                 yield ("", r)
-        yield ("user", self.user)
         yield ("hostname", self.hostname)
         yield ("executable", self.executable)
         yield ("shell", self.shell)
         yield ("cwd", self.cwd)
         yield ("env", self.env)
+        yield ("user", self.user)
 
 
 @dataclass(kw_only=True, slots=True)
