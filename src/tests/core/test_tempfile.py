@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from utilities.constants import TEMP_DIR
 from utilities.core import (
     TemporaryDirectory,
     TemporaryFile,
@@ -44,8 +45,10 @@ class TestTemporaryFile:
         with TemporaryFile() as temp:
             assert isinstance(temp, Path)
             assert temp.is_file()
+            relative = temp.relative_to(TEMP_DIR)
             _ = temp.write_text("text")
             assert temp.read_text() == "text"
+        assert len(relative.parts) == 1
         assert not temp.exists()
 
     def test_dir(self, *, tmp_path: Path) -> None:

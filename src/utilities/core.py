@@ -62,7 +62,7 @@ from stat import (
 from string import Template
 from subprocess import CalledProcessError, check_output
 from tarfile import ReadError, TarFile
-from tempfile import NamedTemporaryFile as _NamedTemporaryFile
+from tempfile import NamedTemporaryFile
 from textwrap import dedent, indent
 from threading import get_ident
 from time import time_ns
@@ -284,6 +284,7 @@ from utilities.constants import (
     SECONDS_PER_HOUR,
     SECONDS_PER_MINUTE,
     SECONDS_PER_WEEK,
+    TEMP_DIR,
     UTC,
     Sentinel,
     _get_now,
@@ -2803,86 +2804,26 @@ def TemporaryFile(  # noqa: N802
     dir: PathLike | None = None,  # noqa: A002
     suffix: str | None = None,
     prefix: str | None = None,
-    ignore_cleanup_errors: bool = False,
     delete: bool = True,
     name: str | None = None,
     data: bytes | None = None,
     text: str | None = None,
 ) -> Iterator[Path]:
     """Yield a temporary file."""
-    if dir is None:
-        with (
-            TemporaryDirectory(
-                suffix=suffix,
-                prefix=prefix,
-                dir=dir,
-                ignore_cleanup_errors=ignore_cleanup_errors,
-                delete=delete,
-            ) as temp_dir,
-            _temporary_file_outer(
-                temp_dir,
-                suffix=suffix,
-                prefix=prefix,
-                delete=delete,
-                name=name,
-                data=data,
-                text=text,
-            ) as temp,
-        ):
-            yield temp
-    else:
-        with _temporary_file_outer(
-            dir,
-            suffix=suffix,
-            prefix=prefix,
-            delete=delete,
-            name=name,
-            data=data,
-            text=text,
-        ) as temp:
-            yield temp
-
-
-@contextmanager
-def _temporary_file_outer(
-    path: PathLike,
-    /,
-    *,
-    suffix: str | None = None,
-    prefix: str | None = None,
-    delete: bool = True,
-    name: str | None = None,
-    data: bytes | None = None,
-    text: str | None = None,
-) -> Iterator[Path]:
-    with _temporary_file_inner(
-        Path(path), suffix=suffix, prefix=prefix, delete=delete, name=name
-    ) as temp:
-        if data is not None:
-            _ = temp.write_bytes(data)
-        if text is not None:
-            _ = temp.write_text(text)
-        yield temp
-
-
-@contextmanager
-def _temporary_file_inner(
-    path: Path,
-    /,
-    *,
-    suffix: str | None = None,
-    prefix: str | None = None,
-    delete: bool = True,
-    name: str | None = None,
-) -> Iterator[Path]:
-    with _NamedTemporaryFile(
-        suffix=suffix, prefix=prefix, dir=path, delete=delete, delete_on_close=False
-    ) as temp:
+    dir_use = TEMP_DIR if dir is None else Path(dir)
+    with NamedTemporaryFile(
+        suffix=suffix, prefix=prefix, dir=dir_use, delete=delete, delete_on_close=False
+    ) as temp_file:
         if name is None:
-            yield Path(path, temp.name)
+            path = dir_use / temp_file.name
         else:
-            _ = shutil.move(path / temp.name, path / name)
-            yield path / name
+            path = dir_use / name
+            _ = shutil.move(dir_use / temp_file.name, path)
+        if data is not None:
+            _ = path.write_bytes(data)
+        if text is not None:
+            _ = path.write_text(text)
+        yield path
 
 
 ##
