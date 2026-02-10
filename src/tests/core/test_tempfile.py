@@ -76,14 +76,12 @@ class TestTemporaryFile:
     def test_data(self) -> None:
         data = b"data"
         with TemporaryFile(data=data) as temp:
-            current = temp.read_bytes()
-            assert current == data
+            assert temp.read_bytes() == data
 
     def test_text(self) -> None:
         text = "text"
         with TemporaryFile(text=text) as temp:
-            current = temp.read_text()
-            assert current == text
+            assert temp.read_text() == "text"
 
 
 class TestYieldAdjacentTempDir:
