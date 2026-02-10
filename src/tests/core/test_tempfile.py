@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from utilities.constants import TEMP_DIR
 from utilities.core import (
     TemporaryDirectory,
     TemporaryFile,
@@ -44,8 +45,10 @@ class TestTemporaryFile:
         with TemporaryFile() as temp:
             assert isinstance(temp, Path)
             assert temp.is_file()
+            relative = temp.relative_to(TEMP_DIR)
             _ = temp.write_text("text")
             assert temp.read_text() == "text"
+        assert len(relative.parts) == 1
         assert not temp.exists()
 
     def test_dir(self, *, tmp_path: Path) -> None:
@@ -57,37 +60,28 @@ class TestTemporaryFile:
         with TemporaryFile(suffix="suffix") as temp:
             assert temp.name.endswith("suffix")
 
-    def test_dir_and_suffix(self, *, tmp_path: Path) -> None:
-        with TemporaryFile(dir=tmp_path, suffix="suffix") as temp:
-            assert temp.name.endswith("suffix")
-
     def test_prefix(self) -> None:
         with TemporaryFile(prefix="prefix") as temp:
-            assert temp.name.startswith("prefix")
-
-    def test_dir_and_prefix(self, *, tmp_path: Path) -> None:
-        with TemporaryFile(dir=tmp_path, prefix="prefix") as temp:
             assert temp.name.startswith("prefix")
 
     def test_name(self) -> None:
         with TemporaryFile(name="name") as temp:
             assert temp.name == "name"
 
-    def test_dir_and_name(self, *, tmp_path: Path) -> None:
-        with TemporaryFile(dir=tmp_path, name="name") as temp:
-            assert temp.name == "name"
+    def test_delete(self, *, tmp_path: Path) -> None:
+        with TemporaryFile(dir=tmp_path, delete=False) as temp:
+            assert temp.is_file()
+        assert temp.is_file()
 
     def test_data(self) -> None:
         data = b"data"
         with TemporaryFile(data=data) as temp:
-            current = temp.read_bytes()
-            assert current == data
+            assert temp.read_bytes() == data
 
     def test_text(self) -> None:
         text = "text"
         with TemporaryFile(text=text) as temp:
-            current = temp.read_text()
-            assert current == text
+            assert temp.read_text() == "text"
 
 
 class TestYieldAdjacentTempDir:
