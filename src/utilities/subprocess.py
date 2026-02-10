@@ -2130,6 +2130,7 @@ def uv_run(
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     cwd: PathLike | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -2155,6 +2156,7 @@ def uv_run(
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     cwd: PathLike | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -2180,6 +2182,7 @@ def uv_run(
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     cwd: PathLike | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -2205,6 +2208,7 @@ def uv_run(
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     cwd: PathLike | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -2230,6 +2234,7 @@ def uv_run(
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     cwd: PathLike | None = None,
     print: bool = False,
     print_stdout: bool = False,
@@ -2255,6 +2260,7 @@ def uv_run(
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -2281,6 +2287,7 @@ def uv_run(
         ),
         cwd=cwd,
         env=env,
+        user=user,
         print=print,
         print_stdout=print_stdout,
         print_stderr=print_stderr,
@@ -2353,6 +2360,7 @@ def uv_tool_install(
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -2361,6 +2369,7 @@ def uv_tool_install(
     return_stdout: bool = False,
     return_stderr: bool = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -2373,6 +2382,7 @@ def uv_tool_install(
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -2381,6 +2391,7 @@ def uv_tool_install(
     return_stdout: Literal[True],
     return_stderr: bool = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -2393,6 +2404,7 @@ def uv_tool_install(
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -2401,6 +2413,7 @@ def uv_tool_install(
     return_stdout: bool = False,
     return_stderr: Literal[True],
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -2413,6 +2426,7 @@ def uv_tool_install(
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -2421,6 +2435,7 @@ def uv_tool_install(
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> None: ...
 @overload
@@ -2433,6 +2448,7 @@ def uv_tool_install(
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -2441,6 +2457,7 @@ def uv_tool_install(
     return_stdout: bool = False,
     return_stderr: bool = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None: ...
 def uv_tool_install(
@@ -2452,6 +2469,7 @@ def uv_tool_install(
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -2460,6 +2478,7 @@ def uv_tool_install(
     return_stdout: bool = False,
     return_stderr: bool = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None:
     """Install commands provided by a Python package."""
@@ -2467,6 +2486,7 @@ def uv_tool_install(
         *uv_tool_install_cmd(package, with_=with_, index=index, native_tls=native_tls),
         cwd=cwd,
         env=env,
+        user=user,
         print=print,
         print_stdout=print_stdout,
         print_stderr=print_stderr,
@@ -2475,6 +2495,7 @@ def uv_tool_install(
         return_stdout=return_stdout,
         return_stderr=return_stderr,
         retry=retry,
+        retry_skip=retry_skip,
         logger=logger,
     )
 
@@ -2518,6 +2539,7 @@ def uv_tool_run(
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -2526,6 +2548,7 @@ def uv_tool_run(
     return_stdout: bool = False,
     return_stderr: bool = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -2540,6 +2563,7 @@ def uv_tool_run(
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -2548,6 +2572,7 @@ def uv_tool_run(
     return_stdout: Literal[True],
     return_stderr: bool = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -2562,6 +2587,7 @@ def uv_tool_run(
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -2570,6 +2596,7 @@ def uv_tool_run(
     return_stdout: bool = False,
     return_stderr: Literal[True],
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str: ...
 @overload
@@ -2584,6 +2611,7 @@ def uv_tool_run(
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -2592,6 +2620,7 @@ def uv_tool_run(
     return_stdout: Literal[False] = False,
     return_stderr: Literal[False] = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> None: ...
 @overload
@@ -2606,6 +2635,7 @@ def uv_tool_run(
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     print: bool = False,
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -2614,6 +2644,7 @@ def uv_tool_run(
     return_stdout: bool = False,
     return_stderr: bool = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None: ...
 def uv_tool_run(
@@ -2627,6 +2658,7 @@ def uv_tool_run(
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
+    user: str | int | None = None,
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
@@ -2635,6 +2667,7 @@ def uv_tool_run(
     return_stdout: bool = False,
     return_stderr: bool = False,
     retry: Retry | None = None,
+    retry_skip: Callable[[int, str, str], bool] | None = None,
     logger: LoggerLike | None = None,
 ) -> str | None:
     """Run a command provided by a Python package."""
@@ -2650,6 +2683,7 @@ def uv_tool_run(
         ),
         cwd=cwd,
         env=env,
+        user=user,
         print=print,
         print_stdout=print_stdout,
         print_stderr=print_stderr,
@@ -2658,6 +2692,7 @@ def uv_tool_run(
         return_stdout=return_stdout,
         return_stderr=return_stderr,
         retry=retry,
+        retry_skip=retry_skip,
         logger=logger,
     )
 
