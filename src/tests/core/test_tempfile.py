@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from utilities.constants import TEMP_DIR
+from utilities.constants import EFFECTIVE_GROUP_NAME, EFFECTIVE_USER_NAME, TEMP_DIR
 from utilities.core import (
+    Permissions,
     TemporaryDirectory,
     TemporaryFile,
+    get_file_group,
+    get_file_owner,
     yield_adjacent_temp_dir,
     yield_adjacent_temp_file,
 )
@@ -74,14 +77,25 @@ class TestTemporaryFile:
         assert temp.is_file()
 
     def test_data(self) -> None:
-        data = b"data"
-        with TemporaryFile(data=data) as temp:
-            assert temp.read_bytes() == data
+        with TemporaryFile(data=b"data") as temp:
+            assert temp.read_bytes() == b"data"
 
     def test_text(self) -> None:
-        text = "text"
-        with TemporaryFile(text=text) as temp:
-            assert temp.read_text() == "text"
+        with TemporaryFile(text="text") as temp:
+            assert temp.read_text() == "text\n"
+
+    def test_perms(self) -> None:
+        perms = Permissions.from_text("u=rw,g=r,o=r")
+        with TemporaryFile(perms=perms) as temp:
+            assert Permissions.from_path(temp) == perms
+
+    def test_user(self) -> None:
+        with TemporaryFile(owner=EFFECTIVE_USER_NAME) as temp:
+            assert get_file_owner(temp) == EFFECTIVE_USER_NAME
+
+    def test_group(self) -> None:
+        with TemporaryFile(group=EFFECTIVE_GROUP_NAME) as temp:
+            assert get_file_group(temp) == EFFECTIVE_GROUP_NAME
 
 
 class TestYieldAdjacentTempDir:

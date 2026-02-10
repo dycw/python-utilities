@@ -2808,6 +2808,9 @@ def TemporaryFile(  # noqa: N802
     name: str | None = None,
     data: bytes | None = None,
     text: str | None = None,
+    perms: PermissionsLike | None = None,
+    owner: str | int | None = None,
+    group: str | int | None = None,
 ) -> Iterator[Path]:
     """Yield a temporary file."""
     dir_use = TEMP_DIR if dir is None else Path(dir)
@@ -2820,9 +2823,13 @@ def TemporaryFile(  # noqa: N802
             path = dir_use / name
             _ = shutil.move(dir_use / temp_file.name, path)
         if data is not None:
-            _ = path.write_bytes(data)
+            write_bytes(path, data, overwrite=True)
         if text is not None:
-            _ = path.write_text(text)
+            write_text(path, text, overwrite=True)
+        if perms is not None:
+            chmod(path, perms)
+        if (owner is not None) or (group is not None):
+            chown(path, user=owner, group=group)
         yield path
 
 
