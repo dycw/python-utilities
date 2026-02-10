@@ -1099,15 +1099,6 @@ class TestRun:
         assert cap.out == ""
         assert cap.err == ""
 
-    @skipif_ci
-    @skipif_mac
-    def test_user(self, *, capsys: CaptureFixture) -> None:
-        result = run("whoami", user="root", print=True)
-        assert result is None
-        cap = capsys.readouterr()
-        assert cap.out == "root\n"
-        assert cap.err == ""
-
     @mark.parametrize("executable", [param("sh"), param("bash")])
     def test_executable(self, *, executable: str, capsys: CaptureFixture) -> None:
         result = run("echo $0", executable=executable, shell=True, print=True)  # noqa: S604
@@ -1135,6 +1126,15 @@ class TestRun:
         assert result is None
         cap = capsys.readouterr()
         assert cap.out == "KEY=value\n"
+        assert cap.err == ""
+
+    @skipif_ci
+    @skipif_mac
+    def test_user(self, *, capsys: CaptureFixture) -> None:
+        result = run("whoami", user="root", print=True)
+        assert result is None
+        cap = capsys.readouterr()
+        assert cap.out == "root\n"
         assert cap.err == ""
 
     def test_input_bash(self, *, capsys: CaptureFixture) -> None:
