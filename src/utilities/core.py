@@ -2775,13 +2775,21 @@ class TemporaryDirectory:
         delete: bool = True,
     ) -> None:
         super().__init__()
-        self._temp_dir = _TemporaryDirectoryNoResourceWarning(
-            suffix=suffix,
-            prefix=prefix,
-            dir=dir,
-            ignore_cleanup_errors=ignore_cleanup_errors,
-            delete=delete,
-        )
+
+        def run() -> _TemporaryDirectoryNoResourceWarning:
+            return _TemporaryDirectoryNoResourceWarning(
+                suffix=suffix,
+                prefix=prefix,
+                dir=dir,
+                ignore_cleanup_errors=ignore_cleanup_errors,
+                delete=delete,
+            )
+
+        try:
+            self._temp_dir = run()
+        except FileNotFoundError as error:
+            Path(error.filename).parent.mkdir(parents=True)
+            self._temp_dir = run()
         self.path = Path(self._temp_dir.name)
 
     def __enter__(self) -> Path:
@@ -2831,23 +2839,38 @@ def TemporaryFile(  # noqa: N802
 ) -> Iterator[Path]:
     """Yield a temporary file."""
     dir_use = TEMP_DIR if dir is None else Path(dir)
-    with NamedTemporaryFile(
-        suffix=suffix, prefix=prefix, dir=dir_use, delete=delete, delete_on_close=False
-    ) as temp_file:
-        if name is None:
-            path = dir_use / temp_file.name
-        else:
-            path = dir_use / name
-            _ = shutil.move(dir_use / temp_file.name, path)
-        if data is not None:
-            write_bytes(path, data, overwrite=True)
-        if text is not None:
-            write_text(path, text, overwrite=True)
-        if perms is not None:
-            chmod(path, perms)
-        if (owner is not None) or (group is not None):
-            chown(path, user=owner, group=group)
-        yield path
+
+    @contextmanager
+    def yield_file() -> Iterator[Path]:
+        with NamedTemporaryFile(
+            suffix=suffix,
+            prefix=prefix,
+            dir=dir_use,
+            delete=delete,
+            delete_on_close=False,
+        ) as temp_file:
+            if name is None:
+                path = dir_use / temp_file.name
+            else:
+                path = dir_use / name
+                _ = shutil.move(dir_use / temp_file.name, path)
+            if data is not None:
+                write_bytes(path, data, overwrite=True)
+            if text is not None:
+                write_text(path, text, overwrite=True)
+            if perms is not None:
+                chmod(path, perms)
+            if (owner is not None) or (group is not None):
+                chown(path, user=owner, group=group)
+            yield path
+
+    try:
+        with yield_file() as path:
+            yield path
+    except FileNotFoundError as error:
+        Path(error.filename).parent.mkdir(parents=True)
+        with yield_file() as path:
+            yield path
 
 
 ##
