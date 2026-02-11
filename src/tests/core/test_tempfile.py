@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pytest import mark, param
+from pytest_lazy_fixtures import lf
+
 from utilities.constants import EFFECTIVE_GROUP_NAME, EFFECTIVE_USER_NAME, TEMP_DIR
 from utilities.core import (
     Permissions,
@@ -37,9 +40,12 @@ class TestTemporaryDirectory:
         with TemporaryDirectory(prefix="prefix") as temp:
             assert temp.name.startswith("prefix")
 
-    def test_dir(self, *, tmp_path: Path) -> None:
-        with TemporaryDirectory(dir=tmp_path) as temp:
-            relative = temp.relative_to(tmp_path)
+    @mark.parametrize(
+        "dir_", [param(lf("tmp_path")), param(lf("temp_path_nested_not_exist"))]
+    )
+    def test_dir(self, *, dir_: Path) -> None:
+        with TemporaryDirectory(dir=dir_) as temp:
+            relative = temp.relative_to(dir_)
         assert len(relative.parts) == 1
 
 
@@ -54,9 +60,12 @@ class TestTemporaryFile:
         assert len(relative.parts) == 1
         assert not temp.exists()
 
-    def test_dir(self, *, tmp_path: Path) -> None:
-        with TemporaryFile(dir=tmp_path) as temp:
-            relative = temp.relative_to(tmp_path)
+    @mark.parametrize(
+        "dir_", [param(lf("tmp_path")), param(lf("temp_path_nested_not_exist"))]
+    )
+    def test_dir(self, *, dir_: Path) -> None:
+        with TemporaryFile(dir=dir_) as temp:
+            relative = temp.relative_to(dir_)
         assert len(relative.parts) == 1
 
     def test_suffix(self) -> None:
