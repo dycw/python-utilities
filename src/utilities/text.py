@@ -24,7 +24,7 @@ from utilities.core import CheckUniqueError, check_unique, parse_bool, transpose
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
-    from utilities.types import MaybeCallableBoolLike, MaybeCallableStr, StrStrMapping
+    from utilities.types import MaybeCallableStr, StrStrMapping
 
 
 ##
@@ -369,30 +369,6 @@ class secret_str(str):  # noqa: N801
 def str_encode(obj: Any, /) -> bytes:
     """Return the string representation of the object encoded as bytes."""
     return str(obj).encode()
-
-
-##
-
-
-@overload
-def to_bool(bool_: MaybeCallableBoolLike, /) -> bool: ...
-@overload
-def to_bool(bool_: None, /) -> None: ...
-@overload
-def to_bool(bool_: Sentinel, /) -> Sentinel: ...
-def to_bool(
-    bool_: MaybeCallableBoolLike | None | Sentinel, /
-) -> bool | None | Sentinel:
-    """Convert to a bool."""
-    match bool_:
-        case bool() | None | Sentinel():
-            return bool_
-        case str():
-            return parse_bool(bool_)
-        case Callable() as func:
-            return to_bool(func())
-        case never:
-            assert_never(never)
 
 
 ##
