@@ -10,11 +10,11 @@
     "anyio>=4.12.1",
     "asyncpg>=0.31.0",
     "atools>=0.14.2",
-    "cachetools>=7.0.0",
+    "cachetools>=7.0.1",
     "click>=8.3.1",
     "cvxpy>=1.8.1",
     "dycw-utilities[test]>=0.184.3",
-    "fastapi>=0.128.6",
+    "fastapi>=0.128.7",
     "fpdf2>=2.8.5",
     "greenlet>=3.3.1",
     "httpx>=0.28.1",
@@ -47,7 +47,7 @@
     "scikit-learn>=1.8.0",
     "scipy>=1.17.0",
     "shellingham>=1.5.4",
-    "slack-sdk>=3.39.0",
+    "slack-sdk>=3.40.0",
     "sqlalchemy>=2.0.46",
     "statsmodels>=0.14.6",
     "testbook>=0.4.2",
@@ -71,7 +71,7 @@
   name = "dycw-utilities"
   readme = "README.md"
   requires-python = ">= 3.12"
-  version = "0.188.30"
+  version = "0.189.0"
 
   [project.entry-points.pytest11]
     pytest-randomly = "utilities.pytest_plugins.pytest_randomly"
@@ -82,13 +82,13 @@
     test = [
       "coverage-conditional-plugin>=0.9.0",
       "dycw-pytest-only>=2.1.1",
-      "hypothesis>=6.151.5",
+      "hypothesis>=6.151.6",
       "pytest-asyncio>=1.3.0",
       "pytest-cov>=7.0.0",
       "pytest-instafail>=0.5.0",
       "pytest-lazy-fixtures>=1.4.0",
       "pytest-randomly>=4.0.1",
-      "pytest-regressions>=2.9.1",
+      "pytest-regressions>=2.10.0",
       "pytest-repeat>=0.9.4",
       "pytest-rerunfailures>=16.1",
       "pytest-rng>=1.0.0",

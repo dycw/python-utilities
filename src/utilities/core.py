@@ -300,6 +300,7 @@ from utilities.types import (
     FilterWarningsAction,
     LoggerLike,
     LogLevel,
+    MaybeCallableBoolLike,
     MaybeCallableDateLike,
     MaybeType,
     Number,
@@ -929,6 +930,22 @@ def last(tup: tuple[Any, ...], /) -> Any:
 def identity[T](obj: T, /) -> T:
     """Return the object itself."""
     return obj
+
+
+##
+
+
+def to_bool(bool_: MaybeCallableBoolLike, /) -> bool:
+    """Convert to a bool."""
+    match bool_:
+        case bool():
+            return bool_
+        case str():
+            return parse_bool(bool_)
+        case Callable() as func:
+            return to_bool(func())
+        case never:
+            assert_never(never)
 
 
 ###############################################################################
@@ -3931,6 +3948,7 @@ __all__ = [
     "suppress_warnings",
     "sync_sleep",
     "take",
+    "to_bool",
     "to_date",
     "to_logger",
     "to_time_zone_name",

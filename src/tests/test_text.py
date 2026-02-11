@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
-    booleans,
     data,
     integers,
     just,
@@ -32,7 +31,6 @@ from utilities.text import (
     split_key_value_pairs,
     split_str,
     str_encode,
-    to_bool,
     to_str,
 )
 
@@ -234,20 +232,6 @@ class TestStrEncode:
         result = str_encode(n)
         expected = str(n).encode()
         assert result == expected
-
-
-class TestToBool:
-    @given(bool_=booleans() | none() | sentinels())
-    def test_bool_none_or_sentinel(self, *, bool_: bool | None | Sentinel) -> None:
-        assert to_bool(bool_) is bool_
-
-    @given(bool_=booleans())
-    def test_str(self, *, bool_: bool) -> None:
-        assert to_bool(str(bool_)) is bool_
-
-    @given(bool_=booleans())
-    def test_callable(self, *, bool_: bool) -> None:
-        assert to_bool(lambda: bool_) is bool_
 
 
 class TestToStr:

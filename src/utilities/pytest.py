@@ -19,6 +19,7 @@ from utilities.constants import (
     IS_NOT_MAC,
     SECOND,
 )
+from utilities.core import to_bool
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
 from utilities.pathlib import (
@@ -29,7 +30,6 @@ from utilities.pathlib import (
     module_path,
 )
 from utilities.random import bernoulli
-from utilities.text import to_bool
 from utilities.throttle import throttle
 from utilities.types import (
     Coro,

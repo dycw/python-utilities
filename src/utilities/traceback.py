@@ -30,10 +30,10 @@ from utilities.core import (
     repr_error,
     repr_mapping,
     repr_table,
+    to_bool,
     write_text,
 )
 from utilities.pathlib import module_path, to_path
-from utilities.text import to_bool
 from utilities.version import to_version3
 from utilities.whenever import format_compact, to_zoned_date_time
 

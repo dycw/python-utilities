@@ -38,10 +38,9 @@ from typing import (
 from rich.pretty import pretty_repr
 
 from utilities.constants import SYSTEM_RANDOM, Sentinel, sentinel
-from utilities.core import async_sleep, duration_to_seconds, get_now, is_pytest
+from utilities.core import async_sleep, duration_to_seconds, get_now, is_pytest, to_bool
 from utilities.functions import ensure_int, ensure_not_none
 from utilities.shelve import yield_shelf
-from utilities.text import to_bool
 from utilities.whenever import round_date_or_date_time
 
 if TYPE_CHECKING:
