@@ -30,7 +30,7 @@ from utilities.core import (
     unique_str,
     yield_temp_environ,
 )
-from utilities.types import CopyOrMove
+from utilities.types import CopyOrMove, Group, Owner
 from utilities.typing import get_literal_elements
 
 if TYPE_CHECKING:
@@ -178,8 +178,8 @@ class TestCopyOrMove:
         *,
         overwrite: bool = False,
         perms: PermissionsLike | None = None,
-        owner: str | int | None = None,
-        group: str | int | None = None,
+        owner: Owner | None = None,
+        group: Group | None = None,
     ) -> None:
         match mode:
             case "copy":

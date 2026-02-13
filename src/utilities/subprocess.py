@@ -54,9 +54,11 @@ if TYPE_CHECKING:
     from utilities.core import PermissionsLike
     from utilities.types import (
         Duration,
+        Group,
         LoggerLike,
         MaybeIterable,
         MaybeSequenceStr,
+        Owner,
         PathLike,
         Retry,
         StrMapping,
@@ -237,7 +239,7 @@ def chown(
     sudo: bool = False,
     recursive: bool = False,
     user: str | int | None = None,
-    group: str | int | None = None,
+    group: Group | None = None,
 ) -> None:
     """Change file owner and/or group."""
     if sudo:  # pragma: no cover
@@ -256,7 +258,7 @@ def chown_cmd(
     *,
     recursive: bool = False,
     user: str | int | None = None,
-    group: str | int | None = None,
+    group: Group | None = None,
 ) -> list[str]:
     """Command to use 'chown' to change file owner and/or group."""
     args: list[str] = ["chown"]
@@ -320,8 +322,8 @@ def cp(
     *,
     sudo: bool = False,
     perms: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
 ) -> None:
     """Copy a file/directory."""
     mkdir(dest, sudo=sudo, parent=True)
@@ -628,8 +630,8 @@ def install(
     *,
     directory: bool = False,
     mode: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
     sudo: bool = False,
 ) -> None:
     """Install a binary."""
@@ -646,8 +648,8 @@ def install_cmd(
     *,
     directory: bool = False,
     mode: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
 ) -> list[str]:
     """Command to use 'install' to install a binary."""
     args: list[str] = ["install"]
@@ -822,8 +824,8 @@ def mv(
     *,
     sudo: bool = False,
     perms: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
 ) -> None:
     """Move a file/directory."""
     mkdir(dest, sudo=sudo, parent=True)
@@ -929,8 +931,8 @@ def rsync(
     print: bool = False,  # noqa: A002
     retry: Retry | None = None,
     logger: LoggerLike | None = None,
-    chown_user: str | int | None = None,
-    chown_group: str | int | None = None,
+    chown_user: Owner | None = None,
+    chown_group: Group | None = None,
     exclude: MaybeSequenceStr | None = None,
     timeout: Duration | None = None,
     chmod: PermissionsLike | None = None,
@@ -988,8 +990,8 @@ def rsync_cmd(
     /,
     *,
     archive: bool = False,
-    chown_user: str | int | None = None,
-    chown_group: str | int | None = None,
+    chown_user: Owner | None = None,
+    chown_group: Group | None = None,
     exclude: MaybeSequenceStr | None = None,
     batch_mode: bool = True,
     host_key_algorithms: MaybeSequenceStr = HOST_KEY_ALGORITHMS,
