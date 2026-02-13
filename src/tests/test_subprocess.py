@@ -405,37 +405,45 @@ class TestExpandPath:
 @mark.only
 class TestGitBranchCurrent:
     @throttle_test(duration=5 * MINUTE)
-    def test_main(self, *, tmp_path: Path, git_repo_url: str) -> None:
+    def test_main(
+        self, *, tmp_path: Path, git_repo_url: str, git_repo_name: str
+    ) -> None:
         with yield_temp_cwd(tmp_path):
             git_clone(git_repo_url)
-        with yield_temp_cwd(tmp_path / "GitPracticeRepo"):
+        with yield_temp_cwd(tmp_path / git_repo_name):
             result = git_branch_current()
         assert result == "master"
 
     @throttle_test(duration=5 * MINUTE)
-    def test_path(self, *, tmp_path: Path, git_repo_url: str) -> None:
+    def test_path(
+        self, *, tmp_path: Path, git_repo_url: str, git_repo_name: str
+    ) -> None:
         with yield_temp_cwd(tmp_path):
             git_clone(git_repo_url)
-        result = git_branch_current(path=tmp_path / "GitPracticeRepo")
+        result = git_branch_current(path=tmp_path / git_repo_name)
         assert result == "master"
 
 
 @mark.only
 class TestGitCheckout:
     @throttle_test(duration=5 * MINUTE)
-    def test_main(self, *, tmp_path: Path, git_repo_url: str) -> None:
+    def test_main(
+        self, *, tmp_path: Path, git_repo_url: str, git_repo_name: str
+    ) -> None:
         with yield_temp_cwd(tmp_path):
             git_clone(git_repo_url)
-        with yield_temp_cwd(tmp_path / "GitPracticeRepo"):
+        with yield_temp_cwd(tmp_path / git_repo_name):
             git_checkout("branch")
             result = git_branch_current()
         assert result == "branch"
 
     @throttle_test(duration=5 * MINUTE)
-    def test_path(self, *, git_repo_url: str, tmp_path: Path) -> None:
+    def test_path(
+        self, *, tmp_path: Path, git_repo_url: str, git_repo_name: str
+    ) -> None:
         with yield_temp_cwd(tmp_path):
             git_clone(git_repo_url)
-        path = tmp_path / "GitPracticeRepo"
+        path = tmp_path / git_repo_name
         git_checkout("branch", path=path)
         result = git_branch_current(path=path)
         assert result == "branch"
@@ -452,10 +460,12 @@ class TestGitCheckoutCmd:
 @mark.only
 class TestGitClone:
     @throttle_test(duration=5 * MINUTE)
-    def test_main(self, *, tmp_path: Path, git_repo_url: str) -> None:
+    def test_main(
+        self, *, tmp_path: Path, git_repo_url: str, git_repo_name: str
+    ) -> None:
         with yield_temp_cwd(tmp_path):
             git_clone(git_repo_url)
-        assert (tmp_path / "GitPracticeRepo/.git").is_dir()
+        assert (tmp_path / git_repo_name / ".git").is_dir()
 
     @throttle_test(duration=5 * MINUTE)
     def test_existing_path(self, *, tmp_path: Path, git_repo_url: str) -> None:
@@ -469,11 +479,12 @@ class TestGitClone:
         assert (tmp_path / ".git").is_dir()
 
     @throttle_test(duration=5 * MINUTE)
-    def test_branch(self, *, tmp_path: Path, git_repo_url: str) -> None:
+    def test_branch(
+        self, *, tmp_path: Path, git_repo_url: str, git_repo_name: str
+    ) -> None:
         with yield_temp_cwd(tmp_path):
             git_clone(git_repo_url, branch="branch")
-        with yield_temp_cwd(tmp_path / "GitPracticeRepo"):
-            result = git_branch_current(path=tmp_path / "GitPracticeRepo")
+        result = git_branch_current(path=tmp_path / git_repo_name)
         assert result == "branch"
 
 

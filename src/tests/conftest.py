@@ -337,6 +337,12 @@ def git_repo_url() -> str:
 
 
 @fixture
+def git_repo_name(*, git_repo_url: str) -> str:
+    *_, name = git_repo_url.split("/")
+    return name
+
+
+@fixture
 def github_public_key() -> str:
     return "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl"
 

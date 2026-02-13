@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from itertools import chain
 from threading import Event, Thread
-from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec
+from typing import TYPE_CHECKING, Any, Concatenate
 
 if TYPE_CHECKING:
     from collections.abc import Callable
