@@ -27,6 +27,7 @@ from utilities.core import (
     normalize_str,
     one,
     which,
+    yield_temp_cwd,
 )
 from utilities.pytest import skipif_ci, skipif_mac, throttle_test
 from utilities.subprocess import (
@@ -401,23 +402,46 @@ class TestExpandPath:
         assert result == expected
 
 
+@mark.only
 class TestGitBranchCurrent:
     @throttle_test(duration=5 * MINUTE)
-    def test_main(self, *, git_repo_url: str, tmp_path: Path) -> None:
-        git_clone(git_repo_url, tmp_path)
-        result = git_branch_current(tmp_path)
+    def test_main(self, *, tmp_path: Path, git_repo_url: str) -> None:
+        with yield_temp_cwd(tmp_path):
+            git_clone(git_repo_url)
+        with yield_temp_cwd(tmp_path / "GitPracticeRepo"):
+            result = git_branch_current()
+        assert result == "master"
+
+    @throttle_test(duration=5 * MINUTE)
+    def test_path(self, *, tmp_path: Path, git_repo_url: str) -> None:
+        with yield_temp_cwd(tmp_path):
+            git_clone(git_repo_url)
+        result = git_branch_current(path=tmp_path / "GitPracticeRepo")
         assert result == "master"
 
 
+@mark.only
 class TestGitCheckout:
     @throttle_test(duration=5 * MINUTE)
-    def test_main(self, *, git_repo_url: str, tmp_path: Path) -> None:
-        git_clone(git_repo_url, tmp_path)
-        git_checkout("branch", tmp_path)
-        result = git_branch_current(tmp_path)
+    def test_main(self, *, tmp_path: Path, git_repo_url: str) -> None:
+        with yield_temp_cwd(tmp_path):
+            git_clone(git_repo_url)
+        with yield_temp_cwd(tmp_path / "GitPracticeRepo"):
+            git_checkout("branch")
+            result = git_branch_current()
+        assert result == "branch"
+
+    @throttle_test(duration=5 * MINUTE)
+    def test_path(self, *, git_repo_url: str, tmp_path: Path) -> None:
+        with yield_temp_cwd(tmp_path):
+            git_clone(git_repo_url)
+        path = tmp_path / "GitPracticeRepo"
+        git_checkout("branch", path=path)
+        result = git_branch_current(path=path)
         assert result == "branch"
 
 
+@mark.only
 class TestGitCheckoutCmd:
     def test_main(self) -> None:
         result = git_checkout_cmd("branch")
@@ -428,26 +452,41 @@ class TestGitCheckoutCmd:
 @mark.only
 class TestGitClone:
     @throttle_test(duration=5 * MINUTE)
-    def test_main(self, *, git_repo_url: str, tmp_path: Path) -> None:
-        git_clone(git_repo_url, tmp_path)
+    def test_main(self, *, tmp_path: Path, git_repo_url: str) -> None:
+        with yield_temp_cwd(tmp_path):
+            git_clone(git_repo_url)
+        assert (tmp_path / "GitPracticeRepo/.git").is_dir()
+
+    @throttle_test(duration=5 * MINUTE)
+    def test_existing_path(self, *, tmp_path: Path, git_repo_url: str) -> None:
+        with yield_temp_cwd(tmp_path):
+            for _ in range(2):
+                git_clone(git_repo_url)
+
+    @throttle_test(duration=5 * MINUTE)
+    def test_path(self, *, tmp_path: Path, git_repo_url: str) -> None:
+        git_clone(git_repo_url, path=tmp_path)
         assert (tmp_path / ".git").is_dir()
 
     @throttle_test(duration=5 * MINUTE)
-    def test_existing_path(self, *, git_repo_url: str, tmp_path: Path) -> None:
-        git_clone(git_repo_url, tmp_path)
-        assert (tmp_path / ".git").is_dir()
-
-    @throttle_test(duration=5 * MINUTE)
-    def test_branch(self, *, git_repo_url: str, tmp_path: Path) -> None:
-        git_clone(git_repo_url, tmp_path, branch="branch")
-        result = git_branch_current(tmp_path)
+    def test_branch(self, *, tmp_path: Path, git_repo_url: str) -> None:
+        with yield_temp_cwd(tmp_path):
+            git_clone(git_repo_url, branch="branch")
+        with yield_temp_cwd(tmp_path / "GitPracticeRepo"):
+            result = git_branch_current(path=tmp_path / "GitPracticeRepo")
         assert result == "branch"
 
 
+@mark.only
 class TestGitCloneCmd:
     def test_main(self, *, git_repo_url: str) -> None:
-        result = git_clone_cmd(git_repo_url, "path")
-        expected = ["git", "clone", "--recurse-submodules", git_repo_url, "path"]
+        result = git_clone_cmd(git_repo_url)
+        expected = ["git", "clone", "--recurse-submodules", git_repo_url]
+        assert result == expected
+
+    def test_path(self, *, git_repo_url: str, tmp_path: Path) -> None:
+        result = git_clone_cmd(git_repo_url, path=tmp_path)
+        expected = ["git", "clone", "--recurse-submodules", git_repo_url, str(tmp_path)]
         assert result == expected
 
 

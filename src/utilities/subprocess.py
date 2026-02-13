@@ -15,6 +15,7 @@ from string import Template
 from subprocess import PIPE, Popen
 from threading import Thread
 from typing import IO, TYPE_CHECKING, Any, Literal, assert_never, overload, override
+from urllib.parse import urlparse
 
 import utilities.core
 from utilities._core_errors import CopySourceNotFoundError, MoveSourceNotFoundError
@@ -569,7 +570,7 @@ def expand_path(
 ##
 
 
-def git_branch_current(path: PathLike, /) -> str:
+def git_branch_current(*, path: PathLike | None = None) -> str:
     """Show the current a branch."""
     return run(*GIT_BRANCH_SHOW_CURRENT, cwd=path, return_=True)
 
@@ -577,7 +578,7 @@ def git_branch_current(path: PathLike, /) -> str:
 ##
 
 
-def git_checkout(branch: str, path: PathLike, /) -> None:
+def git_checkout(branch: str, /, *, path: PathLike | None = None) -> None:
     """Switch a branch."""
     run(*git_checkout_cmd(branch), cwd=path)
 
@@ -591,18 +592,31 @@ def git_checkout_cmd(branch: str, /) -> list[str]:
 
 
 def git_clone(
-    url: str, path: PathLike, /, *, sudo: bool = False, branch: str | None = None
+    url: str,
+    /,
+    *,
+    path: PathLike | None = None,
+    sudo: bool = False,
+    branch: str | None = None,
 ) -> None:
     """Clone a repository."""
-    rm(path, sudo=sudo)
-    run(*maybe_sudo_cmd(*git_clone_cmd(url, path), sudo=sudo))
+    if path is None:
+        *_, name = urlparse(url).path.strip("/").split("/")
+        path_use = Path.cwd() / name
+    else:
+        path_use = path
+    rm(path_use, sudo=sudo)
+    run(*maybe_sudo_cmd(*git_clone_cmd(url, path=path_use), sudo=sudo))
     if branch is not None:
-        git_checkout(branch, path)
+        git_checkout(branch, path=path_use)
 
 
-def git_clone_cmd(url: str, path: PathLike, /) -> list[str]:
+def git_clone_cmd(url: str, /, *, path: PathLike | None = None) -> list[str]:
     """Command to use 'git clone' to clone a repository."""
-    return ["git", "clone", "--recurse-submodules", url, str(path)]
+    args: list[str] = ["git", "clone", "--recurse-submodules", url]
+    if path is not None:
+        args.append(str(path))
+    return args
 
 
 ##
@@ -2745,7 +2759,7 @@ def uv_with_cmd(*, with_: MaybeSequenceStr | None = None) -> list[str]:
 def yield_git_repo(url: str, /, *, branch: str | None = None) -> Iterator[Path]:
     """Yield a temporary git repository."""
     with TemporaryDirectory() as temp_dir:
-        git_clone(url, temp_dir, branch=branch)
+        git_clone(url, path=temp_dir, branch=branch)
         yield temp_dir
 
 
