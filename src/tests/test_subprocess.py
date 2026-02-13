@@ -425,9 +425,15 @@ class TestGitCheckoutCmd:
         assert result == expected
 
 
+@mark.only
 class TestGitClone:
     @throttle_test(duration=5 * MINUTE)
     def test_main(self, *, git_repo_url: str, tmp_path: Path) -> None:
+        git_clone(git_repo_url, tmp_path)
+        assert (tmp_path / ".git").is_dir()
+
+    @throttle_test(duration=5 * MINUTE)
+    def test_existing_path(self, *, git_repo_url: str, tmp_path: Path) -> None:
         git_clone(git_repo_url, tmp_path)
         assert (tmp_path / ".git").is_dir()
 
