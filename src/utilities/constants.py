@@ -174,6 +174,7 @@ MAX_PID: int | None = _get_max_pid()
 ###############################################################################
 
 
+FILE_SYSTEM_ROOT: Path = Path("/")
 HOME: Path = Path.home()
 PWD: Path = Path.cwd()
 
@@ -526,6 +527,7 @@ __all__ = [
     "EFFECTIVE_GROUP_NAME",
     "EFFECTIVE_USER_ID",
     "EFFECTIVE_USER_NAME",
+    "FILE_SYSTEM_ROOT",
     "HOME",
     "HOSTNAME",
     "HOUR",

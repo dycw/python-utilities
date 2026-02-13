@@ -25,6 +25,7 @@ from utilities.constants import (
     EFFECTIVE_GROUP_NAME,
     EFFECTIVE_USER_ID,
     EFFECTIVE_USER_NAME,
+    FILE_SYSTEM_ROOT,
     HOME,
     HOSTNAME,
     IS_LINUX,
@@ -179,7 +180,7 @@ class TestNow:
 
 
 class TestPaths:
-    @mark.parametrize("path", [param(HOME), param(PWD)])
+    @mark.parametrize("path", [param(FILE_SYSTEM_ROOT), param(HOME), param(PWD)])
     def test_main(self, *, path: Path) -> None:
         assert isinstance(path, Path)
         assert path.is_dir()
