@@ -25,7 +25,7 @@ class BackgroundTask:
 
 
 def run_in_background[**P](
-    func: Callable[Concatenate[Event, P], Any], *args: _P.args, **kwargs: P.kwargs
+    func: Callable[Concatenate[Event, P], Any], *args: P.args, **kwargs: P.kwargs
 ) -> BackgroundTask:
     """Run a function in the background."""
     event = Event()
