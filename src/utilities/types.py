@@ -331,6 +331,8 @@ type SerializeObjectExtra = Mapping[Any, Callable[[Any], str]]
 
 
 type FileOrDir = Literal["file", "dir"]
+type Owner = str | int
+type Group = str | int
 type PathLike = MaybeStr[Path]
 type MaybeCallablePathLike = MaybeCallable[PathLike]
 
@@ -497,6 +499,7 @@ __all__ = [
     "ExceptionTypeLike",
     "FileOrDir",
     "FilterWarningsAction",
+    "Group",
     "IPv4AddressLike",
     "IPv6AddressLike",
     "IntOrAll",
@@ -526,6 +529,7 @@ __all__ = [
     "Number",
     "OpenMode",
     "OptExcInfo",
+    "Owner",
     "Pair",
     "Parallelism",
     "ParseObjectExtra",

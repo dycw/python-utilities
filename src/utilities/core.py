@@ -298,12 +298,14 @@ from utilities.types import (
     Dataclass,
     Duration,
     FilterWarningsAction,
+    Group,
     LoggerLike,
     LogLevel,
     MaybeCallableBoolLike,
     MaybeCallableDateLike,
     MaybeType,
     Number,
+    Owner,
     Pair,
     PathToBinaryIO,
     PatternLike,
@@ -539,8 +541,8 @@ def _compress_files(
     *srcs_or_dest: PathLike,
     overwrite: bool = False,
     perms: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
 ) -> None:
     *srcs, dest = map(Path, [src_or_dest, *srcs_or_dest])
     try:
@@ -594,8 +596,8 @@ def compress_zip(
     *srcs_or_dest: PathLike,
     overwrite: bool = False,
     perms: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
 ) -> None:
     """Create a Zip file."""
     *srcs, dest = map(Path, [src_or_dest, *srcs_or_dest])
@@ -1593,8 +1595,8 @@ def copy(
     *,
     overwrite: bool = False,
     perms: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
 ) -> None:
     """Copy a file atomically."""
     src, dest = map(Path, [src, dest])
@@ -1621,8 +1623,8 @@ def move(
     *,
     overwrite: bool = False,
     perms: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
 ) -> None:
     """Move a file atomically."""
     src, dest = map(Path, [src, dest])
@@ -1650,8 +1652,8 @@ def _copy_or_move(
     *,
     overwrite: bool = False,
     perms: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
 ) -> None:
     match file_or_dir(src), file_or_dir(dest), overwrite:
         case None, _, _:
@@ -1864,8 +1866,8 @@ def move_many(
     *paths: Pair[PathLike],
     overwrite: bool = False,
     perms: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
 ) -> None:
     """Move a set of files concurrently."""
     with ExitStack() as stack:
@@ -2342,8 +2344,8 @@ def write_bytes(
     compress: bool = False,
     overwrite: bool = False,
     perms: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
     json: bool = False,
 ) -> None:
     """Write data to a file."""
@@ -2434,8 +2436,8 @@ def write_text(
     compress: bool = False,
     overwrite: bool = False,
     perms: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
 ) -> None:
     """Write text to a file."""
     try:
@@ -2715,7 +2717,7 @@ def chown(
     *,
     recursive: bool = False,
     user: str | int | None = None,
-    group: str | int | None = None,
+    group: Group | None = None,
 ) -> None:
     """Change file owner and/or group."""
     path = Path(path)
@@ -2834,8 +2836,8 @@ def TemporaryFile(  # noqa: N802
     data: bytes | None = None,
     text: str | None = None,
     perms: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
 ) -> Iterator[Path]:
     """Yield a temporary file."""
     dir_use = TEMP_DIR if dir is None else Path(dir)
@@ -3689,8 +3691,8 @@ def yield_write_path(
     compress: bool = False,
     overwrite: bool = False,
     perms: PermissionsLike | None = None,
-    owner: str | int | None = None,
-    group: str | int | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
 ) -> Iterator[Path]:
     """Yield a temporary path for atomically writing files to disk."""
     with yield_adjacent_temp_file(path) as temp:
