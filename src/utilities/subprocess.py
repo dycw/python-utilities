@@ -931,7 +931,7 @@ def rsync(
     print: bool = False,  # noqa: A002
     retry: Retry | None = None,
     logger: LoggerLike | None = None,
-    chown_user: str | int | None = None,
+    chown_user: Owner | None = None,
     chown_group: Group | None = None,
     exclude: MaybeSequenceStr | None = None,
     timeout: Duration | None = None,
@@ -990,7 +990,7 @@ def rsync_cmd(
     /,
     *,
     archive: bool = False,
-    chown_user: str | int | None = None,
+    chown_user: Owner | None = None,
     chown_group: Group | None = None,
     exclude: MaybeSequenceStr | None = None,
     batch_mode: bool = True,
