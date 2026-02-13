@@ -402,7 +402,6 @@ class TestExpandPath:
         assert result == expected
 
 
-@mark.only
 class TestGitBranchCurrent:
     @throttle_test(duration=5 * MINUTE)
     def test_main(
@@ -424,7 +423,6 @@ class TestGitBranchCurrent:
         assert result == "master"
 
 
-@mark.only
 class TestGitCheckout:
     @throttle_test(duration=5 * MINUTE)
     def test_main(
@@ -449,7 +447,6 @@ class TestGitCheckout:
         assert result == "branch"
 
 
-@mark.only
 class TestGitCheckoutCmd:
     def test_main(self) -> None:
         result = git_checkout_cmd("branch")
@@ -457,7 +454,6 @@ class TestGitCheckoutCmd:
         assert result == expected
 
 
-@mark.only
 class TestGitClone:
     @throttle_test(duration=5 * MINUTE)
     def test_main(
@@ -488,7 +484,6 @@ class TestGitClone:
         assert result == "branch"
 
 
-@mark.only
 class TestGitCloneCmd:
     def test_main(self, *, git_repo_url: str) -> None:
         result = git_clone_cmd(git_repo_url)
