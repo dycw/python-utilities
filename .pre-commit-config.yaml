@@ -116,7 +116,7 @@ repos:
       - id: trailing-whitespace
         priority: 20
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.0
+    rev: v0.15.1
     hooks:
       - id: ruff-check
         args:

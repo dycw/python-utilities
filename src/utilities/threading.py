@@ -27,7 +27,7 @@ class BackgroundTask:
         self.thread.join()
 
 
-def run_in_background(
+def run_in_background[**P](
     func: Callable[Concatenate[Event, _P], Any], *args: _P.args, **kwargs: _P.kwargs
 ) -> BackgroundTask:
     """Run a function in the background."""
