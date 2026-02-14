@@ -324,7 +324,7 @@ class TestCopyText:
         src, dest = temp_files
         _ = src.write_text("text")
         copy_text(src, dest, group=EFFECTIVE_GROUP_NAME)
-        assert dest.read_text() == "value"
+        assert dest.read_text() == "text"
         assert get_file_group(dest) == EFFECTIVE_GROUP_NAME
 
 
