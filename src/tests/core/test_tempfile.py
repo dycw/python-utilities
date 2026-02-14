@@ -98,7 +98,7 @@ class TestTemporaryFile:
         with TemporaryFile(perms=perms) as temp:
             assert Permissions.from_path(temp) == perms
 
-    def test_user(self) -> None:
+    def test_owner(self) -> None:
         with TemporaryFile(owner=EFFECTIVE_USER_NAME) as temp:
             assert get_file_owner(temp) == EFFECTIVE_USER_NAME
 

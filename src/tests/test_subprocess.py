@@ -264,14 +264,14 @@ class TestChModCmd:
 
 
 class TestChOwnCmd:
-    def test_user(self) -> None:
-        result = chown_cmd("path", user="user")
-        expected = ["chown", "user", "path"]
+    def test_owner(self) -> None:
+        result = chown_cmd("path", owner="owner")
+        expected = ["chown", "owner", "path"]
         assert result == expected
 
     def test_recursive(self) -> None:
-        result = chown_cmd("path", recursive=True, user="user")
-        expected = ["chown", "-R", "user", "path"]
+        result = chown_cmd("path", recursive=True, owner="owner")
+        expected = ["chown", "-R", "owner", "path"]
         assert result == expected
 
     def test_group(self) -> None:
@@ -279,15 +279,15 @@ class TestChOwnCmd:
         expected = ["chown", ":group", "path"]
         assert result == expected
 
-    def test_user_and_group(self) -> None:
-        result = chown_cmd("path", user="user", group="group")
-        expected = ["chown", "user:group", "path"]
+    def test_owner_and_group(self) -> None:
+        result = chown_cmd("path", owner="owner", group="group")
+        expected = ["chown", "owner:group", "path"]
         assert result == expected
 
     def test_error(self) -> None:
         with raises(
             ChownCmdError,
-            match=r"At least one of 'user' and/or 'group' must be given; got None",
+            match=r"At least one of 'owner' and/or 'group' must be given; got None",
         ):
             _ = chown_cmd("path")
 
@@ -297,15 +297,35 @@ class TestCopyText:
         src, dest = temp_files
         _ = src.write_text("text")
         copy_text(src, dest)
-        result = dest.read_text()
-        assert result == "text"
+        assert dest.read_text() == "text"
 
     def test_substitutions(self, *, temp_files: tuple[Path, Path]) -> None:
         src, dest = temp_files
         _ = src.write_text("${KEY}")
         copy_text(src, dest, substitutions={"KEY": "value"})
-        result = dest.read_text()
-        assert result == "value"
+        assert dest.read_text() == "value"
+
+    def test_perms(self, *, temp_files: tuple[Path, Path]) -> None:
+        src, dest = temp_files
+        _ = src.write_text("text")
+        perms = Permissions.from_text("u=rw,g=r,o=r")
+        copy_text(src, dest, perms=perms)
+        assert dest.read_text() == "text"
+        assert Permissions.from_path(dest) == perms
+
+    def test_owner(self, *, temp_files: tuple[Path, Path]) -> None:
+        src, dest = temp_files
+        _ = src.write_text("text")
+        copy_text(src, dest, owner=EFFECTIVE_USER_NAME)
+        assert dest.read_text() == "text"
+        assert get_file_owner(dest) == EFFECTIVE_USER_NAME
+
+    def test_group(self, *, temp_files: tuple[Path, Path]) -> None:
+        src, dest = temp_files
+        _ = src.write_text("text")
+        copy_text(src, dest, group=EFFECTIVE_GROUP_NAME)
+        assert dest.read_text() == "text"
+        assert get_file_group(dest) == EFFECTIVE_GROUP_NAME
 
 
 class TestCp:
@@ -834,13 +854,13 @@ class TestRsyncCmd:
         ]
         assert result == expected
 
-    def test_chown_user(self, *, temp_file: Path) -> None:
-        result = rsync_cmd(temp_file, "user", "hostname", "dest", chown_user="user2")
+    def test_chown_owner(self, *, temp_file: Path) -> None:
+        result = rsync_cmd(temp_file, "user", "hostname", "dest", chown_owner="owner")
         expected: list[str] = [
             "rsync",
             "--checksum",
             "--chown",
-            "user2",
+            "owner",
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
@@ -864,20 +884,20 @@ class TestRsyncCmd:
         ]
         assert result == expected
 
-    def test_chown_user_and_group(self, *, temp_file: Path) -> None:
+    def test_chown_owner_and_group(self, *, temp_file: Path) -> None:
         result = rsync_cmd(
             temp_file,
             "user",
             "hostname",
             "dest",
-            chown_user="user2",
+            chown_owner="owner",
             chown_group="group",
         )
         expected: list[str] = [
             "rsync",
             "--checksum",
             "--chown",
-            "user2:group",
+            "owner:group",
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",

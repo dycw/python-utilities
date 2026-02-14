@@ -257,17 +257,17 @@ class TestSubstitute:
         result = substitute(self.template, TEMPLATE_KEY=key, TEMPLATE_VALUE=value)
         self._assert_equal(result, key, value)
 
-    def test_environ(self) -> None:
-        key, value = unique_str(), unique_str()
-        with yield_temp_environ(TEMPLATE_KEY=key, TEMPLATE_VALUE=value):
-            result = substitute(self.template, environ=True, key=key, value=value)
-        self._assert_equal(result, key, value)
-
     def test_mapping(self) -> None:
         key, value = unique_str(), unique_str()
         result = substitute(
             self.template, mapping={"TEMPLATE_KEY": key, "TEMPLATE_VALUE": value}
         )
+        self._assert_equal(result, key, value)
+
+    def test_environ(self) -> None:
+        key, value = unique_str(), unique_str()
+        with yield_temp_environ(TEMPLATE_KEY=key, TEMPLATE_VALUE=value):
+            result = substitute(self.template, environ=True, key=key, value=value)
         self._assert_equal(result, key, value)
 
     def test_safe(self) -> None:

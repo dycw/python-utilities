@@ -45,7 +45,7 @@ class TestYieldWritePath:
             temp.touch()
         assert Permissions.from_path(temp_path_not_exist) == perms
 
-    def test_user(self, *, temp_path_not_exist: Path) -> None:
+    def test_owner(self, *, temp_path_not_exist: Path) -> None:
         with yield_write_path(temp_path_not_exist, owner=EFFECTIVE_USER_NAME) as temp:
             temp.touch()
         assert get_file_owner(temp_path_not_exist) == EFFECTIVE_USER_NAME
