@@ -36,6 +36,7 @@ from utilities.core import (
     one,
     repr_str,
     repr_table,
+    substitute,
     sync_sleep,
     to_logger,
 )
@@ -238,18 +239,18 @@ def chown(
     *,
     sudo: bool = False,
     recursive: bool = False,
-    user: str | int | None = None,
+    owner: Owner | None = None,
     group: Group | None = None,
 ) -> None:
     """Change file owner and/or group."""
     if sudo:  # pragma: no cover
-        if (user is not None) or (group is not None):
+        if (owner is not None) or (group is not None):
             args = sudo_cmd(
-                *chown_cmd(path, recursive=recursive, user=user, group=group)
+                *chown_cmd(path, recursive=recursive, owner=owner, group=group)
             )
             run(*args)
     else:  # pragma: no cover
-        utilities.core.chown(path, recursive=recursive, user=user, group=group)
+        utilities.core.chown(path, recursive=recursive, owner=owner, group=group)
 
 
 def chown_cmd(
@@ -257,22 +258,22 @@ def chown_cmd(
     /,
     *,
     recursive: bool = False,
-    user: str | int | None = None,
+    owner: Owner | None = None,
     group: Group | None = None,
 ) -> list[str]:
     """Command to use 'chown' to change file owner and/or group."""
     args: list[str] = ["chown"]
     if recursive:
         args.append("-R")
-    match user, group:
+    match owner, group:
         case None, None:
             raise ChownCmdError
         case str() | int(), None:
-            ownership = "user"
+            ownership = str(owner)
         case None, str() | int():
             ownership = f":{group}"
         case str() | int(), str() | int():
-            ownership = f"{user}:{group}"
+            ownership = f"{owner}:{group}"
         case never:
             assert_never(never)
     return [*args, ownership, str(path)]
@@ -282,7 +283,7 @@ def chown_cmd(
 class ChownCmdError(Exception):
     @override
     def __str__(self) -> str:
-        return "At least one of 'user' and/or 'group' must be given; got None"
+        return "At least one of 'owner' and/or 'group' must be given; got None"
 
 
 ##
@@ -304,12 +305,21 @@ def copy_text(
     *,
     sudo: bool = False,
     substitutions: StrMapping | None = None,
+    environ: bool = False,
+    safe: bool = False,
+    perms: PermissionsLike | None = None,
+    owner: Owner | None = None,
+    group: Group | None = None,
 ) -> None:
     """Copy the text contents of a file."""
     text = cat(src, sudo=sudo)
     if substitutions is not None:
-        text = Template(text).substitute(**substitutions)
+        text = substitute(text, environ=environ, safe=safe)
     tee(dest, text, sudo=sudo)
+    if perms is not None:
+        chmod(dest, perms, sudo=sudo)
+    if (owner is not None) or (group is not None):
+        chown(dest, sudo=sudo, owner=owner, group=group)
 
 
 ##
@@ -332,7 +342,7 @@ def cp(
         if perms is not None:
             chmod(dest, perms, sudo=True)
         if (owner is not None) or (group is not None):
-            chown(dest, sudo=True, user=owner, group=group)
+            chown(dest, sudo=True, owner=owner, group=group)
     else:
         try:
             copy(src, dest, overwrite=True, perms=perms, owner=owner, group=group)
@@ -834,7 +844,7 @@ def mv(
         if perms is not None:
             chmod(dest, perms, sudo=True)
         if (owner is not None) or (group is not None):
-            chown(dest, sudo=True, user=owner, group=group)
+            chown(dest, sudo=True, owner=owner, group=group)
     else:
         try:
             move(src, dest, overwrite=True, perms=perms, owner=owner, group=group)
@@ -957,7 +967,7 @@ def rsync(
         hostname,
         dest,
         archive=any(Path(s).is_dir() for s in srcs),
-        chown_user=chown_user,
+        chown_owner=chown_user,
         chown_group=chown_group,
         exclude=exclude,
         batch_mode=batch_mode,
@@ -990,7 +1000,7 @@ def rsync_cmd(
     /,
     *,
     archive: bool = False,
-    chown_user: Owner | None = None,
+    chown_owner: Owner | None = None,
     chown_group: Group | None = None,
     exclude: MaybeSequenceStr | None = None,
     batch_mode: bool = True,
@@ -1004,15 +1014,15 @@ def rsync_cmd(
     if archive:
         args.append("--archive")
     args.append("--checksum")
-    match chown_user, chown_group:
+    match chown_owner, chown_group:
         case None, None:
             ...
         case str() | int(), None:
-            args.extend(["--chown", str(chown_user)])
+            args.extend(["--chown", str(chown_owner)])
         case None, str() | int():
             args.extend(["--chown", f":{chown_group}"])
         case str() | int(), str() | int():
-            args.extend(["--chown", f"{chown_user}:{chown_group}"])
+            args.extend(["--chown", f"{chown_owner}:{chown_group}"])
         case never:
             assert_never(never)
     args.append("--compress")
@@ -2827,6 +2837,7 @@ __all__ = [
     "chown",
     "chown_cmd",
     "chpasswd",
+    "config_file",
     "copy_text",
     "cp",
     "cp_cmd",

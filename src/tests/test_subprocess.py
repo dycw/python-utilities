@@ -264,14 +264,14 @@ class TestChModCmd:
 
 
 class TestChOwnCmd:
-    def test_user(self) -> None:
-        result = chown_cmd("path", user="user")
-        expected = ["chown", "user", "path"]
+    def test_owner(self) -> None:
+        result = chown_cmd("path", owner="owner")
+        expected = ["chown", "owner", "path"]
         assert result == expected
 
     def test_recursive(self) -> None:
-        result = chown_cmd("path", recursive=True, user="user")
-        expected = ["chown", "-R", "user", "path"]
+        result = chown_cmd("path", recursive=True, owner="owner")
+        expected = ["chown", "-R", "owner", "path"]
         assert result == expected
 
     def test_group(self) -> None:
@@ -279,15 +279,15 @@ class TestChOwnCmd:
         expected = ["chown", ":group", "path"]
         assert result == expected
 
-    def test_user_and_group(self) -> None:
-        result = chown_cmd("path", user="user", group="group")
-        expected = ["chown", "user:group", "path"]
+    def test_owner_and_group(self) -> None:
+        result = chown_cmd("path", owner="owner", group="group")
+        expected = ["chown", "owner:group", "path"]
         assert result == expected
 
     def test_error(self) -> None:
         with raises(
             ChownCmdError,
-            match=r"At least one of 'user' and/or 'group' must be given; got None",
+            match=r"At least one of 'owner' and/or 'group' must be given; got None",
         ):
             _ = chown_cmd("path")
 
@@ -834,13 +834,13 @@ class TestRsyncCmd:
         ]
         assert result == expected
 
-    def test_chown_user(self, *, temp_file: Path) -> None:
-        result = rsync_cmd(temp_file, "user", "hostname", "dest", chown_user="user2")
+    def test_chown_owner(self, *, temp_file: Path) -> None:
+        result = rsync_cmd(temp_file, "user", "hostname", "dest", chown_owner="owner")
         expected: list[str] = [
             "rsync",
             "--checksum",
             "--chown",
-            "user2",
+            "owner",
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",
@@ -864,20 +864,20 @@ class TestRsyncCmd:
         ]
         assert result == expected
 
-    def test_chown_user_and_group(self, *, temp_file: Path) -> None:
+    def test_chown_owner_and_group(self, *, temp_file: Path) -> None:
         result = rsync_cmd(
             temp_file,
             "user",
             "hostname",
             "dest",
-            chown_user="user2",
+            chown_owner="owner",
             chown_group="group",
         )
         expected: list[str] = [
             "rsync",
             "--checksum",
             "--chown",
-            "user2:group",
+            "owner:group",
             "--compress",
             "--rsh",
             "ssh -o BatchMode=yes -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes -T",

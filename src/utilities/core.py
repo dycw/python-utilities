@@ -1673,7 +1673,7 @@ def _copy_or_move(
     if perms is not None:
         chmod(dest, perms)
     if (owner is not None) or (group is not None):
-        chown(dest, user=owner, group=group)
+        chown(dest, owner=owner, group=group)
 
 
 def _copy_or_move__file_to_file(src: Path, dest: Path, mode: CopyOrMove, /) -> None:
@@ -2716,22 +2716,22 @@ def chown(
     /,
     *,
     recursive: bool = False,
-    user: str | int | None = None,
+    owner: Owner | None = None,
     group: Group | None = None,
 ) -> None:
     """Change file owner and/or group."""
     path = Path(path)
     paths = list(path.rglob("**/*")) if recursive else [path]
     for p in paths:
-        match user, group:
+        match owner, group:
             case None, None:
                 ...
             case str() | int(), None:
-                shutil.chown(p, user, group)
+                shutil.chown(p, owner, group)
             case None, str() | int():
-                shutil.chown(p, user, group)
+                shutil.chown(p, owner, group)
             case str() | int(), str() | int():
-                shutil.chown(p, user, group)
+                shutil.chown(p, owner, group)
             case never:
                 assert_never(never)
 
@@ -2863,7 +2863,7 @@ def TemporaryFile(  # noqa: N802
             if perms is not None:
                 chmod(path, perms)
             if (owner is not None) or (group is not None):
-                chown(path, user=owner, group=group)
+                chown(path, owner=owner, group=group)
             yield path
 
     try:
@@ -3002,8 +3002,8 @@ def substitute(
     path_or_text: PathLike,
     /,
     *,
-    environ: bool = False,
     mapping: StrMapping | None = None,
+    environ: bool = False,
     safe: bool = False,
     **kwargs: Any,
 ) -> str:
@@ -3710,7 +3710,7 @@ def yield_write_path(
     if perms is not None:
         chmod(path, perms)
     if (owner is not None) or (group is not None):
-        chown(path, user=owner, group=group)
+        chown(path, owner=owner, group=group)
 
 
 ###############################################################################

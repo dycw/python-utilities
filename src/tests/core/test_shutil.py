@@ -15,16 +15,16 @@ class TestChOwn:
     def test_recursive(self, *, temp_file: Path) -> None:
         chown(temp_file, recursive=True)
 
-    def test_user(self, *, temp_file: Path) -> None:
-        chown(temp_file, user=EFFECTIVE_USER_NAME)
+    def test_owner(self, *, temp_file: Path) -> None:
+        chown(temp_file, owner=EFFECTIVE_USER_NAME)
         assert get_file_owner(temp_file) == EFFECTIVE_USER_NAME
 
     def test_group(self, *, temp_file: Path) -> None:
         chown(temp_file, group=EFFECTIVE_GROUP_NAME)
         assert get_file_group(temp_file) == EFFECTIVE_GROUP_NAME
 
-    def test_user_and_group(self, *, temp_file: Path) -> None:
-        chown(temp_file, user=EFFECTIVE_USER_NAME, group=EFFECTIVE_GROUP_NAME)
+    def test_owner_and_group(self, *, temp_file: Path) -> None:
+        chown(temp_file, owner=EFFECTIVE_USER_NAME, group=EFFECTIVE_GROUP_NAME)
         assert get_file_owner(temp_file) == EFFECTIVE_USER_NAME
         assert get_file_group(temp_file) == EFFECTIVE_GROUP_NAME
 
