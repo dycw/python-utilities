@@ -310,7 +310,7 @@ class TestCopyText:
         _ = src.write_text("text")
         perms = Permissions.from_text("u=rw,g=r,o=r")
         copy_text(src, dest, perms=perms)
-        assert dest.read_text() == "value"
+        assert dest.read_text() == "text"
         assert Permissions.from_path(dest) == perms
 
     def test_owner(self, *, temp_files: tuple[Path, Path]) -> None:

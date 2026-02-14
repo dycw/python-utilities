@@ -314,7 +314,7 @@ def copy_text(
     """Copy the text contents of a file."""
     text = cat(src, sudo=sudo)
     if substitutions is not None:
-        text = substitute(text, environ=environ, safe=safe)
+        text = substitute(text, mapping=substitutions, environ=environ, safe=safe)
     tee(dest, text, sudo=sudo)
     if perms is not None:
         chmod(dest, perms, sudo=sudo)
