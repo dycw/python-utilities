@@ -2837,7 +2837,6 @@ __all__ = [
     "chown",
     "chown_cmd",
     "chpasswd",
-    "config_file",
     "copy_text",
     "cp",
     "cp_cmd",

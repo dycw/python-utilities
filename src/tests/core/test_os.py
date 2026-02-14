@@ -104,7 +104,7 @@ class TestCopyOrMove:
         self._run_test_file(mode, src, dest, perms=perms)
         assert Permissions.from_path(dest) == perms
 
-    def test_user(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
+    def test_owner(self, *, tmp_path: Path, mode: CopyOrMove) -> None:
         src = self._setup_src_file(tmp_path)
         dest = self._setup_dest_file(tmp_path)
         self._run_test_file(mode, src, dest, owner=EFFECTIVE_USER_NAME)

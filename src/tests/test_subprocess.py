@@ -297,15 +297,35 @@ class TestCopyText:
         src, dest = temp_files
         _ = src.write_text("text")
         copy_text(src, dest)
-        result = dest.read_text()
-        assert result == "text"
+        assert dest.read_text() == "text"
 
     def test_substitutions(self, *, temp_files: tuple[Path, Path]) -> None:
         src, dest = temp_files
         _ = src.write_text("${KEY}")
         copy_text(src, dest, substitutions={"KEY": "value"})
-        result = dest.read_text()
-        assert result == "value"
+        assert dest.read_text() == "value"
+
+    def test_perms(self, *, temp_files: tuple[Path, Path]) -> None:
+        src, dest = temp_files
+        _ = src.write_text("text")
+        perms = Permissions.from_text("u=rw,g=r,o=r")
+        copy_text(src, dest, perms=perms)
+        assert dest.read_text() == "value"
+        assert Permissions.from_path(dest) == perms
+
+    def test_owner(self, *, temp_files: tuple[Path, Path]) -> None:
+        src, dest = temp_files
+        _ = src.write_text("text")
+        copy_text(src, dest, owner=EFFECTIVE_USER_NAME)
+        assert dest.read_text() == "text"
+        assert get_file_owner(dest) == EFFECTIVE_USER_NAME
+
+    def test_group(self, *, temp_files: tuple[Path, Path]) -> None:
+        src, dest = temp_files
+        _ = src.write_text("text")
+        copy_text(src, dest, group=EFFECTIVE_GROUP_NAME)
+        assert dest.read_text() == "value"
+        assert get_file_group(dest) == EFFECTIVE_GROUP_NAME
 
 
 class TestCp:
