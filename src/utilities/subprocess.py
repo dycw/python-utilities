@@ -1085,6 +1085,7 @@ def rsync_many(
     | tuple[Literal["sudo"], PathLike, PathLike]
     | tuple[PathLike, PathLike, PermissionsLike]
     | tuple[Literal["sudo"], PathLike, PathLike, PermissionsLike],
+    dir: PathLike | None = None,  # noqa: A002
     retry: Retry | None = None,
     logger: LoggerLike | None = None,
     keep: bool = False,
@@ -1096,7 +1097,7 @@ def rsync_many(
 ) -> None:
     cmds: list[list[str]] = []  # skipif-ci
     with (  # skipif-ci
-        TemporaryDirectory() as temp_src,
+        TemporaryDirectory(dir=dir) as temp_src,
         yield_ssh_temp_dir(
             user, hostname, retry=retry, logger=logger, keep=keep
         ) as temp_dest,
@@ -2768,11 +2769,17 @@ def uv_with_cmd(*, with_: MaybeSequenceStr | None = None) -> list[str]:
 
 
 @contextmanager
-def yield_git_repo(url: str, /, *, branch: str | None = None) -> Iterator[Path]:
+def yield_git_repo(
+    url: str,
+    /,
+    *,
+    dir: PathLike | None = None,  # noqa: A002
+    branch: str | None = None,
+) -> Iterator[Path]:
     """Yield a temporary git repository."""
-    with TemporaryDirectory() as temp_dir:
-        git_clone(url, path=temp_dir, branch=branch)
-        yield temp_dir
+    with TemporaryDirectory(dir=dir) as temp:
+        git_clone(url, path=temp, branch=branch)
+        yield temp
 
 
 ##
