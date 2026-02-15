@@ -627,14 +627,20 @@ def compress_zip(
 
 
 @contextmanager
-def yield_bz2(path: PathLike, /) -> Iterator[Path]:
+def yield_bz2(
+    path: PathLike,
+    /,
+    *,
+    dir: PathLike | None = None,  # noqa: A002
+) -> Iterator[Path]:
     """Yield the contents of a BZ2 file."""
 
     def func(path: PathLike, /) -> BZ2File:
         return BZ2File(path, mode="rb")
 
+    func_typed = cast("PathToBinaryIO", func)
     try:
-        with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
+        with _yield_uncompressed(path, func_typed, dir=dir) as temp:
             yield temp
     except _YieldUncompressedFileNotFoundError as error:
         raise YieldBZ2FileNotFoundError(path=error.path) from None
@@ -647,14 +653,20 @@ def yield_bz2(path: PathLike, /) -> Iterator[Path]:
 
 
 @contextmanager
-def yield_gzip(path: PathLike, /) -> Iterator[Path]:
+def yield_gzip(
+    path: PathLike,
+    /,
+    *,
+    dir: PathLike | None = None,  # noqa: A002
+) -> Iterator[Path]:
     """Yield the contents of a Gzip file."""
 
     def func(path: PathLike, /) -> GzipFile:
         return GzipFile(path, mode="rb")
 
+    func_typed = cast("PathToBinaryIO", func)
     try:
-        with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
+        with _yield_uncompressed(path, func_typed, dir=dir) as temp:
             yield temp
     except _YieldUncompressedFileNotFoundError as error:
         raise YieldGzipFileNotFoundError(path=error.path) from None
@@ -667,14 +679,20 @@ def yield_gzip(path: PathLike, /) -> Iterator[Path]:
 
 
 @contextmanager
-def yield_lzma(path: PathLike, /) -> Iterator[Path]:
+def yield_lzma(
+    path: PathLike,
+    /,
+    *,
+    dir: PathLike | None = None,  # noqa: A002
+) -> Iterator[Path]:
     """Yield the contents of an LZMA file."""
 
     def func(path: PathLike, /) -> LZMAFile:
         return LZMAFile(path, mode="rb")
 
+    func_typed = cast("PathToBinaryIO", func)
     try:
-        with _yield_uncompressed(path, cast("PathToBinaryIO", func)) as temp:
+        with _yield_uncompressed(path, func_typed, dir=dir) as temp:
             yield temp
     except _YieldUncompressedFileNotFoundError as error:
         raise YieldLZMAFileNotFoundError(path=error.path) from None
@@ -687,12 +705,18 @@ def yield_lzma(path: PathLike, /) -> Iterator[Path]:
 
 
 @contextmanager
-def _yield_uncompressed(path: PathLike, func: PathToBinaryIO, /) -> Iterator[Path]:
+def _yield_uncompressed(
+    path: PathLike,
+    func: PathToBinaryIO,
+    /,
+    *,
+    dir: PathLike | None = None,  # noqa: A002
+) -> Iterator[Path]:
     path = Path(path)
     try:
         with func(path) as buffer:
             try:
-                with TarFile(fileobj=buffer) as tf, TemporaryDirectory() as temp:
+                with TarFile(fileobj=buffer) as tf, TemporaryDirectory(dir=dir) as temp:
                     tf.extractall(path=temp, filter="data")
                     try:
                         yield one(temp.iterdir())
@@ -701,7 +725,7 @@ def _yield_uncompressed(path: PathLike, func: PathToBinaryIO, /) -> Iterator[Pat
             except ReadError as error:
                 (arg,) = error.args
                 if arg == "empty file":
-                    with TemporaryDirectory() as temp:
+                    with TemporaryDirectory(dir=dir) as temp:
                         yield temp
                 elif arg in {"bad checksum", "invalid header", "truncated header"}:
                     _ = buffer.seek(0)
@@ -723,11 +747,16 @@ def _yield_uncompressed(path: PathLike, func: PathToBinaryIO, /) -> Iterator[Pat
 
 
 @contextmanager
-def yield_zip(path: PathLike, /) -> Iterator[Path]:
+def yield_zip(
+    path: PathLike,
+    /,
+    *,
+    dir: PathLike | None = None,  # noqa: A002
+) -> Iterator[Path]:
     """Yield the contents of a Zip file."""
     path = Path(path)
     try:
-        with ZipFile(path) as zf, TemporaryDirectory() as temp:
+        with ZipFile(path) as zf, TemporaryDirectory(dir=dir) as temp:
             zf.extractall(path=temp)
             try:
                 yield one(temp.iterdir())
@@ -2775,6 +2804,9 @@ class TemporaryDirectory:
         dir: PathLike | None = None,  # noqa: A002
         ignore_cleanup_errors: bool = False,
         delete: bool = True,
+        perms: PermissionsLike | None = None,
+        owner: Owner | None = None,
+        group: Group | None = None,
     ) -> None:
         super().__init__()
 
@@ -2793,6 +2825,10 @@ class TemporaryDirectory:
             Path(error.filename).parent.mkdir(parents=True)
             self._temp_dir = run()
         self.path = Path(self._temp_dir.name)
+        if perms is not None:
+            chmod(self.path, perms)
+        if (owner is not None) or (group is not None):
+            chown(self.path, owner=owner, group=group)
 
     def __enter__(self) -> Path:
         return Path(self._temp_dir.__enter__())

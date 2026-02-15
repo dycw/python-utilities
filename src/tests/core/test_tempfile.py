@@ -48,6 +48,19 @@ class TestTemporaryDirectory:
             relative = temp.relative_to(dir_)
         assert len(relative.parts) == 1
 
+    def test_perms(self) -> None:
+        perms = Permissions.from_text("u=rw,g=r,o=r")
+        with TemporaryDirectory(perms=perms) as temp:
+            assert Permissions.from_path(temp) == perms
+
+    def test_owner(self) -> None:
+        with TemporaryDirectory(owner=EFFECTIVE_USER_NAME) as temp:
+            assert get_file_owner(temp) == EFFECTIVE_USER_NAME
+
+    def test_group(self) -> None:
+        with TemporaryDirectory(group=EFFECTIVE_GROUP_NAME) as temp:
+            assert get_file_group(temp) == EFFECTIVE_GROUP_NAME
+
 
 class TestTemporaryFile:
     def test_main(self) -> None:
