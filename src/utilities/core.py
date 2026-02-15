@@ -710,7 +710,7 @@ def _yield_uncompressed(
     func: PathToBinaryIO,
     /,
     *,
-    dir: PathLike | None,  # noqa: A002
+    dir: PathLike | None = None,  # noqa: A002
 ) -> Iterator[Path]:
     path = Path(path)
     try:
