@@ -2804,6 +2804,9 @@ class TemporaryDirectory:
         dir: PathLike | None = None,  # noqa: A002
         ignore_cleanup_errors: bool = False,
         delete: bool = True,
+        perms: PermissionsLike | None = None,
+        owner: Owner | None = None,
+        group: Group | None = None,
     ) -> None:
         super().__init__()
 
@@ -2822,6 +2825,10 @@ class TemporaryDirectory:
             Path(error.filename).parent.mkdir(parents=True)
             self._temp_dir = run()
         self.path = Path(self._temp_dir.name)
+        if perms is not None:
+            chmod(self.path, perms)
+        if (owner is not None) or (group is not None):
+            chown(self.path, owner=owner, group=group)
 
     def __enter__(self) -> Path:
         return Path(self._temp_dir.__enter__())
