@@ -46,6 +46,7 @@ from utilities.core import (
     substitute,
     sync_sleep,
     to_logger,
+    yield_temp_environ,
 )
 from utilities.errors import ImpossibleCaseError
 from utilities.math import safe_round
@@ -65,7 +66,6 @@ if TYPE_CHECKING:
         Group,
         LoggerLike,
         MaybeIterable,
-        MaybeList,
         MaybeSequence,
         MaybeSequenceStr,
         Owner,
@@ -2019,7 +2019,8 @@ def uv_pip_list(
     editable: bool = False,
     exclude_editable: bool = False,
     index: MaybeSequenceStr | None = None,
-    credentials: MaybeSequence[tuple[str, str]] | None = None,
+    credentials: MaybeSequence[tuple[str, str] | tuple[int | str, str, str]]
+    | None = None,
     native_tls: bool = False,
 ) -> list[_UvPipListOutput]:
     """List packages installed in an environment."""
@@ -2030,12 +2031,13 @@ def uv_pip_list(
         outdated=False,
     )
     text_base = run(*cmds_base, return_stdout=True)
-    with _uv_pip_list_yield_env(index=index):
+    details = _uv_pip_list_merge(index=index, credentials=credentials)
+    with _uv_pip_list_yield_env(*details):
         cmds_outdated = uv_pip_list_cmd(
             editable=editable,
             exclude_editable=exclude_editable,
             format_="json",
-            index=index,
+            index=[i.full for i in details],
             outdated=False,
         )
     text_outdated = 1
@@ -2068,6 +2070,16 @@ class _IndexDetails:
     url: str
     username: str | None = None
     password: str | None = None
+
+    @property
+    def full(self) -> str:
+        match self.name:
+            case int() as n:
+                return f"custom{n}"
+            case str() as name:
+                return name
+            case never:
+                assert_never(never)
 
 
 def _uv_pip_list_merge(
@@ -2108,23 +2120,16 @@ def _uv_pip_list_merge(
 
 
 @contextmanager
-def _uv_pip_list_yield_env(
-    *,
-    index: MaybeSequenceStr | None = None,
-    credentials: MaybeSequence[tuple[str, str]] | None = None,
-) -> Iterator[None]:
-    if (index is None) or (credentials is None):
+def _uv_pip_list_yield_env(*index: _IndexDetails) -> Iterator[None]:
+    with ExitStack() as stack:
+        for index_i in index:
+            if index_i.username is not None:
+                key = f"UV_INDEX_{index_i.name}_USERNAME"
+                stack.enter_context(yield_temp_environ({key: index_i.username}))
+            if index_i.password is not None:
+                key = f"UV_INDEX_{index_i.name}_PASSWORD"
+                stack.enter_context(yield_temp_environ({key: index_i.password}))
         yield
-    else:
-        list(always_iterable(index))
-        list(always_iterable(index))
-        with ExitStack():
-            for credential in credentials:
-                match credential:
-                    case str() as username, str() as password:
-                        a
-                    case int() as index, str() as username, str() as password:
-                        a
 
 
 def _uv_pip_list_loads(text: str, /) -> list[StrMapping]:
