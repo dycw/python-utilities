@@ -5,6 +5,7 @@ import ipaddress
 import pathlib
 import uuid
 from collections.abc import Callable, Iterable
+from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, assert_never, cast, override
 
@@ -13,10 +14,12 @@ import whenever
 from click import Argument, Choice, Context, Option, Parameter, ParamType
 from click._utils import UNSET
 from click.types import IntParamType, StringParamType
+from rich.pretty import pretty_repr
 
 from utilities.core import (
     ExtractGroupError,
     ParseBoolError,
+    chunked,
     extract_group,
     get_class_name,
     parse_bool,
@@ -1039,9 +1042,77 @@ class ListStrs(ListParameter[StringParamType, str]):
 # strs
 
 
-def to_args() -> list[str]:
+def to_args(*args: Any, join: bool = False) -> list[str]:
     """Convert a set of settings into a list of strings."""
-    return []
+    if (n := len(args)) % 2 != 0:
+        raise _ToArgsOddError(n=n)
+    result: list[str] = []
+    for key, value in chunked(args, 2):
+        if not isinstance(key, str):
+            raise _ToArgsKeyNotAStringError(key=key)
+        if not key.startswith("--"):
+            raise _ToArgsKeyPrefixError(key=key)
+        match value:
+            case True:
+                result.append(key)
+            case False:
+                name = extract_group(r"^\-\-([\w\-]+)$", key)
+                result.append(f"--no-{name}")
+            case int() | str():
+                result.extend(_to_args_join(key, value, join=join))
+            case list():
+                if all(isinstance(v, str) for v in value):
+                    result.extend(_to_args_join(key, ",".join(value), join=join))
+                else:
+                    raise TypeError(value) from None
+            case _:
+                try:
+                    from pydantic import SecretStr
+                except ModuleNotFoundError:  # pragma: no cover
+                    raise TypeError(value) from None
+                else:
+                    if isinstance(value, SecretStr):
+                        result.extend(
+                            _to_args_join(key, value.get_secret_value(), join=join)
+                        )
+                    else:
+                        raise TypeError(value) from None
+    return result
+
+
+def _to_args_join(key: str, value: Any, /, *, join: bool = False) -> list[str]:
+    return [f"{key}={value}"] if join else [key, str(value)]
+
+
+@dataclass(kw_only=True, slots=True)
+class ToArgsError(Exception): ...
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToArgsOddError(ToArgsError):
+    n: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Expected an even number of arguments; got {self.n}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToArgsKeyNotAStringError(ToArgsError):
+    key: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Expected key to be a string; got {pretty_repr(self.key)}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToArgsKeyPrefixError(ToArgsError):
+    key: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Expected key to start with '--'; got {self.key!r}"
 
 
 # private
@@ -1081,6 +1152,7 @@ __all__ = [
     "Str",
     "Time",
     "TimeDelta",
+    "ToArgsError",
     "YearMonth",
     "ZonedDateTime",
     "argument",
