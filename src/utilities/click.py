@@ -1042,7 +1042,7 @@ class ListStrs(ListParameter[StringParamType, str]):
 # strs
 
 
-def to_args(*args: Any, join: bool = False) -> list[str]:
+def to_args(*args: Any, explicit_false: bool = False, join: bool = False) -> list[str]:
     """Convert a set of settings into a list of strings."""
     if (n := len(args)) % 2 != 0:
         raise _ToArgsOddError(n=n)
@@ -1052,17 +1052,19 @@ def to_args(*args: Any, join: bool = False) -> list[str]:
             raise _ToArgsKeyNotAStringError(key=key)
         if not key.startswith("--"):
             raise _ToArgsKeyPrefixError(key=key)
-        match value:
-            case None:
+        match value, explicit_false:
+            case None, _:
                 ...
-            case True:
+            case True, _:
                 result.append(key)
-            case False:
+            case False, False:
+                ...
+            case False, True:
                 name = extract_group(r"^\-\-([\w\-]+)$", key)
                 result.append(f"--no-{name}")
-            case int() | str():
+            case int() | str(), _:
                 result.extend(_to_args_join(key, value, join=join))
-            case list():
+            case list(), _:
                 if all(isinstance(v, str) for v in value):
                     result.extend(_to_args_join(key, ",".join(value), join=join))
                 else:

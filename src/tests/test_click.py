@@ -903,11 +903,19 @@ class TestToArgs:
         assert result == expected
 
     @mark.parametrize(
-        ("flag", "expected"), [param(True, "--flag"), param(False, "--no-flag")]
+        ("flag", "explicit_false", "expected"),
+        [
+            param(True, False, ["--flag"]),
+            param(True, True, ["--flag"]),
+            param(False, False, []),
+            param(False, True, ["--no-flag"]),
+        ],
     )
-    def test_bool(self, *, flag: bool, expected: str) -> None:
-        result = to_args("--flag", flag)
-        assert result == [expected]
+    def test_bool(
+        self, *, flag: bool, explicit_false: bool, expected: list[str]
+    ) -> None:
+        result = to_args("--flag", flag, explicit_false=explicit_false)
+        assert result == expected
 
     def test_error_odd(self) -> None:
         with raises(
