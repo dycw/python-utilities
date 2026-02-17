@@ -1,13 +1,13 @@
 [pytest]
   addopts = [
-    "-ra",
-    "-vv",
     "--color=auto",
-    "--durations=10",
-    "--durations-min=10",
-    "--cov=utilities",
     "--cov-config=.coveragerc.toml",
     "--cov-report=html",
+    "--cov=utilities",
+    "--durations-min=10",
+    "--durations=10",
+    "-ra",
+    "-vv",
   ]
   asyncio_default_fixture_loop_scope = "function"
   asyncio_mode = "auto"
@@ -15,10 +15,10 @@
   empty_parameter_set_mark = "fail_at_collect"
   filterwarnings = [
     "error",
-    "ignore::ResourceWarning",
-    "ignore:Automatically deduplicated selection parameter with identical configuration:UserWarning", # altair
     "ignore::DeprecationWarning",
+    "ignore::ResourceWarning",
     "ignore::RuntimeWarning",
+    "ignore:Automatically deduplicated selection parameter with identical configuration:UserWarning",
   ]
   minversion = "9.0"
   strict = true
