@@ -25,7 +25,7 @@ from hypothesis.strategies import (
     sampled_from,
     uuids,
 )
-from pytest import mark, param
+from pytest import mark, param, raises
 
 import utilities.click
 from utilities.click import (
@@ -56,7 +56,11 @@ from utilities.click import (
     TimeDelta,
     YearMonth,
     ZonedDateTime,
+    _ToArgsKeyNotAStringError,
+    _ToArgsKeyPrefixError,
+    _ToArgsOddError,
     flag,
+    to_args,
 )
 from utilities.core import get_class_name, normalize_multi_line_str, substitute
 from utilities.hypothesis import (
@@ -873,3 +877,54 @@ class TestPath:
             "Invalid value for '--path': '.*' exists but is not a directory",
             result.stderr,
         )
+
+
+class TestToArgs:
+    @mark.parametrize(
+        ("args", "join", "expected"),
+        [
+            param(["--n", 1], False, ["--n", "1"]),
+            param(["--n", 1], True, ["--n=1"]),
+            param(["--arg", "text"], False, ["--arg", "text"]),
+            param(["--arg", "text"], True, ["--arg=text"]),
+            param(["--arg", ["text1"]], False, ["--arg", "text1"]),
+            param(["--arg", ["text1"]], True, ["--arg=text1"]),
+            param(["--arg", ["text1", "text2"]], False, ["--arg", "text1,text2"]),
+            param(["--arg", ["text1", "text2"]], True, ["--arg=text1,text2"]),
+            param(["--arg", pydantic.SecretStr("secret")], False, ["--arg", "secret"]),
+            param(["--arg", pydantic.SecretStr("secret")], True, ["--arg=secret"]),
+        ],
+    )
+    def test_main(self, *, args: list[Any], join: bool, expected: list[str]) -> None:
+        result = to_args(*args, join=join)
+        assert result == expected
+
+    @mark.parametrize(
+        ("flag", "expected"), [param(True, "--flag"), param(False, "--no-flag")]
+    )
+    def test_bool(self, *, flag: bool, expected: str) -> None:
+        result = to_args("--flag", flag)
+        assert result == [expected]
+
+    def test_error_odd(self) -> None:
+        with raises(
+            _ToArgsOddError, match="Expected an even number of arguments; got 1"
+        ):
+            _ = to_args("--arg")
+
+    def test_error_key_not_a_string(self) -> None:
+        with raises(
+            _ToArgsKeyNotAStringError, match="Expected key to be a string; got None"
+        ):
+            _ = to_args(None, "value")
+
+    def test_error_key_prefix(self) -> None:
+        with raises(
+            _ToArgsKeyPrefixError, match="Expected key to start with '--'; got '-arg'"
+        ):
+            _ = to_args("-arg", "value")
+
+    @mark.parametrize("value", [param([1, 2, 3]), param(None)])
+    def test_error_type(self, *, value: Any) -> None:
+        with raises(TypeError):
+            _ = to_args("--arg", value)
