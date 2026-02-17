@@ -912,11 +912,6 @@ class TestToArgs:
         ):
             _ = to_args("--arg")
 
-    @mark.parametrize("value", [param([1, 2, 3]), param(None)])
-    def test_error_type_error(self, *, value: Any) -> None:
-        with raises(TypeError):
-            _ = to_args("--arg", value)
-
     def test_error_key_not_a_string(self) -> None:
         with raises(
             _ToArgsKeyNotAStringError, match="Expected key to be a string; got None"
@@ -928,3 +923,8 @@ class TestToArgs:
             _ToArgsKeyPrefixError, match="Expected key to start with '--'; got '-arg'"
         ):
             _ = to_args("-arg", "value")
+
+    @mark.parametrize("value", [param([1, 2, 3]), param(None)])
+    def test_error_type(self, *, value: Any) -> None:
+        with raises(TypeError):
+            _ = to_args("--arg", value)
