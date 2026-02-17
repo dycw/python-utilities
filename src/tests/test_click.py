@@ -62,6 +62,7 @@ from utilities.click import (
     flag,
     to_args,
 )
+from utilities.constants import sentinel
 from utilities.core import get_class_name, normalize_multi_line_str, substitute
 from utilities.hypothesis import (
     date_deltas,
@@ -883,8 +884,10 @@ class TestToArgs:
     @mark.parametrize(
         ("args", "join", "expected"),
         [
-            param(["--n", 1], False, ["--n", "1"]),
-            param(["--n", 1], True, ["--n=1"]),
+            param(["--arg", None], False, []),
+            param(["--arg", None], True, []),
+            param(["--arg", 1], False, ["--arg", "1"]),
+            param(["--arg", 1], True, ["--arg=1"]),
             param(["--arg", "text"], False, ["--arg", "text"]),
             param(["--arg", "text"], True, ["--arg=text"]),
             param(["--arg", ["text1"]], False, ["--arg", "text1"]),
@@ -924,7 +927,7 @@ class TestToArgs:
         ):
             _ = to_args("-arg", "value")
 
-    @mark.parametrize("value", [param([1, 2, 3]), param(None)])
+    @mark.parametrize("value", [param([1, 2, 3]), param(sentinel)])
     def test_error_type(self, *, value: Any) -> None:
         with raises(TypeError):
             _ = to_args("--arg", value)

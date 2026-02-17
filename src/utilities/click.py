@@ -1053,6 +1053,8 @@ def to_args(*args: Any, join: bool = False) -> list[str]:
         if not key.startswith("--"):
             raise _ToArgsKeyPrefixError(key=key)
         match value:
+            case None:
+                ...
             case True:
                 result.append(key)
             case False:
