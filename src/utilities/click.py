@@ -1036,6 +1036,14 @@ class ListStrs(ListParameter[StringParamType, str]):
         super().__init__(StringParamType(), separator=separator)
 
 
+# strs
+
+
+def to_args() -> list[str]:
+    """Convert a set of settings into a list of strings."""
+    return []
+
+
 # private
 
 
@@ -1078,4 +1086,5 @@ __all__ = [
     "argument",
     "flag",
     "option",
+    "to_args",
 ]
