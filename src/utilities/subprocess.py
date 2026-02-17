@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass, field
 from io import StringIO
 from itertools import chain, repeat
@@ -18,7 +18,11 @@ from typing import IO, TYPE_CHECKING, Any, Literal, assert_never, overload, over
 from urllib.parse import urlparse
 
 import utilities.core
-from utilities._core_errors import CopySourceNotFoundError, MoveSourceNotFoundError
+from utilities._core_errors import (
+    CopySourceNotFoundError,
+    ExtractGroupsError,
+    MoveSourceNotFoundError,
+)
 from utilities.constants import HOME, HOSTNAME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
@@ -28,6 +32,8 @@ from utilities.core import (
     always_iterable,
     copy,
     duration_to_seconds,
+    extract_group,
+    extract_groups,
     file_or_dir,
     log_info,
     move,
@@ -58,6 +64,7 @@ if TYPE_CHECKING:
         Group,
         LoggerLike,
         MaybeIterable,
+        MaybeSequence,
         MaybeSequenceStr,
         Owner,
         PathLike,
@@ -2010,9 +2017,26 @@ def uv_pip_list(
     editable: bool = False,
     exclude_editable: bool = False,
     index: MaybeSequenceStr | None = None,
+    credentials: MaybeSequence[tuple[str, str]] | None = None,
     native_tls: bool = False,
 ) -> list[_UvPipListOutput]:
     """List packages installed in an environment."""
+    cmds_base = uv_pip_list_cmd(
+        editable=editable,
+        exclude_editable=exclude_editable,
+        format_="json",
+        outdated=False,
+    )
+    text_base = run(*cmds_base, return_stdout=True)
+    with _uv_pip_list_yield_env(index=index):
+        cmds_outdated = uv_pip_list_cmd(
+            editable=editable,
+            exclude_editable=exclude_editable,
+            format_="json",
+            index=index,
+            outdated=False,
+        )
+    text_outdated = 1
     cmds_base, cmds_outdated = [
         uv_pip_list_cmd(
             editable=editable,
@@ -2034,6 +2058,50 @@ def uv_pip_list(
         map(_uv_pip_list_loads, [text_base, text_outdated])
     )
     return [_uv_pip_list_assemble_output(d, dicts_outdated) for d in dicts_base]
+
+
+@contextmanager
+def _uv_pip_list_normalize_index(
+    *,
+    index: MaybeSequenceStr | None = None,
+    credentials: MaybeSequence[tuple[str, str]] | None = None,
+) -> tuple[str | None, dict[str, tuple[str, str] | None]]:
+    all_indices: dict[int, str] = {}
+    env_vars: dict[str, tuple[str, str] | None] = {}
+    if index is not None:
+        for i, index_i in enumerate(always_iterable(index)):
+            try:
+                name, base = extract_groups(r"^(\w+)=(\w+)$", index_i)
+            except ExtractGroupsError:
+                all_indices[i] = index_i
+            else:
+                all_indices[i] = base
+                env_vars[name] = None
+    if credentials is not None:
+        for credentials_i in always_iterable(credentials):
+            z
+
+    return all_indices if len(all_indices) >= 1 else None, credentials
+
+
+@contextmanager
+def _uv_pip_list_yield_env(
+    *,
+    index: MaybeSequenceStr | None = None,
+    credentials: MaybeSequence[tuple[str, str]] | None = None,
+) -> Iterator[None]:
+    if (index is None) or (credentials is None):
+        yield
+    else:
+        all_indices = list(always_iterable(index))
+        all_indices = list(always_iterable(index))
+        with ExitStack() as stack:
+            for credential in credentials:
+                match credential:
+                    case str() as username, str() as password:
+                        a
+                    case int() as index, str() as username, str() as password:
+                        a
 
 
 def _uv_pip_list_loads(text: str, /) -> list[StrMapping]:
