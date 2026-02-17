@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from operator import index
 from pathlib import Path
 from re import MULTILINE, search
 from typing import TYPE_CHECKING
@@ -40,6 +41,7 @@ from utilities.subprocess import (
     RunCalledProcessError,
     RunError,
     RunFileNotFoundError,
+    _IndexDetails,
     _rsync_many_prepare,
     _RsyncCmdNoSourcesError,
     _RsyncCmdSourcesNotFoundError,
@@ -47,6 +49,7 @@ from utilities.subprocess import (
     _ssh_retry_skip,
     _uv_pip_list_assemble_output,
     _uv_pip_list_loads,
+    _uv_pip_list_merge,
     _UvPipListBaseVersionError,
     _UvPipListJsonError,
     _UvPipListOutdatedVersionError,
@@ -129,7 +132,7 @@ if TYPE_CHECKING:
 
     from pytest import CaptureFixture
 
-    from utilities.types import PathLike
+    from utilities.types import MaybeSequence, PathLike
 
 
 class TestAppendText:
@@ -1957,24 +1960,6 @@ class TestUvPipList:
         assert is_sequence_of(result, _UvPipListOutput)
 
 
-class TestUvPipListLoadsOutput:
-    def test_main(self) -> None:
-        text = normalize_multi_line_str("""
-            [{"name":"name","version":"0.0.1"}]
-        """)
-        result = _uv_pip_list_loads(text)
-        expected = [{"name": "name", "version": "0.0.1"}]
-        assert result == expected
-
-    def test_error(self) -> None:
-        text = normalize_multi_line_str("""
-            [{"name":"name","version":"0.0.1"}]
-            # warning: The package `name` requires `dep>=1.2.3`, but `1.2.2` is installed
-        """)
-        with raises(_UvPipListJsonError, match=r"Unable to parse JSON; got '.*'"):
-            _ = _uv_pip_list_loads(text)
-
-
 class TestUvPipListAssembleOutput:
     def test_main(self) -> None:
         dict_ = {"name": "name", "version": "0.0.1"}
@@ -2030,6 +2015,75 @@ class TestUvPipListAssembleOutput:
             _UvPipListOutdatedVersionError, match=r"Unable to parse version; got .*"
         ):
             _ = _uv_pip_list_assemble_output(dict_, outdated)
+
+
+class TestUvPipListLoads:
+    def test_main(self) -> None:
+        text = normalize_multi_line_str("""
+            [{"name":"name","version":"0.0.1"}]
+        """)
+        result = _uv_pip_list_loads(text)
+        expected = [{"name": "name", "version": "0.0.1"}]
+        assert result == expected
+
+    def test_error(self) -> None:
+        text = normalize_multi_line_str("""
+            [{"name":"name","version":"0.0.1"}]
+            # warning: The package `name` requires `dep>=1.2.3`, but `1.2.2` is installed
+        """)
+        with raises(_UvPipListJsonError, match=r"Unable to parse JSON; got '.*'"):
+            _ = _uv_pip_list_loads(text)
+
+
+class TestUvPipListMerge:
+    def test_none(self) -> None:
+        result = _uv_pip_list_merge()
+        assert result == []
+
+    def test_index_single_unnamed(self) -> None:
+        result = _uv_pip_list_merge(index="index")
+        expected = [_IndexDetails(name=0, url="index")]
+        assert result == expected
+
+    def test_index_single_named(self) -> None:
+        result = _uv_pip_list_merge(index="name=index")
+        expected = [_IndexDetails(name="name", url="index")]
+        assert result == expected
+
+    def test_index_multiple_unnamed(self) -> None:
+        result = _uv_pip_list_merge(index=["index1", "index2"])
+        expected = [
+            _IndexDetails(name=0, url="index1"),
+            _IndexDetails(name=1, url="index2"),
+        ]
+        assert result == expected
+
+    @mark.parametrize(
+        "credentials",
+        [
+            param(("username", "password")),
+            param([("username", "password")]),
+            param((0, "username", "password")),
+            param([(0, "username", "password")]),
+        ],
+    )
+    def test_index_single_with_credentials_matched(
+        self,
+        *,
+        credentials: MaybeSequence[tuple[str, str] | tuple[int | str, str, str]],
+    ) -> None:
+        result = _uv_pip_list_merge(index="index", credentials=credentials)
+        expected = [
+            _IndexDetails(name=0, url="index", username="username", password="password")  # noqa: S106
+        ]
+        assert result == expected
+
+    def test_index_single_with_credentials_unmatched(self) -> None:
+        result = _uv_pip_list_merge(
+            index="index", credentials=[("other", "username", "password")]
+        )
+        expected = [_IndexDetails(name=0, url="index")]
+        assert result == expected
 
 
 class TestUvPipListCmd:

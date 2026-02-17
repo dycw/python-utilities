@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import sys
 from contextlib import ExitStack, contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from io import StringIO
 from itertools import chain, repeat
 from json import JSONDecodeError
@@ -16,6 +16,8 @@ from subprocess import PIPE, Popen
 from threading import Thread
 from typing import IO, TYPE_CHECKING, Any, Literal, assert_never, overload, override
 from urllib.parse import urlparse
+
+import more_itertools
 
 import utilities.core
 from utilities._core_errors import (
@@ -32,7 +34,6 @@ from utilities.core import (
     always_iterable,
     copy,
     duration_to_seconds,
-    extract_group,
     extract_groups,
     file_or_dir,
     log_info,
@@ -64,6 +65,7 @@ if TYPE_CHECKING:
         Group,
         LoggerLike,
         MaybeIterable,
+        MaybeList,
         MaybeSequence,
         MaybeSequenceStr,
         Owner,
@@ -2060,28 +2062,49 @@ def uv_pip_list(
     return [_uv_pip_list_assemble_output(d, dicts_outdated) for d in dicts_base]
 
 
-@contextmanager
-def _uv_pip_list_normalize_index(
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
+class _IndexDetails:
+    name: int | str
+    url: str
+    username: str | None = None
+    password: str | None = None
+
+
+def _uv_pip_list_merge(
     *,
     index: MaybeSequenceStr | None = None,
-    credentials: MaybeSequence[tuple[str, str]] | None = None,
-) -> tuple[str | None, dict[str, tuple[str, str] | None]]:
-    all_indices: dict[int, str] = {}
-    env_vars: dict[str, tuple[str, str] | None] = {}
+    credentials: MaybeSequence[tuple[str, str] | tuple[int | str, str, str]]
+    | None = None,
+) -> list[_IndexDetails]:
+    details: list[_IndexDetails] = []
     if index is not None:
         for i, index_i in enumerate(always_iterable(index)):
             try:
-                name, base = extract_groups(r"^(\w+)=(\w+)$", index_i)
+                name, url = extract_groups(r"^(\w+)=(\w+)$", index_i)
             except ExtractGroupsError:
-                all_indices[i] = index_i
+                details_i = _IndexDetails(name=i, url=index_i)
             else:
-                all_indices[i] = base
-                env_vars[name] = None
+                details_i = _IndexDetails(name=name, url=url)
+            details.append(details_i)
     if credentials is not None:
-        for credentials_i in always_iterable(credentials):
-            z
-
-    return all_indices if len(all_indices) >= 1 else None, credentials
+        for i, credentials_i in enumerate(
+            more_itertools.always_iterable(credentials, base_type=tuple)
+        ):
+            match credentials_i:
+                case str() as username, str() as password:
+                    j = i
+                case int() as j, str() as username, str() as password:
+                    ...
+                case str() as name, str() as username, str() as password:
+                    try:
+                        j = one(i for i, d in enumerate(details) if d.name == name)
+                    except OneEmptyError:
+                        j = None
+                case never:
+                    assert_never(never)
+            if (j is not None) and (0 <= j < len(details)):
+                details[j] = replace(details[j], username=username, password=password)
+    return details
 
 
 @contextmanager
@@ -2093,9 +2116,9 @@ def _uv_pip_list_yield_env(
     if (index is None) or (credentials is None):
         yield
     else:
-        all_indices = list(always_iterable(index))
-        all_indices = list(always_iterable(index))
-        with ExitStack() as stack:
+        list(always_iterable(index))
+        list(always_iterable(index))
+        with ExitStack():
             for credential in credentials:
                 match credential:
                     case str() as username, str() as password:
