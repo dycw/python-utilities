@@ -2031,6 +2031,16 @@ def uv_extra_cmd(*, extra: MaybeSequenceStr | None = None) -> list[str]:
 ##
 
 
+def uv_group_cmd(*, group: MaybeSequenceStr | None = None) -> list[str]:
+    """Generate the `--group` command if necessary."""
+    if group is None:
+        return []
+    return list(chain.from_iterable(["--group", e] for e in always_iterable(group)))
+
+
+##
+
+
 def uv_index_cmd(*, index: MaybeSequenceStr | None = None) -> list[str]:
     """Generate the `--index` command if necessary."""
     return [] if index is None else ["--index", ",".join(always_iterable(index))]
@@ -3172,6 +3182,7 @@ __all__ = [
     "uv_all_extras_cmd",
     "uv_all_groups_cmd",
     "uv_extra_cmd",
+    "uv_group_cmd",
     "uv_lock",
     "uv_lock_cmd",
     "uv_native_tls_cmd",

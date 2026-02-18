@@ -117,6 +117,7 @@ from utilities.subprocess import (
     uv_all_extras_cmd,
     uv_all_groups_cmd,
     uv_extra_cmd,
+    uv_group_cmd,
     uv_index_cmd,
     uv_lock_cmd,
     uv_native_tls_cmd,
@@ -139,7 +140,7 @@ if TYPE_CHECKING:
 
     from pytest import CaptureFixture
 
-    from utilities.types import PathLike
+    from utilities.types import MaybeSequenceStr, PathLike
 
 
 class TestAppendText:
@@ -1961,19 +1962,30 @@ class TestUvAllGroupsCmd:
 
 
 class TestUvExtraCmd:
-    def test_none(self) -> None:
-        result = uv_extra_cmd()
-        expected = []
+    @mark.parametrize(
+        ("extra", "expected"),
+        [
+            param(None, []),
+            param("extra", ["--extra", "extra"]),
+            param(["extra1", "extra2"], ["--extra", "extra1", "--extra", "extra2"]),
+        ],
+    )
+    def test_main(self, *, extra: MaybeSequenceStr | None, expected: list[str]) -> None:
+        result = uv_extra_cmd(extra=extra)
         assert result == expected
 
-    def test_single(self) -> None:
-        result = uv_extra_cmd(extra="extra")
-        expected = ["--extra", "extra"]
-        assert result == expected
 
-    def test_multiple(self) -> None:
-        result = uv_extra_cmd(extra=["extra1", "extra2"])
-        expected = ["--extra", "extra1", "--extra", "extra2"]
+class TestUvGroupCmd:
+    @mark.parametrize(
+        ("group", "expected"),
+        [
+            param(None, []),
+            param("group", ["--group", "group"]),
+            param(["group1", "group2"], ["--group", "group1", "--group", "group2"]),
+        ],
+    )
+    def test_main(self, *, group: MaybeSequenceStr | None, expected: list[str]) -> None:
+        result = uv_group_cmd(group=group)
         assert result == expected
 
 
