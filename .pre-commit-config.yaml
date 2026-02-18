@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/dycw/pre-commit-hooks
-    rev: 0.14.142
+    rev: 0.15.17
     hooks:
       - id: add-hooks
         args:
@@ -34,7 +34,7 @@ repos:
         priority: 20
       - id: setup-bump-my-version
         args:
-          - --python-package-name-internal=utilities
+          - --package-name=utilities
         priority: 20
       - id: setup-ci-pull-request
         args:
@@ -42,7 +42,7 @@ repos:
         priority: 20
       - id: setup-ci-push
         args:
-          - --python
+          - --package
         priority: 20
       - id: setup-coverage
         priority: 20
@@ -59,14 +59,14 @@ repos:
       - id: setup-pyproject
         args:
           - --description=Miscellaneous Python utilities
-          - --python-package-name-external=dycw-utilities
-          - --python-package-name-internal=utilities
+          - --name-external=dycw-utilities
+          - --name-internal=utilities
         priority: 20
       - id: setup-pyright
         priority: 20
       - id: setup-pytest
         args:
-          - --python-package-name-internal=utilities
+          - --package-name=utilities
         priority: 20
       - id: setup-readme
         args:

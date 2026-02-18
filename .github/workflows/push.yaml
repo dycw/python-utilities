@@ -9,7 +9,8 @@ jobs:
     steps:
       - name: Tag the latest commit
         uses: dycw/action-tag-commit@latest
-  publish:
+        with: {}
+  publish-package:
     environment:
       name: pypi
     permissions:

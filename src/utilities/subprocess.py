@@ -2042,9 +2042,6 @@ def uv_pip_list(
     )
     with _uv_pip_list_yield_env(*details):
         text_outdated = run(*cmds_outdated, return_stdout=True)
-    text_base, text_outdated = [
-        run(*cmds, return_stdout=True) for cmds in [cmds_base, cmds_outdated]
-    ]
     dicts_base, dicts_outdated = list(
         map(_uv_pip_list_loads, [text_base, text_outdated])
     )
