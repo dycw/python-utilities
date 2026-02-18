@@ -2016,7 +2016,7 @@ class TestUvExtraCmd:
 
 class TestUvFrozenCmd:
     @mark.parametrize(
-        ("frozen", "expected"), [param(False, []), param(True, ["--active"])]
+        ("frozen", "expected"), [param(False, []), param(True, ["--frozen"])]
     )
     def test_main(self, *, frozen: bool, expected: list[str]) -> None:
         result = uv_frozen_cmd(frozen=frozen)
@@ -2096,7 +2096,7 @@ class TestUvLockCmd:
 
 class TestUvLockedCmd:
     @mark.parametrize(
-        ("locked", "expected"), [param(False, []), param(True, ["--active"])]
+        ("locked", "expected"), [param(False, []), param(True, ["--locked"])]
     )
     def test_main(self, *, locked: bool, expected: list[str]) -> None:
         result = uv_locked_cmd(locked=locked)
@@ -2135,8 +2135,11 @@ class TestUvPackageCmd:
         ("package", "expected"),
         [
             param(None, []),
-            param("package", ["--package", "group"]),
-            param(["package1", "package2"], ["--group", "group1", "--group", "group2"]),
+            param("package", ["--package", "package"]),
+            param(
+                ["package1", "package2"],
+                ["--package", "package1", "--package", "package2"],
+            ),
         ],
     )
     def test_main(
@@ -2464,7 +2467,7 @@ class TestUvToolRunCmd:
 
 class TestUvUpgradeCmd:
     @mark.parametrize(
-        ("upgrade", "expected"), [param(False, []), param(True, ["--check"])]
+        ("upgrade", "expected"), [param(False, []), param(True, ["--upgrade"])]
     )
     def test_main(self, *, upgrade: bool, expected: list[str]) -> None:
         result = uv_upgrade_cmd(upgrade=upgrade)
