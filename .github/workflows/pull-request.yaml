@@ -11,20 +11,13 @@ jobs:
     steps:
       - name: Run 'pyright'
         uses: dycw/action-pyright@latest
-        with:
-          python-version: "3.12"
+        with: {}
   pytest:
     env:
       CI: "1"
     name: pytest (${{matrix.os}}, ${{matrix.python-version}}, ${{matrix.resolution}})
     runs-on:
       - ${{matrix.os}}
-    services:
-      redis:
-        image: ${{ matrix.os == 'ubuntu-latest' && 'redis/redis-stack:latest' ||
-          '' }}
-        ports:
-          - 6379:6379
     steps:
       - name: Run 'pytest'
         uses: dycw/action-pytest@latest
@@ -50,3 +43,4 @@ jobs:
     steps:
       - name: Run 'ruff'
         uses: dycw/action-ruff@latest
+        with: {}
