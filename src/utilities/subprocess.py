@@ -2059,9 +2059,15 @@ def uv_lock(
     check: bool = False,
     upgrade: bool = False,
     native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    user: str | int | None = None,
     print: bool = False,  # noqa: A002
     print_stdout: bool = False,
     print_stderr: bool = False,
+    suppress: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
 ) -> None:
     """Update the project's lockfile."""
     with yield_uv_index_and_credentials(  # pragma: no cover
@@ -2070,7 +2076,18 @@ def uv_lock(
         cmds = uv_lock_cmd(
             check=check, index=new_index, upgrade=upgrade, native_tls=native_tls
         )
-        run(*cmds, print=print, print_stdout=print_stdout, print_stderr=print_stderr)
+        run(
+            *cmds,
+            cwd=cwd,
+            env=env,
+            user=user,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            suppress=suppress,
+            retry=retry,
+            logger=logger,
+        )
 
 
 def uv_lock_cmd(
@@ -2277,6 +2294,13 @@ def uv_run(
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    script: PathLike | None = None,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2305,6 +2329,13 @@ def uv_run(
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    script: PathLike | None = None,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2333,6 +2364,13 @@ def uv_run(
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    script: PathLike | None = None,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2361,6 +2399,13 @@ def uv_run(
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    script: PathLike | None = None,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2389,6 +2434,13 @@ def uv_run(
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    script: PathLike | None = None,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2416,6 +2468,13 @@ def uv_run(
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    script: PathLike | None = None,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2444,6 +2503,13 @@ def uv_run(
             all_groups=all_groups,
             only_dev=only_dev,
             with_=with_,
+            active=active,
+            locked=locked,
+            frozen=frozen,
+            script=script,
+            all_packages=all_packages,
+            package=package,
+            reinstall=reinstall,
             index=new_index,
             native_tls=native_tls,
         )
@@ -2518,6 +2584,71 @@ def uv_run_cmd(
 
 
 ##
+
+
+def uv_sync(
+    *,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    extra: MaybeSequenceStr | None = None,
+    all_extras: bool = False,
+    no_dev: bool = False,
+    only_dev: bool = False,
+    group: MaybeSequenceStr | None = None,
+    all_groups: bool = False,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    script: PathLike | None = None,
+    check: bool = False,
+    upgrade: bool = False,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    user: str | int | None = None,
+    print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    suppress: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str | None:
+    """Update the project's environment."""
+    with yield_uv_index_and_credentials(  # pragma: no cover
+        index=index, credentials=credentials
+    ) as new_index:
+        cmds = uv_sync_cmd(
+            extra=extra,
+            all_extras=all_extras,
+            no_dev=no_dev,
+            only_dev=only_dev,
+            group=group,
+            all_groups=all_groups,
+            active=active,
+            locked=locked,
+            frozen=frozen,
+            all_packages=all_packages,
+            package=package,
+            script=script,
+            check=check,
+            index=new_index,
+            upgrade=upgrade,
+            native_tls=native_tls,
+        )
+        return run(
+            *cmds,
+            cwd=cwd,
+            env=env,
+            user=user,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            suppress=suppress,
+            retry=retry,
+            logger=logger,
+        )
 
 
 def uv_sync_cmd(
