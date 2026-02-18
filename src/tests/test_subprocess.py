@@ -1990,19 +1990,16 @@ class TestUvGroupCmd:
 
 
 class TestUvIndexCmd:
-    def test_none(self) -> None:
-        result = uv_index_cmd()
-        expected = []
-        assert result == expected
-
-    def test_single(self) -> None:
-        result = uv_index_cmd(index="index")
-        expected = ["--index", "index"]
-        assert result == expected
-
-    def test_multiple(self) -> None:
-        result = uv_index_cmd(index=["index1", "index2"])
-        expected = ["--index", "index1,index2"]
+    @mark.parametrize(
+        ("index", "expected"),
+        [
+            param(None, []),
+            param("index", ["--index", "index"]),
+            param(["index1", "index2"], ["--index", "index1,index2"]),
+        ],
+    )
+    def test_main(self, *, index: MaybeSequenceStr | None, expected: list[str]) -> None:
+        result = uv_index_cmd(index=index)
         assert result == expected
 
 
