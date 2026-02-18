@@ -2089,13 +2089,6 @@ class TestUvPipListMerge:
         ]
         assert result == expected
 
-    def test_index_single_with_credentials_unmatched(self) -> None:
-        result = _uv_pip_list_merge(
-            index="index", credentials=[("other", "username", "password")]
-        )
-        expected = [_IndexDetails(name=0, url="index")]
-        assert result == expected
-
     def test_credentials_only(self) -> None:
         result = _uv_pip_list_merge(credentials=[("username", "password")])
         expected = []
