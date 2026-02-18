@@ -2081,14 +2081,12 @@ def uv_lock_cmd(
     native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to update the project's lockfile."""
-    args: list[str] = ["uv", "lock"]
-    if check:
-        args.append("--check")
-    args.extend(uv_index_cmd(index=index))
-    if upgrade:
-        args.append("--upgrade")
     return [
-        *args,
+        "uv",
+        "lock",
+        *uv_check_cmd(check=check),
+        *uv_index_cmd(index=index),
+        *uv_upgrade_cmd(upgrade=upgrade),
         *RESOLUTION_HIGHEST,
         *PRERELEASE_DISALLOW,
         MANAGED_PYTHON,
@@ -2477,7 +2475,14 @@ def uv_run_cmd(
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    script: PathLike | None = None,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to run a command or script."""
@@ -2493,10 +2498,16 @@ def uv_run_cmd(
         "--exact",
         *uv_with_cmd(with_=with_),
         ISOLATED,
+        *uv_active_cmd(active=active),
+        *uv_locked_cmd(locked=locked),
+        *uv_frozen_cmd(frozen=frozen),
+        *uv_script_cmd(script=script),
+        *uv_all_packages_cmd(all_packages=all_packages),
+        *uv_package_cmd(package=package),
         *uv_index_cmd(index=index),
         *RESOLUTION_HIGHEST,
         *PRERELEASE_DISALLOW,
-        "--reinstall",
+        *uv_reinstall_cmd(reinstall=reinstall),
         MANAGED_PYTHON,
         *uv_native_tls_cmd(native_tls=native_tls),
         "python",
@@ -2513,19 +2524,40 @@ def uv_sync_cmd(
     *,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
+    only_dev: bool = False,
+    group: MaybeSequenceStr | None = None,
+    all_groups: bool = False,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    script: PathLike | None = None,
+    check: bool = False,
     index: MaybeSequenceStr | None = None,
     upgrade: bool = False,
     native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to update the project's environment."""
-    args: list[str] = ["uv", "sync"]
-    if check:
-        args.append("--check")
-    args.extend(uv_index_cmd(index=index))
-    if upgrade:
-        args.append("--upgrade")
     return [
-        *args,
+        "uv",
+        "sync",
+        *uv_extra_cmd(extra=extra),
+        *uv_all_extras_cmd(all_extras=all_extras),
+        *uv_no_dev_cmd(no_dev=no_dev),
+        *uv_only_dev_cmd(only_dev=only_dev),
+        *uv_group_cmd(group=group),
+        *uv_all_groups_cmd(all_groups=all_groups),
+        *uv_active_cmd(active=active),
+        *uv_locked_cmd(locked=locked),
+        *uv_frozen_cmd(frozen=frozen),
+        *uv_all_packages_cmd(all_packages=all_packages),
+        *uv_package_cmd(package=package),
+        *uv_script_cmd(script=script),
+        *uv_check_cmd(check=check),
+        *uv_index_cmd(index=index),
+        *uv_upgrade_cmd(upgrade=upgrade),
         *RESOLUTION_HIGHEST,
         *PRERELEASE_DISALLOW,
         MANAGED_PYTHON,
@@ -2715,7 +2747,7 @@ def uv_tool_install_cmd(
         *uv_index_cmd(index=index),
         *RESOLUTION_HIGHEST,
         *PRERELEASE_DISALLOW,
-        "--reinstall",
+        REINSTALL,
         MANAGED_PYTHON,
         *uv_native_tls_cmd(native_tls=native_tls),
         package,
@@ -2913,6 +2945,7 @@ def uv_tool_run_cmd(
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to run a command provided by a Python package."""
@@ -2927,6 +2960,7 @@ def uv_tool_run_cmd(
         *uv_index_cmd(index=index),
         *RESOLUTION_HIGHEST,
         *PRERELEASE_DISALLOW,
+        *uv_reinstall_cmd(reinstall=reinstall),
         MANAGED_PYTHON,
         *uv_native_tls_cmd(native_tls=native_tls),
         command,
