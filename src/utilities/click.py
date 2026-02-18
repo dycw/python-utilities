@@ -6,7 +6,7 @@ import pathlib
 import uuid
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from enum import StrEnum
+from enum import EnumType, StrEnum
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, assert_never, cast, override
 
 import click
@@ -1052,23 +1052,25 @@ def to_args(*args: Any, explicit_false: bool = False, join: bool = False) -> lis
             raise _ToArgsKeyNotAStringError(key=key)
         if not key.startswith("--"):
             raise _ToArgsKeyPrefixError(key=key)
-        match value, explicit_false:
-            case None, _:
+        match value, explicit_false, type(value):
+            case None, _, _:
                 ...
-            case True, _:
+            case True, _, _:
                 result.append(key)
-            case False, False:
+            case False, False, _:
                 ...
-            case False, True:
+            case False, True, _:
                 name = extract_group(r"^\-\-([\w\-]+)$", key)
                 result.append(f"--no-{name}")
-            case int() | str(), _:
+            case int() | str(), _, _:
                 result.extend(_to_args_join(key, value, join=join))
-            case list(), _:
+            case list(), _, _:
                 if all(isinstance(v, str) for v in value):
                     result.extend(_to_args_join(key, ",".join(value), join=join))
                 else:
                     raise TypeError(value) from None
+            case _, _, EnumType():
+                result.extend(_to_args_join(key, value.value, join=join))
             case _:
                 try:
                     from pydantic import SecretStr
