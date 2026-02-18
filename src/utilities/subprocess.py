@@ -2045,7 +2045,7 @@ def uv_lock_cmd(
     args: list[str] = ["uv", "lock"]
     if check:
         args.append("--check")
-    args.extend(*uv_index_cmd(index=index))
+    args.extend(uv_index_cmd(index=index))
     if upgrade:
         args.append("--upgrade")
     return [

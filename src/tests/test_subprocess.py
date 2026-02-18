@@ -115,6 +115,7 @@ from utilities.subprocess import (
     touch_cmd,
     useradd_cmd,
     uv_index_cmd,
+    uv_lock_cmd,
     uv_native_tls_cmd,
     uv_pip_list,
     uv_pip_list_cmd,
@@ -1915,7 +1916,7 @@ class TestTouchCmd:
 
 
 class TestUserAddCmd:
-    def test_main(self) -> None:
+    def test_none(self) -> None:
         result = useradd_cmd("login")
         expected = ["useradd", "--create-home", "login"]
         assert result == expected
@@ -1954,8 +1955,51 @@ class TestUvIndexCmd:
         assert result == expected
 
 
-class TestUvNativeTLSCmd:
+class TestUvLockCmd:
     def test_none(self) -> None:
+        result = uv_lock_cmd()
+        expected = [
+            "uv",
+            "lock",
+            "--resolution",
+            "highest",
+            "--prerelease",
+            "disallow",
+            "--managed-python",
+        ]
+        assert result == expected
+
+    def test_check(self) -> None:
+        result = uv_lock_cmd(check=True)
+        expected = [
+            "uv",
+            "lock",
+            "--check",
+            "--resolution",
+            "highest",
+            "--prerelease",
+            "disallow",
+            "--managed-python",
+        ]
+        assert result == expected
+
+    def test_upgrade(self) -> None:
+        result = uv_lock_cmd(upgrade=True)
+        expected = [
+            "uv",
+            "lock",
+            "--upgrade",
+            "--resolution",
+            "highest",
+            "--prerelease",
+            "disallow",
+            "--managed-python",
+        ]
+        assert result == expected
+
+
+class TestUvNativeTLSCmd:
+    def test_main(self) -> None:
         result = uv_native_tls_cmd()
         expected = []
         assert result == expected
