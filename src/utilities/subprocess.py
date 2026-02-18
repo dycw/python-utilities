@@ -2018,12 +2018,22 @@ def uv_all_extras_cmd(*, all_extras: bool = False) -> list[str]:
     return ["--all-extras"] if all_extras else []
 
 
-##
-
-
 def uv_all_groups_cmd(*, all_groups: bool = False) -> list[str]:
     """Generate the `--all-groups` command if necessary."""
     return ["--all-groups"] if all_groups else []
+
+
+def uv_all_packages_cmd(*, all_packages: bool = False) -> list[str]:
+    """Generate the `--all-packages` command if necessary."""
+    return ["--all-packages"] if all_packages else []
+
+
+##
+
+
+def uv_check_cmd(*, check: bool = False) -> list[str]:
+    """Generate the `--check` command if necessary."""
+    return ["--check"] if check else []
 
 
 ##
@@ -2036,22 +2046,26 @@ def uv_extra_cmd(*, extra: MaybeSequenceStr | None = None) -> list[str]:
     return list(chain.from_iterable(["--extra", e] for e in always_iterable(extra)))
 
 
+def uv_group_cmd(*, group: MaybeSequenceStr | None = None) -> list[str]:
+    """Generate the `--group` command if necessary."""
+    if group is None:
+        return []
+    return list(chain.from_iterable(["--group", e] for e in always_iterable(group)))
+
+
+def uv_package_cmd(*, package: MaybeSequenceStr | None = None) -> list[str]:
+    """Generate the `--package` command if necessary."""
+    if package is None:
+        return []
+    return list(chain.from_iterable(["--package", e] for e in always_iterable(package)))
+
+
 ##
 
 
 def uv_frozen_cmd(*, frozen: bool = False) -> list[str]:
     """Generate the `--frozen` command if necessary."""
     return ["--frozen"] if frozen else []
-
-
-##
-
-
-def uv_group_cmd(*, group: MaybeSequenceStr | None = None) -> list[str]:
-    """Generate the `--group` command if necessary."""
-    if group is None:
-        return []
-    return list(chain.from_iterable(["--group", e] for e in always_iterable(group)))
 
 
 ##
@@ -2296,6 +2310,14 @@ def uv_pip_list_cmd(
         MANAGED_PYTHON,
         *uv_native_tls_cmd(native_tls=native_tls),
     ]
+
+
+##
+
+
+def uv_reinstall_cmd(*, reinstall: bool = False) -> list[str]:
+    """Generate the `--reinstall` command if necessary."""
+    return ["--reinstall"] if reinstall else []
 
 
 ##
@@ -2607,6 +2629,14 @@ def uv_run_cmd(
 ##
 
 
+def uv_script_cmd(*, script: PathLike | None = None) -> list[str]:
+    """Generate the `--script` command if necessary."""
+    return [] if script is None else ["--script", str(script)]
+
+
+##
+
+
 def uv_sync(
     *,
     index: MaybeSequenceStr | None = None,
@@ -2728,6 +2758,7 @@ def uv_tool_install(
     index: MaybeSequenceStr | None = None,
     credentials: UvIndexCredentials | None = None,
     with_: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2751,6 +2782,7 @@ def uv_tool_install(
     index: MaybeSequenceStr | None = None,
     credentials: UvIndexCredentials | None = None,
     with_: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2774,6 +2806,7 @@ def uv_tool_install(
     index: MaybeSequenceStr | None = None,
     credentials: UvIndexCredentials | None = None,
     with_: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2797,6 +2830,7 @@ def uv_tool_install(
     index: MaybeSequenceStr | None = None,
     credentials: UvIndexCredentials | None = None,
     with_: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2820,6 +2854,7 @@ def uv_tool_install(
     index: MaybeSequenceStr | None = None,
     credentials: UvIndexCredentials | None = None,
     with_: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2842,6 +2877,7 @@ def uv_tool_install(
     index: MaybeSequenceStr | None = None,
     credentials: UvIndexCredentials | None = None,
     with_: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2862,7 +2898,11 @@ def uv_tool_install(
         index=index, credentials=credentials
     ) as new_index:
         cmds = uv_tool_install_cmd(
-            package, with_=with_, index=new_index, native_tls=native_tls
+            package,
+            with_=with_,
+            reinstall=reinstall,
+            index=new_index,
+            native_tls=native_tls,
         )
         return run(
             *cmds,
@@ -2888,6 +2928,7 @@ def uv_tool_install_cmd(
     *,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to install commands provided by a Python package."""
@@ -2899,7 +2940,7 @@ def uv_tool_install_cmd(
         *uv_index_cmd(index=index),
         *RESOLUTION_HIGHEST,
         *PRERELEASE_DISALLOW,
-        REINSTALL,
+        *uv_reinstall_cmd(reinstall=reinstall),
         MANAGED_PYTHON,
         *uv_native_tls_cmd(native_tls=native_tls),
         package,
@@ -3118,6 +3159,14 @@ def uv_tool_run_cmd(
         command,
         *args,
     ]
+
+
+##
+
+
+def uv_upgrade_cmd(*, upgrade: bool = False) -> list[str]:
+    """Generate the `--upgrade` command if necessary."""
+    return ["--upgrade"] if upgrade else []
 
 
 ##
@@ -3372,6 +3421,7 @@ __all__ = [
     "uv_active_cmd",
     "uv_all_extras_cmd",
     "uv_all_groups_cmd",
+    "uv_check_cmd",
     "uv_extra_cmd",
     "uv_frozen_cmd",
     "uv_group_cmd",
@@ -3381,16 +3431,20 @@ __all__ = [
     "uv_native_tls_cmd",
     "uv_no_dev_cmd",
     "uv_only_dev_cmd",
+    "uv_package_cmd",
     "uv_pip_list",
     "uv_pip_list_cmd",
+    "uv_reinstall_cmd",
     "uv_run",
     "uv_run_cmd",
+    "uv_script_cmd",
     "uv_sync",
     "uv_sync_cmd",
     "uv_tool_install",
     "uv_tool_install_cmd",
     "uv_tool_run",
     "uv_tool_run_cmd",
+    "uv_upgrade_cmd",
     "uv_with_cmd",
     "yield_git_repo",
     "yield_ssh_temp_dir",

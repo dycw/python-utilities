@@ -117,6 +117,8 @@ from utilities.subprocess import (
     uv_active_cmd,
     uv_all_extras_cmd,
     uv_all_groups_cmd,
+    uv_all_packages_cmd,
+    uv_check_cmd,
     uv_extra_cmd,
     uv_frozen_cmd,
     uv_group_cmd,
@@ -126,12 +128,16 @@ from utilities.subprocess import (
     uv_native_tls_cmd,
     uv_no_dev_cmd,
     uv_only_dev_cmd,
+    uv_package_cmd,
     uv_pip_list,
     uv_pip_list_cmd,
+    uv_reinstall_cmd,
     uv_run_cmd,
+    uv_script_cmd,
     uv_sync_cmd,
     uv_tool_install_cmd,
     uv_tool_run_cmd,
+    uv_upgrade_cmd,
     uv_with_cmd,
     yield_git_repo,
     yield_ssh_temp_dir,
@@ -1975,6 +1981,25 @@ class TestUvAllGroupsCmd:
         assert result == expected
 
 
+class TestUvAllPackagesCmd:
+    @mark.parametrize(
+        ("all_packages", "expected"),
+        [param(False, []), param(True, ["--all-packages"])],
+    )
+    def test_main(self, *, all_packages: bool, expected: list[str]) -> None:
+        result = uv_all_packages_cmd(all_packages=all_packages)
+        assert result == expected
+
+
+class TestUvCheckCmd:
+    @mark.parametrize(
+        ("check", "expected"), [param(False, []), param(True, ["--check"])]
+    )
+    def test_main(self, *, check: bool, expected: list[str]) -> None:
+        result = uv_check_cmd(check=check)
+        assert result == expected
+
+
 class TestUvExtraCmd:
     @mark.parametrize(
         ("extra", "expected"),
@@ -2102,6 +2127,22 @@ class TestUvOnlyDevCmd:
     )
     def test_main(self, *, only_dev: bool, expected: list[str]) -> None:
         result = uv_only_dev_cmd(only_dev=only_dev)
+        assert result == expected
+
+
+class TestUvPackageCmd:
+    @mark.parametrize(
+        ("package", "expected"),
+        [
+            param(None, []),
+            param("package", ["--package", "group"]),
+            param(["package1", "package2"], ["--group", "group1", "--group", "group2"]),
+        ],
+    )
+    def test_main(
+        self, *, package: MaybeSequenceStr | None, expected: list[str]
+    ) -> None:
+        result = uv_package_cmd(package=package)
         assert result == expected
 
 
@@ -2258,6 +2299,15 @@ class TestUvPipListCmd:
         assert result == expected
 
 
+class TestUvReinstallCmd:
+    @mark.parametrize(
+        ("reinstall", "expected"), [param(False, []), param(True, ["--reinstall"])]
+    )
+    def test_main(self, *, reinstall: bool, expected: list[str]) -> None:
+        result = uv_reinstall_cmd(reinstall=reinstall)
+        assert result == expected
+
+
 class TestUvRunCmd:
     def test_main(self) -> None:
         result = uv_run_cmd("foo.bar")
@@ -2270,7 +2320,6 @@ class TestUvRunCmd:
             "highest",
             "--prerelease",
             "disallow",
-            "--reinstall",
             "--managed-python",
             "python",
             "-m",
@@ -2289,13 +2338,37 @@ class TestUvRunCmd:
             "highest",
             "--prerelease",
             "disallow",
-            "--reinstall",
             "--managed-python",
             "python",
             "-m",
             "foo.bar",
             "arg1",
             "arg2",
+        ]
+        assert result == expected
+
+
+class TestUvScriptCmd:
+    @mark.parametrize(
+        ("script", "expected"),
+        [param(None, []), param("script.py", ["--script", "script.py"])],
+    )
+    def test_main(self, *, script: PathLike | None, expected: list[str]) -> None:
+        result = uv_script_cmd(script=script)
+        assert result == expected
+
+
+class TestUvSyncCmd:
+    def test_main(self) -> None:
+        result = uv_sync_cmd()
+        expected = [
+            "uv",
+            "sync",
+            "--resolution",
+            "highest",
+            "--prerelease",
+            "disallow",
+            "--managed-python",
         ]
         assert result == expected
 
@@ -2311,17 +2384,9 @@ class TestUvToolInstallCmd:
             "highest",
             "--prerelease",
             "disallow",
-            "--reinstall",
             "--managed-python",
             "package",
         ]
-        assert result == expected
-
-
-class TestUvSyncCmd:
-    def test_main(self) -> None:
-        result = uv_sync_cmd()
-        expected = ["uv"]
         assert result == expected
 
 
@@ -2394,6 +2459,15 @@ class TestUvToolRunCmd:
             "--managed-python",
             "command",
         ]
+        assert result == expected
+
+
+class TestUvUpgradeCmd:
+    @mark.parametrize(
+        ("upgrade", "expected"), [param(False, []), param(True, ["--check"])]
+    )
+    def test_main(self, *, upgrade: bool, expected: list[str]) -> None:
+        result = uv_upgrade_cmd(upgrade=upgrade)
         assert result == expected
 
 
