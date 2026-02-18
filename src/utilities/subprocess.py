@@ -2005,6 +2005,16 @@ def useradd_cmd(
 ##
 
 
+def uv_extra_cmd(*, extra: MaybeSequenceStr | None = None) -> list[str]:
+    """Generate the `--extra` command if necessary."""
+    if extra is None:
+        return []
+    return list(chain.from_iterable(["--extra", e] for e in always_iterable(extra)))
+
+
+##
+
+
 def uv_index_cmd(*, index: MaybeSequenceStr | None = None) -> list[str]:
     """Generate the `--index` command if necessary."""
     return [] if index is None else ["--index", ",".join(always_iterable(index))]
@@ -2219,6 +2229,7 @@ def uv_run(
     credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
@@ -2246,6 +2257,7 @@ def uv_run(
     credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
@@ -2273,6 +2285,7 @@ def uv_run(
     credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
@@ -2300,6 +2313,7 @@ def uv_run(
     credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
@@ -2327,6 +2341,7 @@ def uv_run(
     credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
@@ -2353,6 +2368,7 @@ def uv_run(
     credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
@@ -2380,6 +2396,7 @@ def uv_run(
             *args,
             extra=extra,
             all_extras=all_extras,
+            no_dev=no_dev,
             group=group,
             all_groups=all_groups,
             only_dev=only_dev,
@@ -2410,6 +2427,7 @@ def uv_run_cmd(
     *args: str,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
@@ -2418,13 +2436,10 @@ def uv_run_cmd(
     native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to run a command or script."""
-    parts: list[str] = ["uv", "run"]
-    if extra is not None:
-        for extra_i in always_iterable(extra):
-            parts.extend(["--extra", extra_i])
+    parts: list[str] = ["uv", "run", *uv_extra_cmd(extra=extra)]
     if all_extras:
         parts.append("--all-extras")
-    if not only_dev:
+    if no_dev:
         parts.append("--no-dev")
     if group is not None:
         for group_i in always_iterable(group):
@@ -2448,6 +2463,33 @@ def uv_run_cmd(
         "-m",
         module,
         *args,
+    ]
+
+
+##
+
+
+def uv_sync_cmd(
+    *,
+    extra: MaybeSequenceStr | None = None,
+    all_extras: bool = False,
+    index: MaybeSequenceStr | None = None,
+    upgrade: bool = False,
+    native_tls: bool = False,
+) -> list[str]:
+    """Command to use 'uv' to update the project's environment."""
+    args: list[str] = ["uv", "sync"]
+    if check:
+        args.append("--check")
+    args.extend(uv_index_cmd(index=index))
+    if upgrade:
+        args.append("--upgrade")
+    return [
+        *args,
+        *RESOLUTION_HIGHEST,
+        *PRERELEASE_DISALLOW,
+        MANAGED_PYTHON,
+        *uv_native_tls_cmd(native_tls=native_tls),
     ]
 
 
@@ -3101,6 +3143,7 @@ __all__ = [
     "update_ca_certificates",
     "useradd",
     "useradd_cmd",
+    "uv_extra_cmd",
     "uv_lock",
     "uv_lock_cmd",
     "uv_native_tls_cmd",
@@ -3108,6 +3151,8 @@ __all__ = [
     "uv_pip_list_cmd",
     "uv_run",
     "uv_run_cmd",
+    "uv_sync",
+    "uv_sync_cmd",
     "uv_tool_install",
     "uv_tool_install_cmd",
     "uv_tool_run",

@@ -114,6 +114,7 @@ from utilities.subprocess import (
     touch,
     touch_cmd,
     useradd_cmd,
+    uv_extra_cmd,
     uv_index_cmd,
     uv_lock_cmd,
     uv_native_tls_cmd,
@@ -1938,6 +1939,23 @@ class TestUserAddCmd:
         assert result == expected
 
 
+class TestUvExtraCmd:
+    def test_none(self) -> None:
+        result = uv_extra_cmd()
+        expected = []
+        assert result == expected
+
+    def test_single(self) -> None:
+        result = uv_extra_cmd(extra="extra")
+        expected = ["--extra", "extra"]
+        assert result == expected
+
+    def test_multiple(self) -> None:
+        result = uv_extra_cmd(extra=["extra1", "extra2"])
+        expected = ["--extra", "extra1", "--extra", "extra2"]
+        assert result == expected
+
+
 class TestUvIndexCmd:
     def test_none(self) -> None:
         result = uv_index_cmd()
@@ -2169,7 +2187,6 @@ class TestUvRunCmd:
         expected = [
             "uv",
             "run",
-            "--no-dev",
             "--exact",
             "--isolated",
             "--resolution",
@@ -2189,7 +2206,6 @@ class TestUvRunCmd:
         expected = [
             "uv",
             "run",
-            "--no-dev",
             "--exact",
             "--isolated",
             "--resolution",
@@ -2206,58 +2222,31 @@ class TestUvRunCmd:
         ]
         assert result == expected
 
-    def test_extra_single(self) -> None:
-        result = uv_run_cmd("foo.bar", extra="extra")
-        expected = [
-            "uv",
-            "run",
-            "--extra",
-            "extra",
-            "--no-dev",
-            "--exact",
-            "--isolated",
-            "--resolution",
-            "highest",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
-        ]
-        assert result == expected
-
-    def test_extra_multiple(self) -> None:
-        result = uv_run_cmd("foo.bar", extra=["extra1", "extra2"])
-        expected = [
-            "uv",
-            "run",
-            "--extra",
-            "extra1",
-            "--extra",
-            "extra2",
-            "--no-dev",
-            "--exact",
-            "--isolated",
-            "--resolution",
-            "highest",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
-        ]
-        assert result == expected
-
     def test_all_extras(self) -> None:
         result = uv_run_cmd("foo.bar", all_extras=True)
         expected = [
             "uv",
             "run",
             "--all-extras",
+            "--exact",
+            "--isolated",
+            "--resolution",
+            "highest",
+            "--prerelease",
+            "disallow",
+            "--reinstall",
+            "--managed-python",
+            "python",
+            "-m",
+            "foo.bar",
+        ]
+        assert result == expected
+
+    def test_no_dev(self) -> None:
+        result = uv_run_cmd("foo.bar", no_dev=True)
+        expected = [
+            "uv",
+            "run",
             "--no-dev",
             "--exact",
             "--isolated",
@@ -2278,7 +2267,6 @@ class TestUvRunCmd:
         expected = [
             "uv",
             "run",
-            "--no-dev",
             "--group",
             "group",
             "--exact",
@@ -2300,7 +2288,6 @@ class TestUvRunCmd:
         expected = [
             "uv",
             "run",
-            "--no-dev",
             "--group",
             "group1",
             "--group",
@@ -2324,7 +2311,6 @@ class TestUvRunCmd:
         expected = [
             "uv",
             "run",
-            "--no-dev",
             "--all-groups",
             "--exact",
             "--isolated",
