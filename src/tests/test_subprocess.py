@@ -1954,6 +1954,18 @@ class TestUvIndexCmd:
         assert result == expected
 
 
+class TestUvNativeTLSCmd:
+    def test_none(self) -> None:
+        result = uv_native_tls_cmd()
+        expected = []
+        assert result == expected
+
+    def test_native_tls(self) -> None:
+        result = uv_native_tls_cmd(native_tls=True)
+        expected = ["--native-tls"]
+        assert result == expected
+
+
 class TestUvPipList:
     @skipif_ci
     def test_main(self) -> None:
@@ -2104,18 +2116,6 @@ class TestUvPipListCmd:
             "--strict",
             "--managed-python",
         ]
-        assert result == expected
-
-
-class TestUvNativeTLSCmd:
-    def test_none(self) -> None:
-        result = uv_native_tls_cmd()
-        expected = []
-        assert result == expected
-
-    def test_native_tls(self) -> None:
-        result = uv_native_tls_cmd(native_tls=True)
-        expected = ["--native-tls"]
         assert result == expected
 
 
