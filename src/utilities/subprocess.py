@@ -2598,7 +2598,7 @@ def uv_tool_install(
         cmds = uv_tool_install_cmd(
             package, with_=with_, index=new_index, native_tls=native_tls
         )
-        return run(  # pragma: no cover
+        return run(
             *cmds,
             cwd=cwd,
             env=env,
@@ -2648,10 +2648,11 @@ def uv_tool_run(
     command: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     from_: str | None = None,
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2672,10 +2673,11 @@ def uv_tool_run(
     command: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     from_: str | None = None,
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2696,10 +2698,11 @@ def uv_tool_run(
     command: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     from_: str | None = None,
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2720,10 +2723,11 @@ def uv_tool_run(
     command: str,
     /,
     *,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     from_: str | None = None,
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2744,10 +2748,11 @@ def uv_tool_run(
     command: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     from_: str | None = None,
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2767,10 +2772,11 @@ def uv_tool_run(
     command: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     from_: str | None = None,
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2787,30 +2793,34 @@ def uv_tool_run(
     logger: LoggerLike | None = None,
 ) -> str | None:
     """Run a command provided by a Python package."""
-    return run(  # pragma: no cover
-        *uv_tool_run_cmd(
+    with yield_uv_index_and_credentials(  # pragma: no cover
+        index=index, credentials=credentials
+    ) as new_index:
+        cmds = uv_tool_run_cmd(
             command,
             *args,
             from_=from_,
             latest=latest,
             with_=with_,
-            index=index,
+            index=new_index,
             native_tls=native_tls,
-        ),
-        cwd=cwd,
-        env=env,
-        user=user,
-        print=print,
-        print_stdout=print_stdout,
-        print_stderr=print_stderr,
-        suppress=suppress,
-        return_=return_,
-        return_stdout=return_stdout,
-        return_stderr=return_stderr,
-        retry=retry,
-        retry_skip=retry_skip,
-        logger=logger,
-    )
+        )
+        return run(
+            *cmds,
+            cwd=cwd,
+            env=env,
+            user=user,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            suppress=suppress,
+            return_=return_,
+            return_stdout=return_stdout,
+            return_stderr=return_stderr,
+            retry=retry,
+            retry_skip=retry_skip,
+            logger=logger,
+        )
 
 
 def uv_tool_run_cmd(
