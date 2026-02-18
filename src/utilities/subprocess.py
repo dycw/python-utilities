@@ -2459,8 +2459,9 @@ def uv_tool_install(
     package: str,
     /,
     *,
-    with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    with_: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2481,8 +2482,9 @@ def uv_tool_install(
     package: str,
     /,
     *,
-    with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    with_: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2503,8 +2505,9 @@ def uv_tool_install(
     package: str,
     /,
     *,
-    with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    with_: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2525,8 +2528,9 @@ def uv_tool_install(
     package: str,
     /,
     *,
-    with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    with_: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2547,8 +2551,9 @@ def uv_tool_install(
     package: str,
     /,
     *,
-    with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    with_: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2568,8 +2573,9 @@ def uv_tool_install(
     package: str,
     /,
     *,
-    with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    with_: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2586,22 +2592,28 @@ def uv_tool_install(
     logger: LoggerLike | None = None,
 ) -> str | None:
     """Install commands provided by a Python package."""
-    return run(  # pragma: no cover
-        *uv_tool_install_cmd(package, with_=with_, index=index, native_tls=native_tls),
-        cwd=cwd,
-        env=env,
-        user=user,
-        print=print,
-        print_stdout=print_stdout,
-        print_stderr=print_stderr,
-        suppress=suppress,
-        return_=return_,
-        return_stdout=return_stdout,
-        return_stderr=return_stderr,
-        retry=retry,
-        retry_skip=retry_skip,
-        logger=logger,
-    )
+    with yield_uv_index_and_credentials(  # pragma: no cover
+        index=index, credentials=credentials
+    ) as new_index:
+        cmds = uv_tool_install_cmd(
+            package, with_=with_, index=new_index, native_tls=native_tls
+        )
+        return run(  # pragma: no cover
+            *cmds,
+            cwd=cwd,
+            env=env,
+            user=user,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            suppress=suppress,
+            return_=return_,
+            return_stdout=return_stdout,
+            return_stderr=return_stderr,
+            retry=retry,
+            retry_skip=retry_skip,
+            logger=logger,
+        )
 
 
 def uv_tool_install_cmd(
