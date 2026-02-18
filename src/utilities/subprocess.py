@@ -2037,7 +2037,7 @@ def uv_pip_list(
         exclude_editable=exclude_editable,
         format_="json",
         index=[i.full for i in details],
-        outdated=False,
+        outdated=True,
         native_tls=native_tls,
     )
     with _uv_pip_list_yield_env(*details):
