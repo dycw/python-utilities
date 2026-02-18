@@ -2032,29 +2032,16 @@ def uv_pip_list(
     )
     text_base = run(*cmds_base, return_stdout=True)
     details = _uv_pip_list_merge(index=index, credentials=credentials)
+    cmds_outdated = uv_pip_list_cmd(
+        editable=editable,
+        exclude_editable=exclude_editable,
+        format_="json",
+        index=[i.full for i in details],
+        outdated=False,
+        native_tls=native_tls,
+    )
     with _uv_pip_list_yield_env(*details):
-        cmds_outdated = uv_pip_list_cmd(
-            editable=editable,
-            exclude_editable=exclude_editable,
-            format_="json",
-            index=[i.full for i in details],
-            outdated=False,
-        )
-    text_outdated = 1
-    cmds_base, cmds_outdated = [
-        uv_pip_list_cmd(
-            editable=editable,
-            exclude_editable=exclude_editable,
-            format_="json",
-            outdated=outdated,
-            index=index_i,
-            native_tls=native_tls_i,
-        )
-        for outdated, index_i, native_tls_i in [
-            (False, None, False),
-            (True, index, native_tls),
-        ]
-    ]
+        text_outdated = run(*cmds_outdated, return_stdout=True)
     text_base, text_outdated = [
         run(*cmds, return_stdout=True) for cmds in [cmds_base, cmds_outdated]
     ]

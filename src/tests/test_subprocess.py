@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from operator import index
 from pathlib import Path
 from re import MULTILINE, search
 from typing import TYPE_CHECKING
@@ -9,6 +8,7 @@ from uuid import uuid4
 from pytest import LogCaptureFixture, approx, mark, param, raises
 from pytest_lazy_fixtures import lf
 
+from utilities._core_errors import GetEnvError
 from utilities.constants import (
     EFFECTIVE_GROUP_NAME,
     EFFECTIVE_USER_NAME,
@@ -22,6 +22,7 @@ from utilities.core import (
     TemporaryDirectory,
     TemporaryFile,
     check_multi_line_regex,
+    get_env,
     get_file_group,
     get_file_owner,
     normalize_multi_line_str,
@@ -50,6 +51,7 @@ from utilities.subprocess import (
     _uv_pip_list_assemble_output,
     _uv_pip_list_loads,
     _uv_pip_list_merge,
+    _uv_pip_list_yield_env,
     _UvPipListBaseVersionError,
     _UvPipListJsonError,
     _UvPipListOutdatedVersionError,
@@ -2084,6 +2086,36 @@ class TestUvPipListMerge:
         )
         expected = [_IndexDetails(name=0, url="index")]
         assert result == expected
+
+    def test_credentials_only(self) -> None:
+        pass
+
+
+class TestUvPipListYieldEnv:
+    def test_none(self) -> None:
+        index = _IndexDetails(name="name", url="url")
+        with _uv_pip_list_yield_env(index):
+            with raises(
+                GetEnvError,
+                match=r"No environment variable 'UV_INDEX_NAME_USERNAME' \(modulo case\)",
+            ):
+                assert get_env("UV_INDEX_NAME_USERNAME")
+            with raises(
+                GetEnvError,
+                match=r"No environment variable 'UV_INDEX_NAME_PASSWORD' \(modulo case\)",
+            ):
+                assert get_env("UV_INDEX_NAME_PASSWORD")
+
+    def test_credentials(self) -> None:
+        index = _IndexDetails(
+            name="name",
+            url="url",
+            username="username",
+            password="password",  # noqa: S106
+        )
+        with _uv_pip_list_yield_env(index):
+            assert get_env("UV_INDEX_NAME_USERNAME") == "username"
+            assert get_env("UV_INDEX_NAME_PASSWORD") == "password"
 
 
 class TestUvPipListCmd:
