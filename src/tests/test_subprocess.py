@@ -50,12 +50,11 @@ from utilities.subprocess import (
     _ssh_retry_skip,
     _uv_pip_list_assemble_output,
     _uv_pip_list_loads,
-    _uv_pip_list_merge,
-    _uv_pip_list_yield_env,
     _UvPipListBaseVersionError,
     _UvPipListJsonError,
     _UvPipListOutdatedVersionError,
     _UvPipListOutput,
+    _yield_uv_index_and_credentials_merge,
     append_text,
     apt_install_cmd,
     apt_remove_cmd,
@@ -125,6 +124,7 @@ from utilities.subprocess import (
     uv_with_cmd,
     yield_git_repo,
     yield_ssh_temp_dir,
+    yield_uv_index_and_credentials,
 )
 from utilities.typing import is_sequence_of
 from utilities.version import Version3
@@ -2037,91 +2037,6 @@ class TestUvPipListLoads:
             _ = _uv_pip_list_loads(text)
 
 
-class TestUvPipListMerge:
-    def test_none(self) -> None:
-        result = _uv_pip_list_merge()
-        assert result == []
-
-    @mark.parametrize(
-        ("index", "credentials", "exp_name", "exp_data"),
-        [
-            param("index", None, 0, False),
-            param("index", ("username", "password"), 0, True),
-            param("index", [("username", "password")], 0, True),
-            param("index", (0, "username", "password"), 0, True),
-            param("index", [(0, "username", "password")], 0, True),
-            param("index", (1, "username", "password"), 0, False),
-            param("index", [(1, "username", "password")], 0, False),
-            param("index", ("name", "username", "password"), 0, False),
-            param("index", [("name", "username", "password")], 0, False),
-            param("name=index", None, "name", False),
-            param("name=index", ("username", "password"), "name", True),
-            param("name=index", [("username", "password")], "name", True),
-            param("name=index", (0, "username", "password"), "name", True),
-            param("name=index", [(0, "username", "password")], "name", True),
-            param("name=index", (1, "username", "password"), "name", False),
-            param("name=index", [(1, "username", "password")], "name", False),
-            param("name=index", ("name", "username", "password"), "name", True),
-            param("name=index", [("name", "username", "password")], "name", True),
-            param("name=index", ("other", "username", "password"), "name", False),
-            param("name=index", [("other", "username", "password")], "name", False),
-        ],
-    )
-    def test_index_single(
-        self, *, index: str, credentials: Any, exp_name: str | int, exp_data: bool
-    ) -> None:
-        result = _uv_pip_list_merge(index=index, credentials=credentials)
-        exp_details = [
-            _IndexDetails(
-                name=exp_name,
-                url="index",
-                username="username" if exp_data else None,
-                password="password" if exp_data else None,
-            )
-        ]
-        assert result == exp_details
-
-    def test_index_multiple(self) -> None:
-        result = _uv_pip_list_merge(index=["index1", "index2"])
-        expected = [
-            _IndexDetails(name=0, url="index1"),
-            _IndexDetails(name=1, url="index2"),
-        ]
-        assert result == expected
-
-    def test_credentials_only(self) -> None:
-        result = _uv_pip_list_merge(credentials=[("username", "password")])
-        expected = []
-        assert result == expected
-
-
-class TestUvPipListYieldEnv:
-    def test_none(self) -> None:
-        index = _IndexDetails(name="name", url="url")
-        with _uv_pip_list_yield_env(index):
-            with raises(
-                GetEnvError,
-                match=r"No environment variable 'UV_INDEX_NAME_USERNAME' \(modulo case\)",
-            ):
-                assert get_env("UV_INDEX_NAME_USERNAME")
-            with raises(
-                GetEnvError,
-                match=r"No environment variable 'UV_INDEX_NAME_PASSWORD' \(modulo case\)",
-            ):
-                assert get_env("UV_INDEX_NAME_PASSWORD")
-
-    def test_credentials(self) -> None:
-        index = _IndexDetails(
-            name="name",
-            url="url",
-            username="username",
-            password="password",  # noqa: S106
-        )
-        with _uv_pip_list_yield_env(index):
-            assert get_env("UV_INDEX_NAME_USERNAME") == "username"
-            assert get_env("UV_INDEX_NAME_PASSWORD") == "password"
-
-
 class TestUvPipListCmd:
     def test_main(self) -> None:
         result = uv_pip_list_cmd()
@@ -2559,3 +2474,108 @@ class TestYieldSSHTempDir:
 
     def _raise_present(self, path: PathLike, /) -> str:
         return f"if [ -d {path} ]; then exit 1; fi"
+
+
+class TestYieldUvIndexAndCredentials:
+    def test_none(self) -> None:
+        with yield_uv_index_and_credentials() as result:
+            assert result is None
+
+    def test_unnamed_no_credentials(self) -> None:
+        with yield_uv_index_and_credentials(index="url") as result:
+            assert result == ["0=url"]
+            with raises(
+                GetEnvError, match=r"No environment variable '.*' \(modulo case\)"
+            ):
+                _ = get_env("UV_INDEX_CUSTOM0_USERNAME")
+            with raises(
+                GetEnvError, match=r"No environment variable '.*' \(modulo case\)"
+            ):
+                _ = get_env("UV_INDEX_CUSTOM0_PASSWORD")
+
+    def test_unnamed_with_credentials(self) -> None:
+        with yield_uv_index_and_credentials(
+            index="url", credentials=("username", "password")
+        ) as result:
+            assert result == ["0=url"]
+            assert get_env("UV_INDEX_0_USERNAME") == "username"
+            assert get_env("UV_INDEX_0_PASSWORD") == "password"
+
+    def test_named_no_credentials(self) -> None:
+        with yield_uv_index_and_credentials(index="name=url") as result:
+            assert result == ["name=url"]
+            with raises(
+                GetEnvError, match=r"No environment variable '.*' \(modulo case\)"
+            ):
+                _ = get_env("UV_INDEX_NAME_USERNAME")
+            with raises(
+                GetEnvError, match=r"No environment variable '.*' \(modulo case\)"
+            ):
+                _ = get_env("UV_INDEX_NAME_PASSWORD")
+
+    def test_named_with_credentials(self) -> None:
+        with yield_uv_index_and_credentials(
+            index="name=url", credentials=("username", "password")
+        ):
+            assert get_env("UV_INDEX_NAME_USERNAME") == "username"
+            assert get_env("UV_INDEX_NAME_PASSWORD") == "password"
+
+
+class TestYieldUvIndexAndCredentialsMerge:
+    def test_none(self) -> None:
+        assert _yield_uv_index_and_credentials_merge() is None
+
+    @mark.parametrize(
+        ("index", "credentials", "exp_name", "exp_data"),
+        [
+            param("index", None, 0, False),
+            param("index", ("username", "password"), 0, True),
+            param("index", [("username", "password")], 0, True),
+            param("index", (0, "username", "password"), 0, True),
+            param("index", [(0, "username", "password")], 0, True),
+            param("index", (1, "username", "password"), 0, False),
+            param("index", [(1, "username", "password")], 0, False),
+            param("index", ("name", "username", "password"), 0, False),
+            param("index", [("name", "username", "password")], 0, False),
+            param("name=index", None, "name", False),
+            param("name=index", ("username", "password"), "name", True),
+            param("name=index", [("username", "password")], "name", True),
+            param("name=index", (0, "username", "password"), "name", True),
+            param("name=index", [(0, "username", "password")], "name", True),
+            param("name=index", (1, "username", "password"), "name", False),
+            param("name=index", [(1, "username", "password")], "name", False),
+            param("name=index", ("name", "username", "password"), "name", True),
+            param("name=index", [("name", "username", "password")], "name", True),
+            param("name=index", ("other", "username", "password"), "name", False),
+            param("name=index", [("other", "username", "password")], "name", False),
+        ],
+    )
+    def test_index_single(
+        self, *, index: str, credentials: Any, exp_name: str | int, exp_data: bool
+    ) -> None:
+        result = _yield_uv_index_and_credentials_merge(
+            index=index, credentials=credentials
+        )
+        exp_details = [
+            _IndexDetails(
+                name=exp_name,
+                url="index",
+                username="username" if exp_data else None,
+                password="password" if exp_data else None,
+            )
+        ]
+        assert result == exp_details
+
+    def test_index_multiple(self) -> None:
+        result = _yield_uv_index_and_credentials_merge(index=["index1", "index2"])
+        expected = [
+            _IndexDetails(name=0, url="index1"),
+            _IndexDetails(name=1, url="index2"),
+        ]
+        assert result == expected
+
+    def test_credentials_only(self) -> None:
+        result = _yield_uv_index_and_credentials_merge(
+            credentials=[("username", "password")]
+        )
+        assert result is None

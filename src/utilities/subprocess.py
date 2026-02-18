@@ -14,7 +14,16 @@ from shutil import rmtree
 from string import Template
 from subprocess import PIPE, Popen
 from threading import Thread
-from typing import IO, TYPE_CHECKING, Any, Literal, assert_never, overload, override
+from typing import (
+    IO,
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    Self,
+    assert_never,
+    overload,
+    override,
+)
 from urllib.parse import urlparse
 
 import more_itertools
@@ -59,6 +68,7 @@ from utilities.version import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
+    from types import TracebackType
 
     from utilities.core import PermissionsLike
     from utilities.types import (
@@ -66,13 +76,14 @@ if TYPE_CHECKING:
         Group,
         LoggerLike,
         MaybeIterable,
-        MaybeSequence,
         MaybeSequenceStr,
         Owner,
         PathLike,
         Retry,
         StrMapping,
         StrStrMapping,
+        UvIndexCredentials,
+        UvPipListFormat,
     )
 
 
@@ -2002,7 +2013,59 @@ def uv_index_cmd(*, index: MaybeSequenceStr | None = None) -> list[str]:
 ##
 
 
-type _UvPipListFormat = Literal["columns", "freeze", "json"]
+def uv_lock(
+    *,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    check: bool = False,
+    upgrade: bool = False,
+    native_tls: bool = False,
+    print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+) -> None:
+    """Update the project's lockfile."""
+    with yield_uv_index_and_credentials(  # pragma: no cover
+        index=index, credentials=credentials
+    ) as new_index:
+        cmds = uv_lock_cmd(
+            check=check, index=new_index, upgrade=upgrade, native_tls=native_tls
+        )
+        run(*cmds, print=print, print_stdout=print_stdout, print_stderr=print_stderr)
+
+
+def uv_lock_cmd(
+    *,
+    check: bool = False,
+    index: MaybeSequenceStr | None = None,
+    upgrade: bool = False,
+    native_tls: bool = False,
+) -> list[str]:
+    """Command to use 'uv' to update the project's lockfile."""
+    args: list[str] = ["uv", "lock"]
+    if check:
+        args.append("--check")
+    args.extend(*uv_index_cmd(index=index))
+    if upgrade:
+        args.append("--upgrade")
+    return [
+        *args,
+        *RESOLUTION_HIGHEST,
+        *PRERELEASE_DISALLOW,
+        MANAGED_PYTHON,
+        *uv_native_tls_cmd(native_tls=native_tls),
+    ]
+
+
+##
+
+
+def uv_native_tls_cmd(*, native_tls: bool = False) -> list[str]:
+    """Generate the `--native-tls` command if necessary."""
+    return ["--native-tls"] if native_tls else []
+
+
+##
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
@@ -2019,8 +2082,7 @@ def uv_pip_list(
     editable: bool = False,
     exclude_editable: bool = False,
     index: MaybeSequenceStr | None = None,
-    credentials: MaybeSequence[tuple[str, str] | tuple[int | str, str, str]]
-    | None = None,
+    credentials: UvIndexCredentials | None = None,
     native_tls: bool = False,
 ) -> list[_UvPipListOutput]:
     """List packages installed in an environment."""
@@ -2031,89 +2093,22 @@ def uv_pip_list(
         outdated=False,
     )
     text_base = run(*cmds_base, return_stdout=True)
-    details = _uv_pip_list_merge(index=index, credentials=credentials)
-    cmds_outdated = uv_pip_list_cmd(
-        editable=editable,
-        exclude_editable=exclude_editable,
-        format_="json",
-        index=[i.full for i in details],
-        outdated=True,
-        native_tls=native_tls,
-    )
-    with _uv_pip_list_yield_env(*details):
+    with yield_uv_index_and_credentials(
+        index=index, credentials=credentials
+    ) as new_index:
+        cmds_outdated = uv_pip_list_cmd(
+            editable=editable,
+            exclude_editable=exclude_editable,
+            format_="json",
+            index=new_index,
+            outdated=True,
+            native_tls=native_tls,
+        )
         text_outdated = run(*cmds_outdated, return_stdout=True)
     dicts_base, dicts_outdated = list(
         map(_uv_pip_list_loads, [text_base, text_outdated])
     )
     return [_uv_pip_list_assemble_output(d, dicts_outdated) for d in dicts_base]
-
-
-@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
-class _IndexDetails:
-    name: str | int
-    url: str
-    username: str | None = None
-    password: str | None = None
-
-    @property
-    def full(self) -> str:
-        match self.name:
-            case int() as n:
-                return f"custom{n}"
-            case str() as name:
-                return name
-            case never:
-                assert_never(never)
-
-
-def _uv_pip_list_merge(
-    *,
-    index: MaybeSequenceStr | None = None,
-    credentials: MaybeSequence[tuple[str, str] | tuple[int | str, str, str]]
-    | None = None,
-) -> list[_IndexDetails]:
-    details: list[_IndexDetails] = []
-    if index is not None:
-        for i, index_i in enumerate(always_iterable(index)):
-            try:
-                name, url = extract_groups(r"^(\w+)=(\w+)$", index_i)
-            except ExtractGroupsError:
-                details_i = _IndexDetails(name=i, url=index_i)
-            else:
-                details_i = _IndexDetails(name=name, url=url)
-            details.append(details_i)
-    if credentials is not None:
-        for i, credentials_i in enumerate(
-            more_itertools.always_iterable(credentials, base_type=tuple)
-        ):
-            match credentials_i:
-                case str() as username, str() as password:
-                    j = i
-                case int() as j, str() as username, str() as password:
-                    ...
-                case str() as name, str() as username, str() as password:
-                    try:
-                        j = one(i for i, d in enumerate(details) if d.name == name)
-                    except OneEmptyError:
-                        j = None
-                case never:
-                    assert_never(never)
-            if (j is not None) and (0 <= j < len(details)):
-                details[j] = replace(details[j], username=username, password=password)
-    return details
-
-
-@contextmanager
-def _uv_pip_list_yield_env(*details: _IndexDetails) -> Iterator[None]:
-    with ExitStack() as stack:
-        for detail in details:
-            if detail.username is not None:
-                key = f"UV_INDEX_{detail.name}_USERNAME"
-                stack.enter_context(yield_temp_environ({key: detail.username}))
-            if detail.password is not None:
-                key = f"UV_INDEX_{detail.name}_PASSWORD"
-                stack.enter_context(yield_temp_environ({key: detail.password}))
-        yield
 
 
 def _uv_pip_list_loads(text: str, /) -> list[StrMapping]:
@@ -2189,7 +2184,7 @@ def uv_pip_list_cmd(
     *,
     editable: bool = False,
     exclude_editable: bool = False,
-    format_: _UvPipListFormat = "columns",
+    format_: UvPipListFormat = "columns",
     outdated: bool = False,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -2215,26 +2210,19 @@ def uv_pip_list_cmd(
 ##
 
 
-def uv_native_tls_cmd(*, native_tls: bool = False) -> list[str]:
-    """Generate the `--native-tls` command if necessary."""
-    return ["--native-tls"] if native_tls else []
-
-
-##
-
-
 @overload
 def uv_run(
     module: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2254,13 +2242,14 @@ def uv_run(
     module: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2280,13 +2269,14 @@ def uv_run(
     module: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2306,13 +2296,14 @@ def uv_run(
     module: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2332,13 +2323,14 @@ def uv_run(
     module: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2357,13 +2349,14 @@ def uv_run(
     module: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2379,8 +2372,10 @@ def uv_run(
     logger: LoggerLike | None = None,
 ) -> str | None:
     """Run a command or script."""
-    return run(  # pragma: no cover
-        *uv_run_cmd(
+    with yield_uv_index_and_credentials(  # pragma: no cover
+        index=index, credentials=credentials
+    ) as new_index:
+        cmds = uv_run_cmd(
             module,
             *args,
             extra=extra,
@@ -2389,22 +2384,24 @@ def uv_run(
             all_groups=all_groups,
             only_dev=only_dev,
             with_=with_,
-            index=index,
+            index=new_index,
             native_tls=native_tls,
-        ),
-        cwd=cwd,
-        env=env,
-        user=user,
-        print=print,
-        print_stdout=print_stdout,
-        print_stderr=print_stderr,
-        suppress=suppress,
-        return_=return_,
-        return_stdout=return_stdout,
-        return_stderr=return_stderr,
-        retry=retry,
-        logger=logger,
-    )
+        )
+        return run(
+            *cmds,
+            cwd=cwd,
+            env=env,
+            user=user,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            suppress=suppress,
+            return_=return_,
+            return_stdout=return_stdout,
+            return_stderr=return_stderr,
+            retry=retry,
+            logger=logger,
+        )
 
 
 def uv_run_cmd(
@@ -2445,8 +2442,8 @@ def uv_run_cmd(
         *RESOLUTION_HIGHEST,
         *PRERELEASE_DISALLOW,
         "--reinstall",
-        *uv_native_tls_cmd(native_tls=native_tls),
         MANAGED_PYTHON,
+        *uv_native_tls_cmd(native_tls=native_tls),
         "python",
         "-m",
         module,
@@ -2888,6 +2885,113 @@ def yield_ssh_temp_dir(
             ssh(user, hostname, *rm_cmd(path), retry=retry, logger=logger)
 
 
+##
+
+
+@contextmanager
+def yield_uv_index_and_credentials(
+    *,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+) -> Iterator[list[str] | None]:
+    """Yield an index and/or its credentials in the environment."""
+    details = _yield_uv_index_and_credentials_merge(
+        index=index, credentials=credentials
+    )
+    if details is None:
+        yield
+    else:
+        with ExitStack() as stack:
+            for detail in details:
+                stack.enter_context(detail)
+            yield [d.full for d in details]
+
+
+def _yield_uv_index_and_credentials_merge(
+    *,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+) -> list[_IndexDetails] | None:
+    if index is None:
+        return None
+    details = [
+        _IndexDetails.parse(index_i, n=n)
+        for n, index_i in enumerate(always_iterable(index))
+    ]
+    if credentials is not None:
+        for i, credentials_i in enumerate(
+            more_itertools.always_iterable(credentials, base_type=tuple)
+        ):
+            match credentials_i:
+                case str() as username, str() as password:
+                    j = i
+                case int() as j, str() as username, str() as password:
+                    ...
+                case str() as name, str() as username, str() as password:
+                    try:
+                        j = one(i for i, d in enumerate(details) if d.name == name)
+                    except OneEmptyError:
+                        j = None
+                case never:
+                    assert_never(never)
+            if (j is not None) and (0 <= j < len(details)):
+                details[j] = replace(details[j], username=username, password=password)
+    return details
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
+class _IndexDetails:
+    name: str | int
+    url: str
+    username: str | None = None
+    password: str | None = None
+    _stack: ExitStack = field(init=False, repr=False, compare=False)
+
+    def __enter__(self) -> None:
+        self._stack = ExitStack()
+        if (username := self.username) is not None:
+            key = f"UV_INDEX_{self.name}_USERNAME"
+            self._stack.enter_context(yield_temp_environ({key: username}))
+        if (password := self.password) is not None:
+            key = f"UV_INDEX_{self.name}_PASSWORD"
+            self._stack.enter_context(yield_temp_environ({key: password}))
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
+        return self._stack.__exit__(exc_type, exc_value, traceback)
+
+    @classmethod
+    def parse(
+        cls,
+        text: str,
+        /,
+        *,
+        n: int = 0,
+        username: str | None = None,
+        password: str | None = None,
+    ) -> Self:
+        try:
+            name, url = extract_groups(r"^(\w+)=(\w+)$", text)
+        except ExtractGroupsError:
+            return cls(name=n, url=text, username=username, password=password)
+        else:
+            return cls(name=name, url=url, username=username, password=password)
+
+    @property
+    def full(self) -> str:
+        match self.name:
+            case int() as n:
+                return f"{n}={self.url}"
+            case str():
+                return f"{self.name}={self.url}"
+            case never:
+                assert_never(never)
+
+
 __all__ = [
     "APT_UPDATE",
     "BASH_LC",
@@ -2975,6 +3079,8 @@ __all__ = [
     "update_ca_certificates",
     "useradd",
     "useradd_cmd",
+    "uv_lock",
+    "uv_lock_cmd",
     "uv_native_tls_cmd",
     "uv_pip_list",
     "uv_pip_list_cmd",
@@ -2987,4 +3093,5 @@ __all__ = [
     "uv_with_cmd",
     "yield_git_repo",
     "yield_ssh_temp_dir",
+    "yield_uv_index_and_credentials",
 ]
