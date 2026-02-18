@@ -2665,7 +2665,7 @@ def uv_sync(
     suppress: bool = False,
     retry: Retry | None = None,
     logger: LoggerLike | None = None,
-) -> str | None:
+) -> None:
     """Update the project's environment."""
     with yield_uv_index_and_credentials(  # pragma: no cover
         index=index, credentials=credentials
