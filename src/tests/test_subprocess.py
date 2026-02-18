@@ -114,18 +114,22 @@ from utilities.subprocess import (
     touch,
     touch_cmd,
     useradd_cmd,
+    uv_active_cmd,
     uv_all_extras_cmd,
     uv_all_groups_cmd,
     uv_extra_cmd,
+    uv_frozen_cmd,
     uv_group_cmd,
     uv_index_cmd,
     uv_lock_cmd,
+    uv_locked_cmd,
     uv_native_tls_cmd,
     uv_no_dev_cmd,
     uv_only_dev_cmd,
     uv_pip_list,
     uv_pip_list_cmd,
     uv_run_cmd,
+    uv_sync_cmd,
     uv_tool_install_cmd,
     uv_tool_run_cmd,
     uv_with_cmd,
@@ -1944,6 +1948,15 @@ class TestUserAddCmd:
         assert result == expected
 
 
+class TestUvActiveCmd:
+    @mark.parametrize(
+        ("active", "expected"), [param(False, []), param(True, ["--active"])]
+    )
+    def test_main(self, *, active: bool, expected: list[str]) -> None:
+        result = uv_active_cmd(active=active)
+        assert result == expected
+
+
 class TestUvAllExtrasCmd:
     @mark.parametrize(
         ("all_extras", "expected"), [param(False, []), param(True, ["--all-extras"])]
@@ -1973,6 +1986,15 @@ class TestUvExtraCmd:
     )
     def test_main(self, *, extra: MaybeSequenceStr | None, expected: list[str]) -> None:
         result = uv_extra_cmd(extra=extra)
+        assert result == expected
+
+
+class TestUvFrozenCmd:
+    @mark.parametrize(
+        ("frozen", "expected"), [param(False, []), param(True, ["--active"])]
+    )
+    def test_main(self, *, frozen: bool, expected: list[str]) -> None:
+        result = uv_frozen_cmd(frozen=frozen)
         assert result == expected
 
 
@@ -2044,6 +2066,15 @@ class TestUvLockCmd:
             "disallow",
             "--managed-python",
         ]
+        assert result == expected
+
+
+class TestUvLockedCmd:
+    @mark.parametrize(
+        ("locked", "expected"), [param(False, []), param(True, ["--active"])]
+    )
+    def test_main(self, *, locked: bool, expected: list[str]) -> None:
+        result = uv_locked_cmd(locked=locked)
         assert result == expected
 
 
@@ -2284,6 +2315,13 @@ class TestUvToolInstallCmd:
             "--managed-python",
             "package",
         ]
+        assert result == expected
+
+
+class TestUvSyncCmd:
+    def test_main(self) -> None:
+        result = uv_sync_cmd()
+        expected = ["uv"]
         assert result == expected
 
 

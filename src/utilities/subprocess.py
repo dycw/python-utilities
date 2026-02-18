@@ -2005,6 +2005,14 @@ def useradd_cmd(
 ##
 
 
+def uv_active_cmd(*, active: bool = False) -> list[str]:
+    """Generate the `--active` command if necessary."""
+    return ["--active"] if active else []
+
+
+##
+
+
 def uv_all_extras_cmd(*, all_extras: bool = False) -> list[str]:
     """Generate the `--all-extras` command if necessary."""
     return ["--all-extras"] if all_extras else []
@@ -2021,14 +2029,19 @@ def uv_all_groups_cmd(*, all_groups: bool = False) -> list[str]:
 ##
 
 
-##
-
-
 def uv_extra_cmd(*, extra: MaybeSequenceStr | None = None) -> list[str]:
     """Generate the `--extra` command if necessary."""
     if extra is None:
         return []
     return list(chain.from_iterable(["--extra", e] for e in always_iterable(extra)))
+
+
+##
+
+
+def uv_frozen_cmd(*, frozen: bool = False) -> list[str]:
+    """Generate the `--frozen` command if necessary."""
+    return ["--frozen"] if frozen else []
 
 
 ##
@@ -2109,6 +2122,14 @@ def uv_lock_cmd(
         MANAGED_PYTHON,
         *uv_native_tls_cmd(native_tls=native_tls),
     ]
+
+
+##
+
+
+def uv_locked_cmd(*, locked: bool = False) -> list[str]:
+    """Generate the `--locked` command if necessary."""
+    return ["--locked"] if locked else []
 
 
 ##
@@ -3348,12 +3369,15 @@ __all__ = [
     "update_ca_certificates",
     "useradd",
     "useradd_cmd",
+    "uv_active_cmd",
     "uv_all_extras_cmd",
     "uv_all_groups_cmd",
     "uv_extra_cmd",
+    "uv_frozen_cmd",
     "uv_group_cmd",
     "uv_lock",
     "uv_lock_cmd",
+    "uv_locked_cmd",
     "uv_native_tls_cmd",
     "uv_no_dev_cmd",
     "uv_only_dev_cmd",
