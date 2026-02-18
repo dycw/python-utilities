@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 import sys
-from contextlib import contextmanager
-from dataclasses import dataclass, field
+from contextlib import ExitStack, contextmanager
+from dataclasses import dataclass, field, replace
 from io import StringIO
 from itertools import chain, repeat
 from json import JSONDecodeError
@@ -17,8 +17,14 @@ from threading import Thread
 from typing import IO, TYPE_CHECKING, Any, Literal, assert_never, overload, override
 from urllib.parse import urlparse
 
+import more_itertools
+
 import utilities.core
-from utilities._core_errors import CopySourceNotFoundError, MoveSourceNotFoundError
+from utilities._core_errors import (
+    CopySourceNotFoundError,
+    ExtractGroupsError,
+    MoveSourceNotFoundError,
+)
 from utilities.constants import HOME, HOSTNAME, PWD, SECOND
 from utilities.contextlib import enhanced_context_manager
 from utilities.core import (
@@ -28,6 +34,7 @@ from utilities.core import (
     always_iterable,
     copy,
     duration_to_seconds,
+    extract_groups,
     file_or_dir,
     log_info,
     move,
@@ -39,6 +46,7 @@ from utilities.core import (
     substitute,
     sync_sleep,
     to_logger,
+    yield_temp_environ,
 )
 from utilities.errors import ImpossibleCaseError
 from utilities.math import safe_round
@@ -58,6 +66,7 @@ if TYPE_CHECKING:
         Group,
         LoggerLike,
         MaybeIterable,
+        MaybeSequence,
         MaybeSequenceStr,
         Owner,
         PathLike,
@@ -2010,23 +2019,29 @@ def uv_pip_list(
     editable: bool = False,
     exclude_editable: bool = False,
     index: MaybeSequenceStr | None = None,
+    credentials: MaybeSequence[tuple[str, str] | tuple[int | str, str, str]]
+    | None = None,
     native_tls: bool = False,
 ) -> list[_UvPipListOutput]:
     """List packages installed in an environment."""
-    cmds_base, cmds_outdated = [
-        uv_pip_list_cmd(
-            editable=editable,
-            exclude_editable=exclude_editable,
-            format_="json",
-            outdated=outdated,
-            index=index_i,
-            native_tls=native_tls_i,
-        )
-        for outdated, index_i, native_tls_i in [
-            (False, None, False),
-            (True, index, native_tls),
-        ]
-    ]
+    cmds_base = uv_pip_list_cmd(
+        editable=editable,
+        exclude_editable=exclude_editable,
+        format_="json",
+        outdated=False,
+    )
+    text_base = run(*cmds_base, return_stdout=True)
+    details = _uv_pip_list_merge(index=index, credentials=credentials)
+    cmds_outdated = uv_pip_list_cmd(
+        editable=editable,
+        exclude_editable=exclude_editable,
+        format_="json",
+        index=[i.full for i in details],
+        outdated=True,
+        native_tls=native_tls,
+    )
+    with _uv_pip_list_yield_env(*details):
+        text_outdated = run(*cmds_outdated, return_stdout=True)
     text_base, text_outdated = [
         run(*cmds, return_stdout=True) for cmds in [cmds_base, cmds_outdated]
     ]
@@ -2034,6 +2049,74 @@ def uv_pip_list(
         map(_uv_pip_list_loads, [text_base, text_outdated])
     )
     return [_uv_pip_list_assemble_output(d, dicts_outdated) for d in dicts_base]
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
+class _IndexDetails:
+    name: str | int
+    url: str
+    username: str | None = None
+    password: str | None = None
+
+    @property
+    def full(self) -> str:
+        match self.name:
+            case int() as n:
+                return f"custom{n}"
+            case str() as name:
+                return name
+            case never:
+                assert_never(never)
+
+
+def _uv_pip_list_merge(
+    *,
+    index: MaybeSequenceStr | None = None,
+    credentials: MaybeSequence[tuple[str, str] | tuple[int | str, str, str]]
+    | None = None,
+) -> list[_IndexDetails]:
+    details: list[_IndexDetails] = []
+    if index is not None:
+        for i, index_i in enumerate(always_iterable(index)):
+            try:
+                name, url = extract_groups(r"^(\w+)=(\w+)$", index_i)
+            except ExtractGroupsError:
+                details_i = _IndexDetails(name=i, url=index_i)
+            else:
+                details_i = _IndexDetails(name=name, url=url)
+            details.append(details_i)
+    if credentials is not None:
+        for i, credentials_i in enumerate(
+            more_itertools.always_iterable(credentials, base_type=tuple)
+        ):
+            match credentials_i:
+                case str() as username, str() as password:
+                    j = i
+                case int() as j, str() as username, str() as password:
+                    ...
+                case str() as name, str() as username, str() as password:
+                    try:
+                        j = one(i for i, d in enumerate(details) if d.name == name)
+                    except OneEmptyError:
+                        j = None
+                case never:
+                    assert_never(never)
+            if (j is not None) and (0 <= j < len(details)):
+                details[j] = replace(details[j], username=username, password=password)
+    return details
+
+
+@contextmanager
+def _uv_pip_list_yield_env(*details: _IndexDetails) -> Iterator[None]:
+    with ExitStack() as stack:
+        for detail in details:
+            if detail.username is not None:
+                key = f"UV_INDEX_{detail.name}_USERNAME"
+                stack.enter_context(yield_temp_environ({key: detail.username}))
+            if detail.password is not None:
+                key = f"UV_INDEX_{detail.name}_PASSWORD"
+                stack.enter_context(yield_temp_environ({key: detail.password}))
+        yield
 
 
 def _uv_pip_list_loads(text: str, /) -> list[StrMapping]:

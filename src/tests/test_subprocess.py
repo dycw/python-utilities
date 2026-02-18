@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 from re import MULTILINE, search
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from pytest import LogCaptureFixture, approx, mark, param, raises
 from pytest_lazy_fixtures import lf
 
+from utilities._core_errors import GetEnvError
 from utilities.constants import (
     EFFECTIVE_GROUP_NAME,
     EFFECTIVE_USER_NAME,
@@ -21,6 +22,7 @@ from utilities.core import (
     TemporaryDirectory,
     TemporaryFile,
     check_multi_line_regex,
+    get_env,
     get_file_group,
     get_file_owner,
     normalize_multi_line_str,
@@ -40,6 +42,7 @@ from utilities.subprocess import (
     RunCalledProcessError,
     RunError,
     RunFileNotFoundError,
+    _IndexDetails,
     _rsync_many_prepare,
     _RsyncCmdNoSourcesError,
     _RsyncCmdSourcesNotFoundError,
@@ -47,6 +50,8 @@ from utilities.subprocess import (
     _ssh_retry_skip,
     _uv_pip_list_assemble_output,
     _uv_pip_list_loads,
+    _uv_pip_list_merge,
+    _uv_pip_list_yield_env,
     _UvPipListBaseVersionError,
     _UvPipListJsonError,
     _UvPipListOutdatedVersionError,
@@ -1957,24 +1962,6 @@ class TestUvPipList:
         assert is_sequence_of(result, _UvPipListOutput)
 
 
-class TestUvPipListLoadsOutput:
-    def test_main(self) -> None:
-        text = normalize_multi_line_str("""
-            [{"name":"name","version":"0.0.1"}]
-        """)
-        result = _uv_pip_list_loads(text)
-        expected = [{"name": "name", "version": "0.0.1"}]
-        assert result == expected
-
-    def test_error(self) -> None:
-        text = normalize_multi_line_str("""
-            [{"name":"name","version":"0.0.1"}]
-            # warning: The package `name` requires `dep>=1.2.3`, but `1.2.2` is installed
-        """)
-        with raises(_UvPipListJsonError, match=r"Unable to parse JSON; got '.*'"):
-            _ = _uv_pip_list_loads(text)
-
-
 class TestUvPipListAssembleOutput:
     def test_main(self) -> None:
         dict_ = {"name": "name", "version": "0.0.1"}
@@ -2030,6 +2017,109 @@ class TestUvPipListAssembleOutput:
             _UvPipListOutdatedVersionError, match=r"Unable to parse version; got .*"
         ):
             _ = _uv_pip_list_assemble_output(dict_, outdated)
+
+
+class TestUvPipListLoads:
+    def test_main(self) -> None:
+        text = normalize_multi_line_str("""
+            [{"name":"name","version":"0.0.1"}]
+        """)
+        result = _uv_pip_list_loads(text)
+        expected = [{"name": "name", "version": "0.0.1"}]
+        assert result == expected
+
+    def test_error(self) -> None:
+        text = normalize_multi_line_str("""
+            [{"name":"name","version":"0.0.1"}]
+            # warning: The package `name` requires `dep>=1.2.3`, but `1.2.2` is installed
+        """)
+        with raises(_UvPipListJsonError, match=r"Unable to parse JSON; got '.*'"):
+            _ = _uv_pip_list_loads(text)
+
+
+class TestUvPipListMerge:
+    def test_none(self) -> None:
+        result = _uv_pip_list_merge()
+        assert result == []
+
+    @mark.parametrize(
+        ("index", "credentials", "exp_name", "exp_data"),
+        [
+            param("index", None, 0, False),
+            param("index", ("username", "password"), 0, True),
+            param("index", [("username", "password")], 0, True),
+            param("index", (0, "username", "password"), 0, True),
+            param("index", [(0, "username", "password")], 0, True),
+            param("index", (1, "username", "password"), 0, False),
+            param("index", [(1, "username", "password")], 0, False),
+            param("index", ("name", "username", "password"), 0, False),
+            param("index", [("name", "username", "password")], 0, False),
+            param("name=index", None, "name", False),
+            param("name=index", ("username", "password"), "name", True),
+            param("name=index", [("username", "password")], "name", True),
+            param("name=index", (0, "username", "password"), "name", True),
+            param("name=index", [(0, "username", "password")], "name", True),
+            param("name=index", (1, "username", "password"), "name", False),
+            param("name=index", [(1, "username", "password")], "name", False),
+            param("name=index", ("name", "username", "password"), "name", True),
+            param("name=index", [("name", "username", "password")], "name", True),
+            param("name=index", ("other", "username", "password"), "name", False),
+            param("name=index", [("other", "username", "password")], "name", False),
+        ],
+    )
+    def test_index_single(
+        self, *, index: str, credentials: Any, exp_name: str | int, exp_data: bool
+    ) -> None:
+        result = _uv_pip_list_merge(index=index, credentials=credentials)
+        exp_details = [
+            _IndexDetails(
+                name=exp_name,
+                url="index",
+                username="username" if exp_data else None,
+                password="password" if exp_data else None,
+            )
+        ]
+        assert result == exp_details
+
+    def test_index_multiple(self) -> None:
+        result = _uv_pip_list_merge(index=["index1", "index2"])
+        expected = [
+            _IndexDetails(name=0, url="index1"),
+            _IndexDetails(name=1, url="index2"),
+        ]
+        assert result == expected
+
+    def test_credentials_only(self) -> None:
+        result = _uv_pip_list_merge(credentials=[("username", "password")])
+        expected = []
+        assert result == expected
+
+
+class TestUvPipListYieldEnv:
+    def test_none(self) -> None:
+        index = _IndexDetails(name="name", url="url")
+        with _uv_pip_list_yield_env(index):
+            with raises(
+                GetEnvError,
+                match=r"No environment variable 'UV_INDEX_NAME_USERNAME' \(modulo case\)",
+            ):
+                assert get_env("UV_INDEX_NAME_USERNAME")
+            with raises(
+                GetEnvError,
+                match=r"No environment variable 'UV_INDEX_NAME_PASSWORD' \(modulo case\)",
+            ):
+                assert get_env("UV_INDEX_NAME_PASSWORD")
+
+    def test_credentials(self) -> None:
+        index = _IndexDetails(
+            name="name",
+            url="url",
+            username="username",
+            password="password",  # noqa: S106
+        )
+        with _uv_pip_list_yield_env(index):
+            assert get_env("UV_INDEX_NAME_USERNAME") == "username"
+            assert get_env("UV_INDEX_NAME_PASSWORD") == "password"
 
 
 class TestUvPipListCmd:
