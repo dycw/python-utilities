@@ -2021,6 +2021,9 @@ def uv_all_groups_cmd(*, all_groups: bool = False) -> list[str]:
 ##
 
 
+##
+
+
 def uv_extra_cmd(*, extra: MaybeSequenceStr | None = None) -> list[str]:
     """Generate the `--extra` command if necessary."""
     if extra is None:
@@ -2107,6 +2110,14 @@ def uv_native_tls_cmd(*, native_tls: bool = False) -> list[str]:
 def uv_no_dev_cmd(*, no_dev: bool = False) -> list[str]:
     """Generate the `--no-dev` command if necessary."""
     return ["--no-dev"] if no_dev else []
+
+
+##
+
+
+def uv_only_dev_cmd(*, only_dev: bool = False) -> list[str]:
+    """Generate the `--only-dev` command if necessary."""
+    return ["--only-dev"] if only_dev else []
 
 
 ##
@@ -2470,22 +2481,15 @@ def uv_run_cmd(
     native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to run a command or script."""
-    parts: list[str] = [
+    return [
         "uv",
         "run",
         *uv_extra_cmd(extra=extra),
         *uv_all_extras_cmd(all_extras=all_extras),
         *uv_no_dev_cmd(no_dev=no_dev),
-    ]
-    if group is not None:
-        for group_i in always_iterable(group):
-            parts.extend(["--group", group_i])
-    if all_groups:
-        parts.append("--all-groups")
-    if only_dev:
-        parts.append("--only-dev")
-    return [
-        *parts,
+        *uv_group_cmd(group=group),
+        *uv_all_groups_cmd(all_groups=all_groups),
+        *uv_only_dev_cmd(only_dev=only_dev),
         "--exact",
         *uv_with_cmd(with_=with_),
         ISOLATED,
@@ -3187,6 +3191,7 @@ __all__ = [
     "uv_lock_cmd",
     "uv_native_tls_cmd",
     "uv_no_dev_cmd",
+    "uv_only_dev_cmd",
     "uv_pip_list",
     "uv_pip_list_cmd",
     "uv_run",

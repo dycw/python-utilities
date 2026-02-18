@@ -122,6 +122,7 @@ from utilities.subprocess import (
     uv_lock_cmd,
     uv_native_tls_cmd,
     uv_no_dev_cmd,
+    uv_only_dev_cmd,
     uv_pip_list,
     uv_pip_list_cmd,
     uv_run_cmd,
@@ -2064,6 +2065,15 @@ class TestUvNoDevCmd:
         assert result == expected
 
 
+class TestUvOnlyDevCmd:
+    @mark.parametrize(
+        ("only_dev", "expected"), [param(False, []), param(True, ["--only-dev"])]
+    )
+    def test_main(self, *, only_dev: bool, expected: list[str]) -> None:
+        result = uv_only_dev_cmd(only_dev=only_dev)
+        assert result == expected
+
+
 class TestUvPipList:
     @skipif_ci
     def test_main(self) -> None:
@@ -2255,90 +2265,6 @@ class TestUvRunCmd:
             "foo.bar",
             "arg1",
             "arg2",
-        ]
-        assert result == expected
-
-    def test_group_single(self) -> None:
-        result = uv_run_cmd("foo.bar", group="group")
-        expected = [
-            "uv",
-            "run",
-            "--group",
-            "group",
-            "--exact",
-            "--isolated",
-            "--resolution",
-            "highest",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
-        ]
-        assert result == expected
-
-    def test_group_multiple(self) -> None:
-        result = uv_run_cmd("foo.bar", group=["group1", "group2"])
-        expected = [
-            "uv",
-            "run",
-            "--group",
-            "group1",
-            "--group",
-            "group2",
-            "--exact",
-            "--isolated",
-            "--resolution",
-            "highest",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
-        ]
-        assert result == expected
-
-    def test_all_groups(self) -> None:
-        result = uv_run_cmd("foo.bar", all_groups=True)
-        expected = [
-            "uv",
-            "run",
-            "--all-groups",
-            "--exact",
-            "--isolated",
-            "--resolution",
-            "highest",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
-        ]
-        assert result == expected
-
-    def test_only_dev(self) -> None:
-        result = uv_run_cmd("foo.bar", only_dev=True)
-        expected = [
-            "uv",
-            "run",
-            "--only-dev",
-            "--exact",
-            "--isolated",
-            "--resolution",
-            "highest",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
         ]
         assert result == expected
 
