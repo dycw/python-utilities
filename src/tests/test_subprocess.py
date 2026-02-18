@@ -115,10 +115,12 @@ from utilities.subprocess import (
     touch_cmd,
     useradd_cmd,
     uv_all_extras_cmd,
+    uv_all_groups_cmd,
     uv_extra_cmd,
     uv_index_cmd,
     uv_lock_cmd,
     uv_native_tls_cmd,
+    uv_no_dev_cmd,
     uv_pip_list,
     uv_pip_list_cmd,
     uv_run_cmd,
@@ -1949,6 +1951,15 @@ class TestUvAllExtrasCmd:
         assert result == expected
 
 
+class TestUvAllGroupsCmd:
+    @mark.parametrize(
+        ("all_groups", "expected"), [param(False, []), param(True, ["--all-groups"])]
+    )
+    def test_main(self, *, all_groups: bool, expected: list[str]) -> None:
+        result = uv_all_groups_cmd(all_groups=all_groups)
+        assert result == expected
+
+
 class TestUvExtraCmd:
     def test_none(self) -> None:
         result = uv_extra_cmd()
@@ -2032,6 +2043,15 @@ class TestUvNativeTLSCmd:
     )
     def test_main(self, *, native_tls: bool, expected: list[str]) -> None:
         result = uv_native_tls_cmd(native_tls=native_tls)
+        assert result == expected
+
+
+class TestUvNoDevCmd:
+    @mark.parametrize(
+        ("no_dev", "expected"), [param(False, []), param(True, ["--no-dev"])]
+    )
+    def test_main(self, *, no_dev: bool, expected: list[str]) -> None:
+        result = uv_no_dev_cmd(no_dev=no_dev)
         assert result == expected
 
 
@@ -2226,26 +2246,6 @@ class TestUvRunCmd:
             "foo.bar",
             "arg1",
             "arg2",
-        ]
-        assert result == expected
-
-    def test_no_dev(self) -> None:
-        result = uv_run_cmd("foo.bar", no_dev=True)
-        expected = [
-            "uv",
-            "run",
-            "--no-dev",
-            "--exact",
-            "--isolated",
-            "--resolution",
-            "highest",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
         ]
         assert result == expected
 

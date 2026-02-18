@@ -2013,6 +2013,14 @@ def uv_all_extras_cmd(*, all_extras: bool = False) -> list[str]:
 ##
 
 
+def uv_all_groups_cmd(*, all_groups: bool = False) -> list[str]:
+    """Generate the `--all-groups` command if necessary."""
+    return ["--all-groups"] if all_groups else []
+
+
+##
+
+
 def uv_extra_cmd(*, extra: MaybeSequenceStr | None = None) -> list[str]:
     """Generate the `--extra` command if necessary."""
     if extra is None:
@@ -2081,6 +2089,14 @@ def uv_lock_cmd(
 def uv_native_tls_cmd(*, native_tls: bool = False) -> list[str]:
     """Generate the `--native-tls` command if necessary."""
     return ["--native-tls"] if native_tls else []
+
+
+##
+
+
+def uv_no_dev_cmd(*, no_dev: bool = False) -> list[str]:
+    """Generate the `--no-dev` command if necessary."""
+    return ["--no-dev"] if no_dev else []
 
 
 ##
@@ -2449,9 +2465,8 @@ def uv_run_cmd(
         "run",
         *uv_extra_cmd(extra=extra),
         *uv_all_extras_cmd(all_extras=all_extras),
+        *uv_no_dev_cmd(no_dev=no_dev),
     ]
-    if no_dev:
-        parts.append("--no-dev")
     if group is not None:
         for group_i in always_iterable(group):
             parts.extend(["--group", group_i])
@@ -3155,10 +3170,12 @@ __all__ = [
     "useradd",
     "useradd_cmd",
     "uv_all_extras_cmd",
+    "uv_all_groups_cmd",
     "uv_extra_cmd",
     "uv_lock",
     "uv_lock_cmd",
     "uv_native_tls_cmd",
+    "uv_no_dev_cmd",
     "uv_pip_list",
     "uv_pip_list_cmd",
     "uv_run",
