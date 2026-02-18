@@ -2088,7 +2088,9 @@ class TestUvPipListMerge:
         assert result == expected
 
     def test_credentials_only(self) -> None:
-        pass
+        result = _uv_pip_list_merge(credentials=[("username", "password")])
+        expected = []
+        assert result == expected
 
 
 class TestUvPipListYieldEnv:
