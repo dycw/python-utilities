@@ -2053,7 +2053,7 @@ def uv_pip_list(
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
 class _IndexDetails:
-    name: int | str
+    name: str | int
     url: str
     username: str | None = None
     password: str | None = None

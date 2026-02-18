@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from re import MULTILINE, search
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from pytest import LogCaptureFixture, approx, mark, param, raises
@@ -134,7 +134,7 @@ if TYPE_CHECKING:
 
     from pytest import CaptureFixture
 
-    from utilities.types import MaybeSequence, PathLike
+    from utilities.types import PathLike
 
 
 class TestAppendText:
@@ -2042,41 +2042,50 @@ class TestUvPipListMerge:
         result = _uv_pip_list_merge()
         assert result == []
 
-    def test_index_single_unnamed(self) -> None:
-        result = _uv_pip_list_merge(index="index")
-        expected = [_IndexDetails(name=0, url="index")]
-        assert result == expected
+    @mark.parametrize(
+        ("index", "credentials", "exp_name", "exp_data"),
+        [
+            param("index", None, 0, False),
+            param("index", ("username", "password"), 0, True),
+            param("index", [("username", "password")], 0, True),
+            param("index", (0, "username", "password"), 0, True),
+            param("index", [(0, "username", "password")], 0, True),
+            param("index", (1, "username", "password"), 0, False),
+            param("index", [(1, "username", "password")], 0, False),
+            param("index", ("name", "username", "password"), 0, False),
+            param("index", [("name", "username", "password")], 0, False),
+            param("name=index", None, "name", False),
+            param("name=index", ("username", "password"), "name", True),
+            param("name=index", [("username", "password")], "name", True),
+            param("name=index", (0, "username", "password"), "name", True),
+            param("name=index", [(0, "username", "password")], "name", True),
+            param("name=index", (1, "username", "password"), "name", False),
+            param("name=index", [(1, "username", "password")], "name", False),
+            param("name=index", ("name", "username", "password"), "name", True),
+            param("name=index", [("name", "username", "password")], "name", True),
+            param("name=index", ("other", "username", "password"), "name", False),
+            param("name=index", [("other", "username", "password")], "name", False),
+        ],
+    )
+    def test_index_single(
+        self, *, index: str, credentials: Any, exp_name: str | int, exp_data: bool
+    ) -> None:
+        result = _uv_pip_list_merge(index=index, credentials=credentials)
+        exp_details = [
+            _IndexDetails(
+                name=exp_name,
+                url="index",
+                username="username" if exp_data else None,
+                password="password" if exp_data else None,
+            )
+        ]
+        assert result == exp_details
 
-    def test_index_single_named(self) -> None:
-        result = _uv_pip_list_merge(index="name=index")
-        expected = [_IndexDetails(name="name", url="index")]
-        assert result == expected
-
-    def test_index_multiple_unnamed(self) -> None:
+    def test_index_multiple(self) -> None:
         result = _uv_pip_list_merge(index=["index1", "index2"])
         expected = [
             _IndexDetails(name=0, url="index1"),
             _IndexDetails(name=1, url="index2"),
-        ]
-        assert result == expected
-
-    @mark.parametrize(
-        "credentials",
-        [
-            param(("username", "password")),
-            param([("username", "password")]),
-            param((0, "username", "password")),
-            param([(0, "username", "password")]),
-        ],
-    )
-    def test_index_single_with_credentials_matched(
-        self,
-        *,
-        credentials: MaybeSequence[tuple[str, str] | tuple[int | str, str, str]],
-    ) -> None:
-        result = _uv_pip_list_merge(index="index", credentials=credentials)
-        expected = [
-            _IndexDetails(name=0, url="index", username="username", password="password")  # noqa: S106
         ]
         assert result == expected
 
