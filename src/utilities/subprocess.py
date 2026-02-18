@@ -2005,6 +2005,14 @@ def useradd_cmd(
 ##
 
 
+def uv_all_extras_cmd(*, all_extras: bool = False) -> list[str]:
+    """Generate the `--all-extras` command if necessary."""
+    return ["--all-extras"] if all_extras else []
+
+
+##
+
+
 def uv_extra_cmd(*, extra: MaybeSequenceStr | None = None) -> list[str]:
     """Generate the `--extra` command if necessary."""
     if extra is None:
@@ -2436,9 +2444,12 @@ def uv_run_cmd(
     native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to run a command or script."""
-    parts: list[str] = ["uv", "run", *uv_extra_cmd(extra=extra)]
-    if all_extras:
-        parts.append("--all-extras")
+    parts: list[str] = [
+        "uv",
+        "run",
+        *uv_extra_cmd(extra=extra),
+        *uv_all_extras_cmd(all_extras=all_extras),
+    ]
     if no_dev:
         parts.append("--no-dev")
     if group is not None:
@@ -3143,6 +3154,7 @@ __all__ = [
     "update_ca_certificates",
     "useradd",
     "useradd_cmd",
+    "uv_all_extras_cmd",
     "uv_extra_cmd",
     "uv_lock",
     "uv_lock_cmd",

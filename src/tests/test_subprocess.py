@@ -114,6 +114,7 @@ from utilities.subprocess import (
     touch,
     touch_cmd,
     useradd_cmd,
+    uv_all_extras_cmd,
     uv_extra_cmd,
     uv_index_cmd,
     uv_lock_cmd,
@@ -1939,6 +1940,15 @@ class TestUserAddCmd:
         assert result == expected
 
 
+class TestUvAllExtrasCmd:
+    @mark.parametrize(
+        ("all_extras", "expected"), [param(False, []), param(True, ["--all-extras"])]
+    )
+    def test_main(self, *, all_extras: bool, expected: list[str]) -> None:
+        result = uv_all_extras_cmd(all_extras=all_extras)
+        assert result == expected
+
+
 class TestUvExtraCmd:
     def test_none(self) -> None:
         result = uv_extra_cmd()
@@ -2017,14 +2027,11 @@ class TestUvLockCmd:
 
 
 class TestUvNativeTLSCmd:
-    def test_main(self) -> None:
-        result = uv_native_tls_cmd()
-        expected = []
-        assert result == expected
-
-    def test_native_tls(self) -> None:
-        result = uv_native_tls_cmd(native_tls=True)
-        expected = ["--native-tls"]
+    @mark.parametrize(
+        ("native_tls", "expected"), [param(False, []), param(True, ["--native-tls"])]
+    )
+    def test_main(self, *, native_tls: bool, expected: list[str]) -> None:
+        result = uv_native_tls_cmd(native_tls=native_tls)
         assert result == expected
 
 
@@ -2219,26 +2226,6 @@ class TestUvRunCmd:
             "foo.bar",
             "arg1",
             "arg2",
-        ]
-        assert result == expected
-
-    def test_all_extras(self) -> None:
-        result = uv_run_cmd("foo.bar", all_extras=True)
-        expected = [
-            "uv",
-            "run",
-            "--all-extras",
-            "--exact",
-            "--isolated",
-            "--resolution",
-            "highest",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
         ]
         assert result == expected
 
