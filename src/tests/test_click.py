@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import enum
 from dataclasses import dataclass
-from enum import StrEnum, auto, unique
+from enum import Enum, StrEnum, auto, unique
 from operator import attrgetter
 from re import search
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -911,10 +911,34 @@ class TestToArgs:
             param(False, True, ["--no-flag"]),
         ],
     )
+    @mark.parametrize("join", [param(True), param(False)])
     def test_bool(
-        self, *, flag: bool, explicit_false: bool, expected: list[str]
+        self, *, flag: bool, explicit_false: bool, join: bool, expected: list[str]
     ) -> None:
-        result = to_args("--flag", flag, explicit_false=explicit_false)
+        result = to_args("--flag", flag, explicit_false=explicit_false, join=join)
+        assert result == expected
+
+    @mark.parametrize(
+        ("join", "expected"), [param(True, ["--arg=1"]), param(False, ["--arg", "1"])]
+    )
+    def test_enum(self, *, join: bool, expected: list[str]) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
+
+        result = to_args("--arg", Truth.true, join=join)
+        assert result == expected
+
+    @mark.parametrize(
+        ("join", "expected"),
+        [param(True, ["--arg=true_value"]), param(False, ["--arg", "true_value"])],
+    )
+    def test_str_enum(self, *, join: bool, expected: list[str]) -> None:
+        class Truth(StrEnum):
+            true_key = "true_value"
+            false_key = "false_value"
+
+        result = to_args("--arg", Truth.true_key, join=join)
         assert result == expected
 
     def test_error_odd(self) -> None:
