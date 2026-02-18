@@ -2107,15 +2107,15 @@ def _uv_pip_list_merge(
 
 
 @contextmanager
-def _uv_pip_list_yield_env(*index: _IndexDetails) -> Iterator[None]:
+def _uv_pip_list_yield_env(*details: _IndexDetails) -> Iterator[None]:
     with ExitStack() as stack:
-        for index_i in index:
-            if index_i.username is not None:
-                key = f"UV_INDEX_{index_i.name}_USERNAME"
-                stack.enter_context(yield_temp_environ({key: index_i.username}))
-            if index_i.password is not None:
-                key = f"UV_INDEX_{index_i.name}_PASSWORD"
-                stack.enter_context(yield_temp_environ({key: index_i.password}))
+        for detail in details:
+            if detail.username is not None:
+                key = f"UV_INDEX_{detail.name}_USERNAME"
+                stack.enter_context(yield_temp_environ({key: detail.username}))
+            if detail.password is not None:
+                key = f"UV_INDEX_{detail.name}_PASSWORD"
+                stack.enter_context(yield_temp_environ({key: detail.password}))
         yield
 
 
