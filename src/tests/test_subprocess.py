@@ -50,12 +50,11 @@ from utilities.subprocess import (
     _ssh_retry_skip,
     _uv_pip_list_assemble_output,
     _uv_pip_list_loads,
-    _uv_pip_list_merge,
-    _uv_pip_list_yield_env,
     _UvPipListBaseVersionError,
     _UvPipListJsonError,
     _UvPipListOutdatedVersionError,
     _UvPipListOutput,
+    _yield_uv_index_and_credentials_merge,
     append_text,
     apt_install_cmd,
     apt_remove_cmd,
@@ -115,16 +114,34 @@ from utilities.subprocess import (
     touch,
     touch_cmd,
     useradd_cmd,
+    uv_active_cmd,
+    uv_all_extras_cmd,
+    uv_all_groups_cmd,
+    uv_all_packages_cmd,
+    uv_check_cmd,
+    uv_extra_cmd,
+    uv_frozen_cmd,
+    uv_group_cmd,
     uv_index_cmd,
+    uv_lock_cmd,
+    uv_locked_cmd,
     uv_native_tls_cmd,
+    uv_no_dev_cmd,
+    uv_only_dev_cmd,
+    uv_package_cmd,
     uv_pip_list,
     uv_pip_list_cmd,
+    uv_reinstall_cmd,
     uv_run_cmd,
+    uv_script_cmd,
+    uv_sync_cmd,
     uv_tool_install_cmd,
     uv_tool_run_cmd,
+    uv_upgrade_cmd,
     uv_with_cmd,
     yield_git_repo,
     yield_ssh_temp_dir,
+    yield_uv_index_and_credentials,
 )
 from utilities.typing import is_sequence_of
 from utilities.version import Version3
@@ -134,7 +151,7 @@ if TYPE_CHECKING:
 
     from pytest import CaptureFixture
 
-    from utilities.types import PathLike
+    from utilities.types import MaybeSequenceStr, PathLike
 
 
 class TestAppendText:
@@ -1915,7 +1932,7 @@ class TestTouchCmd:
 
 
 class TestUserAddCmd:
-    def test_main(self) -> None:
+    def test_none(self) -> None:
         result = useradd_cmd("login")
         expected = ["useradd", "--create-home", "login"]
         assert result == expected
@@ -1937,20 +1954,198 @@ class TestUserAddCmd:
         assert result == expected
 
 
+class TestUvActiveCmd:
+    @mark.parametrize(
+        ("active", "expected"), [param(False, []), param(True, ["--active"])]
+    )
+    def test_main(self, *, active: bool, expected: list[str]) -> None:
+        result = uv_active_cmd(active=active)
+        assert result == expected
+
+
+class TestUvAllExtrasCmd:
+    @mark.parametrize(
+        ("all_extras", "expected"), [param(False, []), param(True, ["--all-extras"])]
+    )
+    def test_main(self, *, all_extras: bool, expected: list[str]) -> None:
+        result = uv_all_extras_cmd(all_extras=all_extras)
+        assert result == expected
+
+
+class TestUvAllGroupsCmd:
+    @mark.parametrize(
+        ("all_groups", "expected"), [param(False, []), param(True, ["--all-groups"])]
+    )
+    def test_main(self, *, all_groups: bool, expected: list[str]) -> None:
+        result = uv_all_groups_cmd(all_groups=all_groups)
+        assert result == expected
+
+
+class TestUvAllPackagesCmd:
+    @mark.parametrize(
+        ("all_packages", "expected"),
+        [param(False, []), param(True, ["--all-packages"])],
+    )
+    def test_main(self, *, all_packages: bool, expected: list[str]) -> None:
+        result = uv_all_packages_cmd(all_packages=all_packages)
+        assert result == expected
+
+
+class TestUvCheckCmd:
+    @mark.parametrize(
+        ("check", "expected"), [param(False, []), param(True, ["--check"])]
+    )
+    def test_main(self, *, check: bool, expected: list[str]) -> None:
+        result = uv_check_cmd(check=check)
+        assert result == expected
+
+
+class TestUvExtraCmd:
+    @mark.parametrize(
+        ("extra", "expected"),
+        [
+            param(None, []),
+            param("extra", ["--extra", "extra"]),
+            param(["extra1", "extra2"], ["--extra", "extra1", "--extra", "extra2"]),
+        ],
+    )
+    def test_main(self, *, extra: MaybeSequenceStr | None, expected: list[str]) -> None:
+        result = uv_extra_cmd(extra=extra)
+        assert result == expected
+
+
+class TestUvFrozenCmd:
+    @mark.parametrize(
+        ("frozen", "expected"), [param(False, []), param(True, ["--frozen"])]
+    )
+    def test_main(self, *, frozen: bool, expected: list[str]) -> None:
+        result = uv_frozen_cmd(frozen=frozen)
+        assert result == expected
+
+
+class TestUvGroupCmd:
+    @mark.parametrize(
+        ("group", "expected"),
+        [
+            param(None, []),
+            param("group", ["--group", "group"]),
+            param(["group1", "group2"], ["--group", "group1", "--group", "group2"]),
+        ],
+    )
+    def test_main(self, *, group: MaybeSequenceStr | None, expected: list[str]) -> None:
+        result = uv_group_cmd(group=group)
+        assert result == expected
+
+
 class TestUvIndexCmd:
+    @mark.parametrize(
+        ("index", "expected"),
+        [
+            param(None, []),
+            param("index", ["--index", "index"]),
+            param(["index1", "index2"], ["--index", "index1,index2"]),
+        ],
+    )
+    def test_main(self, *, index: MaybeSequenceStr | None, expected: list[str]) -> None:
+        result = uv_index_cmd(index=index)
+        assert result == expected
+
+
+class TestUvLockCmd:
     def test_none(self) -> None:
-        result = uv_index_cmd()
-        expected = []
+        result = uv_lock_cmd()
+        expected = [
+            "uv",
+            "lock",
+            "--resolution",
+            "highest",
+            "--prerelease",
+            "disallow",
+            "--managed-python",
+        ]
         assert result == expected
 
-    def test_single(self) -> None:
-        result = uv_index_cmd(index="index")
-        expected = ["--index", "index"]
+    def test_check(self) -> None:
+        result = uv_lock_cmd(check=True)
+        expected = [
+            "uv",
+            "lock",
+            "--check",
+            "--resolution",
+            "highest",
+            "--prerelease",
+            "disallow",
+            "--managed-python",
+        ]
         assert result == expected
 
-    def test_multiple(self) -> None:
-        result = uv_index_cmd(index=["index1", "index2"])
-        expected = ["--index", "index1,index2"]
+    def test_upgrade(self) -> None:
+        result = uv_lock_cmd(upgrade=True)
+        expected = [
+            "uv",
+            "lock",
+            "--upgrade",
+            "--resolution",
+            "highest",
+            "--prerelease",
+            "disallow",
+            "--managed-python",
+        ]
+        assert result == expected
+
+
+class TestUvLockedCmd:
+    @mark.parametrize(
+        ("locked", "expected"), [param(False, []), param(True, ["--locked"])]
+    )
+    def test_main(self, *, locked: bool, expected: list[str]) -> None:
+        result = uv_locked_cmd(locked=locked)
+        assert result == expected
+
+
+class TestUvNativeTLSCmd:
+    @mark.parametrize(
+        ("native_tls", "expected"), [param(False, []), param(True, ["--native-tls"])]
+    )
+    def test_main(self, *, native_tls: bool, expected: list[str]) -> None:
+        result = uv_native_tls_cmd(native_tls=native_tls)
+        assert result == expected
+
+
+class TestUvNoDevCmd:
+    @mark.parametrize(
+        ("no_dev", "expected"), [param(False, []), param(True, ["--no-dev"])]
+    )
+    def test_main(self, *, no_dev: bool, expected: list[str]) -> None:
+        result = uv_no_dev_cmd(no_dev=no_dev)
+        assert result == expected
+
+
+class TestUvOnlyDevCmd:
+    @mark.parametrize(
+        ("only_dev", "expected"), [param(False, []), param(True, ["--only-dev"])]
+    )
+    def test_main(self, *, only_dev: bool, expected: list[str]) -> None:
+        result = uv_only_dev_cmd(only_dev=only_dev)
+        assert result == expected
+
+
+class TestUvPackageCmd:
+    @mark.parametrize(
+        ("package", "expected"),
+        [
+            param(None, []),
+            param("package", ["--package", "package"]),
+            param(
+                ["package1", "package2"],
+                ["--package", "package1", "--package", "package2"],
+            ),
+        ],
+    )
+    def test_main(
+        self, *, package: MaybeSequenceStr | None, expected: list[str]
+    ) -> None:
+        result = uv_package_cmd(package=package)
         assert result == expected
 
 
@@ -2037,91 +2232,6 @@ class TestUvPipListLoads:
             _ = _uv_pip_list_loads(text)
 
 
-class TestUvPipListMerge:
-    def test_none(self) -> None:
-        result = _uv_pip_list_merge()
-        assert result == []
-
-    @mark.parametrize(
-        ("index", "credentials", "exp_name", "exp_data"),
-        [
-            param("index", None, 0, False),
-            param("index", ("username", "password"), 0, True),
-            param("index", [("username", "password")], 0, True),
-            param("index", (0, "username", "password"), 0, True),
-            param("index", [(0, "username", "password")], 0, True),
-            param("index", (1, "username", "password"), 0, False),
-            param("index", [(1, "username", "password")], 0, False),
-            param("index", ("name", "username", "password"), 0, False),
-            param("index", [("name", "username", "password")], 0, False),
-            param("name=index", None, "name", False),
-            param("name=index", ("username", "password"), "name", True),
-            param("name=index", [("username", "password")], "name", True),
-            param("name=index", (0, "username", "password"), "name", True),
-            param("name=index", [(0, "username", "password")], "name", True),
-            param("name=index", (1, "username", "password"), "name", False),
-            param("name=index", [(1, "username", "password")], "name", False),
-            param("name=index", ("name", "username", "password"), "name", True),
-            param("name=index", [("name", "username", "password")], "name", True),
-            param("name=index", ("other", "username", "password"), "name", False),
-            param("name=index", [("other", "username", "password")], "name", False),
-        ],
-    )
-    def test_index_single(
-        self, *, index: str, credentials: Any, exp_name: str | int, exp_data: bool
-    ) -> None:
-        result = _uv_pip_list_merge(index=index, credentials=credentials)
-        exp_details = [
-            _IndexDetails(
-                name=exp_name,
-                url="index",
-                username="username" if exp_data else None,
-                password="password" if exp_data else None,
-            )
-        ]
-        assert result == exp_details
-
-    def test_index_multiple(self) -> None:
-        result = _uv_pip_list_merge(index=["index1", "index2"])
-        expected = [
-            _IndexDetails(name=0, url="index1"),
-            _IndexDetails(name=1, url="index2"),
-        ]
-        assert result == expected
-
-    def test_credentials_only(self) -> None:
-        result = _uv_pip_list_merge(credentials=[("username", "password")])
-        expected = []
-        assert result == expected
-
-
-class TestUvPipListYieldEnv:
-    def test_none(self) -> None:
-        index = _IndexDetails(name="name", url="url")
-        with _uv_pip_list_yield_env(index):
-            with raises(
-                GetEnvError,
-                match=r"No environment variable 'UV_INDEX_NAME_USERNAME' \(modulo case\)",
-            ):
-                assert get_env("UV_INDEX_NAME_USERNAME")
-            with raises(
-                GetEnvError,
-                match=r"No environment variable 'UV_INDEX_NAME_PASSWORD' \(modulo case\)",
-            ):
-                assert get_env("UV_INDEX_NAME_PASSWORD")
-
-    def test_credentials(self) -> None:
-        index = _IndexDetails(
-            name="name",
-            url="url",
-            username="username",
-            password="password",  # noqa: S106
-        )
-        with _uv_pip_list_yield_env(index):
-            assert get_env("UV_INDEX_NAME_USERNAME") == "username"
-            assert get_env("UV_INDEX_NAME_PASSWORD") == "password"
-
-
 class TestUvPipListCmd:
     def test_main(self) -> None:
         result = uv_pip_list_cmd()
@@ -2192,15 +2302,12 @@ class TestUvPipListCmd:
         assert result == expected
 
 
-class TestUvNativeTLSCmd:
-    def test_none(self) -> None:
-        result = uv_native_tls_cmd()
-        expected = []
-        assert result == expected
-
-    def test_native_tls(self) -> None:
-        result = uv_native_tls_cmd(native_tls=True)
-        expected = ["--native-tls"]
+class TestUvReinstallCmd:
+    @mark.parametrize(
+        ("reinstall", "expected"), [param(False, []), param(True, ["--reinstall"])]
+    )
+    def test_main(self, *, reinstall: bool, expected: list[str]) -> None:
+        result = uv_reinstall_cmd(reinstall=reinstall)
         assert result == expected
 
 
@@ -2210,14 +2317,12 @@ class TestUvRunCmd:
         expected = [
             "uv",
             "run",
-            "--no-dev",
             "--exact",
             "--isolated",
             "--resolution",
             "highest",
             "--prerelease",
             "disallow",
-            "--reinstall",
             "--managed-python",
             "python",
             "-m",
@@ -2230,14 +2335,12 @@ class TestUvRunCmd:
         expected = [
             "uv",
             "run",
-            "--no-dev",
             "--exact",
             "--isolated",
             "--resolution",
             "highest",
             "--prerelease",
             "disallow",
-            "--reinstall",
             "--managed-python",
             "python",
             "-m",
@@ -2247,157 +2350,28 @@ class TestUvRunCmd:
         ]
         assert result == expected
 
-    def test_extra_single(self) -> None:
-        result = uv_run_cmd("foo.bar", extra="extra")
-        expected = [
-            "uv",
-            "run",
-            "--extra",
-            "extra",
-            "--no-dev",
-            "--exact",
-            "--isolated",
-            "--resolution",
-            "highest",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
-        ]
+
+class TestUvScriptCmd:
+    @mark.parametrize(
+        ("script", "expected"),
+        [param(None, []), param("script.py", ["--script", "script.py"])],
+    )
+    def test_main(self, *, script: PathLike | None, expected: list[str]) -> None:
+        result = uv_script_cmd(script=script)
         assert result == expected
 
-    def test_extra_multiple(self) -> None:
-        result = uv_run_cmd("foo.bar", extra=["extra1", "extra2"])
-        expected = [
-            "uv",
-            "run",
-            "--extra",
-            "extra1",
-            "--extra",
-            "extra2",
-            "--no-dev",
-            "--exact",
-            "--isolated",
-            "--resolution",
-            "highest",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
-        ]
-        assert result == expected
 
-    def test_all_extras(self) -> None:
-        result = uv_run_cmd("foo.bar", all_extras=True)
+class TestUvSyncCmd:
+    def test_main(self) -> None:
+        result = uv_sync_cmd()
         expected = [
             "uv",
-            "run",
-            "--all-extras",
-            "--no-dev",
-            "--exact",
-            "--isolated",
+            "sync",
             "--resolution",
             "highest",
             "--prerelease",
             "disallow",
-            "--reinstall",
             "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
-        ]
-        assert result == expected
-
-    def test_group_single(self) -> None:
-        result = uv_run_cmd("foo.bar", group="group")
-        expected = [
-            "uv",
-            "run",
-            "--no-dev",
-            "--group",
-            "group",
-            "--exact",
-            "--isolated",
-            "--resolution",
-            "highest",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
-        ]
-        assert result == expected
-
-    def test_group_multiple(self) -> None:
-        result = uv_run_cmd("foo.bar", group=["group1", "group2"])
-        expected = [
-            "uv",
-            "run",
-            "--no-dev",
-            "--group",
-            "group1",
-            "--group",
-            "group2",
-            "--exact",
-            "--isolated",
-            "--resolution",
-            "highest",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
-        ]
-        assert result == expected
-
-    def test_all_groups(self) -> None:
-        result = uv_run_cmd("foo.bar", all_groups=True)
-        expected = [
-            "uv",
-            "run",
-            "--no-dev",
-            "--all-groups",
-            "--exact",
-            "--isolated",
-            "--resolution",
-            "highest",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
-        ]
-        assert result == expected
-
-    def test_only_dev(self) -> None:
-        result = uv_run_cmd("foo.bar", only_dev=True)
-        expected = [
-            "uv",
-            "run",
-            "--only-dev",
-            "--exact",
-            "--isolated",
-            "--resolution",
-            "highest",
-            "--prerelease",
-            "disallow",
-            "--reinstall",
-            "--managed-python",
-            "python",
-            "-m",
-            "foo.bar",
         ]
         assert result == expected
 
@@ -2413,7 +2387,6 @@ class TestUvToolInstallCmd:
             "highest",
             "--prerelease",
             "disallow",
-            "--reinstall",
             "--managed-python",
             "package",
         ]
@@ -2492,6 +2465,15 @@ class TestUvToolRunCmd:
         assert result == expected
 
 
+class TestUvUpgradeCmd:
+    @mark.parametrize(
+        ("upgrade", "expected"), [param(False, []), param(True, ["--upgrade"])]
+    )
+    def test_main(self, *, upgrade: bool, expected: list[str]) -> None:
+        result = uv_upgrade_cmd(upgrade=upgrade)
+        assert result == expected
+
+
 class TestUvWithCmd:
     def test_none(self) -> None:
         result = uv_with_cmd()
@@ -2559,3 +2541,108 @@ class TestYieldSSHTempDir:
 
     def _raise_present(self, path: PathLike, /) -> str:
         return f"if [ -d {path} ]; then exit 1; fi"
+
+
+class TestYieldUvIndexAndCredentials:
+    def test_none(self) -> None:
+        with yield_uv_index_and_credentials() as result:
+            assert result is None
+
+    def test_unnamed_no_credentials(self) -> None:
+        with yield_uv_index_and_credentials(index="url") as result:
+            assert result == ["0=url"]
+            with raises(
+                GetEnvError, match=r"No environment variable '.*' \(modulo case\)"
+            ):
+                _ = get_env("UV_INDEX_CUSTOM0_USERNAME")
+            with raises(
+                GetEnvError, match=r"No environment variable '.*' \(modulo case\)"
+            ):
+                _ = get_env("UV_INDEX_CUSTOM0_PASSWORD")
+
+    def test_unnamed_with_credentials(self) -> None:
+        with yield_uv_index_and_credentials(
+            index="url", credentials=("username", "password")
+        ) as result:
+            assert result == ["0=url"]
+            assert get_env("UV_INDEX_0_USERNAME") == "username"
+            assert get_env("UV_INDEX_0_PASSWORD") == "password"
+
+    def test_named_no_credentials(self) -> None:
+        with yield_uv_index_and_credentials(index="name=url") as result:
+            assert result == ["name=url"]
+            with raises(
+                GetEnvError, match=r"No environment variable '.*' \(modulo case\)"
+            ):
+                _ = get_env("UV_INDEX_NAME_USERNAME")
+            with raises(
+                GetEnvError, match=r"No environment variable '.*' \(modulo case\)"
+            ):
+                _ = get_env("UV_INDEX_NAME_PASSWORD")
+
+    def test_named_with_credentials(self) -> None:
+        with yield_uv_index_and_credentials(
+            index="name=url", credentials=("username", "password")
+        ):
+            assert get_env("UV_INDEX_NAME_USERNAME") == "username"
+            assert get_env("UV_INDEX_NAME_PASSWORD") == "password"
+
+
+class TestYieldUvIndexAndCredentialsMerge:
+    def test_none(self) -> None:
+        assert _yield_uv_index_and_credentials_merge() is None
+
+    @mark.parametrize(
+        ("index", "credentials", "exp_name", "exp_data"),
+        [
+            param("index", None, 0, False),
+            param("index", ("username", "password"), 0, True),
+            param("index", [("username", "password")], 0, True),
+            param("index", (0, "username", "password"), 0, True),
+            param("index", [(0, "username", "password")], 0, True),
+            param("index", (1, "username", "password"), 0, False),
+            param("index", [(1, "username", "password")], 0, False),
+            param("index", ("name", "username", "password"), 0, False),
+            param("index", [("name", "username", "password")], 0, False),
+            param("name=index", None, "name", False),
+            param("name=index", ("username", "password"), "name", True),
+            param("name=index", [("username", "password")], "name", True),
+            param("name=index", (0, "username", "password"), "name", True),
+            param("name=index", [(0, "username", "password")], "name", True),
+            param("name=index", (1, "username", "password"), "name", False),
+            param("name=index", [(1, "username", "password")], "name", False),
+            param("name=index", ("name", "username", "password"), "name", True),
+            param("name=index", [("name", "username", "password")], "name", True),
+            param("name=index", ("other", "username", "password"), "name", False),
+            param("name=index", [("other", "username", "password")], "name", False),
+        ],
+    )
+    def test_index_single(
+        self, *, index: str, credentials: Any, exp_name: str | int, exp_data: bool
+    ) -> None:
+        result = _yield_uv_index_and_credentials_merge(
+            index=index, credentials=credentials
+        )
+        exp_details = [
+            _IndexDetails(
+                name=exp_name,
+                url="index",
+                username="username" if exp_data else None,
+                password="password" if exp_data else None,
+            )
+        ]
+        assert result == exp_details
+
+    def test_index_multiple(self) -> None:
+        result = _yield_uv_index_and_credentials_merge(index=["index1", "index2"])
+        expected = [
+            _IndexDetails(name=0, url="index1"),
+            _IndexDetails(name=1, url="index2"),
+        ]
+        assert result == expected
+
+    def test_credentials_only(self) -> None:
+        result = _yield_uv_index_and_credentials_merge(
+            credentials=[("username", "password")]
+        )
+        assert result is None

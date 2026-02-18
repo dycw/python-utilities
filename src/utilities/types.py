@@ -386,6 +386,15 @@ type Retry = tuple[int, Duration | None]
 
 
 ###############################################################################
+#### subprocess ###############################################################
+###############################################################################
+
+
+type UvIndexCredentials = MaybeSequence[tuple[str, str] | tuple[int | str, str, str]]
+type UvPipListFormat = Literal["columns", "freeze", "json"]
+
+
+###############################################################################
 #### text #####################################################################
 ###############################################################################
 
@@ -571,6 +580,8 @@ __all__ = [
     "TupleOrStrMapping",
     "TypeLike",
     "UUIDLike",
+    "UvIndexCredentials",
+    "UvPipListFormat",
     "WeekDay",
     "When",
     "YearMonthLike",

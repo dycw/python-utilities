@@ -14,7 +14,16 @@ from shutil import rmtree
 from string import Template
 from subprocess import PIPE, Popen
 from threading import Thread
-from typing import IO, TYPE_CHECKING, Any, Literal, assert_never, overload, override
+from typing import (
+    IO,
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    Self,
+    assert_never,
+    overload,
+    override,
+)
 from urllib.parse import urlparse
 
 import more_itertools
@@ -59,6 +68,7 @@ from utilities.version import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
+    from types import TracebackType
 
     from utilities.core import PermissionsLike
     from utilities.types import (
@@ -66,13 +76,14 @@ if TYPE_CHECKING:
         Group,
         LoggerLike,
         MaybeIterable,
-        MaybeSequence,
         MaybeSequenceStr,
         Owner,
         PathLike,
         Retry,
         StrMapping,
         StrStrMapping,
+        UvIndexCredentials,
+        UvPipListFormat,
     )
 
 
@@ -1994,6 +2005,72 @@ def useradd_cmd(
 ##
 
 
+def uv_active_cmd(*, active: bool = False) -> list[str]:
+    """Generate the `--active` command if necessary."""
+    return ["--active"] if active else []
+
+
+##
+
+
+def uv_all_extras_cmd(*, all_extras: bool = False) -> list[str]:
+    """Generate the `--all-extras` command if necessary."""
+    return ["--all-extras"] if all_extras else []
+
+
+def uv_all_groups_cmd(*, all_groups: bool = False) -> list[str]:
+    """Generate the `--all-groups` command if necessary."""
+    return ["--all-groups"] if all_groups else []
+
+
+def uv_all_packages_cmd(*, all_packages: bool = False) -> list[str]:
+    """Generate the `--all-packages` command if necessary."""
+    return ["--all-packages"] if all_packages else []
+
+
+##
+
+
+def uv_check_cmd(*, check: bool = False) -> list[str]:
+    """Generate the `--check` command if necessary."""
+    return ["--check"] if check else []
+
+
+##
+
+
+def uv_extra_cmd(*, extra: MaybeSequenceStr | None = None) -> list[str]:
+    """Generate the `--extra` command if necessary."""
+    if extra is None:
+        return []
+    return list(chain.from_iterable(["--extra", e] for e in always_iterable(extra)))
+
+
+def uv_group_cmd(*, group: MaybeSequenceStr | None = None) -> list[str]:
+    """Generate the `--group` command if necessary."""
+    if group is None:
+        return []
+    return list(chain.from_iterable(["--group", e] for e in always_iterable(group)))
+
+
+def uv_package_cmd(*, package: MaybeSequenceStr | None = None) -> list[str]:
+    """Generate the `--package` command if necessary."""
+    if package is None:
+        return []
+    return list(chain.from_iterable(["--package", e] for e in always_iterable(package)))
+
+
+##
+
+
+def uv_frozen_cmd(*, frozen: bool = False) -> list[str]:
+    """Generate the `--frozen` command if necessary."""
+    return ["--frozen"] if frozen else []
+
+
+##
+
+
 def uv_index_cmd(*, index: MaybeSequenceStr | None = None) -> list[str]:
     """Generate the `--index` command if necessary."""
     return [] if index is None else ["--index", ",".join(always_iterable(index))]
@@ -2002,7 +2079,98 @@ def uv_index_cmd(*, index: MaybeSequenceStr | None = None) -> list[str]:
 ##
 
 
-type _UvPipListFormat = Literal["columns", "freeze", "json"]
+def uv_lock(
+    *,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    check: bool = False,
+    upgrade: bool = False,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    user: str | int | None = None,
+    print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    suppress: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> None:
+    """Update the project's lockfile."""
+    with yield_uv_index_and_credentials(  # pragma: no cover
+        index=index, credentials=credentials
+    ) as new_index:
+        cmds = uv_lock_cmd(
+            check=check, index=new_index, upgrade=upgrade, native_tls=native_tls
+        )
+        run(
+            *cmds,
+            cwd=cwd,
+            env=env,
+            user=user,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            suppress=suppress,
+            retry=retry,
+            logger=logger,
+        )
+
+
+def uv_lock_cmd(
+    *,
+    check: bool = False,
+    index: MaybeSequenceStr | None = None,
+    upgrade: bool = False,
+    native_tls: bool = False,
+) -> list[str]:
+    """Command to use 'uv' to update the project's lockfile."""
+    return [
+        "uv",
+        "lock",
+        *uv_check_cmd(check=check),
+        *uv_index_cmd(index=index),
+        *uv_upgrade_cmd(upgrade=upgrade),
+        *RESOLUTION_HIGHEST,
+        *PRERELEASE_DISALLOW,
+        MANAGED_PYTHON,
+        *uv_native_tls_cmd(native_tls=native_tls),
+    ]
+
+
+##
+
+
+def uv_locked_cmd(*, locked: bool = False) -> list[str]:
+    """Generate the `--locked` command if necessary."""
+    return ["--locked"] if locked else []
+
+
+##
+
+
+def uv_native_tls_cmd(*, native_tls: bool = False) -> list[str]:
+    """Generate the `--native-tls` command if necessary."""
+    return ["--native-tls"] if native_tls else []
+
+
+##
+
+
+def uv_no_dev_cmd(*, no_dev: bool = False) -> list[str]:
+    """Generate the `--no-dev` command if necessary."""
+    return ["--no-dev"] if no_dev else []
+
+
+##
+
+
+def uv_only_dev_cmd(*, only_dev: bool = False) -> list[str]:
+    """Generate the `--only-dev` command if necessary."""
+    return ["--only-dev"] if only_dev else []
+
+
+##
 
 
 @dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
@@ -2019,8 +2187,7 @@ def uv_pip_list(
     editable: bool = False,
     exclude_editable: bool = False,
     index: MaybeSequenceStr | None = None,
-    credentials: MaybeSequence[tuple[str, str] | tuple[int | str, str, str]]
-    | None = None,
+    credentials: UvIndexCredentials | None = None,
     native_tls: bool = False,
 ) -> list[_UvPipListOutput]:
     """List packages installed in an environment."""
@@ -2031,89 +2198,22 @@ def uv_pip_list(
         outdated=False,
     )
     text_base = run(*cmds_base, return_stdout=True)
-    details = _uv_pip_list_merge(index=index, credentials=credentials)
-    cmds_outdated = uv_pip_list_cmd(
-        editable=editable,
-        exclude_editable=exclude_editable,
-        format_="json",
-        index=[i.full for i in details],
-        outdated=True,
-        native_tls=native_tls,
-    )
-    with _uv_pip_list_yield_env(*details):
+    with yield_uv_index_and_credentials(
+        index=index, credentials=credentials
+    ) as new_index:
+        cmds_outdated = uv_pip_list_cmd(
+            editable=editable,
+            exclude_editable=exclude_editable,
+            format_="json",
+            index=new_index,
+            outdated=True,
+            native_tls=native_tls,
+        )
         text_outdated = run(*cmds_outdated, return_stdout=True)
     dicts_base, dicts_outdated = list(
         map(_uv_pip_list_loads, [text_base, text_outdated])
     )
     return [_uv_pip_list_assemble_output(d, dicts_outdated) for d in dicts_base]
-
-
-@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
-class _IndexDetails:
-    name: str | int
-    url: str
-    username: str | None = None
-    password: str | None = None
-
-    @property
-    def full(self) -> str:
-        match self.name:
-            case int() as n:
-                return f"custom{n}"
-            case str() as name:
-                return name
-            case never:
-                assert_never(never)
-
-
-def _uv_pip_list_merge(
-    *,
-    index: MaybeSequenceStr | None = None,
-    credentials: MaybeSequence[tuple[str, str] | tuple[int | str, str, str]]
-    | None = None,
-) -> list[_IndexDetails]:
-    details: list[_IndexDetails] = []
-    if index is not None:
-        for i, index_i in enumerate(always_iterable(index)):
-            try:
-                name, url = extract_groups(r"^(\w+)=(\w+)$", index_i)
-            except ExtractGroupsError:
-                details_i = _IndexDetails(name=i, url=index_i)
-            else:
-                details_i = _IndexDetails(name=name, url=url)
-            details.append(details_i)
-    if credentials is not None:
-        for i, credentials_i in enumerate(
-            more_itertools.always_iterable(credentials, base_type=tuple)
-        ):
-            match credentials_i:
-                case str() as username, str() as password:
-                    j = i
-                case int() as j, str() as username, str() as password:
-                    ...
-                case str() as name, str() as username, str() as password:
-                    try:
-                        j = one(i for i, d in enumerate(details) if d.name == name)
-                    except OneEmptyError:
-                        j = None
-                case never:
-                    assert_never(never)
-            if (j is not None) and (0 <= j < len(details)):
-                details[j] = replace(details[j], username=username, password=password)
-    return details
-
-
-@contextmanager
-def _uv_pip_list_yield_env(*details: _IndexDetails) -> Iterator[None]:
-    with ExitStack() as stack:
-        for detail in details:
-            if detail.username is not None:
-                key = f"UV_INDEX_{detail.name}_USERNAME"
-                stack.enter_context(yield_temp_environ({key: detail.username}))
-            if detail.password is not None:
-                key = f"UV_INDEX_{detail.name}_PASSWORD"
-                stack.enter_context(yield_temp_environ({key: detail.password}))
-        yield
 
 
 def _uv_pip_list_loads(text: str, /) -> list[StrMapping]:
@@ -2189,7 +2289,7 @@ def uv_pip_list_cmd(
     *,
     editable: bool = False,
     exclude_editable: bool = False,
-    format_: _UvPipListFormat = "columns",
+    format_: UvPipListFormat = "columns",
     outdated: bool = False,
     index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
@@ -2215,9 +2315,9 @@ def uv_pip_list_cmd(
 ##
 
 
-def uv_native_tls_cmd(*, native_tls: bool = False) -> list[str]:
-    """Generate the `--native-tls` command if necessary."""
-    return ["--native-tls"] if native_tls else []
+def uv_reinstall_cmd(*, reinstall: bool = False) -> list[str]:
+    """Generate the `--reinstall` command if necessary."""
+    return ["--reinstall"] if reinstall else []
 
 
 ##
@@ -2228,13 +2328,22 @@ def uv_run(
     module: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    script: PathLike | None = None,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2254,13 +2363,22 @@ def uv_run(
     module: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    script: PathLike | None = None,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2280,13 +2398,22 @@ def uv_run(
     module: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    script: PathLike | None = None,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2306,13 +2433,22 @@ def uv_run(
     module: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    script: PathLike | None = None,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2332,13 +2468,22 @@ def uv_run(
     module: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    script: PathLike | None = None,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     env: StrStrMapping | None = None,
     user: str | int | None = None,
@@ -2357,13 +2502,22 @@ def uv_run(
     module: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    script: PathLike | None = None,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2379,32 +2533,44 @@ def uv_run(
     logger: LoggerLike | None = None,
 ) -> str | None:
     """Run a command or script."""
-    return run(  # pragma: no cover
-        *uv_run_cmd(
+    with yield_uv_index_and_credentials(  # pragma: no cover
+        index=index, credentials=credentials
+    ) as new_index:
+        cmds = uv_run_cmd(
             module,
             *args,
             extra=extra,
             all_extras=all_extras,
+            no_dev=no_dev,
             group=group,
             all_groups=all_groups,
             only_dev=only_dev,
             with_=with_,
-            index=index,
+            active=active,
+            locked=locked,
+            frozen=frozen,
+            script=script,
+            all_packages=all_packages,
+            package=package,
+            reinstall=reinstall,
+            index=new_index,
             native_tls=native_tls,
-        ),
-        cwd=cwd,
-        env=env,
-        user=user,
-        print=print,
-        print_stdout=print_stdout,
-        print_stderr=print_stderr,
-        suppress=suppress,
-        return_=return_,
-        return_stdout=return_stdout,
-        return_stderr=return_stderr,
-        retry=retry,
-        logger=logger,
-    )
+        )
+        return run(
+            *cmds,
+            cwd=cwd,
+            env=env,
+            user=user,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            suppress=suppress,
+            return_=return_,
+            return_stdout=return_stdout,
+            return_stderr=return_stderr,
+            retry=retry,
+            logger=logger,
+        )
 
 
 def uv_run_cmd(
@@ -2413,44 +2579,171 @@ def uv_run_cmd(
     *args: str,
     extra: MaybeSequenceStr | None = None,
     all_extras: bool = False,
+    no_dev: bool = False,
     group: MaybeSequenceStr | None = None,
     all_groups: bool = False,
     only_dev: bool = False,
     with_: MaybeSequenceStr | None = None,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    script: PathLike | None = None,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to run a command or script."""
-    parts: list[str] = ["uv", "run"]
-    if extra is not None:
-        for extra_i in always_iterable(extra):
-            parts.extend(["--extra", extra_i])
-    if all_extras:
-        parts.append("--all-extras")
-    if not only_dev:
-        parts.append("--no-dev")
-    if group is not None:
-        for group_i in always_iterable(group):
-            parts.extend(["--group", group_i])
-    if all_groups:
-        parts.append("--all-groups")
-    if only_dev:
-        parts.append("--only-dev")
     return [
-        *parts,
+        "uv",
+        "run",
+        *uv_extra_cmd(extra=extra),
+        *uv_all_extras_cmd(all_extras=all_extras),
+        *uv_no_dev_cmd(no_dev=no_dev),
+        *uv_group_cmd(group=group),
+        *uv_all_groups_cmd(all_groups=all_groups),
+        *uv_only_dev_cmd(only_dev=only_dev),
         "--exact",
         *uv_with_cmd(with_=with_),
         ISOLATED,
+        *uv_active_cmd(active=active),
+        *uv_locked_cmd(locked=locked),
+        *uv_frozen_cmd(frozen=frozen),
+        *uv_script_cmd(script=script),
+        *uv_all_packages_cmd(all_packages=all_packages),
+        *uv_package_cmd(package=package),
         *uv_index_cmd(index=index),
         *RESOLUTION_HIGHEST,
         *PRERELEASE_DISALLOW,
-        "--reinstall",
-        *uv_native_tls_cmd(native_tls=native_tls),
+        *uv_reinstall_cmd(reinstall=reinstall),
         MANAGED_PYTHON,
+        *uv_native_tls_cmd(native_tls=native_tls),
         "python",
         "-m",
         module,
         *args,
+    ]
+
+
+##
+
+
+def uv_script_cmd(*, script: PathLike | None = None) -> list[str]:
+    """Generate the `--script` command if necessary."""
+    return [] if script is None else ["--script", str(script)]
+
+
+##
+
+
+def uv_sync(
+    *,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    extra: MaybeSequenceStr | None = None,
+    all_extras: bool = False,
+    no_dev: bool = False,
+    only_dev: bool = False,
+    group: MaybeSequenceStr | None = None,
+    all_groups: bool = False,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    script: PathLike | None = None,
+    check: bool = False,
+    upgrade: bool = False,
+    native_tls: bool = False,
+    cwd: PathLike | None = None,
+    env: StrStrMapping | None = None,
+    user: str | int | None = None,
+    print: bool = False,  # noqa: A002
+    print_stdout: bool = False,
+    print_stderr: bool = False,
+    suppress: bool = False,
+    retry: Retry | None = None,
+    logger: LoggerLike | None = None,
+) -> str | None:
+    """Update the project's environment."""
+    with yield_uv_index_and_credentials(  # pragma: no cover
+        index=index, credentials=credentials
+    ) as new_index:
+        cmds = uv_sync_cmd(
+            extra=extra,
+            all_extras=all_extras,
+            no_dev=no_dev,
+            only_dev=only_dev,
+            group=group,
+            all_groups=all_groups,
+            active=active,
+            locked=locked,
+            frozen=frozen,
+            all_packages=all_packages,
+            package=package,
+            script=script,
+            check=check,
+            index=new_index,
+            upgrade=upgrade,
+            native_tls=native_tls,
+        )
+        return run(
+            *cmds,
+            cwd=cwd,
+            env=env,
+            user=user,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            suppress=suppress,
+            retry=retry,
+            logger=logger,
+        )
+
+
+def uv_sync_cmd(
+    *,
+    extra: MaybeSequenceStr | None = None,
+    all_extras: bool = False,
+    no_dev: bool = False,
+    only_dev: bool = False,
+    group: MaybeSequenceStr | None = None,
+    all_groups: bool = False,
+    active: bool = False,
+    locked: bool = False,
+    frozen: bool = False,
+    all_packages: bool = False,
+    package: MaybeSequenceStr | None = None,
+    script: PathLike | None = None,
+    check: bool = False,
+    index: MaybeSequenceStr | None = None,
+    upgrade: bool = False,
+    native_tls: bool = False,
+) -> list[str]:
+    """Command to use 'uv' to update the project's environment."""
+    return [
+        "uv",
+        "sync",
+        *uv_extra_cmd(extra=extra),
+        *uv_all_extras_cmd(all_extras=all_extras),
+        *uv_no_dev_cmd(no_dev=no_dev),
+        *uv_only_dev_cmd(only_dev=only_dev),
+        *uv_group_cmd(group=group),
+        *uv_all_groups_cmd(all_groups=all_groups),
+        *uv_active_cmd(active=active),
+        *uv_locked_cmd(locked=locked),
+        *uv_frozen_cmd(frozen=frozen),
+        *uv_all_packages_cmd(all_packages=all_packages),
+        *uv_package_cmd(package=package),
+        *uv_script_cmd(script=script),
+        *uv_check_cmd(check=check),
+        *uv_index_cmd(index=index),
+        *uv_upgrade_cmd(upgrade=upgrade),
+        *RESOLUTION_HIGHEST,
+        *PRERELEASE_DISALLOW,
+        MANAGED_PYTHON,
+        *uv_native_tls_cmd(native_tls=native_tls),
     ]
 
 
@@ -2462,8 +2755,10 @@ def uv_tool_install(
     package: str,
     /,
     *,
-    with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    with_: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2484,8 +2779,10 @@ def uv_tool_install(
     package: str,
     /,
     *,
-    with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    with_: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2506,8 +2803,10 @@ def uv_tool_install(
     package: str,
     /,
     *,
-    with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    with_: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2528,8 +2827,10 @@ def uv_tool_install(
     package: str,
     /,
     *,
-    with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    with_: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2550,8 +2851,10 @@ def uv_tool_install(
     package: str,
     /,
     *,
-    with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    with_: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2571,8 +2874,10 @@ def uv_tool_install(
     package: str,
     /,
     *,
-    with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+    with_: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2589,22 +2894,32 @@ def uv_tool_install(
     logger: LoggerLike | None = None,
 ) -> str | None:
     """Install commands provided by a Python package."""
-    return run(  # pragma: no cover
-        *uv_tool_install_cmd(package, with_=with_, index=index, native_tls=native_tls),
-        cwd=cwd,
-        env=env,
-        user=user,
-        print=print,
-        print_stdout=print_stdout,
-        print_stderr=print_stderr,
-        suppress=suppress,
-        return_=return_,
-        return_stdout=return_stdout,
-        return_stderr=return_stderr,
-        retry=retry,
-        retry_skip=retry_skip,
-        logger=logger,
-    )
+    with yield_uv_index_and_credentials(  # pragma: no cover
+        index=index, credentials=credentials
+    ) as new_index:
+        cmds = uv_tool_install_cmd(
+            package,
+            with_=with_,
+            reinstall=reinstall,
+            index=new_index,
+            native_tls=native_tls,
+        )
+        return run(
+            *cmds,
+            cwd=cwd,
+            env=env,
+            user=user,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            suppress=suppress,
+            return_=return_,
+            return_stdout=return_stdout,
+            return_stderr=return_stderr,
+            retry=retry,
+            retry_skip=retry_skip,
+            logger=logger,
+        )
 
 
 def uv_tool_install_cmd(
@@ -2613,6 +2928,7 @@ def uv_tool_install_cmd(
     *,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to install commands provided by a Python package."""
@@ -2624,7 +2940,7 @@ def uv_tool_install_cmd(
         *uv_index_cmd(index=index),
         *RESOLUTION_HIGHEST,
         *PRERELEASE_DISALLOW,
-        "--reinstall",
+        *uv_reinstall_cmd(reinstall=reinstall),
         MANAGED_PYTHON,
         *uv_native_tls_cmd(native_tls=native_tls),
         package,
@@ -2639,10 +2955,11 @@ def uv_tool_run(
     command: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     from_: str | None = None,
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2663,10 +2980,11 @@ def uv_tool_run(
     command: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     from_: str | None = None,
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2687,10 +3005,11 @@ def uv_tool_run(
     command: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     from_: str | None = None,
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2711,10 +3030,11 @@ def uv_tool_run(
     command: str,
     /,
     *,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     from_: str | None = None,
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2735,10 +3055,11 @@ def uv_tool_run(
     command: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     from_: str | None = None,
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2758,10 +3079,11 @@ def uv_tool_run(
     command: str,
     /,
     *args: str,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
     from_: str | None = None,
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
-    index: MaybeSequenceStr | None = None,
     native_tls: bool = False,
     cwd: PathLike | None = None,
     env: StrStrMapping | None = None,
@@ -2778,30 +3100,34 @@ def uv_tool_run(
     logger: LoggerLike | None = None,
 ) -> str | None:
     """Run a command provided by a Python package."""
-    return run(  # pragma: no cover
-        *uv_tool_run_cmd(
+    with yield_uv_index_and_credentials(  # pragma: no cover
+        index=index, credentials=credentials
+    ) as new_index:
+        cmds = uv_tool_run_cmd(
             command,
             *args,
             from_=from_,
             latest=latest,
             with_=with_,
-            index=index,
+            index=new_index,
             native_tls=native_tls,
-        ),
-        cwd=cwd,
-        env=env,
-        user=user,
-        print=print,
-        print_stdout=print_stdout,
-        print_stderr=print_stderr,
-        suppress=suppress,
-        return_=return_,
-        return_stdout=return_stdout,
-        return_stderr=return_stderr,
-        retry=retry,
-        retry_skip=retry_skip,
-        logger=logger,
-    )
+        )
+        return run(
+            *cmds,
+            cwd=cwd,
+            env=env,
+            user=user,
+            print=print,
+            print_stdout=print_stdout,
+            print_stderr=print_stderr,
+            suppress=suppress,
+            return_=return_,
+            return_stdout=return_stdout,
+            return_stderr=return_stderr,
+            retry=retry,
+            retry_skip=retry_skip,
+            logger=logger,
+        )
 
 
 def uv_tool_run_cmd(
@@ -2812,6 +3138,7 @@ def uv_tool_run_cmd(
     latest: bool = True,
     with_: MaybeSequenceStr | None = None,
     index: MaybeSequenceStr | None = None,
+    reinstall: bool = False,
     native_tls: bool = False,
 ) -> list[str]:
     """Command to use 'uv' to run a command provided by a Python package."""
@@ -2826,11 +3153,20 @@ def uv_tool_run_cmd(
         *uv_index_cmd(index=index),
         *RESOLUTION_HIGHEST,
         *PRERELEASE_DISALLOW,
+        *uv_reinstall_cmd(reinstall=reinstall),
         MANAGED_PYTHON,
         *uv_native_tls_cmd(native_tls=native_tls),
         command,
         *args,
     ]
+
+
+##
+
+
+def uv_upgrade_cmd(*, upgrade: bool = False) -> list[str]:
+    """Generate the `--upgrade` command if necessary."""
+    return ["--upgrade"] if upgrade else []
 
 
 ##
@@ -2886,6 +3222,113 @@ def yield_ssh_temp_dir(
             log_info(logger, "Keeping temporary directory %s...", repr_str(path))
         else:
             ssh(user, hostname, *rm_cmd(path), retry=retry, logger=logger)
+
+
+##
+
+
+@contextmanager
+def yield_uv_index_and_credentials(
+    *,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+) -> Iterator[list[str] | None]:
+    """Yield an index and/or its credentials in the environment."""
+    details = _yield_uv_index_and_credentials_merge(
+        index=index, credentials=credentials
+    )
+    if details is None:
+        yield
+    else:
+        with ExitStack() as stack:
+            for detail in details:
+                stack.enter_context(detail)
+            yield [d.full for d in details]
+
+
+def _yield_uv_index_and_credentials_merge(
+    *,
+    index: MaybeSequenceStr | None = None,
+    credentials: UvIndexCredentials | None = None,
+) -> list[_IndexDetails] | None:
+    if index is None:
+        return None
+    details = [
+        _IndexDetails.parse(index_i, n=n)
+        for n, index_i in enumerate(always_iterable(index))
+    ]
+    if credentials is not None:
+        for i, credentials_i in enumerate(
+            more_itertools.always_iterable(credentials, base_type=tuple)
+        ):
+            match credentials_i:
+                case str() as username, str() as password:
+                    j = i
+                case int() as j, str() as username, str() as password:
+                    ...
+                case str() as name, str() as username, str() as password:
+                    try:
+                        j = one(i for i, d in enumerate(details) if d.name == name)
+                    except OneEmptyError:
+                        j = None
+                case never:
+                    assert_never(never)
+            if (j is not None) and (0 <= j < len(details)):
+                details[j] = replace(details[j], username=username, password=password)
+    return details
+
+
+@dataclass(order=True, unsafe_hash=True, kw_only=True, slots=True)
+class _IndexDetails:
+    name: str | int
+    url: str
+    username: str | None = None
+    password: str | None = None
+    _stack: ExitStack = field(init=False, repr=False, compare=False)
+
+    def __enter__(self) -> None:
+        self._stack = ExitStack()
+        if (username := self.username) is not None:
+            key = f"UV_INDEX_{self.name}_USERNAME"
+            self._stack.enter_context(yield_temp_environ({key: username}))
+        if (password := self.password) is not None:
+            key = f"UV_INDEX_{self.name}_PASSWORD"
+            self._stack.enter_context(yield_temp_environ({key: password}))
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
+        return self._stack.__exit__(exc_type, exc_value, traceback)
+
+    @classmethod
+    def parse(
+        cls,
+        text: str,
+        /,
+        *,
+        n: int = 0,
+        username: str | None = None,
+        password: str | None = None,
+    ) -> Self:
+        try:
+            name, url = extract_groups(r"^(\w+)=(\w+)$", text)
+        except ExtractGroupsError:
+            return cls(name=n, url=text, username=username, password=password)
+        else:
+            return cls(name=name, url=url, username=username, password=password)
+
+    @property
+    def full(self) -> str:
+        match self.name:
+            case int() as n:
+                return f"{n}={self.url}"
+            case str():
+                return f"{self.name}={self.url}"
+            case never:
+                assert_never(never)
 
 
 __all__ = [
@@ -2975,16 +3418,35 @@ __all__ = [
     "update_ca_certificates",
     "useradd",
     "useradd_cmd",
+    "uv_active_cmd",
+    "uv_all_extras_cmd",
+    "uv_all_groups_cmd",
+    "uv_check_cmd",
+    "uv_extra_cmd",
+    "uv_frozen_cmd",
+    "uv_group_cmd",
+    "uv_lock",
+    "uv_lock_cmd",
+    "uv_locked_cmd",
     "uv_native_tls_cmd",
+    "uv_no_dev_cmd",
+    "uv_only_dev_cmd",
+    "uv_package_cmd",
     "uv_pip_list",
     "uv_pip_list_cmd",
+    "uv_reinstall_cmd",
     "uv_run",
     "uv_run_cmd",
+    "uv_script_cmd",
+    "uv_sync",
+    "uv_sync_cmd",
     "uv_tool_install",
     "uv_tool_install_cmd",
     "uv_tool_run",
     "uv_tool_run_cmd",
+    "uv_upgrade_cmd",
     "uv_with_cmd",
     "yield_git_repo",
     "yield_ssh_temp_dir",
+    "yield_uv_index_and_credentials",
 ]
