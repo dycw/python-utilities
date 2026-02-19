@@ -19,7 +19,7 @@ from utilities.constants import (
     IS_NOT_MAC,
     SECOND,
 )
-from utilities.core import to_bool
+from utilities.core import is_ci, to_bool
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
 from utilities.pathlib import (
@@ -73,7 +73,7 @@ except ModuleNotFoundError:  # pragma: no cover
         return func
 
 else:
-    skipif_ci = mark.skipif(IS_CI, reason="Skipped for CI")
+    skipif_ci = mark.skipif(is_ci(), reason="Skipped for CI")
     skipif_mac = mark.skipif(IS_MAC, reason="Skipped for Mac")
     skipif_linux = mark.skipif(IS_LINUX, reason="Skipped for Linux")
     skipif_not_mac = mark.skipif(IS_NOT_MAC, reason="Skipped for non-Mac")

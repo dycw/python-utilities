@@ -246,6 +246,7 @@ from utilities.constants import (
     HOURS_PER_WEEK,
     IS_LINUX,
     IS_MAC,
+    IS_WINDOWS,
     LOCAL_TIME_ZONE,
     LOCAL_TIME_ZONE_NAME,
     MAX_BYTES,
@@ -1878,9 +1879,26 @@ def has_env(key: str, /, *, case_sensitive: bool = False) -> bool:
 ##
 
 
+def is_ci(
+    *, windows: bool | None = None, mac: bool | None = None, linux: bool | None = None
+) -> bool:
+    """Check if we are in a CI job."""
+    return (
+        parse_bool(get_env("CI", default="False"))
+        and ((windows is None) or (IS_WINDOWS is windows))
+        and ((mac is None) or (IS_MAC is mac))
+        and ((linux is None) or (IS_LINUX is linux))
+    )
+
+
+def is_cron() -> bool:
+    """Check if we are in a cron job."""
+    return parse_bool(get_env("CRON", default="False"))
+
+
 def is_debug() -> bool:
     """Check if we are in `DEBUG` mode."""
-    return has_env("DEBUG")
+    return parse_bool(get_env("DEBUG", default="False"))
 
 
 def is_pytest() -> bool:
@@ -3963,7 +3981,9 @@ __all__ = [
     "get_uid_name",
     "has_env",
     "indent_non_head",
+    "is_ci",
     "is_close",
+    "is_cron",
     "is_debug",
     "is_none",
     "is_not_none",

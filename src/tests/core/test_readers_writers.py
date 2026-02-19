@@ -8,7 +8,6 @@ from utilities._core_errors import (
     ReadBytesNotADirectoryError,
     ReadPickleNotADirectoryError,
 )
-from utilities.constants import IS_CI
 from utilities.core import (
     ReadBytesFileNotFoundError,
     ReadBytesIsADirectoryError,
@@ -20,6 +19,7 @@ from utilities.core import (
     WriteBytesError,
     WritePickleError,
     WriteTextError,
+    is_ci,
     read_bytes,
     read_pickle,
     read_text,
@@ -42,7 +42,7 @@ class TestReadWriteBytes:
     def test_json(self, *, temp_path_not_exist: Path) -> None:
         data = b"""{"foo":0,"bar":[1,2,3]}"""
         write_bytes(temp_path_not_exist, data, json=True)
-        expected = data if IS_CI else b"""{ "foo": 0, "bar": [1, 2, 3] }\n"""
+        expected = data if is_ci() else b"""{ "foo": 0, "bar": [1, 2, 3] }\n"""
         assert read_bytes(temp_path_not_exist) == expected
 
     @mark.parametrize("decompress", [param(False), param(True)])

@@ -8,7 +8,7 @@ from hypothesis import HealthCheck
 from pytest import fixture, param, skip
 from whenever import PlainDateTime
 
-from utilities.constants import IS_CI, IS_CI_AND_NOT_LINUX, MINUTE
+from utilities.constants import IS_CI_AND_NOT_LINUX, MINUTE
 from utilities.core import (
     ExtractGroupError,
     TemporaryDirectory,
@@ -16,6 +16,7 @@ from utilities.core import (
     async_sleep,
     extract_group,
     get_now_local_plain,
+    is_ci,
     unique_str,
 )
 from utilities.pytest import skipif_ci
@@ -279,7 +280,7 @@ async def test_async_postgres_engine() -> AsyncEngine:
 
     from utilities.sqlalchemy import create_engine
 
-    if IS_CI:
+    if is_ci():
         skip(reason="Skipped for CI; Postgres is not available")
     engine = create_engine(
         "postgresql+asyncpg",

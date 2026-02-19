@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, NoReturn
 import anyio
 from pytest import mark, param, raises
 
-from utilities.constants import IS_CI, SECOND
-from utilities.core import async_sleep, sync_sleep, yield_temp_environ
+from utilities.constants import SECOND
+from utilities.core import async_sleep, is_ci, sync_sleep, yield_temp_environ
 from utilities.throttle import (
     _ThrottleMarkerFileError,
     _ThrottleParseZonedDateTimeError,
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from whenever import TimeDelta
 
 
-_DURATION: TimeDelta = (5 if IS_CI else 1) * 0.1 * SECOND
+_DURATION: TimeDelta = (5 if is_ci() else 1) * 0.1 * SECOND
 _MULTIPLE: int = 10
 
 

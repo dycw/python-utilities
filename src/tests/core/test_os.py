@@ -23,6 +23,8 @@ from utilities.core import (
     get_file_group,
     get_file_owner,
     has_env,
+    is_ci,
+    is_cron,
     is_debug,
     is_pytest,
     move,
@@ -307,15 +309,46 @@ class TestHasEnv:
             assert not has_env(key.upper(), case_sensitive=True)
 
 
+class TestIsCI:
+    @mark.parametrize(("ci", "expected"), [param("0", False), param("1", True)])
+    def test_main(self, *, ci: str, expected: bool) -> None:
+        with yield_temp_environ(CI=ci):
+            assert is_ci() is expected
+
+    def test_undefined(self) -> None:
+        with yield_temp_environ(CI=None):
+            assert not is_ci()
+
+
+class TestIsCron:
+    @mark.parametrize(("cron", "expected"), [param("0", False), param("1", True)])
+    def test_main(self, *, cron: str, expected: bool) -> None:
+        with yield_temp_environ(CRON=cron):
+            assert is_cron() is expected
+
+    def test_undefined(self) -> None:
+        with yield_temp_environ(CRON=None):
+            assert not is_cron()
+
+
 class TestIsDebug:
-    def test_main(self) -> None:
-        with yield_temp_environ(DEBUG="1"):
-            assert is_debug()
+    @mark.parametrize(("debug", "expected"), [param("0", False), param("1", True)])
+    def test_main(self, *, debug: str, expected: bool) -> None:
+        with yield_temp_environ(DEBUG=debug):
+            assert is_debug() is expected
+
+    def test_undefined(self) -> None:
+        with yield_temp_environ(DEBUG=None):
+            assert not is_debug()
 
 
 class TestIsPytest:
     def test_main(self) -> None:
         assert is_pytest()
+
+    def test_undefined(self) -> None:
+        with yield_temp_environ(PYTEST_VERSION=None):
+            assert not is_pytest()
 
 
 class TestMoveMany:

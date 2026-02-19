@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 from pytest import fixture, mark, param, raises
 
-from utilities.constants import IS_CI, SECOND
-from utilities.core import duration_to_seconds, repr_str, sync_sleep
+from utilities.constants import SECOND
+from utilities.core import duration_to_seconds, is_ci, repr_str, sync_sleep
 from utilities.pytest import (
     _NodeIdToPathNotGetTailError,
     _NodeIdToPathNotPythonFileError,
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from whenever import TimeDelta
 
 
-_DURATION: TimeDelta = (5 if IS_CI else 1) * SECOND
+_DURATION: TimeDelta = (5 if is_ci() else 1) * SECOND
 _MULTIPLE: float = 2
 
 
