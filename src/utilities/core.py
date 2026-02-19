@@ -1884,15 +1884,14 @@ def is_ci(
 ) -> bool:
     """Check if we are in a CI job."""
     try:
-        ci = parse_bool(get_env("CI"))
+        return (
+            parse_bool(get_env("CI"))
+            and ((windows is None) or (IS_WINDOWS is windows))
+            and ((mac is None) or (IS_MAC is mac))
+            and ((linux is None) or (IS_LINUX is linux))
+        )
     except GetEnvError:
         return False
-    return (
-        ci
-        and ((windows is None) or (IS_WINDOWS is windows))
-        and ((mac is None) or (IS_MAC is mac))
-        and ((linux is None) or (IS_LINUX is linux))
-    )
 
 
 def is_cron() -> bool:
