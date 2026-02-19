@@ -1883,8 +1883,12 @@ def is_ci(
     *, windows: bool | None = None, mac: bool | None = None, linux: bool | None = None
 ) -> bool:
     """Check if we are in a CI job."""
+    try:
+        ci = parse_bool(get_env("CI"))
+    except GetEnvError:
+        return False
     return (
-        parse_bool(get_env("CI", default="False"))
+        ci
         and ((windows is None) or (IS_WINDOWS is windows))
         and ((mac is None) or (IS_MAC is mac))
         and ((linux is None) or (IS_LINUX is linux))
@@ -1893,12 +1897,18 @@ def is_ci(
 
 def is_cron() -> bool:
     """Check if we are in a cron job."""
-    return parse_bool(get_env("CRON", default="False"))
+    try:
+        return parse_bool(get_env("CRON"))
+    except GetEnvError:
+        return False
 
 
 def is_debug() -> bool:
     """Check if we are in `DEBUG` mode."""
-    return parse_bool(get_env("DEBUG", default="False"))
+    try:
+        return parse_bool(get_env("DEBUG"))
+    except GetEnvError:
+        return False
 
 
 def is_pytest() -> bool:
