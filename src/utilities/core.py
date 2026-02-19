@@ -463,14 +463,14 @@ class MaybeColoredFormatter(Formatter):
         validate: bool = True,
         *,
         defaults: StrMapping | None = None,
-        color: bool = False,
+        color: MaybeCallableBoolLike | None = None,
     ) -> None:
         if (datefmt is not None) or (style != "%") or (defaults is not None):
             raise MaybeColoredFormatterError(
                 datefmt=datefmt, style=style, defaults=defaults
             )
         super().__init__(fmt, datefmt, "{", validate, defaults=defaults)
-        if color:
+        if (not is_cron()) if color is None else to_bool(color):
             self._formatter = ColoredFormatter(
                 fmt=fmt,
                 style="{",
@@ -1391,7 +1391,7 @@ def set_up_logging(
     *,
     root: bool = False,
     filters: MaybeIterable[_FilterType] | None = None,
-    console_color: bool = True,
+    console_color: MaybeCallableBoolLike | None = None,
     console_debug: bool = False,
     files: PathLike | None = None,
     max_bytes: int = MAX_BYTES,
@@ -1480,7 +1480,7 @@ class _ConsoleFormatter(Formatter):
         validate: bool = True,
         *,
         defaults: Mapping[str, Any] | None = None,
-        color: bool = False,
+        color: MaybeCallableBoolLike | None = None,
     ) -> None:
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
         header = "{date} {time}.{micros}[{time_zone}] │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}"
