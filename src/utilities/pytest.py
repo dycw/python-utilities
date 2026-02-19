@@ -10,15 +10,7 @@ from re import sub
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, NoReturn, assert_never, cast, override
 
-from utilities.constants import (
-    IS_CI,
-    IS_CI_AND_NOT_LINUX,
-    IS_LINUX,
-    IS_MAC,
-    IS_NOT_LINUX,
-    IS_NOT_MAC,
-    SECOND,
-)
+from utilities.constants import IS_LINUX, IS_MAC, IS_NOT_LINUX, IS_NOT_MAC, SECOND
 from utilities.core import is_ci, to_bool
 from utilities.functools import cache
 from utilities.hashlib import md5_hash
@@ -79,7 +71,7 @@ else:
     skipif_not_mac = mark.skipif(IS_NOT_MAC, reason="Skipped for non-Mac")
     skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
     skipif_ci_and_not_linux = mark.skipif(
-        IS_CI_AND_NOT_LINUX, reason="Skipped for CI/non-Linux"
+        is_ci(linux=False), reason="Skipped for CI/non-Linux"
     )
 
 
@@ -300,8 +292,6 @@ def _get_test_path(*, root: PathLike | None = None) -> Path:
 
 
 __all__ = [
-    "IS_CI",
-    "IS_CI_AND_NOT_LINUX",
     "NodeIdToPathError",
     "add_pytest_addoption",
     "add_pytest_collection_modifyitems",

@@ -8,7 +8,7 @@ from hypothesis import HealthCheck
 from pytest import fixture, param, skip
 from whenever import PlainDateTime
 
-from utilities.constants import IS_CI_AND_NOT_LINUX, MINUTE
+from utilities.constants import MINUTE
 from utilities.core import (
     ExtractGroupError,
     TemporaryDirectory,
@@ -197,7 +197,7 @@ def temp_path_parent_file(*, temp_file: Path) -> Path:
 
 @fixture
 async def test_redis() -> AsyncIterator[Redis]:
-    if IS_CI_AND_NOT_LINUX:
+    if is_ci(linux=False):
         skip(reason="Skipped for CI/non-Linux; Redis is not available")
 
     from utilities.redis import yield_redis
