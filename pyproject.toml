@@ -16,7 +16,7 @@
     "cvxpy>=1.8.1",
     "dycw-utilities[test]>=0.184.3",
     "fastapi>=0.129.0",
-    "fpdf2>=2.8.5",
+    "fpdf2>=2.8.6",
     "greenlet>=3.3.1",
     "httpx>=0.28.1",
     "img2pdf>=0.6.3",
@@ -37,18 +37,18 @@
     "pottery>=3.0.1",
     "pqdm>=0.2.0",
     "psutil>=7.2.2",
-    "psycopg>=3.3.2",
+    "psycopg>=3.3.3",
     "pyarrow>=23.0.1",
     "pydantic-settings-sops>=0.1.2",
     "pydantic>=2.12.5",
     "pyinstrument>=5.1.2",
     "pyright>=1.1.408",
     "redis>=7.2.0",
-    "rich>=14.3.2, <15",
+    "rich>=14.3.3, <15",
     "scikit-learn>=1.8.0",
     "scipy>=1.17.0",
     "shellingham>=1.5.4",
-    "slack-sdk>=3.40.0",
+    "slack-sdk>=3.40.1",
     "sqlalchemy>=2.0.46",
     "statsmodels>=0.14.6",
     "testbook>=0.4.2",
@@ -63,7 +63,7 @@
   dependencies = [
     "coloredlogs>=15.0.1",
     "more-itertools>=10.8.0",
-    "rich>=14.3.2",
+    "rich>=14.3.3",
     "typing-extensions>=4.15.0",
     "tzdata>=2025.3",
     "tzlocal>=5.3.1",
@@ -73,7 +73,7 @@
   name = "dycw-utilities"
   readme = "README.md"
   requires-python = ">= 3.12"
-  version = "0.191.10"
+  version = "0.192.0"
 
   [project.entry-points.pytest11]
     pytest-randomly = "utilities.pytest_plugins.pytest_randomly"

@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from getpass import getuser
 from logging import Logger, getLogger
-from os import cpu_count, environ
+from os import cpu_count
 from pathlib import Path
 from platform import system
 from random import SystemRandom
@@ -103,9 +103,6 @@ ABS_TOL: float = 0.0
 ###############################################################################
 
 
-IS_CI: bool = "CI" in environ
-
-
 def _get_cpu_count() -> int:
     """Get the CPU count."""
     count = cpu_count()
@@ -141,12 +138,6 @@ IS_LINUX: bool = SYSTEM == "linux"
 IS_NOT_WINDOWS: bool = not IS_WINDOWS
 IS_NOT_MAC: bool = not IS_MAC
 IS_NOT_LINUX: bool = not IS_LINUX
-IS_CI_AND_WINDOWS: bool = IS_CI and IS_WINDOWS
-IS_CI_AND_MAC: bool = IS_CI and IS_MAC
-IS_CI_AND_LINUX: bool = IS_CI and IS_LINUX
-IS_CI_AND_NOT_WINDOWS: bool = IS_CI and IS_NOT_WINDOWS
-IS_CI_AND_NOT_MAC: bool = IS_CI and IS_NOT_MAC
-IS_CI_AND_NOT_LINUX: bool = IS_CI and IS_NOT_LINUX
 
 
 def _get_max_pid() -> int | None:
@@ -533,13 +524,6 @@ __all__ = [
     "HOUR",
     "HOURS_PER_DAY",
     "HOURS_PER_WEEK",
-    "IS_CI",
-    "IS_CI_AND_LINUX",
-    "IS_CI_AND_MAC",
-    "IS_CI_AND_NOT_LINUX",
-    "IS_CI_AND_NOT_MAC",
-    "IS_CI_AND_NOT_WINDOWS",
-    "IS_CI_AND_WINDOWS",
     "IS_LINUX",
     "IS_MAC",
     "IS_NOT_LINUX",

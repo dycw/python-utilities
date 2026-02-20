@@ -246,6 +246,7 @@ from utilities.constants import (
     HOURS_PER_WEEK,
     IS_LINUX,
     IS_MAC,
+    IS_WINDOWS,
     LOCAL_TIME_ZONE,
     LOCAL_TIME_ZONE_NAME,
     MAX_BYTES,
@@ -462,14 +463,14 @@ class MaybeColoredFormatter(Formatter):
         validate: bool = True,
         *,
         defaults: StrMapping | None = None,
-        color: bool = False,
+        color: MaybeCallableBoolLike | None = None,
     ) -> None:
         if (datefmt is not None) or (style != "%") or (defaults is not None):
             raise MaybeColoredFormatterError(
                 datefmt=datefmt, style=style, defaults=defaults
             )
         super().__init__(fmt, datefmt, "{", validate, defaults=defaults)
-        if color:
+        if (not is_cron()) if color is None else to_bool(color):
             self._formatter = ColoredFormatter(
                 fmt=fmt,
                 style="{",
@@ -1390,7 +1391,7 @@ def set_up_logging(
     *,
     root: bool = False,
     filters: MaybeIterable[_FilterType] | None = None,
-    console_color: bool = True,
+    console_color: MaybeCallableBoolLike | None = None,
     console_debug: bool = False,
     files: PathLike | None = None,
     max_bytes: int = MAX_BYTES,
@@ -1479,7 +1480,7 @@ class _ConsoleFormatter(Formatter):
         validate: bool = True,
         *,
         defaults: Mapping[str, Any] | None = None,
-        color: bool = False,
+        color: MaybeCallableBoolLike | None = None,
     ) -> None:
         super().__init__(fmt, datefmt, style, validate, defaults=defaults)
         header = "{date} {time}.{micros}[{time_zone}] │ {hostname} ❯ {name} ❯ {funcName} ❯ {lineno} │ {levelname} │ {process}"
@@ -1878,9 +1879,35 @@ def has_env(key: str, /, *, case_sensitive: bool = False) -> bool:
 ##
 
 
+def is_ci(
+    *, windows: bool | None = None, mac: bool | None = None, linux: bool | None = None
+) -> bool:
+    """Check if we are in a CI job."""
+    try:
+        return (
+            parse_bool(get_env("CI"))
+            and ((windows is None) or (IS_WINDOWS is windows))
+            and ((mac is None) or (IS_MAC is mac))
+            and ((linux is None) or (IS_LINUX is linux))
+        )
+    except GetEnvError:
+        return False
+
+
+def is_cron() -> bool:
+    """Check if we are in a cron job."""
+    try:
+        return parse_bool(get_env("CRON"))
+    except GetEnvError:
+        return False
+
+
 def is_debug() -> bool:
     """Check if we are in `DEBUG` mode."""
-    return has_env("DEBUG")
+    try:
+        return parse_bool(get_env("DEBUG"))
+    except GetEnvError:
+        return False
 
 
 def is_pytest() -> bool:
@@ -3963,7 +3990,9 @@ __all__ = [
     "get_uid_name",
     "has_env",
     "indent_non_head",
+    "is_ci",
     "is_close",
+    "is_cron",
     "is_debug",
     "is_none",
     "is_not_none",
